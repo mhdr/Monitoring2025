@@ -76,7 +76,7 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     options.SaveToken = true;
-    options.RequireHttpsMetadata = false; // Set to true in production
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment(); // Only require HTTPS in production
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -158,7 +158,14 @@ if (app.Environment.IsDevelopment())
 // Enable CORS
 app.UseCors("ReactClientPolicy");
 
+// Use HTTPS redirection - this will redirect HTTP requests to HTTPS
 app.UseHttpsRedirection();
+
+// Add HSTS (HTTP Strict Transport Security) for production
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
 
 // Authentication & Authorization middleware
 app.UseAuthentication();

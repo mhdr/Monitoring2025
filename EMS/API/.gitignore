@@ -446,6 +446,9 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# SSL Certificates - security sensitive files
+certificates/
+
 ### Windows template
 # Windows thumbnail cache files
 Thumbs.db
