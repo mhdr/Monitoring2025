@@ -1,0 +1,6 @@
+.vs
+.idea
+.idx
+.vscode
+/_gsdata_
+*.ffs_db
