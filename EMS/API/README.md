@@ -4,7 +4,7 @@ This API project includes JWT-based authentication using ASP.NET Core Identity w
 
 ## Features
 
-- User registration and login
+- User registration and login (username-based, no email required)
 - JWT access token generation
 - Refresh token support
 - Role-based authentication
@@ -73,10 +73,9 @@ curl -X POST "http://localhost:5030/api/auth/register" \
   -d '{
     "firstName": "John",
     "lastName": "Doe",
-    "email": "john.doe@example.com",
     "userName": "johndoe",
-    "password": "Password123!",
-    "confirmPassword": "Password123!"
+    "password": "123",
+    "confirmPassword": "123"
   }'
 ```
 
@@ -86,8 +85,8 @@ curl -X POST "http://localhost:5030/api/auth/register" \
 curl -X POST "http://localhost:5030/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
-    "emailOrUserName": "johndoe",
-    "password": "Password123!",
+    "userName": "johndoe",
+    "password": "123",
     "rememberMe": false
   }'
 ```
@@ -102,7 +101,6 @@ Response:
   "user": {
     "id": "user-id",
     "userName": "johndoe",
-    "email": "john.doe@example.com",
     "firstName": "John",
     "lastName": "Doe",
     "roles": []

@@ -19,10 +19,9 @@ Content-Type: application/json
 {
   "firstName": "John",
   "lastName": "Doe",
-  "email": "john.doe@example.com",
   "userName": "johndoe",
-  "password": "Password123!",
-  "confirmPassword": "Password123!"
+  "password": "123",
+  "confirmPassword": "123"
 }
 
 ###
@@ -33,8 +32,8 @@ POST {{API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "emailOrUserName": "johndoe",
-  "password": "Password123!",
+  "userName": "johndoe",
+  "password": "123",
   "rememberMe": false
 }
 
@@ -57,13 +56,13 @@ Authorization: Bearer {{authToken}}
 
 ###
 
-### Login with email instead of username
+### Login with another user (example)
 POST {{API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "emailOrUserName": "john.doe@example.com",
-  "password": "Password123!",
+  "userName": "anotherusername",
+  "password": "123",
   "rememberMe": false
 }
 
@@ -86,17 +85,16 @@ Authorization: Bearer {{authToken}}
 
 ###
 
-### Test registration with duplicate email - should return error
+### Test registration with duplicate username - should return error
 POST {{API_HostAddress}}/api/auth/register
 Content-Type: application/json
 
 {
   "firstName": "Jane",
   "lastName": "Smith",
-  "email": "john.doe@example.com",
-  "userName": "janesmith",
-  "password": "Password123!",
-  "confirmPassword": "Password123!"
+  "userName": "johndoe",
+  "password": "456",
+  "confirmPassword": "456"
 }
 
 ###
@@ -106,7 +104,7 @@ POST {{API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "emailOrUserName": "johndoe",
+  "userName": "johndoe",
   "password": "WrongPassword",
   "rememberMe": false
 }

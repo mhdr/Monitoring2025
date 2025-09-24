@@ -22,13 +22,6 @@ public class RegisterRequestDto
     public string LastName { get; set; } = string.Empty;
 
     /// <summary>
-    /// User's email address
-    /// </summary>
-    [Required]
-    [EmailAddress]
-    public string Email { get; set; } = string.Empty;
-
-    /// <summary>
     /// Username
     /// </summary>
     [Required]
@@ -39,7 +32,6 @@ public class RegisterRequestDto
     /// User's password
     /// </summary>
     [Required]
-    [StringLength(100, MinimumLength = 6)]
     public string Password { get; set; } = string.Empty;
 
     /// <summary>
@@ -56,10 +48,10 @@ public class RegisterRequestDto
 public class LoginRequestDto
 {
     /// <summary>
-    /// Email or username for login
+    /// Username for login
     /// </summary>
     [Required]
-    public string EmailOrUserName { get; set; } = string.Empty;
+    public string UserName { get; set; } = string.Empty;
 
     /// <summary>
     /// User's password
@@ -141,11 +133,6 @@ public class UserInfoDto
     /// Username
     /// </summary>
     public string UserName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Email address
-    /// </summary>
-    public string Email { get; set; } = string.Empty;
 
     /// <summary>
     /// First name

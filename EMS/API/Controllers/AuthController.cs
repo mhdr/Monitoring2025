@@ -54,16 +54,6 @@ public class AuthController : ControllerBase
             }
 
             // Check if user already exists
-            var existingUserByEmail = await _userManager.FindByEmailAsync(request.Email);
-            if (existingUserByEmail != null)
-            {
-                return BadRequest(new AuthResponseDto
-                {
-                    Success = false,
-                    ErrorMessage = "User with this email already exists"
-                });
-            }
-
             var existingUserByUserName = await _userManager.FindByNameAsync(request.UserName);
             if (existingUserByUserName != null)
             {
@@ -78,10 +68,9 @@ public class AuthController : ControllerBase
             var user = new ApplicationUser
             {
                 UserName = request.UserName,
-                Email = request.Email,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
-                EmailConfirmed = true // For simplicity, auto-confirm email
+                EmailConfirmed = true // Not using email, but keep for compatibility
             };
 
             var result = await _userManager.CreateAsync(user, request.Password);
@@ -117,7 +106,6 @@ public class AuthController : ControllerBase
                 {
                     Id = user.Id,
                     UserName = user.UserName ?? string.Empty,
-                    Email = user.Email ?? string.Empty,
                     FirstName = user.FirstName ?? string.Empty,
                     LastName = user.LastName ?? string.Empty,
                     Roles = roles
@@ -157,9 +145,8 @@ public class AuthController : ControllerBase
                 });
             }
 
-            // Find user by email or username
-            var user = await _userManager.FindByEmailAsync(request.EmailOrUserName) ??
-                       await _userManager.FindByNameAsync(request.EmailOrUserName);
+            // Find user by username
+            var user = await _userManager.FindByNameAsync(request.UserName);
 
             if (user == null)
             {
@@ -175,7 +162,7 @@ public class AuthController : ControllerBase
 
             if (!result.Succeeded)
             {
-                _logger.LogWarning("Failed login attempt for user {UserName}", request.EmailOrUserName);
+                _logger.LogWarning("Failed login attempt for user {UserName}", request.UserName);
                 return Unauthorized(new AuthResponseDto
                 {
                     Success = false,
@@ -204,7 +191,6 @@ public class AuthController : ControllerBase
                 {
                     Id = user.Id,
                     UserName = user.UserName ?? string.Empty,
-                    Email = user.Email ?? string.Empty,
                     FirstName = user.FirstName ?? string.Empty,
                     LastName = user.LastName ?? string.Empty,
                     Roles = roles
@@ -295,7 +281,6 @@ public class AuthController : ControllerBase
                 {
                     Id = user.Id,
                     UserName = user.UserName ?? string.Empty,
-                    Email = user.Email ?? string.Empty,
                     FirstName = user.FirstName ?? string.Empty,
                     LastName = user.LastName ?? string.Empty,
                     Roles = roles
@@ -343,7 +328,6 @@ public class AuthController : ControllerBase
             {
                 Id = user.Id,
                 UserName = user.UserName ?? string.Empty,
-                Email = user.Email ?? string.Empty,
                 FirstName = user.FirstName ?? string.Empty,
                 LastName = user.LastName ?? string.Empty,
                 Roles = roles
