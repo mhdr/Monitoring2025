@@ -1,0 +1,164 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace API.Models.Dto;
+
+/// <summary>
+/// User registration request DTO
+/// </summary>
+public class RegisterRequestDto
+{
+    /// <summary>
+    /// User's first name
+    /// </summary>
+    [Required]
+    [StringLength(50)]
+    public string FirstName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// User's last name
+    /// </summary>
+    [Required]
+    [StringLength(50)]
+    public string LastName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// User's email address
+    /// </summary>
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Username
+    /// </summary>
+    [Required]
+    [StringLength(50)]
+    public string UserName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// User's password
+    /// </summary>
+    [Required]
+    [StringLength(100, MinimumLength = 6)]
+    public string Password { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Confirm password
+    /// </summary>
+    [Required]
+    [Compare("Password")]
+    public string ConfirmPassword { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// User login request DTO
+/// </summary>
+public class LoginRequestDto
+{
+    /// <summary>
+    /// Email or username for login
+    /// </summary>
+    [Required]
+    public string EmailOrUserName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// User's password
+    /// </summary>
+    [Required]
+    public string Password { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Remember me flag for extended token expiry
+    /// </summary>
+    public bool RememberMe { get; set; } = false;
+}
+
+/// <summary>
+/// Refresh token request DTO
+/// </summary>
+public class RefreshTokenRequestDto
+{
+    /// <summary>
+    /// Access token
+    /// </summary>
+    [Required]
+    public string AccessToken { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Refresh token
+    /// </summary>
+    [Required]
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Authentication response DTO
+/// </summary>
+public class AuthResponseDto
+{
+    /// <summary>
+    /// JWT access token
+    /// </summary>
+    public string AccessToken { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Refresh token
+    /// </summary>
+    public string RefreshToken { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Token expiry time
+    /// </summary>
+    public DateTime Expires { get; set; }
+
+    /// <summary>
+    /// User information
+    /// </summary>
+    public UserInfoDto User { get; set; } = new();
+
+    /// <summary>
+    /// Indicates if authentication was successful
+    /// </summary>
+    public bool Success { get; set; } = true;
+
+    /// <summary>
+    /// Error message if authentication failed
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+}
+
+/// <summary>
+/// User information DTO
+/// </summary>
+public class UserInfoDto
+{
+    /// <summary>
+    /// User ID
+    /// </summary>
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Username
+    /// </summary>
+    public string UserName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Email address
+    /// </summary>
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>
+    /// First name
+    /// </summary>
+    public string FirstName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Last name
+    /// </summary>
+    public string LastName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// User roles
+    /// </summary>
+    public IList<string> Roles { get; set; } = new List<string>();
+}

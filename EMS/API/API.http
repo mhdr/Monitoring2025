@@ -1,6 +1,112 @@
 @API_HostAddress = http://localhost:5030
 
+### Test public weather forecast (no auth required)
+GET {{API_HostAddress}}/weatherforecast/public
+Accept: application/json
+
+###
+
+### Test protected weather forecast (requires auth) - should return 401
 GET {{API_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+### Register a new user
+POST {{API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "userName": "johndoe",
+  "password": "Password123!",
+  "confirmPassword": "Password123!"
+}
+
+###
+
+### Login with registered user
+# @name loginUser
+POST {{API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUserName": "johndoe",
+  "password": "Password123!",
+  "rememberMe": false
+}
+
+###
+
+### Extract token from login response
+@authToken = {{loginUser.response.body.accessToken}}
+
+### Test protected weather forecast with JWT token
+GET {{API_HostAddress}}/weatherforecast/
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+
+### Get current user info using JWT token
+GET {{API_HostAddress}}/api/auth/me
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+
+### Login with email instead of username
+POST {{API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUserName": "john.doe@example.com",
+  "password": "Password123!",
+  "rememberMe": false
+}
+
+###
+
+### Test refresh token (use actual tokens from login response)
+POST {{API_HostAddress}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "accessToken": "{{authToken}}",
+  "refreshToken": "replace_with_actual_refresh_token_from_login_response"
+}
+
+###
+
+### Logout (requires auth)
+POST {{API_HostAddress}}/api/auth/logout
+Authorization: Bearer {{authToken}}
+
+###
+
+### Test registration with duplicate email - should return error
+POST {{API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "email": "john.doe@example.com",
+  "userName": "janesmith",
+  "password": "Password123!",
+  "confirmPassword": "Password123!"
+}
+
+###
+
+### Test login with invalid credentials - should return 401
+POST {{API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUserName": "johndoe",
+  "password": "WrongPassword",
+  "rememberMe": false
+}
