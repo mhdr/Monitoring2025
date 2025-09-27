@@ -21,7 +21,29 @@ export const translations = {
     systemDescription: 'این سیستم برای مانیتورینگ و مدیریت انبار طراحی شده است.',
     notificationDescription: 'مدیریت اعلان‌ها و هشدارها',
     userDescription: 'مدیریت کاربران سیستم',
-    reportDescription: 'تولید گزارشات مختلف'
+    reportDescription: 'تولید گزارشات مختلف',
+    // Login page translations
+    loginTitle: 'ورود به سیستم',
+    loginSubtitle: 'لطفاً اطلاعات خود را وارد کنید',
+    username: 'نام کاربری',
+    password: 'رمز عبور',
+    loginButton: 'ورود',
+    loginError: 'خطا در ورود',
+    loginSuccess: 'با موفقیت وارد شدید',
+    loading: 'در حال بارگذاری...',
+    // Form validation messages
+    usernameRequired: 'نام کاربری الزامی است',
+    passwordRequired: 'رمز عبور الزامی است',
+    usernameMinLength: 'نام کاربری باید حداقل ۳ کاراکتر باشد',
+    passwordMinLength: 'رمز عبور باید حداقل ۶ کاراکتر باشد',
+    // Error messages
+    networkError: 'خطا در اتصال به سرور',
+    invalidCredentials: 'نام کاربری یا رمز عبور اشتباه است',
+    serverError: 'خطا در سرور',
+    unexpectedError: 'خطای غیرمنتظره رخ داده است',
+    // Navigation
+    welcomeUser: 'خوش آمدید',
+    userMenu: 'منو کاربر'
   },
   en: {
     welcome: 'Welcome',
@@ -45,7 +67,29 @@ export const translations = {
     systemDescription: 'This system is designed for warehouse monitoring and management.',
     notificationDescription: 'Manage notifications and alerts',
     userDescription: 'System user management',
-    reportDescription: 'Generate various reports'
+    reportDescription: 'Generate various reports',
+    // Login page translations
+    loginTitle: 'System Login',
+    loginSubtitle: 'Please enter your credentials',
+    username: 'Username',
+    password: 'Password',
+    loginButton: 'Login',
+    loginError: 'Login Error',
+    loginSuccess: 'Successfully logged in',
+    loading: 'Loading...',
+    // Form validation messages
+    usernameRequired: 'Username is required',
+    passwordRequired: 'Password is required',
+    usernameMinLength: 'Username must be at least 3 characters',
+    passwordMinLength: 'Password must be at least 6 characters',
+    // Error messages
+    networkError: 'Network connection error',
+    invalidCredentials: 'Invalid username or password',
+    serverError: 'Server error',
+    unexpectedError: 'An unexpected error occurred',
+    // Navigation
+    welcomeUser: 'Welcome',
+    userMenu: 'User Menu'
   }
 };
 
