@@ -1,40 +1,14 @@
+/* Language Switcher positioning */
 .language-switcher {
-  position: fixed;
   top: 15px;
   left: 15px;
-  background: rgba(79, 70, 229, 0.9);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  z-index: 1050;
   backdrop-filter: blur(10px);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
-  z-index: 1000;
-  min-width: 80px;
-  justify-content: center;
 }
 
 .language-switcher:hover {
-  background: rgba(55, 48, 163, 0.95);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.language-text {
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.language-icon {
-  font-size: 0.9rem;
+  transform: translateY(-2px);
 }
 
 /* RTL adjustments */
@@ -49,23 +23,11 @@
   left: 15px;
 }
 
-/* Tablet and up */
+/* Responsive adjustments */
 @media (min-width: 768px) {
   .language-switcher {
     top: 20px;
     left: 20px;
-    border-radius: 25px;
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    gap: 8px;
-  }
-  
-  .language-text {
-    font-size: 0.85rem;
-  }
-  
-  .language-icon {
-    font-size: 1rem;
   }
   
   [dir="rtl"] .language-switcher {
@@ -79,23 +41,10 @@
   }
 }
 
-/* Small mobile screens */
 @media (max-width: 480px) {
   .language-switcher {
     top: 10px;
     left: 10px;
-    padding: 5px 10px;
-    font-size: 0.75rem;
-    border-radius: 16px;
-    min-width: 70px;
-  }
-  
-  .language-text {
-    font-size: 0.7rem;
-  }
-  
-  .language-icon {
-    font-size: 0.8rem;
   }
   
   [dir="rtl"] .language-switcher {
@@ -106,18 +55,5 @@
   [dir="ltr"] .language-switcher {
     left: 10px;
     right: auto;
-  }
-}
-
-/* Touch device optimizations */
-@media (hover: none) and (pointer: coarse) {
-  .language-switcher {
-    padding: 8px 14px;
-    min-height: 40px;
-    min-width: 85px;
-  }
-  
-  .language-switcher:active {
-    transform: scale(0.95);
   }
 }

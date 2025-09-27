@@ -1,3 +1,4 @@
+/* Global font and color scheme */
 :root {
   font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
   line-height: 1.5;
@@ -13,7 +14,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* RTL Styles */
+/* RTL/LTR Direction and Font Styles */
 body.rtl {
   direction: rtl;
   text-align: right;
@@ -23,7 +24,6 @@ body.rtl * {
   direction: rtl;
 }
 
-/* LTR Styles */
 body.ltr {
   direction: ltr;
   text-align: left;
@@ -42,15 +42,7 @@ html[dir="ltr"] {
   text-align: left;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
+/* Basic element styling */
 body {
   margin: 0;
   display: flex;
@@ -59,39 +51,24 @@ body {
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem;
+  width: 100%;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+/* Responsive padding adjustments */
+@media (min-width: 768px) {
+  #root {
+    padding: 2rem;
+  }
 }
 
+/* Light mode adjustments */
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
     background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
   }
 }

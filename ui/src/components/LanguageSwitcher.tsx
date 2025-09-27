@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
 import './LanguageSwitcher.css';
 
@@ -11,14 +12,16 @@ const LanguageSwitcher: React.FC = () => {
   };
 
   return (
-    <button 
-      className="language-switcher"
+    <Button 
+      variant="primary"
+      size="sm"
+      className="position-fixed language-switcher d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm"
       onClick={toggleLanguage}
       title={`Switch to ${language === 'fa' ? 'English' : 'فارسی'}`}
     >
-      <span className="language-text">{t('languageSwitch')}</span>
+      <span className="language-text small fw-medium">{t('languageSwitch')}</span>
       <span className="language-icon">🌐</span>
-    </button>
+    </Button>
   );
 };
 
