@@ -1,5 +1,5 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -11,6 +11,35 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* RTL Styles */
+body.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+body.rtl * {
+  direction: rtl;
+}
+
+/* LTR Styles */
+body.ltr {
+  direction: ltr;
+  text-align: left;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+body.ltr * {
+  direction: ltr;
+}
+
+html[dir="rtl"] {
+  text-align: right;
+}
+
+html[dir="ltr"] {
+  text-align: left;
 }
 
 a {
