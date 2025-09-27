@@ -20,7 +20,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactClientPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://localhost:3000") // React dev server
+        policy.WithOrigins(
+                "http://localhost:3000", "https://localhost:3000", // React Create App
+                "http://localhost:5173", "https://localhost:5173"  // Vite dev server
+              )
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
