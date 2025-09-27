@@ -19,9 +19,20 @@
 - Test and ensure proper display across different screen sizes
 - Use Bootstrap's responsive utilities and grid system
 
+### Backend API
+- The server is built with **.NET Core C# ASP.NET Web API**
+- Server addresses:
+  - HTTP: `http://localhost:5030`
+  - HTTPS: `https://localhost:7136` (use HTTPS by default)
+- SSL certificate is self-signed (can be trusted for development)
+- API documentation available at: `https://localhost:7136/swagger/v1/swagger.json`
+- Authentication uses **JWT tokens**
+
 ### Development Guidelines
 - Always consider both language variants when implementing features
 - Ensure proper RTL (Right-to-Left) support for Persian text
 - Maintain consistent styling using Bootstrap components
 - Test responsiveness on both desktop and mobile viewports
 - Follow existing code patterns and project structure
+- Use HTTPS endpoints by default when making API calls
+- Refer to swagger.json for API endpoint documentation
