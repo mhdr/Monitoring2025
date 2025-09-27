@@ -1,0 +1,77 @@
+/* Custom Responsive Navbar Styles */
+.custom-navbar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #4f46e5 0%, #667eea 100%) !important;
+  border-radius: 12px;
+}
+
+.navbar-brand-custom {
+  font-weight: 700;
+  font-size: 1.5rem;
+  background: linear-gradient(45deg, #fff, #f1f5f9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nav-link-custom {
+  font-weight: 500;
+  margin: 0 0.5rem;
+  padding: 0.5rem 1rem !important;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.nav-link-custom:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white !important;
+  transform: translateY(-1px);
+}
+
+/* RTL Support */
+[dir="rtl"] .navbar-nav {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+[dir="rtl"] .nav-link-custom {
+  margin: 0 0.5rem 0 0;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 991.98px) {
+  .custom-navbar {
+    margin: 1rem;
+    border-radius: 8px;
+  }
+  
+  .navbar-brand-custom {
+    font-size: 1.3rem;
+  }
+  
+  .nav-link-custom {
+    margin: 0.25rem 0;
+    text-align: center;
+    border-radius: 4px;
+  }
+  
+  .navbar-collapse {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin-top: 1rem;
+    padding: 1rem;
+    backdrop-filter: blur(10px);
+  }
+}
+
+/* Small mobile screens */
+@media (max-width: 576px) {
+  .custom-navbar {
+    margin: 0.5rem;
+  }
+  
+  .navbar-brand-custom {
+    font-size: 1.1rem;
+  }
+}

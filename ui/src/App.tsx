@@ -1,6 +1,8 @@
 import './App.css'
+import { Container, Row, Col, Card } from 'react-bootstrap'
 import { useLanguage } from './hooks/useLanguage'
 import LanguageSwitcher from './components/LanguageSwitcher'
+import ResponsiveNavbar from './components/ResponsiveNavbar'
 
 function App() {
   const { t } = useLanguage()
@@ -8,40 +10,60 @@ function App() {
   return (
     <>
       <LanguageSwitcher />
-      <div className="app-container">
-        <header className="app-header">
-          <h1>{t('monitoring')} {t('warehouse')}</h1>
-        </header>
+      <ResponsiveNavbar />
+      <Container fluid className="px-2 px-md-3 px-lg-4">
+        <Row className="justify-content-center">
+          <Col xs={12} lg={10} xl={8}>
+            <header className="app-header">
+              <h1>{t('monitoring')} {t('warehouse')}</h1>
+            </header>
+          </Col>
+        </Row>
         
-        <nav className="app-nav">
-          <button className="nav-button">{t('dashboard')}</button>
-          <button className="nav-button">{t('warehouse')}</button>
-          <button className="nav-button">{t('reports')}</button>
-          <button className="nav-button">{t('settings')}</button>
-        </nav>
-        
-        <main className="app-main">
-          <div className="welcome-section">
-            <h2>{t('welcome')}</h2>
-            <p>{t('systemDescription')}</p>
-          </div>
-          
-          <div className="features-grid">
-            <div className="feature-card">
-              <h3>{t('notifications')}</h3>
-              <p>{t('notificationDescription')}</p>
-            </div>
-            <div className="feature-card">
-              <h3>{t('users')}</h3>
-              <p>{t('userDescription')}</p>
-            </div>
-            <div className="feature-card">
-              <h3>{t('reports')}</h3>
-              <p>{t('reportDescription')}</p>
-            </div>
-          </div>
-        </main>
-      </div>
+        <Row className="justify-content-center">
+          <Col xs={12} lg={10} xl={8}>
+            <main className="app-main">
+              <div className="welcome-section">
+                <h2>{t('welcome')}</h2>
+                <p>{t('systemDescription')}</p>
+              </div>
+              
+              <Row className="features-grid g-3 g-md-4">
+                <Col xs={12} sm={6} lg={4}>
+                  <Card className="feature-card h-100">
+                    <Card.Body className="d-flex flex-column text-center">
+                      <Card.Title as="h3">{t('notifications')}</Card.Title>
+                      <Card.Text className="flex-grow-1">
+                        {t('notificationDescription')}
+                      </Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col xs={12} sm={6} lg={4}>
+                  <Card className="feature-card h-100">
+                    <Card.Body className="d-flex flex-column text-center">
+                      <Card.Title as="h3">{t('users')}</Card.Title>
+                      <Card.Text className="flex-grow-1">
+                        {t('userDescription')}
+                      </Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col xs={12} sm={6} lg={4}>
+                  <Card className="feature-card h-100">
+                    <Card.Body className="d-flex flex-column text-center">
+                      <Card.Title as="h3">{t('reports')}</Card.Title>
+                      <Card.Text className="flex-grow-1">
+                        {t('reportDescription')}
+                      </Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </main>
+          </Col>
+        </Row>
+      </Container>
     </>
   )
 }
