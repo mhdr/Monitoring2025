@@ -8,6 +8,11 @@
 - All UI components, text, and content should be properly internationalized
 - Use the existing i18next setup for translations
 
+### Technology Stack
+- This project is a **React application using TypeScript**
+- Follow TypeScript best practices and proper typing
+- Use type definitions for all components, props, and API responses
+
 ### UI Framework
 - This project uses **Bootstrap** for styling and layout
 - Follow Bootstrap conventions and components when adding new UI elements
