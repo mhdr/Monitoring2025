@@ -35,7 +35,6 @@ export const translations = {
     usernameRequired: 'نام کاربری الزامی است',
     passwordRequired: 'رمز عبور الزامی است',
     usernameMinLength: 'نام کاربری باید حداقل ۳ کاراکتر باشد',
-    passwordMinLength: 'رمز عبور باید حداقل ۶ کاراکتر باشد',
     // Error messages
     networkError: 'خطا در اتصال به سرور',
     invalidCredentials: 'نام کاربری یا رمز عبور اشتباه است',
@@ -81,7 +80,6 @@ export const translations = {
     usernameRequired: 'Username is required',
     passwordRequired: 'Password is required',
     usernameMinLength: 'Username must be at least 3 characters',
-    passwordMinLength: 'Password must be at least 6 characters',
     // Error messages
     networkError: 'Network connection error',
     invalidCredentials: 'Invalid username or password',

@@ -28,8 +28,6 @@ const LoginPage: React.FC = () => {
 
     if (!formData.password) {
       newErrors.password = t('passwordRequired');
-    } else if (formData.password.length < 6) {
-      newErrors.password = t('passwordMinLength');
     }
 
     setErrors(newErrors);
