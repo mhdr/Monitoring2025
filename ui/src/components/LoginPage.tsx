@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
-import { useAuth } from '../hooks/useAuth';
+import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
+import { loginAsync, clearError } from '../store/slices/authSlice';
 import type { ApiError } from '../types/auth';
 import './LoginPage.css';
 
@@ -12,10 +13,19 @@ interface FormErrors {
 
 const LoginPage: React.FC = () => {
   const { t } = useLanguage();
-  const { login, isLoading } = useAuth();
+  const dispatch = useAppDispatch();
+  const { isLoading, error } = useAppSelector((state) => state.auth);
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [errors, setErrors] = useState<FormErrors>({});
   const [apiError, setApiError] = useState<string>('');
+
+  // Update apiError when Redux error changes
+  React.useEffect(() => {
+    if (error) {
+      setApiError(error);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -57,23 +67,21 @@ const LoginPage: React.FC = () => {
     }
 
     try {
-      await login({
+      const result = await dispatch(loginAsync({
         username: formData.username.trim(),
         password: formData.password,
-      });
-    } catch (error) {
-      const apiErr = error as ApiError;
-      
-      // Map specific error codes to user-friendly messages
-      if (apiErr.status === 401) {
-        setApiError(t('invalidCredentials'));
-      } else if (apiErr.status === 0) {
-        setApiError(t('networkError'));
-      } else if (apiErr.status && apiErr.status >= 500) {
-        setApiError(t('serverError'));
-      } else {
-        setApiError(apiErr.message || t('unexpectedError'));
+      }));
+
+      // Check if the action was rejected
+      if (loginAsync.rejected.match(result)) {
+        // Error handling is already done in the Redux slice
+        // The error will be set in the Redux state and displayed via useEffect
+        return;
       }
+    } catch (error) {
+      // This catch is for any unexpected errors
+      const apiErr = error as ApiError;
+      setApiError(apiErr.message || t('unexpectedError'));
     }
   };
 

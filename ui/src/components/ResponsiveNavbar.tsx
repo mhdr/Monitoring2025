@@ -1,14 +1,16 @@
 import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
-import { useAuth } from '../hooks/useAuth';
+import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
+import { logoutAsync } from '../store/slices/authSlice';
 import './ResponsiveNavbar.css';
 
 const ResponsiveNavbar = () => {
   const { t } = useLanguage();
-  const { user, logout } = useAuth();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
 
   const handleLogout = () => {
-    logout();
+    dispatch(logoutAsync());
   };
 
   const getUserDisplayName = () => {
