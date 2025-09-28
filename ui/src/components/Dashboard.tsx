@@ -1,7 +1,6 @@
 import React from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
-import LanguageSwitcher from './LanguageSwitcher';
 import ResponsiveNavbar from './ResponsiveNavbar';
 
 const Dashboard: React.FC = () => {
@@ -9,7 +8,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <>
-      <LanguageSwitcher />
       <ResponsiveNavbar />
       <Container fluid className="px-2 px-md-3 px-lg-4">
         <Row className="justify-content-center">
