@@ -70,6 +70,8 @@ public class AuthController : ControllerBase
                 UserName = request.UserName,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
+                FirstNameFa = request.FirstNameFa,
+                LastNameFa = request.LastNameFa,
                 EmailConfirmed = true // Not using email, but keep for compatibility
             };
 
@@ -108,6 +110,8 @@ public class AuthController : ControllerBase
                     UserName = user.UserName ?? string.Empty,
                     FirstName = user.FirstName ?? string.Empty,
                     LastName = user.LastName ?? string.Empty,
+                    FirstNameFa = user.FirstNameFa ?? string.Empty,
+                    LastNameFa = user.LastNameFa ?? string.Empty,
                     Roles = roles
                 }
             });
@@ -193,6 +197,8 @@ public class AuthController : ControllerBase
                     UserName = user.UserName ?? string.Empty,
                     FirstName = user.FirstName ?? string.Empty,
                     LastName = user.LastName ?? string.Empty,
+                    FirstNameFa = user.FirstNameFa ?? string.Empty,
+                    LastNameFa = user.LastNameFa ?? string.Empty,
                     Roles = roles
                 }
             });
@@ -283,6 +289,8 @@ public class AuthController : ControllerBase
                     UserName = user.UserName ?? string.Empty,
                     FirstName = user.FirstName ?? string.Empty,
                     LastName = user.LastName ?? string.Empty,
+                    FirstNameFa = user.FirstNameFa ?? string.Empty,
+                    LastNameFa = user.LastNameFa ?? string.Empty,
                     Roles = roles
                 }
             });
@@ -330,6 +338,8 @@ public class AuthController : ControllerBase
                 UserName = user.UserName ?? string.Empty,
                 FirstName = user.FirstName ?? string.Empty,
                 LastName = user.LastName ?? string.Empty,
+                FirstNameFa = user.FirstNameFa ?? string.Empty,
+                LastNameFa = user.LastNameFa ?? string.Empty,
                 Roles = roles
             });
         }

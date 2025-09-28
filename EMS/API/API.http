@@ -19,6 +19,8 @@ Content-Type: application/json
 {
   "firstName": "John",
   "lastName": "Doe",
+  "firstNameFa": "جان",
+  "lastNameFa": "دو",
   "userName": "johndoe",
   "password": "123",
   "confirmPassword": "123"
@@ -92,6 +94,8 @@ Content-Type: application/json
 {
   "firstName": "Jane",
   "lastName": "Smith",
+  "firstNameFa": "جین",
+  "lastNameFa": "اسمیت",
   "userName": "johndoe",
   "password": "456",
   "confirmPassword": "456"

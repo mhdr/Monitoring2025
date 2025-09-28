@@ -73,6 +73,8 @@ curl -X POST "http://localhost:5030/api/auth/register" \
   -d '{
     "firstName": "John",
     "lastName": "Doe",
+    "firstNameFa": "جان",
+    "lastNameFa": "دو",
     "userName": "johndoe",
     "password": "123",
     "confirmPassword": "123"
@@ -103,6 +105,8 @@ Response:
     "userName": "johndoe",
     "firstName": "John",
     "lastName": "Doe",
+    "firstNameFa": "جان",
+    "lastNameFa": "دو",
     "roles": []
   }
 }

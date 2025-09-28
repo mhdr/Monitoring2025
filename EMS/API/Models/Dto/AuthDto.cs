@@ -22,6 +22,20 @@ public class RegisterRequestDto
     public string LastName { get; set; } = string.Empty;
 
     /// <summary>
+    /// User's first name in Farsi
+    /// </summary>
+    [Required]
+    [StringLength(50)]
+    public string FirstNameFa { get; set; } = string.Empty;
+
+    /// <summary>
+    /// User's last name in Farsi
+    /// </summary>
+    [Required]
+    [StringLength(50)]
+    public string LastNameFa { get; set; } = string.Empty;
+
+    /// <summary>
     /// Username
     /// </summary>
     [Required]
@@ -143,6 +157,16 @@ public class UserInfoDto
     /// Last name
     /// </summary>
     public string LastName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// First name in Farsi
+    /// </summary>
+    public string FirstNameFa { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Last name in Farsi
+    /// </summary>
+    public string LastNameFa { get; set; } = string.Empty;
 
     /// <summary>
     /// User roles
