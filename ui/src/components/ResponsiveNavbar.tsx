@@ -5,7 +5,7 @@ import { logoutAsync } from '../store/slices/authSlice';
 import './ResponsiveNavbar.css';
 
 const ResponsiveNavbar = () => {
-  const { t } = useLanguage();
+  const { t, language, changeLanguage } = useLanguage();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
 
@@ -63,6 +63,31 @@ const ResponsiveNavbar = () => {
                 <i className="fas fa-cog me-2" aria-hidden="true"></i>
                 {t('settings')}
               </NavDropdown.Item>
+              <NavDropdown.Divider />
+              
+              {/* Language Switcher */}
+              <NavDropdown.Header className="py-1 text-muted small">
+                🌐 Language / زبان
+              </NavDropdown.Header>
+              <NavDropdown.Item 
+                onClick={() => changeLanguage('fa')}
+                className={`py-2 ${language === 'fa' ? 'active' : ''}`}
+                style={{ cursor: 'pointer' }}
+              >
+                <i className="fas fa-globe me-2" aria-hidden="true"></i>
+                فارسی
+                {language === 'fa' && <i className="fas fa-check ms-2 text-success" aria-hidden="true"></i>}
+              </NavDropdown.Item>
+              <NavDropdown.Item 
+                onClick={() => changeLanguage('en')}
+                className={`py-2 ${language === 'en' ? 'active' : ''}`}
+                style={{ cursor: 'pointer' }}
+              >
+                <i className="fas fa-globe me-2" aria-hidden="true"></i>
+                English
+                {language === 'en' && <i className="fas fa-check ms-2 text-success" aria-hidden="true"></i>}
+              </NavDropdown.Item>
+              
               <NavDropdown.Divider />
               <NavDropdown.Item 
                 onClick={handleLogout}
