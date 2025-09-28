@@ -89,8 +89,7 @@ chmod +x run-api.sh
 
 ### Protected Endpoints
 
-- `GET /weatherforecast` - Get weather forecast (requires JWT token)
-- `GET /weatherforecast/public` - Get public weather forecast (no auth required)
+This API currently focuses on authentication. Protected endpoints will be added as needed.
 
 ## Usage Examples
 
@@ -172,22 +171,7 @@ Response:
 }
 ```
 
-### 3. Access protected endpoints
-
-**HTTP:**
-```bash
-curl -X GET "http://localhost:5030/weatherforecast" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
-```
-
-**HTTPS:**
-```bash
-curl -X GET "https://localhost:7136/weatherforecast" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
-  -k
-```
-
-### 4. Update user information
+### 3. Update user information
 
 Update current user's information (HTTP):
 ```bash
@@ -368,8 +352,7 @@ const refreshToken = async () => {
 ```
 API/
 ├── Controllers/
-│   ├── AuthController.cs          # Authentication endpoints
-│   └── WeatherForecastController.cs
+│   └── AuthController.cs          # Authentication endpoints
 ├── Models/
 │   ├── JwtConfig.cs              # JWT configuration
 │   └── Dto/

@@ -1,29 +1,9 @@
 @API_HostAddress_HTTP = http://localhost:5030
 @API_HostAddress_HTTPS = https://localhost:7136
 
-### Test public weather forecast (no auth required) - HTTP
-GET {{API_HostAddress_HTTP}}/weatherforecast/public
-Accept: application/json
 
-###
 
-### Test public weather forecast (no auth required) - HTTPS
-GET {{API_HostAddress_HTTPS}}/weatherforecast/public
-Accept: application/json
 
-###
-
-### Test protected weather forecast (requires auth) - should return 401 - HTTP
-GET {{API_HostAddress_HTTP}}/weatherforecast/
-Accept: application/json
-
-###
-
-### Test protected weather forecast (requires auth) - should return 401 - HTTPS
-GET {{API_HostAddress_HTTPS}}/weatherforecast/
-Accept: application/json
-
-###
 
 ### Register a new user - HTTP
 POST {{API_HostAddress_HTTP}}/api/auth/register
@@ -87,19 +67,7 @@ Content-Type: application/json
 @authTokenHTTP = {{loginUserHTTP.response.body.accessToken}}
 @authTokenHTTPS = {{loginUserHTTPS.response.body.accessToken}}
 
-### Test protected weather forecast with JWT token - HTTP
-GET {{API_HostAddress_HTTP}}/weatherforecast/
-Accept: application/json
-Authorization: Bearer {{authTokenHTTP}}
 
-###
-
-### Test protected weather forecast with JWT token - HTTPS
-GET {{API_HostAddress_HTTPS}}/weatherforecast/
-Accept: application/json
-Authorization: Bearer {{authTokenHTTPS}}
-
-###
 
 ### Get current user info using JWT token - HTTP
 GET {{API_HostAddress_HTTP}}/api/auth/me
