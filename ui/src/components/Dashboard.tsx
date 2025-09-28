@@ -7,9 +7,9 @@ const Dashboard: React.FC = () => {
   const { t } = useLanguage();
 
   return (
-    <>
+    <div className="d-flex flex-column vh-100">
       <ResponsiveNavbar />
-      <Container fluid className="px-2 px-md-3 px-lg-4">
+      <Container fluid className="flex-grow-1 px-2 px-md-3 px-lg-4 py-3">
         <Row className="justify-content-center">
           <Col xs={12} lg={10} xl={8}>
             <header className="bg-gradient text-white p-3 p-md-4 rounded-3 mb-3 mb-md-4 shadow text-center">
@@ -62,7 +62,7 @@ const Dashboard: React.FC = () => {
           </Col>
         </Row>
       </Container>
-    </>
+    </div>
   );
 };
 

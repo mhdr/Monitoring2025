@@ -23,9 +23,9 @@ const ResponsiveNavbar = () => {
   return (
     <Navbar 
       expand="lg" 
-      className="custom-navbar shadow rounded-3 mx-2 mx-md-3 mb-3 mb-md-4"
+      className="custom-navbar shadow"
     >
-      <Container>
+      <Container fluid>
         <Navbar.Brand 
           href="#" 
           className="fw-bold fs-4 text-white navbar-brand-gradient"

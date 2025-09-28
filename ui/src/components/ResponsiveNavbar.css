@@ -1,6 +1,9 @@
 /* Custom navbar styling with Bootstrap integration */
 .custom-navbar {
   background: linear-gradient(135deg, #4f46e5 0%, #667eea 100%) !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
 }
 
 .navbar-brand-gradient {
@@ -91,7 +94,7 @@
 /* Mobile-specific styles */
 @media (max-width: 991.98px) {
   .custom-navbar {
-    margin: 0.75rem;
+    margin: 0 !important;
   }
   
   .user-dropdown .dropdown-toggle {

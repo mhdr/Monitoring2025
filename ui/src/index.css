@@ -52,16 +52,10 @@ body {
 }
 
 #root {
-  margin: 0 auto;
-  padding: 1rem;
+  margin: 0;
+  padding: 0;
   width: 100%;
-}
-
-/* Responsive padding adjustments */
-@media (min-width: 768px) {
-  #root {
-    padding: 2rem;
-  }
+  height: 100vh;
 }
 
 /* Light mode adjustments */
