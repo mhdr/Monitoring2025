@@ -158,21 +158,33 @@ try {
 
 # Set appropriate file permissions (Windows equivalent)
 try {
-    # Remove inheritance and set specific permissions for private key files
-    $keyAcl = Get-Acl "$KEY_NAME.pem"
-    $keyAcl.SetAccessRuleProtection($true, $false)  # Disable inheritance, don't preserve existing rules
-    $keyAcl.SetOwner([System.Security.Principal.WindowsIdentity]::GetCurrent().User)
+    $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
     
-    $pfxAcl = Get-Acl "$PFX_NAME.pfx"
-    $pfxAcl.SetAccessRuleProtection($true, $false)  # Disable inheritance, don't preserve existing rules
-    $pfxAcl.SetOwner([System.Security.Principal.WindowsIdentity]::GetCurrent().User)
+    # Set permissions for private key file
+    Write-ColorOutput "Setting permissions for private key file..." "Yellow"
+    $keyPermission = "${currentUser}:(R)"
+    icacls "$KEY_NAME.pem" /inheritance:r /grant:r $keyPermission | Out-Null
     
-    Set-Acl "$KEY_NAME.pem" $keyAcl
-    Set-Acl "$PFX_NAME.pfx" $pfxAcl
+    # Set permissions for PFX certificate file
+    Write-ColorOutput "Setting permissions for PFX certificate file..." "Yellow"
+    $pfxPermission = "${currentUser}:(R)"
+    icacls "$PFX_NAME.pfx" /inheritance:r /grant:r $pfxPermission | Out-Null
+    
+    # Set permissions for PEM certificate file (less restrictive since it's just the public cert)
+    Write-ColorOutput "Setting permissions for PEM certificate file..." "Yellow"
+    $certPermission = "${currentUser}:(R)"
+    icacls "$CERT_NAME.pem" /inheritance:r /grant:r $certPermission | Out-Null
+    
+    # Ensure the certificates directory has proper permissions
+    Set-Location ..
+    $dirPermission = "${currentUser}:(RX)"
+    icacls "$CERT_DIR" /grant:r $dirPermission | Out-Null
+    Set-Location $CERT_DIR
     
     Write-ColorOutput "File permissions set successfully" "Green"
 } catch {
     Write-ColorOutput "Warning: Could not set file permissions: $_" "Yellow"
+    Write-ColorOutput "You may need to manually set read permissions on the certificate files." "Yellow"
 }
 
 Write-Host ""
