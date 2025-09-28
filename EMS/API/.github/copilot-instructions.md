@@ -1,7 +1,7 @@
 # Copilot Instructions
 
 ## Project Overview
-This is an Energy Management System (EMS) API built with ASP.NET Core, serving as the backend for a monitoring system.
+This is an Environmental Monitoring System (EMS) API built with ASP.NET Core, serving as the backend for a monitoring system.
 
 ## Development Environment
 This project should use both HTTP and HTTPS:
@@ -11,17 +11,13 @@ This project should use both HTTP and HTTPS:
 - Always test endpoints on both protocols when applicable
 
 ## Data Storage
-- **Primary Database**: PostgreSQL (relational data, transactions, user management)
-- **Secondary Database**: MongoDB (logs, time-series data, analytics)
-- **Message Broker**: RabbitMQ (asynchronous communication, event-driven architecture)
-- Use appropriate database based on data type and access patterns
+- **Database**: PostgreSQL (relational data, transactions, user management)
 
 ## Code Standards
 - Follow C# and ASP.NET Core best practices
 - Use dependency injection for services
 - Implement proper error handling and logging
 - Use async/await patterns for database operations
-- Apply SOLID principles
 - Write unit tests for new functionality
 
 ## API Design
@@ -36,7 +32,6 @@ This project should use both HTTP and HTTPS:
 - Implement proper authentication and authorization
 - Validate all inputs
 - Use HTTPS in production
-- Apply rate limiting where appropriate
 - Sanitize data before database operations
 
 ## API Documentation
