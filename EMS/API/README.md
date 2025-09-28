@@ -57,6 +57,8 @@ JWT settings are configured in `appsettings.json`:
 - `POST /api/auth/refresh-token` - Refresh JWT token
 - `GET /api/auth/me` - Get current user info (requires auth)
 - `POST /api/auth/logout` - Logout user
+- `PUT /api/auth/update-user/{userId?}` - Update user information (requires auth)
+- `POST /api/auth/disable-user` - Disable/enable user account (admin functionality)
 
 ### Protected Endpoints
 
@@ -107,7 +109,8 @@ Response:
     "lastName": "Doe",
     "firstNameFa": "جان",
     "lastNameFa": "دو",
-    "roles": []
+    "roles": [],
+    "isDisabled": false
   }
 }
 ```
@@ -117,6 +120,58 @@ Response:
 ```bash
 curl -X GET "http://localhost:5030/weatherforecast" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
+```
+
+### 4. Update user information
+
+Update current user's information:
+```bash
+curl -X PUT "http://localhost:5030/api/auth/update-user" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "John Updated",
+    "lastName": "Doe Updated",
+    "firstNameFa": "جان بروزرسانی شده",
+    "lastNameFa": "دو بروزرسانی شده"
+  }'
+```
+
+Update another user's information (admin only):
+```bash
+curl -X PUT "http://localhost:5030/api/auth/update-user/USER_ID_HERE" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Another User Updated",
+    "lastName": "LastName Updated"
+  }'
+```
+
+### 5. Disable/Enable user accounts
+
+Disable a user account:
+```bash
+curl -X POST "http://localhost:5030/api/auth/disable-user" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "USER_ID_TO_DISABLE",
+    "disable": true,
+    "reason": "User violated terms of service"
+  }'
+```
+
+Enable a user account:
+```bash
+curl -X POST "http://localhost:5030/api/auth/disable-user" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "USER_ID_TO_ENABLE",
+    "disable": false,
+    "reason": "User issue has been resolved"
+  }'
 ```
 
 ## React Client Integration

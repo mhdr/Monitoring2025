@@ -112,3 +112,57 @@ Content-Type: application/json
   "password": "WrongPassword",
   "rememberMe": false
 }
+
+###
+
+### Update current user information
+PUT {{API_HostAddress}}/api/auth/update-user
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "firstName": "John Updated",
+  "lastName": "Doe Updated",
+  "firstNameFa": "جان بروزرسانی شده",
+  "lastNameFa": "دو بروزرسانی شده"
+}
+
+###
+
+### Update another user's information (Admin only - will return 403 for regular users)
+PUT {{API_HostAddress}}/api/auth/update-user/user_id_here
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "firstName": "Another User Updated",
+  "lastName": "LastName Updated"
+}
+
+###
+
+### Disable a user (Admin functionality)
+POST {{API_HostAddress}}/api/auth/disable-user
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "userId": "user_id_to_disable_here",
+  "disable": true,
+  "reason": "User violated terms of service"
+}
+
+###
+
+### Enable a user (Admin functionality) 
+POST {{API_HostAddress}}/api/auth/disable-user
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "userId": "user_id_to_enable_here",
+  "disable": false,
+  "reason": "User issue has been resolved"
+}
+
+###

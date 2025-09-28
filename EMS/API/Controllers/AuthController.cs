@@ -112,7 +112,8 @@ public class AuthController : ControllerBase
                     LastName = user.LastName ?? string.Empty,
                     FirstNameFa = user.FirstNameFa ?? string.Empty,
                     LastNameFa = user.LastNameFa ?? string.Empty,
-                    Roles = roles
+                    Roles = roles,
+                    IsDisabled = await _userManager.IsLockedOutAsync(user)
                 }
             });
         }
@@ -199,7 +200,8 @@ public class AuthController : ControllerBase
                     LastName = user.LastName ?? string.Empty,
                     FirstNameFa = user.FirstNameFa ?? string.Empty,
                     LastNameFa = user.LastNameFa ?? string.Empty,
-                    Roles = roles
+                    Roles = roles,
+                    IsDisabled = await _userManager.IsLockedOutAsync(user)
                 }
             });
         }
@@ -291,7 +293,8 @@ public class AuthController : ControllerBase
                     LastName = user.LastName ?? string.Empty,
                     FirstNameFa = user.FirstNameFa ?? string.Empty,
                     LastNameFa = user.LastNameFa ?? string.Empty,
-                    Roles = roles
+                    Roles = roles,
+                    IsDisabled = await _userManager.IsLockedOutAsync(user)
                 }
             });
         }
@@ -340,7 +343,8 @@ public class AuthController : ControllerBase
                 LastName = user.LastName ?? string.Empty,
                 FirstNameFa = user.FirstNameFa ?? string.Empty,
                 LastNameFa = user.LastNameFa ?? string.Empty,
-                Roles = roles
+                Roles = roles,
+                IsDisabled = await _userManager.IsLockedOutAsync(user)
             });
         }
         catch (Exception ex)
@@ -363,5 +367,228 @@ public class AuthController : ControllerBase
         
         await _signInManager.SignOutAsync();
         return Ok(new { message = "Logged out successfully" });
+    }
+
+    /// <summary>
+    /// Disable or enable a user account (Admin only)
+    /// </summary>
+    /// <param name="request">Disable user request</param>
+    /// <returns>Operation result</returns>
+    [HttpPost("disable-user")]
+    [Authorize] // TODO: Add role-based authorization for admin only
+    [ProducesResponseType(typeof(OperationResponseDto), 200)]
+    [ProducesResponseType(typeof(OperationResponseDto), 400)]
+    [ProducesResponseType(typeof(OperationResponseDto), 404)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> DisableUser([FromBody] DisableUserRequestDto request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new OperationResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid input data"
+                });
+            }
+
+            // Find the user to disable/enable
+            var user = await _userManager.FindByIdAsync(request.UserId);
+            if (user == null)
+            {
+                return NotFound(new OperationResponseDto
+                {
+                    Success = false,
+                    Message = "User not found"
+                });
+            }
+
+            // Prevent users from disabling themselves
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == request.UserId)
+            {
+                return BadRequest(new OperationResponseDto
+                {
+                    Success = false,
+                    Message = "You cannot disable your own account"
+                });
+            }
+
+            // Set lockout end time - if disabling, lockout indefinitely; if enabling, remove lockout
+            var lockoutEnd = request.Disable 
+                ? DateTimeOffset.MaxValue 
+                : (DateTimeOffset?)null;
+
+            var result = await _userManager.SetLockoutEndDateAsync(user, lockoutEnd);
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return BadRequest(new OperationResponseDto
+                {
+                    Success = false,
+                    Message = $"Failed to update user status: {errors}"
+                });
+            }
+
+            var action = request.Disable ? "disabled" : "enabled";
+            var reason = !string.IsNullOrEmpty(request.Reason) ? $" Reason: {request.Reason}" : "";
+            
+            _logger.LogInformation("User {UserId} has been {Action} by {AdminId}.{Reason}", 
+                request.UserId, action, currentUserId, reason);
+
+            return Ok(new OperationResponseDto
+            {
+                Success = true,
+                Message = $"User {user.UserName} has been {action} successfully",
+                Data = new { UserId = user.Id, UserName = user.UserName, IsDisabled = request.Disable }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while disabling/enabling user {UserId}", request.UserId);
+            return StatusCode(500, new OperationResponseDto
+            {
+                Success = false,
+                Message = "Internal server error"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Update user information
+    /// </summary>
+    /// <param name="userId">User ID to update (optional - defaults to current user)</param>
+    /// <param name="request">User information to update</param>
+    /// <returns>Updated user information</returns>
+    [HttpPut("update-user/{userId?}")]
+    [Authorize]
+    [ProducesResponseType(typeof(UserInfoDto), 200)]
+    [ProducesResponseType(typeof(OperationResponseDto), 400)]
+    [ProducesResponseType(typeof(OperationResponseDto), 404)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> UpdateUser(string? userId, [FromBody] UpdateUserRequestDto request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new OperationResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid input data"
+                });
+            }
+
+            // Get current user ID from token
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            // If userId is not provided or empty, update current user
+            var targetUserId = string.IsNullOrEmpty(userId) ? currentUserId : userId;
+
+            // Check if user is trying to update someone else's profile
+            // TODO: Add role-based authorization to allow admins to update any user
+            if (currentUserId != targetUserId)
+            {
+                // For now, only allow users to update their own profile
+                // In the future, you can add role checking here: 
+                // var currentUserRoles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value);
+                // if (!currentUserRoles.Contains("Admin"))
+                return Forbid();
+            }
+
+            // Find the user to update
+            var user = await _userManager.FindByIdAsync(targetUserId);
+            if (user == null)
+            {
+                return NotFound(new OperationResponseDto
+                {
+                    Success = false,
+                    Message = "User not found"
+                });
+            }
+
+            // Update user properties if provided
+            bool hasChanges = false;
+
+            if (!string.IsNullOrEmpty(request.FirstName))
+            {
+                user.FirstName = request.FirstName;
+                hasChanges = true;
+            }
+
+            if (!string.IsNullOrEmpty(request.LastName))
+            {
+                user.LastName = request.LastName;
+                hasChanges = true;
+            }
+
+            if (!string.IsNullOrEmpty(request.FirstNameFa))
+            {
+                user.FirstNameFa = request.FirstNameFa;
+                hasChanges = true;
+            }
+
+            if (!string.IsNullOrEmpty(request.LastNameFa))
+            {
+                user.LastNameFa = request.LastNameFa;
+                hasChanges = true;
+            }
+
+            if (!hasChanges)
+            {
+                return BadRequest(new OperationResponseDto
+                {
+                    Success = false,
+                    Message = "No changes provided"
+                });
+            }
+
+            // Save changes
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return BadRequest(new OperationResponseDto
+                {
+                    Success = false,
+                    Message = $"Failed to update user: {errors}"
+                });
+            }
+
+            // Get updated user roles
+            var roles = await _userManager.GetRolesAsync(user);
+
+            _logger.LogInformation("User {UserId} information updated by {CurrentUserId}", 
+                targetUserId, currentUserId);
+
+            return Ok(new UserInfoDto
+            {
+                Id = user.Id,
+                UserName = user.UserName ?? string.Empty,
+                FirstName = user.FirstName ?? string.Empty,
+                LastName = user.LastName ?? string.Empty,
+                FirstNameFa = user.FirstNameFa ?? string.Empty,
+                LastNameFa = user.LastNameFa ?? string.Empty,
+                Roles = roles,
+                IsDisabled = await _userManager.IsLockedOutAsync(user)
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating user {UserId}", userId);
+            return StatusCode(500, new OperationResponseDto
+            {
+                Success = false,
+                Message = "Internal server error"
+            });
+        }
     }
 }

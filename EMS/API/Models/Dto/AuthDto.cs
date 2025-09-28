@@ -172,4 +172,83 @@ public class UserInfoDto
     /// User roles
     /// </summary>
     public IList<string> Roles { get; set; } = new List<string>();
+
+    /// <summary>
+    /// Whether user account is disabled/locked
+    /// </summary>
+    public bool IsDisabled { get; set; } = false;
+}
+
+/// <summary>
+/// Update user information request DTO
+/// </summary>
+public class UpdateUserRequestDto
+{
+    /// <summary>
+    /// User's first name
+    /// </summary>
+    [StringLength(50)]
+    public string? FirstName { get; set; }
+
+    /// <summary>
+    /// User's last name
+    /// </summary>
+    [StringLength(50)]
+    public string? LastName { get; set; }
+
+    /// <summary>
+    /// User's first name in Farsi
+    /// </summary>
+    [StringLength(50)]
+    public string? FirstNameFa { get; set; }
+
+    /// <summary>
+    /// User's last name in Farsi
+    /// </summary>
+    [StringLength(50)]
+    public string? LastNameFa { get; set; }
+}
+
+/// <summary>
+/// Disable/Enable user request DTO
+/// </summary>
+public class DisableUserRequestDto
+{
+    /// <summary>
+    /// User ID to disable/enable
+    /// </summary>
+    [Required]
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether to disable (true) or enable (false) the user
+    /// </summary>
+    public bool Disable { get; set; } = true;
+
+    /// <summary>
+    /// Optional reason for disabling the user
+    /// </summary>
+    [StringLength(500)]
+    public string? Reason { get; set; }
+}
+
+/// <summary>
+/// Generic response DTO for operations
+/// </summary>
+public class OperationResponseDto
+{
+    /// <summary>
+    /// Whether the operation was successful
+    /// </summary>
+    public bool Success { get; set; } = true;
+
+    /// <summary>
+    /// Success or error message
+    /// </summary>
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Additional data if needed
+    /// </summary>
+    public object? Data { get; set; }
 }
