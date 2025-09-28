@@ -15,7 +15,7 @@ const LoginPage: React.FC = () => {
   const { t } = useLanguage();
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
-  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [formData, setFormData] = useState({ username: '', password: '', rememberMe: false });
   const [errors, setErrors] = useState<FormErrors>({});
   const [apiError, setApiError] = useState<string>('');
 
@@ -45,8 +45,11 @@ const LoginPage: React.FC = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
     
     // Clear field error when user starts typing
     if (errors[name as keyof FormErrors]) {
@@ -70,6 +73,7 @@ const LoginPage: React.FC = () => {
       const result = await dispatch(loginAsync({
         userName: formData.username.trim(),
         password: formData.password,
+        rememberMe: formData.rememberMe,
       }));
 
       // Check if the action was rejected
@@ -174,6 +178,19 @@ const LoginPage: React.FC = () => {
                     <Form.Control.Feedback type="invalid">
                       {errors.password}
                     </Form.Control.Feedback>
+                  </Form.Group>
+
+                  <Form.Group className="mb-4">
+                    <Form.Check
+                      type="checkbox"
+                      name="rememberMe"
+                      id="rememberMe"
+                      checked={formData.rememberMe}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                      label={t('rememberMe')}
+                      className="fw-medium"
+                    />
                   </Form.Group>
 
                   <Button
