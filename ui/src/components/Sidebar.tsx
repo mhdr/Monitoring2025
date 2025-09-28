@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
+import type { TranslationKey } from '../utils/translations';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -10,7 +11,7 @@ interface SidebarProps {
 
 interface MenuItem {
   path: string;
-  key: string;
+  key: TranslationKey;
   icon: string;
 }
 
@@ -45,12 +46,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 
       {/* Sidebar */}
       <div 
+        id="main-sidebar"
         className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${language === 'fa' ? 'sidebar-rtl' : 'sidebar-ltr'}`}
         dir={language === 'fa' ? 'rtl' : 'ltr'}
+        data-sidebar="main"
+        style={{ backgroundColor: language === 'fa' ? '#2c3e50' : '#2c3e50' }}
       >
         <div className="sidebar-header">
           <h5 className="sidebar-title mb-0">
-            {t('systemTitle')}
+            {t('systemTitle')} v2
           </h5>
           <button
             className="btn btn-link sidebar-toggle d-lg-none p-0"
