@@ -1,5 +1,5 @@
 /* Sidebar Base Styles */
-.sidebar {
+ .sidebar {
   position: fixed;
   top: 0;
   width: 280px;
@@ -9,14 +9,18 @@
   z-index: 1040;
   overflow-y: auto;
   overflow-x: hidden;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
-  border-right: 1px solid #1a252f;
   transition: transform 0.3s ease-in-out;
-  
-  /* Default LTR positioning */
+  /* Let side specific classes add shadow & borders */
+ }
+
+/* LTR positioning (desktop default) */
+.sidebar-ltr {
   left: 0;
   right: auto;
-  transform: translateX(-100%);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+  border-right: 1px solid #1a252f;
+  border-left: none;
+  transform: translateX(-100%); /* hidden on mobile */
 }
 
 /* Hide any potential duplicate sidebars */
@@ -25,14 +29,14 @@
 }
 
 /* RTL positioning */
-.sidebar-rtl {
+ .sidebar-rtl {
   left: auto;
   right: 0;
-  transform: translateX(100%);
+  transform: translateX(100%); /* hidden on mobile */
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15);
   border-right: none;
   border-left: 1px solid #1a252f;
-}
+ }
 
 /* Sidebar open states */
 .sidebar-open {
@@ -146,26 +150,16 @@
 /* Desktop Styles */
 @media (min-width: 992px) {
   .sidebar {
-    position: relative;
+    position: fixed; /* keep fixed so content can scroll independently */
     width: 260px;
-    box-shadow: none;
-    border-right: 1px solid #1a252f;
-    transform: translateX(0);
-    left: 0;
-    right: auto;
+    top: 0;
+    height: 100vh;
   }
-
+  .sidebar-ltr,
   .sidebar-rtl {
-    left: auto;
-    right: 0;
-    border-right: none;
-    border-left: 1px solid #1a252f;
-    transform: translateX(0);
+    transform: none; /* always visible on desktop */
   }
-
-  .sidebar-toggle {
-    display: none;
-  }
+  .sidebar-toggle { display: none; }
 }
 
 /* Mobile Styles */
@@ -182,22 +176,10 @@
 
 /* Small Mobile Styles */
 @media (max-width: 576px) {
-  .sidebar {
-    width: 100%;
-    left: 0;
-    right: auto;
-    transform: translateX(-100%);
-  }
-
-  .sidebar-rtl {
-    left: auto;
-    right: 0;
-    transform: translateX(100%);
-  }
-
-  .sidebar-open {
-    transform: translateX(0);
-  }
+  .sidebar { width: 100%; }
+  .sidebar-ltr { left:0; right:auto; }
+  .sidebar-rtl { left:auto; right:0; }
+  .sidebar-open { transform: translateX(0); }
 }
 
 /* Scrollbar Styling for Sidebar */

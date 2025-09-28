@@ -5,15 +5,8 @@
 
 /* Temporarily disable margins to test if they cause visual artifacts */
 @media (min-width: 992px) {
-  .main-content-ltr {
-    /* margin-left: 260px; */
-    margin-right: 0;
-  }
-
-  .main-content-rtl {
-    /* margin-right: 260px; */
-    margin-left: 0;
-  }
+  .main-content-ltr { margin-left: 260px; margin-right: 0; }
+  .main-content-rtl { margin-right: 260px; margin-left: 0; }
 }
 
 /* Mobile - no margin adjustments needed since sidebar is overlay */

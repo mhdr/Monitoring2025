@@ -47,10 +47,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       {/* Sidebar */}
       <div 
         id="main-sidebar"
-        className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${language === 'fa' ? 'sidebar-rtl' : 'sidebar-ltr'}`}
+        className={`sidebar ${language === 'fa' ? 'sidebar-rtl' : 'sidebar-ltr'} ${isOpen ? 'sidebar-open' : ''}`}
         dir={language === 'fa' ? 'rtl' : 'ltr'}
         data-sidebar="main"
-        style={{ backgroundColor: language === 'fa' ? '#2c3e50' : '#2c3e50' }}
+        style={{ backgroundColor: '#2c3e50' }}
       >
         <div className="sidebar-header">
           <h5 className="sidebar-title mb-0">

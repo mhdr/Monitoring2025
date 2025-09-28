@@ -30,10 +30,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = useCallback(async (credentials: LoginRequest): Promise<void> => {
     try {
       setIsLoading(true);
-      const response = await apiClient.login(credentials);
-      
-      setToken(response.token);
-      setUser(response.user);
+  const response = await apiClient.login(credentials);
+  // API returns accessToken per LoginResponse interface
+  setToken(response.accessToken);
+  setUser(response.user);
     } catch (error) {
       // Re-throw the error to let the calling component handle it
       throw error as ApiError;
