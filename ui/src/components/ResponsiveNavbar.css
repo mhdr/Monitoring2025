@@ -48,6 +48,13 @@
   outline: none !important;
 }
 
+/* Hide sidebar toggle button on desktop screens */
+@media (min-width: 992px) {
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
+}
+
 .nav-link-hover {
   transition: all 0.3s ease;
 }
