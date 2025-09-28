@@ -20,6 +20,13 @@ public class AuthController : ControllerBase
     private readonly IJwtTokenService _jwtTokenService;
     private readonly ILogger<AuthController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the AuthController
+    /// </summary>
+    /// <param name="userManager">The user manager service</param>
+    /// <param name="signInManager">The sign-in manager service</param>
+    /// <param name="jwtTokenService">The JWT token service</param>
+    /// <param name="logger">The logger service</param>
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
@@ -37,9 +44,13 @@ public class AuthController : ControllerBase
     /// </summary>
     /// <param name="request">Registration request containing user information</param>
     /// <returns>Authentication response with JWT token</returns>
+    /// <response code="200">Returns the user information with JWT token</response>
+    /// <response code="400">If the input is invalid or user already exists</response>
+    /// <response code="500">If an internal error occurs</response>
     [HttpPost("register")]
-    [ProducesResponseType(typeof(AuthResponseDto), 200)]
-    [ProducesResponseType(typeof(AuthResponseDto), 400)]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
     {
         try
@@ -133,10 +144,15 @@ public class AuthController : ControllerBase
     /// </summary>
     /// <param name="request">Login request containing credentials</param>
     /// <returns>Authentication response with JWT token</returns>
+    /// <response code="200">Returns the user information with JWT token</response>
+    /// <response code="400">If the input is invalid</response>
+    /// <response code="401">If the credentials are incorrect</response>
+    /// <response code="500">If an internal error occurs</response>
     [HttpPost("login")]
-    [ProducesResponseType(typeof(AuthResponseDto), 200)]
-    [ProducesResponseType(typeof(AuthResponseDto), 400)]
-    [ProducesResponseType(typeof(AuthResponseDto), 401)]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         try

@@ -48,12 +48,39 @@ JWT settings are configured in `appsettings.json`:
 
 **⚠️ Important**: Change the JWT key in production to a secure, randomly generated key.
 
+## Development Environment
+
+This project supports both HTTP and HTTPS protocols:
+- **HTTP**: `http://localhost:5030`
+- **HTTPS**: `https://localhost:7136` (use HTTPS by default)
+- The SSL certificate is self-signed for development
+- Always test endpoints on both protocols when applicable
+
+## Running the Application
+
+### Using dotnet CLI
+```bash
+# Run with HTTPS (default)
+dotnet run
+
+# Or run with specific profile
+dotnet run --launch-profile https
+dotnet run --launch-profile http
+```
+
+### Using the run script
+```bash
+# Make the script executable and run
+chmod +x run-api.sh
+./run-api.sh
+```
+
 ## API Endpoints
 
 ### Authentication Endpoints
 
 - `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login and get JWT token
+- `POST /api/auth/login` - Login and get JWT token  
 - `POST /api/auth/refresh-token` - Refresh JWT token
 - `GET /api/auth/me` - Get current user info (requires auth)
 - `POST /api/auth/logout` - Logout user
@@ -69,6 +96,7 @@ JWT settings are configured in `appsettings.json`:
 
 ### 1. Register a new user
 
+**HTTP:**
 ```bash
 curl -X POST "http://localhost:5030/api/auth/register" \
   -H "Content-Type: application/json" \
@@ -83,14 +111,43 @@ curl -X POST "http://localhost:5030/api/auth/register" \
   }'
 ```
 
+**HTTPS:**
+```bash
+curl -X POST "https://localhost:7136/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -k \
+  -d '{
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "firstNameFa": "جین",
+    "lastNameFa": "اسمیت",
+    "userName": "janesmith",
+    "password": "456",
+    "confirmPassword": "456"
+  }'
+```
+
 ### 2. Login and get JWT token
 
+**HTTP:**
 ```bash
 curl -X POST "http://localhost:5030/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "userName": "johndoe",
     "password": "123",
+    "rememberMe": false
+  }'
+```
+
+**HTTPS:**
+```bash
+curl -X POST "https://localhost:7136/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -k \
+  -d '{
+    "userName": "janesmith",
+    "password": "456",
     "rememberMe": false
   }'
 ```
@@ -117,14 +174,22 @@ Response:
 
 ### 3. Access protected endpoints
 
+**HTTP:**
 ```bash
 curl -X GET "http://localhost:5030/weatherforecast" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
 ```
 
+**HTTPS:**
+```bash
+curl -X GET "https://localhost:7136/weatherforecast" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -k
+```
+
 ### 4. Update user information
 
-Update current user's information:
+Update current user's information (HTTP):
 ```bash
 curl -X PUT "http://localhost:5030/api/auth/update-user" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
@@ -137,14 +202,17 @@ curl -X PUT "http://localhost:5030/api/auth/update-user" \
   }'
 ```
 
-Update another user's information (admin only):
+Update current user's information (HTTPS):
 ```bash
-curl -X PUT "http://localhost:5030/api/auth/update-user/USER_ID_HERE" \
+curl -X PUT "https://localhost:7136/api/auth/update-user" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
   -H "Content-Type: application/json" \
+  -k \
   -d '{
-    "firstName": "Another User Updated",
-    "lastName": "LastName Updated"
+    "firstName": "Jane Updated",
+    "lastName": "Smith Updated",
+    "firstNameFa": "جین بروزرسانی شده",
+    "lastNameFa": "اسمیت بروزرسانی شده"
   }'
 ```
 
@@ -176,12 +244,21 @@ curl -X POST "http://localhost:5030/api/auth/disable-user" \
 
 ## React Client Integration
 
-For your React client, you can use the JWT tokens as follows:
+For your React client, you can use the JWT tokens with both HTTP and HTTPS endpoints:
 
 ```javascript
+// Configuration for both HTTP and HTTPS
+const API_CONFIG = {
+  HTTP_BASE_URL: 'http://localhost:5030',
+  HTTPS_BASE_URL: 'https://localhost:7136',
+  USE_HTTPS: true // Set to false for HTTP only
+};
+
+const getBaseUrl = () => API_CONFIG.USE_HTTPS ? API_CONFIG.HTTPS_BASE_URL : API_CONFIG.HTTP_BASE_URL;
+
 // Login function
 const login = async (credentials) => {
-  const response = await fetch('http://localhost:5030/api/auth/login', {
+  const response = await fetch(`${getBaseUrl()}/api/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -201,8 +278,9 @@ const login = async (credentials) => {
 };
 
 // API call with JWT token
-const makeAuthenticatedRequest = async (url, options = {}) => {
+const makeAuthenticatedRequest = async (endpoint, options = {}) => {
   const token = localStorage.getItem('accessToken');
+  const url = `${getBaseUrl()}${endpoint}`;
   
   const response = await fetch(url, {
     ...options,
@@ -217,17 +295,48 @@ const makeAuthenticatedRequest = async (url, options = {}) => {
     // Token expired, try to refresh
     await refreshToken();
     // Retry the request
-    return makeAuthenticatedRequest(url, options);
+    return makeAuthenticatedRequest(endpoint, options);
   }
   
   return response;
+};
+
+// Refresh token function
+const refreshToken = async () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  const accessToken = localStorage.getItem('accessToken');
+  
+  const response = await fetch(`${getBaseUrl()}/api/auth/refresh-token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      accessToken,
+      refreshToken
+    }),
+  });
+  
+  if (response.ok) {
+    const data = await response.json();
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    return data;
+  }
+  
+  // Refresh failed, redirect to login
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  throw new Error('Refresh token failed');
 };
 ```
 
 ## Testing with Swagger UI
 
 1. Start the API: `dotnet run`
-2. Open Swagger UI: `http://localhost:5030/swagger`
+2. Open Swagger UI: 
+   - HTTP: `http://localhost:5030/swagger`
+   - HTTPS: `https://localhost:7136/swagger` (preferred)
 3. Register or login to get a JWT token
 4. Click "Authorize" button in Swagger UI
 5. Enter: `Bearer YOUR_JWT_TOKEN_HERE`

@@ -43,12 +43,23 @@ public class JwtTokenService : IJwtTokenService
     private readonly JwtConfig _jwtConfig;
     private readonly ILogger<JwtTokenService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the JwtTokenService
+    /// </summary>
+    /// <param name="jwtConfig">The JWT configuration</param>
+    /// <param name="logger">The logger service</param>
     public JwtTokenService(JwtConfig jwtConfig, ILogger<JwtTokenService> logger)
     {
         _jwtConfig = jwtConfig;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Generates a JWT access token for the specified user
+    /// </summary>
+    /// <param name="user">The user to generate the token for</param>
+    /// <param name="roles">The user's roles</param>
+    /// <returns>A JWT access token string</returns>
     public string GenerateAccessToken(ApplicationUser user, IList<string> roles)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -88,6 +99,10 @@ public class JwtTokenService : IJwtTokenService
         return tokenString;
     }
 
+    /// <summary>
+    /// Generates a refresh token
+    /// </summary>
+    /// <returns>A base64-encoded refresh token string</returns>
     public string GenerateRefreshToken()
     {
         var randomNumber = new byte[64];
@@ -96,6 +111,11 @@ public class JwtTokenService : IJwtTokenService
         return Convert.ToBase64String(randomNumber);
     }
 
+    /// <summary>
+    /// Extracts the principal from an expired JWT token
+    /// </summary>
+    /// <param name="token">The expired JWT token</param>
+    /// <returns>The claims principal from the token, or null if invalid</returns>
     public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
     {
         var tokenValidationParameters = new TokenValidationParameters

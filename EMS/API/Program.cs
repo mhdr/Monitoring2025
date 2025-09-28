@@ -116,15 +116,33 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 builder.Services.AddSwaggerGen(c =>
 {
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Version = "v1",
+        Title = "EMS Monitoring API",
+        Description = "Environmental Monitoring System API with JWT Authentication",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "EMS Development Team",
+            Email = "support@ems-monitoring.com",
+            Url = new Uri("https://github.com/mhdr/Monitoring2025")
+        },
+        License = new Microsoft.OpenApi.Models.OpenApiLicense
+        {
+            Name = "MIT License",
+            Url = new Uri("https://opensource.org/licenses/MIT")
+        }
+    });
+
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    c.IncludeXmlComments(xmlPath);
+    c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
 
     // Configure Swagger to use JWT Bearer token
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
@@ -144,6 +162,19 @@ builder.Services.AddSwaggerGen(c =>
             },
             Array.Empty<string>()
         }
+    });
+
+    // Add servers for both HTTP and HTTPS
+    c.AddServer(new Microsoft.OpenApi.Models.OpenApiServer
+    {
+        Url = "https://localhost:7136",
+        Description = "HTTPS Development Server (Preferred)"
+    });
+    
+    c.AddServer(new Microsoft.OpenApi.Models.OpenApiServer
+    {
+        Url = "http://localhost:5030",
+        Description = "HTTP Development Server"
     });
 });
 builder.Services.AddOpenApi();

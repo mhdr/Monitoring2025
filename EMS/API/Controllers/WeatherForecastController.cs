@@ -24,7 +24,7 @@ public class WeatherForecastController : ControllerBase
     /// <response code="401">If the user is not authenticated</response>
     [HttpGet(Name = "GetWeatherForecast")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<WeatherForecast>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IEnumerable<WeatherForecast> Get()
     {
@@ -43,7 +43,7 @@ public class WeatherForecastController : ControllerBase
     /// <returns>A collection of public weather forecasts</returns>
     /// <response code="200">Returns the weather forecasts</response>
     [HttpGet("public")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<WeatherForecast>), StatusCodes.Status200OK)]
     public IEnumerable<WeatherForecast> GetPublic()
     {
         return Enumerable.Range(1, 3).Select(index => new WeatherForecast
