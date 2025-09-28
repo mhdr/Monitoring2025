@@ -54,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       >
         <div className="sidebar-header">
           <h5 className="sidebar-title mb-0">
-            {t('systemTitle')} v2
+            {t('systemTitle')}
           </h5>
           <button
             className="btn btn-link sidebar-toggle d-lg-none p-0"
