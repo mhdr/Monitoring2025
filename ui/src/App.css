@@ -9,7 +9,7 @@ body.ltr #root {
 
 /* Custom Bootstrap gradient background for header */
 .bg-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
 }
 
 /* Hover effect for cards */
