@@ -22,6 +22,15 @@ export const translations = {
     notificationDescription: 'مدیریت اعلان‌ها و هشدارها',
     userDescription: 'مدیریت کاربران سیستم',
     reportDescription: 'تولید گزارشات مختلف',
+    // Sidebar navigation
+    systemTitle: 'سیستم مانیتورینگ',
+    plots: 'نمودارها',
+    activeAlarms: 'هشدارهای فعال',
+    alarmLog: 'سیاهه هشدارها',
+    auditTrail: 'سیاهه بازرسی',
+    disabledAlarms: 'هشدارهای غیرفعال',
+    scheduler: 'زمان‌بند',
+    management: 'مدیریت',
     // Login page translations
     loginTitle: 'ورود به سیستم',
     loginSubtitle: 'لطفاً اطلاعات خود را وارد کنید',
@@ -67,6 +76,15 @@ export const translations = {
     notificationDescription: 'Manage notifications and alerts',
     userDescription: 'System user management',
     reportDescription: 'Generate various reports',
+    // Sidebar navigation
+    systemTitle: 'Monitoring System',
+    plots: 'Plots',
+    activeAlarms: 'Active Alarms',
+    alarmLog: 'Alarm Log',
+    auditTrail: 'Audit Trail',
+    disabledAlarms: 'Disabled Alarms',
+    scheduler: 'Scheduler',
+    management: 'Management',
     // Login page translations
     loginTitle: 'System Login',
     loginSubtitle: 'Please enter your credentials',

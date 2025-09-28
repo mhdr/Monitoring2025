@@ -26,6 +26,25 @@
   background-clip: text;
 }
 
+/* Sidebar toggle button */
+.sidebar-toggle-btn {
+  border: none !important;
+  background: none !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-toggle-btn:hover {
+  color: #bdc3c7 !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 4px;
+}
+
+.sidebar-toggle-btn:focus {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 .nav-link-hover {
   transition: all 0.3s ease;
 }

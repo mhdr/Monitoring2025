@@ -4,7 +4,11 @@ import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
 import { logoutAsync } from '../store/slices/authSlice';
 import './ResponsiveNavbar.css';
 
-const ResponsiveNavbar = () => {
+interface ResponsiveNavbarProps {
+  onToggleSidebar?: () => void;
+}
+
+const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) => {
   const { t, language, changeLanguage } = useLanguage();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
@@ -47,6 +51,18 @@ const ResponsiveNavbar = () => {
       className="custom-navbar shadow"
     >
       <Container fluid>
+        {/* Sidebar Toggle Button */}
+        {onToggleSidebar && (
+          <button
+            className="btn btn-link text-white me-2 p-0 sidebar-toggle-btn"
+            onClick={onToggleSidebar}
+            aria-label="Toggle sidebar"
+            type="button"
+          >
+            <i className="bi bi-list fs-4"></i>
+          </button>
+        )}
+        
         <Navbar.Brand 
           href="#" 
           className="fw-bold fs-4 text-white navbar-brand-gradient"
