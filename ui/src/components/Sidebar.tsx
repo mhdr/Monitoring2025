@@ -77,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
                     }
                   }}
                 >
-                  <i className={`${item.icon} me-2`}></i>
+                  <i className={`${item.icon} ${language === 'fa' ? 'ms-2' : 'me-2'}`}></i>
                   {t(item.key)}
                 </Link>
               </li>

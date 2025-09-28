@@ -1,0 +1,41 @@
+/* DashboardLayout Styles */
+.dashboard-container {
+  min-height: 100vh;
+}
+
+/* Main content area adjustments for desktop when sidebar is visible */
+@media (min-width: 992px) {
+  .main-content-ltr {
+    margin-left: 260px; /* Match sidebar width */
+    margin-right: 0;
+  }
+
+  .main-content-rtl {
+    margin-right: 260px; /* Match sidebar width */
+    margin-left: 0;
+  }
+}
+
+/* Mobile - no margin adjustments needed since sidebar is overlay */
+@media (max-width: 991.98px) {
+  .main-content-ltr,
+  .main-content-rtl {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* Smooth transition for content area when language changes */
+.main-content-ltr,
+.main-content-rtl {
+  transition: margin 0.3s ease-in-out;
+}
+
+/* Ensure proper content flow for RTL */
+.dashboard-container[dir="rtl"] {
+  direction: rtl;
+}
+
+.dashboard-container[dir="ltr"] {
+  direction: ltr;
+}
