@@ -25,6 +25,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
     
+    // Update document title
+    document.title = translations[lang].pageTitle;
+    
     // Update body class for styling
     document.body.className = lang === 'fa' ? 'rtl' : 'ltr';
   };
@@ -37,6 +40,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Set initial direction
     document.documentElement.dir = language === 'fa' ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
+    
+    // Set initial document title
+    document.title = translations[language].pageTitle;
+    
     document.body.className = language === 'fa' ? 'rtl' : 'ltr';
   }, [language]);
 

@@ -24,6 +24,7 @@ export const translations = {
     reportDescription: 'تولید گزارشات مختلف',
     // Sidebar navigation
     systemTitle: 'سیستم مانیتورینگ',
+    pageTitle: 'سیستم مانیتورینگ',
     plots: 'نمودارها',
     activeAlarms: 'هشدارهای فعال',
     alarmLog: 'سیاهه هشدارها',
@@ -78,6 +79,7 @@ export const translations = {
     reportDescription: 'Generate various reports',
     // Sidebar navigation
     systemTitle: 'Monitoring System',
+    pageTitle: 'Monitoring System',
     plots: 'Plots',
     activeAlarms: 'Active Alarms',
     alarmLog: 'Alarm Log',
