@@ -6,6 +6,17 @@
   border-radius: 0 !important;
   min-height: 50px !important;
   padding: 0.25rem 0 !important;
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Prevent body scrollbars when dropdown is open */
+.custom-navbar .navbar-nav {
+  overflow: visible !important;
+}
+
+.custom-navbar .nav-item {
+  overflow: visible !important;
 }
 
 .navbar-brand-gradient {
@@ -34,12 +45,18 @@
 }
 
 /* User dropdown styling */
+.user-dropdown {
+  position: static !important;
+  overflow: visible !important;
+}
+
 .user-dropdown .dropdown-toggle {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50px;
   padding: 0.375rem 0.75rem;
   transition: all 0.3s ease;
+  overflow: visible !important;
 }
 
 .user-dropdown .dropdown-toggle:hover {
@@ -60,6 +77,11 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   margin-top: 0.5rem;
   min-width: 200px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: absolute;
+  z-index: 1050;
 }
 
 .user-dropdown .dropdown-item {
@@ -97,6 +119,7 @@
 @media (max-width: 991.98px) {
   .custom-navbar {
     margin: 0 !important;
+    overflow: visible !important;
   }
   
   .user-dropdown .dropdown-toggle {
@@ -108,6 +131,10 @@
   .user-dropdown .dropdown-menu {
     width: 100%;
     margin-top: 0.25rem;
+    max-width: calc(100vw - 40px);
+    left: 10px !important;
+    right: 10px !important;
+    transform: none !important;
   }
 }
 
@@ -126,4 +153,15 @@
     background: rgba(79, 70, 229, 0.2);
     color: #f9fafb;
   }
+}
+
+/* Prevent unwanted scrollbars from dropdown */
+.navbar-nav .nav-item.dropdown {
+  overflow: visible !important;
+}
+
+.dropdown-menu.show {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  max-width: calc(100vw - 20px);
 }
