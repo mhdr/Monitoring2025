@@ -6,7 +6,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="d-flex flex-column vh-100">
       <ResponsiveNavbar />
-        
+
     </div>
   );
 };
