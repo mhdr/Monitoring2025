@@ -14,10 +14,31 @@ const ResponsiveNavbar = () => {
   };
 
   const getUserDisplayName = () => {
+    // Use Persian names if language is Persian and they are available
+    if (language === 'fa') {
+      if (user?.firstNameFa && user?.lastNameFa) {
+        return `${user.firstNameFa} ${user.lastNameFa}`;
+      }
+      if (user?.firstNameFa) {
+        return user.firstNameFa;
+      }
+      if (user?.lastNameFa) {
+        return user.lastNameFa;
+      }
+    }
+    
+    // Use English names or fall back to English if Persian is not available
     if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
     }
-    return user?.username || '';
+    if (user?.firstName) {
+      return user.firstName;
+    }
+    if (user?.lastName) {
+      return user.lastName;
+    }
+    
+    return user?.userName || '';
   };
 
   return (

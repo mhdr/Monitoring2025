@@ -1,23 +1,28 @@
 // Authentication types for the monitoring system
 export interface User {
   id: string;
-  username: string;
-  email?: string;
+  userName: string;
   firstName?: string;
   lastName?: string;
-  role?: string;
+  firstNameFa?: string;
+  lastNameFa?: string;
+  roles?: string[];
+  isDisabled?: boolean;
 }
 
 export interface LoginRequest {
-  username: string;
+  userName: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface LoginResponse {
-  token: string;
+  accessToken: string;
   refreshToken?: string;
   user: User;
-  expiresIn?: number;
+  expires: string;
+  success: boolean;
+  errorMessage?: string;
 }
 
 export interface AuthContextType {

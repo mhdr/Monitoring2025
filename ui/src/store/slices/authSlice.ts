@@ -30,7 +30,7 @@ export const loginAsync = createAsyncThunk<
   async (credentials: LoginRequest, { rejectWithValue }) => {
     try {
       const response = await apiClient.login(credentials);
-      return { user: response.user, token: response.token };
+      return { user: response.user, token: response.accessToken };
     } catch (error) {
       const apiError = error as ApiError;
       return rejectWithValue(apiError.message || 'Login failed');

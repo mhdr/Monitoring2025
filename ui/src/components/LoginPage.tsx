@@ -68,7 +68,7 @@ const LoginPage: React.FC = () => {
 
     try {
       const result = await dispatch(loginAsync({
-        username: formData.username.trim(),
+        userName: formData.username.trim(),
         password: formData.password,
       }));
 

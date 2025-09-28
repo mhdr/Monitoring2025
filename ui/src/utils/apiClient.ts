@@ -69,8 +69,13 @@ class ApiClient {
       const response = await this.client.post('/api/auth/login', credentials);
       const loginData = response.data;
       
+      // Check if login was successful
+      if (!loginData.success) {
+        throw new Error(loginData.errorMessage || 'Login failed');
+      }
+      
       // Store token and user data
-      this.setStoredAuth(loginData.token, loginData.user);
+      this.setStoredAuth(loginData.accessToken, loginData.user);
       
       return loginData;
     } catch (error) {
