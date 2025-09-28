@@ -9,6 +9,7 @@
   overflow: visible !important;
   position: relative !important;
   border-bottom: 1px solid #1a252f;
+  z-index: 1060 !important;
 }
 
 /* Prevent body scrollbars when dropdown is open */
@@ -70,6 +71,7 @@
 .user-dropdown {
   position: relative !important;
   overflow: visible !important;
+  z-index: 1061 !important;
 }
 
 .user-dropdown .dropdown-toggle {
@@ -107,7 +109,7 @@
   top: 100% !important;
   right: 0 !important;
   left: auto !important;
-  z-index: 1050;
+  z-index: 9999 !important;
   transform: none !important;
 }
 
@@ -193,4 +195,22 @@
 .navbar-nav .nav-item.dropdown {
   overflow: visible !important;
   position: relative !important;
+}
+
+/* Ensure Bootstrap dropdown is always on top */
+.navbar .dropdown-menu {
+  z-index: 9999 !important;
+}
+
+/* Force Bootstrap dropdown stacking context */
+.navbar-nav .nav-item.dropdown.show {
+  z-index: 9999 !important;
+  position: relative !important;
+}
+
+/* Additional dropdown visibility fixes */
+.navbar-nav .dropdown-menu.show {
+  display: block !important;
+  z-index: 9999 !important;
+  position: absolute !important;
 }
