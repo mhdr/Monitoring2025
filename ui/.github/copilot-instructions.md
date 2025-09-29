@@ -32,7 +32,7 @@
 
 ### Backend API
 - The server is built with **.NET Core C# ASP.NET Web API**
-- **The backend project operates in HTTPS-first mode**
+- **The backend project operates in HTTPS-only mode**
 - **Server address:** `https://localhost:7136`
 - SSL certificate is self-signed (can be trusted for development)
 - **API documentation:** Available at `https://localhost:7136/swagger/v1/swagger.json`
