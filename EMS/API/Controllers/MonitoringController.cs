@@ -8,7 +8,7 @@ using Core.RedisModels;
 using DB.User.Data;
 using DB.User.Models;
 using MassTransit;
-using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -22,46 +22,61 @@ using ItemType = Core.Libs.ItemType;
 
 namespace API.Controllers;
 
+/// <summary>
+/// Monitoring controller for managing monitoring data, groups, items, alarms, and system configurations
+/// </summary>
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
+[Produces("application/json")]
+[Authorize]
 public class MonitoringController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly IAntiforgery _antiforgery;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<MonitoringController> _logger;
     private readonly IHubContext<MyHub> _hubContext;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IServiceProvider _serviceProvider;
     private readonly IBus _bus;
 
-    public MonitoringController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
-        IAntiforgery antiforgery, ApplicationDbContext context, ILogger<MonitoringController> logger,
-        IHubContext<MyHub> hubContext, IHttpContextAccessor httpContextAccessor, IServiceProvider serviceProvider,
+    /// <summary>
+    /// Initializes a new instance of the MonitoringController
+    /// </summary>
+    /// <param name="userManager">The user manager service</param>
+    /// <param name="context">The application database context</param>
+    /// <param name="logger">The logger service</param>
+    /// <param name="hubContext">The SignalR hub context</param>
+    /// <param name="httpContextAccessor">The HTTP context accessor</param>
+    /// <param name="bus">The MassTransit bus service</param>
+    public MonitoringController(
+        UserManager<ApplicationUser> userManager,
+        ApplicationDbContext context, 
+        ILogger<MonitoringController> logger,
+        IHubContext<MyHub> hubContext, 
+        IHttpContextAccessor httpContextAccessor,
         IBus bus)
     {
         _userManager = userManager;
-        _signInManager = signInManager;
         _context = context;
         _logger = logger;
         _hubContext = hubContext;
         _httpContextAccessor = httpContextAccessor;
-        _serviceProvider = serviceProvider;
         _bus = bus;
     }
 
+    /// <summary>
+    /// Get groups accessible to the current user
+    /// </summary>
+    /// <param name="request">Groups request parameters</param>
+    /// <returns>List of groups the user has access to</returns>
+    /// <response code="200">Returns the list of accessible groups</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="500">If an internal error occurs</response>
     [HttpPost("Groups")]
     public async Task<IActionResult> Groups([FromBody] GroupsRequestDto request)
     {
         try
         {
-            var userId = request.UserId;
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            }
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -73,10 +88,7 @@ public class MonitoringController : ControllerBase
             var groups = (await _context.Groups.ToListAsync()).OrderBy(x => x.Name);
             var permittdGroups = new List<GroupsResponseDto.Group>();
 
-
-            using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var user = await userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId);
 
             foreach (var g in groups)
             {
@@ -136,34 +148,34 @@ public class MonitoringController : ControllerBase
 
             return Ok(response);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogError(ex, "Error retrieving groups for user");
+            return StatusCode(500, new { success = false, errorMessage = "Internal server error" });
         }
-
-        return BadRequest(ModelState);
     }
 
+    /// <summary>
+    /// Get monitoring items accessible to the current user
+    /// </summary>
+    /// <param name="request">Items request parameters</param>
+    /// <returns>List of monitoring items the user has access to</returns>
+    /// <response code="200">Returns the list of accessible monitoring items</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="500">If an internal error occurs</response>
     [HttpPost("Items")]
     public async Task<IActionResult> Items([FromBody] ItemsRequestDto request)
     {
         try
         {
-            var userId = request.UserId;
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            }
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized();
             }
 
-            using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var user = await userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId);
 
             var userGuid = Guid.Parse(userId);
 
@@ -324,12 +336,11 @@ public class MonitoringController : ControllerBase
 
             return Ok(response);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogError(ex, "Error retrieving items for user");
+            return StatusCode(500, new { success = false, errorMessage = "Internal server error" });
         }
-
-        return BadRequest(ModelState);
     }
 
     [HttpPost("ItemsAsAdmin")]
@@ -1080,16 +1091,14 @@ public class MonitoringController : ControllerBase
                 return Ok(response);
             }
 
-            using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var user = await userManager.FindByNameAsync(request.UserName);
+            var user = await _userManager.FindByNameAsync(request.UserName);
 
             if (user == null)
             {
                 var identity = new ApplicationUser(request.UserName)
                     { FirstName = request.FirstName, LastName = request.LastName };
                 var password = "12345";
-                var result = await userManager.CreateAsync(identity, password);
+                var result = await _userManager.CreateAsync(identity, password);
 
                 if (result.Succeeded)
                 {
@@ -1172,9 +1181,7 @@ public class MonitoringController : ControllerBase
                 return Ok(response);
             }
 
-            using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var user = await userManager.FindByNameAsync(request.UserName);
+            var user = await _userManager.FindByNameAsync(request.UserName);
 
             if (user != null)
             {
@@ -1182,7 +1189,7 @@ public class MonitoringController : ControllerBase
                 user.FirstName = request.FirstName;
                 user.LastName = request.LastName;
 
-                var result = await userManager.UpdateAsync(user);
+                var result = await _userManager.UpdateAsync(user);
 
                 if (result.Succeeded)
                 {
@@ -1220,15 +1227,13 @@ public class MonitoringController : ControllerBase
                 return Ok(response);
             }
 
-            using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var user = await userManager.FindByNameAsync(request.UserName);
+            var user = await _userManager.FindByNameAsync(request.UserName);
 
             if (user != null)
             {
                 var password = "12345";
-                var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
-                var resetPassResult = await userManager.ResetPasswordAsync(user, resetToken, password);
+                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var resetPassResult = await _userManager.ResetPasswordAsync(user, resetToken, password);
 
                 if (resetPassResult.Succeeded)
                 {
@@ -1310,15 +1315,13 @@ public class MonitoringController : ControllerBase
                 return Ok(response);
             }
 
-            using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var user = await userManager.FindByNameAsync(request.UserName);
+            var user = await _userManager.FindByNameAsync(request.UserName);
 
             if (user != null)
             {
-                var currentRoles = await userManager.GetRolesAsync(user);
-                await userManager.RemoveFromRolesAsync(user, currentRoles);
-                await userManager.AddToRolesAsync(user, request.Roles);
+                var currentRoles = await _userManager.GetRolesAsync(user);
+                await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                await _userManager.AddToRolesAsync(user, request.Roles);
                 response.IsSuccessful = true;
             }
             else
@@ -1394,17 +1397,15 @@ public class MonitoringController : ControllerBase
                 return Unauthorized();
             }
 
-            using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             // var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
-            var user = await userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId);
 
             if (user == null)
             {
                 return Unauthorized();
             }
 
-            var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
 
             var response = new ChangePasswordResponseDto()
             {
@@ -1433,9 +1434,7 @@ public class MonitoringController : ControllerBase
                 return Unauthorized();
             }
 
-            using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var user = await userManager.FindByIdAsync(request.UserId);
+            var user = await _userManager.FindByIdAsync(request.UserId);
 
             var groupsToDelete = await _context.GroupPermissions
                 .Where(x => x.UserId == new Guid(user.Id))
