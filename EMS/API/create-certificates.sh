@@ -23,13 +23,9 @@ CERT_PASSWORD="password123"
 DAYS_VALID=365
 
 # Optional behavior flags (env overrides)
-#   SKIP_TRUST=1        -> generate certs only, skip installing into trust stores
 #   FORCE_REGENERATE=1  -> skip prompt and always regenerate
 #   EXTRA_SAN="dns1,dns2" -> extra DNS SubjectAltNames
-SKIP_TRUST=${SKIP_TRUST:-0}
 FORCE_REGENERATE=${FORCE_REGENERATE:-0}
-
-CA_FRIENDLY_NAME="EMS API Root CA"
 
 # Certificate subject information
 COUNTRY="US"
@@ -66,15 +62,7 @@ if [ -f "${CERT_NAME}.pem" ] && [ -f "${KEY_NAME}.pem" ] && [ -f "${PFX_NAME}.pf
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             echo -e "${GREEN}Using existing certificates (set FORCE_REGENERATE=1 to auto-regenerate).${NC}"
-            if [ "$SKIP_TRUST" = "1" ]; then
-                echo -e "${YELLOW}Skipping trust installation (SKIP_TRUST=1).${NC}"
-            fi
-            # Even if certs exist we can still (re)attempt trust if not skipped
-            if [ "$SKIP_TRUST" = "0" ]; then
-                REUSE_MODE=1
-            else
-                exit 0
-            fi
+            exit 0
         else
             echo -e "${YELLOW}Removing existing certificates...${NC}"
             rm -f "${CERT_NAME}.pem" "${KEY_NAME}.pem" "${PFX_NAME}.pfx"
@@ -258,154 +246,16 @@ echo -e "\n${BLUE}Certificate Information:${NC}"
 openssl x509 -in "${CERT_NAME}.pem" -text -noout | grep -E "(Issuer:|Subject:|Not Before:|Not After :)"
 openssl x509 -in "${CA_CERT_NAME}.pem" -text -noout | grep -E "(Subject:|CA:true)" | head -n 2 || true
 
-######################## TRUST INSTALLATION ########################
-install_system_trust() {
-    echo -e "\n${YELLOW}Installing Root CA to system trust store (preferred) ...${NC}"
 
-    # Already trusted short-circuit checks (simple heuristics)
-    if command -v update-ca-certificates &>/dev/null; then
-        if [ -f "/usr/local/share/ca-certificates/${CA_CERT_NAME}.crt" ]; then
-            echo -e "${GREEN}✓ Root CA already present in /usr/local/share/ca-certificates (Debian/Ubuntu)${NC}"
-            return 0
-        fi
-    fi
-    if command -v trust &>/dev/null; then
-        if [ -f "/etc/ca-certificates/trust-source/anchors/${CA_CERT_NAME}.crt" ]; then
-            echo -e "${GREEN}✓ Root CA already present in anchors directory (Arch-based)${NC}"
-            return 0
-        fi
-    fi
-    if [ -d "/etc/pki/ca-trust/source/anchors" ] && [ -f "/etc/pki/ca-trust/source/anchors/${CA_CERT_NAME}.crt" ]; then
-        echo -e "${GREEN}✓ Root CA already present in /etc/pki/ca-trust/source/anchors (RHEL/Fedora)${NC}"
-        return 0
-    fi
-
-    if command -v trust &> /dev/null && [ -d "/etc/ca-certificates/trust-source/anchors" ]; then
-        echo -e "${YELLOW}Detected Arch-based system (EndeavourOS/Arch/Manjaro). Installing certificate...${NC}"
-        if sudo cp "${CA_CERT_NAME}.pem" "/etc/ca-certificates/trust-source/anchors/${CA_CERT_NAME}.crt" 2>/dev/null; then
-            # For Arch-based systems, just copying to anchors and running extract-compat is sufficient
-            if sudo trust extract-compat >/dev/null 2>&1; then
-                echo -e "${GREEN}✓ Certificate installed and trusted system-wide${NC}"
-            else
-                echo -e "${YELLOW}⚠ Certificate copied but extract-compat failed${NC}"
-            fi
-        else
-            echo -e "${YELLOW}⚠ Failed to copy certificate (Arch-based) - check sudo permissions${NC}"
-        fi
-    elif command -v update-ca-certificates &> /dev/null; then
-        echo -e "${YELLOW}Detected Debian/Ubuntu system. Installing certificate...${NC}"
-        if sudo cp "${CA_CERT_NAME}.pem" "/usr/local/share/ca-certificates/${CA_CERT_NAME}.crt" 2>/dev/null; then
-            if sudo update-ca-certificates >/dev/null 2>&1; then
-                echo -e "${GREEN}✓ Certificate installed and trusted system-wide${NC}"
-            else
-                echo -e "${YELLOW}⚠ Copied but update-ca-certificates failed${NC}"
-            fi
-        else
-            echo -e "${YELLOW}⚠ Failed to copy certificate (Debian/Ubuntu)${NC}"
-        fi
-    elif command -v update-ca-trust &> /dev/null && [ -d "/etc/pki/ca-trust/source/anchors" ]; then
-        echo -e "${YELLOW}Detected Red Hat/CentOS/Fedora system. Installing certificate...${NC}"
-        if sudo cp "${CA_CERT_NAME}.pem" "/etc/pki/ca-trust/source/anchors/${CA_CERT_NAME}.crt" 2>/dev/null; then
-            if sudo update-ca-trust >/dev/null 2>&1; then
-                echo -e "${GREEN}✓ Certificate installed and trusted system-wide${NC}"
-            else
-                echo -e "${YELLOW}⚠ Copied but update-ca-trust failed${NC}"
-            fi
-        else
-            echo -e "${YELLOW}⚠ Failed to copy certificate (RHEL/Fedora)${NC}"
-        fi
-    else
-        echo -e "${YELLOW}⚠ Could not detect certificate management system${NC}"
-        echo -e "  Manual installation may be required (see README or script header)"
-    fi
-}
-
-install_browser_trust() {
-    echo -e "\n${YELLOW}Installing Root CA for browser trust...${NC}"
-    if ! command -v certutil &> /dev/null; then
-        echo -e "${YELLOW}⚠ certutil (NSS tools) not found. Browser stores skipped${NC}"
-        echo -e "  Install: Debian/Ubuntu -> sudo apt-get install libnss3-tools";
-        return 0
-    fi
-
-    CHROME_DB="$HOME/.pki/nssdb"
-    if [ -d "$CHROME_DB" ]; then
-        if certutil -L -d sql:"$CHROME_DB" | grep -q "$CA_FRIENDLY_NAME" 2>/dev/null; then
-            echo -e "${GREEN}✓ Chrome/Chromium already trusts ${CA_FRIENDLY_NAME}${NC}"
-        else
-            echo -e "${YELLOW}Installing Root CA for Chrome/Chromium...${NC}"
-            certutil -D -n "$CA_FRIENDLY_NAME" -d sql:"$CHROME_DB" 2>/dev/null || true
-            if certutil -A -n "$CA_FRIENDLY_NAME" -t "C,C,C" -i "${CA_CERT_NAME}.pem" -d sql:"$CHROME_DB" 2>/dev/null; then
-                echo -e "${GREEN}✓ Root CA trusted in Chrome/Chromium${NC}"
-            else
-                echo -e "${YELLOW}⚠ Failed to add CA to Chrome/Chromium${NC}"
-            fi
-        fi
-    else
-        echo -e "${YELLOW}⚠ Chrome/Chromium NSS DB not found ($CHROME_DB) – launch browser once then rerun${NC}"
-    fi
-
-    FIREFOX_PROFILE_DIR="$HOME/.mozilla/firefox"
-    if [ -d "$FIREFOX_PROFILE_DIR" ]; then
-        PROFILES=$(find "$FIREFOX_PROFILE_DIR" -maxdepth 1 -name "*.default*" -type d 2>/dev/null)
-        if [ -z "$PROFILES" ]; then
-            echo -e "${YELLOW}⚠ No Firefox profiles found${NC}"
-        else
-            echo -e "${YELLOW}Installing Root CA for Firefox profiles...${NC}"
-            for profile in $PROFILES; do
-                if [ -f "$profile/cert9.db" ]; then
-                    if certutil -L -d sql:"$profile" | grep -q "$CA_FRIENDLY_NAME" 2>/dev/null; then
-                        echo -e "${GREEN}  ✓ Already trusted in $(basename "$profile")${NC}"
-                    else
-                        certutil -D -n "$CA_FRIENDLY_NAME" -d sql:"$profile" 2>/dev/null || true
-                        if certutil -A -n "$CA_FRIENDLY_NAME" -t "C,C,C" -i "${CA_CERT_NAME}.pem" -d sql:"$profile" 2>/dev/null; then
-                            echo -e "${GREEN}  ✓ Trusted in $(basename "$profile")${NC}"
-                        else
-                            echo -e "${YELLOW}  ⚠ Failed in $(basename "$profile")${NC}"
-                        fi
-                    fi
-                fi
-            done
-        fi
-    else
-        echo -e "${YELLOW}⚠ Firefox profile dir not found (${FIREFOX_PROFILE_DIR})${NC}"
-    fi
-}
-
-install_wsl_trust() {
-    # Import CA into Windows (when running inside WSL) so Windows browsers trust it
-    if grep -qi microsoft /proc/version 2>/dev/null && command -v powershell.exe >/dev/null 2>&1; then
-        echo -e "\n${YELLOW}Detected WSL environment – attempting Windows cert store import...${NC}"
-        WIN_PATH=$(wslpath -w "${PWD}/${CA_CERT_NAME}.pem" 2>/dev/null || true)
-        if [ -n "$WIN_PATH" ]; then
-            powershell.exe -NoProfile -Command "try { Import-Certificate -FilePath '$WIN_PATH' -CertStoreLocation Cert:\\CurrentUser\\Root | Out-Null; Write-Output 'WSL_IMPORT_OK' } catch { Write-Output 'WSL_IMPORT_FAIL'; exit 1 }" | grep -q WSL_IMPORT_OK && \
-                echo -e "${GREEN}✓ Imported Root CA into Windows CurrentUser Root store${NC}" || \
-                echo -e "${YELLOW}⚠ Windows import may have failed (run PowerShell as user and import manually)${NC}"
-        else
-            echo -e "${YELLOW}⚠ Could not translate path for Windows import${NC}"
-        fi
-    fi
-}
-
-if [ "${SKIP_TRUST}" = "1" ]; then
-    echo -e "\n${YELLOW}SKIP_TRUST=1 set – skipping trust installation steps.${NC}"
-else
-    install_system_trust
-    install_browser_trust
-    install_wsl_trust
-fi
 
 echo -e "\n${YELLOW}Note: This is a self-signed certificate for development use only.${NC}"
-echo -e "If browsers still show warnings: restart them, clear cache, or check trust installation."
+echo -e "You may need to configure your applications to trust the certificate or disable SSL validation."
 
 echo -e "\n${BLUE}Verification commands:${NC}"
 echo -e "  openssl verify -CAfile ${CA_CERT_NAME}.pem ${CERT_NAME}.pem"
-echo -e "  grep -i '${CA_CERT_NAME}' /etc/ssl/certs/* 2>/dev/null | head -n1 || true"
-echo -e "  certutil -L -d sql:$HOME/.pki/nssdb | grep '${CA_FRIENDLY_NAME}' 2>/dev/null || true"
 
 echo -e "\n${BLUE}Environment options:${NC}"
 echo -e "  EXTRA_SAN=dev.local,api.local ./create-certificates.sh"
-echo -e "  SKIP_TRUST=1 ./create-certificates.sh (generate only)"
 echo -e "  FORCE_REGENERATE=1 ./create-certificates.sh"
 
 echo -e "\n${GREEN}You can now run your application with:${NC}"

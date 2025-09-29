@@ -333,59 +333,18 @@ try {
     Write-ColorOutput "Could not display certificate information" "Yellow"
 }
 
-################################ Trust Installation ################################
-Write-Host ""
-Write-ColorOutput "Installing Root CA to Windows certificate store..." "Yellow"
-
-try {
-    # Import Root CA to Current User's Trusted Root Certification Authorities store
-    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("$CA_CERT_NAME.pem")
-    $store = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "CurrentUser")
-    $store.Open("ReadWrite")
-    
-    # Check if certificate already exists
-    $existingCert = $store.Certificates | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-    
-    if ($existingCert) {
-        Write-ColorOutput "Certificate already exists in trust store (thumbprint: $($cert.Thumbprint))" "Yellow"
-    } else {
-        $store.Add($cert)
-    Write-ColorOutput "Root CA installed and trusted for current user" "Green"
-    Write-ColorOutput "Root CA thumbprint: $($cert.Thumbprint)" "White"
-    }
-    
-    $store.Close()
-    
-    # Also try to install to Local Machine store (requires admin privileges)
-    try {
-        $machineStore = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
-        $machineStore.Open("ReadWrite")
-        
-    $existingMachineCert = $machineStore.Certificates | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-        
-        if ($existingMachineCert) {
-            Write-ColorOutput "Certificate already exists in machine trust store" "Yellow"
-        } else {
-            $machineStore.Add($cert)
-            Write-ColorOutput "Root CA also installed to Local Machine trust store" "Green"
-        }
-        
-        $machineStore.Close()
-    } catch {
-        Write-ColorOutput "Could not install to Local Machine store (admin privileges required)" "Yellow"
-        Write-ColorOutput "Certificate is trusted for current user only" "White"
-    }
-    
-} catch {
-    Write-ColorOutput "Failed to install certificate to trust store: $_" "Red"
-    Write-ColorOutput "You may need to manually trust the certificate" "Yellow"
-    Write-ColorOutput "Double-click the certificate file and install it to 'Trusted Root Certification Authorities'" "White"
-}
-
 Write-Host ""
 Write-ColorOutput "Note: This is a self-signed certificate for development use only." "Yellow"
-Write-ColorOutput "The Root CA should now be trusted; the server cert will chain to it." "White"
-Write-ColorOutput "If you still see warnings, try restarting your browser." "White"
+Write-ColorOutput "You may need to configure your applications to trust the certificate or disable SSL validation." "White"
+
+Write-Host ""
+Write-ColorOutput "Verification command:" "Blue"
+Write-ColorOutput "  $openSslPath verify -CAfile $CA_CERT_NAME.pem $CERT_NAME.pem" "White"
+
+Write-Host ""
+Write-ColorOutput "Environment options:" "Blue"
+Write-ColorOutput "  `$env:EXTRA_SAN='dev.local,api.local'; .\create-certificates.ps1" "White"
+Write-ColorOutput "  .\create-certificates.ps1 -Force" "White"
 
 Write-Host ""
 Write-ColorOutput "You can now run your application with:" "Green"
@@ -394,4 +353,4 @@ Write-ColorOutput "  dotnet run --launch-profile https" "White"
 Set-Location ..
 
 Write-Host ""
-Write-ColorOutput "Certificate generation and installation completed successfully!" "Green"
+Write-ColorOutput "Certificate generation completed successfully!" "Green"
