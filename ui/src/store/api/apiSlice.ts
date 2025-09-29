@@ -1,8 +1,9 @@
 import { createApi, fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import type { LoginRequest, LoginResponse, ApiError, User, RefreshTokenRequest } from '../../types/auth';
 
-// API configuration
-const API_BASE_URL = 'https://localhost:7136';
+// API configuration - Use relative path for development with Vite proxy
+// In production, this should be set to the actual API server URL
+const API_BASE_URL = import.meta.env.PROD ? 'https://localhost:7136' : '';
 
 // Custom base query with authentication handling
 const baseQuery = fetchBaseQuery({
