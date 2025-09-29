@@ -1,10 +1,10 @@
 ## Development Instructions
 
 ### Server Configuration
-This project operates in **HTTPS-first mode** (single protocol for local development):
+This project operates in **HTTPS-only mode** for local development:
 - **HTTPS ONLY**: `https://localhost:7136` (fixed binding)
-- **HTTP Access Removed**: Do not expose or document raw HTTP endpoints unless explicitly reintroduced.
-- **Redirection**: If an HTTP listener is ever re-enabled, it MUST immediately redirect to HTTPS.
+- **HTTP Access Completely Removed**: No HTTP endpoints are exposed or supported
+- **No HTTP Redirection**: HTTP listener has been permanently removed from the configuration
 - **Certificate**: A self-signed development certificate (`certificates/api-cert.pfx`) is loaded automatically; clients may need to trust it or skip validation for local testing.
 
 

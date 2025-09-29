@@ -1,17 +1,14 @@
-@API_HostAddress_HTTP = http://localhost:5030
-@API_HostAddress_HTTPS = https://localhost:7136
-# Fixed development endpoints (HTTPS preferred). No dynamic port logic.
+@API_HostAddress = https://localhost:7136
+# HTTPS-only development endpoint
 
 ###
 # EMS API Testing - SSL Certificate Configuration
 # 
-# ⚠️  IMPORTANT: This API uses HTTPS redirection and self-signed certificates
+# ⚠️  IMPORTANT: This API operates in HTTPS-only mode with self-signed certificates
 # 
 # 🔧 QUICK FIXES for SSL errors:
-# 1. Use HTTPS endpoints instead of HTTP (preferred)
-# 2. Set Development:DisableHttpsRedirection=true in appsettings.Development.json
-# 3. Configure your HTTP client to trust self-signed certificates
-# 4. Add certificates to system trust store using ./create-certificates.sh
+# 1. Configure your HTTP client to trust self-signed certificates
+# 2. Add certificates to system trust store using ./create-certificates.sh
 #
 # 📖 Detailed SSL setup instructions are in SSL-README.md
 #
@@ -19,11 +16,8 @@
 
 # SSL Certificate Configuration for HTTPS Requests
 # 
-# The HTTPS endpoint uses a self-signed certificate for development.
-# If you encounter SSL handshake exceptions, you have these options:
-#
-# Option 1: Use the HTTP endpoint (will be redirected to HTTPS)
-# Option 2: Configure your HTTP client to trust self-signed certificates
+# The API uses HTTPS-only mode with a self-signed certificate for development.
+# If you encounter SSL handshake exceptions, configure your HTTP client to trust self-signed certificates
 # Option 3: Add the certificate to your system's trusted certificates
 #
 # For VS Code REST Client, add this to your settings.json:
@@ -44,7 +38,7 @@
 
 
 ### Register a new user - HTTP
-POST {{API_HostAddress_HTTP}}/api/auth/register
+POST {{API_HostAddress}}/api/auth/register
 Content-Type: application/json
 
 {
@@ -60,7 +54,7 @@ Content-Type: application/json
 ###
 
 ### Register a new user - HTTPS
-POST {{API_HostAddress_HTTPS}}/api/auth/register
+POST {{API_HostAddress}}/api/auth/register
 Content-Type: application/json
 
 {
@@ -102,7 +96,7 @@ Content-Type: application/json
 # METHOD 4: Disable SSL verification (UNSAFE - for testing only)
 # Add to VS Code settings.json: "rest-client.rejectUnauthorized": false
 #
-POST {{API_HostAddress_HTTP}}/api/auth/login
+POST {{API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
@@ -115,7 +109,7 @@ Content-Type: application/json
 
 ### Login with registered user - HTTPS
 # @name loginUserHTTPS
-POST {{API_HostAddress_HTTPS}}/api/auth/login
+POST {{API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
@@ -133,21 +127,21 @@ Content-Type: application/json
 
 
 ### Get current user info using JWT token - HTTP
-GET {{API_HostAddress_HTTP}}/api/auth/me
+GET {{API_HostAddress}}/api/auth/me
 Accept: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
 ###
 
 ### Get current user info using JWT token - HTTPS
-GET {{API_HostAddress_HTTPS}}/api/auth/me
+GET {{API_HostAddress}}/api/auth/me
 Accept: application/json
 Authorization: Bearer {{authTokenHTTPS}}
 
 ###
 
 ### Test refresh token - HTTP (use actual tokens from login response)
-POST {{API_HostAddress_HTTP}}/api/auth/refresh-token
+POST {{API_HostAddress}}/api/auth/refresh-token
 Content-Type: application/json
 
 {
@@ -158,7 +152,7 @@ Content-Type: application/json
 ###
 
 ### Test refresh token - HTTPS (use actual tokens from login response)
-POST {{API_HostAddress_HTTPS}}/api/auth/refresh-token
+POST {{API_HostAddress}}/api/auth/refresh-token
 Content-Type: application/json
 
 {
@@ -169,19 +163,19 @@ Content-Type: application/json
 ###
 
 ### Logout - HTTP (requires auth)
-POST {{API_HostAddress_HTTP}}/api/auth/logout
+POST {{API_HostAddress}}/api/auth/logout
 Authorization: Bearer {{authTokenHTTP}}
 
 ###
 
 ### Logout - HTTPS (requires auth)
-POST {{API_HostAddress_HTTPS}}/api/auth/logout
+POST {{API_HostAddress}}/api/auth/logout
 Authorization: Bearer {{authTokenHTTPS}}
 
 ###
 
 ### Test registration with duplicate username - should return error - HTTP
-POST {{API_HostAddress_HTTP}}/api/auth/register
+POST {{API_HostAddress}}/api/auth/register
 Content-Type: application/json
 
 {
@@ -197,7 +191,7 @@ Content-Type: application/json
 ###
 
 ### Test login with invalid credentials - should return 401 - HTTP
-POST {{API_HostAddress_HTTP}}/api/auth/login
+POST {{API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
@@ -209,7 +203,7 @@ Content-Type: application/json
 ###
 
 ### Test login with invalid credentials - should return 401 - HTTPS
-POST {{API_HostAddress_HTTPS}}/api/auth/login
+POST {{API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
@@ -221,7 +215,7 @@ Content-Type: application/json
 ###
 
 ### Update current user information - HTTP
-PUT {{API_HostAddress_HTTP}}/api/auth/update-user
+PUT {{API_HostAddress}}/api/auth/update-user
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
@@ -235,7 +229,7 @@ Authorization: Bearer {{authTokenHTTP}}
 ###
 
 ### Update current user information - HTTPS
-PUT {{API_HostAddress_HTTPS}}/api/auth/update-user
+PUT {{API_HostAddress}}/api/auth/update-user
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}
 
@@ -249,7 +243,7 @@ Authorization: Bearer {{authTokenHTTPS}}
 ###
 
 ### Update another user's information (Admin only - will return 403 for regular users) - HTTP
-PUT {{API_HostAddress_HTTP}}/api/auth/update-user/user_id_here
+PUT {{API_HostAddress}}/api/auth/update-user/user_id_here
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
@@ -261,7 +255,7 @@ Authorization: Bearer {{authTokenHTTP}}
 ###
 
 ### Disable a user (Admin functionality) - HTTP
-POST {{API_HostAddress_HTTP}}/api/auth/disable-user
+POST {{API_HostAddress}}/api/auth/disable-user
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
@@ -274,7 +268,7 @@ Authorization: Bearer {{authTokenHTTP}}
 ###
 
 ### Enable a user (Admin functionality) - HTTP
-POST {{API_HostAddress_HTTP}}/api/auth/disable-user
+POST {{API_HostAddress}}/api/auth/disable-user
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
@@ -291,7 +285,7 @@ Authorization: Bearer {{authTokenHTTP}}
 #################################################################################
 
 ### Get groups accessible to current user - HTTP
-POST {{API_HostAddress_HTTP}}/api/monitoring/Groups
+POST {{API_HostAddress}}/api/monitoring/Groups
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
@@ -302,7 +296,7 @@ Authorization: Bearer {{authTokenHTTP}}
 ###
 
 ### Get groups accessible to current user - HTTPS
-POST {{API_HostAddress_HTTPS}}/api/monitoring/Groups
+POST {{API_HostAddress}}/api/monitoring/Groups
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}
 
@@ -313,7 +307,7 @@ Authorization: Bearer {{authTokenHTTPS}}
 ###
 
 ### Get groups for specific user (Admin only) - HTTP
-POST {{API_HostAddress_HTTP}}/api/monitoring/Groups
+POST {{API_HostAddress}}/api/monitoring/Groups
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
@@ -324,7 +318,7 @@ Authorization: Bearer {{authTokenHTTP}}
 ###
 
 ### Get groups for specific user (Admin only) - HTTPS
-POST {{API_HostAddress_HTTPS}}/api/monitoring/Groups
+POST {{API_HostAddress}}/api/monitoring/Groups
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}
 
@@ -335,7 +329,7 @@ Authorization: Bearer {{authTokenHTTPS}}
 ###
 
 ### Add new group - HTTP
-POST {{API_HostAddress_HTTP}}/api/monitoring/AddGroup
+POST {{API_HostAddress}}/api/monitoring/AddGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
@@ -347,7 +341,7 @@ Authorization: Bearer {{authTokenHTTP}}
 ###
 
 ### Add new group - HTTPS
-POST {{API_HostAddress_HTTPS}}/api/monitoring/AddGroup
+POST {{API_HostAddress}}/api/monitoring/AddGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}
 
@@ -359,7 +353,7 @@ Authorization: Bearer {{authTokenHTTPS}}
 ###
 
 ### Add new sub-group - HTTP
-POST {{API_HostAddress_HTTP}}/api/monitoring/AddGroup
+POST {{API_HostAddress}}/api/monitoring/AddGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
@@ -371,7 +365,7 @@ Authorization: Bearer {{authTokenHTTP}}
 ###
 
 ### Add new sub-group - HTTPS
-POST {{API_HostAddress_HTTPS}}/api/monitoring/AddGroup
+POST {{API_HostAddress}}/api/monitoring/AddGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}
 
@@ -383,7 +377,7 @@ Authorization: Bearer {{authTokenHTTPS}}
 ###
 
 ### Edit existing group - HTTP
-POST {{API_HostAddress_HTTP}}/api/monitoring/EditGroup
+POST {{API_HostAddress}}/api/monitoring/EditGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
@@ -395,7 +389,7 @@ Authorization: Bearer {{authTokenHTTP}}
 ###
 
 ### Edit existing group - HTTPS
-POST {{API_HostAddress_HTTPS}}/api/monitoring/EditGroup
+POST {{API_HostAddress}}/api/monitoring/EditGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}
 
@@ -407,7 +401,7 @@ Authorization: Bearer {{authTokenHTTPS}}
 ###
 
 ### Delete group - HTTP
-POST {{API_HostAddress_HTTP}}/api/monitoring/DeleteGroup
+POST {{API_HostAddress}}/api/monitoring/DeleteGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
@@ -418,7 +412,7 @@ Authorization: Bearer {{authTokenHTTP}}
 ###
 
 ### Delete group - HTTPS
-POST {{API_HostAddress_HTTPS}}/api/monitoring/DeleteGroup
+POST {{API_HostAddress}}/api/monitoring/DeleteGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}
 

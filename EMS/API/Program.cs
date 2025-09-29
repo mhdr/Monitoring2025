@@ -44,14 +44,12 @@ builder.WebHost.ConfigureKestrel(options =>
         Console.WriteLine("[INFO] Development certificate not found. Will use ephemeral HTTPS certificate.");
     }
 
-    // Fixed bindings (no dynamic or env override logic)
-    options.Listen(IPAddress.Any, 5030);
+    // Fixed bindings (no dynamic or env override logic) - HTTPS ONLY
     options.Listen(IPAddress.Any, 7136, listenOptions =>
     {
         if (devCert != null) listenOptions.UseHttps(devCert); else listenOptions.UseHttps();
     });
-    Console.WriteLine("[BIND] HTTP  port 5030");
-    Console.WriteLine("[BIND] HTTPS port 7136");
+    Console.WriteLine("[BIND] HTTPS port 7136 (HTTPS-only mode)");
 });
 
 // Add services to the container.
