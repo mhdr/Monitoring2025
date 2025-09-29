@@ -14,7 +14,12 @@ using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Kestrel for LAN access (0.0.0.0) with development certificate if available
+// Detect the public IP address for CORS and logging purposes
+var detectedIp = await IpDetectionService.DetectPublicIpAsync();
+Console.WriteLine($"[IP DETECTION] Detected public IP: {detectedIp}");
+Console.WriteLine($"[NETWORK] Binding to all interfaces (0.0.0.0) but using {detectedIp} for CORS and external access");
+
+// Configure Kestrel to bind to all interfaces but use detected IP for CORS
 builder.WebHost.ConfigureKestrel(options =>
 {
     // Resolve certificate (dev self-signed) if present
@@ -44,12 +49,12 @@ builder.WebHost.ConfigureKestrel(options =>
         Console.WriteLine("[INFO] Development certificate not found. Will use ephemeral HTTPS certificate.");
     }
 
-    // Fixed bindings (no dynamic or env override logic) - HTTPS ONLY
+    // Bind to all interfaces (0.0.0.0) for compatibility - HTTPS ONLY
     options.Listen(IPAddress.Any, 7136, listenOptions =>
     {
         if (devCert != null) listenOptions.UseHttps(devCert); else listenOptions.UseHttps();
     });
-    Console.WriteLine("[BIND] HTTPS port 7136 (HTTPS-only mode)");
+    Console.WriteLine($"[BIND] HTTPS port 7136 on all interfaces (externally accessible via {detectedIp}:7136)");
 });
 
 // Add services to the container.
@@ -62,10 +67,19 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactClientPolicy", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:3000", "https://localhost:3000", // React Create App
-                "http://localhost:5173", "https://localhost:5173"  // Vite dev server
-              )
+        // Build dynamic origins list including detected IP
+        var allowedOrigins = new List<string>
+        {
+            "http://localhost:3000", "https://localhost:3000", // React Create App
+            "http://localhost:5173", "https://localhost:5173", // Vite dev server
+            $"https://{detectedIp}:3000", // React on detected IP
+            $"https://{detectedIp}:5173", // Vite on detected IP
+            $"https://{detectedIp}:7136"  // API on detected IP
+        };
+
+        Console.WriteLine($"[CORS] Allowing origins: {string.Join(", ", allowedOrigins)}");
+        
+        policy.WithOrigins(allowedOrigins.ToArray())
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
