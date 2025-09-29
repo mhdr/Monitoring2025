@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using API.Libs;
+using API.Models.Dto;
+using API.Models.ModelDto;
 using Contracts;
 using Core;
 using Core.Libs;
@@ -14,8 +16,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using Share.Client.Dto;
-using Share.Client.ModelDto;
 using Share.Libs;
 using ItemType = Core.Libs.ItemType;
 

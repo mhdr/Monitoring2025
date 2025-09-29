@@ -32,7 +32,6 @@
       <ProjectReference Include="..\..\..\MonitoringCore\Core\Core\Core.csproj" />
       <ProjectReference Include="..\Contracts\Contracts.csproj" />
       <ProjectReference Include="..\DB.User\DB.User.csproj" />
-      <ProjectReference Include="..\Share.Client\Share.Client.csproj" />
       <ProjectReference Include="..\Share\Share.csproj" />
     </ItemGroup>
 
