@@ -30,11 +30,12 @@ SYSTEM_CERT_DIR="/etc/ca-certificates/trust-source/anchors"
 echo -e "${BLUE}=== EMS API SSL Certificate Trust Installation ===${NC}"
 echo -e "This script will install the EMS API Root CA certificate to the system trust store.\n"
 
-# Check if running as root
+# Check if running as root, if not, re-run with sudo
 if [[ $EUID -ne 0 ]]; then
-    echo -e "${RED}Error: This script must be run as root (use sudo)${NC}"
-    echo "Usage: sudo ./trust-certificate.sh"
-    exit 1
+    echo -e "${YELLOW}This script requires root privileges to install certificates to the system trust store.${NC}"
+    echo -e "${BLUE}You will be prompted for your password...${NC}"
+    echo
+    exec sudo "$0" "$@"
 fi
 
 # Check if certificates directory exists
