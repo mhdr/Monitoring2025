@@ -7,7 +7,7 @@
 # - Includes localhost, 127.0.0.1, and ::1 for local development
 # - Detects local IP using system routing and network interfaces
 # - Includes local network IPs for internal access
-# - Uses local IP as Common Name but includes all local addresses
+# - Uses localhost as Common Name for browser compatibility
 
 set -e  # Exit on any error
 
@@ -73,7 +73,7 @@ STATE="State"
 LOCALITY="City"
 ORGANIZATION="EMS Monitoring"
 ORG_UNIT="Development"
-# Common Name will be set to the detected local IP
+# Common Name will be set to localhost for browser compatibility
 
 echo -e "${BLUE}=== EMS API SSL Certificate Generator ===${NC}"
 echo -e "This script will create self-signed SSL certificates for development use.\n"
@@ -157,7 +157,7 @@ fi
 
 # Detect local IP
 LOCAL_IP=$(detect_local_ip)
-COMMON_NAME="$LOCAL_IP"  # Set Common Name to the detected local IP
+COMMON_NAME="localhost"  # Set Common Name to localhost for browser compatibility
 
 HOSTNAME_FQDN=$(hostname -f 2>/dev/null || hostname)
 HOST_SHORT=$(hostname -s 2>/dev/null || echo "${HOSTNAME_FQDN%%.*}")
@@ -293,7 +293,7 @@ echo -e "  🔐 ${KEY_NAME}.pem           - Server private key"
 echo -e "  🔗 ${CERT_NAME}-chain.pem    - Server + CA chain"
 echo -e "  📦 ${PFX_NAME}.pfx           - PKCS#12 (includes chain)"
 echo -e "\nCertificate details:"
-echo -e "  🌐 Common Name: ${COMMON_NAME} (detected local IP)"
+echo -e "  🌐 Common Name: ${COMMON_NAME} (for browser compatibility)"
 echo -e "  🏢 Organization: ${ORGANIZATION}"
 echo -e "  📅 Valid for: ${DAYS_VALID} days"
 echo -e "  🔒 Password: ${CERT_PASSWORD}"
