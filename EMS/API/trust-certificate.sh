@@ -122,6 +122,9 @@ fi
 
 # Install certificate to NSS database for browsers
 echo -e "${YELLOW}Installing certificate to NSS databases for browser compatibility...${NC}"
+echo -e "${BLUE}Note: You may be prompted for passwords for browser certificate databases.${NC}"
+echo -e "${BLUE}For most browsers, you can press Enter for empty password or enter your master password if set.${NC}"
+echo
 
 # Function to add certificate to NSS database
 add_to_nss_db() {
@@ -130,17 +133,43 @@ add_to_nss_db() {
     
     if [ -d "$db_path" ]; then
         echo -e "${YELLOW}  Adding certificate to $db_name NSS database...${NC}"
-        certutil -A -n "EMS API Root CA" -t "TCu,Cu,Tu" -i "$CA_CERT_PATH" -d "$db_path" 2>/dev/null
-        if [ $? -eq 0 ]; then
+        
+        # First check if the certificate already exists
+        if certutil -L -d "$db_path" -n "EMS API Root CA" &>/dev/null; then
+            echo -e "${GREEN}  ✓ Certificate already exists in $db_name NSS database${NC}"
+            return 0
+        fi
+        
+        # Try to add the certificate
+        echo -e "${BLUE}  Note: If prompted for a password, press Enter for empty password or enter your database password.${NC}"
+        if certutil -A -n "EMS API Root CA" -t "TCu,Cu,Tu" -i "$CA_CERT_PATH" -d "$db_path"; then
             echo -e "${GREEN}  ✓ Certificate added to $db_name NSS database${NC}"
         else
-            echo -e "${YELLOW}  ⚠ Failed to add certificate to $db_name NSS database (may already exist)${NC}"
+            local exit_code=$?
+            case $exit_code in
+                12)
+                    echo -e "${YELLOW}  ⚠ Certificate already exists in $db_name NSS database${NC}"
+                    ;;
+                1)
+                    echo -e "${YELLOW}  ⚠ Password required or database access denied for $db_name NSS database${NC}"
+                    echo -e "${BLUE}    You may need to manually import the certificate in your browser.${NC}"
+                    ;;
+                *)
+                    echo -e "${YELLOW}  ⚠ Failed to add certificate to $db_name NSS database (exit code: $exit_code)${NC}"
+                    echo -e "${BLUE}    This is usually not critical - browsers can still be configured manually.${NC}"
+                    ;;
+            esac
         fi
     fi
 }
 
 # Add to system NSS database
-add_to_nss_db "sql:/etc/pki/nssdb" "system"
+echo -e "${YELLOW}Adding certificate to system NSS database...${NC}"
+if [ -d "/etc/pki/nssdb" ]; then
+    add_to_nss_db "sql:/etc/pki/nssdb" "system"
+else
+    echo -e "${YELLOW}  ⚠ System NSS database not found at /etc/pki/nssdb${NC}"
+fi
 
 # Add to user NSS databases (Firefox/Chrome profiles)
 for user_home in /home/*; do
