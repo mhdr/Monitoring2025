@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using Share.Server.Libs;
+using Share.Libs;
 
 namespace DB.User.Models;
 

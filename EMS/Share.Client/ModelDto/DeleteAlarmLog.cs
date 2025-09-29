@@ -1,6 +1,6 @@
 
 
-using Share.Client.Libs;
+using Share.Libs;
 
 namespace Share.Client.ModelDto;
 

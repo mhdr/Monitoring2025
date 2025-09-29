@@ -1,0 +1,12 @@
+/home/mahmood/git/Monitoring2025/EMS/Share/bin/Debug/net9.0/Share.deps.json
+/home/mahmood/git/Monitoring2025/EMS/Share/bin/Debug/net9.0/Share.dll
+/home/mahmood/git/Monitoring2025/EMS/Share/bin/Debug/net9.0/Share.pdb
+/home/mahmood/git/Monitoring2025/EMS/Share/obj/Debug/net9.0/Share.GeneratedMSBuildEditorConfig.editorconfig
+/home/mahmood/git/Monitoring2025/EMS/Share/obj/Debug/net9.0/Share.AssemblyInfoInputs.cache
+/home/mahmood/git/Monitoring2025/EMS/Share/obj/Debug/net9.0/Share.AssemblyInfo.cs
+/home/mahmood/git/Monitoring2025/EMS/Share/obj/Debug/net9.0/Share.csproj.CoreCompileInputs.cache
+/home/mahmood/git/Monitoring2025/EMS/Share/obj/Debug/net9.0/Share.sourcelink.json
+/home/mahmood/git/Monitoring2025/EMS/Share/obj/Debug/net9.0/Share.dll
+/home/mahmood/git/Monitoring2025/EMS/Share/obj/Debug/net9.0/refint/Share.dll
+/home/mahmood/git/Monitoring2025/EMS/Share/obj/Debug/net9.0/Share.pdb
+/home/mahmood/git/Monitoring2025/EMS/Share/obj/Debug/net9.0/ref/Share.dll

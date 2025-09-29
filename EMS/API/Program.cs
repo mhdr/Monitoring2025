@@ -1,12 +1,15 @@
 using System.Text;
+using API.Libs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using API.Models;
 using API.Services;
+using Contracts;
 using DB.User.Data;
 using DB.User.Models;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -179,6 +182,23 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddOpenApi();
 
+// configure the endpoints for mass transit
+
+EndpointConvention.Map<ReadValuesMessage>(new Uri("queue:core-read-values"));
+
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context2, cfg) =>
+    {
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("pupli");
+            h.Password("7eAZvkUhviQ7ZKLSzJru");
+        });
+        cfg.ConfigureEndpoints(context2);
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -221,5 +241,7 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"Database migration failed: {ex.Message}");
     }
 }
+
+app.MapHub<MyHub>("hub");
 
 app.Run();
