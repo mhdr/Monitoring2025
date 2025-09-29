@@ -4,11 +4,11 @@
 # This script creates self-signed SSL certificates for development use
 # 
 # Modified to automatically detect the server's public IP address
-# and create certificates for it instead of localhost/127.0.0.1
-# - Removes localhost, 127.0.0.1, ::1, and 0.0.0.0 from certificates
+# and create certificates for local development including localhost/127.0.0.1
+# - Includes localhost, 127.0.0.1, and ::1 for local development
 # - Automatically detects public IP using external services
 # - Includes local network IPs for internal access
-# - Uses public IP as Common Name
+# - Uses public IP as Common Name but includes all local addresses
 
 set -e  # Exit on any error
 
@@ -176,13 +176,16 @@ COMMON_NAME="$PUBLIC_IP"  # Set Common Name to the detected public IP
 HOSTNAME_FQDN=$(hostname -f 2>/dev/null || hostname)
 HOST_SHORT=$(hostname -s 2>/dev/null || echo "${HOSTNAME_FQDN%%.*}")
 
-# Collect only the public IP and local network IPs (excluding loopback)
+# Collect the public IP, local network IPs, and localhost addresses for dev
 IPv4_LIST=""
 if [[ -n "$PUBLIC_IP" ]]; then
     IPv4_LIST="$PUBLIC_IP"
 fi
 
-# Add local network IPs (for internal access) but exclude loopback
+# Add localhost and loopback addresses for local development
+IPv4_LIST="$IPv4_LIST 127.0.0.1"
+
+# Add local network IPs (for internal access)
 LOCAL_IPS=$(ip -4 addr show scope global 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | grep -v '^127\.' | sort -u)
 if [[ -n "$LOCAL_IPS" ]]; then
     for local_ip in $LOCAL_IPS; do
@@ -192,9 +195,10 @@ if [[ -n "$LOCAL_IPS" ]]; then
     done
 fi
 
-# Prepare DNS names (avoid duplicates) - include hostname but not localhost
+# Prepare DNS names (avoid duplicates) - include hostname and localhost
 declare -A DNS_MAP
 add_dns() { [[ -n "$1" ]] && DNS_MAP["$1"]=1; }
+add_dns "localhost"
 add_dns "$HOST_SHORT"
 add_dns "$HOSTNAME_FQDN"
 
@@ -217,15 +221,19 @@ for dns_name in "${!DNS_MAP[@]}"; do
 done
 
 ALT_IP_LINES=""
-# Only include detected public IP and local network IPs (no localhost/loopback)
+# Include public IP, localhost, and local network IPs for development
 for ipaddr in $IPv4_LIST; do
     ALT_IP_LINES+="IP.${IP_INDEX} = ${ipaddr}\n"
     IP_INDEX=$((IP_INDEX+1))
 done
 
+# Add IPv6 loopback for completeness
+ALT_IP_LINES+="IP.${IP_INDEX} = ::1\n"
+IP_INDEX=$((IP_INDEX+1))
+
 echo -e "${YELLOW}Generating server key and CSR (detected $(($DNS_INDEX-1)) DNS names, $(($IP_INDEX-1)) IP entries)...${NC}"
 echo -e "  DNS names: $(printf '%s ' "${!DNS_MAP[@]}")"
-echo -e "  IP addresses: $IPv4_LIST"
+echo -e "  IP addresses: $IPv4_LIST ::1"
 
 cat > server.conf << EOF
 [req]
@@ -310,9 +318,15 @@ openssl x509 -in "${CA_CERT_NAME}.pem" -text -noout | grep -E "(Subject:|CA:true
 
 
 
-echo -e "\n${YELLOW}Note: This certificate is configured for the detected public IP (${PUBLIC_IP}) and local network access.${NC}"
-echo -e "The certificate does not include localhost/127.0.0.1 for security reasons."
-echo -e "Access your application using: https://${PUBLIC_IP}:7136"
+echo -e "\n${YELLOW}Note: This certificate is configured for local development and includes:${NC}"
+echo -e "  - Public IP: ${PUBLIC_IP}"
+echo -e "  - Localhost: 127.0.0.1 and ::1"
+echo -e "  - DNS: localhost"
+echo -e "  - Local network IPs for internal access"
+echo -e "\nYou can access your application using any of these URLs:"
+echo -e "  https://localhost:7136"
+echo -e "  https://127.0.0.1:7136"
+echo -e "  https://${PUBLIC_IP}:7136"
 
 echo -e "\n${BLUE}Verification commands:${NC}"
 echo -e "  openssl verify -CAfile ${CA_CERT_NAME}.pem ${CERT_NAME}.pem"
