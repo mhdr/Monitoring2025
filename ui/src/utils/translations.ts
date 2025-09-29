@@ -25,7 +25,7 @@ export const translations = {
     // Sidebar navigation
     systemTitle: 'سیستم مانیتورینگ',
     pageTitle: 'سیستم مانیتورینگ',
-    plots: 'نمودارها',
+    plots: 'نقشه‌ها',
     activeAlarms: 'هشدارهای فعال',
     alarmLog: 'گزارش هشدارها',
     auditTrail: 'گزارش بازرسی‌ها',
