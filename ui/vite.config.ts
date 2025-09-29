@@ -16,11 +16,12 @@ const customCertsExist = fs.existsSync(certFile) && fs.existsSync(keyFile)
 export default defineConfig({
   plugins: [react()],
   server: {
-    https: customCertsExist ? {
-      key: fs.readFileSync(keyFile),
-      cert: fs.readFileSync(certFile),
-    } : true, // Fallback to basic SSL if custom certs don't exist
-    host: 'localhost',
+    // Temporarily disable HTTPS for troubleshooting
+    // https: customCertsExist ? {
+    //   key: fs.readFileSync(keyFile),
+    //   cert: fs.readFileSync(certFile),
+    // } : true, // Fallback to basic SSL if custom certs don't exist
+    host: '127.0.0.1',
     port: 5173,
     proxy: {
       '/api': {
