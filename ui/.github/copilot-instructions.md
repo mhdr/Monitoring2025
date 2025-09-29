@@ -12,6 +12,7 @@
 - This project is a **React application using TypeScript**
 - Follow TypeScript best practices and proper typing
 - Use type definitions for all components, props, and API responses
+- This project uses **Redux for state management** and **RTK Query for data fetching and caching solution**
 
 ### UI Framework
 - This project uses **Bootstrap** for styling and layout
