@@ -69,17 +69,30 @@ builder.Services.AddCors(options =>
     {
         // Build comprehensive origins list including detected IP and all local dev IPs
         var localIps = new[] { "localhost", "127.0.0.1", "0.0.0.0", "::1", detectedIp.ToString() };
-        var ports = new[] { "7136" };
-        var protocols = new[] { "https" };
+        var apiPorts = new[] { "7136", "5030" }; // API ports
+        var frontendPorts = new[] { "3000", "3001", "5000", "5173", "4200", "8080", "8081", "8000" }; // Common frontend dev ports
+        var protocols = new[] { "http", "https" }; // Support both HTTP and HTTPS
         
         var allowedOrigins = new List<string>();
         
-        // Add all combinations of protocols, IPs, and ports for comprehensive local dev support
+        // Add API origins (HTTPS for production, both HTTP/HTTPS for dev)
         foreach (var protocol in protocols)
         {
             foreach (var ip in localIps)
             {
-                foreach (var port in ports)
+                foreach (var port in apiPorts)
+                {
+                    allowedOrigins.Add($"{protocol}://{ip}:{port}");
+                }
+            }
+        }
+        
+        // Add frontend origins (commonly HTTP in development)
+        foreach (var protocol in protocols)
+        {
+            foreach (var ip in new[] { "localhost", "127.0.0.1" }) // Frontend typically runs on localhost
+            {
+                foreach (var port in frontendPorts)
                 {
                     allowedOrigins.Add($"{protocol}://{ip}:{port}");
                 }
@@ -95,6 +108,7 @@ builder.Services.AddCors(options =>
         });
 
         Console.WriteLine($"[CORS] Allowing {allowedOrigins.Count} origins including detected IP {detectedIp}");
+        Console.WriteLine($"[CORS] Frontend ports supported: {string.Join(", ", frontendPorts)}");
         
         policy.WithOrigins(allowedOrigins.ToArray())
               .AllowAnyMethod()
