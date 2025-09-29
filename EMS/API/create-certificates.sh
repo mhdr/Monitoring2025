@@ -269,7 +269,7 @@ install_system_trust() {
         fi
     fi
     if command -v trust &>/dev/null; then
-        if ls /etc/ca-certificates/trust-source/anchors/${CA_CERT_NAME}.crt >/dev/null 2>&1; then
+        if [ -f "/etc/ca-certificates/trust-source/anchors/${CA_CERT_NAME}.crt" ]; then
             echo -e "${GREEN}✓ Root CA already present in anchors directory (Arch-based)${NC}"
             return 0
         fi
@@ -282,11 +282,14 @@ install_system_trust() {
     if command -v trust &> /dev/null && [ -d "/etc/ca-certificates/trust-source/anchors" ]; then
         echo -e "${YELLOW}Detected Arch-based system (EndeavourOS/Arch/Manjaro). Installing certificate...${NC}"
         if sudo cp "${CA_CERT_NAME}.pem" "/etc/ca-certificates/trust-source/anchors/${CA_CERT_NAME}.crt" 2>/dev/null; then
-            sudo trust anchor "/etc/ca-certificates/trust-source/anchors/${CA_CERT_NAME}.crt" >/dev/null 2>&1 || true
-            sudo trust extract-compat >/dev/null 2>&1
-            echo -e "${GREEN}✓ Certificate installed and trusted system-wide${NC}"
+            # For Arch-based systems, just copying to anchors and running extract-compat is sufficient
+            if sudo trust extract-compat >/dev/null 2>&1; then
+                echo -e "${GREEN}✓ Certificate installed and trusted system-wide${NC}"
+            else
+                echo -e "${YELLOW}⚠ Certificate copied but extract-compat failed${NC}"
+            fi
         else
-            echo -e "${YELLOW}⚠ Failed to copy certificate (Arch-based)${NC}"
+            echo -e "${YELLOW}⚠ Failed to copy certificate (Arch-based) - check sudo permissions${NC}"
         fi
     elif command -v update-ca-certificates &> /dev/null; then
         echo -e "${YELLOW}Detected Debian/Ubuntu system. Installing certificate...${NC}"
