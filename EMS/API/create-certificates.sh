@@ -202,19 +202,19 @@ DNS_INDEX=1
 IP_INDEX=1
 ALT_DNS_LINES=""
 for dns_name in "${!DNS_MAP[@]}"; do
-    ALT_DNS_LINES+="DNS.${DNS_INDEX} = ${dns_name}\n"
+    ALT_DNS_LINES+="DNS.${DNS_INDEX} = ${dns_name}"$'\n'
     DNS_INDEX=$((DNS_INDEX+1))
 done
 
 ALT_IP_LINES=""
 # Include local IP, localhost, and local network IPs for development
 for ipaddr in $IPv4_LIST; do
-    ALT_IP_LINES+="IP.${IP_INDEX} = ${ipaddr}\n"
+    ALT_IP_LINES+="IP.${IP_INDEX} = ${ipaddr}"$'\n'
     IP_INDEX=$((IP_INDEX+1))
 done
 
 # Add IPv6 loopback for completeness
-ALT_IP_LINES+="IP.${IP_INDEX} = ::1\n"
+ALT_IP_LINES+="IP.${IP_INDEX} = ::1"$'\n'
 IP_INDEX=$((IP_INDEX+1))
 
 echo -e "${YELLOW}Generating server key and CSR (detected $(($DNS_INDEX-1)) DNS names, $(($IP_INDEX-1)) IP entries)...${NC}"
@@ -242,8 +242,10 @@ extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 
 [alt_names]
-${ALT_DNS_LINES}${ALT_IP_LINES}
 EOF
+
+# Append alt_names to the config file properly
+echo "${ALT_DNS_LINES}${ALT_IP_LINES}" >> server.conf
 
 # Generate key and CSR
 openssl req -new -newkey rsa:4096 -nodes -keyout "${KEY_NAME}.pem" -out server.csr -config server.conf || { echo -e "${RED}✗ Failed to create server CSR${NC}"; exit 1; }
