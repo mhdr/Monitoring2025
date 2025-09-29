@@ -2,8 +2,55 @@
 
 # SSL Certificate Generation Script for EMS API
 # This script creates self-signed SSL certificates for development use
+# 
+# Modified to automatically detect the server's public IP address
+# and create certificates for it instead of localhost/127.0.0.1
+# - Removes localhost, 127.0.0.1, ::1, and 0.0.0.0 from certificates
+# - Automatically detects public IP using external services
+# - Includes local network IPs for internal access
+# - Uses public IP as Common Name
 
 set -e  # Exit on any error
+
+# Function to detect public IP address
+detect_public_ip() {
+    local public_ip=""
+    local services=(
+        "https://ipinfo.io/ip"
+        "https://api.ipify.org"
+        "https://checkip.amazonaws.com"
+        "https://icanhazip.com"
+        "https://ifconfig.me/ip"
+    )
+    
+    echo -e "${YELLOW}Detecting public IP address...${NC}" >&2
+    
+    for service in "${services[@]}"; do
+        echo -e "  Trying $service..." >&2
+        public_ip=$(curl -s --max-time 10 "$service" 2>/dev/null | tr -d '\n\r' | grep -E '^[0-9]{1,3}(\.[0-9]{1,3}){3}$')
+        if [[ -n "$public_ip" ]]; then
+            echo -e "${GREEN}  ✓ Detected public IP: $public_ip${NC}" >&2
+            echo "$public_ip"
+            return 0
+        fi
+    done
+    
+    echo -e "${RED}  ✗ Failed to detect public IP address from external services${NC}" >&2
+    echo -e "${YELLOW}  Falling back to local IP detection...${NC}" >&2
+    # Fallback to local network interfaces (excluding loopback)
+    public_ip=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[0-9.]+' | head -n1)
+    if [[ -z "$public_ip" ]]; then
+        public_ip=$(hostname -I 2>/dev/null | awk '{print $1}' | grep -v '^127\.')
+    fi
+    if [[ -n "$public_ip" ]]; then
+        echo -e "${YELLOW}  Using local IP: $public_ip${NC}" >&2
+        echo "$public_ip"
+        return 0
+    else
+        echo -e "${RED}  ✗ Could not determine any IP address${NC}" >&2
+        exit 1
+    fi
+}
 
 # Colors for output
 RED='\033[0;31m'
@@ -33,16 +80,23 @@ STATE="State"
 LOCALITY="City"
 ORGANIZATION="EMS Monitoring"
 ORG_UNIT="Development"
-COMMON_NAME="localhost"
+# Common Name will be set to the detected public IP
 
 echo -e "${BLUE}=== EMS API SSL Certificate Generator ===${NC}"
 echo -e "This script will create self-signed SSL certificates for development use.\n"
 
-# Check if openssl is installed
+# Check if required tools are installed
 if ! command -v openssl &> /dev/null; then
     echo -e "${RED}Error: OpenSSL is not installed. Please install it first.${NC}"
     echo "On Ubuntu/Debian: sudo apt-get install openssl"
     echo "On CentOS/RHEL: sudo yum install openssl"
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null; then
+    echo -e "${RED}Error: curl is not installed. Please install it first.${NC}"
+    echo "On Ubuntu/Debian: sudo apt-get install curl"
+    echo "On CentOS/RHEL: sudo yum install curl"
     exit 1
 fi
 
@@ -115,20 +169,32 @@ else
     echo -e "${GREEN}Root CA already exists - reusing ${CA_CERT_NAME}.pem${NC}"
 fi
 
+# Detect public IP
+PUBLIC_IP=$(detect_public_ip)
+COMMON_NAME="$PUBLIC_IP"  # Set Common Name to the detected public IP
+
 HOSTNAME_FQDN=$(hostname -f 2>/dev/null || hostname)
 HOST_SHORT=$(hostname -s 2>/dev/null || echo "${HOSTNAME_FQDN%%.*}")
 
-# Collect IPv4 addresses (global scope) excluding loopback & link-local
-IPv4_LIST=$(ip -4 addr show scope global 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | sort -u)
-if [[ -z "$IPv4_LIST" ]]; then
-    # Fallback using hostname -I
-    IPv4_LIST=$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+(\.[0-9]+){3}$' | grep -v '^127\.' | sort -u)
+# Collect only the public IP and local network IPs (excluding loopback)
+IPv4_LIST=""
+if [[ -n "$PUBLIC_IP" ]]; then
+    IPv4_LIST="$PUBLIC_IP"
 fi
 
-# Prepare DNS names (avoid duplicates) - always include localhost & hostnames
+# Add local network IPs (for internal access) but exclude loopback
+LOCAL_IPS=$(ip -4 addr show scope global 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | grep -v '^127\.' | sort -u)
+if [[ -n "$LOCAL_IPS" ]]; then
+    for local_ip in $LOCAL_IPS; do
+        if [[ "$local_ip" != "$PUBLIC_IP" ]]; then
+            IPv4_LIST="$IPv4_LIST $local_ip"
+        fi
+    done
+fi
+
+# Prepare DNS names (avoid duplicates) - include hostname but not localhost
 declare -A DNS_MAP
 add_dns() { [[ -n "$1" ]] && DNS_MAP["$1"]=1; }
-add_dns "localhost"
 add_dns "$HOST_SHORT"
 add_dns "$HOSTNAME_FQDN"
 
@@ -151,19 +217,15 @@ for dns_name in "${!DNS_MAP[@]}"; do
 done
 
 ALT_IP_LINES=""
-# Always include standard loopback entries and 0.0.0.0 for server binding
-ALT_IP_LINES+="IP.${IP_INDEX} = 127.0.0.1\n"; IP_INDEX=$((IP_INDEX+1))
-ALT_IP_LINES+="IP.${IP_INDEX} = ::1\n"; IP_INDEX=$((IP_INDEX+1))
-ALT_IP_LINES+="IP.${IP_INDEX} = 0.0.0.0\n"; IP_INDEX=$((IP_INDEX+1))
-
+# Only include detected public IP and local network IPs (no localhost/loopback)
 for ipaddr in $IPv4_LIST; do
-    # Skip if already localhost pattern
-    if [[ "$ipaddr" == 127.* ]]; then continue; fi
     ALT_IP_LINES+="IP.${IP_INDEX} = ${ipaddr}\n"
     IP_INDEX=$((IP_INDEX+1))
 done
 
 echo -e "${YELLOW}Generating server key and CSR (detected $(($DNS_INDEX-1)) DNS names, $(($IP_INDEX-1)) IP entries)...${NC}"
+echo -e "  DNS names: $(printf '%s ' "${!DNS_MAP[@]}")"
+echo -e "  IP addresses: $IPv4_LIST"
 
 cat > server.conf << EOF
 [req]
@@ -237,7 +299,7 @@ echo -e "  🔐 ${KEY_NAME}.pem           - Server private key"
 echo -e "  🔗 ${CERT_NAME}-chain.pem    - Server + CA chain"
 echo -e "  📦 ${PFX_NAME}.pfx           - PKCS#12 (includes chain)"
 echo -e "\nCertificate details:"
-echo -e "  🌐 Common Name: ${COMMON_NAME}"
+echo -e "  🌐 Common Name: ${COMMON_NAME} (detected public IP)"
 echo -e "  🏢 Organization: ${ORGANIZATION}"
 echo -e "  📅 Valid for: ${DAYS_VALID} days"
 echo -e "  🔒 Password: ${CERT_PASSWORD}"
@@ -248,8 +310,9 @@ openssl x509 -in "${CA_CERT_NAME}.pem" -text -noout | grep -E "(Subject:|CA:true
 
 
 
-echo -e "\n${YELLOW}Note: This is a self-signed certificate for development use only.${NC}"
-echo -e "You may need to configure your applications to trust the certificate or disable SSL validation."
+echo -e "\n${YELLOW}Note: This certificate is configured for the detected public IP (${PUBLIC_IP}) and local network access.${NC}"
+echo -e "The certificate does not include localhost/127.0.0.1 for security reasons."
+echo -e "Access your application using: https://${PUBLIC_IP}:7136"
 
 echo -e "\n${BLUE}Verification commands:${NC}"
 echo -e "  openssl verify -CAfile ${CA_CERT_NAME}.pem ${CERT_NAME}.pem"
