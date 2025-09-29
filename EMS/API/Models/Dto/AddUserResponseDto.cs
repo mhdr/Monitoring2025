@@ -16,12 +16,12 @@ public class AddUserResponseDto
     /// <summary>
     /// Error type if user creation failed
     /// </summary>
-    public ErrorType? Error { get; set; }
+    public AddUserErrorType? Error { get; set; }
 
     /// <summary>
     /// Enumeration of possible error types during user creation
     /// </summary>
-    public enum ErrorType
+    public enum AddUserErrorType
     {
         /// <summary>
         /// Username already exists in the system

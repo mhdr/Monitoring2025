@@ -10,7 +10,7 @@ public class ValuesResponseDto
     /// <summary>
     /// List of current values for the requested monitoring items
     /// </summary>
-    public List<Value2> Values { get; set; }
+    public List<MultiValue> Values { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the ValuesResponseDto
@@ -23,7 +23,7 @@ public class ValuesResponseDto
     /// <summary>
     /// Represents a current value for a monitoring item
     /// </summary>
-    public class Value2
+    public class MultiValue
     {
         /// <summary>
         /// ID of the monitoring item this value belongs to

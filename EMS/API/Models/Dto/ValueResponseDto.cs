@@ -8,12 +8,12 @@ public class ValueResponseDto
     /// <summary>
     /// The value object for the requested item
     /// </summary>
-    public Value2 Value { get; set; } = new();
+    public SingleValue Value { get; set; } = new();
 
     /// <summary>
     /// Represents a single monitoring item value with timestamp information
     /// </summary>
-    public class Value2
+    public class SingleValue
     {
         /// <summary>
         /// Monitoring item identifier (GUID as string)

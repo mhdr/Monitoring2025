@@ -493,7 +493,7 @@ public class MonitoringController : ControllerBase
 
             foreach (var value in values)
             {
-                response.Values.Add(new ValuesResponseDto.Value2()
+                response.Values.Add(new ValuesResponseDto.MultiValue()
                 {
                     ItemId = value.ItemId.ToString(),
                     Value = value.Value,
@@ -540,7 +540,7 @@ public class MonitoringController : ControllerBase
 
             var response = new ValueResponseDto();
 
-            response.Value = new ValueResponseDto.Value2()
+            response.Value = new ValueResponseDto.SingleValue()
             {
                 ItemId = value.ItemId.ToString(),
                 Value = value.Value,
@@ -1234,7 +1234,7 @@ public class MonitoringController : ControllerBase
             if (string.IsNullOrEmpty(request.UserName))
             {
                 response.IsSuccessful = false;
-                response.Error = AddUserResponseDto.ErrorType.EmptyUserName;
+                response.Error = AddUserResponseDto.AddUserErrorType.EmptyUserName;
                 return Ok(response);
             }
 
@@ -1255,7 +1255,7 @@ public class MonitoringController : ControllerBase
             else
             {
                 response.IsSuccessful = false;
-                response.Error = AddUserResponseDto.ErrorType.DuplicateUserName;
+                response.Error = AddUserResponseDto.AddUserErrorType.DuplicateUserName;
             }
 
             return Ok(response);
@@ -1346,7 +1346,7 @@ public class MonitoringController : ControllerBase
             if (string.IsNullOrEmpty(request.UserName))
             {
                 response.IsSuccessful = false;
-                response.Error = EditUserResponseDto.ErrorType.EmptyUserName;
+                response.Error = EditUserResponseDto.EditUserErrorType.EmptyUserName;
                 return Ok(response);
             }
 
@@ -2007,7 +2007,7 @@ public class MonitoringController : ControllerBase
             else
             {
                 response.IsSuccessful = false;
-                response.Error = DeleteControllerResponseDto.ErrorType.AlreadyInUse;
+                response.Error = DeleteControllerResponseDto.DeleteControllerErrorType.AlreadyInUse;
             }
 
             return Ok(response);
@@ -2104,7 +2104,7 @@ public class MonitoringController : ControllerBase
             if (matched != null)
             {
                 response.IsSuccessful = false;
-                response.Error = AddPointAsAdminResponseDto.ErrorType.DuplicatePointNumber;
+                response.Error = AddPointAsAdminResponseDto.AddPointErrorType.DuplicatePointNumber;
                 return Ok(response);
             }
 
@@ -2131,7 +2131,7 @@ public class MonitoringController : ControllerBase
             if (result == null || result == Guid.Empty)
             {
                 response.IsSuccessful = false;
-                response.Error = AddPointAsAdminResponseDto.ErrorType.UnKnown;
+                response.Error = AddPointAsAdminResponseDto.AddPointErrorType.UnKnown;
                 return Ok(response);
             }
 
@@ -2226,7 +2226,7 @@ public class MonitoringController : ControllerBase
                 if (matchByPointNumber.Id != request.Id)
                 {
                     response.IsSuccessful = false;
-                    response.Error = EditPointAsAdminResponseDto.ErrorType.DuplicatePointNumber;
+                    response.Error = EditPointAsAdminResponseDto.EditPointErrorType.DuplicatePointNumber;
                     return Ok(response);
                 }
             }

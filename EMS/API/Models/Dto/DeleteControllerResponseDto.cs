@@ -3,9 +3,9 @@ namespace API.Models.Dto;
 public class DeleteControllerResponseDto
 {
     public bool IsSuccessful { get; set; }
-    public ErrorType? Error { get; set; }
+    public DeleteControllerErrorType? Error { get; set; }
 
-    public enum ErrorType
+    public enum DeleteControllerErrorType
     {
         AlreadyInUse = 1,
     }
