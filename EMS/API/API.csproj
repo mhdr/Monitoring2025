@@ -35,4 +35,9 @@
       <ProjectReference Include="..\Share\Share.csproj" />
     </ItemGroup>
 
+    <!-- Ensure development certificates are copied to output so Program.cs can load them -->
+    <ItemGroup>
+      <None Include="certificates/**" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
 </Project>

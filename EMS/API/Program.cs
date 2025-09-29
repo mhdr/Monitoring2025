@@ -18,13 +18,24 @@ builder.WebHost.ConfigureKestrel(options =>
 {
     // Only add explicit endpoints if not already constrained by launchSettings applicationUrl binding
     // This allows access from other machines on local network: https://<your-hostname>:7136
-    var certPath = Path.Combine(AppContext.BaseDirectory, "certificates", "api-cert.pfx");
+    var potentialPaths = new List<string>
+    {
+        Path.Combine(AppContext.BaseDirectory, "certificates", "api-cert.pfx"),                      // published / bin path
+        Path.Combine(builder.Environment.ContentRootPath, "certificates", "api-cert.pfx"),            // project root during dev
+        Path.Combine(Directory.GetCurrentDirectory(), "certificates", "api-cert.pfx")                 // current dir fallback
+    };
+
     var certPassword = "password123"; // Keep in sync with create-certificates scripts (dev only)
-    if (File.Exists(certPath))
+    string? selectedCertPath = potentialPaths.FirstOrDefault(File.Exists);
+
+    if (selectedCertPath != null)
     {
         try
         {
-            var cert = new System.Security.Cryptography.X509Certificates.X509Certificate2(certPath, certPassword, System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable);
+            var cert = new System.Security.Cryptography.X509Certificates.X509Certificate2(selectedCertPath, certPassword, System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable);
+            Console.WriteLine($"[DEV CERT] Using development certificate: {selectedCertPath}");
+            Console.WriteLine($"[DEV CERT] Subject: {cert.Subject}");
+            Console.WriteLine($"[DEV CERT] Thumbprint: {cert.Thumbprint}");
             options.Listen(System.Net.IPAddress.Any, 5030); // HTTP
             options.Listen(System.Net.IPAddress.Any, 7136, listenOptions =>
             {
@@ -33,12 +44,14 @@ builder.WebHost.ConfigureKestrel(options =>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[WARN] Failed to load development certificate for HTTPS: {ex.Message}. Falling back to default URLs.");
+            Console.WriteLine($"[WARN] Failed to load development certificate for HTTPS from {selectedCertPath}: {ex.Message}. Falling back to default HTTPS binding.");
+            options.Listen(System.Net.IPAddress.Any, 5030);
+            options.Listen(System.Net.IPAddress.Any, 7136, lo => lo.UseHttps());
         }
     }
     else
     {
-        // Fallback to default ephemeral cert binding if dev cert missing
+        Console.WriteLine("[INFO] Development certificate not found. Using ephemeral HTTPS certificate.");
         options.Listen(System.Net.IPAddress.Any, 5030);
         options.Listen(System.Net.IPAddress.Any, 7136, lo => lo.UseHttps());
     }
