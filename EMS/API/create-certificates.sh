@@ -163,9 +163,10 @@ for dns_name in "${!DNS_MAP[@]}"; do
 done
 
 ALT_IP_LINES=""
-# Always include standard loopback entries
+# Always include standard loopback entries and 0.0.0.0 for server binding
 ALT_IP_LINES+="IP.${IP_INDEX} = 127.0.0.1\n"; IP_INDEX=$((IP_INDEX+1))
 ALT_IP_LINES+="IP.${IP_INDEX} = ::1\n"; IP_INDEX=$((IP_INDEX+1))
+ALT_IP_LINES+="IP.${IP_INDEX} = 0.0.0.0\n"; IP_INDEX=$((IP_INDEX+1))
 
 for ipaddr in $IPv4_LIST; do
     # Skip if already localhost pattern
