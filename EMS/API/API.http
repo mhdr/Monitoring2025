@@ -56,9 +56,9 @@ POST {{API_HostAddress_HTTPS}}/api/auth/login
 Content-Type: application/json
 
 {
-  "userName": "janesmith",
-  "password": "456",
-  "rememberMe": false
+  "userName": "mahmood2",
+  "password": "12345",
+  "rememberMe": true
 }
 
 ###
@@ -219,6 +219,148 @@ Authorization: Bearer {{authTokenHTTP}}
   "userId": "user_id_to_enable_here",
   "disable": false,
   "reason": "User issue has been resolved"
+}
+
+###
+
+#################################################################################
+# MONITORING CONTROLLER - GROUPS ENDPOINTS
+#################################################################################
+
+### Get groups accessible to current user - HTTP
+POST {{API_HostAddress_HTTP}}/api/monitoring/Groups
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": null
+}
+
+###
+
+### Get groups accessible to current user - HTTPS
+POST {{API_HostAddress_HTTPS}}/api/monitoring/Groups
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": null
+}
+
+###
+
+### Get groups for specific user (Admin only) - HTTP
+POST {{API_HostAddress_HTTP}}/api/monitoring/Groups
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "01ca06c6-bac7-4488-9337-172ef636153b"
+}
+
+###
+
+### Get groups for specific user (Admin only) - HTTPS
+POST {{API_HostAddress_HTTPS}}/api/monitoring/Groups
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": "01ca06c6-bac7-4488-9337-172ef636153b"
+}
+
+###
+
+### Add new group - HTTP
+POST {{API_HostAddress_HTTP}}/api/monitoring/AddGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "name": "Production Servers",
+  "parentId": null
+}
+
+###
+
+### Add new group - HTTPS
+POST {{API_HostAddress_HTTPS}}/api/monitoring/AddGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "name": "Development Servers",
+  "parentId": null
+}
+
+###
+
+### Add new sub-group - HTTP
+POST {{API_HostAddress_HTTP}}/api/monitoring/AddGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "name": "Web Servers",
+  "parentId": "replace_with_actual_parent_group_id"
+}
+
+###
+
+### Add new sub-group - HTTPS
+POST {{API_HostAddress_HTTPS}}/api/monitoring/AddGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "name": "Database Servers",
+  "parentId": "replace_with_actual_parent_group_id"
+}
+
+###
+
+### Edit existing group - HTTP
+POST {{API_HostAddress_HTTP}}/api/monitoring/EditGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "replace_with_actual_group_id",
+  "name": "Updated Group Name"
+}
+
+###
+
+### Edit existing group - HTTPS
+POST {{API_HostAddress_HTTPS}}/api/monitoring/EditGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "id": "replace_with_actual_group_id",
+  "name": "Updated Group Name HTTPS"
+}
+
+###
+
+### Delete group - HTTP
+POST {{API_HostAddress_HTTP}}/api/monitoring/DeleteGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "replace_with_actual_group_id"
+}
+
+###
+
+### Delete group - HTTPS
+POST {{API_HostAddress_HTTPS}}/api/monitoring/DeleteGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "id": "replace_with_actual_group_id"
 }
 
 ###
