@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import fs from 'fs'
 import path from 'path'
 import { homedir } from 'os'
@@ -14,14 +15,17 @@ const customCertsExist = fs.existsSync(certFile) && fs.existsSync(keyFile)
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Use basic SSL plugin as fallback if custom certificates don't exist
+    !customCertsExist && basicSsl()
+  ].filter(Boolean),
   server: {
-    // Temporarily disable HTTPS for troubleshooting
-    // https: customCertsExist ? {
-    //   key: fs.readFileSync(keyFile),
-    //   cert: fs.readFileSync(certFile),
-    // } : true, // Fallback to basic SSL if custom certs don't exist
-    host: '127.0.0.1',
+    https: customCertsExist ? {
+      key: fs.readFileSync(keyFile),
+      cert: fs.readFileSync(certFile),
+    } : undefined, // Let the basic SSL plugin handle HTTPS when enabled
+    host: 'localhost',
     port: 5173,
     proxy: {
       '/api': {
