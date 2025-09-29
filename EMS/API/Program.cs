@@ -67,17 +67,34 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactClientPolicy", policy =>
     {
-        // Build dynamic origins list including detected IP
-        var allowedOrigins = new List<string>
+        // Build comprehensive origins list including detected IP and all local dev IPs
+        var localIps = new[] { "localhost", "127.0.0.1", "0.0.0.0", "::1", detectedIp.ToString() };
+        var ports = new[] { "7136" };
+        var protocols = new[] { "https" };
+        
+        var allowedOrigins = new List<string>();
+        
+        // Add all combinations of protocols, IPs, and ports for comprehensive local dev support
+        foreach (var protocol in protocols)
         {
-            "http://localhost:3000", "https://localhost:3000", // React Create App
-            "http://localhost:5173", "https://localhost:5173", // Vite dev server
-            $"https://{detectedIp}:3000", // React on detected IP
-            $"https://{detectedIp}:5173", // Vite on detected IP
-            $"https://{detectedIp}:7136"  // API on detected IP
-        };
+            foreach (var ip in localIps)
+            {
+                foreach (var port in ports)
+                {
+                    allowedOrigins.Add($"{protocol}://{ip}:{port}");
+                }
+            }
+        }
+        
+        // Add some common variations without ports for flexibility
+        allowedOrigins.AddRange(new[]
+        {
+            "http://localhost", "https://localhost",
+            "http://127.0.0.1", "https://127.0.0.1",
+            $"http://{detectedIp}", $"https://{detectedIp}"
+        });
 
-        Console.WriteLine($"[CORS] Allowing origins: {string.Join(", ", allowedOrigins)}");
+        Console.WriteLine($"[CORS] Allowing {allowedOrigins.Count} origins including detected IP {detectedIp}");
         
         policy.WithOrigins(allowedOrigins.ToArray())
               .AllowAnyMethod()
