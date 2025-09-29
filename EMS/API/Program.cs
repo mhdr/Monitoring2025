@@ -13,6 +13,37 @@ using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Kestrel for LAN access (0.0.0.0) with development certificate if available
+builder.WebHost.ConfigureKestrel(options =>
+{
+    // Only add explicit endpoints if not already constrained by launchSettings applicationUrl binding
+    // This allows access from other machines on local network: https://<your-hostname>:7136
+    var certPath = Path.Combine(AppContext.BaseDirectory, "certificates", "api-cert.pfx");
+    var certPassword = "password123"; // Keep in sync with create-certificates scripts (dev only)
+    if (File.Exists(certPath))
+    {
+        try
+        {
+            var cert = new System.Security.Cryptography.X509Certificates.X509Certificate2(certPath, certPassword, System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable);
+            options.Listen(System.Net.IPAddress.Any, 5030); // HTTP
+            options.Listen(System.Net.IPAddress.Any, 7136, listenOptions =>
+            {
+                listenOptions.UseHttps(cert);
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[WARN] Failed to load development certificate for HTTPS: {ex.Message}. Falling back to default URLs.");
+        }
+    }
+    else
+    {
+        // Fallback to default ephemeral cert binding if dev cert missing
+        options.Listen(System.Net.IPAddress.Any, 5030);
+        options.Listen(System.Net.IPAddress.Any, 7136, lo => lo.UseHttps());
+    }
+});
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddControllers();

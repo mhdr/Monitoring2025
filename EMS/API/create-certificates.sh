@@ -104,8 +104,55 @@ else
     echo -e "${GREEN}Root CA already exists - reusing ${CA_CERT_NAME}.pem${NC}"
 fi
 
-# 2. Server key & CSR
-echo -e "${YELLOW}Generating server key and CSR...${NC}"
+HOSTNAME_FQDN=$(hostname -f 2>/dev/null || hostname)
+HOST_SHORT=$(hostname -s 2>/dev/null || echo "${HOSTNAME_FQDN%%.*}")
+
+# Collect IPv4 addresses (global scope) excluding loopback & link-local
+IPv4_LIST=$(ip -4 addr show scope global 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | sort -u)
+if [[ -z "$IPv4_LIST" ]]; then
+    # Fallback using hostname -I
+    IPv4_LIST=$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+(\.[0-9]+){3}$' | grep -v '^127\.' | sort -u)
+fi
+
+# Prepare DNS names (avoid duplicates) - always include localhost & hostnames
+declare -A DNS_MAP
+add_dns() { [[ -n "$1" ]] && DNS_MAP["$1"]=1; }
+add_dns "localhost"
+add_dns "$HOST_SHORT"
+add_dns "$HOSTNAME_FQDN"
+
+# EXTRA_SAN can include additional DNS names (comma separated)
+if [[ -n "$EXTRA_SAN" ]]; then
+    IFS=',' read -ra EXTRA_SAN_ARR <<< "$EXTRA_SAN"
+    for name in "${EXTRA_SAN_ARR[@]}"; do
+        name_trim=$(echo "$name" | xargs)
+        [[ -n "$name_trim" ]] && add_dns "$name_trim"
+    done
+fi
+
+# Build alt_names section dynamically
+DNS_INDEX=1
+IP_INDEX=1
+ALT_DNS_LINES=""
+for dns_name in "${!DNS_MAP[@]}"; do
+    ALT_DNS_LINES+="DNS.${DNS_INDEX} = ${dns_name}\n"
+    DNS_INDEX=$((DNS_INDEX+1))
+done
+
+ALT_IP_LINES=""
+# Always include standard loopback entries
+ALT_IP_LINES+="IP.${IP_INDEX} = 127.0.0.1\n"; IP_INDEX=$((IP_INDEX+1))
+ALT_IP_LINES+="IP.${IP_INDEX} = ::1\n"; IP_INDEX=$((IP_INDEX+1))
+
+for ipaddr in $IPv4_LIST; do
+    # Skip if already localhost pattern
+    if [[ "$ipaddr" == 127.* ]]; then continue; fi
+    ALT_IP_LINES+="IP.${IP_INDEX} = ${ipaddr}\n"
+    IP_INDEX=$((IP_INDEX+1))
+done
+
+echo -e "${YELLOW}Generating server key and CSR (detected $(($DNS_INDEX-1)) DNS names, $(($IP_INDEX-1)) IP entries)...${NC}"
+
 cat > server.conf << EOF
 [req]
 distinguished_name = dn
@@ -127,10 +174,7 @@ extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = localhost
-DNS.2 = 127.0.0.1
-IP.1 = 127.0.0.1
-IP.2 = ::1
+${ALT_DNS_LINES}${ALT_IP_LINES}
 EOF
 
 # Generate key and CSR

@@ -150,8 +150,53 @@ keyUsage = critical, keyCertSign, cRLSign
     Write-ColorOutput "Root CA already exists - reusing $CA_CERT_NAME.pem" "Green"
 }
 
-# 2. Server CSR
-Write-ColorOutput "Generating server key and CSR..." "Yellow"
+# 2. Server CSR with dynamic SANs
+Write-ColorOutput "Collecting hostnames and interface IPs for SAN..." "Yellow"
+$dnsSet = [System.Collections.Generic.HashSet[string]]::new()
+$ipSet  = [System.Collections.Generic.HashSet[string]]::new()
+
+foreach ($name in @('localhost', $env:COMPUTERNAME, [System.Net.Dns]::GetHostName(), [System.Net.Dns]::GetHostEntry('localhost').HostName)) {
+    if ($name -and -not ($dnsSet.Contains($name))) { [void]$dnsSet.Add($name) }
+}
+
+try {
+    $fqdn = ([System.Net.Dns]::GetHostEntry([System.Net.Dns]::GetHostName())).HostName
+    if ($fqdn -and -not ($dnsSet.Contains($fqdn))) { [void]$dnsSet.Add($fqdn) }
+} catch {}
+
+# Optional EXTRA_SAN environment variable (comma separated)
+$extraSan = $env:EXTRA_SAN
+if ($extraSan) {
+    foreach ($entry in $extraSan.Split(',', [System.StringSplitOptions]::RemoveEmptyEntries)) {
+        $trim = $entry.Trim()
+        if ($trim -and -not ($dnsSet.Contains($trim))) { [void]$dnsSet.Add($trim) }
+    }
+}
+
+# Enumerate IPv4 addresses (non-loopback)
+try {
+    $addresses = [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() |
+        Where-Object { $_.OperationalStatus -eq 'Up' } |
+        ForEach-Object { $_.GetIPProperties().UnicastAddresses } |
+        Where-Object { $_.Address.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork } |
+        ForEach-Object { $_.Address.ToString() } |
+        Sort-Object -Unique
+    foreach ($a in $addresses) { if ($a -and -not $a.StartsWith('127.')) { [void]$ipSet.Add($a) } }
+} catch {}
+
+# Always include loopbacks
+[void]$ipSet.Add('127.0.0.1')
+[void]$ipSet.Add('::1')
+
+$dnsIndex = 1
+$ipIndex = 1
+$altDnsLines = New-Object System.Text.StringBuilder
+foreach ($d in $dnsSet) { [void]$altDnsLines.AppendLine("DNS.$dnsIndex = $d"); $dnsIndex++ }
+$altIpLines = New-Object System.Text.StringBuilder
+foreach ($ip in $ipSet) { [void]$altIpLines.AppendLine("IP.$ipIndex = $ip"); $ipIndex++ }
+
+Write-ColorOutput "Detected $($dnsIndex-1) DNS names and $($ipIndex-1) IP entries for SAN" "Green"
+
 $serverConfig = @"
 [req]
 distinguished_name = dn
@@ -173,10 +218,7 @@ extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = localhost
-DNS.2 = 127.0.0.1
-IP.1 = 127.0.0.1
-IP.2 = ::1
+$($altDnsLines.ToString())$($altIpLines.ToString())
 "@
 $serverConfig | Out-File -FilePath server.conf -Encoding ASCII
 
