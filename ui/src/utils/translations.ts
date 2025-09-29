@@ -27,10 +27,10 @@ export const translations = {
     pageTitle: 'سیستم مانیتورینگ',
     plots: 'نمودارها',
     activeAlarms: 'هشدارهای فعال',
-    alarmLog: 'سیاهه هشدارها',
-    auditTrail: 'سیاهه بازرسی',
+    alarmLog: 'گزارش هشدارها',
+    auditTrail: 'گزارش بازرسی‌ها',
     disabledAlarms: 'هشدارهای غیرفعال',
-    scheduler: 'زمان‌بند',
+    scheduler: 'برنامه‌ریز',
     management: 'مدیریت',
     // Login page translations
     loginTitle: 'ورود به سیستم',
