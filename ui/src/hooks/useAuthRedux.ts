@@ -1,6 +1,7 @@
 import { useAppDispatch, useAppSelector } from './useRedux';
-import { loginAsync, logoutAsync, clearError } from '../store/slices/authSlice';
-import type { LoginRequest } from '../types/auth';
+import { useLoginMutation } from '../store/api/apiSlice';
+import { setAuth, clearAuth, setLoading, selectAuth } from '../store/slices/authSlice';
+import type { LoginRequest, ApiError } from '../types/auth';
 
 /**
  * Custom hook that provides a Redux-based authentication interface
@@ -8,21 +9,25 @@ import type { LoginRequest } from '../types/auth';
  */
 export const useAuthRedux = () => {
   const dispatch = useAppDispatch();
-  const { user, token, isAuthenticated, isLoading, error } = useAppSelector((state) => state.auth);
+  const { user, token, isAuthenticated, isLoading } = useAppSelector(selectAuth);
+  const [loginMutation] = useLoginMutation();
 
   const login = async (credentials: LoginRequest): Promise<void> => {
-    const result = await dispatch(loginAsync(credentials));
-    if (loginAsync.rejected.match(result)) {
-      throw new Error(result.payload || 'Login failed');
+    try {
+      dispatch(setLoading(true));
+      const response = await loginMutation(credentials).unwrap();
+      dispatch(setAuth({
+        user: response.user,
+        token: response.accessToken,
+      }));
+    } catch (error) {
+      dispatch(setLoading(false));
+      throw error as ApiError;
     }
   };
 
   const logout = () => {
-    dispatch(logoutAsync());
-  };
-
-  const clearAuthError = () => {
-    dispatch(clearError());
+    dispatch(clearAuth());
   };
 
   return {
@@ -30,9 +35,7 @@ export const useAuthRedux = () => {
     token,
     isAuthenticated,
     isLoading,
-    error,
     login,
     logout,
-    clearError: clearAuthError,
   };
 };

@@ -1,6 +1,6 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import type { User, LoginRequest, ApiError } from '../../types/auth';
-import { apiClient } from '../../utils/apiClient';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import type { User } from '../../types/auth';
+import { authStorageHelpers } from '../api/apiSlice';
 
 // Define the initial state interface
 interface AuthState {
@@ -8,126 +8,69 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  error: string | null;
 }
 
-// Define the initial state
-const initialState: AuthState = {
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
+// Get initial state from storage
+const initializeFromStorage = () => {
+  const authState = authStorageHelpers.getCurrentAuth();
+  return {
+    user: authState.user,
+    token: authState.token,
+    isAuthenticated: Boolean(authState.token && authState.user),
+    isLoading: false,
+  };
 };
 
-// Async thunk for login
-export const loginAsync = createAsyncThunk<
-  { user: User; token: string },
-  LoginRequest,
-  { rejectValue: string }
->(
-  'auth/login',
-  async (credentials: LoginRequest, { rejectWithValue }) => {
-    try {
-      const response = await apiClient.login(credentials);
-      return { user: response.user, token: response.accessToken };
-    } catch (error) {
-      const apiError = error as ApiError;
-      return rejectWithValue(apiError.message || 'Login failed');
-    }
-  }
-);
-
-// Async thunk for logout
-export const logoutAsync = createAsyncThunk(
-  'auth/logout',
-  async () => {
-    apiClient.logout();
-  }
-);
-
-// Async thunk to initialize auth from stored state
-export const initializeAuth = createAsyncThunk(
-  'auth/initialize',
-  async () => {
-    const authState = apiClient.getCurrentAuth();
-    if (authState.token && authState.user) {
-      return { user: authState.user, token: authState.token };
-    }
-    return null;
-  }
-);
+// Define the initial state
+const initialState: AuthState = initializeFromStorage();
 
 // Create the auth slice
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // Synchronous action to clear error
-    clearError: (state) => {
-      state.error = null;
+    // Set auth state (called after successful login)
+    setAuth: (state, action: PayloadAction<{ user: User; token: string }>) => {
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      state.isAuthenticated = true;
+      state.isLoading = false;
     },
-    // Synchronous action to reset auth state
-    resetAuth: (state) => {
+    
+    // Clear auth state (called on logout)
+    clearAuth: (state) => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
       state.isLoading = false;
-      state.error = null;
+      // Also clear from storage
+      authStorageHelpers.clearStoredAuth();
     },
-  },
-  extraReducers: (builder) => {
-    // Login cases
-    builder
-      .addCase(loginAsync.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(loginAsync.fulfilled, (state, action: PayloadAction<{ user: User; token: string }>) => {
-        state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.isAuthenticated = true;
-        state.error = null;
-      })
-      .addCase(loginAsync.rejected, (state, action) => {
-        state.isLoading = false;
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        state.error = action.payload || 'Login failed';
-      })
-      // Logout cases
-      .addCase(logoutAsync.fulfilled, (state) => {
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        state.isLoading = false;
-        state.error = null;
-      })
-      // Initialize auth cases
-      .addCase(initializeAuth.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(initializeAuth.fulfilled, (state, action) => {
-        state.isLoading = false;
-        if (action.payload) {
-          state.user = action.payload.user;
-          state.token = action.payload.token;
-          state.isAuthenticated = true;
-        }
-      })
-      .addCase(initializeAuth.rejected, (state) => {
-        state.isLoading = false;
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-      });
+    
+    // Set loading state
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.isLoading = action.payload;
+    },
+    
+    // Initialize auth from storage (called on app start)
+    initializeAuth: (state) => {
+      const authState = authStorageHelpers.getCurrentAuth();
+      state.user = authState.user;
+      state.token = authState.token;
+      state.isAuthenticated = Boolean(authState.token && authState.user);
+      state.isLoading = false;
+    },
   },
 });
 
 // Export actions
-export const { clearError, resetAuth } = authSlice.actions;
+export const { setAuth, clearAuth, setLoading, initializeAuth } = authSlice.actions;
+
+// Selectors
+export const selectAuth = (state: { auth: AuthState }) => state.auth;
+export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
+export const selectUser = (state: { auth: AuthState }) => state.auth.user;
+export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLoading;
 
 // Export the reducer
 export default authSlice.reducer;

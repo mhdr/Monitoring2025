@@ -1,7 +1,6 @@
 import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
-import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
-import { logoutAsync } from '../store/slices/authSlice';
+import { useAuth } from '../hooks/useAuth';
 import './ResponsiveNavbar.css';
 
 interface ResponsiveNavbarProps {
@@ -10,11 +9,10 @@ interface ResponsiveNavbarProps {
 
 const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) => {
   const { t, language, changeLanguage } = useLanguage();
-  const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    dispatch(logoutAsync());
+    logout();
   };
 
   const getUserDisplayName = () => {

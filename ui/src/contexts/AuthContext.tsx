@@ -1,6 +1,8 @@
-import React, { createContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { User, AuthContextType, LoginRequest, ApiError } from '../types/auth';
-import { apiClient } from '../utils/apiClient';
+import React, { createContext, useEffect, useCallback, type ReactNode } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AuthContextType, LoginRequest, ApiError } from '../types/auth';
+import { useLoginMutation } from '../store/api/apiSlice';
+import { setAuth, clearAuth, setLoading, initializeAuth, selectAuth } from '../store/slices/authSlice';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -9,49 +11,43 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { user, token, isAuthenticated, isLoading } = useSelector(selectAuth);
+  const [loginMutation] = useLoginMutation();
 
   // Initialize auth state on mount
   useEffect(() => {
-    const initializeAuth = () => {
-      const authState = apiClient.getCurrentAuth();
-      if (authState.token && authState.user) {
-        setToken(authState.token);
-        setUser(authState.user);
-      }
-      setIsLoading(false);
-    };
-
-    initializeAuth();
-  }, []);
+    dispatch(initializeAuth());
+  }, [dispatch]);
 
   const login = useCallback(async (credentials: LoginRequest): Promise<void> => {
     try {
-      setIsLoading(true);
-  const response = await apiClient.login(credentials);
-  // API returns accessToken per LoginResponse interface
-  setToken(response.accessToken);
-  setUser(response.user);
+      dispatch(setLoading(true));
+      
+      // Call the RTK Query mutation
+      const response = await loginMutation(credentials).unwrap();
+      
+      // Update auth state
+      dispatch(setAuth({
+        user: response.user,
+        token: response.accessToken,
+      }));
+      
     } catch (error) {
+      dispatch(setLoading(false));
       // Re-throw the error to let the calling component handle it
       throw error as ApiError;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [dispatch, loginMutation]);
 
   const logout = useCallback(() => {
-    apiClient.logout();
-    setToken(null);
-    setUser(null);
-  }, []);
+    dispatch(clearAuth());
+  }, [dispatch]);
 
   const value: AuthContextType = {
     user,
     token,
-    isAuthenticated: Boolean(token && user),
+    isAuthenticated,
     isLoading,
     login,
     logout,

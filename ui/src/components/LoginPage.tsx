@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
-import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
-import { loginAsync } from '../store/slices/authSlice';
+import { useAuth } from '../hooks/useAuth';
 import type { ApiError } from '../types/auth';
 import './LoginPage.css';
 
@@ -13,22 +12,12 @@ interface FormErrors {
 
 const LoginPage: React.FC = () => {
   const { t } = useLanguage();
-  const dispatch = useAppDispatch();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
+  const { login, isLoading } = useAuth();
   const [formData, setFormData] = useState({ username: '', password: '', rememberMe: false });
   const [errors, setErrors] = useState<FormErrors>({});
-  // Local API error mirrors redux error but we retain until explicit clear or next submit
+  // Local API error 
   const [apiError, setApiError] = useState<string>('');
   const [pendingNewAttempt, setPendingNewAttempt] = useState(false);
-
-  // Update apiError when Redux error changes, but only if we haven't processed it yet
-  React.useEffect(() => {
-    // When redux error updates, copy it locally (do not auto-clear on typing)
-    if (error) {
-      setApiError(error);
-      setPendingNewAttempt(false);
-    }
-  }, [error]);
 
   // Clear apiError only when user starts typing or manually dismisses
   const clearApiError = () => {
@@ -84,20 +73,16 @@ const LoginPage: React.FC = () => {
     }
 
     try {
-      const result = await dispatch(loginAsync({
+      await login({
         userName: formData.username.trim(),
         password: formData.password,
         rememberMe: formData.rememberMe,
-      }));
+      });
 
-      // Check if the action was rejected
-      if (loginAsync.rejected.match(result)) {
-        // Error handling is already done in the Redux slice
-        // The error will be set in the Redux state and displayed via useEffect
-        return;
-      }
+      // If we reach this point, login was successful
+      // The auth context will handle navigation through the app routing
     } catch (error) {
-      // This catch is for any unexpected errors
+      // Handle login error
       const apiErr = error as ApiError;
       setApiError(apiErr.message || t('unexpectedError'));
     }

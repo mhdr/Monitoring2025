@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.9.0",
-    "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "i18next": "^23.15.1",
@@ -25,7 +24,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
-    "@types/axios": "^0.9.36",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.3",
