@@ -3,53 +3,46 @@
 # SSL Certificate Generation Script for EMS API
 # This script creates self-signed SSL certificates for development use
 # 
-# Modified to automatically detect the server's public IP address
-# and create certificates for local development including localhost/127.0.0.1
+# Modified to create certificates for local development including localhost/127.0.0.1
 # - Includes localhost, 127.0.0.1, and ::1 for local development
-# - Automatically detects public IP using external services
+# - Detects local IP using system routing and network interfaces
 # - Includes local network IPs for internal access
-# - Uses public IP as Common Name but includes all local addresses
+# - Uses local IP as Common Name but includes all local addresses
 
 set -e  # Exit on any error
 
-# Function to detect public IP address
-detect_public_ip() {
-    local public_ip=""
-    local services=(
-        "https://ipinfo.io/ip"
-        "https://api.ipify.org"
-        "https://checkip.amazonaws.com"
-        "https://icanhazip.com"
-        "https://ifconfig.me/ip"
-    )
+# Function to detect local IP address
+detect_local_ip() {
+    local local_ip=""
     
-    echo -e "${YELLOW}Detecting public IP address...${NC}" >&2
+    echo -e "${YELLOW}Detecting local IP address...${NC}" >&2
     
-    for service in "${services[@]}"; do
-        echo -e "  Trying $service..." >&2
-        public_ip=$(curl -s --max-time 10 "$service" 2>/dev/null | tr -d '\n\r' | grep -E '^[0-9]{1,3}(\.[0-9]{1,3}){3}$')
-        if [[ -n "$public_ip" ]]; then
-            echo -e "${GREEN}  ✓ Detected public IP: $public_ip${NC}" >&2
-            echo "$public_ip"
-            return 0
-        fi
-    done
-    
-    echo -e "${RED}  ✗ Failed to detect public IP address from external services${NC}" >&2
-    echo -e "${YELLOW}  Falling back to local IP detection...${NC}" >&2
-    # Fallback to local network interfaces (excluding loopback)
-    public_ip=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[0-9.]+' | head -n1)
-    if [[ -z "$public_ip" ]]; then
-        public_ip=$(hostname -I 2>/dev/null | awk '{print $1}' | grep -v '^127\.')
-    fi
-    if [[ -n "$public_ip" ]]; then
-        echo -e "${YELLOW}  Using local IP: $public_ip${NC}" >&2
-        echo "$public_ip"
+    # Try to get the IP used for external routing (most reliable local method)
+    local_ip=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[0-9.]+' | head -n1)
+    if [[ -n "$local_ip" && "$local_ip" != "127.0.0.1" ]]; then
+        echo -e "${GREEN}  ✓ Detected local IP: $local_ip${NC}" >&2
+        echo "$local_ip"
         return 0
-    else
-        echo -e "${RED}  ✗ Could not determine any IP address${NC}" >&2
-        exit 1
     fi
+    
+    # Fallback to hostname -I method
+    local_ip=$(hostname -I 2>/dev/null | awk '{print $1}' | grep -v '^127\.')
+    if [[ -n "$local_ip" ]]; then
+        echo -e "${GREEN}  ✓ Using local IP: $local_ip${NC}" >&2
+        echo "$local_ip"
+        return 0
+    fi
+    
+    # Last resort: get first non-loopback interface
+    local_ip=$(ip -4 addr show scope global 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | grep -v '^127\.' | head -n1)
+    if [[ -n "$local_ip" ]]; then
+        echo -e "${YELLOW}  Using interface IP: $local_ip${NC}" >&2
+        echo "$local_ip"
+        return 0
+    fi
+    
+    echo -e "${RED}  ✗ Could not determine any local IP address${NC}" >&2
+    exit 1
 }
 
 # Colors for output
@@ -80,7 +73,7 @@ STATE="State"
 LOCALITY="City"
 ORGANIZATION="EMS Monitoring"
 ORG_UNIT="Development"
-# Common Name will be set to the detected public IP
+# Common Name will be set to the detected local IP
 
 echo -e "${BLUE}=== EMS API SSL Certificate Generator ===${NC}"
 echo -e "This script will create self-signed SSL certificates for development use.\n"
@@ -90,13 +83,6 @@ if ! command -v openssl &> /dev/null; then
     echo -e "${RED}Error: OpenSSL is not installed. Please install it first.${NC}"
     echo "On Ubuntu/Debian: sudo apt-get install openssl"
     echo "On CentOS/RHEL: sudo yum install openssl"
-    exit 1
-fi
-
-if ! command -v curl &> /dev/null; then
-    echo -e "${RED}Error: curl is not installed. Please install it first.${NC}"
-    echo "On Ubuntu/Debian: sudo apt-get install curl"
-    echo "On CentOS/RHEL: sudo yum install curl"
     exit 1
 fi
 
@@ -169,17 +155,17 @@ else
     echo -e "${GREEN}Root CA already exists - reusing ${CA_CERT_NAME}.pem${NC}"
 fi
 
-# Detect public IP
-PUBLIC_IP=$(detect_public_ip)
-COMMON_NAME="$PUBLIC_IP"  # Set Common Name to the detected public IP
+# Detect local IP
+LOCAL_IP=$(detect_local_ip)
+COMMON_NAME="$LOCAL_IP"  # Set Common Name to the detected local IP
 
 HOSTNAME_FQDN=$(hostname -f 2>/dev/null || hostname)
 HOST_SHORT=$(hostname -s 2>/dev/null || echo "${HOSTNAME_FQDN%%.*}")
 
-# Collect the public IP, local network IPs, and localhost addresses for dev
+# Collect the local IP, local network IPs, and localhost addresses for dev
 IPv4_LIST=""
-if [[ -n "$PUBLIC_IP" ]]; then
-    IPv4_LIST="$PUBLIC_IP"
+if [[ -n "$LOCAL_IP" ]]; then
+    IPv4_LIST="$LOCAL_IP"
 fi
 
 # Add localhost and loopback addresses for local development
@@ -189,7 +175,7 @@ IPv4_LIST="$IPv4_LIST 127.0.0.1"
 LOCAL_IPS=$(ip -4 addr show scope global 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | grep -v '^127\.' | sort -u)
 if [[ -n "$LOCAL_IPS" ]]; then
     for local_ip in $LOCAL_IPS; do
-        if [[ "$local_ip" != "$PUBLIC_IP" ]]; then
+        if [[ "$local_ip" != "$LOCAL_IP" ]]; then
             IPv4_LIST="$IPv4_LIST $local_ip"
         fi
     done
@@ -221,7 +207,7 @@ for dns_name in "${!DNS_MAP[@]}"; do
 done
 
 ALT_IP_LINES=""
-# Include public IP, localhost, and local network IPs for development
+# Include local IP, localhost, and local network IPs for development
 for ipaddr in $IPv4_LIST; do
     ALT_IP_LINES+="IP.${IP_INDEX} = ${ipaddr}\n"
     IP_INDEX=$((IP_INDEX+1))
@@ -307,7 +293,7 @@ echo -e "  🔐 ${KEY_NAME}.pem           - Server private key"
 echo -e "  🔗 ${CERT_NAME}-chain.pem    - Server + CA chain"
 echo -e "  📦 ${PFX_NAME}.pfx           - PKCS#12 (includes chain)"
 echo -e "\nCertificate details:"
-echo -e "  🌐 Common Name: ${COMMON_NAME} (detected public IP)"
+echo -e "  🌐 Common Name: ${COMMON_NAME} (detected local IP)"
 echo -e "  🏢 Organization: ${ORGANIZATION}"
 echo -e "  📅 Valid for: ${DAYS_VALID} days"
 echo -e "  🔒 Password: ${CERT_PASSWORD}"
@@ -319,14 +305,14 @@ openssl x509 -in "${CA_CERT_NAME}.pem" -text -noout | grep -E "(Subject:|CA:true
 
 
 echo -e "\n${YELLOW}Note: This certificate is configured for local development and includes:${NC}"
-echo -e "  - Public IP: ${PUBLIC_IP}"
+echo -e "  - Local IP: ${LOCAL_IP}"
 echo -e "  - Localhost: 127.0.0.1 and ::1"
 echo -e "  - DNS: localhost"
 echo -e "  - Local network IPs for internal access"
 echo -e "\nYou can access your application using any of these URLs:"
 echo -e "  https://localhost:7136"
 echo -e "  https://127.0.0.1:7136"
-echo -e "  https://${PUBLIC_IP}:7136"
+echo -e "  https://${LOCAL_IP}:7136"
 
 echo -e "\n${BLUE}Verification commands:${NC}"
 echo -e "  openssl verify -CAfile ${CA_CERT_NAME}.pem ${CERT_NAME}.pem"
