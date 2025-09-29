@@ -1,11 +1,9 @@
 import React from 'react';
-import { Spinner, Alert, Row, Col, Card } from 'react-bootstrap';
+import { Row, Col, Card, Alert } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
-import { useGetDashboardDataQuery } from '../store/api/apiSlice';
 
 const Dashboard: React.FC = () => {
   const { t } = useLanguage();
-  const { data: dashboardData, error, isLoading } = useGetDashboardDataQuery();
 
   return (
     <div className="container-fluid py-4">
@@ -16,107 +14,81 @@ const Dashboard: React.FC = () => {
               <h4 className="card-title mb-0">{t('dashboard')}</h4>
             </div>
             <div className="card-body">
-              {isLoading && (
-                <div className="d-flex justify-content-center py-4">
-                  <Spinner animation="border" />
-                </div>
-              )}
+              <Alert variant="info">
+                <Alert.Heading>Dashboard Not Available</Alert.Heading>
+                <p>
+                  Dashboard data is not currently available. The monitoring endpoints have been temporarily disabled as they are not yet implemented on the backend.
+                </p>
+              </Alert>
               
-              {error && (
-                <Alert variant="danger">
-                  Error loading dashboard data: {(error as { message?: string })?.message || 'Unknown error'}
-                </Alert>
-              )}
-              
-              {dashboardData && (
-                <>
-                  <Row className="mb-4">
-                    <Col md={3}>
-                      <Card className="text-white bg-primary">
-                        <Card.Body>
-                          <Card.Title>Total Alarms</Card.Title>
-                          <Card.Text className="h2">{dashboardData.totalAlarms}</Card.Text>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                    <Col md={3}>
-                      <Card className="text-white bg-danger">
-                        <Card.Body>
-                          <Card.Title>Active Alarms</Card.Title>
-                          <Card.Text className="h2">{dashboardData.activeAlarms}</Card.Text>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                    <Col md={3}>
-                      <Card className="text-white bg-warning">
-                        <Card.Body>
-                          <Card.Title>Critical Alarms</Card.Title>
-                          <Card.Text className="h2">{dashboardData.criticalAlarms}</Card.Text>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                    <Col md={3}>
-                      <Card className="text-white bg-success">
-                        <Card.Body>
-                          <Card.Title>Acknowledged</Card.Title>
-                          <Card.Text className="h2">{dashboardData.acknowledgedAlarms}</Card.Text>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                  </Row>
-                  
-                  <div className="row">
-                    <div className="col-lg-8">
-                      <h5 className="mb-3">{t('welcome')}</h5>
-                      <p className="text-muted mb-4">
-                        {t('systemDescription')}
-                      </p>
-                      <p className="text-muted">
-                        System Status: <span className={`badge bg-${dashboardData.systemStatus === 'healthy' ? 'success' : dashboardData.systemStatus === 'warning' ? 'warning' : 'danger'}`}>
-                          {dashboardData.systemStatus.toUpperCase()}
+              <Row className="mb-4">
+                <Col md={3}>
+                  <Card className="text-white bg-secondary">
+                    <Card.Body>
+                      <Card.Title>Total Alarms</Card.Title>
+                      <Card.Text className="h2">-</Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col md={3}>
+                  <Card className="text-white bg-secondary">
+                    <Card.Body>
+                      <Card.Title>Active Alarms</Card.Title>
+                      <Card.Text className="h2">-</Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col md={3}>
+                  <Card className="text-white bg-secondary">
+                    <Card.Body>
+                      <Card.Title>Warning Alarms</Card.Title>
+                      <Card.Text className="h2">-</Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col md={3}>
+                  <Card className="text-white bg-secondary">
+                    <Card.Body>
+                      <Card.Title>Sensors</Card.Title>
+                      <Card.Text className="h2">-</Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+
+              <Row>
+                <Col md={8}>
+                  <Card>
+                    <Card.Header>
+                      <Card.Title>Recent Activity</Card.Title>
+                    </Card.Header>
+                    <Card.Body>
+                      <Alert variant="secondary">
+                        No recent activity available at this time.
+                      </Alert>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col md={4}>
+                  <Card>
+                    <Card.Header>
+                      <Card.Title>System Status</Card.Title>
+                    </Card.Header>
+                    <Card.Body>
+                      <div className="text-center">
+                        System Status: <span className="badge bg-secondary">
+                          UNKNOWN
                         </span>
-                      </p>
-                      <p className="text-muted">
-                        Last Updated: {new Date(dashboardData.lastUpdate).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="col-lg-4">
-                      <div className="card bg-primary text-white">
-                        <div className="card-body">
-                          <h6 className="card-title">{t('systemTitle')}</h6>
-                          <p className="card-text small">
-                            Navigate using the menu to explore monitoring features.
-                          </p>
-                        </div>
                       </div>
-                    </div>
-                  </div>
-                </>
-              )}
-              
-              {!isLoading && !error && !dashboardData && (
-                <div className="row">
-                  <div className="col-lg-8">
-                    <h5 className="mb-3">{t('welcome')}</h5>
-                    <p className="text-muted mb-4">
-                      {t('systemDescription')}
-                    </p>
-                    <p className="text-muted">
-                      Use the sidebar navigation to access different sections of the monitoring system.
-                    </p>
-                  </div>
-                  <div className="col-lg-4">
-                    <div className="card bg-primary text-white">
-                      <div className="card-body">
-                        <h6 className="card-title">{t('systemTitle')}</h6>
-                        <p className="card-text small">
-                          Navigate using the menu to explore monitoring features.
-                        </p>
+                      <div className="mt-3">
+                        <small className="text-muted">
+                          Last updated: Not available
+                        </small>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
             </div>
           </div>
         </div>

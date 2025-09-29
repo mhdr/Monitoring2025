@@ -25,6 +25,11 @@ export interface LoginResponse {
   errorMessage?: string;
 }
 
+export interface RefreshTokenRequest {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface AuthContextType {
   user: User | null;
   token: string | null;

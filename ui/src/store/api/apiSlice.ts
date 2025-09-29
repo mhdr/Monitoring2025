@@ -1,14 +1,5 @@
 import { createApi, fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
-import type { LoginRequest, LoginResponse, ApiError, User } from '../../types/auth';
-import type { 
-  DashboardData, 
-  Alarm, 
-  AlarmLogEntry, 
-  AuditTrailEntry, 
-  PaginatedResponse,
-  AlarmAcknowledgeRequest,
-  AlarmToggleRequest 
-} from '../../types/api';
+import type { LoginRequest, LoginResponse, ApiError, User, RefreshTokenRequest } from '../../types/auth';
 
 // API configuration
 const API_BASE_URL = 'https://localhost:7136';
@@ -152,7 +143,7 @@ export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
   // Define tag types for cache invalidation
-  tagTypes: ['Auth', 'User', 'Alarm', 'Dashboard', 'AuditTrail'],
+  tagTypes: ['Auth', 'User'],
   endpoints: (builder) => ({
     // Authentication endpoints
     login: builder.mutation<LoginResponse, LoginRequest>({
@@ -182,18 +173,19 @@ export const apiSlice = createApi({
       invalidatesTags: ['Auth', 'User'],
     }),
 
-    // Get current user profile (if needed for protected routes)
+    // Get current user profile
     getCurrentUser: builder.query<User, void>({
-      query: () => '/api/auth/profile',
+      query: () => '/api/Auth/me',
       transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
       providesTags: ['User'],
     }),
 
-    // Refresh token endpoint (if your API supports it)
-    refreshToken: builder.mutation<{ accessToken: string }, void>({
-      query: () => ({
-        url: '/api/auth/refresh',
+    // Refresh token endpoint
+    refreshToken: builder.mutation<LoginResponse, RefreshTokenRequest>({
+      query: (tokens) => ({
+        url: '/api/Auth/refresh-token',
         method: 'POST',
+        body: tokens,
       }),
       transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
       async onQueryStarted(_arg, { queryFulfilled }) {
@@ -201,9 +193,9 @@ export const apiSlice = createApi({
           const { data } = await queryFulfilled;
           // Update stored token
           const currentUser = authStorageHelpers.getStoredUser();
-          if (currentUser) {
+          if (currentUser && data.success) {
             const isRemembered = !!localStorage.getItem('auth_token');
-            authStorageHelpers.setStoredAuth(data.accessToken, currentUser, isRemembered);
+            authStorageHelpers.setStoredAuth(data.accessToken, data.user, isRemembered);
           }
         } catch {
           // Token refresh failed, clear auth
@@ -211,59 +203,6 @@ export const apiSlice = createApi({
         }
       },
       invalidatesTags: ['Auth'],
-    }),
-
-    // Add more endpoints as needed for your application
-    // Examples for common monitoring system endpoints:
-    
-    // Dashboard data
-    getDashboardData: builder.query<DashboardData, void>({
-      query: () => '/api/dashboard',
-      transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
-      providesTags: ['Dashboard'],
-    }),
-
-    // Active alarms
-    getActiveAlarms: builder.query<Alarm[], void>({
-      query: () => '/api/alarms/active',
-      transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
-      providesTags: ['Alarm'],
-    }),
-
-    // Alarm log
-    getAlarmLog: builder.query<PaginatedResponse<AlarmLogEntry>, { page?: number; limit?: number }>({
-      query: ({ page = 1, limit = 50 } = {}) => `/api/alarms/log?page=${page}&limit=${limit}`,
-      transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
-      providesTags: ['Alarm'],
-    }),
-
-    // Audit trail
-    getAuditTrail: builder.query<PaginatedResponse<AuditTrailEntry>, { page?: number; limit?: number }>({
-      query: ({ page = 1, limit = 50 } = {}) => `/api/audit?page=${page}&limit=${limit}`,
-      transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
-      providesTags: ['AuditTrail'],
-    }),
-
-    // Acknowledge alarm
-    acknowledgeAlarm: builder.mutation<void, { alarmId: string; note?: string }>({
-      query: ({ alarmId, note }) => ({
-        url: `/api/alarms/${alarmId}/acknowledge`,
-        method: 'POST',
-        body: { note } as AlarmAcknowledgeRequest,
-      }),
-      transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
-      invalidatesTags: ['Alarm'],
-    }),
-
-    // Disable/Enable alarm
-    toggleAlarm: builder.mutation<void, { alarmId: string; enabled: boolean }>({
-      query: ({ alarmId, enabled }) => ({
-        url: `/api/alarms/${alarmId}/toggle`,
-        method: 'PUT',
-        body: { enabled } as AlarmToggleRequest,
-      }),
-      transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
-      invalidatesTags: ['Alarm'],
     }),
   }),
 });
@@ -273,12 +212,6 @@ export const {
   useLoginMutation,
   useGetCurrentUserQuery,
   useRefreshTokenMutation,
-  useGetDashboardDataQuery,
-  useGetActiveAlarmsQuery,
-  useGetAlarmLogQuery,
-  useGetAuditTrailQuery,
-  useAcknowledgeAlarmMutation,
-  useToggleAlarmMutation,
 } = apiSlice;
 
 // Export the reducer
