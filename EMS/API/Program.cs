@@ -216,7 +216,12 @@ if (app.Environment.IsDevelopment())
 app.UseCors("ReactClientPolicy");
 
 // Use HTTPS redirection - this will redirect HTTP requests to HTTPS
-app.UseHttpsRedirection();
+// Can be disabled in development by setting Development:DisableHttpsRedirection to true
+var disableHttpsRedirection = builder.Configuration.GetValue<bool>("Development:DisableHttpsRedirection", false);
+if (!disableHttpsRedirection)
+{
+    app.UseHttpsRedirection();
+}
 
 // Add HSTS (HTTP Strict Transport Security) for production
 if (!app.Environment.IsDevelopment())

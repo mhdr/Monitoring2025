@@ -1,6 +1,43 @@
 @API_HostAddress_HTTP = http://localhost:5030
 @API_HostAddress_HTTPS = https://localhost:7136
 
+###
+# EMS API Testing - SSL Certificate Configuration
+# 
+# ⚠️  IMPORTANT: This API uses HTTPS redirection and self-signed certificates
+# 
+# 🔧 QUICK FIXES for SSL errors:
+# 1. Use HTTPS endpoints instead of HTTP (preferred)
+# 2. Set Development:DisableHttpsRedirection=true in appsettings.Development.json
+# 3. Configure your HTTP client to trust self-signed certificates
+# 4. Add certificates to system trust store using ./create-certificates.sh
+#
+# 📖 Detailed SSL setup instructions are in SSL-README.md
+#
+###
+
+# SSL Certificate Configuration for HTTPS Requests
+# 
+# The HTTPS endpoint uses a self-signed certificate for development.
+# If you encounter SSL handshake exceptions, you have these options:
+#
+# Option 1: Use the HTTP endpoint (will be redirected to HTTPS)
+# Option 2: Configure your HTTP client to trust self-signed certificates
+# Option 3: Add the certificate to your system's trusted certificates
+#
+# For VS Code REST Client, add this to your settings.json:
+# "rest-client.certificates": {
+#   "localhost:7136": {
+#     "cert": "./certificates/api-cert.pem",
+#     "key": "./certificates/api-key.pem"
+#   }
+# }
+#
+# Or disable SSL verification (NOT recommended for production):
+# "rest-client.requestTimeout": 30000,
+# "rest-client.previewOptions": "full",
+# "rest-client.rejectUnauthorized": false
+
 
 
 
@@ -39,13 +76,38 @@ Content-Type: application/json
 
 ### Login with registered user - HTTP
 # @name loginUserHTTP
+# 
+# TROUBLESHOOTING SSL ISSUES:
+# If you get "PKIX path building failed" or SSL handshake exceptions:
+#
+# METHOD 1: Use HTTPS directly (recommended)
+# Use the HTTPS endpoint below instead of HTTP
+#
+# METHOD 2: Disable HTTPS redirection temporarily
+# Set "Development:DisableHttpsRedirection": true in appsettings.Development.json
+# Then restart the API server
+#
+# METHOD 3: Configure VS Code REST Client to trust self-signed certificates
+# Add to VS Code settings.json:
+# {
+#   "rest-client.certificates": {
+#     "localhost:7136": {
+#       "cert": "./certificates/api-cert.pem",
+#       "key": "./certificates/api-key.pem"
+#     }
+#   }
+# }
+#
+# METHOD 4: Disable SSL verification (UNSAFE - for testing only)
+# Add to VS Code settings.json: "rest-client.rejectUnauthorized": false
+#
 POST {{API_HostAddress_HTTP}}/api/auth/login
 Content-Type: application/json
 
 {
-  "userName": "johndoe",
-  "password": "123",
-  "rememberMe": false
+  "userName": "mahmood2",
+  "password": "12345",
+  "rememberMe": true
 }
 
 ###
