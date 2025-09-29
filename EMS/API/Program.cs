@@ -1,4 +1,5 @@
 using System.Text;
+using System.Net;
 using API.Libs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -16,45 +17,41 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure Kestrel for LAN access (0.0.0.0) with development certificate if available
 builder.WebHost.ConfigureKestrel(options =>
 {
-    // Only add explicit endpoints if not already constrained by launchSettings applicationUrl binding
-    // This allows access from other machines on local network: https://<your-hostname>:7136
+    // Resolve certificate (dev self-signed) if present
     var potentialPaths = new List<string>
     {
-        Path.Combine(AppContext.BaseDirectory, "certificates", "api-cert.pfx"),                      // published / bin path
-        Path.Combine(builder.Environment.ContentRootPath, "certificates", "api-cert.pfx"),            // project root during dev
-        Path.Combine(Directory.GetCurrentDirectory(), "certificates", "api-cert.pfx")                 // current dir fallback
+        Path.Combine(AppContext.BaseDirectory, "certificates", "api-cert.pfx"),
+        Path.Combine(builder.Environment.ContentRootPath, "certificates", "api-cert.pfx"),
+        Path.Combine(Directory.GetCurrentDirectory(), "certificates", "api-cert.pfx")
     };
-
-    var certPassword = "password123"; // Keep in sync with create-certificates scripts (dev only)
+    var certPassword = "password123"; // Dev only; matches script
     string? selectedCertPath = potentialPaths.FirstOrDefault(File.Exists);
-
+    System.Security.Cryptography.X509Certificates.X509Certificate2? devCert = null;
     if (selectedCertPath != null)
     {
         try
         {
-            var cert = new System.Security.Cryptography.X509Certificates.X509Certificate2(selectedCertPath, certPassword, System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable);
+            devCert = new System.Security.Cryptography.X509Certificates.X509Certificate2(selectedCertPath, certPassword, System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable);
             Console.WriteLine($"[DEV CERT] Using development certificate: {selectedCertPath}");
-            Console.WriteLine($"[DEV CERT] Subject: {cert.Subject}");
-            Console.WriteLine($"[DEV CERT] Thumbprint: {cert.Thumbprint}");
-            options.Listen(System.Net.IPAddress.Any, 5030); // HTTP
-            options.Listen(System.Net.IPAddress.Any, 7136, listenOptions =>
-            {
-                listenOptions.UseHttps(cert);
-            });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[WARN] Failed to load development certificate for HTTPS from {selectedCertPath}: {ex.Message}. Falling back to default HTTPS binding.");
-            options.Listen(System.Net.IPAddress.Any, 5030);
-            options.Listen(System.Net.IPAddress.Any, 7136, lo => lo.UseHttps());
+            Console.WriteLine($"[WARN] Failed to load development certificate from {selectedCertPath}: {ex.Message}. Will use ephemeral HTTPS certificate.");
         }
     }
     else
     {
-        Console.WriteLine("[INFO] Development certificate not found. Using ephemeral HTTPS certificate.");
-        options.Listen(System.Net.IPAddress.Any, 5030);
-        options.Listen(System.Net.IPAddress.Any, 7136, lo => lo.UseHttps());
+        Console.WriteLine("[INFO] Development certificate not found. Will use ephemeral HTTPS certificate.");
     }
+
+    // Fixed bindings (no dynamic or env override logic)
+    options.Listen(IPAddress.Any, 5030);
+    options.Listen(IPAddress.Any, 7136, listenOptions =>
+    {
+        if (devCert != null) listenOptions.UseHttps(devCert); else listenOptions.UseHttps();
+    });
+    Console.WriteLine("[BIND] HTTP  port 5030");
+    Console.WriteLine("[BIND] HTTPS port 7136");
 });
 
 // Add services to the container.

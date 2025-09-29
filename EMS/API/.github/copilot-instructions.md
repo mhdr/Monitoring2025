@@ -1,10 +1,12 @@
 ## Development Instructions
 
 ### Server Configuration
-This project must support dual protocol access:
-- **HTTP**: `http://localhost:5030` - For development and testing
-- **HTTPS**: `https://localhost:7136` - **Default and preferred protocol**
-- **SSL Certificate**: Self-signed certificate is used for local development
+This project operates in **HTTPS-first mode** (single protocol for local development):
+- **HTTPS ONLY**: `https://localhost:7136` (fixed binding)
+- **HTTP Access Removed**: Do not expose or document raw HTTP endpoints unless explicitly reintroduced.
+- **Redirection**: If an HTTP listener is ever re-enabled, it MUST immediately redirect to HTTPS.
+- **Certificate**: A self-signed development certificate (`certificates/api-cert.pfx`) is loaded automatically; clients may need to trust it or skip validation for local testing.
+
 
 ### Code Quality Standards
 - **Error Handling**: Implement comprehensive try-catch blocks and structured error responses

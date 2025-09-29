@@ -50,11 +50,13 @@ JWT settings are configured in `appsettings.json`:
 
 ## Development Environment
 
-This project supports both HTTP and HTTPS protocols:
-- **HTTP**: `http://localhost:5030`
-- **HTTPS**: `https://localhost:7136` (use HTTPS by default)
-- The SSL certificate is self-signed for development
-- Always test endpoints on both protocols when applicable
+This project exposes two fixed development endpoints:
+- HTTP: `http://localhost:5030`
+- HTTPS (preferred): `https://localhost:7136`
+
+The HTTPS endpoint uses a self-signed development certificate (located in `certificates/api-cert.pfx`). When using curl or other tools that enforce certificate trust, add `-k` (curl) or trust the certificate manually for local testing.
+
+A single launch profile (`EMS.API`) includes both URLs, with HTTPS first. Always prefer HTTPS when integrating clients.
 
 ## Running the Application
 

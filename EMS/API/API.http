@@ -1,5 +1,6 @@
 @API_HostAddress_HTTP = http://localhost:5030
 @API_HostAddress_HTTPS = https://localhost:7136
+# Fixed development endpoints (HTTPS preferred). No dynamic port logic.
 
 ###
 # EMS API Testing - SSL Certificate Configuration
