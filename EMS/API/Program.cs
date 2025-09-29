@@ -117,6 +117,9 @@ builder.Services.AddAuthorization();
 // Add JWT Token Service
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
+// Add SignalR services
+builder.Services.AddSignalR();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
