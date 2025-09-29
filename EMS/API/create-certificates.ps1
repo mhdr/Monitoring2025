@@ -25,9 +25,11 @@ function Write-ColorOutput {
 
 # Configuration
 $CERT_DIR = "certificates"
-$CERT_NAME = "api-cert"
-$KEY_NAME = "api-key"
-$PFX_NAME = "api-cert"
+$CERT_NAME = "api-cert"          # Server/leaf cert
+$KEY_NAME = "api-key"            # Server private key
+$PFX_NAME = "api-cert"           # PKCS#12 bundle
+$CA_CERT_NAME = "api-root-ca"    # Root CA cert
+$CA_KEY_NAME = "api-root-ca-key" # Root CA key
 $CERT_PASSWORD = "password123"
 $DAYS_VALID = 365
 
@@ -102,36 +104,111 @@ if ($certExists -and -not $Force) {
     Remove-Item -Path "$CERT_NAME.pem", "$KEY_NAME.pem", "$PFX_NAME.pfx" -Force -ErrorAction SilentlyContinue
 }
 
-Write-ColorOutput "Generating SSL certificate and private key..." "Yellow"
+Write-ColorOutput "Generating Root CA (if needed) and server certificate..." "Yellow"
 
-# Build the subject string
-$subject = "/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION/OU=$ORG_UNIT/CN=$COMMON_NAME"
+# Remove stale temp files
+Remove-Item -Path ca.conf, server.conf, openssl.conf -Force -ErrorAction SilentlyContinue
 
-# Generate private key and certificate in one command
-$opensslArgs = @(
-    "req", "-x509", "-newkey", "rsa:4096",
-    "-keyout", "$KEY_NAME.pem",
-    "-out", "$CERT_NAME.pem",
-    "-days", $DAYS_VALID,
-    "-nodes",
-    "-subj", $subject
-)
+# 1. Root CA
+if (-not (Test-Path "$CA_CERT_NAME.pem") -or -not (Test-Path "$CA_KEY_NAME.pem")) {
+    Write-ColorOutput "Creating Root CA..." "Yellow"
+    $caConfig = @"
+[req]
+prompt = no
+distinguished_name = dn
+x509_extensions = v3_ca
 
-try {
-    & $openSslPath $opensslArgs
-    if ($LASTEXITCODE -eq 0) {
-        Write-ColorOutput "Certificate and private key generated successfully" "Green"
-    } else {
-        throw "OpenSSL returned exit code: $LASTEXITCODE"
-    }
-} catch {
-    Write-ColorOutput "Failed to generate certificate and private key" "Red"
-    Write-ColorOutput "Error: $_" "Red"
-    Set-Location ..
-    exit 1
+[dn]
+C=$COUNTRY
+ST=$STATE
+L=$LOCALITY
+O=$ORGANIZATION
+OU=$ORG_UNIT Root CA
+CN=$COMMON_NAME Root CA
+
+[v3_ca]
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always,issuer
+basicConstraints = critical, CA:true, pathlen:0
+keyUsage = critical, keyCertSign, cRLSign
+"@
+    $caConfig | Out-File -FilePath ca.conf -Encoding ASCII
+    $caArgs = @(
+        "req","-x509","-newkey","rsa:4096",
+        "-days", $DAYS_VALID,
+        "-sha256",
+        "-nodes",
+        "-keyout", "$CA_KEY_NAME.pem",
+        "-out", "$CA_CERT_NAME.pem",
+        "-config", "ca.conf",
+        "-extensions", "v3_ca"
+    )
+    & $openSslPath $caArgs
+    if ($LASTEXITCODE -ne 0) { Write-ColorOutput "Failed to create Root CA" "Red"; exit 1 }
+    Write-ColorOutput "Root CA generated ($CA_CERT_NAME.pem)" "Green"
+} else {
+    Write-ColorOutput "Root CA already exists - reusing $CA_CERT_NAME.pem" "Green"
 }
 
-Write-ColorOutput "Converting certificate to PKCS#12 format (.pfx)..." "Yellow"
+# 2. Server CSR
+Write-ColorOutput "Generating server key and CSR..." "Yellow"
+$serverConfig = @"
+[req]
+distinguished_name = dn
+prompt = no
+req_extensions = v3_req
+
+[dn]
+C=$COUNTRY
+ST=$STATE
+L=$LOCALITY
+O=$ORGANIZATION
+OU=$ORG_UNIT
+CN=$COMMON_NAME
+
+[v3_req]
+basicConstraints = CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = localhost
+DNS.2 = 127.0.0.1
+IP.1 = 127.0.0.1
+IP.2 = ::1
+"@
+$serverConfig | Out-File -FilePath server.conf -Encoding ASCII
+
+$csrArgs = @(
+    "req","-new","-newkey","rsa:4096",
+    "-nodes",
+    "-keyout", "$KEY_NAME.pem",
+    "-out","server.csr",
+    "-config","server.conf"
+)
+& $openSslPath $csrArgs
+if ($LASTEXITCODE -ne 0) { Write-ColorOutput "Failed to generate server CSR" "Red"; exit 1 }
+
+# 3. Sign server cert
+Write-ColorOutput "Signing server certificate with Root CA..." "Yellow"
+$signArgs = @(
+    "x509","-req","-in","server.csr",
+    "-CA","$CA_CERT_NAME.pem","-CAkey","$CA_KEY_NAME.pem","-CAcreateserial",
+    "-out","$CERT_NAME.pem","-days", $DAYS_VALID,
+    "-sha256","-extensions","v3_req","-extfile","server.conf"
+)
+& $openSslPath $signArgs
+if ($LASTEXITCODE -ne 0) { Write-ColorOutput "Failed to sign server certificate" "Red"; exit 1 }
+Write-ColorOutput "Server certificate generated ($CERT_NAME.pem)" "Green"
+
+# 4. Create chain file
+Get-Content "$CERT_NAME.pem","$CA_CERT_NAME.pem" | Set-Content "$CERT_NAME-chain.pem"
+Write-ColorOutput "Chain file created ($CERT_NAME-chain.pem)" "Green"
+
+Remove-Item -Path server.csr, ca.conf, server.conf, "$CA_CERT_NAME.srl" -Force -ErrorAction SilentlyContinue
+
+Write-ColorOutput "Converting certificate + chain to PKCS#12 format (.pfx)..." "Yellow"
 
 # Convert to PKCS#12 format for .NET
 $pkcs12Args = @(
@@ -139,6 +216,7 @@ $pkcs12Args = @(
     "-out", "$PFX_NAME.pfx",
     "-inkey", "$KEY_NAME.pem",
     "-in", "$CERT_NAME.pem",
+    "-certfile", "$CA_CERT_NAME.pem",
     "-passout", "pass:$CERT_PASSWORD"
 )
 
@@ -190,9 +268,11 @@ try {
 Write-Host ""
 Write-ColorOutput "=== Certificate Generation Complete ===" "Green"
 Write-ColorOutput "Generated files:" "White"
-Write-ColorOutput "  Certificate file: $CERT_NAME.pem" "White"
-Write-ColorOutput "  Private key file: $KEY_NAME.pem" "White"
-Write-ColorOutput "  PKCS#12 certificate for .NET: $PFX_NAME.pfx" "White"
+Write-ColorOutput "  Root CA certificate: $CA_CERT_NAME.pem" "White"
+Write-ColorOutput "  Server certificate: $CERT_NAME.pem" "White"
+Write-ColorOutput "  Server private key: $KEY_NAME.pem" "White"
+Write-ColorOutput "  Certificate chain: $CERT_NAME-chain.pem" "White"
+Write-ColorOutput "  PKCS#12 (with chain): $PFX_NAME.pfx" "White"
 Write-Host ""
 Write-ColorOutput "Certificate details:" "White"
 Write-ColorOutput "  Common Name: $COMMON_NAME" "White"
@@ -203,20 +283,21 @@ Write-ColorOutput "  Password: $CERT_PASSWORD" "White"
 Write-Host ""
 Write-ColorOutput "Certificate Information:" "Blue"
 try {
-    $certInfoArgs = @("x509", "-in", "$CERT_NAME.pem", "-text", "-noout")
-    $certInfo = & $openSslPath $certInfoArgs | Select-String -Pattern "(Issuer|Subject|Not Before|Not After)"
-    $certInfo | ForEach-Object { Write-ColorOutput $_.Line "White" }
+    $leafInfo = & $openSslPath x509 -in "$CERT_NAME.pem" -text -noout | Select-String -Pattern "(Issuer:|Subject:|Not Before:|Not After :)"
+    $leafInfo | ForEach-Object { Write-ColorOutput $_.Line "White" }
+    $caInfo = & $openSslPath x509 -in "$CA_CERT_NAME.pem" -text -noout | Select-String -Pattern "(Subject:|CA:true)"
+    $caInfo | Select-Object -First 2 | ForEach-Object { Write-ColorOutput $_.Line "Yellow" }
 } catch {
     Write-ColorOutput "Could not display certificate information" "Yellow"
 }
 
-# Trust the certificate in Windows certificate store
+################################ Trust Installation ################################
 Write-Host ""
-Write-ColorOutput "Installing certificate to Windows certificate store..." "Yellow"
+Write-ColorOutput "Installing Root CA to Windows certificate store..." "Yellow"
 
 try {
-    # Import certificate to Current User's Trusted Root Certification Authorities store
-    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("$CERT_NAME.pem")
+    # Import Root CA to Current User's Trusted Root Certification Authorities store
+    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("$CA_CERT_NAME.pem")
     $store = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "CurrentUser")
     $store.Open("ReadWrite")
     
@@ -227,8 +308,8 @@ try {
         Write-ColorOutput "Certificate already exists in trust store (thumbprint: $($cert.Thumbprint))" "Yellow"
     } else {
         $store.Add($cert)
-        Write-ColorOutput "Certificate installed and trusted for current user" "Green"
-        Write-ColorOutput "Certificate thumbprint: $($cert.Thumbprint)" "White"
+    Write-ColorOutput "Root CA installed and trusted for current user" "Green"
+    Write-ColorOutput "Root CA thumbprint: $($cert.Thumbprint)" "White"
     }
     
     $store.Close()
@@ -238,13 +319,13 @@ try {
         $machineStore = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
         $machineStore.Open("ReadWrite")
         
-        $existingMachineCert = $machineStore.Certificates | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+    $existingMachineCert = $machineStore.Certificates | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
         
         if ($existingMachineCert) {
             Write-ColorOutput "Certificate already exists in machine trust store" "Yellow"
         } else {
             $machineStore.Add($cert)
-            Write-ColorOutput "Certificate also installed to Local Machine trust store" "Green"
+            Write-ColorOutput "Root CA also installed to Local Machine trust store" "Green"
         }
         
         $machineStore.Close()
@@ -261,7 +342,7 @@ try {
 
 Write-Host ""
 Write-ColorOutput "Note: This is a self-signed certificate for development use only." "Yellow"
-Write-ColorOutput "The certificate should now be trusted by browsers and applications." "White"
+Write-ColorOutput "The Root CA should now be trusted; the server cert will chain to it." "White"
 Write-ColorOutput "If you still see warnings, try restarting your browser." "White"
 
 Write-Host ""
