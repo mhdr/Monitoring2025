@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
-import { loginAsync, clearError } from '../store/slices/authSlice';
+import { loginAsync } from '../store/slices/authSlice';
 import type { ApiError } from '../types/auth';
 import './LoginPage.css';
 
@@ -17,15 +17,23 @@ const LoginPage: React.FC = () => {
   const { isLoading, error } = useAppSelector((state) => state.auth);
   const [formData, setFormData] = useState({ username: '', password: '', rememberMe: false });
   const [errors, setErrors] = useState<FormErrors>({});
+  // Local API error mirrors redux error but we retain until explicit clear or next submit
   const [apiError, setApiError] = useState<string>('');
+  const [pendingNewAttempt, setPendingNewAttempt] = useState(false);
 
-  // Update apiError when Redux error changes
+  // Update apiError when Redux error changes, but only if we haven't processed it yet
   React.useEffect(() => {
+    // When redux error updates, copy it locally (do not auto-clear on typing)
     if (error) {
       setApiError(error);
-      dispatch(clearError());
+      setPendingNewAttempt(false);
     }
-  }, [error, dispatch]);
+  }, [error]);
+
+  // Clear apiError only when user starts typing or manually dismisses
+  const clearApiError = () => {
+    setApiError('');
+  };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -57,8 +65,9 @@ const LoginPage: React.FC = () => {
     }
     
     // Clear API error when user modifies form
-    if (apiError) {
-      setApiError('');
+    // Don't clear apiError on first key stroke after failure; only mark that user is editing
+    if (apiError && !pendingNewAttempt) {
+      setPendingNewAttempt(true);
     }
   };
 
@@ -67,6 +76,11 @@ const LoginPage: React.FC = () => {
     
     if (!validateForm()) {
       return;
+    }
+
+    // If user modified inputs after a failure (pendingNewAttempt), clear apiError now
+    if (pendingNewAttempt) {
+      clearApiError();
     }
 
     try {
@@ -127,7 +141,7 @@ const LoginPage: React.FC = () => {
                     variant="danger" 
                     className="mb-4" 
                     dismissible 
-                    onClose={() => setApiError('')}
+                    onClose={clearApiError}
                   >
                     <Alert.Heading className="h6 mb-2">
                       {t('loginError')}

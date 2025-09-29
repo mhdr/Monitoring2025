@@ -29,10 +29,25 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          // Token expired or invalid - clear storage and redirect to login
-          this.clearStoredAuth();
-          window.location.href = '/login';
+        const status = error.response?.status;
+        if (status === 401) {
+          // Determine if the failing request is the login attempt itself
+          const requestUrl: string = error.config?.url || '';
+          const isLoginRequest = /\/api\/auth\/login/i.test(requestUrl);
+
+          // Only force redirect for protected resource 401s (not for the login endpoint)
+          if (!isLoginRequest) {
+            const hadToken = !!this.getStoredToken();
+            // Clear auth storage when token was present (expired / invalid)
+            if (hadToken) {
+              this.clearStoredAuth();
+            }
+            // Avoid triggering unnecessary reload if already on login page
+            if (window.location.pathname !== '/login') {
+              // Use replace-style navigation to avoid extra history entries
+              window.location.href = '/login';
+            }
+          }
         }
         return Promise.reject(this.handleApiError(error));
       }
