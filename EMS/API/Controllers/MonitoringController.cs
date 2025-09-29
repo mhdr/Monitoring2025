@@ -72,6 +72,9 @@ public class MonitoringController : ControllerBase
     /// <response code="401">If user is not authenticated</response>
     /// <response code="500">If an internal error occurs</response>
     [HttpPost("Groups")]
+    [ProducesResponseType(typeof(GroupsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Groups([FromBody] GroupsRequestDto request)
     {
         try
@@ -164,6 +167,9 @@ public class MonitoringController : ControllerBase
     /// <response code="401">If user is not authenticated</response>
     /// <response code="500">If an internal error occurs</response>
     [HttpPost("Items")]
+    [ProducesResponseType(typeof(ItemsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Items([FromBody] ItemsRequestDto request)
     {
         try
@@ -453,6 +459,9 @@ public class MonitoringController : ControllerBase
     /// <response code="401">If user is not authenticated</response>
     /// <response code="400">If there's a validation error with the request</response>
     [HttpPost("Values")]
+    [ProducesResponseType(typeof(ValuesResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Values([FromBody] ValuesRequestDto request)
     {
         try
@@ -596,6 +605,9 @@ public class MonitoringController : ControllerBase
     /// <response code="401">If user is not authenticated</response>
     /// <response code="400">If there's a validation error with the request</response>
     [HttpPost("Alarms")]
+    [ProducesResponseType(typeof(AlarmsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Alarms([FromBody] AlarmsRequestDto request)
     {
         try
@@ -659,6 +671,9 @@ public class MonitoringController : ControllerBase
     /// <response code="401">If user is not authenticated</response>
     /// <response code="400">If there's a validation error with the request</response>
     [HttpPost("ActiveAlarms")]
+    [ProducesResponseType(typeof(ActiveAlarmsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ActiveAlarms([FromBody] ActiveAlarmsRequestDto request)
     {
         try
@@ -705,6 +720,9 @@ public class MonitoringController : ControllerBase
     /// <response code="401">If user is not authenticated</response>
     /// <response code="400">If there's an error retrieving version information</response>
     [HttpGet("SettingsVersion")]
+    [ProducesResponseType(typeof(SettingsVersionResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SettingsVersion()
     {
         try
@@ -1095,6 +1113,9 @@ public class MonitoringController : ControllerBase
     /// <response code="401">If user is not authenticated</response>
     /// <response code="400">If there's an error retrieving users</response>
     [HttpGet("GetUsers")]
+    [ProducesResponseType(typeof(GetUsersResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetUsers()
     {
         try
@@ -1165,6 +1186,9 @@ public class MonitoringController : ControllerBase
     /// <response code="401">If user is not authenticated</response>
     /// <response code="400">If there's a validation error with the request</response>
     [HttpPost("AddUser")]
+    [ProducesResponseType(typeof(AddUserResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AddUser([FromBody] AddUserRequestDto request)
     {
         try
