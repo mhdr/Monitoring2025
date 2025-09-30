@@ -112,6 +112,7 @@ public class MonitoringController : ControllerBase
                     {
                         Id = g.Id.ToString(),
                         Name = g.Name,
+                        NameFa = g.NameFa,
                         ParentId = parentId,
                     });
                 }
@@ -138,6 +139,7 @@ public class MonitoringController : ControllerBase
                         {
                             Id = g.Id.ToString(),
                             Name = g.Name,
+                            NameFa = g.NameFa,
                             ParentId = parentId,
                         });
                     }

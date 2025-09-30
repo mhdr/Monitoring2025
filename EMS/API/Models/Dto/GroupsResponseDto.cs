@@ -34,8 +34,14 @@ public class GroupsResponseDto
         /// <summary>
         /// Name of the group
         /// </summary>
-        /// <example>Temperature Sensors</example>
+        /// <example>Cold Room</example>
         public string Name { get; set; }
+        
+        /// <summary>
+        /// Name of the group in Farsi
+        /// </summary>
+        /// <example>سردخانه</example>
+        public string? NameFa { get; set; }
 
         /// <summary>
         /// Parent group ID if this group has a parent

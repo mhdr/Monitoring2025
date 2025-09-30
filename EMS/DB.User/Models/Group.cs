@@ -11,6 +11,8 @@ public class Group
     public Guid Id { get; set; }
 
     [Column("name")] public string Name { get; set; }
+
+    [Column("name_fa")] public string? NameFa { get; set; }
     
     [Column("parent_id")]
     public Guid? ParentId { get; set; }
