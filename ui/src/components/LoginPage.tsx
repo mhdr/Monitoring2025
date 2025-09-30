@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
 import type { ApiError } from '../types/auth';
@@ -10,9 +11,17 @@ interface FormErrors {
   password?: string;
 }
 
+interface LocationState {
+  from?: {
+    pathname: string;
+  };
+}
+
 const LoginPage: React.FC = () => {
   const { t } = useLanguage();
   const { login, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({ username: '', password: '', rememberMe: false });
   const [errors, setErrors] = useState<FormErrors>({});
   // Local API error 
@@ -80,7 +89,10 @@ const LoginPage: React.FC = () => {
       });
 
       // If we reach this point, login was successful
-      // The auth context will handle navigation through the app routing
+      // Navigate to the saved location or default to /dashboard
+      const state = location.state as LocationState;
+      const from = state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
     } catch (error) {
       // Handle login error
       const apiErr = error as ApiError;

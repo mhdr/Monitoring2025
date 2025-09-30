@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Container, Spinner, Row, Col } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
@@ -11,6 +11,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -28,7 +29,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Save the current location they were trying to access
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;
