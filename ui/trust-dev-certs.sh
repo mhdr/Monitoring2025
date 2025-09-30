@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Trust Development SSL Certificates for Chrome and Firefox on EndeavourOS
+# Trust Development SSL Certificates for Chrome and Firefox on Linux
 # This script now prefers a LOCAL DEVELOPMENT ROOT CA (mkcert if available, otherwise custom) to sign the localhost cert.
 # Browsers (especially Chrome) are less happy with a raw self‑signed leaf certificate lacking CA basicConstraints.
 # Strategy:
@@ -33,6 +33,24 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Detect Linux distribution
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$ID"
+    elif [ -f /etc/arch-release ]; then
+        echo "arch"
+    elif [ -f /etc/debian_version ]; then
+        echo "debian"
+    elif [ -f /etc/fedora-release ]; then
+        echo "fedora"
+    else
+        echo "unknown"
+    fi
+}
+
+DISTRO=$(detect_distro)
+
 # Install required packages if not present
 echo -e "${BLUE}📦 Checking required packages...${NC}"
 
@@ -43,13 +61,42 @@ if ! command_exists openssl; then
 fi
 
 if ! command_exists certutil; then
-    PACKAGES_TO_INSTALL+=("nss")
+    case "$DISTRO" in
+        arch|endeavouros|manjaro)
+            PACKAGES_TO_INSTALL+=("nss")
+            ;;
+        ubuntu|debian|pop|linuxmint)
+            PACKAGES_TO_INSTALL+=("libnss3-tools")
+            ;;
+        fedora|rhel|centos)
+            PACKAGES_TO_INSTALL+=("nss-tools")
+            ;;
+        *)
+            PACKAGES_TO_INSTALL+=("nss-tools")
+            ;;
+    esac
 fi
 
 if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
     echo -e "${YELLOW}⚠️  Installing required packages: ${PACKAGES_TO_INSTALL[*]}${NC}"
     echo "You may be prompted for your sudo password..."
-    sudo pacman -S --needed "${PACKAGES_TO_INSTALL[@]}"
+    
+    case "$DISTRO" in
+        arch|endeavouros|manjaro)
+            sudo pacman -S --needed "${PACKAGES_TO_INSTALL[@]}"
+            ;;
+        ubuntu|debian|pop|linuxmint)
+            sudo apt-get update && sudo apt-get install -y "${PACKAGES_TO_INSTALL[@]}"
+            ;;
+        fedora|rhel|centos)
+            sudo dnf install -y "${PACKAGES_TO_INSTALL[@]}"
+            ;;
+        *)
+            echo -e "${RED}❌ Unsupported distribution: $DISTRO${NC}"
+            echo "Please install the following packages manually: ${PACKAGES_TO_INSTALL[*]}"
+            exit 1
+            ;;
+    esac
 fi
 
 VITE_CERT_DIR="$HOME/.vite-plugin-basic-ssl"
@@ -91,6 +138,10 @@ if command -v mkcert >/dev/null 2>&1; then
         echo -e "${GREEN}✅ Existing mkcert certificate valid for $rem more days${NC}"
     fi
     ROOT_CA_CERT=$(mkcert -CAROOT 2>/dev/null)/rootCA.pem
+    # Extract the actual CA name from mkcert root certificate
+    if [ -f "$ROOT_CA_CERT" ]; then
+        ROOT_CA_NAME=$(openssl x509 -in "$ROOT_CA_CERT" -noout -subject | sed 's/.*CN=\(.*\)/\1/')
+    fi
 else
     echo -e "${YELLOW}ℹ️  mkcert not found – falling back to custom root CA generation${NC}"
     # Generate root CA if missing or expiring soon (<30 days)
@@ -180,13 +231,39 @@ if [ ! -f "$ROOT_CA_CERT" ]; then
 fi
 
 # Add CA certificate to system trust store if we created our own (skip if mkcert handled system) unless it's already there
-SYSTEM_CERT_DIR="/etc/ca-certificates/trust-source/anchors"
 CA_TARGET_NAME="monitoring-dev-root-ca.crt"
-if [ -d "$SYSTEM_CERT_DIR" ] && [ "$MKCERT_MODE" = false ]; then
+if [ "$MKCERT_MODE" = false ]; then
     echo -e "${BLUE}🔒 Adding local root CA to system trust store...${NC}"
-    sudo cp "$ROOT_CA_CERT" "$SYSTEM_CERT_DIR/$CA_TARGET_NAME" 2>/dev/null || true
-    sudo trust extract-compat 2>/dev/null || true
-    echo -e "${GREEN}✅ Root CA available system-wide${NC}"
+    
+    case "$DISTRO" in
+        arch|endeavouros|manjaro)
+            SYSTEM_CERT_DIR="/etc/ca-certificates/trust-source/anchors"
+            if [ -d "$SYSTEM_CERT_DIR" ]; then
+                sudo cp "$ROOT_CA_CERT" "$SYSTEM_CERT_DIR/$CA_TARGET_NAME" 2>/dev/null || true
+                sudo trust extract-compat 2>/dev/null || true
+                echo -e "${GREEN}✅ Root CA added to system trust store (Arch-based)${NC}"
+            fi
+            ;;
+        ubuntu|debian|pop|linuxmint)
+            SYSTEM_CERT_DIR="/usr/local/share/ca-certificates"
+            if [ -d "$SYSTEM_CERT_DIR" ]; then
+                sudo cp "$ROOT_CA_CERT" "$SYSTEM_CERT_DIR/$CA_TARGET_NAME" 2>/dev/null || true
+                sudo update-ca-certificates 2>/dev/null || true
+                echo -e "${GREEN}✅ Root CA added to system trust store (Debian-based)${NC}"
+            fi
+            ;;
+        fedora|rhel|centos)
+            SYSTEM_CERT_DIR="/etc/pki/ca-trust/source/anchors"
+            if [ -d "$SYSTEM_CERT_DIR" ]; then
+                sudo cp "$ROOT_CA_CERT" "$SYSTEM_CERT_DIR/$CA_TARGET_NAME" 2>/dev/null || true
+                sudo update-ca-trust 2>/dev/null || true
+                echo -e "${GREEN}✅ Root CA added to system trust store (Fedora-based)${NC}"
+            fi
+            ;;
+        *)
+            echo -e "${YELLOW}⚠️  Unknown distribution, skipping system trust store${NC}"
+            ;;
+    esac
 fi
 
 # Add CA certificate to Firefox profiles (mkcert usually handles; we ensure fallback)
@@ -219,18 +296,23 @@ else
     echo -e "${YELLOW}⚠️  Firefox not found${NC}"
 fi
 
-# Add CA certificate to Chrome/Chromium
-echo -e "${BLUE}🌐 Adding certificate authority to Chrome/Chromium...${NC}"
+# Add CA certificate to Chrome/Chromium and other Chromium-based browsers
+echo -e "${BLUE}🌐 Adding certificate authority to Chrome/Chromium-based browsers...${NC}"
 
-# Chrome/Chromium certificate database
+# Chrome/Chromium certificate database (shared by Chrome, Chromium, Brave, Edge, etc.)
 CHROME_CERT_DB="$HOME/.pki/nssdb"
 
 if [ -d "$CHROME_CERT_DB" ]; then
+    # Remove old certificate with wrong name if exists
+    certutil -D -n "Monitoring Dev Local CA" -d sql:"$CHROME_CERT_DB" 2>/dev/null || true
+    # Remove existing certificate with same name (to update it)
     certutil -D -n "$ROOT_CA_NAME" -d sql:"$CHROME_CERT_DB" 2>/dev/null || true
+    # Add the root CA
     certutil -A -n "$ROOT_CA_NAME" -t "C,C,C" -i "$ROOT_CA_CERT" -d sql:"$CHROME_CERT_DB" 2>/dev/null || {
         echo -e "${YELLOW}⚠️  Could not add root CA to Chrome certificate database${NC}"
     }
     echo -e "${GREEN}✅ Root CA added to Chrome/Chromium certificate store${NC}"
+    echo -e "${GREEN}   (Also applies to Brave, Edge, and other Chromium-based browsers)${NC}"
 else
     echo -e "${YELLOW}⚠️  Chrome/Chromium certificate database not found${NC}"
     echo "You may need to start Chrome/Chromium first to create the database"
@@ -263,11 +345,26 @@ echo "- This certificate is only valid for localhost development"
 echo ""
 echo -e "${BLUE}🔧 To remove the certificate later:${NC}"
 if [ "$MKCERT_MODE" = true ]; then
-echo "# mkcert root removal (not usually recommended):"
-echo "rm -rf $(mkcert -CAROOT)"
+    echo "# mkcert root removal (not usually recommended):"
+    echo "rm -rf $(mkcert -CAROOT)"
 else
-echo "sudo rm /etc/ca-certificates/trust-source/anchors/monitoring-dev-root-ca.crt 2>/dev/null || true"
-echo "sudo trust extract-compat"
+    case "$DISTRO" in
+        arch|endeavouros|manjaro)
+            echo "sudo rm /etc/ca-certificates/trust-source/anchors/monitoring-dev-root-ca.crt 2>/dev/null || true"
+            echo "sudo trust extract-compat"
+            ;;
+        ubuntu|debian|pop|linuxmint)
+            echo "sudo rm /usr/local/share/ca-certificates/monitoring-dev-root-ca.crt 2>/dev/null || true"
+            echo "sudo update-ca-certificates"
+            ;;
+        fedora|rhel|centos)
+            echo "sudo rm /etc/pki/ca-trust/source/anchors/monitoring-dev-root-ca.crt 2>/dev/null || true"
+            echo "sudo update-ca-trust"
+            ;;
+        *)
+            echo "# Remove certificate based on your distribution"
+            ;;
+    esac
 fi
 echo "certutil -D -n '${ROOT_CA_NAME}' -d sql:$CHROME_CERT_DB 2>/dev/null || true"
 echo ""
