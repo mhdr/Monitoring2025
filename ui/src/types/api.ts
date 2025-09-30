@@ -149,3 +149,44 @@ export interface GroupsRequestDto {
 export interface GroupsResponseDto {
   groups: Group[];
 }
+
+// Monitoring Items types
+export interface Item {
+  id: string;
+  groupId?: string | null;
+  itemType: ItemType;
+  name: string;
+  pointNumber: number;
+  shouldScale: ShouldScaleType;
+  normMin: number;
+  normMax: number;
+  scaleMin: number;
+  scaleMax: number;
+  saveInterval: number;
+  saveHistoricalInterval: number;
+  calculationMethod: ValueCalculationMethod;
+  numberOfSamples: number;
+  onText?: string | null;
+  offText?: string | null;
+  unit?: string | null;
+  isDisabled?: boolean | null;
+  interfaceType: InterfaceType;
+  isEditable: boolean;
+}
+
+export type ItemType = 1 | 2 | 3 | 4; // 1: DigitalInput, 2: DigitalOutput, 3: AnalogInput, 4: AnalogOutput
+
+export type ShouldScaleType = 1 | 2; // 1: NoScale, 2: Scale
+
+export type ValueCalculationMethod = 0 | 1; // 0: Instantaneous, 1: Average
+
+export type InterfaceType = 0 | 1 | 2; // 0: None, 1: Controller, 2: MessageBus
+
+export interface ItemsRequestDto {
+  userId?: string | null;
+  showOrphans?: boolean;
+}
+
+export interface ItemsResponseDto {
+  items: Item[];
+}

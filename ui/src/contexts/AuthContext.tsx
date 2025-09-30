@@ -37,6 +37,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Prefetch monitoring groups data after successful login
       dispatch(apiSlice.util.prefetch('getGroups', {}, { force: true }));
       
+      // Prefetch monitoring items data after successful login
+      dispatch(apiSlice.util.prefetch('getItems', { showOrphans: false }, { force: true }));
+      
     } catch (error) {
       dispatch(setLoading(false));
       // Re-throw the error to let the calling component handle it
@@ -46,8 +49,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = useCallback(() => {
     dispatch(clearAuth());
-    // Clear cached groups data on logout
-    dispatch(apiSlice.util.invalidateTags(['Groups']));
+    // Clear cached groups and items data on logout
+    dispatch(apiSlice.util.invalidateTags(['Groups', 'Items']));
   }, [dispatch]);
 
   const value: AuthContextType = {

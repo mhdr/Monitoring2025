@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import type { LoginRequest, LoginResponse, ApiError, User, RefreshTokenRequest } from '../../types/auth';
-import type { GroupsRequestDto, GroupsResponseDto } from '../../types/api';
+import type { GroupsRequestDto, GroupsResponseDto, ItemsRequestDto, ItemsResponseDto } from '../../types/api';
 
 // API configuration - Use relative path for development with Vite proxy
 // In production, this should be set to the actual API server URL
@@ -145,7 +145,7 @@ export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
   // Define tag types for cache invalidation
-  tagTypes: ['Auth', 'User', 'Groups'],
+  tagTypes: ['Auth', 'User', 'Groups', 'Items'],
   endpoints: (builder) => ({
     // Authentication endpoints
     login: builder.mutation<LoginResponse, LoginRequest>({
@@ -217,6 +217,17 @@ export const apiSlice = createApi({
       transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
       providesTags: ['Groups'],
     }),
+
+    // Get monitoring items accessible to the current user
+    getItems: builder.query<ItemsResponseDto, ItemsRequestDto | void>({
+      query: (params) => ({
+        url: '/api/Monitoring/Items',
+        method: 'POST',
+        body: params || { showOrphans: false },
+      }),
+      transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
+      providesTags: ['Items'],
+    }),
   }),
 });
 
@@ -227,6 +238,8 @@ export const {
   useRefreshTokenMutation,
   useGetGroupsQuery,
   useLazyGetGroupsQuery,
+  useGetItemsQuery,
+  useLazyGetItemsQuery,
 } = apiSlice;
 
 // Export the reducer
