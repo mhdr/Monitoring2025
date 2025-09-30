@@ -134,3 +134,18 @@ export interface ManagementSettings {
     timezone: string;
   };
 }
+
+// Monitoring Groups types
+export interface Group {
+  id: string;
+  name: string;
+  parentId?: string | null;
+}
+
+export interface GroupsRequestDto {
+  userId?: string | null;
+}
+
+export interface GroupsResponseDto {
+  groups: Group[];
+}

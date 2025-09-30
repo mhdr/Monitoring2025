@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import type { LoginRequest, LoginResponse, ApiError, User, RefreshTokenRequest } from '../../types/auth';
+import type { GroupsRequestDto, GroupsResponseDto } from '../../types/api';
 
 // API configuration - Use relative path for development with Vite proxy
 // In production, this should be set to the actual API server URL
@@ -144,7 +145,7 @@ export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
   // Define tag types for cache invalidation
-  tagTypes: ['Auth', 'User'],
+  tagTypes: ['Auth', 'User', 'Groups'],
   endpoints: (builder) => ({
     // Authentication endpoints
     login: builder.mutation<LoginResponse, LoginRequest>({
@@ -205,6 +206,17 @@ export const apiSlice = createApi({
       },
       invalidatesTags: ['Auth'],
     }),
+
+    // Get monitoring groups accessible to the current user
+    getGroups: builder.query<GroupsResponseDto, GroupsRequestDto | void>({
+      query: (params) => ({
+        url: '/api/Monitoring/Groups',
+        method: 'POST',
+        body: params || {},
+      }),
+      transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
+      providesTags: ['Groups'],
+    }),
   }),
 });
 
@@ -213,6 +225,8 @@ export const {
   useLoginMutation,
   useGetCurrentUserQuery,
   useRefreshTokenMutation,
+  useGetGroupsQuery,
+  useLazyGetGroupsQuery,
 } = apiSlice;
 
 // Export the reducer

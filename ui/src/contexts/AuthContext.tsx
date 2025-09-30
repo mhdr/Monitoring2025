@@ -1,8 +1,9 @@
 import React, { createContext, useEffect, useCallback, type ReactNode } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AuthContextType, LoginRequest, ApiError } from '../types/auth';
-import { useLoginMutation } from '../store/api/apiSlice';
+import { useLoginMutation, apiSlice } from '../store/api/apiSlice';
 import { setAuth, clearAuth, setLoading, initializeAuth, selectAuth } from '../store/slices/authSlice';
+import type { AppDispatch } from '../store/store';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -11,7 +12,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { user, token, isAuthenticated, isLoading } = useSelector(selectAuth);
   const [loginMutation] = useLoginMutation();
 
@@ -32,6 +33,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user: response.user,
         token: response.accessToken,
       }));
+
+      // Prefetch monitoring groups data after successful login
+      dispatch(apiSlice.util.prefetch('getGroups', {}, { force: true }));
       
     } catch (error) {
       dispatch(setLoading(false));
@@ -42,6 +46,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = useCallback(() => {
     dispatch(clearAuth());
+    // Clear cached groups data on logout
+    dispatch(apiSlice.util.invalidateTags(['Groups']));
   }, [dispatch]);
 
   const value: AuthContextType = {
