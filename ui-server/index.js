@@ -2,6 +2,7 @@ const express = require('express');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const compression = require('compression');
 const app = express();
 const port = 8080;
 
@@ -12,8 +13,23 @@ const keyPath = path.join(__dirname, 'certificates', 'ui-server-key.pem');
 // Check if SSL certificates exist
 const sslEnabled = fs.existsSync(certPath) && fs.existsSync(keyPath);
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Enable gzip compression for all responses
+app.use(compression());
+
+// Serve static files from the public directory with caching
+// Cache static assets for 1 year (immutable), but not index.html
+app.use(express.static(path.join(__dirname, 'public'), {
+    maxAge: '1y',
+    immutable: true,
+    setHeaders: (res, filePath) => {
+        // Don't cache index.html to ensure users always get the latest version
+        if (filePath.endsWith('index.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        }
+    }
+}));
 
 // Handle React Router - send all requests to index.html
 // Note: In Express v5, use a middleware instead of app.get('*')

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Stop UI Server
-# This script stops any running UI server on port 3000
+# This script stops any running UI server on port 8080
 
 echo "🛑 Stopping UI Server..."
 

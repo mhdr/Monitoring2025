@@ -29,11 +29,7 @@ npm run build
 # Step 3: Navigate to ui-server and install dependencies
 echo -e "${YELLOW}Step 3: Installing UI Server dependencies...${NC}"
 cd ../ui-server
-if [ ! -d "node_modules" ]; then
-    npm install
-else
-    echo "Dependencies already installed"
-fi
+npm install
 
 # Step 4: Create public directory if it doesn't exist
 echo -e "${YELLOW}Step 4: Preparing deployment directory...${NC}"
