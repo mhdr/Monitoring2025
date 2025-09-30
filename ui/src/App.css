@@ -1,6 +1,21 @@
 /* RTL/LTR Font and Direction Styles */
 body.rtl #root {
-  font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
+  font-family: 'iransansx', 'Tahoma', 'Arial', sans-serif;
+  /* Enable Persian digits for RTL mode */
+  -moz-font-feature-settings: "ss02";
+  -webkit-font-feature-settings: "ss02";
+  font-feature-settings: "ss02";
+}
+
+/* Variable Font Support for RTL - for modern browsers */
+@supports (font-variation-settings: normal) {
+  body.rtl #root {
+    font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif;
+    /* Enable Persian digits for RTL mode */
+    -moz-font-feature-settings: "ss02";
+    -webkit-font-feature-settings: "ss02";
+    font-feature-settings: "ss02";
+  }
 }
 
 body.ltr #root {

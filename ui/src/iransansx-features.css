@@ -1,0 +1,109 @@
+/* IRANSansX Font Feature Settings and Utilities */
+
+/* Persian/Farsi Numbers from English/Arabic numbers (ss02) */
+.persian-numbers {
+  -moz-font-feature-settings: "ss02";
+  -webkit-font-feature-settings: "ss02";
+  font-feature-settings: "ss02";
+}
+
+/* Monospace numbers for tables and lists (ss03) */
+.monospace-numbers {
+  -moz-font-feature-settings: "ss03";
+  -webkit-font-feature-settings: "ss03";
+  font-feature-settings: "ss03";
+}
+
+/* Vertically aligned numbers (ss04) */
+.aligned-numbers {
+  -moz-font-feature-settings: "ss04";
+  -webkit-font-feature-settings: "ss04";
+  font-feature-settings: "ss04";
+}
+
+/* Variable Font Weight utilities */
+@supports (font-variation-settings: normal) {
+  .vf-thin {
+    font-weight: 100;
+    font-variation-settings: "wght" 100;
+  }
+  
+  .vf-extralight {
+    font-weight: 200;
+    font-variation-settings: "wght" 200;
+  }
+  
+  .vf-light {
+    font-weight: 300;
+    font-variation-settings: "wght" 300;
+  }
+  
+  .vf-regular {
+    font-weight: 400;
+    font-variation-settings: "wght" 400;
+  }
+  
+  .vf-medium {
+    font-weight: 500;
+    font-variation-settings: "wght" 500;
+  }
+  
+  .vf-semibold {
+    font-weight: 600;
+    font-variation-settings: "wght" 600;
+  }
+  
+  .vf-bold {
+    font-weight: 700;
+    font-variation-settings: "wght" 700;
+  }
+  
+  .vf-extrabold {
+    font-weight: 800;
+    font-variation-settings: "wght" 800;
+  }
+  
+  .vf-black {
+    font-weight: 900;
+    font-variation-settings: "wght" 900;
+  }
+  
+  /* DOTS variable (sharpness) - range 0 to 8 */
+  .vf-sharp-1 {
+    font-variation-settings: "wght" var(--font-weight, 400), "DOTS" 1;
+  }
+  
+  .vf-sharp-2 {
+    font-variation-settings: "wght" var(--font-weight, 400), "DOTS" 2;
+  }
+  
+  .vf-sharp-3 {
+    font-variation-settings: "wght" var(--font-weight, 400), "DOTS" 3;
+  }
+  
+  .vf-sharp-4 {
+    font-variation-settings: "wght" var(--font-weight, 400), "DOTS" 4;
+  }
+  
+  .vf-sharp-5 {
+    font-variation-settings: "wght" var(--font-weight, 400), "DOTS" 5;
+  }
+  
+  .vf-sharp-6 {
+    font-variation-settings: "wght" var(--font-weight, 400), "DOTS" 6;
+  }
+  
+  .vf-sharp-7 {
+    font-variation-settings: "wght" var(--font-weight, 400), "DOTS" 7;
+  }
+  
+  .vf-sharp-8 {
+    font-variation-settings: "wght" var(--font-weight, 400), "DOTS" 8;
+  }
+  
+  /* Combined: Bold + Sharp */
+  .vf-bold-sharp {
+    font-weight: 700;
+    font-variation-settings: "wght" 700, "DOTS" 4;
+  }
+}

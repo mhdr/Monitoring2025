@@ -1,6 +1,6 @@
 /* Global font and color scheme */
 :root {
-  font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
+  font-family: 'iransansx', 'Tahoma', 'Arial', sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -27,10 +27,21 @@
   --shadow-medium: rgba(0, 0, 0, 0.2);
 }
 
+/* Variable Font Support - for modern browsers */
+@supports (font-variation-settings: normal) {
+  :root {
+    font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif;
+  }
+}
+
 /* RTL/LTR Direction and Font Styles */
 body.rtl {
   direction: rtl;
   text-align: right;
+  /* Enable Persian digits globally for Persian/RTL mode */
+  -moz-font-feature-settings: "ss02";
+  -webkit-font-feature-settings: "ss02";
+  font-feature-settings: "ss02";
 }
 
 body.rtl * {
@@ -49,6 +60,10 @@ body.ltr * {
 
 html[dir="rtl"] {
   text-align: right;
+  /* Enable Persian digits for RTL direction */
+  -moz-font-feature-settings: "ss02";
+  -webkit-font-feature-settings: "ss02";
+  font-feature-settings: "ss02";
 }
 
 html[dir="ltr"] {
