@@ -53,7 +53,22 @@ export const translations = {
     unexpectedError: 'خطای غیرمنتظره رخ داده است',
     // Navigation
     welcomeUser: 'خوش آمدید',
-    userMenu: 'منو کاربر'
+    userMenu: 'منو کاربر',
+    // Monitoring page - Groups
+    groups: 'گروه‌ها',
+    noGroups: 'هیچ گروهی یافت نشد',
+    loadingGroups: 'در حال بارگذاری گروه‌ها...',
+    errorLoadingGroups: 'خطا در بارگذاری گروه‌ها',
+    expandGroup: 'باز کردن گروه',
+    collapseGroup: 'بستن گروه',
+    subgroups: 'زیرگروه',
+    backToParent: 'بازگشت به پوشه والد',
+    currentFolder: 'پوشه فعلی',
+    rootFolder: 'پوشه اصلی',
+    noItemsInFolder: 'این پوشه خالی است',
+    openFolder: 'باز کردن پوشه',
+    folders: 'پوشه‌ها',
+    folder: 'پوشه'
   },
   en: {
     welcome: 'Welcome',
@@ -109,7 +124,22 @@ export const translations = {
     unexpectedError: 'An unexpected error occurred',
     // Navigation
     welcomeUser: 'Welcome',
-    userMenu: 'User Menu'
+    userMenu: 'User Menu',
+    // Monitoring page - Groups
+    groups: 'Groups',
+    noGroups: 'No groups found',
+    loadingGroups: 'Loading groups...',
+    errorLoadingGroups: 'Error loading groups',
+    expandGroup: 'Expand group',
+    collapseGroup: 'Collapse group',
+    subgroups: 'Subgroups',
+    backToParent: 'Back to Parent Folder',
+    currentFolder: 'Current Folder',
+    rootFolder: 'Root Folder',
+    noItemsInFolder: 'This folder is empty',
+    openFolder: 'Open Folder',
+    folders: 'Folders',
+    folder: 'Folder'
   }
 };
 
