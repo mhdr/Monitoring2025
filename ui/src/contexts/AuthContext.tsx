@@ -21,6 +21,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch(initializeAuth());
   }, [dispatch]);
 
+  // Refetch groups and items data when the app loads if user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && token && !isLoading) {
+      // Refetch monitoring groups and items on app initialization
+      // This ensures fresh data while keeping the cached data available during loading
+      dispatch(apiSlice.util.prefetch('getGroups', {}, { force: true }));
+      dispatch(apiSlice.util.prefetch('getItems', { showOrphans: false }, { force: true }));
+    }
+  }, [isAuthenticated, token, isLoading, dispatch]);
+
   const login = useCallback(async (credentials: LoginRequest): Promise<void> => {
     try {
       dispatch(setLoading(true));

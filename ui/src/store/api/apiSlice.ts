@@ -146,6 +146,9 @@ export const apiSlice = createApi({
   baseQuery: baseQueryWithReauth,
   // Define tag types for cache invalidation
   tagTypes: ['Auth', 'User', 'Groups', 'Items'],
+  // Keep cached data for 24 hours (86400 seconds) to support persistence
+  // This prevents automatic removal of cached data
+  keepUnusedDataFor: 86400,
   endpoints: (builder) => ({
     // Authentication endpoints
     login: builder.mutation<LoginResponse, LoginRequest>({
