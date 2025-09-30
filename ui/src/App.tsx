@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useBootstrapRTL } from './hooks/useBootstrapRTL';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import DashboardLayout from './components/DashboardLayout';
@@ -14,6 +15,9 @@ import ManagementPage from './components/ManagementPage';
 import './App.css';
 
 function App() {
+  // Dynamically load Bootstrap CSS based on language direction
+  useBootstrapRTL();
+
   return (
     <Router>
       <Routes>
