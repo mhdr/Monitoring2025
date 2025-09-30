@@ -134,6 +134,13 @@
   width: 20px;
   text-align: center;
   font-size: 1.1rem;
+  margin-inline-end: 0.75rem; /* Adds space after icon in LTR, before icon in RTL */
+}
+
+/* Additional spacing for RTL to ensure proper spacing */
+.sidebar-rtl .sidebar-nav .nav-link i {
+  margin-inline-end: 0.75rem; /* Consistent spacing in RTL */
+  margin-inline-start: 0; /* Remove any start margin */
 }
 
 /* Mobile Backdrop */
