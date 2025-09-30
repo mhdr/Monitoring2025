@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
-import { initializeAuth } from '../store/slices/authSlice';
+import { useAuth } from '../hooks/useAuth';
 import { Container, Spinner, Row, Col } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -10,14 +9,8 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const dispatch = useAppDispatch();
-  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
-
-  // Initialize auth state on mount
-  useEffect(() => {
-    dispatch(initializeAuth());
-  }, [dispatch]);
 
   if (isLoading) {
     return (
