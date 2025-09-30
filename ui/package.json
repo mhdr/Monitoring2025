@@ -5,10 +5,12 @@
   "type": "module",
   "description": "سیستم مانیتورینگ انبار - رابط کاربری فارسی",
   "scripts": {
+    "predev": "bash check-ssl.sh",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup-ssl": "chmod +x trust-dev-certs.sh && ./trust-dev-certs.sh"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.9.0",

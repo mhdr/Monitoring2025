@@ -1,12 +1,18 @@
 #!/bin/bash
 
 # Trust Development SSL Certificates for Chrome and Firefox on EndeavourOS
-# This script adds the Vite development SSL certificate to system and browser trust stores
+# This script now prefers a LOCAL DEVELOPMENT ROOT CA (mkcert if available, otherwise custom) to sign the localhost cert.
+# Browsers (especially Chrome) are less happy with a raw self‑signed leaf certificate lacking CA basicConstraints.
+# Strategy:
+#  1. If mkcert exists: use it (simplest, robust, auto‑trusts root)
+#  2. Else create a lightweight root CA (10 years) + sign a leaf cert (825 days ~ Chrome cap) with proper SANs
+#  3. Install (trust) ONLY the root CA in system & NSS stores; browsers validate the signed leaf w/o warnings
+#  4. Recreate certificates when SANs missing or expiring soon (<15 days)
 
-set -e
+set -euo pipefail
 
-echo "🔐 Development SSL Certificate Trust Setup for EndeavourOS"
-echo "==========================================================="
+echo "🔐 Development SSL Certificate Trust Setup"
+echo "=========================================="
 
 # Colors for output
 RED='\033[0;31m'
@@ -46,81 +52,145 @@ if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
     sudo pacman -S --needed "${PACKAGES_TO_INSTALL[@]}"
 fi
 
-# Certificate paths
 VITE_CERT_DIR="$HOME/.vite-plugin-basic-ssl"
-CERT_FILE="$VITE_CERT_DIR/cert.pem"
-KEY_FILE="$VITE_CERT_DIR/key.pem"
-
-# Always generate our own certificates with correct common name
-echo -e "${BLUE}🔧 Generating proper localhost certificates...${NC}"
 mkdir -p "$VITE_CERT_DIR"
 
-# Remove existing certificates if they have wrong common name
-if [ -f "$CERT_FILE" ]; then
-    EXISTING_CN=$(openssl x509 -in "$CERT_FILE" -noout -subject 2>/dev/null | grep -o 'CN=[^,]*' | cut -d= -f2 || echo "")
-    if [ "$EXISTING_CN" != "localhost" ]; then
-        echo -e "${YELLOW}⚠️  Existing certificate has wrong CN: $EXISTING_CN (expected: localhost)${NC}"
-        echo -e "${BLUE}�️  Removing old certificates...${NC}"
-        rm -f "$CERT_FILE" "$KEY_FILE"
+# Paths
+CERT_FILE="$VITE_CERT_DIR/cert.pem"            # Leaf cert
+KEY_FILE="$VITE_CERT_DIR/key.pem"              # Leaf key
+ROOT_CA_KEY="$VITE_CERT_DIR/rootCA-key.pem"    # Root CA key (custom case)
+ROOT_CA_CERT="$VITE_CERT_DIR/rootCA.pem"       # Root CA cert
+ROOT_CA_NAME="Monitoring Dev Local CA"
+
+# Helper: expiry days remaining for a cert (returns integer or 0)
+days_remaining() {
+    local file=$1
+    if [ ! -f "$file" ]; then echo 0; return; fi
+    local raw epoch_now epoch_end
+    raw=$(openssl x509 -in "$file" -noout -enddate 2>/dev/null | cut -d= -f2 || echo "")
+    if [ -z "$raw" ]; then echo 0; return; fi
+    epoch_now=$(date +%s)
+    epoch_end=$(date -d "$raw" +%s 2>/dev/null || echo 0)
+    if [ "$epoch_end" = 0 ]; then echo 0; return; fi
+    echo $(( (epoch_end-epoch_now)/86400 ))
+}
+
+# Decide path: prefer mkcert
+MKCERT_MODE=false
+if command -v mkcert >/dev/null 2>&1; then
+    MKCERT_MODE=true
+    echo -e "${BLUE}🛠 Using mkcert for certificate generation...${NC}"
+    # If cert missing or expiring soon (<15 days) regenerate
+    rem=$(days_remaining "$CERT_FILE")
+    if [ ! -f "$CERT_FILE" ] || [ "$rem" -lt 15 ]; then
+        echo -e "${BLUE}🔧 Generating (or refreshing) mkcert localhost certificate...${NC}"
+        (cd "$VITE_CERT_DIR" && mkcert -install >/dev/null 2>&1 || true)
+        mkcert -key-file "$KEY_FILE" -cert-file "$CERT_FILE" localhost 127.0.0.1 ::1 >/dev/null
+        echo -e "${GREEN}✅ mkcert certificate ready (expires in $(days_remaining "$CERT_FILE") days)${NC}"
+    else
+        echo -e "${GREEN}✅ Existing mkcert certificate valid for $rem more days${NC}"
     fi
-fi
-
-# Generate new certificates if they don't exist or were removed
-if [ ! -f "$CERT_FILE" ]; then
-    # Generate private key
-    openssl genrsa -out "$KEY_FILE" 2048
-    
-    # Create certificate configuration
-    cat > "$VITE_CERT_DIR/cert.conf" << EOF
-[req]
-distinguished_name = req_distinguished_name
-req_extensions = v3_req
+    ROOT_CA_CERT=$(mkcert -CAROOT 2>/dev/null)/rootCA.pem
+else
+    echo -e "${YELLOW}ℹ️  mkcert not found – falling back to custom root CA generation${NC}"
+    # Generate root CA if missing or expiring soon (<30 days)
+    ca_rem=$(days_remaining "$ROOT_CA_CERT")
+    if [ ! -f "$ROOT_CA_CERT" ] || [ "$ca_rem" -lt 30 ]; then
+        echo -e "${BLUE}🔧 Creating local root CA (${ROOT_CA_NAME})...${NC}"
+        openssl genrsa -out "$ROOT_CA_KEY" 4096 >/dev/null 2>&1
+        cat > "$VITE_CERT_DIR/rootCA.cnf" << EOF
+[ req ]
+distinguished_name = dn
 prompt = no
+x509_extensions = v3_ca
 
-[req_distinguished_name]
+[ dn ]
+CN = ${ROOT_CA_NAME}
+O = Local Dev
+C = XX
+
+[ v3_ca ]
+basicConstraints = critical, CA:TRUE, pathlen:0
+keyUsage = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer:always
+EOF
+        openssl req -x509 -new -nodes -key "$ROOT_CA_KEY" -sha256 -days 3650 \
+            -out "$ROOT_CA_CERT" -config "$VITE_CERT_DIR/rootCA.cnf" >/dev/null 2>&1
+        rm -f "$VITE_CERT_DIR/rootCA.cnf" "$VITE_CERT_DIR/rootCA.srl"
+        echo -e "${GREEN}✅ Root CA created (expires in $(days_remaining "$ROOT_CA_CERT") days)${NC}"
+    else
+        echo -e "${GREEN}✅ Root CA valid for $ca_rem more days${NC}"
+    fi
+    # Generate / refresh leaf cert
+    leaf_rem=$(days_remaining "$CERT_FILE")
+    if [ ! -f "$CERT_FILE" ] || [ "$leaf_rem" -lt 15 ]; then
+        echo -e "${BLUE}🔧 Generating leaf localhost certificate signed by root CA...${NC}"
+        openssl genrsa -out "$KEY_FILE" 2048 >/dev/null 2>&1
+        cat > "$VITE_CERT_DIR/cert.conf" << EOF
+[ req ]
+distinguished_name = dn
+prompt = no
+req_extensions = v3_req
+
+[ dn ]
 CN = localhost
 
-[v3_req]
-keyUsage = keyEncipherment, dataEncipherment
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
 
-[alt_names]
+[ alt_names ]
 DNS.1 = localhost
 DNS.2 = 127.0.0.1
 IP.1 = 127.0.0.1
 IP.2 = ::1
 EOF
-    
-    # Generate certificate with proper configuration
-    openssl req -new -x509 -key "$KEY_FILE" -out "$CERT_FILE" -days 365 \
-        -config "$VITE_CERT_DIR/cert.conf" -extensions v3_req
-    
-    # Clean up config file
-    rm -f "$VITE_CERT_DIR/cert.conf"
-    
-    echo -e "${GREEN}✅ Generated SSL certificates with CN=localhost${NC}"
-    
-    # Verify the certificate
-    CN_CHECK=$(openssl x509 -in "$CERT_FILE" -noout -subject | grep -o 'CN=[^,]*' | cut -d= -f2)
-    echo -e "${BLUE}📋 Certificate Common Name: $CN_CHECK${NC}"
+        openssl req -new -key "$KEY_FILE" -out "$VITE_CERT_DIR/cert.csr" -config "$VITE_CERT_DIR/cert.conf" >/dev/null 2>&1
+        openssl x509 -req -in "$VITE_CERT_DIR/cert.csr" -CA "$ROOT_CA_CERT" -CAkey "$ROOT_CA_KEY" -CAcreateserial \
+            -out "$CERT_FILE" -days 825 -sha256 -extensions v3_req -extfile "$VITE_CERT_DIR/cert.conf" >/dev/null 2>&1
+        rm -f "$VITE_CERT_DIR/cert.csr" "$VITE_CERT_DIR/cert.conf" "$VITE_CERT_DIR/rootCA.srl"
+        echo -e "${GREEN}✅ Leaf certificate generated (expires in $(days_remaining "$CERT_FILE") days)${NC}"
+    else
+        echo -e "${GREEN}✅ Leaf certificate valid for $leaf_rem more days${NC}"
+    fi
 fi
 
-# Add certificate to system trust store
-echo -e "${BLUE}🔒 Adding certificate to system trust store...${NC}"
+# Determine which CA file to trust (mkcert already installs globally, but we still add to per-user NSS if needed)
+if [ ! -f "$ROOT_CA_CERT" ]; then
+    if [ "$MKCERT_MODE" = true ]; then
+        echo -e "${YELLOW}⚠️  mkcert root CA not located (expected: $(mkcert -CAROOT)/rootCA.pem). Attempting mkcert -install...${NC}"
+        (cd "$VITE_CERT_DIR" && mkcert -install >/dev/null 2>&1 || true)
+        if [ -f "$(mkcert -CAROOT)/rootCA.pem" ]; then
+            ROOT_CA_CERT="$(mkcert -CAROOT)/rootCA.pem"
+            echo -e "${GREEN}✅ mkcert root CA installed${NC}"
+        else
+            echo -e "${YELLOW}⚠️  Still no mkcert root CA; will fallback to trusting leaf (browser may warn).${NC}"
+            ROOT_CA_CERT="$CERT_FILE"
+        fi
+    else
+        # If custom mode but somehow missing, fallback to leaf (should not happen)
+        ROOT_CA_CERT="$CERT_FILE"
+        echo -e "${YELLOW}⚠️  Root CA certificate not found; falling back to trusting leaf certificate (Chrome may warn).${NC}"
+    fi
+fi
+
+# Add CA certificate to system trust store if we created our own (skip if mkcert handled system) unless it's already there
 SYSTEM_CERT_DIR="/etc/ca-certificates/trust-source/anchors"
-CERT_NAME="vite-dev-localhost.crt"
-
-if [ -d "$SYSTEM_CERT_DIR" ]; then
-    sudo cp "$CERT_FILE" "$SYSTEM_CERT_DIR/$CERT_NAME"
-    sudo trust extract-compat
-    echo -e "${GREEN}✅ Added to system trust store${NC}"
-else
-    echo -e "${YELLOW}⚠️  System trust store not found, skipping system-wide trust${NC}"
+CA_TARGET_NAME="monitoring-dev-root-ca.crt"
+if [ -d "$SYSTEM_CERT_DIR" ] && [ "$MKCERT_MODE" = false ]; then
+    echo -e "${BLUE}🔒 Adding local root CA to system trust store...${NC}"
+    sudo cp "$ROOT_CA_CERT" "$SYSTEM_CERT_DIR/$CA_TARGET_NAME" 2>/dev/null || true
+    sudo trust extract-compat 2>/dev/null || true
+    echo -e "${GREEN}✅ Root CA available system-wide${NC}"
 fi
 
-# Add certificate to Firefox profiles
-echo -e "${BLUE}🦊 Adding certificate to Firefox profiles...${NC}"
+# Add CA certificate to Firefox profiles (mkcert usually handles; we ensure fallback)
+echo -e "${BLUE}🦊 Adding certificate authority to Firefox profiles...${NC}"
 FIREFOX_PROFILES_DIR="$HOME/.mozilla/firefox"
 
 if [ -d "$FIREFOX_PROFILES_DIR" ]; then
@@ -132,8 +202,9 @@ if [ -d "$FIREFOX_PROFILES_DIR" ]; then
             profile_name=$(basename "$profile_dir")
             echo "  📁 Processing Firefox profile: $profile_name"
             
-            # Add certificate to Firefox's certificate database
-            certutil -A -n "Vite Dev Certificate" -t "TCu,Cu,Tu" -i "$CERT_FILE" -d sql:"$profile_dir" 2>/dev/null || {
+            # Add root CA certificate to Firefox's certificate database
+            certutil -D -n "$ROOT_CA_NAME" -d sql:"$profile_dir" 2>/dev/null || true
+            certutil -A -n "$ROOT_CA_NAME" -t "C,C,C" -i "$ROOT_CA_CERT" -d sql:"$profile_dir" 2>/dev/null || {
                 echo -e "${YELLOW}    ⚠️  Could not add to Firefox profile $profile_name (database may not exist)${NC}"
             }
         fi
@@ -148,17 +219,18 @@ else
     echo -e "${YELLOW}⚠️  Firefox not found${NC}"
 fi
 
-# Add certificate to Chrome/Chromium
-echo -e "${BLUE}🌐 Adding certificate to Chrome/Chromium...${NC}"
+# Add CA certificate to Chrome/Chromium
+echo -e "${BLUE}🌐 Adding certificate authority to Chrome/Chromium...${NC}"
 
 # Chrome/Chromium certificate database
 CHROME_CERT_DB="$HOME/.pki/nssdb"
 
 if [ -d "$CHROME_CERT_DB" ]; then
-    certutil -A -n "Vite Dev Certificate" -t "TCu,Cu,Tu" -i "$CERT_FILE" -d sql:"$CHROME_CERT_DB" 2>/dev/null || {
-        echo -e "${YELLOW}⚠️  Could not add to Chrome certificate database${NC}"
+    certutil -D -n "$ROOT_CA_NAME" -d sql:"$CHROME_CERT_DB" 2>/dev/null || true
+    certutil -A -n "$ROOT_CA_NAME" -t "C,C,C" -i "$ROOT_CA_CERT" -d sql:"$CHROME_CERT_DB" 2>/dev/null || {
+        echo -e "${YELLOW}⚠️  Could not add root CA to Chrome certificate database${NC}"
     }
-    echo -e "${GREEN}✅ Added to Chrome/Chromium certificate store${NC}"
+    echo -e "${GREEN}✅ Root CA added to Chrome/Chromium certificate store${NC}"
 else
     echo -e "${YELLOW}⚠️  Chrome/Chromium certificate database not found${NC}"
     echo "You may need to start Chrome/Chromium first to create the database"
@@ -169,19 +241,34 @@ echo ""
 echo -e "${GREEN}🎉 Certificate trust setup completed!${NC}"
 echo ""
 echo -e "${BLUE}📋 Next steps:${NC}"
-echo "1. Restart any open Chrome/Chromium and Firefox browsers"
+echo "1. Restart any open Chrome/Chromium and Firefox browsers (fully close all windows)"
 echo "2. Start your Vite development server: npm run dev"
-echo "3. Visit https://localhost:5173"
-echo "4. The certificate should now be trusted automatically"
+echo "3. Visit https://localhost:5173 (Chrome should now show a secure lock)"
 echo ""
-echo -e "${YELLOW}💡 Note:${NC}"
-echo "- If you still see certificate warnings, try clearing browser cache"
-echo "- You may need to restart your browsers completely"
+echo -e "${YELLOW}💡 For Chrome/Chromium users:${NC}"
+echo "If you still see 'NET::ERR_CERT_INVALID':"
+echo " - Ensure the root CA appears in chrome://settings/security → Manage certificates (Authorities) as '${ROOT_CA_NAME}'"
+echo " - Clear SSL state: chrome://net-internals/#events → (or Settings > Privacy > Clear browsing data > Cached images & files)"
+if [ "$MKCERT_MODE" = true ]; then
+echo " - Confirm chain: openssl verify -CAfile $(mkcert -CAROOT)/rootCA.pem $CERT_FILE"
+else
+echo " - Confirm chain: openssl verify -CAfile $ROOT_CA_CERT $CERT_FILE"
+fi
+echo ""
+echo -e "${YELLOW}💡 General Notes:${NC}"
+echo "- Firefox should trust the certificate automatically"
+echo "- Chrome on Linux has stricter certificate validation for localhost"
+echo "- The certificate is system-trusted but Chrome may still show warnings for self-signed certs"
 echo "- This certificate is only valid for localhost development"
 echo ""
 echo -e "${BLUE}🔧 To remove the certificate later:${NC}"
-echo "sudo rm $SYSTEM_CERT_DIR/$CERT_NAME 2>/dev/null || true"
+if [ "$MKCERT_MODE" = true ]; then
+echo "# mkcert root removal (not usually recommended):"
+echo "rm -rf $(mkcert -CAROOT)"
+else
+echo "sudo rm /etc/ca-certificates/trust-source/anchors/monitoring-dev-root-ca.crt 2>/dev/null || true"
 echo "sudo trust extract-compat"
-echo "certutil -D -n 'Vite Dev Certificate' -d sql:$CHROME_CERT_DB 2>/dev/null || true"
+fi
+echo "certutil -D -n '${ROOT_CA_NAME}' -d sql:$CHROME_CERT_DB 2>/dev/null || true"
 echo ""
 echo -e "${GREEN}✨ Happy coding with trusted HTTPS! ✨${NC}"
