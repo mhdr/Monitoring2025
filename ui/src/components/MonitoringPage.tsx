@@ -6,7 +6,7 @@ import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
 
 const MonitoringPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentFolderId = searchParams.get('folderId');
@@ -49,6 +49,11 @@ const MonitoringPage: React.FC = () => {
 
   const allGroups = data?.groups || [];
 
+  // Helper function to get display name based on language
+  const getDisplayName = (group: Group) => {
+    return (language === 'fa' && group.nameFa) ? group.nameFa : group.name;
+  };
+
   const handleFolderClick = (folderId: string) => {
     navigate(`/dashboard/monitoring?folderId=${folderId}`);
   };
@@ -84,8 +89,8 @@ const MonitoringPage: React.FC = () => {
             <div className="card-body flex-fill overflow-auto">
               {/* Breadcrumb Navigation */}
               {breadcrumbs.length > 0 && (
-                <nav aria-label="breadcrumb" className="mb-3">
-                  <ol className="breadcrumb">
+                <nav aria-label="breadcrumb" className="mb-4">
+                  <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">
                       <a 
                         href="#" 
@@ -105,7 +110,7 @@ const MonitoringPage: React.FC = () => {
                         aria-current={index === breadcrumbs.length - 1 ? 'page' : undefined}
                       >
                         {index === breadcrumbs.length - 1 ? (
-                          folder.name
+                          getDisplayName(folder)
                         ) : (
                           <a 
                             href="#" 
@@ -114,7 +119,7 @@ const MonitoringPage: React.FC = () => {
                               handleBreadcrumbClick(folder.id);
                             }}
                           >
-                            {folder.name}
+                            {getDisplayName(folder)}
                           </a>
                         )}
                       </li>
@@ -170,7 +175,7 @@ const MonitoringPage: React.FC = () => {
                   <div className="d-flex align-items-center mb-3">
                     <i className="bi bi-folder-fill me-2 text-warning"></i>
                     <h5 className="mb-0">
-                      {currentFolder ? currentFolder.name : t('rootFolder')}
+                      {currentFolder ? getDisplayName(currentFolder) : t('rootFolder')}
                     </h5>
                     <span className="badge bg-secondary ms-2">
                       {childGroups.length}

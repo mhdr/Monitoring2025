@@ -139,6 +139,7 @@ export interface ManagementSettings {
 export interface Group {
   id: string;
   name: string;
+  nameFa?: string | null;
   parentId?: string | null;
 }
 

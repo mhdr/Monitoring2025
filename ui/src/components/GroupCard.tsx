@@ -10,7 +10,10 @@ interface GroupCardProps {
 }
 
 const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, onClick }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  // Display Persian name if language is Persian and nameFa is available, otherwise use name
+  const displayName = (language === 'fa' && group.nameFa) ? group.nameFa : group.name;
 
   return (
     <div 
@@ -30,7 +33,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, onClick }) 
         <i className="bi bi-folder-fill"></i>
       </div>
       <div className="group-card-content">
-        <h6 className="group-card-title">{group.name}</h6>
+        <h6 className="group-card-title">{displayName}</h6>
         {subgroupCount > 0 && (
           <span className="group-card-badge badge bg-primary">
             {subgroupCount} {subgroupCount === 1 ? t('folder') : t('folders')}
