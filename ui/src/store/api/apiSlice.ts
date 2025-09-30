@@ -219,6 +219,8 @@ export const apiSlice = createApi({
       }),
       transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
       providesTags: ['Groups'],
+      // Force refetch on mount and page refresh
+      keepUnusedDataFor: 0,
     }),
 
     // Get monitoring items accessible to the current user
@@ -230,6 +232,8 @@ export const apiSlice = createApi({
       }),
       transformErrorResponse: (error: FetchBaseQueryError) => transformApiError(error),
       providesTags: ['Items'],
+      // Force refetch on mount and page refresh
+      keepUnusedDataFor: 0,
     }),
   }),
 });
