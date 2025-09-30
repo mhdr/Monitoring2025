@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { User } from '../../types/auth';
-import { authStorageHelpers } from '../api/apiSlice';
+import { authStorageHelpers } from '../../utils/authStorage';
 
 // Define the initial state interface
 interface AuthState {

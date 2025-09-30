@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
-import { useGetGroupsQuery } from '../store/api/apiSlice';
-import type { Group } from '../types/api';
+import { monitoringApi } from '../services/api';
+import type { Group, GroupsResponseDto } from '../types/api';
+import type { ApiError } from '../types/auth';
 import GroupCard from './GroupCard';
 
 const MonitoringPage: React.FC = () => {
@@ -11,7 +12,27 @@ const MonitoringPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const currentFolderId = searchParams.get('folderId');
   
-  const { data, isLoading, isError, error } = useGetGroupsQuery();
+  const [data, setData] = useState<GroupsResponseDto | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<ApiError | null>(null);
+
+  // Fetch groups data
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await monitoringApi.getGroups();
+        setData(response);
+      } catch (err) {
+        setError(err as ApiError);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGroups();
+  }, []); // Empty dependency array - fetch once on mount
 
   // Get current folder and its children
   const { currentFolder, childGroups, breadcrumbs } = useMemo(() => {
@@ -141,16 +162,14 @@ const MonitoringPage: React.FC = () => {
               )}
 
               {/* Error State */}
-              {isError && (
+              {error && (
                 <div className="alert alert-danger d-flex align-items-center" role="alert">
                   <i className="bi bi-exclamation-triangle-fill me-2"></i>
                   <div>
                     <strong>{t('errorLoadingGroups')}</strong>
-                    {error && 'status' in error && (
+                    {error.status && (
                       <div className="small mt-1">
-                        {typeof error.status === 'number' 
-                          ? `Error ${error.status}` 
-                          : error.status}
+                        {`Error ${error.status}`}
                       </div>
                     )}
                   </div>
@@ -158,7 +177,7 @@ const MonitoringPage: React.FC = () => {
               )}
 
               {/* Empty State */}
-              {!isLoading && !isError && childGroups.length === 0 && (
+              {!isLoading && !error && childGroups.length === 0 && (
                 <div className="d-flex align-items-center justify-content-center h-100">
                   <div className="text-center text-muted">
                     <i className="bi bi-folder-x" style={{ fontSize: '3rem' }}></i>
@@ -170,7 +189,7 @@ const MonitoringPage: React.FC = () => {
               )}
 
               {/* Folder Grid View */}
-              {!isLoading && !isError && childGroups.length > 0 && (
+              {!isLoading && !error && childGroups.length > 0 && (
                 <div>
                   <div className="d-flex align-items-center mb-3">
                     <i className="bi bi-folder-fill me-2 text-warning"></i>

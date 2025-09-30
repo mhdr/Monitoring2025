@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from './useRedux';
-import { useLoginMutation } from '../store/api/apiSlice';
+import { authApi } from '../services/api';
 import { setAuth, clearAuth, setLoading, selectAuth } from '../store/slices/authSlice';
 import type { LoginRequest, ApiError } from '../types/auth';
 
@@ -10,12 +10,11 @@ import type { LoginRequest, ApiError } from '../types/auth';
 export const useAuthRedux = () => {
   const dispatch = useAppDispatch();
   const { user, token, isAuthenticated, isLoading } = useAppSelector(selectAuth);
-  const [loginMutation] = useLoginMutation();
 
   const login = async (credentials: LoginRequest): Promise<void> => {
     try {
       dispatch(setLoading(true));
-      const response = await loginMutation(credentials).unwrap();
+      const response = await authApi.login(credentials);
       dispatch(setAuth({
         user: response.user,
         token: response.accessToken,
