@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { monitoringApi } from '../services/api';
-import type { Group, GroupsResponseDto } from '../types/api';
+import type { Group, GroupsResponseDto, ItemsResponseDto } from '../types/api';
 import type { ApiError } from '../types/auth';
 import GroupCard from './GroupCard';
 
@@ -15,6 +15,10 @@ const MonitoringPage: React.FC = () => {
   const [data, setData] = useState<GroupsResponseDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
+  
+  const [itemsData, setItemsData] = useState<ItemsResponseDto | null>(null);
+  const [isLoadingItems, setIsLoadingItems] = useState(true);
+  const [itemsError, setItemsError] = useState<ApiError | null>(null);
 
   // Fetch groups data
   useEffect(() => {
@@ -32,6 +36,24 @@ const MonitoringPage: React.FC = () => {
     };
 
     fetchGroups();
+  }, []); // Empty dependency array - fetch once on mount
+
+  // Fetch items data
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        setIsLoadingItems(true);
+        setItemsError(null);
+        const response = await monitoringApi.getItems({ showOrphans: false });
+        setItemsData(response);
+      } catch (err) {
+        setItemsError(err as ApiError);
+      } finally {
+        setIsLoadingItems(false);
+      }
+    };
+
+    fetchItems();
   }, []); // Empty dependency array - fetch once on mount
 
   // Get current folder and its children
@@ -68,11 +90,32 @@ const MonitoringPage: React.FC = () => {
     return { currentFolder: folder, childGroups: children, breadcrumbs: trail };
   }, [data?.groups, currentFolderId]);
 
+  // Get items for current folder
+  const currentFolderItems = useMemo(() => {
+    if (!itemsData?.items) {
+      return [];
+    }
+
+    // Filter items by current folder/group
+    if (!currentFolderId) {
+      // At root level - show items with no groupId
+      return itemsData.items.filter(item => !item.groupId || item.groupId === null);
+    }
+
+    // Show items belonging to current folder
+    return itemsData.items.filter(item => item.groupId === currentFolderId);
+  }, [itemsData?.items, currentFolderId]);
+
   const allGroups = data?.groups || [];
 
   // Helper function to get display name based on language
   const getDisplayName = (group: Group) => {
     return (language === 'fa' && group.nameFa) ? group.nameFa : group.name;
+  };
+
+  // Helper function to get item display name based on language
+  const getItemDisplayName = (item: typeof currentFolderItems[0]) => {
+    return (language === 'fa' && item.nameFa) ? item.nameFa : item.name;
   };
 
   const handleFolderClick = (folderId: string) => {
@@ -190,11 +233,11 @@ const MonitoringPage: React.FC = () => {
 
               {/* Folder Grid View */}
               {!isLoading && !error && childGroups.length > 0 && (
-                <div>
+                <div className="mb-4">
                   <div className="d-flex align-items-center mb-3">
                     <i className="bi bi-folder-fill me-2 text-warning"></i>
                     <h5 className="mb-0">
-                      {currentFolder ? getDisplayName(currentFolder) : t('rootFolder')}
+                      {t('folders')}
                     </h5>
                     <span className="badge bg-secondary ms-2">
                       {childGroups.length}
@@ -213,6 +256,67 @@ const MonitoringPage: React.FC = () => {
                         />
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {/* Items List View */}
+              {!isLoadingItems && !itemsError && currentFolderItems.length > 0 && (
+                <div>
+                  <div className="d-flex align-items-center mb-3">
+                    <i className="bi bi-file-earmark-text-fill me-2 text-primary"></i>
+                    <h5 className="mb-0">
+                      {t('items')}
+                    </h5>
+                    <span className="badge bg-secondary ms-2">
+                      {currentFolderItems.length}
+                    </span>
+                  </div>
+                  
+                  <div className="list-group">
+                    {currentFolderItems.map((item) => (
+                      <div 
+                        key={item.id} 
+                        className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      >
+                        <div className="d-flex align-items-center flex-grow-1">
+                          <i className="bi bi-file-earmark me-3 text-muted"></i>
+                          <div>
+                            <div className="fw-semibold">{getItemDisplayName(item)}</div>
+                            <small className="text-muted">
+                              {t('pointNumber')}: {item.pointNumber}
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Items Loading State */}
+              {isLoadingItems && (
+                <div className="d-flex align-items-center justify-content-center py-4">
+                  <div className="text-center">
+                    <div className="spinner-border text-primary mb-2" role="status" style={{ width: '2rem', height: '2rem' }}>
+                      <span className="visually-hidden">{t('loadingItems')}</span>
+                    </div>
+                    <p className="text-muted small">{t('loadingItems')}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Items Error State */}
+              {itemsError && (
+                <div className="alert alert-warning d-flex align-items-center" role="alert">
+                  <i className="bi bi-exclamation-triangle me-2"></i>
+                  <div>
+                    <strong>{t('errorLoadingItems')}</strong>
+                    {itemsError.status && (
+                      <div className="small mt-1">
+                        {`Error ${itemsError.status}`}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

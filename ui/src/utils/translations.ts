@@ -68,7 +68,13 @@ export const translations = {
     noItemsInFolder: 'این پوشه خالی است',
     openFolder: 'باز کردن پوشه',
     folders: 'پوشه‌ها',
-    folder: 'پوشه'
+    folder: 'پوشه',
+    // Monitoring page - Items
+    items: 'آیتم‌ها',
+    loadingItems: 'در حال بارگذاری آیتم‌ها...',
+    errorLoadingItems: 'خطا در بارگذاری آیتم‌ها',
+    noItems: 'هیچ آیتمی یافت نشد',
+    pointNumber: 'شماره نقطه'
   },
   en: {
     welcome: 'Welcome',
@@ -139,7 +145,13 @@ export const translations = {
     noItemsInFolder: 'This folder is empty',
     openFolder: 'Open Folder',
     folders: 'Folders',
-    folder: 'Folder'
+    folder: 'Folder',
+    // Monitoring page - Items
+    items: 'Items',
+    loadingItems: 'Loading items...',
+    errorLoadingItems: 'Error loading items',
+    noItems: 'No items found',
+    pointNumber: 'Point Number'
   }
 };
 
