@@ -70,11 +70,11 @@ export const translations = {
     folders: 'پوشه‌ها',
     folder: 'پوشه',
     // Monitoring page - Items
-    items: 'آیتم‌ها',
-    loadingItems: 'در حال بارگذاری آیتم‌ها...',
-    errorLoadingItems: 'خطا در بارگذاری آیتم‌ها',
-    noItems: 'هیچ آیتمی یافت نشد',
-    pointNumber: 'شماره نقطه'
+    items: 'پوینت‌ها',
+    loadingItems: 'در حال بارگذاری پوینت‌ها...',
+    errorLoadingItems: 'خطا در بارگذاری پوینت‌ها',
+    noItems: 'هیچ پوینتی یافت نشد',
+    pointNumber: 'شماره پوینت'
   },
   en: {
     welcome: 'Welcome',
@@ -147,10 +147,10 @@ export const translations = {
     folders: 'Folders',
     folder: 'Folder',
     // Monitoring page - Items
-    items: 'Items',
-    loadingItems: 'Loading items...',
-    errorLoadingItems: 'Error loading items',
-    noItems: 'No items found',
+    items: 'Points',
+    loadingItems: 'Loading points...',
+    errorLoadingItems: 'Error loading points',
+    noItems: 'No points found',
     pointNumber: 'Point Number'
   }
 };
