@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
@@ -14,6 +14,10 @@ const MonitoringPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const currentFolderId = searchParams.get('folderId');
   
+  // State to manage visible loading indicator with minimum display time
+  const [showRefreshIndicator, setShowRefreshIndicator] = useState(false);
+  const loadingTimeoutRef = useRef<number | null>(null);
+  
   // Get data from Redux store
   const {
     groups: allGroups,
@@ -23,6 +27,7 @@ const MonitoringPage: React.FC = () => {
     itemsLoading: isLoadingItems,
     itemsError,
     values: itemValues,
+    valuesLoading: isRefreshing,
   } = useAppSelector((state) => state.monitoring);
 
   // Fetch groups and items data on mount
@@ -83,6 +88,33 @@ const MonitoringPage: React.FC = () => {
     // Show items belonging to current folder
     return allItems.filter((item) => item.groupId === currentFolderId);
   }, [allItems, currentFolderId]);
+
+  // Manage refresh indicator visibility with minimum display time
+  useEffect(() => {
+    if (isRefreshing) {
+      // Show indicator immediately when loading starts
+      setShowRefreshIndicator(true);
+      
+      // Clear any existing timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+    } else if (showRefreshIndicator) {
+      // When loading finishes, keep indicator visible for at least 500ms
+      loadingTimeoutRef.current = setTimeout(() => {
+        setShowRefreshIndicator(false);
+        loadingTimeoutRef.current = null;
+      }, 500);
+    }
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [isRefreshing, showRefreshIndicator]);
 
   // Poll values every 5 seconds for items in current folder
   useEffect(() => {
@@ -177,7 +209,21 @@ const MonitoringPage: React.FC = () => {
           <div className="card h-100 d-flex flex-column">
             <div className="card-header">
               <div className="d-flex justify-content-between align-items-center">
-                <h4 className="card-title mb-0">{t('monitoring')}</h4>
+                <div className="d-flex align-items-center">
+                  <h4 className="card-title mb-0">{t('monitoring')}</h4>
+                  {showRefreshIndicator && currentFolderItems.length > 0 && (
+                    <div className="ms-3 d-flex align-items-center text-muted">
+                      <div 
+                        className="spinner-border spinner-border-sm me-2" 
+                        role="status"
+                        style={{ width: '1rem', height: '1rem' }}
+                      >
+                        <span className="visually-hidden">{t('refreshingData')}</span>
+                      </div>
+                      <small className="d-none d-md-inline">{t('refreshingData')}</small>
+                    </div>
+                  )}
+                </div>
                 {currentFolder && (
                   <button 
                     className="btn btn-outline-secondary btn-sm"

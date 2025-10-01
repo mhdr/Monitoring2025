@@ -75,5 +75,6 @@
   "off": "OFF",
   "loadingValue": "Loading...",
   "value": "Value",
-  "time": "Time"
+  "time": "Time",
+  "refreshingData": "Refreshing data..."
 }
