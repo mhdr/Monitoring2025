@@ -59,13 +59,15 @@
 /* Grid container for item cards */
 .items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* On desktop/tablet show two columns */
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
+/* Collapse to a single column on small screens (matching Bootstrap's md breakpoint) */
+@media (max-width: 767.98px) {
   .items-grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
