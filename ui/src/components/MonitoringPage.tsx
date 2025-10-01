@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
 import { fetchGroups, fetchItems, setCurrentFolderId, fetchValues } from '../store/slices/monitoringSlice';
 import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
+import ItemCard from './ItemCard';
 
 const MonitoringPage: React.FC = () => {
   const { t, language } = useLanguage();
@@ -147,6 +148,10 @@ const MonitoringPage: React.FC = () => {
   const formatTimestamp = (time: number) => {
     const date = new Date(time * 1000); // Convert Unix timestamp to milliseconds
     return date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
@@ -308,43 +313,17 @@ const MonitoringPage: React.FC = () => {
                     </span>
                   </div>
                   
-                  <div className="list-group">
+                  <div className="items-grid">
                     {currentFolderItems.map((item: typeof currentFolderItems[0]) => {
                       const itemValue = getItemValue(item.id);
                       return (
-                        <div 
-                          key={item.id} 
-                          className="list-group-item list-group-item-action"
-                        >
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div className="d-flex align-items-start flex-grow-1">
-                              <i className="bi bi-file-earmark me-3 text-muted mt-1"></i>
-                              <div className="flex-grow-1">
-                                <div className="fw-semibold mb-1">{getItemDisplayName(item)}</div>
-                                <small className="text-muted">
-                                  {t('pointNumber')}: {item.pointNumber}
-                                </small>
-                              </div>
-                            </div>
-                            <div className="text-end ms-3">
-                              {itemValue ? (
-                                <>
-                                  <div className="fw-bold text-primary mb-1">
-                                    {formatItemValue(item, itemValue.value)}
-                                  </div>
-                                  <small className="text-muted">
-                                    <i className="bi bi-clock me-1"></i>
-                                    {formatTimestamp(itemValue.time)}
-                                  </small>
-                                </>
-                              ) : (
-                                <div className="text-muted fst-italic">
-                                  <small>{t('loadingValue')}</small>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                        <ItemCard
+                          key={item.id}
+                          name={getItemDisplayName(item)}
+                          pointNumber={item.pointNumber}
+                          value={itemValue ? formatItemValue(item, itemValue.value) : t('loadingValue')}
+                          time={itemValue ? formatTimestamp(itemValue.time) : t('loadingValue')}
+                        />
                       );
                     })}
                   </div>

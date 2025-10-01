@@ -71,5 +71,7 @@
   "noValue": "N/A",
   "on": "ON",
   "off": "OFF",
-  "loadingValue": "Loading..."
+  "loadingValue": "Loading...",
+  "value": "Value",
+  "time": "Time"
 }
