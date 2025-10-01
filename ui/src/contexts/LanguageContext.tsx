@@ -1,4 +1,4 @@
-import React, { createContext, useEffect } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n/config';
 
@@ -8,6 +8,7 @@ interface LanguageContextType {
   language: Language;
   changeLanguage: (lang: Language) => void;
   t: (key: string) => string;
+  isLoadingLanguage: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -17,19 +18,29 @@ export { LanguageContext };
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useTranslation();
   const currentLanguage = i18n.language as Language;
+  const [isLoadingLanguage, setIsLoadingLanguage] = useState(false);
 
-  const changeLanguage = (lang: Language) => {
-    i18n.changeLanguage(lang);
+  const changeLanguage = async (lang: Language) => {
+    setIsLoadingLanguage(true);
     
-    // Update document direction and language
-    document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
-    
-    // Update document title
-    document.title = t('pageTitle');
-    
-    // Update body class for styling
-    document.body.className = lang === 'fa' ? 'rtl' : 'ltr';
+    try {
+      await i18n.changeLanguage(lang);
+      
+      // Update document direction and language
+      document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
+      document.documentElement.lang = lang;
+      
+      // Update document title
+      document.title = t('pageTitle');
+      
+      // Update body class for styling
+      document.body.className = lang === 'fa' ? 'rtl' : 'ltr';
+      
+      // Small delay to ensure CSS is fully applied
+      await new Promise(resolve => setTimeout(resolve, 200));
+    } finally {
+      setIsLoadingLanguage(false);
+    }
   };
 
   useEffect(() => {
@@ -60,7 +71,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [t]);
 
   return (
-    <LanguageContext.Provider value={{ language: currentLanguage, changeLanguage, t }}>
+    <LanguageContext.Provider value={{ language: currentLanguage, changeLanguage, t, isLoadingLanguage }}>
       {children}
     </LanguageContext.Provider>
   );
