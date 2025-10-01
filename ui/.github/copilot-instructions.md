@@ -6,11 +6,12 @@
 - This project **must support both Persian (fa) and English (en) languages**
 - **Persian language is the primary/main language** - all default content should be in Persian
 - All UI components, text, labels, messages, error messages, and content should be properly internationalized
-- Use the existing i18next setup for translations - **never hardcode text strings in components**
-- Ensure proper RTL (Right-to-Left) layout support for Persian content using CSS direction properties
-- When adding new text, **always add corresponding keys to both language translation files**
-- Translation files are typically located in the `public/locales/` directory
-- Use meaningful, hierarchical translation keys (e.g., `common.buttons.save`, `errors.validation.required`)
+- This project uses **i18next** for internationalization. Use the existing i18next setup (see `src/i18n/config.ts` and the helper in `src/hooks/useTranslation.ts`) for all translations — **never hardcode text strings in components**.
+- When adding new UI text or messages:
+	- Add translation keys to both `public/locales/fa/translation.json` and `public/locales/en/translation.json`.
+	- Use meaningful, hierarchical keys (e.g., `common.buttons.save`, `errors.validation.required`).
+	- Prefer using the `useTranslation` hook or the project's `useTranslation` helper to access translations in components.
+- Ensure proper RTL (Right-to-Left) layout support for Persian content using CSS direction properties (the project includes `bootstrap-rtl.css`).
 
 ### Technology Stack
 - This project is a **React application using TypeScript**
