@@ -101,11 +101,11 @@ const MonitoringPage: React.FC = () => {
         loadingTimeoutRef.current = null;
       }
     } else if (showRefreshIndicator) {
-      // When loading finishes, keep indicator visible for at least 500ms
+      // When loading finishes, keep indicator visible for at least 1000ms
       loadingTimeoutRef.current = setTimeout(() => {
         setShowRefreshIndicator(false);
         loadingTimeoutRef.current = null;
-      }, 500);
+      }, 1000);
     }
     
     // Cleanup timeout on unmount
