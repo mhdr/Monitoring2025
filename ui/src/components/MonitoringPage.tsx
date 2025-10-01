@@ -287,11 +287,13 @@ const MonitoringPage: React.FC = () => {
                   <div className="groups-grid">
                     {childGroups.map((group: Group) => {
                       const subgroupCount = allGroups.filter((g: Group) => g.parentId === group.id).length;
+                      const itemCount = allItems.filter((item) => item.groupId === group.id).length;
                       return (
                         <GroupCard
                           key={group.id}
                           group={group}
                           subgroupCount={subgroupCount}
+                          itemCount={itemCount}
                           onClick={() => handleFolderClick(group.id)}
                         />
                       );

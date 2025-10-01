@@ -64,6 +64,8 @@
   "folders2": "Folders",
   "folder": "Folder",
   "items": "Points",
+  "items2": "Points",
+  "item": "Point",
   "loadingItems": "Loading points...",
   "errorLoadingItems": "Error loading points",
   "noItems": "No points found",
