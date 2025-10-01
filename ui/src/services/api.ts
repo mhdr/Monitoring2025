@@ -157,11 +157,77 @@ export const monitoringApi = {
    * Get monitoring groups accessible to the current user
    */
   getGroups: async (params?: GroupsRequestDto): Promise<GroupsResponseDto> => {
+    const cacheKey = (() => {
+      try {
+        const normalized = params ? params : {};
+        // Use a stable key based on JSON stringified params
+        return `monitoring_groups:${encodeURIComponent(JSON.stringify(normalized))}`;
+      } catch {
+        return 'monitoring_groups:default';
+      }
+    })();
+
+    // Try to read from sessionStorage first
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const cached = window.sessionStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            return JSON.parse(cached) as GroupsResponseDto;
+          } catch {
+            // If parse fails, ignore cache and continue to fetch
+          }
+        }
+      }
+    } catch {
+      // If any storage access throws (privacy mode, quota), ignore and fetch
+    }
+
+    // Fetch from API and store in sessionStorage
     try {
       const response = await axiosInstance.post<GroupsResponseDto>('/api/Monitoring/Groups', params || {});
-      return response.data;
+      const data = response.data;
+
+      try {
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          try {
+            window.sessionStorage.setItem(cacheKey, JSON.stringify(data));
+          } catch {
+            // ignore storage set errors
+          }
+        }
+      } catch {
+        // ignore storage errors
+      }
+
+      return data;
     } catch (error: unknown) {
       throw transformApiError(error);
+    }
+  },
+
+  /**
+   * Clear cached groups for a given params (or all if no params provided)
+   */
+  clearGroupsCache: (params?: GroupsRequestDto): void => {
+    try {
+      if (typeof window === 'undefined' || !window.sessionStorage) return;
+
+      if (params) {
+        const key = `monitoring_groups:${encodeURIComponent(JSON.stringify(params))}`;
+        window.sessionStorage.removeItem(key);
+      } else {
+        // remove any keys that start with monitoring_groups:
+        const prefix = 'monitoring_groups:';
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < window.sessionStorage.length; i++) {
+          const k = window.sessionStorage.key(i);
+          if (k && k.startsWith(prefix)) keysToRemove.push(k);
+        }
+        keysToRemove.forEach((k) => window.sessionStorage.removeItem(k));
+      }
+    } catch {
+      // ignore storage access errors
     }
   },
 
