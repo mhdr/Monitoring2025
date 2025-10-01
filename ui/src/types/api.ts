@@ -157,6 +157,7 @@ export interface Item {
   groupId?: string | null;
   itemType: ItemType;
   name: string;
+  nameFa?: string | null;
   pointNumber: number;
   shouldScale: ShouldScaleType;
   normMin: number;
