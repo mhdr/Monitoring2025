@@ -36,7 +36,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, onClick }) 
         <h6 className="group-card-title">{displayName}</h6>
         {subgroupCount > 0 && (
           <span className="group-card-badge badge bg-primary">
-            {subgroupCount} {subgroupCount === 1 ? t('folder') : t('folders')}
+            {subgroupCount} {subgroupCount === 1 ? t('folder') : t('folders2')}
           </span>
         )}
       </div>
