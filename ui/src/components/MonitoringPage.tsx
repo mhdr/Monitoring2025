@@ -1,112 +1,86 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
-import { monitoringApi } from '../services/api';
-import type { Group, GroupsResponseDto, ItemsResponseDto } from '../types/api';
-import type { ApiError } from '../types/auth';
+import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
+import { fetchGroups, fetchItems, setCurrentFolderId } from '../store/slices/monitoringSlice';
+import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
 
 const MonitoringPage: React.FC = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
   const currentFolderId = searchParams.get('folderId');
   
-  const [data, setData] = useState<GroupsResponseDto | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<ApiError | null>(null);
-  
-  const [itemsData, setItemsData] = useState<ItemsResponseDto | null>(null);
-  const [isLoadingItems, setIsLoadingItems] = useState(true);
-  const [itemsError, setItemsError] = useState<ApiError | null>(null);
+  // Get data from Redux store
+  const {
+    groups: allGroups,
+    groupsLoading: isLoading,
+    groupsError: error,
+    items: allItems,
+    itemsLoading: isLoadingItems,
+    itemsError,
+  } = useAppSelector((state) => state.monitoring);
 
-  // Fetch groups data
+  // Fetch groups and items data on mount
   useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await monitoringApi.getGroups();
-        setData(response);
-      } catch (err) {
-        setError(err as ApiError);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    dispatch(fetchGroups());
+    dispatch(fetchItems({ showOrphans: false }));
+  }, [dispatch]);
 
-    fetchGroups();
-  }, []); // Empty dependency array - fetch once on mount
-
-  // Fetch items data
+  // Update current folder ID in Redux when URL parameter changes
   useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        setIsLoadingItems(true);
-        setItemsError(null);
-        const response = await monitoringApi.getItems({ showOrphans: false });
-        setItemsData(response);
-      } catch (err) {
-        setItemsError(err as ApiError);
-      } finally {
-        setIsLoadingItems(false);
-      }
-    };
-
-    fetchItems();
-  }, []); // Empty dependency array - fetch once on mount
+    dispatch(setCurrentFolderId(currentFolderId));
+  }, [currentFolderId, dispatch]);
 
   // Get current folder and its children
   const { currentFolder, childGroups, breadcrumbs } = useMemo(() => {
-    if (!data?.groups) {
+    if (!allGroups || allGroups.length === 0) {
       return { currentFolder: null, childGroups: [], breadcrumbs: [] };
     }
-
-    const allGroups = data.groups;
     
     // If no folderId, we're at root
     if (!currentFolderId) {
-      const rootGroups = allGroups.filter(g => !g.parentId || g.parentId === null);
+      const rootGroups = allGroups.filter((g: Group) => !g.parentId || g.parentId === null);
       return { currentFolder: null, childGroups: rootGroups, breadcrumbs: [] };
     }
 
     // Find current folder
-    const folder = allGroups.find(g => g.id === currentFolderId);
+    const folder = allGroups.find((g: Group) => g.id === currentFolderId);
     if (!folder) {
       return { currentFolder: null, childGroups: [], breadcrumbs: [] };
     }
 
     // Get children of current folder
-    const children = allGroups.filter(g => g.parentId === currentFolderId);
+    const children = allGroups.filter((g: Group) => g.parentId === currentFolderId);
 
     // Build breadcrumb trail
     const trail: Group[] = [];
     let current: Group | undefined = folder;
     while (current) {
       trail.unshift(current);
-      current = current.parentId ? allGroups.find(g => g.id === current!.parentId) : undefined;
+      current = current.parentId ? allGroups.find((g: Group) => g.id === current!.parentId) : undefined;
     }
 
     return { currentFolder: folder, childGroups: children, breadcrumbs: trail };
-  }, [data?.groups, currentFolderId]);
+  }, [allGroups, currentFolderId]);
 
   // Get items for current folder
   const currentFolderItems = useMemo(() => {
-    if (!itemsData?.items) {
+    if (!allItems || allItems.length === 0) {
       return [];
     }
 
     // Filter items by current folder/group
     if (!currentFolderId) {
       // At root level - show items with no groupId
-      return itemsData.items.filter(item => !item.groupId || item.groupId === null);
+      return allItems.filter((item) => !item.groupId || item.groupId === null);
     }
 
     // Show items belonging to current folder
-    return itemsData.items.filter(item => item.groupId === currentFolderId);
-  }, [itemsData?.items, currentFolderId]);
-
-  const allGroups = data?.groups || [];
+    return allItems.filter((item) => item.groupId === currentFolderId);
+  }, [allItems, currentFolderId]);
 
   // Helper function to get display name based on language
   const getDisplayName = (group: Group) => {
@@ -245,8 +219,8 @@ const MonitoringPage: React.FC = () => {
                   </div>
                   
                   <div className="groups-grid">
-                    {childGroups.map((group) => {
-                      const subgroupCount = allGroups.filter(g => g.parentId === group.id).length;
+                    {childGroups.map((group: Group) => {
+                      const subgroupCount = allGroups.filter((g: Group) => g.parentId === group.id).length;
                       return (
                         <GroupCard
                           key={group.id}
@@ -274,7 +248,7 @@ const MonitoringPage: React.FC = () => {
                   </div>
                   
                   <div className="list-group">
-                    {currentFolderItems.map((item) => (
+                    {currentFolderItems.map((item: typeof currentFolderItems[0]) => (
                       <div 
                         key={item.id} 
                         className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"

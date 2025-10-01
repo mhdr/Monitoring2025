@@ -1,0 +1,14 @@
+{
+  "monitoring": "نظارت",
+  "backToParent": "بازگشت به والد",
+  "rootFolder": "پوشه ریشه",
+  "loadingGroups": "در حال بارگذاری گروه‌ها...",
+  "errorLoadingGroups": "خطا در بارگذاری گروه‌ها",
+  "noItemsInFolder": "هیچ آیتمی در این پوشه وجود ندارد",
+  "noGroups": "هیچ گروهی یافت نشد",
+  "folders": "پوشه‌ها",
+  "items": "آیتم‌ها",
+  "pointNumber": "شماره نقطه",
+  "loadingItems": "در حال بارگذاری آیتم‌ها...",
+  "errorLoadingItems": "خطا در بارگذاری آیتم‌ها"
+}

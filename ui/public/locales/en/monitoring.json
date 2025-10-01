@@ -1,0 +1,14 @@
+{
+  "monitoring": "Monitoring",
+  "backToParent": "Back to Parent",
+  "rootFolder": "Root Folder",
+  "loadingGroups": "Loading groups...",
+  "errorLoadingGroups": "Error loading groups",
+  "noItemsInFolder": "No items in this folder",
+  "noGroups": "No groups found",
+  "folders": "Folders",
+  "items": "Items",
+  "pointNumber": "Point Number",
+  "loadingItems": "Loading items...",
+  "errorLoadingItems": "Error loading items"
+}

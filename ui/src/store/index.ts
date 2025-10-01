@@ -14,6 +14,7 @@ import sessionStorage from 'redux-persist/lib/storage/session'; // sessionStorag
 
 import authReducer from './slices/authSlice';
 import languageReducer from './slices/languageSlice';
+import monitoringReducer from './slices/monitoringSlice';
 
 /**
  * Persistence configuration for language
@@ -42,6 +43,7 @@ const authPersistConfig = {
 const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authReducer),
   language: persistReducer(languagePersistConfig, languageReducer),
+  monitoring: monitoringReducer,
 });
 
 /**
