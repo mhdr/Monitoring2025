@@ -189,7 +189,7 @@ builder.Services.AddAuthentication(options =>
         },
         OnTokenValidated = context =>
         {
-            Console.WriteLine("Token validated successfully");
+            // Console.WriteLine("Token validated successfully");
             return Task.CompletedTask;
         }
     };
