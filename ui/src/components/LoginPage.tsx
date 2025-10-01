@@ -12,8 +12,11 @@ interface FormErrors {
 }
 
 interface LocationState {
+  // Preserve the full location including pathname, search, and hash
   from?: {
     pathname: string;
+    search?: string;
+    hash?: string;
   };
 }
 
@@ -89,10 +92,15 @@ const LoginPage: React.FC = () => {
       });
 
       // If we reach this point, login was successful
-      // Navigate to the saved location or default to /dashboard
+      // Navigate to the saved location (preserve search/hash) or default to /dashboard
       const state = location.state as LocationState;
-      const from = state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+      const fromLoc = state?.from;
+      if (fromLoc && fromLoc.pathname) {
+        const target = `${fromLoc.pathname || '/dashboard'}${fromLoc.search || ''}${fromLoc.hash || ''}`;
+        navigate(target, { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (error) {
       // Handle login error
       const apiErr = error as ApiError;

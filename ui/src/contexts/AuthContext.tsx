@@ -13,14 +13,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // Start loading true until we initialize auth state from storage
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Initialize auth state on mount from storage
   useEffect(() => {
-    const authState = authStorageHelpers.getCurrentAuth();
-    setUser(authState.user);
-    setToken(authState.token);
-    setIsAuthenticated(Boolean(authState.token && authState.user));
+    // Read stored auth synchronously; keep isLoading true during this read
+    try {
+      const authState = authStorageHelpers.getCurrentAuth();
+      setUser(authState.user);
+      setToken(authState.token);
+      setIsAuthenticated(Boolean(authState.token && authState.user));
+    } finally {
+      // Ensure loading flag is cleared after initialization
+      setIsLoading(false);
+    }
   }, []);
 
   const login = useCallback(async (credentials: LoginRequest): Promise<void> => {
