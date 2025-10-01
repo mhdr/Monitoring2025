@@ -192,3 +192,19 @@ export interface ItemsRequestDto {
 export interface ItemsResponseDto {
   items: Item[];
 }
+
+// Monitoring Values types
+export interface MultiValue {
+  itemId: string;
+  value: string | null;
+  time: number; // Unix timestamp (int64)
+  dateTime?: string; // ReadOnly DateTime representation
+}
+
+export interface ValuesRequestDto {
+  itemIds?: string[] | null; // Leave empty to get all values
+}
+
+export interface ValuesResponseDto {
+  values: MultiValue[];
+}

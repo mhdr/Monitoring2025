@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
-import { fetchGroups, fetchItems, setCurrentFolderId } from '../store/slices/monitoringSlice';
+import { fetchGroups, fetchItems, setCurrentFolderId, fetchValues } from '../store/slices/monitoringSlice';
 import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
 
@@ -21,6 +21,7 @@ const MonitoringPage: React.FC = () => {
     items: allItems,
     itemsLoading: isLoadingItems,
     itemsError,
+    values: itemValues,
   } = useAppSelector((state) => state.monitoring);
 
   // Fetch groups and items data on mount
@@ -82,6 +83,30 @@ const MonitoringPage: React.FC = () => {
     return allItems.filter((item) => item.groupId === currentFolderId);
   }, [allItems, currentFolderId]);
 
+  // Poll values every 5 seconds for items in current folder
+  useEffect(() => {
+    // Only poll if we're in a folder with items
+    if (!currentFolderItems || currentFolderItems.length === 0) {
+      return;
+    }
+
+    // Extract item IDs from current folder items
+    const itemIds = currentFolderItems.map((item) => item.id);
+
+    // Fetch values immediately on mount or folder change
+    dispatch(fetchValues({ itemIds }));
+
+    // Set up interval to fetch values every 5 seconds
+    const intervalId = setInterval(() => {
+      dispatch(fetchValues({ itemIds }));
+    }, 5000);
+
+    // Cleanup: clear interval when component unmounts or folder changes
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [currentFolderItems, dispatch]);
+
   // Helper function to get display name based on language
   const getDisplayName = (group: Group) => {
     return (language === 'fa' && group.nameFa) ? group.nameFa : group.name;
@@ -90,6 +115,42 @@ const MonitoringPage: React.FC = () => {
   // Helper function to get item display name based on language
   const getItemDisplayName = (item: typeof currentFolderItems[0]) => {
     return (language === 'fa' && item.nameFa) ? item.nameFa : item.name;
+  };
+
+  // Helper function to get value for an item
+  const getItemValue = (itemId: string) => {
+    return itemValues.find((v) => v.itemId === itemId);
+  };
+
+  // Helper function to format value based on item type
+  const formatItemValue = (item: typeof currentFolderItems[0], value: string | null) => {
+    if (value === null || value === undefined) {
+      return t('noValue');
+    }
+
+    // For digital items (type 1 or 2), show on/off text
+    if (item.itemType === 1 || item.itemType === 2) {
+      const boolValue = value === 'true' || value === '1';
+      return boolValue ? (item.onText || t('on')) : (item.offText || t('off'));
+    }
+
+    // For analog items (type 3 or 4), show value with unit
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      return `${numValue.toFixed(2)} ${item.unit || ''}`;
+    }
+
+    return value;
+  };
+
+  // Helper function to format timestamp
+  const formatTimestamp = (time: number) => {
+    const date = new Date(time * 1000); // Convert Unix timestamp to milliseconds
+    return date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
   };
 
   const handleFolderClick = (folderId: string) => {
@@ -248,22 +309,44 @@ const MonitoringPage: React.FC = () => {
                   </div>
                   
                   <div className="list-group">
-                    {currentFolderItems.map((item: typeof currentFolderItems[0]) => (
-                      <div 
-                        key={item.id} 
-                        className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                      >
-                        <div className="d-flex align-items-center flex-grow-1">
-                          <i className="bi bi-file-earmark me-3 text-muted"></i>
-                          <div>
-                            <div className="fw-semibold">{getItemDisplayName(item)}</div>
-                            <small className="text-muted">
-                              {t('pointNumber')}: {item.pointNumber}
-                            </small>
+                    {currentFolderItems.map((item: typeof currentFolderItems[0]) => {
+                      const itemValue = getItemValue(item.id);
+                      return (
+                        <div 
+                          key={item.id} 
+                          className="list-group-item list-group-item-action"
+                        >
+                          <div className="d-flex justify-content-between align-items-start">
+                            <div className="d-flex align-items-start flex-grow-1">
+                              <i className="bi bi-file-earmark me-3 text-muted mt-1"></i>
+                              <div className="flex-grow-1">
+                                <div className="fw-semibold mb-1">{getItemDisplayName(item)}</div>
+                                <small className="text-muted">
+                                  {t('pointNumber')}: {item.pointNumber}
+                                </small>
+                              </div>
+                            </div>
+                            <div className="text-end ms-3">
+                              {itemValue ? (
+                                <>
+                                  <div className="fw-bold text-primary mb-1">
+                                    {formatItemValue(item, itemValue.value)}
+                                  </div>
+                                  <small className="text-muted">
+                                    <i className="bi bi-clock me-1"></i>
+                                    {formatTimestamp(itemValue.time)}
+                                  </small>
+                                </>
+                              ) : (
+                                <div className="text-muted fst-italic">
+                                  <small>{t('loadingValue')}</small>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

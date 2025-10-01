@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import type { LoginRequest, LoginResponse, ApiError, User, RefreshTokenRequest } from '../types/auth';
-import type { GroupsRequestDto, GroupsResponseDto, ItemsRequestDto, ItemsResponseDto } from '../types/api';
+import type { GroupsRequestDto, GroupsResponseDto, ItemsRequestDto, ItemsResponseDto, ValuesRequestDto, ValuesResponseDto } from '../types/api';
 import { authStorageHelpers } from '../utils/authStorage';
 
 // API configuration - Use relative path for development with Vite proxy
@@ -252,6 +252,23 @@ export const monitoringApi = {
       }
 
       return data;
+    } catch (error: unknown) {
+      throw transformApiError(error);
+    }
+  },
+  
+  /**
+   * Get current values for monitoring items
+   * @param params - Optional parameters including itemIds to filter specific items
+   * @returns ValuesResponseDto containing current values for monitoring items
+   */
+  getValues: async (params?: ValuesRequestDto): Promise<ValuesResponseDto> => {
+    try {
+      const response = await axiosInstance.post<ValuesResponseDto>(
+        '/api/Monitoring/Values', 
+        params || { itemIds: null }
+      );
+      return response.data;
     } catch (error: unknown) {
       throw transformApiError(error);
     }

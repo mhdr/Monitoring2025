@@ -67,5 +67,9 @@
   "loadingItems": "Loading points...",
   "errorLoadingItems": "Error loading points",
   "noItems": "No points found",
-  "pointNumber": "Point Number"
+  "pointNumber": "Point Number",
+  "noValue": "N/A",
+  "on": "ON",
+  "off": "OFF",
+  "loadingValue": "Loading..."
 }

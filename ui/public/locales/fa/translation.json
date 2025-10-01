@@ -67,5 +67,9 @@
   "loadingItems": "در حال بارگذاری پوینت‌ها...",
   "errorLoadingItems": "خطا در بارگذاری پوینت‌ها",
   "noItems": "هیچ پوینتی یافت نشد",
-  "pointNumber": "شماره پوینت"
+  "pointNumber": "شماره پوینت",
+  "noValue": "مقدار ندارد",
+  "on": "روشن",
+  "off": "خاموش",
+  "loadingValue": "در حال بارگذاری..."
 }
