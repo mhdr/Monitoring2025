@@ -29,18 +29,5 @@ public class ValueResponseDto
         /// Unix epoch seconds when the value was recorded
         /// </summary>
         public long Time { get; set; }
-
-        /// <summary>
-        /// Convenience DateTime (local) converted from <see cref="Time"/>
-        /// </summary>
-        public DateTime DateTime
-        {
-            get
-            {
-                DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Time);
-                DateTime localDateTime = dateTimeOffset.LocalDateTime;
-                return localDateTime;
-            }
-        }
     }
 }
