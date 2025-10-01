@@ -46,11 +46,11 @@
   font-weight: bold;
   color: var(--bs-body-color);
   white-space: nowrap;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
 }
 
 .item-card-value {
-  font-weight: bold;
+  /*font-weight: bold;*/
   color: var(--bs-body-color);
   word-break: break-word;
   font-size: 0.9rem;
