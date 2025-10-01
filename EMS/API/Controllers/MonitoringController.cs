@@ -211,6 +211,7 @@ public class MonitoringController : ControllerBase
                         {
                             Id = item.Id.ToString(),
                             Name = item.ItemName,
+                            NameFa = item.ItemNameFa,
                             ItemType = (Share.Libs.ItemType)item.ItemType,
                             GroupId = groupId,
                             OnText = item.OnText,

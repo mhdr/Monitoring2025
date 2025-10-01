@@ -49,6 +49,12 @@ public class ItemsResponseDto
         /// </summary>
         /// <example>Temperature Sensor 1</example>
         public string? Name { get; set; }
+        
+        /// <summary>
+        /// Display name of the item in Farsi
+        /// </summary>
+        /// <example>دمای سنسور 1</example>
+        public string? NameFa { get; set; }
 
         /// <summary>
         /// Hardware point number for communication
