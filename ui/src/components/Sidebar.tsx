@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
-import type { TranslationKey } from '../utils/translations';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -11,7 +10,7 @@ interface SidebarProps {
 
 interface MenuItem {
   path: string;
-  key: TranslationKey;
+  key: string;
   icon: string;
 }
 

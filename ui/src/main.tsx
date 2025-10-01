@@ -4,6 +4,7 @@ import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 import './index.css'
 import './iransansx-features.css'
+import './i18n/config' // Initialize i18next
 import { LanguageProvider } from './contexts/LanguageContext'
 import { AuthProvider } from './contexts/AuthContext'
 import { store, persistor } from './store'

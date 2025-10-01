@@ -1,10 +1,13 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { translations, type Language, type TranslationKey } from '../utils/translations';
+import React, { createContext, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n/config';
+
+type Language = 'fa' | 'en';
 
 interface LanguageContextType {
   language: Language;
   changeLanguage: (lang: Language) => void;
-  t: (key: TranslationKey) => string;
+  t: (key: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -12,43 +15,52 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export { LanguageContext };
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('language');
-    return (saved as Language) || 'fa';
-  });
+  const { t } = useTranslation();
+  const currentLanguage = i18n.language as Language;
 
   const changeLanguage = (lang: Language) => {
-    setLanguage(lang);
-    localStorage.setItem('language', lang);
+    i18n.changeLanguage(lang);
     
     // Update document direction and language
     document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
     
     // Update document title
-    document.title = translations[lang].pageTitle;
+    document.title = t('pageTitle');
     
     // Update body class for styling
     document.body.className = lang === 'fa' ? 'rtl' : 'ltr';
   };
 
-  const t = (key: TranslationKey): string => {
-    return translations[language][key] || key;
-  };
-
   useEffect(() => {
-    // Set initial direction
-    document.documentElement.dir = language === 'fa' ? 'rtl' : 'ltr';
-    document.documentElement.lang = language;
+    // Set initial direction based on current language
+    const lang = i18n.language as Language;
+    document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
     
     // Set initial document title
-    document.title = translations[language].pageTitle;
+    document.title = t('pageTitle');
     
-    document.body.className = language === 'fa' ? 'rtl' : 'ltr';
-  }, [language]);
+    document.body.className = lang === 'fa' ? 'rtl' : 'ltr';
+    
+    // Listen for language changes
+    const handleLanguageChanged = (lng: string) => {
+      const newLang = lng as Language;
+      document.documentElement.dir = newLang === 'fa' ? 'rtl' : 'ltr';
+      document.documentElement.lang = newLang;
+      document.title = t('pageTitle');
+      document.body.className = newLang === 'fa' ? 'rtl' : 'ltr';
+    };
+    
+    i18n.on('languageChanged', handleLanguageChanged);
+    
+    return () => {
+      i18n.off('languageChanged', handleLanguageChanged);
+    };
+  }, [t]);
 
   return (
-    <LanguageContext.Provider value={{ language, changeLanguage, t }}>
+    <LanguageContext.Provider value={{ language: currentLanguage, changeLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );

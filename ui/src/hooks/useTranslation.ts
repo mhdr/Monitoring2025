@@ -1,16 +1,14 @@
 /**
- * Custom hook to get translation function from Redux
- * Use this to access translations in your components
+ * Custom hook wrapper for react-i18next
+ * Provides translation function with type safety
  */
-import { useAppSelector } from './useRedux';
-import { translations, type TranslationKey } from '../utils/translations';
+import { useTranslation as useI18nextTranslation } from 'react-i18next';
 
 export const useTranslation = () => {
-  const currentLanguage = useAppSelector(state => state.language.currentLanguage);
+  const { t, i18n } = useI18nextTranslation();
   
-  const t = (key: TranslationKey): string => {
-    return translations[currentLanguage][key] || key;
+  return { 
+    t, 
+    language: i18n.language as 'fa' | 'en' 
   };
-  
-  return { t, language: currentLanguage };
 };

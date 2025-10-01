@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { Language } from '../../utils/translations';
-import { translations } from '../../utils/translations';
+import i18n from '../../i18n/config';
 
 interface LanguageState {
   currentLanguage: Language;
@@ -21,13 +21,14 @@ const languageSlice = createSlice({
     setLanguage: (state, action: PayloadAction<Language>) => {
       state.currentLanguage = action.payload;
       
+      // Change i18next language
+      i18n.changeLanguage(action.payload);
+      
       // Update document direction and language attributes
       document.documentElement.dir = action.payload === 'fa' ? 'rtl' : 'ltr';
       document.documentElement.lang = action.payload;
       
-      // Update document title
-      document.title = translations[action.payload].pageTitle;
-      
+      // Update document title (will be updated by LanguageContext)
       // Update body class for styling
       document.body.className = action.payload === 'fa' ? 'rtl' : 'ltr';
     },
@@ -37,15 +38,17 @@ const languageSlice = createSlice({
      * Called on app startup
      */
     initializeLanguage: (state) => {
-      const savedLanguage = localStorage.getItem('language') as Language;
+      const savedLanguage = localStorage.getItem('i18nextLng') as Language;
       const language = savedLanguage || 'fa';
       
       state.currentLanguage = language;
       
+      // Change i18next language
+      i18n.changeLanguage(language);
+      
       // Update document properties
       document.documentElement.dir = language === 'fa' ? 'rtl' : 'ltr';
       document.documentElement.lang = language;
-      document.title = translations[language].pageTitle;
       document.body.className = language === 'fa' ? 'rtl' : 'ltr';
     },
   },
