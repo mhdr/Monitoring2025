@@ -16,7 +16,7 @@
 - This project is a **React application using TypeScript**
 - Follow TypeScript best practices and provide proper typing for all code
 - Use type definitions for all components, props, functions, and API responses
-- This project uses **Redux Toolkit (RTK) for state management** and **RTK Query for data fetching and caching**
+- This project uses **Redux Toolkit (RTK) for state management**
 - Prefer functional components with hooks over class components
 
 ### UI Framework
