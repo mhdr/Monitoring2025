@@ -239,7 +239,7 @@ const MonitoringPage: React.FC = () => {
                     onClick={() => handleBreadcrumbClick(currentFolder.parentId || null)}
                     data-id-ref="monitoring-page-back-to-parent-button"
                   >
-                    <i className="bi bi-arrow-left me-2" data-id-ref="monitoring-page-back-to-parent-icon"></i>
+                    <i className="bi bi-arrow-left me-md-2" data-id-ref="monitoring-page-back-to-parent-icon"></i>
                     <span className="d-none d-md-inline" data-id-ref="monitoring-page-back-to-parent-label">{t('backToParent')}</span>
                   </button>
                 )}
