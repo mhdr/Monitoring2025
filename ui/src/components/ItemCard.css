@@ -19,40 +19,6 @@
   border-bottom: 1px solid var(--bs-border-color);
 }
 
-/* When using flex utilities from bootstrap (d-flex), ensure title aligns and button floats to the opposite side */
-.item-card-header.d-flex {
-  display: flex; /* reinforce layout */
-  align-items: center;
-}
-
-.item-card-open-btn {
-  color: var(--bs-body-color);
-  text-decoration: none;
-  border: none;
-  background: transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.05rem;
-}
-
-.item-card-open-btn .bi {
-  vertical-align: middle;
-}
-
-.item-card-open-btn:hover {
-  color: var(--bs-primary);
-  text-decoration: none;
-}
-
-/* Ensure proper spacing for LTR/RTL: when title is first, using ms-auto pushes button to the opposite end; for RTL the project's bootstrap-rtl should handle it, but add fallback */
-:root[dir="rtl"] .item-card-open-btn {
-  margin-left: 0.5rem;
-}
-:root[dir="ltr"] .item-card-open-btn {
-  margin-right: 0.5rem;
-}
-
 .item-card-title {
   font-size: 1rem;
   font-weight: bold;

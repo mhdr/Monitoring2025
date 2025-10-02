@@ -77,7 +77,4 @@
   "value": "Value",
   "time": "Time",
   "refreshingData": "Refreshing data..."
-  ,"itemCard": {
-    "openInNewTab": "Open in new tab"
-  }
 }
