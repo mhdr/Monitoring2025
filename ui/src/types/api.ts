@@ -169,8 +169,11 @@ export interface Item {
   calculationMethod: ValueCalculationMethod;
   numberOfSamples: number;
   onText?: string | null;
+  onTextFa?: string | null;
   offText?: string | null;
+  offTextFa?: string | null;
   unit?: string | null;
+  unitFa?: string | null;
   isDisabled?: boolean | null;
   interfaceType: InterfaceType;
   isEditable: boolean;

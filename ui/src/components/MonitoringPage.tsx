@@ -164,13 +164,21 @@ const MonitoringPage: React.FC = () => {
     // For digital items (type 1 or 2), show on/off text
     if (item.itemType === 1 || item.itemType === 2) {
       const boolValue = value === 'true' || value === '1';
-      return boolValue ? (item.onText || t('on')) : (item.offText || t('off'));
+      
+      // Use Farsi text if language is Persian and Farsi text is available
+      if (boolValue) {
+        return (language === 'fa' && item.onTextFa) ? item.onTextFa : (item.onText || t('on'));
+      } else {
+        return (language === 'fa' && item.offTextFa) ? item.offTextFa : (item.offText || t('off'));
+      }
     }
 
     // For analog items (type 3 or 4), show value with unit
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
-      return `${numValue.toFixed(2)} ${item.unit || ''}`;
+      // Use Farsi unit if language is Persian and Farsi unit is available
+      const displayUnit = (language === 'fa' && item.unitFa) ? item.unitFa : (item.unit || '');
+      return `${numValue.toFixed(2)} ${displayUnit}`;
     }
 
     return value;
