@@ -47,8 +47,9 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
     <Navbar 
       expand="lg" 
       className="custom-navbar shadow"
+      data-id-ref="responsive-navbar-root"
     >
-      <Container fluid>
+      <Container fluid data-id-ref="responsive-navbar-container">
         {/* Sidebar Toggle Button */}
         {onToggleSidebar && (
           <button
@@ -56,80 +57,87 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
             onClick={onToggleSidebar}
             aria-label="Toggle sidebar"
             type="button"
+            data-id-ref="responsive-navbar-sidebar-toggle-btn"
           >
-            <i className="bi bi-list fs-4"></i>
+            <i className="bi bi-list fs-4" data-id-ref="responsive-navbar-sidebar-toggle-icon"></i>
           </button>
         )}
         
         <Navbar.Brand 
           href="#" 
           className="fw-bold fs-4 text-white navbar-brand-gradient"
+          data-id-ref="responsive-navbar-brand"
         >
           {t('monitoring')}
         </Navbar.Brand>
         <Navbar.Toggle 
           aria-controls="basic-navbar-nav" 
           className="border-0 text-white"
+          data-id-ref="responsive-navbar-toggle"
         />
-        <Navbar.Collapse id="basic-navbar-nav" className="custom-collapse">
-          <Nav className="me-auto">
+        <Navbar.Collapse id="basic-navbar-nav" className="custom-collapse" data-id-ref="responsive-navbar-collapse">
+          <Nav className="me-auto" data-id-ref="responsive-navbar-nav-main">
                 {/*TODO: Add navigation links here*/}
                 {/* Example Nav Links */}
           </Nav>
           
           {/* User Menu */}
-          <Nav>
+          <Nav data-id-ref="responsive-navbar-user-nav">
             <NavDropdown
               title={
-                <span className="text-white fw-medium">
-                  <i className="fas fa-user-circle me-2" aria-hidden="true"></i>
+                <span className="text-white fw-medium" data-id-ref="responsive-navbar-user-dropdown-title">
+                  <i className="fas fa-user-circle me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-icon"></i>
                   {getUserDisplayName()}
                 </span>
               }
               id="user-nav-dropdown"
               className="user-dropdown"
               align="end"
+              data-id-ref="responsive-navbar-user-dropdown"
             >
-              <NavDropdown.Item href="#profile" className="py-2">
-                <i className="fas fa-user me-2" aria-hidden="true"></i>
+              <NavDropdown.Item href="#profile" className="py-2" data-id-ref="responsive-navbar-user-profile-link">
+                <i className="fas fa-user me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-profile-icon"></i>
                 {t('profile')}
               </NavDropdown.Item>
-              <NavDropdown.Item href="#settings" className="py-2">
-                <i className="fas fa-cog me-2" aria-hidden="true"></i>
+              <NavDropdown.Item href="#settings" className="py-2" data-id-ref="responsive-navbar-user-settings-link">
+                <i className="fas fa-cog me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-settings-icon"></i>
                 {t('settings')}
               </NavDropdown.Item>
-              <NavDropdown.Divider />
+              <NavDropdown.Divider data-id-ref="responsive-navbar-user-divider-1" />
               
               {/* Language Switcher */}
-              <NavDropdown.Header className="py-1 text-muted small">
+              <NavDropdown.Header className="py-1 text-muted small" data-id-ref="responsive-navbar-language-header">
                 🌐 Language / زبان
               </NavDropdown.Header>
               <NavDropdown.Item 
                 onClick={() => changeLanguage('fa')}
                 className={`py-2 ${language === 'fa' ? 'active' : ''}`}
                 style={{ cursor: 'pointer' }}
+                data-id-ref="responsive-navbar-language-fa"
               >
-                <i className="fas fa-globe me-2" aria-hidden="true"></i>
+                <i className="fas fa-globe me-2" aria-hidden="true" data-id-ref="responsive-navbar-language-fa-icon"></i>
                 فارسی
-                {language === 'fa' && <i className="fas fa-check ms-2 text-success" aria-hidden="true"></i>}
+                {language === 'fa' && <i className="fas fa-check ms-2 text-success" aria-hidden="true" data-id-ref="responsive-navbar-language-fa-check"></i>}
               </NavDropdown.Item>
               <NavDropdown.Item 
                 onClick={() => changeLanguage('en')}
                 className={`py-2 ${language === 'en' ? 'active' : ''}`}
                 style={{ cursor: 'pointer' }}
+                data-id-ref="responsive-navbar-language-en"
               >
-                <i className="fas fa-globe me-2" aria-hidden="true"></i>
+                <i className="fas fa-globe me-2" aria-hidden="true" data-id-ref="responsive-navbar-language-en-icon"></i>
                 English
-                {language === 'en' && <i className="fas fa-check ms-2 text-success" aria-hidden="true"></i>}
+                {language === 'en' && <i className="fas fa-check ms-2 text-success" aria-hidden="true" data-id-ref="responsive-navbar-language-en-check"></i>}
               </NavDropdown.Item>
               
-              <NavDropdown.Divider />
+              <NavDropdown.Divider data-id-ref="responsive-navbar-user-divider-2" />
               <NavDropdown.Item 
                 onClick={handleLogout}
                 className="py-2 text-danger"
                 style={{ cursor: 'pointer' }}
+                data-id-ref="responsive-navbar-logout-link"
               >
-                <i className="fas fa-sign-out-alt me-2" aria-hidden="true"></i>
+                <i className="fas fa-sign-out-alt me-2" aria-hidden="true" data-id-ref="responsive-navbar-logout-icon"></i>
                 {t('logout')}
               </NavDropdown.Item>
             </NavDropdown>

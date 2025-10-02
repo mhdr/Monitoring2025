@@ -18,9 +18,10 @@ const LanguageSwitcher: React.FC = () => {
       className="position-fixed language-switcher d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm"
       onClick={toggleLanguage}
       title={`Switch to ${language === 'fa' ? 'English' : 'فارسی'}`}
+      data-id-ref="language-switcher-root-button"
     >
-      <span className="language-text small fw-medium">{t('languageSwitch')}</span>
-      <span className="language-icon">🌐</span>
+      <span className="language-text small fw-medium" data-id-ref="language-switcher-label">{t('languageSwitch')}</span>
+      <span className="language-icon" data-id-ref="language-switcher-icon">🌐</span>
     </Button>
   );
 };

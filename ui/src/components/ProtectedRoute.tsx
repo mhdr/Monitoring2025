@@ -15,13 +15,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (isLoading) {
     return (
-      <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center">
-        <Row>
-          <Col className="text-center">
-            <Spinner animation="border" role="status" variant="primary" className="mb-3">
-              <span className="visually-hidden">{t('loading')}</span>
+      <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center" data-id-ref="protected-route-loading-container">
+        <Row data-id-ref="protected-route-loading-row">
+          <Col className="text-center" data-id-ref="protected-route-loading-col">
+            <Spinner animation="border" role="status" variant="primary" className="mb-3" data-id-ref="protected-route-loading-spinner">
+              <span className="visually-hidden" data-id-ref="protected-route-loading-spinner-label">{t('loading')}</span>
             </Spinner>
-            <p className="text-muted">{t('loading')}</p>
+            <p className="text-muted" data-id-ref="protected-route-loading-text">{t('loading')}</p>
           </Col>
         </Row>
       </Container>

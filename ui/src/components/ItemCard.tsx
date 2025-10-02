@@ -13,22 +13,22 @@ const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) =
   const { t } = useLanguage();
 
   return (
-    <div className="item-card">
-      <div className="item-card-header">
-        <h6 className="item-card-title">{name}</h6>
+    <div className="item-card" data-id-ref="item-card-root-container">
+      <div className="item-card-header" data-id-ref="item-card-header">
+        <h6 className="item-card-title" data-id-ref="item-card-title">{name}</h6>
       </div>
-      <div className="item-card-body">
-        <div className="item-card-row">
-          <span className="item-card-label">{t('pointNumber')}:</span>
-          <span className="item-card-value">{pointNumber}</span>
+      <div className="item-card-body" data-id-ref="item-card-body">
+        <div className="item-card-row" data-id-ref="item-card-row-point-number">
+          <span className="item-card-label" data-id-ref="item-card-label-point-number">{t('pointNumber')}:</span>
+          <span className="item-card-value" data-id-ref="item-card-value-point-number">{pointNumber}</span>
         </div>
-        <div className="item-card-row">
-          <span className="item-card-label">{t('value')}:</span>
-          <span className="item-card-value">{value}</span>
+        <div className="item-card-row" data-id-ref="item-card-row-value">
+          <span className="item-card-label" data-id-ref="item-card-label-value">{t('value')}:</span>
+          <span className="item-card-value" data-id-ref="item-card-value-value">{value}</span>
         </div>
-        <div className="item-card-row">
-          <span className="item-card-label">{t('time')}:</span>
-          <span className="item-card-value">{time}</span>
+        <div className="item-card-row" data-id-ref="item-card-row-time">
+          <span className="item-card-label" data-id-ref="item-card-label-time">{t('time')}:</span>
+          <span className="item-card-value" data-id-ref="item-card-value-time">{time}</span>
         </div>
       </div>
     </div>

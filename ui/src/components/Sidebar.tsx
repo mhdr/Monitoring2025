@@ -40,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
         <div 
           className="sidebar-backdrop d-lg-none" 
           onClick={onToggle}
+          data-id-ref="sidebar-mobile-backdrop"
         ></div>
       )}
 
@@ -50,26 +51,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
         dir={language === 'fa' ? 'rtl' : 'ltr'}
         data-sidebar="main"
         style={{ backgroundColor: '#2c3e50' }}
+        data-id-ref="sidebar-root-container"
       >
-        <div className="sidebar-header">
-          <h5 className="sidebar-title mb-0">
+        <div className="sidebar-header" data-id-ref="sidebar-header">
+          <h5 className="sidebar-title mb-0" data-id-ref="sidebar-title">
             {t('systemTitle')}
           </h5>
           <button
             className="btn btn-link sidebar-toggle d-lg-none p-0"
             onClick={onToggle}
             aria-label="Close sidebar"
+            data-id-ref="sidebar-toggle-close-btn"
           >
-            <i className="bi bi-x-lg"></i>
+            <i className="bi bi-x-lg" data-id-ref="sidebar-toggle-close-icon"></i>
           </button>
         </div>
 
-        <div className="sidebar-divider"></div>
+        <div className="sidebar-divider" data-id-ref="sidebar-divider"></div>
 
-        <nav className="sidebar-nav">
-          <ul className="nav flex-column">
+        <nav className="sidebar-nav" data-id-ref="sidebar-nav">
+          <ul className="nav flex-column" data-id-ref="sidebar-nav-list">
             {menuItems.map((item) => (
-              <li key={item.key} className="nav-item">
+              <li key={item.key} className="nav-item" data-id-ref={`sidebar-nav-item-${item.key}`}>
                 <Link
                   to={item.path}
                   className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
@@ -79,8 +82,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
                       onToggle();
                     }
                   }}
+                  data-id-ref={`sidebar-nav-link-${item.key}`}
                 >
-                  <i className={item.icon}></i>
+                  <i className={item.icon} data-id-ref={`sidebar-nav-icon-${item.key}`}></i>
                   {t(item.key)}
                 </Link>
               </li>

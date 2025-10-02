@@ -16,7 +16,7 @@ const PublicRoute: React.FC = () => {
   const location = useLocation();
 
   if (isLoading) {
-    return <LoginPage />;
+    return <LoginPage data-id-ref="public-route-login-page-loading" />;
   }
 
   if (isAuthenticated) {
@@ -25,12 +25,12 @@ const PublicRoute: React.FC = () => {
     const fromLoc = state?.from;
     if (fromLoc && fromLoc.pathname) {
       const target = `${fromLoc.pathname || '/dashboard'}${fromLoc.search || ''}${fromLoc.hash || ''}`;
-      return <Navigate to={target} replace />;
+      return <Navigate to={target} replace data-id-ref="public-route-navigate-redirect" />;
     }
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard" replace data-id-ref="public-route-navigate-dashboard" />;
   }
 
-  return <LoginPage />;
+  return <LoginPage data-id-ref="public-route-login-page" />;
 };
 
 export default PublicRoute;

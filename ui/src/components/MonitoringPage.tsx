@@ -203,24 +203,25 @@ const MonitoringPage: React.FC = () => {
   };
 
   return (
-    <div className="container-fluid h-100 d-flex flex-column py-4">
-      <div className="row flex-fill">
-        <div className="col-12 h-100">
-          <div className="card h-100 d-flex flex-column">
-            <div className="card-header">
-              <div className="d-flex justify-content-between align-items-center">
-                <div className="d-flex align-items-center">
-                  <h4 className="card-title mb-0">{t('monitoring')}</h4>
+    <div className="container-fluid h-100 d-flex flex-column py-4" data-id-ref="monitoring-page-root-container">
+      <div className="row flex-fill" data-id-ref="monitoring-page-main-row">
+        <div className="col-12 h-100" data-id-ref="monitoring-page-main-col">
+          <div className="card h-100 d-flex flex-column" data-id-ref="monitoring-page-main-card">
+            <div className="card-header" data-id-ref="monitoring-page-header">
+              <div className="d-flex justify-content-between align-items-center" data-id-ref="monitoring-page-header-row">
+                <div className="d-flex align-items-center" data-id-ref="monitoring-page-title-row">
+                  <h4 className="card-title mb-0" data-id-ref="monitoring-page-title">{t('monitoring')}</h4>
                   {showRefreshIndicator && currentFolderItems.length > 0 && (
-                    <div className="ms-3 d-flex align-items-center text-muted">
+                    <div className="ms-3 d-flex align-items-center text-muted" data-id-ref="monitoring-page-refresh-indicator-container">
                       <div 
                         className="spinner-border spinner-border-sm me-2" 
                         role="status"
                         style={{ width: '1rem', height: '1rem' }}
+                        data-id-ref="monitoring-page-refresh-spinner"
                       >
-                        <span className="visually-hidden">{t('refreshingData')}</span>
+                        <span className="visually-hidden" data-id-ref="monitoring-page-refresh-spinner-label">{t('refreshingData')}</span>
                       </div>
-                      <small className="d-none d-md-inline">{t('refreshingData')}</small>
+                      <small className="d-none d-md-inline" data-id-ref="monitoring-page-refresh-label">{t('refreshingData')}</small>
                     </div>
                   )}
                 </div>
@@ -228,28 +229,30 @@ const MonitoringPage: React.FC = () => {
                   <button 
                     className="btn btn-outline-secondary btn-sm"
                     onClick={() => handleBreadcrumbClick(currentFolder.parentId || null)}
+                    data-id-ref="monitoring-page-back-to-parent-button"
                   >
-                    <i className="bi bi-arrow-left me-2"></i>
-                    <span className="d-none d-md-inline">{t('backToParent')}</span>
+                    <i className="bi bi-arrow-left me-2" data-id-ref="monitoring-page-back-to-parent-icon"></i>
+                    <span className="d-none d-md-inline" data-id-ref="monitoring-page-back-to-parent-label">{t('backToParent')}</span>
                   </button>
                 )}
               </div>
             </div>
             
-            <div className="card-body flex-fill overflow-auto">
+            <div className="card-body flex-fill overflow-auto" data-id-ref="monitoring-page-body">
               {/* Breadcrumb Navigation */}
               {breadcrumbs.length > 0 && (
-                <nav aria-label="breadcrumb" className="mb-4">
-                  <ol className="breadcrumb mb-0">
-                    <li className="breadcrumb-item">
+                <nav aria-label="breadcrumb" className="mb-4" data-id-ref="monitoring-page-breadcrumb-nav">
+                  <ol className="breadcrumb mb-0" data-id-ref="monitoring-page-breadcrumb-list">
+                    <li className="breadcrumb-item" data-id-ref="monitoring-page-breadcrumb-root-item">
                       <a 
                         href="#" 
                         onClick={(e) => {
                           e.preventDefault();
                           handleBreadcrumbClick(null);
                         }}
+                        data-id-ref="monitoring-page-breadcrumb-root-link"
                       >
-                        <i className="bi bi-house-door-fill me-1"></i>
+                        <i className="bi bi-house-door-fill me-1" data-id-ref="monitoring-page-breadcrumb-root-icon"></i>
                         {t('rootFolder')}
                       </a>
                     </li>
@@ -258,6 +261,7 @@ const MonitoringPage: React.FC = () => {
                         key={folder.id} 
                         className={`breadcrumb-item ${index === breadcrumbs.length - 1 ? 'active' : ''}`}
                         aria-current={index === breadcrumbs.length - 1 ? 'page' : undefined}
+                        data-id-ref={`monitoring-page-breadcrumb-item-${folder.id}`}
                       >
                         {index === breadcrumbs.length - 1 ? (
                           getDisplayName(folder)
@@ -268,6 +272,7 @@ const MonitoringPage: React.FC = () => {
                               e.preventDefault();
                               handleBreadcrumbClick(folder.id);
                             }}
+                            data-id-ref={`monitoring-page-breadcrumb-link-${folder.id}`}
                           >
                             {getDisplayName(folder)}
                           </a>
@@ -280,24 +285,24 @@ const MonitoringPage: React.FC = () => {
 
               {/* Loading State */}
               {isLoading && (
-                <div className="d-flex align-items-center justify-content-center h-100">
-                  <div className="text-center">
-                    <div className="spinner-border text-primary mb-3" role="status">
-                      <span className="visually-hidden">{t('loadingGroups')}</span>
+                <div className="d-flex align-items-center justify-content-center h-100" data-id-ref="monitoring-page-loading-groups-container">
+                  <div className="text-center" data-id-ref="monitoring-page-loading-groups-center">
+                    <div className="spinner-border text-primary mb-3" role="status" data-id-ref="monitoring-page-loading-groups-spinner">
+                      <span className="visually-hidden" data-id-ref="monitoring-page-loading-groups-label">{t('loadingGroups')}</span>
                     </div>
-                    <p className="text-muted">{t('loadingGroups')}</p>
+                    <p className="text-muted" data-id-ref="monitoring-page-loading-groups-text">{t('loadingGroups')}</p>
                   </div>
                 </div>
               )}
 
               {/* Error State */}
               {error && (
-                <div className="alert alert-danger d-flex align-items-center" role="alert">
-                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                  <div>
-                    <strong>{t('errorLoadingGroups')}</strong>
+                <div className="alert alert-danger d-flex align-items-center" role="alert" data-id-ref="monitoring-page-groups-error-alert">
+                  <i className="bi bi-exclamation-triangle-fill me-2" data-id-ref="monitoring-page-groups-error-icon"></i>
+                  <div data-id-ref="monitoring-page-groups-error-content">
+                    <strong data-id-ref="monitoring-page-groups-error-title">{t('errorLoadingGroups')}</strong>
                     {error.status && (
-                      <div className="small mt-1">
+                      <div className="small mt-1" data-id-ref="monitoring-page-groups-error-status">
                         {`Error ${error.status}`}
                       </div>
                     )}
@@ -307,10 +312,10 @@ const MonitoringPage: React.FC = () => {
 
               {/* Empty State */}
               {!isLoading && !error && childGroups.length === 0 && (
-                <div className="d-flex align-items-center justify-content-center h-100">
-                  <div className="text-center text-muted">
-                    <i className="bi bi-folder-x" style={{ fontSize: '3rem' }}></i>
-                    <p className="mt-3">
+                <div className="d-flex align-items-center justify-content-center h-100" data-id-ref="monitoring-page-empty-state-container">
+                  <div className="text-center text-muted" data-id-ref="monitoring-page-empty-state-center">
+                    <i className="bi bi-folder-x" style={{ fontSize: '3rem' }} data-id-ref="monitoring-page-empty-state-icon"></i>
+                    <p className="mt-3" data-id-ref="monitoring-page-empty-state-text">
                       {currentFolder ? t('noItemsInFolder') : t('noGroups')}
                     </p>
                   </div>
@@ -319,18 +324,18 @@ const MonitoringPage: React.FC = () => {
 
               {/* Folder Grid View */}
               {!isLoading && !error && childGroups.length > 0 && (
-                <div className="mb-4">
-                  <div className="d-flex align-items-center mb-3">
-                    <i className="bi bi-folder-fill me-2 text-warning"></i>
-                    <h5 className="mb-0">
+                <div className="mb-4" data-id-ref="monitoring-page-folder-grid-section">
+                  <div className="d-flex align-items-center mb-3" data-id-ref="monitoring-page-folder-grid-header">
+                    <i className="bi bi-folder-fill me-2 text-warning" data-id-ref="monitoring-page-folder-grid-icon"></i>
+                    <h5 className="mb-0" data-id-ref="monitoring-page-folder-grid-title">
                       {t('folders')}
                     </h5>
-                    <span className="badge bg-secondary ms-2">
+                    <span className="badge bg-secondary ms-2" data-id-ref="monitoring-page-folder-grid-count">
                       {childGroups.length}
                     </span>
                   </div>
                   
-                  <div className="groups-grid">
+                  <div className="groups-grid" data-id-ref="monitoring-page-folder-grid">
                     {childGroups.map((group: Group) => {
                       const subgroupCount = allGroups.filter((g: Group) => g.parentId === group.id).length;
                       const itemCount = allItems.filter((item) => item.groupId === group.id).length;
@@ -341,6 +346,7 @@ const MonitoringPage: React.FC = () => {
                           subgroupCount={subgroupCount}
                           itemCount={itemCount}
                           onClick={() => handleFolderClick(group.id)}
+                          data-id-ref={`monitoring-page-group-card-${group.id}`}
                         />
                       );
                     })}
@@ -350,18 +356,18 @@ const MonitoringPage: React.FC = () => {
 
               {/* Items List View */}
               {!isLoadingItems && !itemsError && currentFolderItems.length > 0 && (
-                <div>
-                  <div className="d-flex align-items-center mb-3">
-                    <i className="bi bi-file-earmark-text-fill me-2 text-primary"></i>
-                    <h5 className="mb-0">
+                <div data-id-ref="monitoring-page-items-list-section">
+                  <div className="d-flex align-items-center mb-3" data-id-ref="monitoring-page-items-list-header">
+                    <i className="bi bi-file-earmark-text-fill me-2 text-primary" data-id-ref="monitoring-page-items-list-icon"></i>
+                    <h5 className="mb-0" data-id-ref="monitoring-page-items-list-title">
                       {t('items')}
                     </h5>
-                    <span className="badge bg-secondary ms-2">
+                    <span className="badge bg-secondary ms-2" data-id-ref="monitoring-page-items-list-count">
                       {currentFolderItems.length}
                     </span>
                   </div>
                   
-                  <div className="items-grid">
+                  <div className="items-grid" data-id-ref="monitoring-page-items-grid">
                     {currentFolderItems.map((item: typeof currentFolderItems[0]) => {
                       const itemValue = getItemValue(item.id);
                       return (
@@ -371,6 +377,7 @@ const MonitoringPage: React.FC = () => {
                           pointNumber={item.pointNumber}
                           value={itemValue ? formatItemValue(item, itemValue.value) : t('loadingValue')}
                           time={itemValue ? formatTimestamp(itemValue.time) : t('loadingValue')}
+                          data-id-ref={`monitoring-page-item-card-${item.id}`}
                         />
                       );
                     })}
@@ -380,24 +387,24 @@ const MonitoringPage: React.FC = () => {
 
               {/* Items Loading State */}
               {isLoadingItems && (
-                <div className="d-flex align-items-center justify-content-center py-4">
-                  <div className="text-center">
-                    <div className="spinner-border text-primary mb-2" role="status" style={{ width: '2rem', height: '2rem' }}>
-                      <span className="visually-hidden">{t('loadingItems')}</span>
+                <div className="d-flex align-items-center justify-content-center py-4" data-id-ref="monitoring-page-loading-items-container">
+                  <div className="text-center" data-id-ref="monitoring-page-loading-items-center">
+                    <div className="spinner-border text-primary mb-2" role="status" style={{ width: '2rem', height: '2rem' }} data-id-ref="monitoring-page-loading-items-spinner">
+                      <span className="visually-hidden" data-id-ref="monitoring-page-loading-items-label">{t('loadingItems')}</span>
                     </div>
-                    <p className="text-muted small">{t('loadingItems')}</p>
+                    <p className="text-muted small" data-id-ref="monitoring-page-loading-items-text">{t('loadingItems')}</p>
                   </div>
                 </div>
               )}
 
               {/* Items Error State */}
               {itemsError && (
-                <div className="alert alert-warning d-flex align-items-center" role="alert">
-                  <i className="bi bi-exclamation-triangle me-2"></i>
-                  <div>
-                    <strong>{t('errorLoadingItems')}</strong>
+                <div className="alert alert-warning d-flex align-items-center" role="alert" data-id-ref="monitoring-page-items-error-alert">
+                  <i className="bi bi-exclamation-triangle me-2" data-id-ref="monitoring-page-items-error-icon"></i>
+                  <div data-id-ref="monitoring-page-items-error-content">
+                    <strong data-id-ref="monitoring-page-items-error-title">{t('errorLoadingItems')}</strong>
                     {itemsError.status && (
-                      <div className="small mt-1">
+                      <div className="small mt-1" data-id-ref="monitoring-page-items-error-status">
                         {`Error ${itemsError.status}`}
                       </div>
                     )}
