@@ -367,7 +367,7 @@ const MonitoringPage: React.FC = () => {
               {/* Items List View */}
               {!isLoadingItems && !itemsError && currentFolderItems.length > 0 && (
                 <div data-id-ref="monitoring-page-items-list-section">
-                  <div className="d-flex align-items-center mb-3" data-id-ref="monitoring-page-items-list-header">
+              <div className="d-none d-md-flex align-items-center mb-3" data-id-ref="monitoring-page-items-list-header">
                     <i className="bi bi-file-earmark-text-fill me-2 text-primary" data-id-ref="monitoring-page-items-list-icon"></i>
                     <h5 className="mb-0" data-id-ref="monitoring-page-items-list-title">
                       {t('items')}
