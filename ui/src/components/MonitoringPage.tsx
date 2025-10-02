@@ -249,7 +249,8 @@ const MonitoringPage: React.FC = () => {
             <div className="card-body flex-fill overflow-auto" data-id-ref="monitoring-page-body">
               {/* Breadcrumb Navigation */}
               {breadcrumbs.length > 0 && (
-                <nav aria-label="breadcrumb" className="mb-4" data-id-ref="monitoring-page-breadcrumb-nav">
+                // Hide breadcrumb on small screens (mobile) and show from md and up
+                <nav aria-label="breadcrumb" className="mb-4 d-none d-md-block" data-id-ref="monitoring-page-breadcrumb-nav">
                   <ol className="breadcrumb mb-0" data-id-ref="monitoring-page-breadcrumb-list">
                     <li className="breadcrumb-item" data-id-ref="monitoring-page-breadcrumb-root-item">
                       <a 
