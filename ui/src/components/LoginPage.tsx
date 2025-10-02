@@ -119,23 +119,23 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="login-page min-vh-100 d-flex align-items-center">
+    <div data-id-ref="login-page-container" className="login-page min-vh-100 d-flex align-items-center">
       <Container>
         <Row className="justify-content-center">
           <Col xs={12} sm={8} md={6} lg={5} xl={4}>
-            <Card className="login-card shadow-lg border-0">
-              <Card.Body className="p-4 p-md-5">
+            <Card data-id-ref="login-card" className="login-card shadow-lg border-0">
+              <Card.Body data-id-ref="login-card-body" className="p-4 p-md-5">
                 {/* Header */}
-                <div className="text-center mb-4">
-                  <div className="login-logo mb-3">
-                    <div className="logo-icon">
-                      <i className="fas fa-warehouse" aria-hidden="true"></i>
+                <div data-id-ref="login-header" className="text-center mb-4">
+                  <div data-id-ref="login-logo" className="login-logo mb-3">
+                    <div data-id-ref="login-logo-icon" className="logo-icon">
+                      <i data-id-ref="login-logo-icon-visual" className="fas fa-warehouse" aria-hidden="true"></i>
                     </div>
                   </div>
-                  <h1 className="h3 mb-2 fw-bold text-primary">
+                  <h1 data-id-ref="login-title" className="h3 mb-2 fw-bold text-primary">
                     {t('loginTitle')}
                   </h1>
-                  <p className="text-muted mb-0">
+                  <p data-id-ref="login-subtitle" className="text-muted mb-0">
                     {t('loginSubtitle')}
                   </p>
                 </div>
@@ -143,25 +143,27 @@ const LoginPage: React.FC = () => {
                 {/* Error Alert */}
                 {apiError && (
                   <Alert 
+                    data-id-ref="login-error-alert"
                     variant="danger" 
                     className="mb-4" 
                     dismissible 
                     onClose={clearApiError}
                   >
-                    <Alert.Heading className="h6 mb-2">
+                    <Alert.Heading data-id-ref="login-error-heading" className="h6 mb-2">
                       {t('loginError')}
                     </Alert.Heading>
-                    {apiError}
+                    <div data-id-ref="login-error-message">{apiError}</div>
                   </Alert>
                 )}
 
                 {/* Login Form */}
-                <Form onSubmit={handleSubmit} noValidate>
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-medium">
+                <Form data-id-ref="login-form" onSubmit={handleSubmit} noValidate>
+                  <Form.Group data-id-ref="login-username-group" className="mb-3">
+                    <Form.Label data-id-ref="login-username-label" className="fw-medium">
                       {t('username')} *
                     </Form.Label>
                     <Form.Control
+                      data-id-ref="login-username-input"
                       type="text"
                       name="username"
                       value={formData.username}
@@ -173,16 +175,17 @@ const LoginPage: React.FC = () => {
                       className="form-control-lg"
                       placeholder={t('username')}
                     />
-                    <Form.Control.Feedback type="invalid">
+                    <Form.Control.Feedback data-id-ref="login-username-feedback" type="invalid">
                       {errors.username}
                     </Form.Control.Feedback>
                   </Form.Group>
 
-                  <Form.Group className="mb-4">
-                    <Form.Label className="fw-medium">
+                  <Form.Group data-id-ref="login-password-group" className="mb-4">
+                    <Form.Label data-id-ref="login-password-label" className="fw-medium">
                       {t('password')} *
                     </Form.Label>
                     <Form.Control
+                      data-id-ref="login-password-input"
                       type="password"
                       name="password"
                       value={formData.password}
@@ -194,13 +197,14 @@ const LoginPage: React.FC = () => {
                       className="form-control-lg"
                       placeholder={t('password')}
                     />
-                    <Form.Control.Feedback type="invalid">
+                    <Form.Control.Feedback data-id-ref="login-password-feedback" type="invalid">
                       {errors.password}
                     </Form.Control.Feedback>
                   </Form.Group>
 
-                  <Form.Group className="mb-4">
+                  <Form.Group data-id-ref="login-remember-group" className="mb-4">
                     <Form.Check
+                      data-id-ref="login-remember-checkbox"
                       type="checkbox"
                       name="rememberMe"
                       id="rememberMe"
@@ -213,6 +217,7 @@ const LoginPage: React.FC = () => {
                   </Form.Group>
 
                   <Button
+                    data-id-ref="login-submit-button"
                     type="submit"
                     variant="primary"
                     size="lg"
@@ -222,6 +227,7 @@ const LoginPage: React.FC = () => {
                     {isLoading ? (
                       <>
                         <Spinner
+                          data-id-ref="login-loading-spinner"
                           as="span"
                           animation="border"
                           size="sm"
