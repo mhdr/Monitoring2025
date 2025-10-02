@@ -49,9 +49,9 @@ public class MonitoringController : ControllerBase
     /// <param name="bus">The MassTransit bus service</param>
     public MonitoringController(
         UserManager<ApplicationUser> userManager,
-        ApplicationDbContext context, 
+        ApplicationDbContext context,
         ILogger<MonitoringController> logger,
-        IHubContext<MyHub> hubContext, 
+        IHubContext<MyHub> hubContext,
         IHttpContextAccessor httpContextAccessor,
         IBus bus)
     {
@@ -215,8 +215,11 @@ public class MonitoringController : ControllerBase
                             ItemType = (Share.Libs.ItemType)item.ItemType,
                             GroupId = groupId,
                             OnText = item.OnText,
+                            OnTextFa = item.OnTextFa,
                             OffText = item.OffText,
+                            OffTextFa = item.OffTextFa,
                             Unit = item.Unit,
+                            UnitFa = item.UnitFa,
                             CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
                             NumberOfSamples = item.NumberOfSamples,
                             IsDisabled = item.IsDisabled,
@@ -244,8 +247,11 @@ public class MonitoringController : ControllerBase
                                 ItemType = (Share.Libs.ItemType)item.ItemType,
                                 GroupId = groupItem.GroupId.ToString(),
                                 OnText = item.OnText,
+                                OnTextFa = item.OnTextFa,
                                 OffText = item.OffText,
+                                OffTextFa = item.OffTextFa,
                                 Unit = item.Unit,
+                                UnitFa = item.UnitFa,
                                 CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
                                 NumberOfSamples = item.NumberOfSamples,
                                 IsDisabled = item.IsDisabled,
@@ -290,8 +296,11 @@ public class MonitoringController : ControllerBase
                                 ItemType = (Share.Libs.ItemType)item.ItemType,
                                 GroupId = groupId,
                                 OnText = item.OnText,
+                                OnTextFa = item.OnTextFa,
                                 OffText = item.OffText,
+                                OffTextFa = item.OffTextFa,
                                 Unit = item.Unit,
+                                UnitFa = item.UnitFa,
                                 CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
                                 NumberOfSamples = item.NumberOfSamples,
                                 IsDisabled = item.IsDisabled,
@@ -319,8 +328,11 @@ public class MonitoringController : ControllerBase
                                     ItemType = (Share.Libs.ItemType)item.ItemType,
                                     GroupId = groupItem.GroupId.ToString(),
                                     OnText = item.OnText,
+                                    OnTextFa = item.OnTextFa,
                                     OffText = item.OffText,
+                                    OffTextFa = item.OffTextFa,
                                     Unit = item.Unit,
+                                    UnitFa = item.UnitFa,
                                     CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
                                     NumberOfSamples = item.NumberOfSamples,
                                     IsDisabled = item.IsDisabled,
@@ -333,7 +345,7 @@ public class MonitoringController : ControllerBase
                                     ScaleMax = item.ScaleMax,
                                     ScaleMin = item.ScaleMin,
                                     IsEditable = item.IsEditable,
-                                    InterfaceType =(Share.Libs.InterfaceType)item.InterfaceType,
+                                    InterfaceType = (Share.Libs.InterfaceType)item.InterfaceType,
                                 });
                             }
                         }
@@ -1249,7 +1261,7 @@ public class MonitoringController : ControllerBase
             if (user == null)
             {
                 var identity = new ApplicationUser(request.UserName)
-                    { FirstName = request.FirstName, LastName = request.LastName };
+                { FirstName = request.FirstName, LastName = request.LastName };
                 var password = "12345";
                 var result = await _userManager.CreateAsync(identity, password);
 
@@ -1905,7 +1917,7 @@ public class MonitoringController : ControllerBase
     {
         try
         {
-            
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
@@ -3603,8 +3615,8 @@ public class MonitoringController : ControllerBase
             var response = new GetSvgLayoutsResponseDto();
 
             var layouts = await _context.SvgLayouts.Where(x => x.IsDisabled == false)
-                .OrderBy(x=>x.Order)
-                .ThenBy(x=>x.Name)
+                .OrderBy(x => x.Order)
+                .ThenBy(x => x.Name)
                 .ToListAsync();
 
             foreach (var layout in layouts)
@@ -3616,7 +3628,7 @@ public class MonitoringController : ControllerBase
                     Content = layout.Content,
                 });
             }
-            
+
             response.IsSuccess = true;
             return Ok(response);
         }

@@ -121,16 +121,34 @@ public class ItemsResponseDto
         public string? OnText { get; set; }
 
         /// <summary>
+        /// Text to display when boolean value is true in Farsi
+        /// </summary>
+        /// <example>روشن</example>
+        public string? OnTextFa { get; set; }
+
+        /// <summary>
         /// Text to display when boolean value is false
         /// </summary>
         /// <example>OFF</example>
         public string? OffText { get; set; }
 
         /// <summary>
+        /// Text to display when boolean value is false in Farsi
+        /// </summary>
+        /// <example>خاموش</example>
+        public string? OffTextFa { get; set; }
+
+        /// <summary>
         /// Engineering unit for the value (°C, bar, etc.)
         /// </summary>
         /// <example>°C</example>
         public string? Unit { get; set; }
+
+        /// <summary>
+        /// Engineering unit for the value in Farsi
+        /// </summary>
+        /// <example>درجه سانتی‌گراد</example>
+        public string? UnitFa { get; set; }
 
         /// <summary>
         /// Whether the item is disabled from data collection
