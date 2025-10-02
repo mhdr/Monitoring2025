@@ -30,6 +30,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Extend auth expiration on user activity (every 5 minutes)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Extend immediately on mount if authenticated
+    authStorageHelpers.extendAuthExpiration();
+
+    // Set up interval to extend expiration periodically
+    const interval = setInterval(() => {
+      authStorageHelpers.extendAuthExpiration();
+    }, 5 * 60 * 1000); // Every 5 minutes
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
   const login = useCallback(async (credentials: LoginRequest): Promise<void> => {
     try {
       setIsLoading(true);

@@ -16,12 +16,14 @@ const axiosInstance: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and extend expiration on activity
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = authStorageHelpers.getStoredToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      // Extend expiration on each API call (user activity)
+      authStorageHelpers.extendAuthExpiration();
     }
     return config;
   },
@@ -40,10 +42,12 @@ axiosInstance.interceptors.response.use(
 
       // Only handle logout for non-login 401s
       if (!isLoginRequest) {
+        // Check if token is expired (client-side check)
+        const isExpired = authStorageHelpers.isAuthExpired();
         const hadToken = !!authStorageHelpers.getStoredToken();
         
         // Clear auth storage when token was present (expired/invalid)
-        if (hadToken) {
+        if (hadToken || isExpired) {
           authStorageHelpers.clearStoredAuth();
         }
         
