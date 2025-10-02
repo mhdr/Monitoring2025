@@ -14,8 +14,18 @@ const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) =
 
   return (
     <div className="item-card" data-id-ref="item-card-root-container">
-      <div className="item-card-header" data-id-ref="item-card-header">
+      <div className="item-card-header d-flex align-items-center" data-id-ref="item-card-header">
         <h6 className="item-card-title" data-id-ref="item-card-title">{name}</h6>
+        <button
+          type="button"
+          className="btn btn-link ms-auto p-0 item-card-open-btn"
+          aria-label={t('itemCard.openInNewTab')}
+          title={t('itemCard.openInNewTab')}
+          data-id-ref="item-card-open-button"
+          onClick={() => window.open('', '_blank')}
+        >
+          <i className="bi bi-box-arrow-up-right" aria-hidden="true" />
+        </button>
       </div>
       <div className="item-card-body" data-id-ref="item-card-body">
         <div className="item-card-row" data-id-ref="item-card-row-point-number">

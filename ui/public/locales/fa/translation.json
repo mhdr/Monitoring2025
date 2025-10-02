@@ -77,4 +77,7 @@
   "value": "مقدار",
   "time": "زمان",
   "refreshingData": "در حال به‌روزرسانی داده‌ها..."
+  ,"itemCard": {
+    "openInNewTab": "باز کردن در تب جدید"
+  }
 }
