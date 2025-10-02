@@ -156,6 +156,81 @@ src/services/
 - 🔐 **Auth Testing:** Test both authenticated and unauthenticated states
 - 🐛 **Error Handling:** Ensure proper error messages in both languages
 
+### Chrome DevTools MCP Integration
+**MANDATORY** for UI debugging and testing - This project has Chrome DevTools MCP available for real-time browser debugging and performance analysis.
+
+#### Core Capabilities
+Chrome DevTools MCP provides AI-powered access to Chrome's debugging surface, removing the "blindfold" that prevents AI from seeing rendered output, console logs, and network activity.
+
+#### When to Use Chrome DevTools MCP
+- 🎨 **UI/Layout Issues:** Inspect DOM, CSS, and visual rendering problems
+- ⚡ **Performance Analysis:** Record traces, analyze page load times, and identify bottlenecks
+- 🐛 **Runtime Debugging:** Check console errors, evaluate JavaScript in browser context
+- 🌐 **Network Inspection:** Analyze API requests/responses, check HTTPS calls to backend
+- 📱 **Responsive Testing:** Verify layouts across different viewport sizes programmatically
+- 🔄 **RTL/LTR Testing:** Validate Persian and English layouts in real browser environment
+- 🎯 **User Interactions:** Test click handlers, form submissions, and navigation flows
+- 📊 **State Verification:** Inspect Redux state, component props, and runtime values
+
+#### Available Tools
+- **Performance Tools:** `performance_start_trace`, `performance_stop_trace`, `performance_analyze_insight`
+- **Network Tools:** `list_network_requests`, `get_network_request` (verify API calls to `https://localhost:7136`)
+- **Debugging Tools:** `evaluate_script`, `list_console_messages`, `take_screenshot`, `take_snapshot`
+- **Navigation Tools:** `navigate_page`, `new_page`, `list_pages`, `close_page`, `wait_for`
+- **Interaction Tools:** `click`, `fill`, `fill_form`, `hover`, `drag`, `upload_file`, `handle_dialog`
+- **Emulation Tools:** `emulate_network`, `emulate_cpu`, `resize_page` (test responsive design)
+
+#### Usage Workflow
+1. **Launch Browser:** MCP starts Chrome automatically when needed
+2. **Navigate to App:** Use `navigate_page` to open `http://localhost:5173` (Vite dev server)
+3. **Perform Actions:** Use interaction tools to test user flows
+4. **Inspect State:** Use `evaluate_script` to check runtime values, Redux state
+5. **Capture Evidence:** Use `take_screenshot` or `take_snapshot` to document issues
+6. **Analyze Performance:** Use trace tools to identify slow rendering or API calls
+7. **Check Console:** Use `list_console_messages` to catch JavaScript errors
+
+#### Best Practices
+- ✅ **Verify Before Changes:** Use DevTools MCP to understand actual browser behavior before fixing issues
+- ✅ **Test After Changes:** Immediately verify fixes in real browser using MCP tools
+- ✅ **Responsive Verification:** Use `resize_page` to test mobile/tablet/desktop layouts
+- ✅ **API Validation:** Use network tools to verify HTTPS calls and JWT authentication
+- ✅ **Performance First:** Run performance traces to ensure changes don't degrade UX
+- ✅ **RTL Testing:** Navigate to Persian mode and verify layout with screenshots
+- ⚠️ **Privacy Warning:** DevTools MCP exposes all browser content - avoid sharing sensitive data
+
+#### Example Use Cases
+```typescript
+// Test login flow with real browser
+1. navigate_page → http://localhost:5173
+2. fill_form → username/password fields
+3. click → login button
+4. list_console_messages → check for errors
+5. evaluate_script → verify auth token in Redux store
+6. take_screenshot → document successful login
+
+// Debug RTL layout issue
+1. navigate_page → app with Persian language
+2. resize_page → mobile viewport (375x667)
+3. take_screenshot → capture RTL layout
+4. evaluate_script → inspect Bootstrap RTL classes
+5. take_snapshot → get full DOM for analysis
+
+// Performance optimization
+1. navigate_page → dashboard page
+2. performance_start_trace
+3. [wait for page load]
+4. performance_stop_trace
+5. performance_analyze_insight → get optimization recommendations
+```
+
+#### Integration with Development Workflow
+- 🔍 **Debug Phase:** Use DevTools MCP to investigate reported bugs in real browser
+- ✏️ **Implementation Phase:** Test UI changes immediately in live browser
+- ✅ **Validation Phase:** Verify fixes across viewports and language modes
+- 📊 **Optimization Phase:** Analyze performance and refine based on real metrics
+
+**Remember:** Chrome DevTools MCP transforms AI from a "blind" code generator into an active debugging partner that can see, test, and verify changes in a real browser environment.
+
 ### API Integration Best Practices
 - 🔒 **Always use HTTPS endpoints** when making API calls
 - 📄 **Refer to swagger.json** for endpoint specifications
@@ -194,13 +269,14 @@ Before submitting any new feature or component:
 - [ ] TypeScript types defined for all props, functions, and API calls
 - [ ] Translation keys added to both `fa/translation.json` and `en/translation.json`
 - [ ] No hardcoded text strings in components
-- [ ] RTL layout tested and working correctly for Persian
+- [ ] RTL layout tested and working correctly for Persian (use Chrome DevTools MCP)
 - [ ] Bootstrap components and classes used appropriately
-- [ ] Responsive design tested on desktop and mobile viewports
+- [ ] Responsive design tested on desktop and mobile viewports (use Chrome DevTools MCP)
 - [ ] Redux state management implemented if needed
-- [ ] API integration uses HTTPS and proper error handling
+- [ ] API integration uses HTTPS and proper error handling (verify with Chrome DevTools MCP network tools)
 - [ ] Code follows existing project patterns and structure
 - [ ] Component works in both authenticated and unauthenticated states (if applicable)
+- [ ] **Chrome DevTools MCP verification:** Test in real browser, check console for errors, validate performance
 
 ---
 
