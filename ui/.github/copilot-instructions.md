@@ -150,6 +150,26 @@ src/services/
 - 📦 **Proper Imports:** Use absolute imports via TypeScript path aliases
 - 🧹 **Clean Code:** Remove unused imports, variables, and commented-out code
 
+### HTML/JSX Element Identification
+- 🔖 **data-id-ref Attribute:** **MANDATORY** - Every HTML/JSX element you create must include a `data-id-ref` attribute with a unique, descriptive value
+- 🎯 **Naming Convention:** Use kebab-case with hierarchical structure: `component-name-element-type-purpose`
+- 🤖 **AI Agent Integration:** These attributes enable AI agents, automated testing tools, and debugging utilities to reliably reference and interact with DOM elements
+- 📋 **Examples:**
+  ```tsx
+  // ✅ Good examples:
+  <button data-id-ref="login-form-submit-button">Login</button>
+  <input data-id-ref="user-profile-email-input" type="email" />
+  <div data-id-ref="dashboard-stats-card-container">...</div>
+  <nav data-id-ref="sidebar-main-navigation">...</nav>
+  ```
+- ⚠️ **Uniqueness:** Each `data-id-ref` value must be unique within the component scope
+- 🔍 **Purpose:** These identifiers serve as stable selectors for:
+  - Automated testing (E2E tests, integration tests)
+  - AI agent interactions (Chrome DevTools MCP, automated workflows)
+  - Debugging and element inspection
+  - Accessibility auditing tools
+  - Analytics and user behavior tracking
+
 ### Testing & Validation
 - 📱 **Responsive Testing:** Test all components on desktop and mobile viewports
 - 🌐 **Language Testing:** Verify RTL/LTR layouts work correctly
