@@ -334,7 +334,8 @@ const MonitoringPage: React.FC = () => {
               {/* Folder Grid View */}
               {!isLoading && !error && childGroups.length > 0 && (
                 <div className="mb-4" data-id-ref="monitoring-page-folder-grid-section">
-                  <div className="d-flex align-items-center mb-3" data-id-ref="monitoring-page-folder-grid-header">
+                  {/* Hide header on small screens (mobile); show from md and up */}
+                  <div className="d-none d-md-flex align-items-center mb-3" data-id-ref="monitoring-page-folder-grid-header">
                     <i className="bi bi-folder-fill me-2 text-warning" data-id-ref="monitoring-page-folder-grid-icon"></i>
                     <h5 className="mb-0" data-id-ref="monitoring-page-folder-grid-title">
                       {t('folders')}
