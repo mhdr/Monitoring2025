@@ -74,6 +74,19 @@
   border: 1px solid rgba(52, 152, 219, 0.2);
 }
 
+/* Remove borders coming from Bootstrap's collapse/nav container */
+#basic-navbar-nav,
+.custom-collapse,
+.custom-collapse .navbar-nav {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* More specific rule to override .navbar-collapse border if present */
+.navbar-collapse#basic-navbar-nav {
+  border: none !important;
+}
+
 /* User dropdown styling */
 .user-dropdown {
   position: relative !important;
