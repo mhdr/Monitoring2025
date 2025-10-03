@@ -5,13 +5,14 @@
   "type": "module",
   "description": "سیستم مانیتورینگ انبار - رابط کاربری فارسی",
   "scripts": {
-    "predev": "bash check-ssl.sh",
+    "predev": "node scripts/check-ssl.cjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "setup-ssl": "chmod +x trust-dev-certs.sh && ./trust-dev-certs.sh",
-    "trust-certs:win": "powershell -ExecutionPolicy Bypass -File .\trust-dev-certs.ps1"
+    "trust-certs:win": "powershell -ExecutionPolicy Bypass -File .\\trust-dev-certs.ps1",
+    "trust-certs:unix": "chmod +x trust-dev-certs.sh && ./trust-dev-certs.sh"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.9.0",
