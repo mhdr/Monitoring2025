@@ -5,21 +5,27 @@ const DataTablePage: React.FC = () => {
   const { t } = useLanguage();
 
   return (
-    <div className="container-fluid py-4" data-id-ref="data-table-page-root">
-      <div className="row" data-id-ref="data-table-page-header-row">
-        <div className="col-12" data-id-ref="data-table-page-header-col">
-          <h2 className="mb-4" data-id-ref="data-table-page-title">
-            {t('dataTable')}
-          </h2>
-        </div>
-      </div>
-      <div className="row" data-id-ref="data-table-page-content-row">
-        <div className="col-12" data-id-ref="data-table-page-content-col">
-          <div className="card" data-id-ref="data-table-page-card">
-            <div className="card-body" data-id-ref="data-table-page-card-body">
-              <p className="text-muted" data-id-ref="data-table-page-placeholder-text">
-                {/* Content will be added later */}
-                Data Table content coming soon...
+    <div
+      className="container-fluid h-100 d-flex flex-column py-4"
+      data-id-ref="data-table-page-container"
+    >
+      <div className="row flex-fill" data-id-ref="data-table-page-row">
+        <div className="col-12 h-100" data-id-ref="data-table-page-col">
+          <div
+            className="card h-100 d-flex flex-column"
+            data-id-ref="data-table-page-card"
+          >
+            <div className="card-header" data-id-ref="data-table-page-card-header">
+              <h4 className="card-title mb-0" data-id-ref="data-table-page-title">
+                {t('dataTable')}
+              </h4>
+            </div>
+            <div
+              className="card-body flex-fill d-flex align-items-center justify-content-center"
+              data-id-ref="data-table-page-card-body"
+            >
+              <p className="text-muted" data-id-ref="data-table-page-placeholder">
+                {t('dataTable')} page content will be added here.
               </p>
             </div>
           </div>

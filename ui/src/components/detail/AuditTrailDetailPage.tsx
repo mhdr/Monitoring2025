@@ -5,21 +5,27 @@ const AuditTrailDetailPage: React.FC = () => {
   const { t } = useLanguage();
 
   return (
-    <div className="container-fluid py-4" data-id-ref="audit-trail-detail-page-root">
-      <div className="row" data-id-ref="audit-trail-detail-page-header-row">
-        <div className="col-12" data-id-ref="audit-trail-detail-page-header-col">
-          <h2 className="mb-4" data-id-ref="audit-trail-detail-page-title">
-            {t('auditTrailDetail')}
-          </h2>
-        </div>
-      </div>
-      <div className="row" data-id-ref="audit-trail-detail-page-content-row">
-        <div className="col-12" data-id-ref="audit-trail-detail-page-content-col">
-          <div className="card" data-id-ref="audit-trail-detail-page-card">
-            <div className="card-body" data-id-ref="audit-trail-detail-page-card-body">
-              <p className="text-muted" data-id-ref="audit-trail-detail-page-placeholder-text">
-                {/* Content will be added later */}
-                Audit Trail content coming soon...
+    <div
+      className="container-fluid h-100 d-flex flex-column py-4"
+      data-id-ref="audit-trail-detail-page-container"
+    >
+      <div className="row flex-fill" data-id-ref="audit-trail-detail-page-row">
+        <div className="col-12 h-100" data-id-ref="audit-trail-detail-page-col">
+          <div
+            className="card h-100 d-flex flex-column"
+            data-id-ref="audit-trail-detail-page-card"
+          >
+            <div className="card-header" data-id-ref="audit-trail-detail-page-card-header">
+              <h4 className="card-title mb-0" data-id-ref="audit-trail-detail-page-title">
+                {t('auditTrailDetail')}
+              </h4>
+            </div>
+            <div
+              className="card-body flex-fill d-flex align-items-center justify-content-center"
+              data-id-ref="audit-trail-detail-page-card-body"
+            >
+              <p className="text-muted" data-id-ref="audit-trail-detail-page-placeholder">
+                {t('auditTrailDetail')} page content will be added here.
               </p>
             </div>
           </div>
