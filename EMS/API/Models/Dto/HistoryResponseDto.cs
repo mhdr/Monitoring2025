@@ -29,18 +29,5 @@ public class HistoryResponseDto
         /// Unix timestamp when the value was recorded
         /// </summary>
         public long Time { get; set; }
-
-        /// <summary>
-        /// Timestamp converted to local DateTime
-        /// </summary>
-        public DateTime DateTime
-        {
-            get
-            {
-                DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Time);
-                DateTime localDateTime = dateTimeOffset.LocalDateTime;
-                return localDateTime;
-            }
-        }
     }
 }
