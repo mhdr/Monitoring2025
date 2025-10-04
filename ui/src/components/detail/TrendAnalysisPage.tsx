@@ -350,7 +350,7 @@ const TrendAnalysisPage: React.FC = () => {
                   <label className="form-label small mb-1" data-id-ref="trend-analysis-date-range-label">
                     {t('dateRange')}
                   </label>
-                  <div className="btn-group d-flex d-md-inline-flex" role="group" data-id-ref="trend-analysis-preset-button-group">
+                  <div className="btn-group d-flex d-md-inline-flex mt-1 mt-md-0 ms-md-2" role="group" data-id-ref="trend-analysis-preset-button-group">
                     <button
                       type="button"
                       className={`btn btn-sm ${selectedPreset === 'last24Hours' ? 'btn-primary' : 'btn-outline-primary'}`}
