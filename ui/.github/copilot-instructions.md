@@ -105,7 +105,100 @@ src/styles/
 
 ---
 
-## 📱 Responsive Design Requirements
+## � Charts & Data Visualization
+
+### Apache ECharts Integration
+- **Charting Library:** **Apache ECharts** for data visualization and interactive charts
+- **React Wrapper:** **echarts-for-react** for React component integration
+- **Version:** ECharts 5.6.0, echarts-for-react 3.0.2
+
+### Implementation Guidelines
+
+#### Using ECharts Components
+- **Wrapper Component:** Use `ReactECharts` from `echarts-for-react` for all chart implementations
+- **Type Safety:** Define TypeScript interfaces for chart options and data structures
+- **Performance:** Use ECharts' built-in performance optimization features for large datasets
+
+#### Chart Configuration Best Practices
+```typescript
+// ✅ Good example - using echarts-for-react:
+import ReactECharts from 'echarts-for-react';
+import type { EChartsOption } from 'echarts';
+
+const option: EChartsOption = {
+  // Chart configuration
+  xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed'] },
+  yAxis: { type: 'value' },
+  series: [{ data: [120, 200, 150], type: 'line' }]
+};
+
+<ReactECharts 
+  option={option}
+  data-id-ref="dashboard-line-chart"
+  style={{ height: '400px', width: '100%' }}
+/>
+```
+
+#### RTL Support for Charts
+- **Text Direction:** Configure ECharts text elements to support RTL for Persian language
+- **Legend Position:** Adjust legend placement for RTL layouts
+- **Tooltip Direction:** Ensure tooltips display correctly in both LTR and RTL modes
+- **Axis Labels:** Consider text alignment for Persian axis labels
+
+#### Responsive Charts
+- **Container Sizing:** Use percentage-based dimensions or flex layouts for chart containers
+- **Resize Handling:** echarts-for-react automatically handles window resize events
+- **Mobile Optimization:** Adjust chart options for smaller screens (reduce font sizes, simplify legends)
+- **Breakpoint-Based Options:** Consider using different chart configurations for different screen sizes
+
+#### Chart Internationalization
+- **Translatable Elements:** All chart titles, axis labels, legends, and tooltips must be internationalized
+- **Number Formatting:** Use appropriate number formatters for Persian (fa) and English (en) locales
+- **Date Formatting:** Apply locale-specific date formats in time-series charts
+- **Pattern:**
+  ```typescript
+  // ✅ Good example - internationalized chart:
+  const { t } = useTranslation();
+  
+  const option: EChartsOption = {
+    title: { text: t('charts.temperature.title') },
+    xAxis: { name: t('charts.axes.time') },
+    yAxis: { name: t('charts.axes.temperature') },
+    // ... other configuration
+  };
+  ```
+
+#### Performance Considerations
+- **Large Datasets:** Use ECharts' data sampling and progressive rendering for large datasets
+- **Lazy Loading:** Consider lazy loading chart components for pages with multiple charts
+- **Update Strategy:** Use `notMerge` and `lazyUpdate` options appropriately when updating chart data
+- **Memory Management:** Clean up chart instances properly when components unmount
+
+#### Chart Types & Usage
+Common chart types used in monitoring applications:
+- **Line Charts:** Time-series data, trends over time
+- **Bar Charts:** Comparisons, categorical data
+- **Pie/Donut Charts:** Proportional data, status distributions
+- **Gauge Charts:** Real-time metrics, thresholds
+- **Heatmaps:** Matrix data, correlation visualization
+- **Scatter Plots:** Relationship analysis, outlier detection
+
+#### ECharts Resources
+- **Official Documentation:** https://echarts.apache.org/en/index.html
+- **echarts-for-react:** https://github.com/hustcc/echarts-for-react
+- **Examples Gallery:** https://echarts.apache.org/examples/en/index.html
+- **API Reference:** https://echarts.apache.org/en/api.html
+
+### Testing Charts
+- 📊 **Visual Testing:** Use Chrome DevTools MCP to verify chart rendering
+- 🌐 **RTL Testing:** Verify chart layout in Persian language mode
+- 📱 **Responsive Testing:** Test charts across different viewport sizes
+- ⚡ **Performance Testing:** Monitor chart rendering performance with large datasets
+- 🔄 **Data Updates:** Test chart updates when data changes (real-time monitoring)
+
+---
+
+## �📱 Responsive Design Requirements
 
 ### Device Support
 - ✅ **Desktop:** Full desktop browser support
@@ -326,6 +419,8 @@ Before submitting any new feature or component:
 - [ ] API integration uses HTTPS and proper error handling (verify with Chrome DevTools MCP network tools)
 - [ ] Code follows existing project patterns and structure
 - [ ] Component works in both authenticated and unauthenticated states (if applicable)
+- [ ] **Charts (if applicable):** ECharts options are internationalized, responsive, and RTL-compatible
+- [ ] **Charts (if applicable):** Chart performance tested with representative data volumes
 - [ ] **Chrome DevTools MCP verification:** Test in real browser, check console for errors, validate performance
 
 ---
