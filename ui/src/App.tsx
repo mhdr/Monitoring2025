@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useBootstrapRTL } from './hooks/useBootstrapRTL';
 import { useLanguage } from './hooks/useLanguage';
@@ -198,7 +198,6 @@ const AppRoutes = () => {
 };
 
 function App() {
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const { isLoadingLanguage } = useLanguage();
   const { t } = useTranslation();
   
@@ -206,33 +205,27 @@ function App() {
   useBootstrapRTL();
 
   useEffect(() => {
-    // Mark initial load as complete after a short delay
-    // This ensures we don't show React loading screens during initial HTML loader phase
-    const timeoutId = setTimeout(() => {
-      setInitialLoadComplete(true);
-      
-      // Remove HTML loader after React is ready to take over
+    // Remove initial loading screen from HTML after app initializes
+    const removeInitialLoader = () => {
       const initialLoader = document.getElementById('initial-loading-screen');
       if (initialLoader) {
         initialLoader.classList.add('hide');
         setTimeout(() => {
           initialLoader.remove();
-        }, 300);
+        }, 300); // Match transition duration
       }
-    }, 100);
+    };
+
+    // Wait for router and first route to resolve before removing HTML loader
+    // This prevents showing both loaders simultaneously
+    const timer = setTimeout(removeInitialLoader, 400);
     
-    return () => clearTimeout(timeoutId);
+    return () => clearTimeout(timer);
   }, []);
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {
     return <LoadingScreen message={t('loading')} />;
-  }
-
-  // During initial load, render nothing so HTML loader stays visible
-  // and React LoadingScreen doesn't appear
-  if (!initialLoadComplete) {
-    return null;
   }
 
   return (
