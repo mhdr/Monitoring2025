@@ -121,6 +121,11 @@
   .item-card-row {
     gap: 0.375rem;
   }
+
+  /* Hide the open-in-new-tab button on small screens (mobile) while keeping the element/attribute in the DOM */
+  .item-card-open-btn {
+    display: none;
+  }
 }
 
 @media (max-width: 576px) {
