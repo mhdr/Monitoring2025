@@ -231,8 +231,8 @@ Chrome DevTools MCP provides AI-powered access to Chrome's debugging surface, re
 - **Emulation Tools:** `emulate_network`, `emulate_cpu`, `resize_page` (test responsive design)
 
 #### Usage Workflow
-1. **Launch Browser:** MCP starts Chrome automatically when needed
-2. **Navigate to App:** Use `navigate_page` to open `http://localhost:5173` (Vite dev server)
+1. **Connect to Browser:** Chrome DevTools MCP will first attempt to connect to a currently running Chrome instance. If no running instance is found or connection fails, MCP will launch a new Chrome browser automatically
+2. **Navigate to App:** Use `navigate_page` to open `https://localhost:5173` (Vite dev server)
 3. **Perform Actions:** Use interaction tools to test user flows
 4. **Inspect State:** Use `evaluate_script` to check runtime values, Redux state
 5. **Capture Evidence:** Use `take_screenshot` or `take_snapshot` to document issues
