@@ -77,5 +77,14 @@
   "value": "Value",
   "time": "Time",
   "refreshingData": "Refreshing data...",
-  "openInNewTab": "Open in new tab"
+  "openInNewTab": "Open in new tab",
+  "trendAnalysis": "Trend Analysis",
+  "dataTable": "Data Table",
+  "liveMonitoring": "Live Monitoring",
+  "activeAlarmsDetail": "Active Alarms",
+  "alarmLogDetail": "Alarm Log",
+  "alarmCriteria": "Alarm Criteria",
+  "auditTrailDetail": "Audit Trail",
+  "managementDetail": "Management",
+  "itemDetailTitle": "Point Details"
 }

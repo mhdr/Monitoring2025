@@ -77,5 +77,14 @@
   "value": "مقدار",
   "time": "زمان",
   "refreshingData": "در حال به‌روزرسانی داده‌ها...",
-  "openInNewTab": "باز کردن در تب جدید"
+  "openInNewTab": "باز کردن در تب جدید",
+  "trendAnalysis": "تحلیل روند",
+  "dataTable": "جدول داده",
+  "liveMonitoring": "مانیتورینگ زنده",
+  "activeAlarmsDetail": "هشدارهای فعال",
+  "alarmLogDetail": "گزارش هشدارها",
+  "alarmCriteria": "معیارهای هشدار",
+  "auditTrailDetail": "گزارش بازرسی‌ها",
+  "managementDetail": "مدیریت",
+  "itemDetailTitle": "جزئیات پوینت"
 }

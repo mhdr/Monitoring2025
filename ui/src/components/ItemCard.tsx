@@ -29,9 +29,22 @@ const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) =
   }, []);
 
   const handleOpenNewTab = () => {
-    // Open a blank new tab/window; content will be added later by the user
+    // Open a new tab with the item detail page
     try {
-      window.open('', '_blank');
+      // Create URL with item data as query parameters
+      const params = new URLSearchParams({
+        name: name,
+        pointNumber: pointNumber.toString(),
+        value: value,
+        time: time,
+      });
+      
+      // Get the current origin to build the full URL
+      const baseUrl = window.location.origin;
+      const detailUrl = `${baseUrl}/item-detail?${params.toString()}`;
+      
+      // Open in new tab
+      window.open(detailUrl, '_blank');
     } catch (e) {
       // no-op - window may be undefined in some test environments
       // keep silent to avoid breaking UI; log warning in dev

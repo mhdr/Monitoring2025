@@ -23,8 +23,8 @@
   transform: translateX(-100%); /* hidden on mobile */
 }
 
-/* Hide any potential duplicate sidebars */
-.sidebar:not(#main-sidebar) {
+/* Hide any potential duplicate sidebars - allow main-sidebar and detail-sidebar */
+.sidebar:not(#main-sidebar):not(#detail-sidebar) {
   display: none !important;
 }
 

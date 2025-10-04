@@ -16,6 +16,15 @@ import DisabledAlarmsPage from './components/DisabledAlarmsPage';
 import SchedulerPage from './components/SchedulerPage';
 import ManagementPage from './components/ManagementPage';
 import LoadingScreen from './components/LoadingScreen';
+import DetailLayout from './components/detail/DetailLayout';
+import TrendAnalysisPage from './components/detail/TrendAnalysisPage';
+import DataTablePage from './components/detail/DataTablePage';
+import LiveMonitoringDetailPage from './components/detail/LiveMonitoringDetailPage';
+import ActiveAlarmsDetailPage from './components/detail/ActiveAlarmsDetailPage';
+import AlarmLogDetailPage from './components/detail/AlarmLogDetailPage';
+import AlarmCriteriaPage from './components/detail/AlarmCriteriaPage';
+import AuditTrailDetailPage from './components/detail/AuditTrailDetailPage';
+import ManagementDetailPage from './components/detail/ManagementDetailPage';
 import './App.css';
 
 function App() {
@@ -73,6 +82,21 @@ function App() {
           <Route path="disabled-alarms" element={<DisabledAlarmsPage />} />
           <Route path="scheduler" element={<SchedulerPage />} />
           <Route path="management" element={<ManagementPage />} />
+        </Route>
+        <Route path="/item-detail" element={
+          <ProtectedRoute>
+            <DetailLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Navigate to="/item-detail/trend-analysis" replace />} />
+          <Route path="trend-analysis" element={<TrendAnalysisPage />} />
+          <Route path="data-table" element={<DataTablePage />} />
+          <Route path="live-monitoring" element={<LiveMonitoringDetailPage />} />
+          <Route path="active-alarms" element={<ActiveAlarmsDetailPage />} />
+          <Route path="alarm-log" element={<AlarmLogDetailPage />} />
+          <Route path="alarm-criteria" element={<AlarmCriteriaPage />} />
+          <Route path="audit-trail" element={<AuditTrailDetailPage />} />
+          <Route path="management" element={<ManagementDetailPage />} />
         </Route>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
