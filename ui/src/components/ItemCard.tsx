@@ -16,6 +16,14 @@ const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) =
     <div className="item-card" data-id-ref="item-card-root-container">
       <div className="item-card-header" data-id-ref="item-card-header">
         <h6 className="item-card-title" data-id-ref="item-card-title">{name}</h6>
+        <button 
+          className="item-card-open-btn" 
+          data-id-ref="item-card-open-new-tab-button"
+          aria-label={t('openInNewTab')}
+          type="button"
+        >
+          <i className="bi bi-box-arrow-up-right" data-id-ref="item-card-open-icon"></i>
+        </button>
       </div>
       <div className="item-card-body" data-id-ref="item-card-body">
         <div className="item-card-row" data-id-ref="item-card-row-point-number">

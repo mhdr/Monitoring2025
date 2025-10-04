@@ -76,5 +76,6 @@
   "loadingValue": "Loading...",
   "value": "Value",
   "time": "Time",
-  "refreshingData": "Refreshing data..."
+  "refreshingData": "Refreshing data...",
+  "openInNewTab": "Open in new tab"
 }
