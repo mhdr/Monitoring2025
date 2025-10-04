@@ -3,9 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 import { useLanguage } from '../../hooks/useLanguage';
-import { useAppSelector } from '../../hooks/useRedux';
 import { monitoringApi } from '../../services/api';
-import type { HistoryRequestDto, HistoryResponseDto, HistoricalDataPoint, Item } from '../../types/api';
+import type { HistoryRequestDto, HistoryResponseDto, HistoricalDataPoint } from '../../types/api';
 
 // Date range preset types
 type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
@@ -19,7 +18,6 @@ const TrendAnalysisPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [historyData, setHistoryData] = useState<HistoricalDataPoint[]>([]);
-  const [itemName, setItemName] = useState<string | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>('last24Hours');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
@@ -93,23 +91,6 @@ const TrendAnalysisPage: React.FC = () => {
     }
   };
 
-  // Read items from Redux and pick the display name
-  const items = useAppSelector((state) => state.monitoring.items as Item[]);
-  useEffect(() => {
-    if (!itemId) {
-      setItemName(null);
-      return;
-    }
-
-    const found = (items || []).find((it) => it.id === itemId);
-    if (found) {
-      const displayName = language === 'fa' ? (found.nameFa || found.name) : (found.name || found.nameFa || '');
-      setItemName(displayName || null);
-    } else {
-      setItemName(null);
-    }
-  }, [items, itemId, language]);
-
   // Fetch data on mount and when date range changes
   useEffect(() => {
     fetchHistoryData();
@@ -119,25 +100,6 @@ const TrendAnalysisPage: React.FC = () => {
   // Prepare chart data
   const chartOption: EChartsOption = useMemo(() => {
     const isRTL = language === 'fa';
-
-    const locale = language === 'fa' ? 'fa-IR' : 'en-US';
-    const formatOptions: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    };
-
-    const { startDate, endDate } = getDateRange;
-    const formattedStart = new Date(startDate * 1000).toLocaleString(locale, formatOptions);
-    const formattedEnd = new Date(endDate * 1000).toLocaleString(locale, formatOptions);
-
-    const dateRangeLabel = `${formattedStart}, ${formattedEnd}`;
-
-    const chartTitle = itemName
-      ? `${itemName}, ${dateRangeLabel}`
-      : `${t('chartTitle')}, ${dateRangeLabel}`;
 
     // Convert data points to chart format
     const timestamps = historyData.map((point) => {
@@ -152,7 +114,7 @@ const TrendAnalysisPage: React.FC = () => {
 
     return {
       title: {
-        text: chartTitle,
+        text: t('chartTitle'),
         left: isRTL ? 'right' : 'left',
         textStyle: {
           fontSize: 16,
@@ -247,7 +209,7 @@ const TrendAnalysisPage: React.FC = () => {
         left: isRTL ? 20 : 'auto',
       },
     };
-  }, [historyData, language, t, itemName, getDateRange]);
+  }, [historyData, language, t]);
 
   // Handle date range preset change
   const handlePresetChange = (preset: DateRangePreset) => {
