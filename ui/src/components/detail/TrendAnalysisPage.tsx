@@ -146,6 +146,12 @@ const TrendAnalysisPage: React.FC = () => {
         axisLabel: {
           rotate: 45,
           fontSize: 10,
+          // Show only a subset of labels to prevent clutter
+          interval: timestamps.length > 50 
+            ? Math.floor(timestamps.length / 20) // Show ~20 labels for large datasets
+            : timestamps.length > 20 
+            ? Math.floor(timestamps.length / 10) // Show ~10 labels for medium datasets
+            : 0, // Show all labels for small datasets (< 20 points)
         },
       },
       yAxis: {
