@@ -38,6 +38,13 @@
   border-width: 0.3em;
 }
 
+/* Skeleton loading mode */
+.loading-screen-skeleton {
+  position: relative;
+  background-color: #f8f9fa;
+  overflow-y: auto;
+}
+
 /* Responsive adjustments */
 @media (max-width: 576px) {
   .loading-screen .spinner-border {

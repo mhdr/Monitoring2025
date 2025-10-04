@@ -3,9 +3,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useBootstrapRTL } from './hooks/useBootstrapRTL';
 import { useLanguage } from './hooks/useLanguage';
 import { useTranslation } from './hooks/useTranslation';
+import { useRoutePreloader } from './hooks/useRoutePreloader';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
+import LazyErrorBoundary from './components/LazyErrorBoundary';
+import DashboardSkeleton from './components/DashboardSkeleton';
+import MonitoringPageSkeleton from './components/MonitoringPageSkeleton';
+import GenericPageSkeleton from './components/GenericPageSkeleton';
 import './App.css';
 
 // Lazy load layout components
@@ -32,6 +37,165 @@ const AlarmLogDetailPage = lazy(() => import('./components/detail/AlarmLogDetail
 const AlarmCriteriaPage = lazy(() => import('./components/detail/AlarmCriteriaPage'));
 const AuditTrailDetailPage = lazy(() => import('./components/detail/AuditTrailDetailPage'));
 const ManagementDetailPage = lazy(() => import('./components/detail/ManagementDetailPage'));
+
+/**
+ * AppRoutes Component
+ * Contains all routes and must be inside Router for useLocation to work
+ */
+const AppRoutes = () => {
+  const { t } = useTranslation();
+  
+  // Enable intelligent route preloading based on navigation patterns
+  // This must be inside Router component to access useLocation
+  useRoutePreloader();
+
+  return (
+      <Routes>
+        <Route path="/login" element={<PublicRoute />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <DashboardLayout />
+              </Suspense>
+            </LazyErrorBoundary>
+          </ProtectedRoute>
+        }>
+          <Route index element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen skeleton={<DashboardSkeleton />} variant="skeleton" />}>
+                <Dashboard />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="monitoring" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen skeleton={<MonitoringPageSkeleton />} variant="skeleton" />}>
+                <MonitoringPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="plots" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <PlotsPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="active-alarms" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen skeleton={<GenericPageSkeleton />} variant="skeleton" />}>
+                <ActiveAlarmsPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="alarm-log" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen skeleton={<GenericPageSkeleton />} variant="skeleton" />}>
+                <AlarmLogPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="audit-trail" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <AuditTrailPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="disabled-alarms" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <DisabledAlarmsPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="scheduler" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <SchedulerPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="management" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <ManagementPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+        </Route>
+        <Route path="/item-detail" element={
+          <ProtectedRoute>
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <DetailLayout />
+              </Suspense>
+            </LazyErrorBoundary>
+          </ProtectedRoute>
+        }>
+          <Route index element={<Navigate to="/item-detail/trend-analysis" replace />} />
+          <Route path="trend-analysis" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <TrendAnalysisPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="data-table" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <DataTablePage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="live-monitoring" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <LiveMonitoringDetailPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="active-alarms" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <ActiveAlarmsDetailPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="alarm-log" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <AlarmLogDetailPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="alarm-criteria" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <AlarmCriteriaPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="audit-trail" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <AuditTrailDetailPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="management" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <ManagementDetailPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+        </Route>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+  );
+};
 
 function App() {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -72,112 +236,7 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route path="/login" element={<PublicRoute />} />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <DashboardLayout />
-            </Suspense>
-          </ProtectedRoute>
-        }>
-          <Route index element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <Dashboard />
-            </Suspense>
-          } />
-          <Route path="monitoring" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <MonitoringPage />
-            </Suspense>
-          } />
-          <Route path="plots" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <PlotsPage />
-            </Suspense>
-          } />
-          <Route path="active-alarms" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <ActiveAlarmsPage />
-            </Suspense>
-          } />
-          <Route path="alarm-log" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <AlarmLogPage />
-            </Suspense>
-          } />
-          <Route path="audit-trail" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <AuditTrailPage />
-            </Suspense>
-          } />
-          <Route path="disabled-alarms" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <DisabledAlarmsPage />
-            </Suspense>
-          } />
-          <Route path="scheduler" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <SchedulerPage />
-            </Suspense>
-          } />
-          <Route path="management" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <ManagementPage />
-            </Suspense>
-          } />
-        </Route>
-        <Route path="/item-detail" element={
-          <ProtectedRoute>
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <DetailLayout />
-            </Suspense>
-          </ProtectedRoute>
-        }>
-          <Route index element={<Navigate to="/item-detail/trend-analysis" replace />} />
-          <Route path="trend-analysis" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <TrendAnalysisPage />
-            </Suspense>
-          } />
-          <Route path="data-table" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <DataTablePage />
-            </Suspense>
-          } />
-          <Route path="live-monitoring" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <LiveMonitoringDetailPage />
-            </Suspense>
-          } />
-          <Route path="active-alarms" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <ActiveAlarmsDetailPage />
-            </Suspense>
-          } />
-          <Route path="alarm-log" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <AlarmLogDetailPage />
-            </Suspense>
-          } />
-          <Route path="alarm-criteria" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <AlarmCriteriaPage />
-            </Suspense>
-          } />
-          <Route path="audit-trail" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <AuditTrailDetailPage />
-            </Suspense>
-          } />
-          <Route path="management" element={
-            <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-              <ManagementDetailPage />
-            </Suspense>
-          } />
-        </Route>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+      <AppRoutes />
     </Router>
   );
 }
