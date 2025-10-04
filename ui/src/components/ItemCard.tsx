@@ -10,6 +10,7 @@ declare global {
 }
 import { useLanguage } from '../hooks/useLanguage';
 import './ItemCard.css';
+import { buildDetailTabUrl } from '../utils/detailRoutes';
 
 interface ItemCardProps {
   name: string;
@@ -31,17 +32,12 @@ const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) =
   const handleOpenNewTab = () => {
     // Open a new tab with the item detail page
     try {
-      // Create URL with item data as query parameters
-      const params = new URLSearchParams({
-        name: name,
-        pointNumber: pointNumber.toString(),
-        value: value,
-        time: time,
+      const detailUrl = buildDetailTabUrl('trend-analysis', {
+        name,
+        pointNumber,
+        value,
+        time,
       });
-      
-      // Get the current origin to build the full URL
-      const baseUrl = window.location.origin;
-      const detailUrl = `${baseUrl}/item-detail?${params.toString()}`;
       
       // Open in new tab
       window.open(detailUrl, '_blank');
