@@ -40,8 +40,13 @@
 
 /* Skeleton loading mode */
 .loading-screen-skeleton {
-  position: relative;
-  background-color: #f8f9fa;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bs-body-bg, #f8f9fa);
+  z-index: 9999;
   overflow-y: auto;
 }
 

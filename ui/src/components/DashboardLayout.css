@@ -1,6 +1,13 @@
 /* DashboardLayout Styles */
 .dashboard-container {
   min-height: 100vh;
+  opacity: 0;
+  transition: opacity 0.15s ease-in;
+}
+
+/* Show dashboard once React has fully mounted */
+.dashboard-container.dashboard-ready {
+  opacity: 1;
 }
 
 /* Temporarily disable margins to test if they cause visual artifacts */

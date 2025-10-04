@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import ResponsiveNavbar from './ResponsiveNavbar';
 import Sidebar from './Sidebar';
@@ -7,15 +7,21 @@ import './DashboardLayout.css';
 
 const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const { language } = useLanguage();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  // Mark layout as ready after mount to prevent flash
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
+
   return (
     <div
-      className={`dashboard-container d-flex vh-100 ${language === 'fa' ? 'flex-row-reverse' : ''}`}
+      className={`dashboard-container d-flex vh-100 ${language === 'fa' ? 'flex-row-reverse' : ''} ${isReady ? 'dashboard-ready' : ''}`}
       dir={language === 'fa' ? 'rtl' : 'ltr'}
       data-id-ref="dashboard-layout-root-container"
     >
