@@ -1,4 +1,13 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+
+// Extend window type for Bootstrap 5
+declare global {
+  interface Window {
+    bootstrap?: {
+  Tooltip?: new (element: HTMLElement) => unknown;
+    };
+  }
+}
 import { useLanguage } from '../hooks/useLanguage';
 import './ItemCard.css';
 
@@ -11,6 +20,13 @@ interface ItemCardProps {
 
 const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) => {
   const { t } = useLanguage();
+  const openBtnRef = useRef<HTMLButtonElement>(null);
+  // Initialize Bootstrap tooltip on mount
+  useEffect(() => {
+    if (openBtnRef.current && window.bootstrap && window.bootstrap.Tooltip) {
+      new window.bootstrap.Tooltip(openBtnRef.current);
+    }
+  }, []);
 
   const handleOpenNewTab = () => {
     // Open a blank new tab/window; content will be added later by the user
@@ -33,6 +49,9 @@ const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) =
           aria-label={t('openInNewTab')}
           type="button"
           onClick={handleOpenNewTab}
+          data-bs-toggle="tooltip"
+          title={t('openInNewTab')}
+          ref={openBtnRef}
         >
           <i className="bi bi-box-arrow-up-right" data-id-ref="item-card-open-icon"></i>
         </button>
