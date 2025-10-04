@@ -12,6 +12,17 @@ interface ItemCardProps {
 const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) => {
   const { t } = useLanguage();
 
+  const handleOpenNewTab = () => {
+    // Open a blank new tab/window; content will be added later by the user
+    try {
+      window.open('', '_blank');
+    } catch (e) {
+      // no-op - window may be undefined in some test environments
+      // keep silent to avoid breaking UI; log warning in dev
+      console.warn('Could not open new tab', e);
+    }
+  };
+
   return (
     <div className="item-card" data-id-ref="item-card-root-container">
       <div className="item-card-header" data-id-ref="item-card-header">
@@ -21,6 +32,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) =
           data-id-ref="item-card-open-new-tab-button"
           aria-label={t('openInNewTab')}
           type="button"
+          onClick={handleOpenNewTab}
         >
           <i className="bi bi-box-arrow-up-right" data-id-ref="item-card-open-icon"></i>
         </button>
