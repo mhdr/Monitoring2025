@@ -21,26 +21,30 @@
     <link rel="stylesheet" href="/bootstrap-icons/bootstrap-icons.css">
     <title>Monitoring System | سیستم مانیتورینگ</title>
     <style>
-      /* Initial loading screen styles */
+      /* Initial loading screen styles with anti-flicker logic.
+         We start hidden (display:none) and only reveal if React mount exceeds a threshold. */
       #initial-loading-screen {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        inset: 0;
         background-color: #ffffff;
-        display: flex;
+        display: none; /* hidden by default to avoid flash */
         justify-content: center;
         align-items: center;
         z-index: 9999;
+        opacity: 0;
         transition: opacity 0.3s ease-in-out;
       }
-      
-      #initial-loading-screen.hide {
+
+      #initial-loading-screen.visible { /* becomes flex and fades in */
+        display: flex;
+        opacity: 1;
+      }
+
+      #initial-loading-screen.hide { /* fade out then removed by JS */
         opacity: 0;
         pointer-events: none;
       }
-      
+
       .initial-spinner {
         width: 3rem;
         height: 3rem;
@@ -49,22 +53,48 @@
         border-radius: 50%;
         animation: spinner-rotate 0.75s linear infinite;
       }
-      
-      @keyframes spinner-rotate {
-        to { transform: rotate(360deg); }
-      }
-      
+
+      @keyframes spinner-rotate { to { transform: rotate(360deg); } }
+
       @media (prefers-color-scheme: dark) {
-        #initial-loading-screen {
-          background-color: #212529;
-        }
+        #initial-loading-screen { background-color: #212529; }
       }
     </style>
   </head>
   <body>
-    <div id="initial-loading-screen">
-      <div class="initial-spinner"></div>
+    <div id="initial-loading-screen" data-id-ref="initial-loading-screen-root">
+      <div class="initial-spinner" data-id-ref="initial-loading-screen-spinner"></div>
     </div>
+    <script>
+      // Anti-flicker: only show initial loader if React hasn't mounted quickly.
+      (function() {
+        var THRESHOLD = 180; // ms before showing loader (tweakable)
+        var loader = document.getElementById('initial-loading-screen');
+        // Flags for coordination with React
+        window.__initialLoaderShown = false;
+        window.__initialLoaderTimer = window.setTimeout(function() {
+          if (!loader || window.__reactMounted) return; // React already mounted; skip showing
+          window.__initialLoaderShown = true;
+          // Show loader with fade-in
+          loader.classList.add('visible');
+        }, THRESHOLD);
+
+        window.__hideInitialLoader = function immediateHideInitialLoader() {
+          if (!loader) return;
+          window.clearTimeout(window.__initialLoaderTimer);
+            // If never shown, remove immediately (no flash)
+          if (!window.__initialLoaderShown) {
+            loader.remove();
+            return;
+          }
+          // Fade out then remove
+          loader.classList.add('hide');
+          setTimeout(function() {
+            if (loader && loader.parentNode) loader.remove();
+          }, 300); // match CSS transition
+        };
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

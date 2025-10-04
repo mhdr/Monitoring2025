@@ -13,6 +13,16 @@ import MonitoringPageSkeleton from './components/MonitoringPageSkeleton';
 import GenericPageSkeleton from './components/GenericPageSkeleton';
 import './App.css';
 
+// Extend Window for initial loader coordination (declared here for bundler scope)
+declare global {
+  interface Window {
+    __reactMounted?: boolean;
+    __initialLoaderShown?: boolean;
+    __initialLoaderTimer?: number;
+    __hideInitialLoader?: () => void;
+  }
+}
+
 // Lazy load layout components
 const DashboardLayout = lazy(() => import('./components/DashboardLayout'));
 const DetailLayout = lazy(() => import('./components/detail/DetailLayout'));
@@ -205,22 +215,16 @@ function App() {
   useBootstrapRTL();
 
   useEffect(() => {
-    // Remove initial loading screen from HTML after app initializes
-    const removeInitialLoader = () => {
+    window.__reactMounted = true;
+    if (typeof window.__hideInitialLoader === 'function') {
+      window.__hideInitialLoader();
+    } else {
       const initialLoader = document.getElementById('initial-loading-screen');
       if (initialLoader) {
         initialLoader.classList.add('hide');
-        setTimeout(() => {
-          initialLoader.remove();
-        }, 300); // Match transition duration
+        setTimeout(() => initialLoader.remove(), 300);
       }
-    };
-
-    // Wait for router and first route to resolve before removing HTML loader
-    // This prevents showing both loaders simultaneously
-    const timer = setTimeout(removeInitialLoader, 400);
-    
-    return () => clearTimeout(timer);
+    }
   }, []);
 
   // Show loading screen during language changes
