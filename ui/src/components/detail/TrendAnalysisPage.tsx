@@ -58,6 +58,7 @@ const TrendAnalysisPage: React.FC = () => {
   const fetchHistoryData = async () => {
     if (!itemId) {
       setError(t('itemNotFound'));
+      setLoading(false);
       return;
     }
 
@@ -232,6 +233,36 @@ const TrendAnalysisPage: React.FC = () => {
       setCustomEndDate(unixToDateTimeLocal(endDate));
     }
   }, [selectedPreset, customStartDate, customEndDate, getDateRange]);
+
+  // Show helpful message when itemId is missing
+  if (!itemId) {
+    return (
+      <div
+        className="container-fluid h-100 d-flex align-items-center justify-content-center"
+        data-id-ref="trend-analysis-no-item-container"
+      >
+        <div className="text-center" data-id-ref="trend-analysis-no-item-content">
+          <i className="bi bi-exclamation-triangle text-warning display-1 mb-4" data-id-ref="trend-analysis-no-item-icon" />
+          <h3 className="mb-3" data-id-ref="trend-analysis-no-item-title">
+            {t('itemNotFound')}
+          </h3>
+          <p className="text-muted mb-4" data-id-ref="trend-analysis-no-item-description">
+            {language === 'fa' 
+              ? 'برای مشاهده تحلیل روند، لطفاً از صفحه مانیتورینگ یک پوینت را انتخاب کنید.'
+              : 'To view trend analysis, please select a monitoring item from the Monitoring page.'}
+          </p>
+          <a
+            href="/dashboard/monitoring"
+            className="btn btn-primary"
+            data-id-ref="trend-analysis-no-item-back-button"
+          >
+            <i className="bi bi-arrow-left me-2" data-id-ref="trend-analysis-no-item-back-icon" />
+            {language === 'fa' ? 'بازگشت به مانیتورینگ' : 'Go to Monitoring'}
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
