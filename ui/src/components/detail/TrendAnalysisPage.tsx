@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 import { useLanguage } from '../../hooks/useLanguage';
+import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
+import { fetchItems } from '../../store/slices/monitoringSlice';
 import { monitoringApi } from '../../services/api';
 import type { HistoryRequestDto, HistoryResponseDto, HistoricalDataPoint } from '../../types/api';
 
@@ -11,8 +13,23 @@ type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
 
 const TrendAnalysisPage: React.FC = () => {
   const { t, language } = useLanguage();
+  const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
   const itemId = searchParams.get('itemId');
+
+  // Get item from Redux store
+  const items = useAppSelector((state) => state.monitoring.items);
+  const item = useAppSelector((state) => 
+    state.monitoring.items.find((item) => item.id === itemId)
+  );
+  const itemsLoading = useAppSelector((state) => state.monitoring.itemsLoading);
+
+  // Fetch items if not loaded (for direct URL access)
+  useEffect(() => {
+    if (items.length === 0 && !itemsLoading) {
+      dispatch(fetchItems({ showOrphans: false }));
+    }
+  }, [dispatch, items.length, itemsLoading]);
 
   // State management
   const [loading, setLoading] = useState<boolean>(false);
@@ -53,6 +70,31 @@ const TrendAnalysisPage: React.FC = () => {
 
     return { startDate, endDate };
   }, [selectedPreset, customStartDate, customEndDate]);
+
+  // Format date range for display in chart title
+  const formatDateRange = useMemo(() => {
+    const { startDate, endDate } = getDateRange;
+    const locale = language === 'fa' ? 'fa-IR' : 'en-US';
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    };
+
+    const startDateStr = new Date(startDate * 1000).toLocaleString(locale, dateOptions);
+    const endDateStr = new Date(endDate * 1000).toLocaleString(locale, dateOptions);
+
+    return `${startDateStr} - ${endDateStr}`;
+  }, [getDateRange, language]);
+
+  // Get item name based on language
+  const itemName = useMemo(() => {
+    if (itemsLoading) return t('loadingItemData');
+    if (!item) return t('itemNotFoundInStore');
+    return language === 'fa' && item.nameFa ? item.nameFa : item.name;
+  }, [item, itemsLoading, language, t]);
 
   // Fetch historical data
   const fetchHistoryData = async () => {
@@ -114,7 +156,7 @@ const TrendAnalysisPage: React.FC = () => {
 
     return {
       title: {
-        text: t('chartTitle'),
+        text: `${itemName}, ${formatDateRange}`,
         left: isRTL ? 'right' : 'left',
         textStyle: {
           fontSize: 16,
@@ -209,7 +251,7 @@ const TrendAnalysisPage: React.FC = () => {
         left: isRTL ? 20 : 'auto',
       },
     };
-  }, [historyData, language, t]);
+  }, [historyData, language, t, formatDateRange, itemName]);
 
   // Handle date range preset change
   const handlePresetChange = (preset: DateRangePreset) => {
