@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useBootstrapRTL } from './hooks/useBootstrapRTL';
 import { useLanguage } from './hooks/useLanguage';
@@ -12,16 +12,6 @@ import DashboardSkeleton from './components/DashboardSkeleton';
 import MonitoringPageSkeleton from './components/MonitoringPageSkeleton';
 import GenericPageSkeleton from './components/GenericPageSkeleton';
 import './App.css';
-
-// Extend Window for initial loader coordination (declared here for bundler scope)
-declare global {
-  interface Window {
-    __reactMounted?: boolean;
-    __initialLoaderShown?: boolean;
-    __initialLoaderTimer?: number;
-    __hideInitialLoader?: () => void;
-  }
-}
 
 // Lazy load layout components
 const DashboardLayout = lazy(() => import('./components/DashboardLayout'));
@@ -213,19 +203,6 @@ function App() {
   
   // Dynamically load Bootstrap CSS based on language direction
   useBootstrapRTL();
-
-  useEffect(() => {
-    window.__reactMounted = true;
-    if (typeof window.__hideInitialLoader === 'function') {
-      window.__hideInitialLoader();
-    } else {
-      const initialLoader = document.getElementById('initial-loading-screen');
-      if (initialLoader) {
-        initialLoader.classList.add('hide');
-        setTimeout(() => initialLoader.remove(), 300);
-      }
-    }
-  }, []);
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {
