@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import type { LoginRequest, LoginResponse, ApiError, User, RefreshTokenRequest } from '../types/auth';
-import type { GroupsRequestDto, GroupsResponseDto, ItemsRequestDto, ItemsResponseDto, ValuesRequestDto, ValuesResponseDto } from '../types/api';
+import type { GroupsRequestDto, GroupsResponseDto, ItemsRequestDto, ItemsResponseDto, ValuesRequestDto, ValuesResponseDto, HistoryRequestDto, HistoryResponseDto } from '../types/api';
 import { authStorageHelpers } from '../utils/authStorage';
 
 // API configuration - Use relative path for development with Vite proxy
@@ -271,6 +271,23 @@ export const monitoringApi = {
       const response = await axiosInstance.post<ValuesResponseDto>(
         '/api/Monitoring/Values', 
         params || { itemIds: null }
+      );
+      return response.data;
+    } catch (error: unknown) {
+      throw transformApiError(error);
+    }
+  },
+
+  /**
+   * Get historical data for a monitoring item within a date range
+   * @param params - History request containing itemId, startDate (Unix timestamp), and endDate (Unix timestamp)
+   * @returns HistoryResponseDto containing array of historical data points with values and timestamps
+   */
+  getHistory: async (params: HistoryRequestDto): Promise<HistoryResponseDto> => {
+    try {
+      const response = await axiosInstance.post<HistoryResponseDto>(
+        '/api/Monitoring/History',
+        params
       );
       return response.data;
     } catch (error: unknown) {

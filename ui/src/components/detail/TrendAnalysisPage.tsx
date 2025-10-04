@@ -1,32 +1,405 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import ReactECharts from 'echarts-for-react';
+import type { EChartsOption } from 'echarts';
 import { useLanguage } from '../../hooks/useLanguage';
+import { monitoringApi } from '../../services/api';
+import type { HistoryRequestDto, HistoryResponseDto, HistoricalDataPoint } from '../../types/api';
+
+// Date range preset types
+type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
 
 const TrendAnalysisPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const [searchParams] = useSearchParams();
+  const itemId = searchParams.get('itemId');
+
+  // State management
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [historyData, setHistoryData] = useState<HistoricalDataPoint[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>('last24Hours');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
+
+  // Calculate Unix timestamps based on date range
+  const getDateRange = useMemo(() => {
+    const now = Math.floor(Date.now() / 1000); // Current time in Unix seconds
+    let startDate: number;
+    let endDate: number = now;
+
+    switch (selectedPreset) {
+      case 'last24Hours':
+        startDate = now - 24 * 60 * 60; // 24 hours ago
+        break;
+      case 'last7Days':
+        startDate = now - 7 * 24 * 60 * 60; // 7 days ago
+        break;
+      case 'last30Days':
+        startDate = now - 30 * 24 * 60 * 60; // 30 days ago
+        break;
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          startDate = Math.floor(new Date(customStartDate).getTime() / 1000);
+          endDate = Math.floor(new Date(customEndDate).getTime() / 1000);
+        } else {
+          // Default to last 24 hours if custom dates not set
+          startDate = now - 24 * 60 * 60;
+        }
+        break;
+      default:
+        startDate = now - 24 * 60 * 60;
+    }
+
+    return { startDate, endDate };
+  }, [selectedPreset, customStartDate, customEndDate]);
+
+  // Fetch historical data
+  const fetchHistoryData = async () => {
+    if (!itemId) {
+      setError(t('itemNotFound'));
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { startDate, endDate } = getDateRange;
+
+      // Validate date range
+      if (startDate >= endDate) {
+        setError(t('startDateAfterEnd'));
+        setLoading(false);
+        return;
+      }
+
+      const request: HistoryRequestDto = {
+        itemId,
+        startDate,
+        endDate,
+      };
+
+      const response: HistoryResponseDto = await monitoringApi.getHistory(request);
+      setHistoryData(response.values || []);
+    } catch (err) {
+      console.error('Error fetching history data:', err);
+      setError(t('errorLoadingData'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data on mount and when date range changes
+  useEffect(() => {
+    fetchHistoryData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId, selectedPreset, customStartDate, customEndDate]);
+
+  // Prepare chart data
+  const chartOption: EChartsOption = useMemo(() => {
+    const isRTL = language === 'fa';
+
+    // Convert data points to chart format
+    const timestamps = historyData.map((point) => {
+      const date = new Date(point.time * 1000);
+      return date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US');
+    });
+
+    const values = historyData.map((point) => {
+      const value = parseFloat(point.value || '0');
+      return isNaN(value) ? null : value;
+    });
+
+    return {
+      title: {
+        text: t('chartTitle'),
+        left: isRTL ? 'right' : 'left',
+        textStyle: {
+          fontSize: 16,
+        },
+      },
+      tooltip: {
+        trigger: 'axis',
+        formatter: (params: unknown) => {
+          if (Array.isArray(params) && params.length > 0) {
+            const param = params[0] as { axisValue: string; value: number };
+            return `${t('time')}: ${param.axisValue}<br/>${t('value')}: ${param.value}`;
+          }
+          return '';
+        },
+      },
+      grid: {
+        left: isRTL ? '15%' : '10%',
+        right: isRTL ? '10%' : '15%',
+        bottom: '15%',
+        top: '15%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: timestamps,
+        name: t('xAxisLabel'),
+        nameLocation: 'middle',
+        nameGap: 30,
+        axisLabel: {
+          rotate: 45,
+          fontSize: 10,
+        },
+      },
+      yAxis: {
+        type: 'value',
+        name: t('yAxisLabel'),
+        nameLocation: 'middle',
+        nameGap: 50,
+        nameRotate: isRTL ? -90 : 90,
+      },
+      series: [
+        {
+          name: t('value'),
+          type: 'line',
+          data: values,
+          smooth: true,
+          lineStyle: {
+            width: 2,
+          },
+          itemStyle: {
+            color: '#0d6efd',
+          },
+        },
+      ],
+      dataZoom: [
+        {
+          type: 'inside',
+          start: 0,
+          end: 100,
+        },
+        {
+          type: 'slider',
+          start: 0,
+          end: 100,
+          height: 30,
+          bottom: 10,
+        },
+      ],
+      toolbox: {
+        feature: {
+          dataZoom: {
+            yAxisIndex: 'none',
+            title: {
+              zoom: t('zoom'),
+              back: t('reset'),
+            },
+          },
+          restore: {
+            title: t('reset'),
+          },
+          saveAsImage: {
+            title: t('export'),
+          },
+        },
+        right: isRTL ? 'auto' : 20,
+        left: isRTL ? 20 : 'auto',
+      },
+    };
+  }, [historyData, language, t]);
+
+  // Handle date range preset change
+  const handlePresetChange = (preset: DateRangePreset) => {
+    setSelectedPreset(preset);
+    if (preset !== 'custom') {
+      setCustomStartDate('');
+      setCustomEndDate('');
+    }
+  };
+
+  // Convert Unix timestamp to datetime-local format for input
+  const unixToDateTimeLocal = (unix: number): string => {
+    const date = new Date(unix * 1000);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Initialize custom dates when switching to custom preset
+  useEffect(() => {
+    if (selectedPreset === 'custom' && !customStartDate && !customEndDate) {
+      const { startDate, endDate } = getDateRange;
+      setCustomStartDate(unixToDateTimeLocal(startDate));
+      setCustomEndDate(unixToDateTimeLocal(endDate));
+    }
+  }, [selectedPreset, customStartDate, customEndDate, getDateRange]);
 
   return (
     <div
-      className="container-fluid h-100 d-flex flex-column py-4"
+      className="container-fluid h-100 d-flex flex-column py-3 py-md-4"
       data-id-ref="trend-analysis-page-container"
     >
-      <div className="row flex-fill" data-id-ref="trend-analysis-page-row">
-        <div className="col-12 h-100" data-id-ref="trend-analysis-page-col">
-          <div
-            className="card h-100 d-flex flex-column"
-            data-id-ref="trend-analysis-page-card"
-          >
-            <div className="card-header" data-id-ref="trend-analysis-page-card-header">
-              <h4 className="card-title mb-0" data-id-ref="trend-analysis-page-title">
-                {t('trendAnalysis')}
-              </h4>
+      {/* Error Alert */}
+      {error && (
+        <div className="row mb-3" data-id-ref="trend-analysis-error-row">
+          <div className="col-12">
+            <div
+              className="alert alert-danger alert-dismissible fade show"
+              role="alert"
+              data-id-ref="trend-analysis-error-alert"
+            >
+              {error}
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setError(null)}
+                aria-label="Close"
+                data-id-ref="trend-analysis-error-close-button"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Date Range Selector */}
+      <div className="row mb-3" data-id-ref="trend-analysis-date-range-row">
+        <div className="col-12">
+          <div className="card" data-id-ref="trend-analysis-date-range-card">
+            <div className="card-body p-3" data-id-ref="trend-analysis-date-range-card-body">
+              <div className="row g-2 align-items-end">
+                {/* Preset Buttons */}
+                <div className="col-12 col-md-auto">
+                  <label className="form-label small mb-1" data-id-ref="trend-analysis-date-range-label">
+                    {t('dateRange')}
+                  </label>
+                  <div className="btn-group d-flex d-md-inline-flex" role="group" data-id-ref="trend-analysis-preset-button-group">
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${selectedPreset === 'last24Hours' ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => handlePresetChange('last24Hours')}
+                      data-id-ref="trend-analysis-preset-24h-button"
+                    >
+                      {t('last24Hours')}
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${selectedPreset === 'last7Days' ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => handlePresetChange('last7Days')}
+                      data-id-ref="trend-analysis-preset-7d-button"
+                    >
+                      {t('last7Days')}
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${selectedPreset === 'last30Days' ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => handlePresetChange('last30Days')}
+                      data-id-ref="trend-analysis-preset-30d-button"
+                    >
+                      {t('last30Days')}
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${selectedPreset === 'custom' ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => handlePresetChange('custom')}
+                      data-id-ref="trend-analysis-preset-custom-button"
+                    >
+                      {t('customRange')}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Custom Date Inputs (shown only when custom is selected) */}
+                {selectedPreset === 'custom' && (
+                  <>
+                    <div className="col-12 col-sm-6 col-md-auto">
+                      <label htmlFor="startDate" className="form-label small mb-1" data-id-ref="trend-analysis-start-date-label">
+                        {t('startDate')}
+                      </label>
+                      <input
+                        type="datetime-local"
+                        className="form-control form-control-sm"
+                        id="startDate"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        data-id-ref="trend-analysis-start-date-input"
+                      />
+                    </div>
+                    <div className="col-12 col-sm-6 col-md-auto">
+                      <label htmlFor="endDate" className="form-label small mb-1" data-id-ref="trend-analysis-end-date-label">
+                        {t('endDate')}
+                      </label>
+                      <input
+                        type="datetime-local"
+                        className="form-control form-control-sm"
+                        id="endDate"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        data-id-ref="trend-analysis-end-date-input"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Refresh Button */}
+                <div className="col-12 col-md-auto ms-md-auto">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-success w-100 w-md-auto"
+                    onClick={fetchHistoryData}
+                    disabled={loading}
+                    data-id-ref="trend-analysis-refresh-button"
+                  >
+                    <i className="bi bi-arrow-clockwise me-1" data-id-ref="trend-analysis-refresh-icon" />
+                    {loading ? t('fetchingData') : t('refresh')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Data Point Count */}
+              {historyData.length > 0 && !loading && (
+                <div className="mt-2 text-muted small" data-id-ref="trend-analysis-data-count">
+                  {historyData.length} {t('dataPoints')}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Chart Section */}
+      <div className="row flex-fill" data-id-ref="trend-analysis-chart-row">
+        <div className="col-12 h-100" data-id-ref="trend-analysis-chart-col">
+          <div className="card h-100 d-flex flex-column" data-id-ref="trend-analysis-chart-card">
+            <div className="card-header" data-id-ref="trend-analysis-chart-card-header">
+              <h5 className="card-title mb-0" data-id-ref="trend-analysis-chart-title">
+                {t('trendAnalysisTitle')}
+              </h5>
             </div>
             <div
               className="card-body flex-fill d-flex align-items-center justify-content-center"
-              data-id-ref="trend-analysis-page-card-body"
+              data-id-ref="trend-analysis-chart-card-body"
             >
-              <p className="text-muted" data-id-ref="trend-analysis-page-placeholder">
-                {t('trendAnalysis')} page content will be added here.
-              </p>
+              {loading ? (
+                <div className="text-center" data-id-ref="trend-analysis-loading-container">
+                  <div className="spinner-border text-primary mb-3" role="status" data-id-ref="trend-analysis-loading-spinner">
+                    <span className="visually-hidden">{t('loadingChart')}</span>
+                  </div>
+                  <p className="text-muted" data-id-ref="trend-analysis-loading-text">
+                    {t('loadingChart')}
+                  </p>
+                </div>
+              ) : historyData.length === 0 ? (
+                <div className="text-center text-muted" data-id-ref="trend-analysis-no-data-container">
+                  <i className="bi bi-inbox fs-1 mb-3 d-block" data-id-ref="trend-analysis-no-data-icon" />
+                  <p data-id-ref="trend-analysis-no-data-text">{t('noData')}</p>
+                </div>
+              ) : (
+                <ReactECharts
+                  option={chartOption}
+                  style={{ height: '100%', width: '100%', minHeight: '400px' }}
+                  opts={{ renderer: 'canvas' }}
+                  data-id-ref="trend-analysis-chart"
+                />
+              )}
             </div>
           </div>
         </div>

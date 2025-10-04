@@ -211,3 +211,19 @@ export interface ValuesRequestDto {
 export interface ValuesResponseDto {
   values: MultiValue[];
 }
+
+// History types for trend analysis
+export interface HistoricalDataPoint {
+  value: string | null; // The historical value as a string
+  time: number; // Unix timestamp when the value was recorded (int64)
+}
+
+export interface HistoryRequestDto {
+  itemId: string; // Identifier of the item to retrieve history for (required)
+  startDate: number; // Start time as Unix seconds since epoch (UTC) (int64)
+  endDate: number; // End time as Unix seconds since epoch (UTC) (int64)
+}
+
+export interface HistoryResponseDto {
+  values: HistoricalDataPoint[]; // List of historical data points with values and timestamps
+}
