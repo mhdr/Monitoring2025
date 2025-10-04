@@ -52,6 +52,29 @@ When adding new UI text or messages:
 - **Framework:** React application with **TypeScript**
 - **Component Style:** Prefer **functional components with hooks** over class components
 - **State Management:** **Redux Toolkit (RTK)** for global state
+- **Code Splitting:** **Lazy Loading** implemented for route-based components
+
+### Lazy Loading & Code Splitting
+- **Implementation:** This application uses React's `lazy()` and `Suspense` for code splitting
+- **Strategy:** Route-based lazy loading to optimize initial bundle size
+- **Benefits:** Faster initial page load, improved performance, better user experience
+- **Pattern:** When adding new routes or large components:
+  ```typescript
+  // ✅ Good example - lazy load route components:
+  const Dashboard = lazy(() => import('./components/Dashboard'));
+  const LoginPage = lazy(() => import('./components/LoginPage'));
+  
+  // Wrap in Suspense with fallback:
+  <Suspense fallback={<LoadingScreen />}>
+    <Dashboard />
+  </Suspense>
+  ```
+- **Best Practices:**
+  - Use lazy loading for route components and heavy feature modules
+  - Provide meaningful loading fallbacks (use `LoadingScreen` component)
+  - Avoid lazy loading small, frequently-used components
+  - Keep authentication and core layout components in the main bundle
+  - Test lazy-loaded components to ensure proper error boundaries
 
 ### TypeScript Best Practices
 - ✅ Follow TypeScript best practices and conventions
