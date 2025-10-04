@@ -383,6 +383,7 @@ const MonitoringPage: React.FC = () => {
                       return (
                         <ItemCard
                           key={item.id}
+                          itemId={item.id}
                           name={getItemDisplayName(item)}
                           pointNumber={item.pointNumber}
                           value={itemValue ? formatItemValue(item, itemValue.value) : t('loadingValue')}

@@ -13,13 +13,14 @@ import './ItemCard.css';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
 
 interface ItemCardProps {
+  itemId: string;
   name: string;
   pointNumber: number;
   value: string;
   time: string;
 }
 
-const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) => {
+const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, time }) => {
   const { t } = useLanguage();
   const openBtnRef = useRef<HTMLButtonElement>(null);
   // Initialize Bootstrap tooltip on mount
@@ -33,10 +34,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ name, pointNumber, value, time }) =
     // Open a new tab with the item detail page
     try {
       const detailUrl = buildDetailTabUrl('trend-analysis', {
-        name,
-        pointNumber,
-        value,
-        time,
+        itemId,
       });
       
       // Open in new tab

@@ -13,10 +13,7 @@ export type DetailTab =
   | 'management';
 
 export interface DetailRouteParams {
-  name: string;
-  pointNumber: number;
-  value: string;
-  time: string;
+  itemId: string;
 }
 
 /**
@@ -25,10 +22,7 @@ export interface DetailRouteParams {
  */
 export function buildDetailTabUrl(tab: DetailTab, params: DetailRouteParams): string {
   const search = new URLSearchParams({
-    name: params.name,
-    pointNumber: params.pointNumber.toString(),
-    value: params.value,
-    time: params.time,
+    itemId: params.itemId,
   }).toString();
 
   const origin = (typeof window !== 'undefined' && window.location.origin) || '';
