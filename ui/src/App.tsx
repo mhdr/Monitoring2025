@@ -198,7 +198,7 @@ const AppRoutes = () => {
 };
 
 function App() {
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const { isLoadingLanguage } = useLanguage();
   const { t } = useTranslation();
   
@@ -206,22 +206,22 @@ function App() {
   useBootstrapRTL();
 
   useEffect(() => {
-    // Remove initial loading screen from HTML after app initializes
-    const removeInitialLoader = () => {
+    // Mark initial load as complete after a short delay
+    // This ensures we don't show React loading screens during initial HTML loader phase
+    const timeoutId = setTimeout(() => {
+      setInitialLoadComplete(true);
+      
+      // Remove HTML loader after React is ready to take over
       const initialLoader = document.getElementById('initial-loading-screen');
       if (initialLoader) {
         initialLoader.classList.add('hide');
         setTimeout(() => {
           initialLoader.remove();
-        }, 300); // Match transition duration
+        }, 300);
       }
-      setIsInitialized(true);
-    };
-
-    // Wait a bit for everything to be ready
-    const timer = setTimeout(removeInitialLoader, 100);
+    }, 100);
     
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Show loading screen during language changes
@@ -229,8 +229,9 @@ function App() {
     return <LoadingScreen message={t('loading')} />;
   }
 
-  // Don't render content until initialization is complete
-  if (!isInitialized) {
+  // During initial load, render nothing so HTML loader stays visible
+  // and React LoadingScreen doesn't appear
+  if (!initialLoadComplete) {
     return null;
   }
 
