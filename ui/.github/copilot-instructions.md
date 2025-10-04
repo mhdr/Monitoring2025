@@ -145,6 +145,13 @@ src/styles/
 - **Context:** Authentication logic in `src/contexts/AuthContext.tsx`
 - **Redux:** Auth state managed in `src/store/slices/authSlice.ts`
 
+### Development & Debugging Authentication
+For debugging purposes (such as testing with Chrome DevTools MCP), use these test credentials:
+- **Username:** `test`
+- **Password:** `Password@12345`
+- **Purpose:** These credentials are specifically for development testing, UI debugging, and automated testing workflows
+- **Usage:** Use when logging into the application during debugging sessions, Chrome DevTools MCP testing, or when verifying authentication flows
+
 ### API Service
 ```
 src/services/
