@@ -70,11 +70,11 @@ builder.Services.AddCors(options =>
         // Build comprehensive origins list including detected IP and all local dev IPs
         var localIps = new[] { "localhost", "127.0.0.1", "0.0.0.0", "::1", detectedIp.ToString() };
         var apiPorts = new[] { "7136", "5030" }; // API ports
-        var frontendPorts = new[] { "3000", "3001", "5000", "5173", "4200", "8080", "8081", "8000" }; // Common frontend dev ports
+        var frontendPorts = new[] { "3000", "3001", "5000", "5173", "5174", "5175", "4200", "8080", "8081", "8000" }; // Common frontend dev ports
         var protocols = new[] { "http", "https" }; // Support both HTTP and HTTPS
-        
+
         var allowedOrigins = new List<string>();
-        
+
         // Add API origins (HTTPS for production, both HTTP/HTTPS for dev)
         foreach (var protocol in protocols)
         {
@@ -86,7 +86,7 @@ builder.Services.AddCors(options =>
                 }
             }
         }
-        
+
         // Add frontend origins (commonly HTTP in development)
         foreach (var protocol in protocols)
         {
@@ -98,7 +98,7 @@ builder.Services.AddCors(options =>
                 }
             }
         }
-        
+
         // Add some common variations without ports for flexibility
         allowedOrigins.AddRange(new[]
         {
@@ -109,7 +109,7 @@ builder.Services.AddCors(options =>
 
         Console.WriteLine($"[CORS] Allowing {allowedOrigins.Count} origins including detected IP {detectedIp}");
         Console.WriteLine($"[CORS] Frontend ports supported: {string.Join(", ", frontendPorts)}");
-        
+
         policy.WithOrigins(allowedOrigins.ToArray())
               .AllowAnyMethod()
               .AllowAnyHeader()
@@ -260,7 +260,7 @@ builder.Services.AddSwaggerGen(c =>
         Url = "https://localhost:7136",
         Description = "HTTPS Development Server (Preferred)"
     });
-    
+
     c.AddServer(new Microsoft.OpenApi.Models.OpenApiServer
     {
         Url = "http://localhost:5030",
