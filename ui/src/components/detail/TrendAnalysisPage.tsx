@@ -7,6 +7,7 @@ import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
 import { fetchItems } from '../../store/slices/monitoringSlice';
 import { monitoringApi } from '../../services/api';
 import type { HistoryRequestDto, HistoryResponseDto, HistoricalDataPoint, Item } from '../../types/api';
+import JalaliDateTimePicker from '../JalaliDateTimePicker';
 
 // Date range preset types
 type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
@@ -415,32 +416,22 @@ const TrendAnalysisPage: React.FC = () => {
                 {/* Custom Date Inputs (shown only when custom is selected) */}
                 {selectedPreset === 'custom' && (
                   <>
-                    <div className="col-12 col-sm-6 col-md-auto">
-                      <label htmlFor="startDate" className="form-label small mb-1" data-id-ref="trend-analysis-start-date-label">
-                        {t('startDate')}
-                      </label>
-                      <input
-                        type="datetime-local"
-                        className="form-control form-control-sm"
-                        id="startDate"
-                        value={customStartDate}
-                        onChange={(e) => setCustomStartDate(e.target.value)}
-                        data-id-ref="trend-analysis-start-date-input"
-                      />
-                    </div>
-                    <div className="col-12 col-sm-6 col-md-auto">
-                      <label htmlFor="endDate" className="form-label small mb-1" data-id-ref="trend-analysis-end-date-label">
-                        {t('endDate')}
-                      </label>
-                      <input
-                        type="datetime-local"
-                        className="form-control form-control-sm"
-                        id="endDate"
-                        value={customEndDate}
-                        onChange={(e) => setCustomEndDate(e.target.value)}
-                        data-id-ref="trend-analysis-end-date-input"
-                      />
-                    </div>
+                    <JalaliDateTimePicker
+                      id="startDate"
+                      value={customStartDate}
+                      onChange={setCustomStartDate}
+                      data-id-ref="trend-analysis-start-date-input"
+                      className="col-12 col-sm-6 col-md-auto"
+                      label={t('startDate')}
+                    />
+                    <JalaliDateTimePicker
+                      id="endDate"
+                      value={customEndDate}
+                      onChange={setCustomEndDate}
+                      data-id-ref="trend-analysis-end-date-input"
+                      className="col-12 col-sm-6 col-md-auto"
+                      label={t('endDate')}
+                    />
                   </>
                 )}
 
