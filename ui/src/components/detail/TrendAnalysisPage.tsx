@@ -25,13 +25,6 @@ const TrendAnalysisPage: React.FC = () => {
   );
   const itemsLoading = useAppSelector((state) => state.monitoring.itemsLoading);
 
-  // Fetch items if not loaded (for direct URL access)
-  useEffect(() => {
-    if (items.length === 0 && !itemsLoading) {
-      dispatch(fetchItems({ showOrphans: false }));
-    }
-  }, [dispatch, items.length, itemsLoading]);
-
   // State management
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +32,24 @@ const TrendAnalysisPage: React.FC = () => {
   const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>('last24Hours');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
+
+  // Fetch items if not loaded (for direct URL access)
+  useEffect(() => {
+    if (items.length === 0 && !itemsLoading) {
+      dispatch(fetchItems({ showOrphans: false }));
+    }
+  }, [dispatch, items.length, itemsLoading]);
+
+  // Handle window resize for responsive chart title
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Calculate Unix timestamps based on date range
   const getDateRange = useMemo(() => {
@@ -181,7 +192,7 @@ const TrendAnalysisPage: React.FC = () => {
     });
 
     return {
-      title: {
+      title: isMobile ? undefined : {
         text: composedChartTitle,
         left: isRTL ? 'right' : 'left',
         textStyle: {
@@ -215,7 +226,7 @@ const TrendAnalysisPage: React.FC = () => {
         left: isRTL ? '15%' : '10%',
         right: isRTL ? '10%' : '15%',
         bottom: '15%',
-        top: '15%',
+        top: isMobile ? '10%' : '15%', // Less top padding on mobile when title is hidden
         containLabel: true,
       },
       xAxis: {
@@ -302,7 +313,7 @@ const TrendAnalysisPage: React.FC = () => {
         left: isRTL ? 20 : 'auto',
       },
     };
-  }, [historyData, language, t, itemUnit, composedChartTitle]);
+  }, [historyData, language, t, itemUnit, composedChartTitle, isMobile]);
 
   // Handle date range preset change
   const handlePresetChange = (preset: DateRangePreset) => {
