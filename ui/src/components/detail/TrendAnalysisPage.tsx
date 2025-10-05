@@ -166,7 +166,7 @@ const TrendAnalysisPage: React.FC = () => {
 
     return {
       title: {
-        text: `${itemName}, ${labeledDateRange}`,
+        text: `${itemName} - ${labeledDateRange}`,
         left: isRTL ? 'right' : 'left',
         textStyle: {
           fontSize: 16,
