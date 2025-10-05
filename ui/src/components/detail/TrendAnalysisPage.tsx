@@ -71,8 +71,8 @@ const TrendAnalysisPage: React.FC = () => {
     return { startDate, endDate };
   }, [selectedPreset, customStartDate, customEndDate]);
 
-  // Format date range for display in chart title
-  const formatDateRange = useMemo(() => {
+  // Localized labeled date range for clarity in the chart title (e.g. "From: <start> To: <end>")
+  const labeledDateRange = useMemo(() => {
     const { startDate, endDate } = getDateRange;
     const locale = language === 'fa' ? 'fa-IR' : 'en-US';
     const dateOptions: Intl.DateTimeFormatOptions = {
@@ -86,8 +86,9 @@ const TrendAnalysisPage: React.FC = () => {
     const startDateStr = new Date(startDate * 1000).toLocaleString(locale, dateOptions);
     const endDateStr = new Date(endDate * 1000).toLocaleString(locale, dateOptions);
 
-    return `${startDateStr} - ${endDateStr}`;
-  }, [getDateRange, language]);
+    // Use existing translation keys 'from' and 'to'
+    return `${t('from')}: ${startDateStr} ${t('to')}: ${endDateStr}`;
+  }, [getDateRange, language, t]);
 
   // Get item name based on language
   const itemName = useMemo(() => {
@@ -164,7 +165,7 @@ const TrendAnalysisPage: React.FC = () => {
 
     return {
       title: {
-        text: `${itemName}, ${formatDateRange}`,
+        text: `${itemName}, ${labeledDateRange}`,
         left: isRTL ? 'right' : 'left',
         textStyle: {
           fontSize: 16,
@@ -260,7 +261,7 @@ const TrendAnalysisPage: React.FC = () => {
         left: isRTL ? 20 : 'auto',
       },
     };
-  }, [historyData, language, t, formatDateRange, itemName, itemUnit]);
+  }, [historyData, language, t, itemName, itemUnit, labeledDateRange]);
 
   // Handle date range preset change
   const handlePresetChange = (preset: DateRangePreset) => {
