@@ -98,6 +98,21 @@ const TrendAnalysisPage: React.FC = () => {
     return language === 'fa' && item.nameFa ? item.nameFa : item.name;
   }, [item, itemsLoading, language, t]);
 
+  // Point number label (localized), e.g. "Point Number: 123"
+  const itemPointLabel = useMemo(() => {
+    if (!item) return '';
+    return `${t('pointNumber')}: ${item.pointNumber}`;
+  }, [item, t]);
+
+  // Compose full title: item name, point label (if any), and labeled date range
+  const composedChartTitle = useMemo(() => {
+    const parts: string[] = [];
+    if (itemName) parts.push(itemName);
+    if (itemPointLabel) parts.push(itemPointLabel);
+    parts.push(labeledDateRange);
+    return parts.join(' — ');
+  }, [itemName, itemPointLabel, labeledDateRange]);
+
   // Get item unit based on language (use unitFa for Persian if available)
   const itemUnit = useMemo(() => {
     const it = item as Item | undefined;
@@ -166,7 +181,7 @@ const TrendAnalysisPage: React.FC = () => {
 
     return {
       title: {
-        text: `${itemName} - ${labeledDateRange}`,
+        text: composedChartTitle,
         left: isRTL ? 'right' : 'left',
         textStyle: {
           fontSize: 16,
@@ -262,7 +277,7 @@ const TrendAnalysisPage: React.FC = () => {
         left: isRTL ? 20 : 'auto',
       },
     };
-  }, [historyData, language, t, itemName, itemUnit, labeledDateRange]);
+  }, [historyData, language, t, itemUnit, composedChartTitle]);
 
   // Handle date range preset change
   const handlePresetChange = (preset: DateRangePreset) => {
