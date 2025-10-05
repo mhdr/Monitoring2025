@@ -340,7 +340,6 @@ If you need to add a new color category:
 #### Documentation
 - 📝 **Comment Purpose:** When using theme variables, add comments explaining the usage
 - 🔍 **Variable Discovery:** Check `theme.css` for available variables before creating new ones
-- 📚 **Refer to Theme Docs:** See `THEME.md`, `THEME_IMPLEMENTATION_SUMMARY.md` for more details
 
 ### Common Pitfalls to Avoid
 
