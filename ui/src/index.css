@@ -117,16 +117,20 @@ body.rtl jdp-container * {
   }
 }
 
-/* Apply IranSans font to date input fields in Persian mode */
-body.rtl input[data-id-ref="trend-analysis-start-date-input"],
-body.rtl input[data-id-ref="trend-analysis-end-date-input"] {
+/* Apply IranSans font to separated date and time input fields in Persian mode */
+body.rtl input[data-id-ref="trend-analysis-start-date-date"],
+body.rtl input[data-id-ref="trend-analysis-start-date-time"],
+body.rtl input[data-id-ref="trend-analysis-end-date-date"],
+body.rtl input[data-id-ref="trend-analysis-end-date-time"] {
   font-family: 'iransansx', 'Tahoma', 'Arial', sans-serif !important;
 }
 
-/* Variable Font Support for date inputs - for modern browsers */
+/* Variable Font Support for separated date and time inputs - for modern browsers */
 @supports (font-variation-settings: normal) {
-  body.rtl input[data-id-ref="trend-analysis-start-date-input"],
-  body.rtl input[data-id-ref="trend-analysis-end-date-input"] {
+  body.rtl input[data-id-ref="trend-analysis-start-date-date"],
+  body.rtl input[data-id-ref="trend-analysis-start-date-time"],
+  body.rtl input[data-id-ref="trend-analysis-end-date-date"],
+  body.rtl input[data-id-ref="trend-analysis-end-date-time"] {
     font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif !important;
   }
 }

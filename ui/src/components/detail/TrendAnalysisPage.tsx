@@ -7,7 +7,7 @@ import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
 import { fetchItems } from '../../store/slices/monitoringSlice';
 import { monitoringApi } from '../../services/api';
 import type { HistoryRequestDto, HistoryResponseDto, HistoricalDataPoint, Item } from '../../types/api';
-import JalaliDateTimePicker from '../JalaliDateTimePicker';
+import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
 
 // Date range preset types
 type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
@@ -416,21 +416,23 @@ const TrendAnalysisPage: React.FC = () => {
                 {/* Custom Date Inputs (shown only when custom is selected) */}
                 {selectedPreset === 'custom' && (
                   <>
-                    <JalaliDateTimePicker
+                    <SeparatedDateTimePicker
                       id="startDate"
                       value={customStartDate}
                       onChange={setCustomStartDate}
-                      data-id-ref="trend-analysis-start-date-input"
-                      className="col-12 col-sm-6 col-md-auto"
-                      label={t('startDate')}
+                      data-id-ref="trend-analysis-start-date"
+                      className="col-12 col-md-auto"
+                      dateLabel={t('startDate')}
+                      timeLabel={t('startTime')}
                     />
-                    <JalaliDateTimePicker
+                    <SeparatedDateTimePicker
                       id="endDate"
                       value={customEndDate}
                       onChange={setCustomEndDate}
-                      data-id-ref="trend-analysis-end-date-input"
-                      className="col-12 col-sm-6 col-md-auto"
-                      label={t('endDate')}
+                      data-id-ref="trend-analysis-end-date"
+                      className="col-12 col-md-auto"
+                      dateLabel={t('endDate')}
+                      timeLabel={t('endTime')}
                     />
                   </>
                 )}
