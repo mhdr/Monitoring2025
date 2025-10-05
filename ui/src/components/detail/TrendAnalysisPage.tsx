@@ -168,6 +168,8 @@ const TrendAnalysisPage: React.FC = () => {
         left: isRTL ? 'right' : 'left',
         textStyle: {
           fontSize: 16,
+          // Use IRANSans variable font in Persian mode
+          fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
         },
       },
       tooltip: {
