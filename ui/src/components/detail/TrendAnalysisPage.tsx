@@ -6,7 +6,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
 import { fetchItems } from '../../store/slices/monitoringSlice';
 import { monitoringApi } from '../../services/api';
-import type { HistoryRequestDto, HistoryResponseDto, HistoricalDataPoint } from '../../types/api';
+import type { HistoryRequestDto, HistoryResponseDto, HistoricalDataPoint, Item } from '../../types/api';
 
 // Date range preset types
 type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
@@ -95,6 +95,14 @@ const TrendAnalysisPage: React.FC = () => {
     if (!item) return t('itemNotFoundInStore');
     return language === 'fa' && item.nameFa ? item.nameFa : item.name;
   }, [item, itemsLoading, language, t]);
+
+  // Get item unit based on language (use unitFa for Persian if available)
+  const itemUnit = useMemo(() => {
+    const it = item as Item | undefined;
+    if (!it) return '';
+    if (language === 'fa' && it.unitFa) return it.unitFa;
+    return it.unit ?? '';
+  }, [item, language]);
 
   // Fetch historical data
   const fetchHistoryData = async () => {
@@ -196,10 +204,11 @@ const TrendAnalysisPage: React.FC = () => {
       },
       yAxis: {
         type: 'value',
-        name: t('yAxisLabel'),
-        nameLocation: 'middle',
-        nameGap: 50,
-        nameRotate: isRTL ? -90 : 90,
+        // Use the item's unit as the axis name when available, otherwise show no name
+        name: itemUnit || undefined,
+        nameLocation: itemUnit ? 'middle' : undefined,
+        nameGap: itemUnit ? 50 : undefined,
+        nameRotate: itemUnit ? (isRTL ? -90 : 90) : undefined,
       },
       series: [
         {
@@ -249,7 +258,7 @@ const TrendAnalysisPage: React.FC = () => {
         left: isRTL ? 20 : 'auto',
       },
     };
-  }, [historyData, language, t, formatDateRange, itemName]);
+  }, [historyData, language, t, formatDateRange, itemName, itemUnit]);
 
   // Handle date range preset change
   const handlePresetChange = (preset: DateRangePreset) => {
