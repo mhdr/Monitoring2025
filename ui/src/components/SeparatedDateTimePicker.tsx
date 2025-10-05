@@ -122,6 +122,35 @@ const SeparatedDateTimePicker: React.FC<SeparatedDateTimePickerProps> = ({
     }
   }, [language, dateValue]);
 
+  // Listen for changes to the date input (for Persian mode) in case the Jalali picker doesn't call our onChange callback
+  useEffect(() => {
+    if (language !== 'fa' || !dateInputRef.current) return;
+    
+    const inputElement = dateInputRef.current;
+    
+    const handleNativeChange = () => {
+      const newJalaliDate = inputElement.value;
+      if (newJalaliDate && newJalaliDate !== dateValue) {
+        const newIsoDate = jalaliDateToIso(newJalaliDate);
+        
+        if (newIsoDate) {
+          setDateValue(newJalaliDate);
+          const newIsoDateTime = combineDateAndTime(newIsoDate, timeValue);
+          if (newIsoDateTime) {
+            onChange(newIsoDateTime);
+          }
+        }
+      }
+    };
+    
+    // Listen to the native 'change' event
+    inputElement.addEventListener('change', handleNativeChange);
+    
+    return () => {
+      inputElement.removeEventListener('change', handleNativeChange);
+    };
+  }, [language, dateValue, timeValue, jalaliDateToIso, combineDateAndTime, onChange]);
+
   // Load JalaliDatePicker script on mount
   useEffect(() => {
     if (language !== 'fa') return;
