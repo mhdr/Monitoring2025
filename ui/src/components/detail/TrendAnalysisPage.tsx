@@ -159,11 +159,11 @@ const TrendAnalysisPage: React.FC = () => {
     }
   };
 
-  // Fetch data on mount and when date range changes
+  // Fetch data on mount and when preset changes (not when custom dates change)
   useEffect(() => {
     fetchHistoryData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemId, selectedPreset, customStartDate, customEndDate]);
+  }, [itemId, selectedPreset]);
 
   // Prepare chart data
   const chartOption: EChartsOption = useMemo(() => {
