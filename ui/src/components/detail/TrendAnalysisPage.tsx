@@ -75,10 +75,11 @@ const TrendAnalysisPage: React.FC = () => {
   const labeledDateRange = useMemo(() => {
     const { startDate, endDate } = getDateRange;
     const locale = language === 'fa' ? 'fa-IR' : 'en-US';
+    // Use a more human-friendly format: e.g. "Oct 5, 2025 14:30" or Persian equivalent
     const dateOptions: Intl.DateTimeFormatOptions = {
       year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
+      month: 'short',
+      day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     };
