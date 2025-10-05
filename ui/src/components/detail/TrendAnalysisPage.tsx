@@ -182,9 +182,7 @@ const TrendAnalysisPage: React.FC = () => {
       xAxis: {
         type: 'category',
         data: timestamps,
-        name: t('xAxisLabel'),
-        nameLocation: 'middle',
-        nameGap: 30,
+        // Intentionally no name to avoid displaying a label like 'time' on the x-axis
         axisLabel: {
           rotate: 45,
           fontSize: 10,
