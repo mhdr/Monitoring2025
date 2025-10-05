@@ -195,7 +195,15 @@ const TrendAnalysisPage: React.FC = () => {
         formatter: (params: unknown) => {
           if (Array.isArray(params) && params.length > 0) {
             const param = params[0] as { axisValue: string; value: number };
-            return `${t('time')}: ${param.axisValue}<br/>${t('value')}: ${param.value}`;
+            // Convert value to Persian digits if in Persian mode
+            let displayValue = String(param.value);
+            if (language === 'fa') {
+              const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+              displayValue = displayValue.replace(/\d/g, (digit) => persianDigits[parseInt(digit)]);
+            }
+            // Add unit if available
+            const unitDisplay = itemUnit ? ` ${itemUnit}` : '';
+            return `${t('time')}: ${param.axisValue}<br/>${t('value')}: ${displayValue}${unitDisplay}`;
           }
           return '';
         },
