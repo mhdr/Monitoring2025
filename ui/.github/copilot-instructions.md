@@ -366,8 +366,22 @@ Chrome DevTools MCP provides AI-powered access to Chrome's debugging surface, re
 - **Interaction Tools:** `click`, `fill`, `fill_form`, `hover`, `drag`, `upload_file`, `handle_dialog`
 - **Emulation Tools:** `emulate_network`, `emulate_cpu`, `resize_page` (test responsive design)
 
+#### Browser Instance Strategy
+**RECOMMENDED APPROACH:** Always start a fresh Chrome instance for DevTools MCP sessions.
+
+**Why Fresh Instances:**
+- ✅ **Reliability:** Connecting to existing Chrome instances frequently fails or reports MCP as unavailable
+- ✅ **Clean State:** Fresh instances eliminate interference from existing tabs, extensions, or cached data
+- ✅ **Consistency:** Provides a predictable, isolated testing environment
+- ✅ **Session Control:** Full control over browser state without unexpected side effects
+
+**Implementation:**
+- Chrome DevTools MCP will automatically launch a new Chrome browser instance for each debugging session
+- This ensures stable connections and reliable tool availability
+- The new instance is isolated from your regular browsing sessions
+
 #### Usage Workflow
-1. **Connect to Browser:** Chrome DevTools MCP will first attempt to connect to a currently running Chrome instance. If no running instance is found or connection fails, MCP will launch a new Chrome browser automatically
+1. **Launch Fresh Browser:** Chrome DevTools MCP automatically starts a new, isolated Chrome instance for debugging
 2. **Navigate to App:** Use `navigate_page` to open `https://localhost:5173` (Vite dev server)
 3. **Perform Actions:** Use interaction tools to test user flows
 4. **Inspect State:** Use `evaluate_script` to check runtime values, Redux state
