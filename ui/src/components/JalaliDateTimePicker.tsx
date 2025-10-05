@@ -96,9 +96,9 @@ const JalaliDateTimePicker: React.FC<JalaliDateTimePickerProps> = ({
     }
   }, []);
 
-  // Initialize JalaliDatePicker for Persian mode
+  // Load JalaliDatePicker script on mount
   useEffect(() => {
-    if (language !== 'fa' || !inputRef.current) return;
+    if (language !== 'fa') return;
 
     const loadScript = (): Promise<void> => {
       return new Promise((resolve, reject) => {
@@ -134,67 +134,50 @@ const JalaliDateTimePicker: React.FC<JalaliDateTimePickerProps> = ({
       });
     };
 
-    const initializePicker = async () => {
-      try {
-        await loadScript();
+    loadScript().catch((error) => {
+      console.error('Error loading JalaliDatePicker:', error);
+    });
+  }, [language]);
 
-        if (!window.jalaliDatepicker || !inputRef.current) {
-          console.error('JalaliDatePicker not available');
-          return;
-        }
-
-        // Clean up any existing instance
-        try {
-          window.jalaliDatepicker.hide();
-        } catch {
-          // Ignore cleanup errors
-        }
-
-        // Set initial value
-        const jalaliValue = isoToJalali(value);
-        if (inputRef.current) {
-          inputRef.current.value = jalaliValue;
-        }
-
-        // Initialize the date picker
-        window.jalaliDatepicker.show(inputRef.current, {
-          time: true,
-          date: true,
-          autoHide: true,
-          hideAfterChange: true,
-          persianDigits: true,
-          initDate: jalaliValue || undefined,
-          onChange: () => {
-            if (inputRef.current) {
-              const newJalaliValue = inputRef.current.value;
-              const newIsoValue = jalaliToIso(newJalaliValue);
-              onChange(newIsoValue);
-            }
-          },
-        });
-      } catch (error) {
-        console.error('Error initializing JalaliDatePicker:', error);
-      }
-    };
-
-    initializePicker();
-
-    // Cleanup function
-    return () => {
-      if (window.jalaliDatepicker) {
-        try {
-          window.jalaliDatepicker.hide();
-        } catch {
-          // Ignore cleanup errors
-        }
-      }
-    };
-  }, [language, value, onChange, isoToJalali, jalaliToIso]);
+  // Update input value when value prop changes
+  useEffect(() => {
+    if (language === 'fa' && inputRef.current && value) {
+      const jalaliValue = isoToJalali(value);
+      inputRef.current.value = jalaliValue;
+    }
+  }, [language, value, isoToJalali]);
 
   // Handle change for Gregorian mode
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value);
   };
+
+  // Handle click/focus to show Jalali picker
+  const showJalaliPicker = useCallback((e: React.MouseEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    
+    if (!window.jalaliDatepicker || !inputRef.current) {
+      console.warn('JalaliDatePicker not loaded yet');
+      return;
+    }
+
+    // Show the picker with options
+    window.jalaliDatepicker.show(inputRef.current, {
+      time: true,
+      date: true,
+      autoHide: true,
+      hideAfterChange: true,
+      persianDigits: true,
+      initDate: inputRef.current.value || undefined,
+      onChange: () => {
+        if (inputRef.current) {
+          const newJalaliValue = inputRef.current.value;
+          const newIsoValue = jalaliToIso(newJalaliValue);
+          onChange(newIsoValue);
+        }
+      },
+    });
+  }, [jalaliToIso, onChange]);
 
   if (language === 'fa') {
     // Jalali mode
@@ -211,8 +194,10 @@ const JalaliDateTimePicker: React.FC<JalaliDateTimePickerProps> = ({
           className="form-control form-control-sm"
           id={id}
           data-id-ref={dataIdRef}
-          readOnly
           placeholder="____/__/__ __:__"
+          onClick={showJalaliPicker}
+          onFocus={showJalaliPicker}
+          readOnly
         />
       </div>
     );
