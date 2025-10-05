@@ -3,7 +3,7 @@
   "monitoring": "Monitoring",
   "warehouse": "Warehouse",
   "dashboard": "Dashboard",
-  "settings": "Settings",
+  "settingsMenu": "Settings",
   "users": "Users",
   "reports": "Reports",
   "notifications": "Notifications",
@@ -140,5 +140,20 @@
     "red": "Bold Red",
     "teal": "Ocean Teal",
     "indigo": "Deep Indigo"
+  },
+  "settings": {
+    "pageTitle": "Settings",
+    "pageDescription": "Manage your personalization and preferences",
+    "theme": {
+      "sectionTitle": "Theme",
+      "sectionDescription": "Choose a color theme to personalize your interface"
+    },
+    "language": {
+      "title": "Language",
+      "sectionTitle": "Language",
+      "sectionDescription": "Choose your preferred language for the interface",
+      "persianDescription": "Persian (Default)",
+      "englishDescription": "English"
+    }
   }
 }

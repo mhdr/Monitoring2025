@@ -30,6 +30,7 @@ const AuditTrailPage = lazy(() => import('./components/AuditTrailPage'));
 const DisabledAlarmsPage = lazy(() => import('./components/DisabledAlarmsPage'));
 const SchedulerPage = lazy(() => import('./components/SchedulerPage'));
 const ManagementPage = lazy(() => import('./components/ManagementPage'));
+const SettingsPage = lazy(() => import('./components/SettingsPage'));
 
 // Lazy load detail page components
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
@@ -124,6 +125,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ManagementPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="settings" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen skeleton={<GenericPageSkeleton />} variant="skeleton" />}>
+                <SettingsPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

@@ -1,7 +1,6 @@
 import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
-import ThemeSwitcher from './ThemeSwitcher';
 import './ResponsiveNavbar.css';
 
 interface ResponsiveNavbarProps {
@@ -9,7 +8,7 @@ interface ResponsiveNavbarProps {
 }
 
 const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) => {
-  const { t, language, changeLanguage } = useLanguage();
+  const { t, language } = useLanguage();
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
@@ -100,42 +99,10 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
                 <i className="fas fa-user me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-profile-icon"></i>
                 {t('profile')}
               </NavDropdown.Item>
-              <NavDropdown.Item href="#settings" className="py-2" data-id-ref="responsive-navbar-user-settings-link">
+              <NavDropdown.Item href="/dashboard/settings" className="py-2" data-id-ref="responsive-navbar-user-settings-link">
                 <i className="fas fa-cog me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-settings-icon"></i>
-                {t('settings')}
+                {t('settingsMenu')}
               </NavDropdown.Item>
-              <NavDropdown.Divider data-id-ref="responsive-navbar-user-divider-1" />
-              
-              {/* Theme Switcher */}
-              <ThemeSwitcher />
-              
-              <NavDropdown.Divider data-id-ref="responsive-navbar-theme-language-divider" />
-              
-              {/* Language Switcher */}
-              <NavDropdown.Header className="py-1 text-muted small" data-id-ref="responsive-navbar-language-header">
-                🌐 Language / زبان
-              </NavDropdown.Header>
-              <NavDropdown.Item 
-                onClick={() => changeLanguage('fa')}
-                className={`py-2 ${language === 'fa' ? 'active' : ''}`}
-                style={{ cursor: 'pointer' }}
-                data-id-ref="responsive-navbar-language-fa"
-              >
-                <i className="fas fa-globe me-2" aria-hidden="true" data-id-ref="responsive-navbar-language-fa-icon"></i>
-                فارسی
-                {language === 'fa' && <i className="fas fa-check ms-2 text-success" aria-hidden="true" data-id-ref="responsive-navbar-language-fa-check"></i>}
-              </NavDropdown.Item>
-              <NavDropdown.Item 
-                onClick={() => changeLanguage('en')}
-                className={`py-2 ${language === 'en' ? 'active' : ''}`}
-                style={{ cursor: 'pointer' }}
-                data-id-ref="responsive-navbar-language-en"
-              >
-                <i className="fas fa-globe me-2" aria-hidden="true" data-id-ref="responsive-navbar-language-en-icon"></i>
-                English
-                {language === 'en' && <i className="fas fa-check ms-2 text-success" aria-hidden="true" data-id-ref="responsive-navbar-language-en-check"></i>}
-              </NavDropdown.Item>
-              
               <NavDropdown.Divider data-id-ref="responsive-navbar-user-divider-2" />
               <NavDropdown.Item 
                 onClick={handleLogout}

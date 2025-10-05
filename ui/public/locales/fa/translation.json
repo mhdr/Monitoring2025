@@ -3,7 +3,7 @@
   "monitoring": "مانیتورینگ",
   "warehouse": "انبار",
   "dashboard": "داشبورد",
-  "settings": "تنظیمات",
+  "settingsMenu": "تنظیمات",
   "users": "کاربران",
   "reports": "گزارشات",
   "notifications": "اعلان‌ها",
@@ -140,5 +140,20 @@
     "red": "قرمز پررنگ",
     "teal": "فیروزه‌ای اقیانوس",
     "indigo": "نیلی عمیق"
+  },
+  "settings": {
+    "pageTitle": "تنظیمات",
+    "pageDescription": "تنظیمات شخصی‌سازی و ترجیحات خود را مدیریت کنید",
+    "theme": {
+      "sectionTitle": "پوسته رنگی",
+      "sectionDescription": "یک پوسته رنگی را برای شخصی‌سازی رابط کاربری انتخاب کنید"
+    },
+    "language": {
+      "title": "زبان",
+      "sectionTitle": "زبان",
+      "sectionDescription": "زبان مورد نظر خود را برای رابط کاربری انتخاب کنید",
+      "persianDescription": "فارسی (پیش‌فرض)",
+      "englishDescription": "انگلیسی"
+    }
   }
 }

@@ -1,0 +1,179 @@
+/* Settings Page Styles */
+
+.settings-page {
+  min-height: 100vh;
+  background: var(--bg-primary-light);
+  padding-bottom: 2rem;
+}
+
+.settings-page .page-header {
+  border-bottom: 2px solid var(--border-light);
+  padding-bottom: 1rem;
+}
+
+.settings-page .page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary-light);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.settings-page .page-description {
+  font-size: 1rem;
+  margin: 0.5rem 0 0 0;
+}
+
+.settings-card {
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.settings-card:hover {
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-2px);
+}
+
+.settings-card .card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary-light);
+  display: flex;
+  align-items: center;
+}
+
+.settings-card .card-text {
+  font-size: 0.95rem;
+}
+
+/* Language Options Grid */
+.language-options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.language-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 2px solid var(--border-medium);
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: start;
+  width: 100%;
+}
+
+.language-option-btn:hover {
+  border-color: var(--primary-light);
+  background: var(--bg-primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.language-option-btn.active {
+  border-color: var(--accent-primary);
+  background: linear-gradient(135deg, var(--bg-primary-light) 0%, white 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.language-option-btn .language-flag {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.language-option-btn .language-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.language-option-btn .language-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary-light);
+  display: block;
+}
+
+.language-option-btn .language-description {
+  font-size: 0.875rem;
+  color: var(--text-secondary-light);
+  display: block;
+}
+
+.language-option-btn .language-check {
+  font-size: 1.5rem;
+  color: var(--accent-primary);
+  margin-inline-start: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 991px) {
+  .settings-page .page-title {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .settings-page .page-title {
+    font-size: 1.5rem;
+  }
+
+  .language-option-btn {
+    padding: 1rem;
+  }
+
+  .language-option-btn .language-flag {
+    font-size: 2rem;
+  }
+
+  .language-option-btn .language-name {
+    font-size: 1.1rem;
+  }
+
+  .language-option-btn .language-description {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .settings-page .page-title {
+    font-size: 1.25rem;
+  }
+
+  .settings-card .card-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Dark theme support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+  .settings-page {
+    background: var(--bg-primary-dark);
+  }
+
+  .settings-card {
+    background: var(--bg-primary-dark);
+    border-color: var(--border-dark);
+  }
+
+  .language-option-btn {
+    background: var(--bg-primary-dark);
+    border-color: var(--border-dark);
+  }
+
+  .language-option-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .language-option-btn.active {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, var(--bg-primary-dark) 100%);
+  }
+}
