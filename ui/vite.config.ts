@@ -61,22 +61,16 @@ export default defineConfig({
             './src/components/LanguageSwitcher.tsx',
           ],
           
-          // Detail pages - group together since they share context
-          'detail-pages': [
-            './src/components/detail/TrendAnalysisPage.tsx',
-            './src/components/detail/DataTablePage.tsx',
-            './src/components/detail/LiveMonitoringDetailPage.tsx',
-            './src/components/detail/ActiveAlarmsDetailPage.tsx',
-            './src/components/detail/AlarmLogDetailPage.tsx',
-            './src/components/detail/AlarmCriteriaPage.tsx',
-            './src/components/detail/AuditTrailDetailPage.tsx',
-            './src/components/detail/ManagementDetailPage.tsx',
-          ],
+          // ECharts - large charting library used only in TrendAnalysisPage
+          // Isolate it so it's only loaded when needed
+          'echarts-vendor': ['echarts', 'echarts-for-react'],
         },
       },
     },
     // Chunk size warning limit
-    chunkSizeWarningLimit: 600,
+    // Set to 1100 KB to accommodate ECharts vendor chunk (~1050 KB)
+    // This is acceptable since it's only loaded when TrendAnalysisPage is accessed
+    chunkSizeWarningLimit: 1100,
     // Source maps for production debugging (optional, can be disabled)
     sourcemap: false,
   },
