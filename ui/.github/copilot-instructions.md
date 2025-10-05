@@ -299,6 +299,49 @@ src/services/
 - 🔐 **Auth Testing:** Test both authenticated and unauthenticated states
 - 🐛 **Error Handling:** Ensure proper error messages in both languages
 
+### Development Server Configuration
+
+#### Port Management
+- **Default Port:** `5173` (Vite development server)
+- **Backend API Port:** `7136` (HTTPS)
+
+#### Critical: Port 5173 Usage Rules
+⚠️ **MANDATORY - Port Consistency for CORS:**
+
+If port `5173` is already in use when attempting to start the development server:
+- ✅ **DO NOT start the server on a different port** (e.g., 5174, 5175)
+- ✅ **REASON:** The backend API is configured with CORS policies that **only allow `https://localhost:5173`**
+- ✅ **ACTION:** Assume the developer already has the server running on port `5173` and use that instance
+- ✅ **TESTING:** Connect Chrome DevTools MCP to `https://localhost:5173` directly
+- ✅ **VERIFICATION:** Use `list_network_requests` to confirm the server is responding correctly
+
+#### Port Conflict Resolution Workflow
+1. **If you see "Port 5173 is in use":**
+   - Do NOT run `npm run dev` again
+   - Do NOT accept an alternate port (5174, 5175, etc.)
+   - Inform the user: "The development server is already running on port 5173"
+   - Proceed with testing/debugging using `https://localhost:5173`
+
+2. **If the developer explicitly asks to restart the server:**
+   - First, help them terminate any existing Vite processes
+   - Then start the server on the default port 5173
+   - Verify the server started successfully
+
+#### CORS Configuration Context
+- The backend API (`https://localhost:7136`) is configured to accept requests from `https://localhost:5173` only
+- Using a different port will result in CORS errors:
+  - `Access-Control-Allow-Origin` header will block requests
+  - API calls will fail with CORS policy violations
+  - Authentication and data fetching will not work
+- **Never suggest using alternate ports** when port 5173 is occupied
+
+#### Development Server Best Practices
+- ✅ Check if server is already running before attempting to start it
+- ✅ Use the existing running instance on port 5173
+- ✅ If testing is needed, connect to the already-running server
+- ✅ If server issues occur, help debug the existing instance rather than starting a new one
+- ⚠️ Avoid running multiple Vite instances simultaneously
+
 ### Chrome DevTools MCP Integration
 **MANDATORY** for UI debugging and testing - This project has Chrome DevTools MCP available for real-time browser debugging and performance analysis.
 
@@ -344,7 +387,7 @@ Chrome DevTools MCP provides AI-powered access to Chrome's debugging surface, re
 #### Example Use Cases
 ```typescript
 // Test login flow with real browser
-1. navigate_page → http://localhost:5173
+1. navigate_page → https://localhost:5173
 2. fill_form → username/password fields
 3. click → login button
 4. list_console_messages → check for errors
