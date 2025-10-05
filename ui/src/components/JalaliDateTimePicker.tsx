@@ -1,9 +1,17 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import jalaali from 'jalaali-js';
 import { useLanguage } from '../hooks/useLanguage';
 
-// Import JalaliDatePicker CSS
-import '@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css';
+// Declare global jalaliDatepicker
+declare global {
+  interface Window {
+    jalaliDatepicker?: {
+      show: (input: HTMLInputElement, options?: Record<string, unknown>) => void;
+      hide: () => void;
+      startWatch: (options?: Record<string, unknown>) => void;
+    };
+  }
+}
 
 interface JalaliDateTimePickerProps {
   id: string;
@@ -36,7 +44,7 @@ const JalaliDateTimePicker: React.FC<JalaliDateTimePickerProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Convert ISO datetime-local to Jalali format (YYYY/MM/DD HH:mm)
-  const isoToJalali = (isoString: string): string => {
+  const isoToJalali = useCallback((isoString: string): string => {
     if (!isoString) return '';
     
     try {
@@ -54,10 +62,10 @@ const JalaliDateTimePicker: React.FC<JalaliDateTimePickerProps> = ({
       console.error('Error converting ISO to Jalali:', error);
       return '';
     }
-  };
+  }, []);
 
   // Convert Jalali format to ISO datetime-local format
-  const jalaliToIso = (jalaliString: string): string => {
+  const jalaliToIso = useCallback((jalaliString: string): string => {
     if (!jalaliString) return '';
     
     try {
@@ -86,72 +94,102 @@ const JalaliDateTimePicker: React.FC<JalaliDateTimePickerProps> = ({
       console.error('Error converting Jalali to ISO:', error);
       return '';
     }
-  };
+  }, []);
 
   // Initialize JalaliDatePicker for Persian mode
   useEffect(() => {
-    if (language === 'fa' && inputRef.current) {
-      // Dynamically import the JalaliDatePicker library
-      import('@majidh1/jalalidatepicker').then((module) => {
-        const jalaliDatepicker = (module as never as { default?: unknown }) || module;
-        const dp = jalaliDatepicker.default || jalaliDatepicker;
+    if (language !== 'fa' || !inputRef.current) return;
+
+    const loadScript = (): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        // Check if script is already loaded
+        if (window.jalaliDatepicker) {
+          resolve();
+          return;
+        }
+
+        // Check if script element exists
+        const scriptId = 'jalali-datepicker-script';
+        let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+
+        if (script) {
+          // Script is loading, wait for it
+          const checkLoaded = setInterval(() => {
+            if (window.jalaliDatepicker) {
+              clearInterval(checkLoaded);
+              resolve();
+            }
+          }, 50);
+          return;
+        }
+
+        // Create and load the script
+        script = document.createElement('script');
+        script.id = scriptId;
+        script.src = '/lib/jalalidatepicker/jalalidatepicker.min.js';
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load JalaliDatePicker'));
+        document.head.appendChild(script);
+      });
+    };
+
+    const initializePicker = async () => {
+      try {
+        await loadScript();
+
+        if (!window.jalaliDatepicker || !inputRef.current) {
+          console.error('JalaliDatePicker not available');
+          return;
+        }
 
         // Clean up any existing instance
         try {
-          (dp as { hide: () => void }).hide();
+          window.jalaliDatepicker.hide();
         } catch {
           // Ignore cleanup errors
         }
 
-        // Initialize the date picker after a short delay
-        setTimeout(() => {
-          if (inputRef.current) {
-            const jalaliValue = isoToJalali(value);
-            
-            // Set initial value
-            inputRef.current.value = jalaliValue;
+        // Set initial value
+        const jalaliValue = isoToJalali(value);
+        if (inputRef.current) {
+          inputRef.current.value = jalaliValue;
+        }
 
-            (dp as { 
-              show: (input: HTMLInputElement, options?: Record<string, unknown>) => void 
-            }).show(inputRef.current, {
-              time: true,
-              date: true,
-              autoHide: true,
-              hideAfterChange: true,
-              persianDigits: true,
-              initDate: jalaliValue || undefined,
-              onChange: () => {
-                if (inputRef.current) {
-                  const newJalaliValue = inputRef.current.value;
-                  const newIsoValue = jalaliToIso(newJalaliValue);
-                  onChange(newIsoValue);
-                }
-              },
-            });
-          }
-        }, 100);
-      }).catch((error) => {
-        console.error('Failed to load JalaliDatePicker:', error);
-      });
-    }
+        // Initialize the date picker
+        window.jalaliDatepicker.show(inputRef.current, {
+          time: true,
+          date: true,
+          autoHide: true,
+          hideAfterChange: true,
+          persianDigits: true,
+          initDate: jalaliValue || undefined,
+          onChange: () => {
+            if (inputRef.current) {
+              const newJalaliValue = inputRef.current.value;
+              const newIsoValue = jalaliToIso(newJalaliValue);
+              onChange(newIsoValue);
+            }
+          },
+        });
+      } catch (error) {
+        console.error('Error initializing JalaliDatePicker:', error);
+      }
+    };
+
+    initializePicker();
 
     // Cleanup function
     return () => {
-      if (language === 'fa') {
-        import('@majidh1/jalalidatepicker').then((module) => {
-          const jalaliDatepicker = (module as never as { default?: unknown }) || module;
-          const dp = jalaliDatepicker.default || jalaliDatepicker;
-          try {
-            (dp as { hide: () => void }).hide();
-          } catch {
-            // Ignore cleanup errors
-          }
-        }).catch(() => {
-          // Ignore import errors during cleanup
-        });
+      if (window.jalaliDatepicker) {
+        try {
+          window.jalaliDatepicker.hide();
+        } catch {
+          // Ignore cleanup errors
+        }
       }
     };
-  }, [language, value, onChange]);
+  }, [language, value, onChange, isoToJalali, jalaliToIso]);
 
   // Handle change for Gregorian mode
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
