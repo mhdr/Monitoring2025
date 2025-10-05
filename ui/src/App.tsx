@@ -12,6 +12,7 @@ import LazyErrorBoundary from './components/LazyErrorBoundary';
 import DashboardSkeleton from './components/DashboardSkeleton';
 import MonitoringPageSkeleton from './components/MonitoringPageSkeleton';
 import GenericPageSkeleton from './components/GenericPageSkeleton';
+import ServiceWorkerPrompt from './components/ServiceWorkerPrompt';
 import './App.css';
 
 // Lazy load layout components
@@ -216,6 +217,7 @@ function App() {
   return (
     <Router>
       <AppRoutes />
+      <ServiceWorkerPrompt />
     </Router>
   );
 }

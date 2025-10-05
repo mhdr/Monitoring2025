@@ -117,5 +117,18 @@
   "fetchingData": "Fetching historical data...",
   "dataPoints": "data points",
   "from": "From",
-  "to": "To"
+  "to": "To",
+  "serviceWorker": {
+    "updateTitle": "Update Available",
+    "updateMessage": "A new version of the application is available. Please reload to update.",
+    "updateButton": "Reload Now",
+    "offlineTitle": "Ready for Offline Use",
+    "offlineMessage": "The application is now cached and ready to work offline."
+  },
+  "common": {
+    "buttons": {
+      "close": "Close",
+      "later": "Later"
+    }
+  }
 }

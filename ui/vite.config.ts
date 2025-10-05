@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 import { visualizer } from 'rollup-plugin-visualizer'
+import { VitePWA } from 'vite-plugin-pwa'
+// import PluginCritical from 'rollup-plugin-critical' // Available for manual critical CSS extraction
 import fs from 'fs'
 import path from 'path'
 import { homedir } from 'os'
@@ -20,13 +22,202 @@ export default defineConfig({
     react(),
     // Use basic SSL plugin as fallback if custom certificates don't exist
     !customCertsExist && basicSsl(),
+    // PWA plugin - service worker, manifest, and offline support
+    VitePWA({
+      registerType: 'prompt', // User consent before updating
+      includeAssets: ['fonts/woff2/IRANSansXV.woff2', 'fonts/woff/IRANSansXV.woff', 'bootstrap-icons/fonts/*.woff*'],
+      manifest: {
+        name: 'Monitoring System 2025',
+        short_name: 'Monitoring',
+        description: 'Real-time monitoring and alarm management system',
+        theme_color: '#0d6efd', // Bootstrap primary color
+        background_color: '#ffffff',
+        display: 'standalone',
+        scope: '/',
+        start_url: '/',
+        orientation: 'any',
+        icons: [
+          {
+            src: 'icons/icon-72x72.png',
+            sizes: '72x72',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-96x96.png',
+            sizes: '96x96',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-128x128.png',
+            sizes: '128x128',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-144x144.png',
+            sizes: '144x144',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-152x152.png',
+            sizes: '152x152',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'icons/icon-384x384.png',
+            sizes: '384x384',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ],
+        // RTL support metadata
+        dir: 'rtl' as const,
+        lang: 'fa-IR'
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        runtimeCaching: [
+          // Cache Bootstrap CSS variants (RTL/LTR) - CacheFirst with long expiration
+          {
+            urlPattern: /.*\/assets\/css\/bootstrap-(rtl|ltr)-.*\.css$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'bootstrap-css-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Cache font CSS - CacheFirst with long expiration
+          {
+            urlPattern: /.*\/assets\/css\/fonts-.*\.css$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'fonts-css-cache',
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Cache font files - CacheFirst with very long expiration
+          {
+            urlPattern: /.*\/fonts\/(woff2?|ttf|otf|eot)\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Cache API calls - NetworkFirst with fallback to cache
+          {
+            urlPattern: /^https:\/\/localhost:7136\/api\/.*/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 5 // 5 minutes
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Cache other CSS files
+          {
+            urlPattern: /.*\.css$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'css-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Cache JS chunks
+          {
+            urlPattern: /.*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'js-cache',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ],
+        // Clean up old caches on activation
+        cleanupOutdatedCaches: true,
+        // Skip waiting and claim clients immediately
+        skipWaiting: false, // Let user decide when to update
+        clientsClaim: true
+      },
+      devOptions: {
+        enabled: false, // Disable in dev mode for faster HMR
+        type: 'module'
+      }
+    }),
     // Bundle analyzer - generates stats.html after build
     visualizer({
       open: false,
       filename: 'dist/stats.html',
       gzipSize: true,
       brotliSize: true,
-    })
+    }),
+    // Critical CSS extraction - runs after build to inline critical CSS
+    // Note: Disabled by default as it requires a live server and puppeteer
+    // Manual critical CSS extraction is already implemented in index.html
+    // This plugin can be enabled for automated extraction if needed
+    // PluginCritical({
+    //   criticalUrl: 'https://localhost:5173/',
+    //   criticalBase: './dist',
+    //   criticalPages: [
+    //     { uri: '', template: 'index' },
+    //     { uri: 'login', template: 'index' }
+    //   ],
+    //   criticalConfig: {
+    //     inline: true,
+    //     extract: false,
+    //     width: 1920,
+    //     height: 1080,
+    //     penthouse: {
+    //       blockJSRequests: false
+    //     }
+    //   }
+    // })
   ].filter(Boolean),
   server: {
     https: customCertsExist ? {
