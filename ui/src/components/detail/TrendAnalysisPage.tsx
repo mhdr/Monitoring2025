@@ -199,6 +199,9 @@ const TrendAnalysisPage: React.FC = () => {
           }
           return '';
         },
+        textStyle: {
+          fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
+        },
       },
       grid: {
         left: isRTL ? '15%' : '10%',
@@ -214,6 +217,7 @@ const TrendAnalysisPage: React.FC = () => {
         axisLabel: {
           rotate: 45,
           fontSize: 10,
+          fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
           // Show only a subset of labels to prevent clutter
           interval: timestamps.length > 50 
             ? Math.floor(timestamps.length / 20) // Show ~20 labels for large datasets
@@ -229,6 +233,12 @@ const TrendAnalysisPage: React.FC = () => {
         nameLocation: itemUnit ? 'middle' : undefined,
         nameGap: itemUnit ? 50 : undefined,
         nameRotate: itemUnit ? (isRTL ? -90 : 90) : undefined,
+        nameTextStyle: {
+          fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
+        },
+        axisLabel: {
+          fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
+        },
       },
       series: [
         {
@@ -241,6 +251,9 @@ const TrendAnalysisPage: React.FC = () => {
           },
           itemStyle: {
             color: '#0d6efd',
+          },
+          label: {
+            fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
           },
         },
       ],
@@ -256,6 +269,9 @@ const TrendAnalysisPage: React.FC = () => {
           end: 100,
           height: 30,
           bottom: 10,
+          textStyle: {
+            fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
+          },
         },
       ],
       toolbox: {
