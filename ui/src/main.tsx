@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
+import './styles/theme.css' // Theme configuration - MUST be imported first
 import './index.css'
 import './iransansx-features.css'
 import './i18n/config' // Initialize i18next

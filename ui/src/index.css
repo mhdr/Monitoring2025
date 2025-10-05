@@ -6,25 +6,16 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: var(--bg-secondary-dark);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Custom Color Variables for Consistent Theme */
-  --primary-dark: #2c3e50;
-  --primary-medium: #34495e;
-  --primary-light: #3498db;
-  --primary-lighter: #5dade2;
-  --accent: #3498db;
-  --accent-hover: #2980b9;
-  --text-primary: #ecf0f1;
-  --text-secondary: #bdc3c7;
-  --border-color: #1a252f;
-  --shadow-light: rgba(0, 0, 0, 0.15);
-  --shadow-medium: rgba(0, 0, 0, 0.2);
+  /* Note: All color variables are now defined in styles/theme.css */
+  /* These legacy variable names are kept for backward compatibility */
+  /* but will reference the new theme variables */
 }
 
 /* Variable Font Support - for modern browsers */
@@ -97,7 +88,7 @@ body {
 /* Light mode adjustments */
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
+    color: var(--text-primary-dark);
     background-color: #ffffff;
   }
 }

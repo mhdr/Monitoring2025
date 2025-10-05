@@ -1,8 +1,8 @@
 .skeleton-loader {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: var(--gradient-shimmer-light);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 @keyframes skeleton-loading {
@@ -24,13 +24,13 @@
 }
 
 .skeleton-rectangular {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 /* Dark mode support (if needed in future) */
 @media (prefers-color-scheme: dark) {
   .skeleton-loader {
-    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+    background: var(--gradient-shimmer-dark);
     background-size: 200% 100%;
   }
 }

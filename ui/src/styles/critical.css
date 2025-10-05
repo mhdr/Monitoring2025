@@ -22,12 +22,12 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: var(--z-loading-screen);
 }
 
 .loading-screen-spinner {
@@ -35,7 +35,7 @@
   height: 3rem;
   border: 0.25rem solid rgba(255, 255, 255, 0.3);
   border-top-color: #ffffff;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 0.8s linear infinite;
 }
 
@@ -62,7 +62,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa;
+  background-color: var(--bg-secondary-light);
 }
 
 #root {
@@ -81,14 +81,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
 }
 
 .login-card {
   background: white;
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   padding: 2rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lg);
   max-width: 400px;
   width: 90%;
 }
@@ -105,9 +105,9 @@ body {
 
 .sidebar {
   width: 250px;
-  background-color: #343a40;
+  background-color: var(--primary-medium);
   color: white;
-  transition: transform 0.3s ease;
+  transition: transform var(--transition-medium) ease;
 }
 
 .main-content {

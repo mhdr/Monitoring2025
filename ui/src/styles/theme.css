@@ -1,0 +1,375 @@
+/**
+ * ============================================================================
+ * MONITORING2025 UI THEME CONFIGURATION
+ * ============================================================================
+ * 
+ * Centralized theme file for all color definitions, gradients, shadows, and
+ * design tokens used throughout the application.
+ * 
+ * HOW TO MODIFY COLORS:
+ * 1. Find the color category you want to change (Primary, Accent, etc.)
+ * 2. Update the hex values in the CSS custom properties
+ * 3. The changes will automatically apply throughout the entire application
+ * 
+ * USAGE IN COMPONENTS:
+ * - Use var(--primary-dark) instead of hardcoded colors
+ * - Use var(--gradient-primary) for consistent gradient backgrounds
+ * - Use var(--shadow-md) for standardized shadows
+ * 
+ * ============================================================================
+ */
+
+:root {
+  /* ========================================================================== */
+  /* PRIMARY COLORS - Main Brand Colors (Dark Blue/Slate Theme) */
+  /* ========================================================================== */
+  
+  /* Dark slate blue - used for main sidebar, navbar, and dark surfaces */
+  --primary-dark: #2c3e50;
+  --primary-dark-rgb: 44, 62, 80;
+  
+  /* Medium slate blue - used for secondary surfaces and gradients */
+  --primary-medium: #34495e;
+  --primary-medium-rgb: 52, 73, 94;
+  
+  /* Light blue accent - used for interactive elements */
+  --primary-light: #3498db;
+  --primary-light-rgb: 52, 152, 219;
+  
+  /* Lighter blue - used for hover states and highlights */
+  --primary-lighter: #5dade2;
+  --primary-lighter-rgb: 93, 173, 226;
+  
+  /* Darker blue for hover/pressed states */
+  --primary-darker: #1a252f;
+  --primary-darker-rgb: 26, 37, 47;
+
+  /* ========================================================================== */
+  /* ACCENT COLORS - Interactive Elements & Call-to-Actions */
+  /* ========================================================================== */
+  
+  /* Main accent color for buttons, links, and active states */
+  --accent-primary: #3498db;
+  --accent-primary-rgb: 52, 152, 219;
+  
+  /* Accent hover state */
+  --accent-hover: #2980b9;
+  --accent-hover-rgb: 41, 128, 185;
+  
+  /* Accent pressed/active state */
+  --accent-active: #21618c;
+  --accent-active-rgb: 33, 97, 140;
+
+  /* ========================================================================== */
+  /* GRADIENT COLORS - Login Page & Special Backgrounds */
+  /* ========================================================================== */
+  
+  /* Purple-blue gradient (Login page, loading screens) */
+  --gradient-purple-start: #667eea;
+  --gradient-purple-end: #764ba2;
+  
+  /* Indigo-blue gradient (Buttons, icons) */
+  --gradient-indigo-start: #4f46e5;
+  --gradient-indigo-end: #667eea;
+  
+  /* Darker indigo gradient (Button hover states) */
+  --gradient-indigo-hover-start: #4338ca;
+  --gradient-indigo-hover-end: #5b6de8;
+  
+  /* Gray gradient (Disabled states) */
+  --gradient-gray-start: #9ca3af;
+  --gradient-gray-end: #d1d5db;
+  
+  /* Sidebar gradient */
+  --gradient-sidebar-start: #2c3e50;
+  --gradient-sidebar-end: #34495e;
+
+  /* ========================================================================== */
+  /* TEXT COLORS - Typography */
+  /* ========================================================================== */
+  
+  /* Primary text on dark backgrounds */
+  --text-primary-light: #ecf0f1;
+  --text-primary-light-rgb: 236, 240, 241;
+  
+  /* Secondary text on dark backgrounds */
+  --text-secondary-light: #bdc3c7;
+  --text-secondary-light-rgb: 189, 195, 199;
+  
+  /* Primary text on light backgrounds */
+  --text-primary-dark: #213547;
+  --text-primary-dark-rgb: 33, 53, 71;
+  
+  /* Secondary text on light backgrounds */
+  --text-secondary-dark: #64748b;
+  --text-secondary-dark-rgb: 100, 116, 139;
+  
+  /* Muted text */
+  --text-muted-light: #9ca3af;
+  --text-muted-dark: #6b7280;
+
+  /* ========================================================================== */
+  /* SEMANTIC COLORS - Status & Feedback */
+  /* ========================================================================== */
+  
+  /* Success */
+  --success: #10b981;
+  --success-rgb: 16, 185, 129;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --success-border: #059669;
+  --success-text: #047857;
+  
+  /* Warning */
+  --warning: #f59e0b;
+  --warning-rgb: 245, 158, 11;
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  --warning-border: #d97706;
+  --warning-text: #b45309;
+  
+  /* Error/Danger */
+  --error: #dc3545;
+  --error-rgb: 220, 53, 69;
+  --error-bg: rgba(220, 53, 69, 0.1);
+  --error-border: #c82333;
+  --error-text: #721c24;
+  
+  /* Info */
+  --info: #0ea5e9;
+  --info-rgb: 14, 165, 233;
+  --info-bg: rgba(14, 165, 233, 0.1);
+  --info-border: #0284c7;
+  --info-text: #075985;
+
+  /* ========================================================================== */
+  /* BACKGROUND COLORS */
+  /* ========================================================================== */
+  
+  /* Light mode backgrounds */
+  --bg-primary-light: #ffffff;
+  --bg-secondary-light: #f8f9fa;
+  --bg-tertiary-light: #f1f3f5;
+  
+  /* Dark mode backgrounds */
+  --bg-primary-dark: #1a1a1a;
+  --bg-secondary-dark: #242424;
+  --bg-tertiary-dark: #2a2a2a;
+  
+  /* Surface backgrounds */
+  --surface-light: rgba(255, 255, 255, 0.95);
+  --surface-dark: rgba(17, 24, 39, 0.95);
+  --surface-overlay: rgba(52, 73, 94, 0.3);
+
+  /* ========================================================================== */
+  /* BORDER COLORS */
+  /* ========================================================================== */
+  
+  --border-light: #e2e8f0;
+  --border-light-rgb: 226, 232, 240;
+  
+  --border-medium: #cbd5e1;
+  --border-medium-rgb: 203, 213, 225;
+  
+  --border-dark: #1a252f;
+  --border-dark-rgb: 26, 37, 47;
+  
+  --border-focus: #4f46e5;
+  --border-focus-rgb: 79, 70, 229;
+
+  /* ========================================================================== */
+  /* SHADOW DEFINITIONS */
+  /* ========================================================================== */
+  
+  /* Small shadows for subtle elevation */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  /* Medium shadows for cards and modals */
+  --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.2);
+  
+  /* Large shadows for important elements */
+  --shadow-xl: 0 15px 35px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
+  
+  /* Colored shadows */
+  --shadow-primary: 0 4px 15px rgba(79, 70, 229, 0.3);
+  --shadow-primary-lg: 0 8px 25px rgba(79, 70, 229, 0.4);
+  --shadow-accent: 0 4px 15px rgba(52, 152, 219, 0.3);
+  
+  /* Focus shadows */
+  --shadow-focus-primary: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+  --shadow-focus-error: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  --shadow-focus-accent: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+  
+  /* Sidebar shadow */
+  --shadow-sidebar: 2px 0 10px rgba(0, 0, 0, 0.15);
+  --shadow-sidebar-rtl: -2px 0 10px rgba(0, 0, 0, 0.15);
+
+  /* ========================================================================== */
+  /* GRADIENT DEFINITIONS (Pre-configured for consistent use) */
+  /* ========================================================================== */
+  
+  /* Primary gradients */
+  --gradient-primary: linear-gradient(135deg, var(--gradient-purple-start) 0%, var(--gradient-purple-end) 100%);
+  --gradient-sidebar: linear-gradient(180deg, var(--gradient-sidebar-start) 0%, var(--gradient-sidebar-end) 100%);
+  --gradient-navbar: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 100%);
+  
+  /* Button gradients */
+  --gradient-button: linear-gradient(135deg, var(--gradient-indigo-start) 0%, var(--gradient-indigo-end) 100%);
+  --gradient-button-hover: linear-gradient(135deg, var(--gradient-indigo-hover-start) 0%, var(--gradient-indigo-hover-end) 100%);
+  --gradient-button-disabled: linear-gradient(135deg, var(--gradient-gray-start) 0%, var(--gradient-gray-end) 100%);
+  
+  /* Accent gradients */
+  --gradient-accent-horizontal: linear-gradient(90deg, rgba(52, 152, 219, 0.15) 0%, rgba(52, 152, 219, 0.05) 100%);
+  --gradient-accent-active: linear-gradient(90deg, rgba(52, 152, 219, 0.25) 0%, rgba(52, 152, 219, 0.1) 100%);
+  
+  /* Text gradient */
+  --gradient-text: linear-gradient(45deg, var(--text-primary-light), var(--text-secondary-light));
+  
+  /* Shimmer effect gradient (for loading skeletons) */
+  --gradient-shimmer-light: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  --gradient-shimmer-dark: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+  
+  /* Overlay gradients */
+  --gradient-overlay-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+
+  /* ========================================================================== */
+  /* SPACING & SIZING (Optional - for consistency) */
+  /* ========================================================================== */
+  
+  /* Border radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+  
+  /* Transition durations */
+  --transition-fast: 0.15s;
+  --transition-base: 0.2s;
+  --transition-medium: 0.3s;
+  --transition-slow: 0.5s;
+  
+  /* Transition timing functions */
+  --ease-in-out: ease-in-out;
+  --ease-out: ease-out;
+  --ease-in: ease-in;
+
+  /* ========================================================================== */
+  /* Z-INDEX SCALE (For proper layering) */
+  /* ========================================================================== */
+  
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-sidebar: 1040;
+  --z-user-dropdown: 1061;
+  --z-navbar: 1060;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-loading-screen: 9999;
+
+  /* ========================================================================== */
+  /* CHART COLORS (For Apache ECharts visualization) */
+  /* ========================================================================== */
+  
+  /* Chart color palette (data series) */
+  --chart-color-1: #3498db;
+  --chart-color-2: #e74c3c;
+  --chart-color-3: #2ecc71;
+  --chart-color-4: #f39c12;
+  --chart-color-5: #9b59b6;
+  --chart-color-6: #1abc9c;
+  --chart-color-7: #34495e;
+  --chart-color-8: #e67e22;
+  
+  /* Chart backgrounds */
+  --chart-bg-light: #ffffff;
+  --chart-bg-dark: #1a1a1a;
+  
+  /* Chart grid lines */
+  --chart-grid-light: #e5e7eb;
+  --chart-grid-dark: #374151;
+  
+  /* Chart text */
+  --chart-text-light: #4b5563;
+  --chart-text-dark: #d1d5db;
+}
+
+/* ============================================================================ */
+/* DARK MODE OVERRIDES */
+/* ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Override backgrounds for dark mode */
+    --bg-primary: var(--bg-primary-dark);
+    --bg-secondary: var(--bg-secondary-dark);
+    --bg-tertiary: var(--bg-tertiary-dark);
+    
+    /* Override text colors for dark mode */
+    --text-primary: var(--text-primary-light);
+    --text-secondary: var(--text-secondary-light);
+    --text-muted: var(--text-muted-light);
+    
+    /* Override surface colors */
+    --surface: var(--surface-dark);
+    
+    /* Override chart colors */
+    --chart-bg: var(--chart-bg-dark);
+    --chart-grid: var(--chart-grid-dark);
+    --chart-text: var(--chart-text-dark);
+    
+    /* Override error background for dark mode */
+    --error-bg: rgba(220, 53, 69, 0.2);
+    --error-text: #fca5a5;
+  }
+}
+
+/* Light mode defaults */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-primary: var(--bg-primary-light);
+    --bg-secondary: var(--bg-secondary-light);
+    --bg-tertiary: var(--bg-tertiary-light);
+    
+    --text-primary: var(--text-primary-dark);
+    --text-secondary: var(--text-secondary-dark);
+    --text-muted: var(--text-muted-dark);
+    
+    --surface: var(--surface-light);
+    
+    --chart-bg: var(--chart-bg-light);
+    --chart-grid: var(--chart-grid-light);
+    --chart-text: var(--chart-text-light);
+  }
+}
+
+/* ============================================================================ */
+/* UTILITY CLASSES (Optional - for quick theming in HTML) */
+/* ============================================================================ */
+
+.bg-primary { background-color: var(--primary-dark) !important; }
+.bg-primary-medium { background-color: var(--primary-medium) !important; }
+.bg-accent { background-color: var(--accent-primary) !important; }
+
+.text-primary { color: var(--text-primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-muted { color: var(--text-muted) !important; }
+
+.border-primary { border-color: var(--border-light) !important; }
+.border-dark { border-color: var(--border-dark) !important; }
+
+.shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow-md { box-shadow: var(--shadow-md) !important; }
+.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+
+.gradient-primary { background: var(--gradient-primary) !important; }
+.gradient-button { background: var(--gradient-button) !important; }
+.gradient-sidebar { background: var(--gradient-sidebar) !important; }
+
+/* ============================================================================ */
+/* END OF THEME CONFIGURATION */
+/* ============================================================================ */
