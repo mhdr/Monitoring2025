@@ -38,6 +38,7 @@
 body.rtl {
   direction: rtl;
   text-align: right;
+  font-family: 'iransansx', 'Tahoma', 'Arial', sans-serif;
   /* Enable Persian digits globally for Persian/RTL mode */
   -moz-font-feature-settings: "ss02";
   -webkit-font-feature-settings: "ss02";
@@ -46,6 +47,13 @@ body.rtl {
 
 body.rtl * {
   direction: rtl;
+}
+
+/* Variable Font Support for RTL - for modern browsers */
+@supports (font-variation-settings: normal) {
+  body.rtl {
+    font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif;
+  }
 }
 
 body.ltr {
@@ -91,5 +99,34 @@ body {
   :root {
     color: #213547;
     background-color: #ffffff;
+  }
+}
+
+/* JalaliDatePicker Font Styling - Apply IranSans in Persian mode */
+/* Note: jdp-container is a custom HTML element, not a class */
+body.rtl jdp-container,
+body.rtl jdp-container * {
+  font-family: 'iransansx', 'Tahoma', 'Arial', sans-serif !important;
+}
+
+/* Variable Font Support for JalaliDatePicker - for modern browsers */
+@supports (font-variation-settings: normal) {
+  body.rtl jdp-container,
+  body.rtl jdp-container * {
+    font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif !important;
+  }
+}
+
+/* Apply IranSans font to date input fields in Persian mode */
+body.rtl input[data-id-ref="trend-analysis-start-date-input"],
+body.rtl input[data-id-ref="trend-analysis-end-date-input"] {
+  font-family: 'iransansx', 'Tahoma', 'Arial', sans-serif !important;
+}
+
+/* Variable Font Support for date inputs - for modern browsers */
+@supports (font-variation-settings: normal) {
+  body.rtl input[data-id-ref="trend-analysis-start-date-input"],
+  body.rtl input[data-id-ref="trend-analysis-end-date-input"] {
+    font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif !important;
   }
 }
