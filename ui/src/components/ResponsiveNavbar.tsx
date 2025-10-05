@@ -1,6 +1,7 @@
 import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
+import ThemeSwitcher from './ThemeSwitcher';
 import './ResponsiveNavbar.css';
 
 interface ResponsiveNavbarProps {
@@ -104,6 +105,11 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
                 {t('settings')}
               </NavDropdown.Item>
               <NavDropdown.Divider data-id-ref="responsive-navbar-user-divider-1" />
+              
+              {/* Theme Switcher */}
+              <ThemeSwitcher />
+              
+              <NavDropdown.Divider data-id-ref="responsive-navbar-theme-language-divider" />
               
               {/* Language Switcher */}
               <NavDropdown.Header className="py-1 text-muted small" data-id-ref="responsive-navbar-language-header">

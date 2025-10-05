@@ -4,6 +4,60 @@
 
 This project uses a centralized theme system with CSS custom properties (CSS variables) for consistent styling throughout the application. All color definitions, gradients, shadows, and design tokens are consolidated in a single file: **`src/styles/theme.css`**.
 
+## 🎨 Theme Switcher (User Interface)
+
+Users can switch between 7 preset themes directly from the application's user dropdown menu:
+
+### Available Themes
+
+| Theme | Emoji | Name (English) | Name (Persian) | Primary Color |
+|-------|-------|----------------|----------------|---------------|
+| **Default** | 🔵 | Professional Blue | آبی حرفه‌ای | `#2c3e50` (Blue) |
+| **Green** | 🟢 | Nature Green | سبز طبیعت | `#1e4620` (Green) |
+| **Purple** | 🟣 | Royal Purple | بنفش سلطنتی | `#4a148c` (Purple) |
+| **Orange** | 🟠 | Warm Orange | نارنجی گرم | `#e65100` (Orange) |
+| **Red** | 🔴 | Bold Red | قرمز پررنگ | `#b71c1c` (Red) |
+| **Teal** | 🌊 | Ocean Teal | فیروزه‌ای اقیانوس | `#006064` (Teal) |
+| **Indigo** | 🔮 | Deep Indigo | نیلی عمیق | `#1a237e` (Indigo) |
+
+### How to Switch Themes (For Users)
+
+1. **Click on your username** in the top-right navigation bar
+2. **Open the dropdown menu** which contains:
+   - Profile
+   - Settings
+   - **Theme Switcher** (at the top with color-coded buttons)
+   - Language Switcher
+   - Logout
+3. **Click on any theme button** to instantly apply that theme
+4. **Your choice persists** - the selected theme will be remembered even after closing the browser
+
+### Features
+
+- ✅ **7 Beautiful Preset Themes**: Carefully designed color palettes for different preferences
+- ✅ **Instant Application**: Theme changes apply immediately without page reload
+- ✅ **Persistent Storage**: Your theme choice is saved to localStorage
+- ✅ **Bilingual Support**: Theme names in both English and Persian
+- ✅ **RTL Compatible**: Theme switcher works perfectly in both LTR (English) and RTL (Persian) modes
+- ✅ **Visual Preview**: Each theme button shows a color preview strip
+- ✅ **Responsive Design**: Works on desktop, tablet, and mobile devices
+
+### Technical Implementation
+
+The theme switcher uses:
+- **Redux Store**: State management with `themeSlice.ts`
+- **Redux Persist**: Automatic localStorage persistence
+- **Dynamic CSS Variables**: Instant theme application via `themeUtils.ts`
+- **TypeScript Types**: Full type safety with `themes.ts`
+- **React Hooks**: Custom `useTheme` hook for easy integration
+
+Location in code:
+- **Component**: `src/components/ThemeSwitcher.tsx`
+- **Hook**: `src/hooks/useTheme.ts`
+- **Types**: `src/types/themes.ts`
+- **Utilities**: `src/utils/themeUtils.ts`
+- **Redux**: `src/store/slices/themeSlice.ts`
+
 ## 📁 Files Structure
 
 ```

@@ -15,6 +15,7 @@ import sessionStorage from 'redux-persist/lib/storage/session'; // sessionStorag
 import authReducer from './slices/authSlice';
 import languageReducer from './slices/languageSlice';
 import monitoringReducer from './slices/monitoringSlice';
+import themeReducer from './slices/themeSlice';
 
 /**
  * Persistence configuration for language
@@ -24,6 +25,16 @@ const languagePersistConfig = {
   key: 'language',
   storage, // localStorage
   whitelist: ['currentLanguage'], // Only persist language selection
+};
+
+/**
+ * Persistence configuration for theme
+ * Theme preference is stored in localStorage
+ */
+const themePersistConfig = {
+  key: 'theme',
+  storage, // localStorage
+  whitelist: ['currentThemeId'], // Only persist theme selection
 };
 
 /**
@@ -43,6 +54,7 @@ const authPersistConfig = {
 const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authReducer),
   language: persistReducer(languagePersistConfig, languageReducer),
+  theme: persistReducer(themePersistConfig, themeReducer),
   monitoring: monitoringReducer,
 });
 

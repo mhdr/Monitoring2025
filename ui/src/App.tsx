@@ -5,6 +5,7 @@ import { useFontLoader } from './hooks/useFontLoader';
 import { useLanguage } from './hooks/useLanguage';
 import { useTranslation } from './hooks/useTranslation';
 import { useRoutePreloader } from './hooks/useRoutePreloader';
+import { useTheme } from './hooks/useTheme';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -208,6 +209,9 @@ function App() {
   
   // Dynamically load Persian fonts only when needed (Persian language active)
   useFontLoader();
+  
+  // Initialize and apply theme (load from localStorage and apply CSS variables)
+  useTheme();
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {
