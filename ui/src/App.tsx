@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useBootstrapRTL } from './hooks/useBootstrapRTL';
+import { useFontLoader } from './hooks/useFontLoader';
 import { useLanguage } from './hooks/useLanguage';
 import { useTranslation } from './hooks/useTranslation';
 import { useRoutePreloader } from './hooks/useRoutePreloader';
@@ -203,6 +204,9 @@ function App() {
   
   // Dynamically load Bootstrap CSS based on language direction
   useBootstrapRTL();
+  
+  // Dynamically load Persian fonts only when needed (Persian language active)
+  useFontLoader();
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {

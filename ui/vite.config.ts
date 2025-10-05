@@ -65,6 +65,30 @@ export default defineConfig({
           // Isolate it so it's only loaded when needed
           'echarts-vendor': ['echarts', 'echarts-for-react'],
         },
+        // Asset file naming with content hash for long-term caching
+        assetFileNames: (assetInfo) => {
+          // Organize assets into subdirectories
+          const info = assetInfo.name?.split('.') || [];
+          const ext = info[info.length - 1];
+          
+          // CSS files in css/ directory
+          if (ext === 'css') {
+            return 'assets/css/[name]-[hash][extname]';
+          }
+          
+          // Font files in fonts/ directory
+          if (/woff2?|ttf|otf|eot/.test(ext)) {
+            return 'assets/fonts/[name]-[hash][extname]';
+          }
+          
+          // Images in images/ directory
+          if (/png|jpe?g|svg|gif|webp|ico/.test(ext)) {
+            return 'assets/images/[name]-[hash][extname]';
+          }
+          
+          // Default for other assets
+          return 'assets/[name]-[hash][extname]';
+        },
       },
     },
     // Chunk size warning limit
@@ -73,5 +97,24 @@ export default defineConfig({
     chunkSizeWarningLimit: 1100,
     // Source maps for production debugging (optional, can be disabled)
     sourcemap: false,
+    // CSS code splitting configuration
+    cssCodeSplit: true,
+    // Performance budgets and warnings
+    reportCompressedSize: true,
+    // Asset size limits for warnings
+    assetsInlineLimit: 4096, // Inline assets smaller than 4KB
+  },
+  // Performance monitoring and optimization hints
+  optimizeDeps: {
+    // Pre-bundle dependencies for faster development
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@reduxjs/toolkit',
+      'react-redux',
+      'i18next',
+      'react-i18next',
+    ],
   },
 })
