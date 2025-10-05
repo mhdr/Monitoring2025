@@ -225,10 +225,11 @@ const TrendAnalysisPage: React.FC = () => {
         },
       },
       grid: {
-        left: isRTL ? '15%' : '10%',
-        right: isRTL ? '10%' : '15%',
-        bottom: '15%',
-        top: isMobile ? '10%' : '15%', // Less top padding on mobile when title is hidden
+        // Reduce left/right margins on mobile to use full width
+        left: isMobile ? (isRTL ? '8%' : '4%') : (isRTL ? '15%' : '10%'),
+        right: isMobile ? (isRTL ? '4%' : '8%') : (isRTL ? '10%' : '15%'),
+        bottom: isMobile ? '8%' : '15%',
+        top: isMobile ? '8%' : '15%', // Less top padding on mobile when title is hidden
         containLabel: true,
       },
       xAxis: {
@@ -381,7 +382,7 @@ const TrendAnalysisPage: React.FC = () => {
 
   return (
     <div
-      className="container-fluid h-100 d-flex flex-column py-3 py-md-4"
+      className={`container-fluid h-100 d-flex flex-column ${isMobile ? 'py-1' : 'py-3 py-md-4'}`}
       data-id-ref="trend-analysis-page-container"
     >
       {/* Error Alert */}
@@ -429,8 +430,8 @@ const TrendAnalysisPage: React.FC = () => {
             </div>
 
             {/* Card body: hidden on mobile when collapsed */}
-            {(!isMobile || !dateRangeCollapsed) && (
-              <div className="card-body p-3" data-id-ref="trend-analysis-date-range-card-body">
+              {(!isMobile || !dateRangeCollapsed) && (
+              <div className={`card-body ${isMobile ? 'p-2' : 'p-3'}`} data-id-ref="trend-analysis-date-range-card-body">
                 <div className="row g-2 align-items-end">
                   {/* Preset Buttons */}
                   <div className="col-12 col-md-auto">
@@ -516,9 +517,9 @@ const TrendAnalysisPage: React.FC = () => {
 
       {/* Chart Section */}
       <div className="row flex-fill" data-id-ref="trend-analysis-chart-row">
-        <div className="col-12 h-100" data-id-ref="trend-analysis-chart-col">
-          <div className="card h-100 d-flex flex-column" data-id-ref="trend-analysis-chart-card">
-            <div className="card-header d-flex justify-content-between align-items-center" data-id-ref="trend-analysis-chart-card-header">
+        <div className={`col-12 h-100 ${isMobile ? 'px-1' : ''}`} data-id-ref="trend-analysis-chart-col">
+      <div className="card h-100 d-flex flex-column" data-id-ref="trend-analysis-chart-card">
+            <div className={`card-header d-flex justify-content-between align-items-center ${isMobile ? 'py-1' : ''}`} data-id-ref="trend-analysis-chart-card-header">
               <h5 className="card-title mb-0" data-id-ref="trend-analysis-chart-title">
                 {t('trendAnalysisTitle')}
               </h5>
@@ -530,7 +531,7 @@ const TrendAnalysisPage: React.FC = () => {
               )}
             </div>
             <div
-              className="card-body flex-fill d-flex align-items-center justify-content-center"
+              className={`card-body flex-fill d-flex align-items-center ${isMobile ? '' : 'justify-content-center'}`}
               data-id-ref="trend-analysis-chart-card-body"
             >
               {loading ? (
@@ -550,7 +551,7 @@ const TrendAnalysisPage: React.FC = () => {
               ) : (
                 <ReactECharts
                   option={chartOption}
-                  style={{ height: '100%', width: '100%', minHeight: '400px' }}
+                  style={{ height: '100%', width: '100%', minHeight: isMobile ? '260px' : '400px' }}
                   opts={{ renderer: 'canvas' }}
                   data-id-ref="trend-analysis-chart"
                 />
