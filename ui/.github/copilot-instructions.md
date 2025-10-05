@@ -100,7 +100,307 @@ When adding new UI text or messages:
 ```
 src/styles/
   ├── bootstrap-ltr.css  (Left-to-Right layout)
-  └── bootstrap-rtl.css  (Right-to-Left layout)
+  ├── bootstrap-rtl.css  (Right-to-Left layout)
+  └── theme.css         (Centralized theme system)
+```
+
+---
+
+## 🎨 Theme System & Color Management
+
+### Overview
+This application implements a **centralized theme system** using CSS custom properties (variables) for all color definitions, gradients, shadows, and design tokens. The theme system allows users to switch between multiple pre-configured color schemes without any code changes.
+
+### Core Principle
+⚠️ **CRITICAL:** **NEVER hardcode colors, gradients, or theme-related styles in component files.**
+
+All theme-related styling must reference CSS custom properties defined in `src/styles/theme.css`.
+
+### Theme Architecture
+
+#### Centralized Theme Configuration
+- **Theme File:** `src/styles/theme.css`
+  - Contains all CSS custom properties for colors, gradients, shadows
+  - Defines default values that get overridden when themes are switched
+  - Well-documented with category comments for easy modification
+
+#### Theme Presets
+- **Theme Definitions:** `src/types/themes.ts`
+  - TypeScript interfaces for theme structure and colors
+  - Available themes: Default (Blue), Green, Purple, Orange, Red, Teal, Indigo
+  - Each theme includes emoji, name, and complete color palette
+
+#### Theme Management
+- **Redux State:** `src/store/slices/themeSlice.ts`
+  - Manages current theme state and persistence to localStorage
+  - Actions: `initializeTheme`, `setTheme`, `resetTheme`
+
+- **Theme Utilities:** `src/utils/themeUtils.ts`
+  - `applyTheme()`: Dynamically updates CSS custom properties
+  - `hexToRgb()`: Converts hex colors to RGB for rgba() usage
+
+- **Theme Hook:** `src/hooks/useTheme.ts`
+  - Custom hook to initialize and manage theme application
+  - Automatically applies theme on mount and when theme changes
+
+- **Theme Switcher:** `src/components/ThemeSwitcher.tsx`
+  - User interface component for switching between themes
+  - Located in user dropdown menu
+
+### Using the Theme System
+
+#### ✅ Correct Usage - CSS Custom Properties
+Always reference theme variables instead of hardcoding colors:
+
+```css
+/* ✅ Good examples - use CSS custom properties */
+.my-component {
+  background: var(--primary-dark);
+  color: var(--text-primary-light);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+}
+
+.my-button {
+  background: var(--gradient-button);
+  color: var(--text-primary-light);
+}
+
+.my-button:hover {
+  background: var(--gradient-button-hover);
+}
+```
+
+```tsx
+/* ✅ Good examples - inline styles with theme variables */
+<div style={{ backgroundColor: 'var(--primary-dark)' }}>
+<span style={{ color: 'var(--text-secondary-light)' }}>
+```
+
+#### ❌ Incorrect Usage - Hardcoded Colors
+**NEVER** hardcode colors in component files:
+
+```css
+/* ❌ Bad examples - hardcoded colors */
+.my-component {
+  background: #2c3e50;  /* Never hardcode colors */
+  color: #ecf0f1;       /* Use var(--text-primary-light) instead */
+}
+
+.my-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Use var(--gradient-primary) instead */
+}
+```
+
+```tsx
+/* ❌ Bad examples - hardcoded inline styles */
+<div style={{ backgroundColor: '#2c3e50' }}>  {/* Wrong */}
+<span style={{ color: '#ecf0f1' }}>            {/* Wrong */}
+```
+
+### Available Theme Variables
+
+#### Primary Colors
+```css
+--primary-dark          /* Main sidebar, navbar, dark surfaces */
+--primary-medium        /* Secondary surfaces */
+--primary-light         /* Interactive elements */
+--primary-lighter       /* Hover states, highlights */
+--primary-darker        /* Pressed states */
+```
+
+#### Accent Colors
+```css
+--accent-primary        /* Buttons, links, active states */
+--accent-hover          /* Hover states */
+--accent-active         /* Pressed/active states */
+```
+
+#### Text Colors
+```css
+--text-primary-light    /* Primary text on dark backgrounds */
+--text-secondary-light  /* Secondary text on dark backgrounds */
+--text-primary-dark     /* Primary text on light backgrounds */
+--text-secondary-dark   /* Secondary text on light backgrounds */
+--text-muted-light      /* Muted text on dark backgrounds */
+--text-muted-dark       /* Muted text on light backgrounds */
+```
+
+#### Semantic Colors
+```css
+--success               /* Success state color */
+--success-bg            /* Success background (10% opacity) */
+--success-border        /* Success border color */
+--warning               /* Warning state color */
+--error                 /* Error/danger state color */
+--info                  /* Info state color */
+```
+
+#### Background Colors
+```css
+--bg-primary-light      /* Primary light background */
+--bg-secondary-light    /* Secondary light background */
+--bg-primary-dark       /* Primary dark background */
+--bg-secondary-dark     /* Secondary dark background */
+--surface-light         /* Surface overlay light */
+--surface-dark          /* Surface overlay dark */
+```
+
+#### Borders
+```css
+--border-light          /* Light border */
+--border-medium         /* Medium border */
+--border-dark           /* Dark border */
+--border-focus          /* Focus state border */
+```
+
+#### Shadows
+```css
+--shadow-xs, --shadow-sm        /* Small shadows */
+--shadow-md, --shadow-lg        /* Medium shadows */
+--shadow-xl, --shadow-2xl       /* Large shadows */
+--shadow-primary                /* Colored shadows */
+--shadow-focus-primary          /* Focus ring shadow */
+```
+
+#### Pre-configured Gradients
+```css
+--gradient-primary              /* Login page, loading screens */
+--gradient-sidebar              /* Sidebar background */
+--gradient-navbar               /* Navbar background */
+--gradient-button               /* Button background */
+--gradient-button-hover         /* Button hover state */
+--gradient-button-disabled      /* Disabled button */
+```
+
+### Theme System Workflow
+
+#### How Themes Work
+1. **Default Values:** `theme.css` defines default CSS custom properties
+2. **User Selection:** User selects a theme via `ThemeSwitcher` component
+3. **State Update:** Redux `themeSlice` updates current theme ID and saves to localStorage
+4. **Apply Theme:** `useTheme` hook detects change and calls `applyTheme()`
+5. **Dynamic Update:** `applyTheme()` uses `document.documentElement.style.setProperty()` to override CSS variables
+6. **Instant Reflection:** All components using CSS variables automatically reflect new colors
+
+#### Adding New Theme Colors
+If you need to add a new color category:
+
+1. **Add to `theme.css`:**
+   ```css
+   :root {
+     --my-new-color: #abc123;
+     --my-new-color-rgb: 171, 193, 35;
+   }
+   ```
+
+2. **Add to TypeScript interface (`themes.ts`):**
+   ```typescript
+   export interface ThemeColors {
+     // ... existing properties
+     myNewColor: string;
+   }
+   ```
+
+3. **Update all theme presets in `themes.ts`:**
+   ```typescript
+   const defaultTheme: Theme = {
+     colors: {
+       // ... existing colors
+       myNewColor: '#abc123',
+     },
+   };
+   ```
+
+4. **Update `applyTheme()` in `themeUtils.ts`:**
+   ```typescript
+   export const applyTheme = (theme: Theme): void => {
+     // ... existing code
+     root.style.setProperty('--my-new-color', colors.myNewColor);
+     root.style.setProperty('--my-new-color-rgb', hexToRgb(colors.myNewColor));
+   };
+   ```
+
+### Best Practices
+
+#### Component Styling
+- ✅ **Always use CSS custom properties** for any color, gradient, or shadow
+- ✅ **Use semantic color variables** (e.g., `--success`, `--error`) for consistency
+- ✅ **Reference gradients** by their preset names (e.g., `--gradient-button`)
+- ✅ **Use shadow variables** for consistent elevation (e.g., `--shadow-md`)
+- ⚠️ **Never hardcode hex/rgb values** in component CSS or inline styles
+
+#### Testing Themes
+- 📊 **Chrome DevTools MCP:** Use to verify theme switching works correctly
+- 🎨 **Visual Testing:** Test all themes to ensure your components look good in each
+- 🔄 **Dynamic Switching:** Verify colors update immediately when theme changes
+- 📱 **Responsive + Theme:** Test theme appearance across different viewport sizes
+
+#### Documentation
+- 📝 **Comment Purpose:** When using theme variables, add comments explaining the usage
+- 🔍 **Variable Discovery:** Check `theme.css` for available variables before creating new ones
+- 📚 **Refer to Theme Docs:** See `THEME.md`, `THEME_IMPLEMENTATION_SUMMARY.md` for more details
+
+### Common Pitfalls to Avoid
+
+❌ **Hardcoding Colors**
+```css
+/* Wrong */
+.card { background: #2c3e50; }
+
+/* Correct */
+.card { background: var(--primary-dark); }
+```
+
+❌ **Inline RGB Values**
+```tsx
+/* Wrong */
+<div style={{ backgroundColor: 'rgba(44, 62, 80, 0.8)' }}>
+
+/* Correct */
+<div style={{ backgroundColor: 'rgba(var(--primary-dark-rgb), 0.8)' }}>
+```
+
+❌ **Creating Local Color Variables**
+```css
+/* Wrong - don't create component-specific color variables */
+.my-component {
+  --local-blue: #3498db; /* Don't do this */
+  background: var(--local-blue);
+}
+
+/* Correct - use centralized theme variables */
+.my-component {
+  background: var(--primary-light);
+}
+```
+
+❌ **Bootstrap Color Classes with Hardcoded Styles**
+```tsx
+/* Wrong - mixing Bootstrap classes with hardcoded colors */
+<button className="btn" style={{ background: '#667eea' }}>
+
+/* Correct - use theme variables with Bootstrap */
+<button className="btn" style={{ background: 'var(--gradient-button)' }}>
+```
+
+### Theme System Reference Files
+```
+src/
+├── styles/
+│   └── theme.css                    # CSS custom properties definition
+├── types/
+│   └── themes.ts                    # Theme interfaces and presets
+├── utils/
+│   └── themeUtils.ts                # Theme application utilities
+├── hooks/
+│   └── useTheme.ts                  # Theme management hook
+├── store/
+│   └── slices/
+│       └── themeSlice.ts            # Redux theme state
+└── components/
+    └── ThemeSwitcher.tsx            # Theme switcher UI component
 ```
 
 ---
@@ -476,6 +776,9 @@ Before submitting any new feature or component:
 - [ ] API integration uses HTTPS and proper error handling (verify with Chrome DevTools MCP network tools)
 - [ ] Code follows existing project patterns and structure
 - [ ] Component works in both authenticated and unauthenticated states (if applicable)
+- [ ] **Theme System:** No hardcoded colors, gradients, or shadows - all theme-related styles use CSS custom properties from `theme.css`
+- [ ] **Theme System:** Component appearance verified across all available themes (Default, Green, Purple, Orange, Red, Teal, Indigo)
+- [ ] **Theme System:** New theme colors (if added) properly defined in `themes.ts`, `theme.css`, and `themeUtils.ts`
 - [ ] **Charts (if applicable):** ECharts options are internationalized, responsive, and RTL-compatible
 - [ ] **Charts (if applicable):** Chart performance tested with representative data volumes
 - [ ] **Chrome DevTools MCP verification:** Test in real browser, check console for errors, validate performance
