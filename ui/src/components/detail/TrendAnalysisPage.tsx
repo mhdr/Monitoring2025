@@ -432,13 +432,6 @@ const TrendAnalysisPage: React.FC = () => {
                   </button>
                 </div>
               </div>
-
-              {/* Data Point Count */}
-              {historyData.length > 0 && !loading && (
-                <div className="mt-2 text-muted small" data-id-ref="trend-analysis-data-count">
-                  {historyData.length} {t('dataPoints')}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -448,10 +441,16 @@ const TrendAnalysisPage: React.FC = () => {
       <div className="row flex-fill" data-id-ref="trend-analysis-chart-row">
         <div className="col-12 h-100" data-id-ref="trend-analysis-chart-col">
           <div className="card h-100 d-flex flex-column" data-id-ref="trend-analysis-chart-card">
-            <div className="card-header" data-id-ref="trend-analysis-chart-card-header">
+            <div className="card-header d-flex justify-content-between align-items-center" data-id-ref="trend-analysis-chart-card-header">
               <h5 className="card-title mb-0" data-id-ref="trend-analysis-chart-title">
                 {t('trendAnalysisTitle')}
               </h5>
+              {/* Data Point Count */}
+              {historyData.length > 0 && !loading && (
+                <span className="badge bg-secondary" data-id-ref="trend-analysis-data-count">
+                  {historyData.length} {t('dataPoints')}
+                </span>
+              )}
             </div>
             <div
               className="card-body flex-fill d-flex align-items-center justify-content-center"
