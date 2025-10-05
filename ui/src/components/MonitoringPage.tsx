@@ -233,16 +233,7 @@ const MonitoringPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                {currentFolder && (
-                  <button 
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={() => handleBreadcrumbClick(currentFolder.parentId || null)}
-                    data-id-ref="monitoring-page-back-to-parent-button"
-                  >
-                    <i className="bi bi-arrow-left me-md-2" data-id-ref="monitoring-page-back-to-parent-icon"></i>
-                    <span className="d-none d-md-inline" data-id-ref="monitoring-page-back-to-parent-label">{t('backToParent')}</span>
-                  </button>
-                )}
+                { /* back-to-parent button removed as requested */ }
               </div>
             </div>
             
