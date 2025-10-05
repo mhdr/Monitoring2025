@@ -33,6 +33,8 @@ const TrendAnalysisPage: React.FC = () => {
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
+  // Collapsed state for the Date Range card on mobile
+  const [dateRangeCollapsed, setDateRangeCollapsed] = useState<boolean>(window.innerWidth < 768);
 
   // Fetch items if not loaded (for direct URL access)
   useEffect(() => {
@@ -408,88 +410,106 @@ const TrendAnalysisPage: React.FC = () => {
       <div className="row mb-3" data-id-ref="trend-analysis-date-range-row">
         <div className="col-12">
           <div className="card" data-id-ref="trend-analysis-date-range-card">
-            <div className="card-body p-3" data-id-ref="trend-analysis-date-range-card-body">
-              <div className="row g-2 align-items-end">
-                {/* Preset Buttons */}
-                <div className="col-12 col-md-auto">
-                  <label className="form-label small mb-1" data-id-ref="trend-analysis-date-range-label">
-                    {t('dateRange')}
-                  </label>
-                  <div className="btn-group flex-wrap mt-1 mt-md-0 ms-md-2" role="group" data-id-ref="trend-analysis-preset-button-group">
+            <div className="card-header d-flex align-items-center justify-content-between p-2">
+              <div className="d-flex align-items-center">
+                <strong className="small mb-0" data-id-ref="trend-analysis-date-range-label">{t('dateRange')}</strong>
+              </div>
+              {/* Toggle button visible only on mobile */}
+              {isMobile && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setDateRangeCollapsed((s) => !s)}
+                  aria-expanded={!dateRangeCollapsed}
+                  data-id-ref="trend-analysis-date-range-toggle-button"
+                >
+                  <i className={`bi ${dateRangeCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'}`} />
+                </button>
+              )}
+            </div>
+
+            {/* Card body: hidden on mobile when collapsed */}
+            {(!isMobile || !dateRangeCollapsed) && (
+              <div className="card-body p-3" data-id-ref="trend-analysis-date-range-card-body">
+                <div className="row g-2 align-items-end">
+                  {/* Preset Buttons */}
+                  <div className="col-12 col-md-auto">
+                    <div className="btn-group flex-wrap mt-1 mt-md-0 ms-md-2" role="group" data-id-ref="trend-analysis-preset-button-group">
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${selectedPreset === 'last24Hours' ? 'btn-primary' : 'btn-outline-primary'}`}
+                        onClick={() => handlePresetChange('last24Hours')}
+                        data-id-ref="trend-analysis-preset-24h-button"
+                      >
+                        {t('last24Hours')}
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${selectedPreset === 'last7Days' ? 'btn-primary' : 'btn-outline-primary'}`}
+                        onClick={() => handlePresetChange('last7Days')}
+                        data-id-ref="trend-analysis-preset-7d-button"
+                      >
+                        {t('last7Days')}
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${selectedPreset === 'last30Days' ? 'btn-primary' : 'btn-outline-primary'}`}
+                        onClick={() => handlePresetChange('last30Days')}
+                        data-id-ref="trend-analysis-preset-30d-button"
+                      >
+                        {t('last30Days')}
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${selectedPreset === 'custom' ? 'btn-primary' : 'btn-outline-primary'}`}
+                        onClick={() => handlePresetChange('custom')}
+                        data-id-ref="trend-analysis-preset-custom-button"
+                      >
+                        {t('customRange')}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Custom Date Inputs (shown only when custom is selected) */}
+                  {selectedPreset === 'custom' && (
+                    <>
+                      <SeparatedDateTimePicker
+                        id="startDate"
+                        value={customStartDate}
+                        onChange={setCustomStartDate}
+                        data-id-ref="trend-analysis-start-date"
+                        className="col-12 col-md-auto"
+                        dateLabel={t('startDate')}
+                        timeLabel={t('startTime')}
+                      />
+                      <SeparatedDateTimePicker
+                        id="endDate"
+                        value={customEndDate}
+                        onChange={setCustomEndDate}
+                        data-id-ref="trend-analysis-end-date"
+                        className="col-12 col-md-auto"
+                        dateLabel={t('endDate')}
+                        timeLabel={t('endTime')}
+                      />
+                    </>
+                  )}
+
+                  {/* Refresh Button */}
+                  <div className="col-12 col-md-auto ms-md-auto">
                     <button
                       type="button"
-                      className={`btn btn-sm ${selectedPreset === 'last24Hours' ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => handlePresetChange('last24Hours')}
-                      data-id-ref="trend-analysis-preset-24h-button"
+                      className="btn btn-sm btn-success w-100 w-md-auto"
+                      onClick={fetchHistoryData}
+                      disabled={loading}
+                      data-id-ref="trend-analysis-refresh-button"
                     >
-                      {t('last24Hours')}
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn btn-sm ${selectedPreset === 'last7Days' ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => handlePresetChange('last7Days')}
-                      data-id-ref="trend-analysis-preset-7d-button"
-                    >
-                      {t('last7Days')}
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn btn-sm ${selectedPreset === 'last30Days' ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => handlePresetChange('last30Days')}
-                      data-id-ref="trend-analysis-preset-30d-button"
-                    >
-                      {t('last30Days')}
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn btn-sm ${selectedPreset === 'custom' ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => handlePresetChange('custom')}
-                      data-id-ref="trend-analysis-preset-custom-button"
-                    >
-                      {t('customRange')}
+                      <i className="bi bi-arrow-clockwise me-1" data-id-ref="trend-analysis-refresh-icon" />
+                      {loading ? t('fetchingData') : t('refresh')}
                     </button>
                   </div>
                 </div>
-
-                {/* Custom Date Inputs (shown only when custom is selected) */}
-                {selectedPreset === 'custom' && (
-                  <>
-                    <SeparatedDateTimePicker
-                      id="startDate"
-                      value={customStartDate}
-                      onChange={setCustomStartDate}
-                      data-id-ref="trend-analysis-start-date"
-                      className="col-12 col-md-auto"
-                      dateLabel={t('startDate')}
-                      timeLabel={t('startTime')}
-                    />
-                    <SeparatedDateTimePicker
-                      id="endDate"
-                      value={customEndDate}
-                      onChange={setCustomEndDate}
-                      data-id-ref="trend-analysis-end-date"
-                      className="col-12 col-md-auto"
-                      dateLabel={t('endDate')}
-                      timeLabel={t('endTime')}
-                    />
-                  </>
-                )}
-
-                {/* Refresh Button */}
-                <div className="col-12 col-md-auto ms-md-auto">
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-success w-100 w-md-auto"
-                    onClick={fetchHistoryData}
-                    disabled={loading}
-                    data-id-ref="trend-analysis-refresh-button"
-                  >
-                    <i className="bi bi-arrow-clockwise me-1" data-id-ref="trend-analysis-refresh-icon" />
-                    {loading ? t('fetchingData') : t('refresh')}
-                  </button>
-                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
