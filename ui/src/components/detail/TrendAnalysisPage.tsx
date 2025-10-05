@@ -238,11 +238,14 @@ const TrendAnalysisPage: React.FC = () => {
           fontSize: 10,
           fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
           // Show only a subset of labels to prevent clutter
-          interval: timestamps.length > 50 
-            ? Math.floor(timestamps.length / 20) // Show ~20 labels for large datasets
-            : timestamps.length > 20 
-            ? Math.floor(timestamps.length / 10) // Show ~10 labels for medium datasets
-            : 0, // Show all labels for small datasets (< 20 points)
+          // On mobile, show at most ~6 labels for readability
+          interval: isMobile
+            ? Math.max(0, Math.floor(timestamps.length / Math.max(1, Math.min(6, timestamps.length))))
+            : timestamps.length > 50 
+              ? Math.floor(timestamps.length / 20) // Show ~20 labels for large datasets
+              : timestamps.length > 20 
+              ? Math.floor(timestamps.length / 10) // Show ~10 labels for medium datasets
+              : 0, // Show all labels for small datasets (< 20 points)
         },
       },
       yAxis: {
@@ -276,7 +279,7 @@ const TrendAnalysisPage: React.FC = () => {
           },
         },
       ],
-      dataZoom: [
+      dataZoom: isMobile ? undefined : [
         {
           type: 'inside',
           start: 0,
@@ -293,7 +296,7 @@ const TrendAnalysisPage: React.FC = () => {
           },
         },
       ],
-      toolbox: {
+      toolbox: isMobile ? undefined : {
         feature: {
           dataZoom: {
             yAxisIndex: 'none',
