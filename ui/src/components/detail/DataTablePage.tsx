@@ -553,10 +553,18 @@ const DataTablePage: React.FC = () => {
                           statusPanels: [
                             { statusPanel: 'agTotalRowCountComponent', align: 'left' },
                             { statusPanel: 'agFilteredRowCountComponent' },
-                            { statusPanel: 'agSelectedRowCountComponent' },
                             { statusPanel: 'agAggregationComponent' }
                           ]
                         },
+                        // Explicitly disable checkbox selection for columns in this table
+                        // and use single row selection without checkboxes so the selection
+                        // column (checkbox column) does not appear.
+                        rowSelection: {
+                          mode: 'singleRow',
+                          checkboxes: false,
+                          headerCheckbox: false,
+                        },
+
                         defaultColDef: {
                           resizable: true,
                           sortable: true,
