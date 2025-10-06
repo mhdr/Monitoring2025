@@ -91,35 +91,4 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         // call to create Identity keys
         base.OnModelCreating(modelBuilder);
     }
-
-    public async Task EnsurePartitioning()
-    {
-        var connection = Database.GetDbConnection();
-        await connection.OpenAsync();
-
-        var now = DateTime.UtcNow;
-        var startYear = now.Year;
-        var endYear = now.Year + 1;
-
-        for (int year = startYear; year <= endYear; year++)
-        {
-            for (int month = 1; month <= 12; month++)
-            {
-                var startTimestamp = new DateTime(year, month, 1).ToUnixTimeSeconds();
-                var endTimestamp = new DateTime(year, month, DateTime.DaysInMonth(year, month)).AddDays(1)
-                    .ToUnixTimeSeconds();
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = $@"
-                        CREATE TABLE IF NOT EXISTS audit_log_{year}{month:D2} PARTITION OF audit_log
-                        FOR VALUES FROM ({startTimestamp}) TO ({endTimestamp});
-            ";
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
-        }
-
-        await connection.CloseAsync();
-    }
 }

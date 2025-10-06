@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using API.Models;
 using API.Services;
+using API.Workers;
 using Contracts;
 using DB.User.Data;
 using DB.User.Models;
@@ -285,6 +286,9 @@ builder.Services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(context2);
     });
 });
+
+builder.Services.AddHostedService<ActiveAlarmsBackgroundWorker>();
+builder.Services.AddHostedService<StartupWorker>();
 
 var app = builder.Build();
 
