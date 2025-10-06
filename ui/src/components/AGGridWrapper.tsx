@@ -50,8 +50,7 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
   useImperativeHandle(ref, () => gridApiRef.current ?? ({} as AGGridApi), []);
 
   const localeText = useMemo(() => {
-    if (language === 'fa') return AG_GRID_LOCALE_IR;
-    return undefined;
+    return language === 'fa' ? AG_GRID_LOCALE_IR : undefined;
   }, [language]);
 
   const handleGridReady = useCallback((params: { api: AGGridApi }) => {
@@ -66,7 +65,24 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
 
   const containerStyle = useMemo(() => ({ height, width }), [height, width]);
   const defaultColDef = useMemo(() => ({ resizable: true, sortable: true, filter: true, ...gridOptions.defaultColDef }), [gridOptions.defaultColDef]);
-  const mergedGridOptions = useMemo(() => ({ animateRows: true, enableRtl: isRTL, enableCellTextSelection: true, ensureDomOrder: true, ...gridOptions, localeText, defaultColDef, onGridReady: handleGridReady }), [gridOptions, localeText, defaultColDef, handleGridReady, isRTL]);
+  const mergedGridOptions = useMemo(() => {
+    const options = { 
+      animateRows: true, 
+      enableRtl: isRTL, 
+      enableCellTextSelection: true, 
+      ensureDomOrder: true, 
+      defaultColDef, 
+      onGridReady: handleGridReady,
+      ...gridOptions
+    };
+    
+    // Apply localeText after spreading gridOptions to ensure it's not overwritten
+    if (localeText) {
+      options.localeText = localeText;
+    }
+    
+    return options;
+  }, [gridOptions, localeText, defaultColDef, handleGridReady, isRTL]);
 
   return (
     <div className={`ag-grid-wrapper ${containerClassName} ${isRTL ? 'ag-grid-rtl' : 'ag-grid-ltr'}`} style={containerStyle} data-id-ref={idRef ? `${idRef}-wrapper-container` : 'ag-grid-wrapper-container'}>
