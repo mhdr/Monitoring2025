@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useMemo } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import '../Sidebar.css';
 
@@ -17,17 +17,29 @@ interface MenuItem {
 const DetailSidebar: React.FC<DetailSidebarProps> = ({ isOpen, onToggle }) => {
   const { t, language } = useLanguage();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
-  const menuItems: MenuItem[] = [
-    { path: '/item-detail/trend-analysis', key: 'trendAnalysis', icon: 'bi-graph-up-arrow' },
-    { path: '/item-detail/data-table', key: 'dataTable', icon: 'bi-table' },
-    { path: '/item-detail/live-monitoring', key: 'liveMonitoring', icon: 'bi-activity' },
-    { path: '/item-detail/active-alarms', key: 'activeAlarmsDetail', icon: 'bi-exclamation-triangle-fill' },
-    { path: '/item-detail/alarm-log', key: 'alarmLogDetail', icon: 'bi-journal-text' },
-    { path: '/item-detail/alarm-criteria', key: 'alarmCriteria', icon: 'bi-funnel' },
-    { path: '/item-detail/audit-trail', key: 'auditTrailDetail', icon: 'bi-list-check' },
-    { path: '/item-detail/management', key: 'managementDetail', icon: 'bi-gear' },
-  ];
+  // Get itemId from URL query string
+  const itemId = searchParams.get('itemId');
+
+  // Build full path with query string for each menu item
+  const menuItemsWithQuery = useMemo(() => {
+    const menuItems: MenuItem[] = [
+      { path: '/item-detail/trend-analysis', key: 'trendAnalysis', icon: 'bi-graph-up-arrow' },
+      { path: '/item-detail/data-table', key: 'dataTable', icon: 'bi-table' },
+      { path: '/item-detail/live-monitoring', key: 'liveMonitoring', icon: 'bi-activity' },
+      { path: '/item-detail/active-alarms', key: 'activeAlarmsDetail', icon: 'bi-exclamation-triangle-fill' },
+      { path: '/item-detail/alarm-log', key: 'alarmLogDetail', icon: 'bi-journal-text' },
+      { path: '/item-detail/alarm-criteria', key: 'alarmCriteria', icon: 'bi-funnel' },
+      { path: '/item-detail/audit-trail', key: 'auditTrailDetail', icon: 'bi-list-check' },
+      { path: '/item-detail/management', key: 'managementDetail', icon: 'bi-gear' },
+    ];
+
+    return menuItems.map((item) => ({
+      ...item,
+      fullPath: itemId ? `${item.path}?itemId=${itemId}` : item.path,
+    }));
+  }, [itemId]);
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -71,10 +83,10 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ isOpen, onToggle }) => {
 
         <nav className="sidebar-nav" data-id-ref="detail-sidebar-nav">
           <ul className="nav flex-column" data-id-ref="detail-sidebar-nav-list">
-            {menuItems.map((item) => (
+            {menuItemsWithQuery.map((item) => (
               <li key={item.key} className="nav-item" data-id-ref={`detail-sidebar-nav-item-${item.key}`}>
                 <Link
-                  to={item.path}
+                  to={item.fullPath}
                   className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
                   onClick={() => {
                     // Close sidebar on mobile after navigation
