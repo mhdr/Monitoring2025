@@ -168,6 +168,8 @@ export type AGGridSelectionChangedEventSource = 'api' | string;
 
 // Grid Options
 export interface AGGridOptions {
+  // v33+ Theming API: theme object imported from ag-grid-community
+  theme?: unknown; // Theme object (themeQuartz, themeBalham, etc.) or 'legacy' string
   columnDefs?: AGGridColumnDef[];
   rowData?: AGGridRowData[];
   defaultColDef?: AGGridColumnDef;

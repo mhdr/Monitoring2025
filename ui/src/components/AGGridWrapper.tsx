@@ -20,6 +20,13 @@ import type {
 } from '../types/agGrid';
 import './AGGridWrapper.css';
 
+// AG Grid v33+ Theming API: Import theme objects
+// These are lazy-loaded when the grid initializes
+let themeQuartz: unknown | null = null;
+let themeBalham: unknown | null = null;
+let themeAlpine: unknown | null = null;
+let themeMaterial: unknown | null = null;
+
 /**
  * AG Grid Wrapper Component
  */
@@ -52,6 +59,49 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
 
   // Expose api via ref early (will update when api ref assigned)
   useImperativeHandle(ref, () => (gridApiRef.current ?? ({} as AGGridApi)), []);
+
+  /**
+   * Get theme object for v33+ Theming API
+   * Themes are imported from window.agGrid after library loads
+   */
+  const getThemeObject = useCallback((themeName: string): unknown => {
+    if (!window.agGrid) {
+      console.warn('[AGGrid] AG Grid not loaded yet, cannot get theme');
+      return null;
+    }
+
+    // Cache theme objects for reuse
+    const agGrid = window.agGrid as unknown as { [key: string]: unknown };
+    
+    switch (themeName) {
+      case 'quartz':
+        if (!themeQuartz && agGrid.themeQuartz) {
+          themeQuartz = agGrid.themeQuartz;
+        }
+        return themeQuartz;
+      case 'balham':
+        if (!themeBalham && agGrid.themeBalham) {
+          themeBalham = agGrid.themeBalham;
+        }
+        return themeBalham;
+      case 'alpine':
+        if (!themeAlpine && agGrid.themeAlpine) {
+          themeAlpine = agGrid.themeAlpine;
+        }
+        return themeAlpine;
+      case 'material':
+        if (!themeMaterial && agGrid.themeMaterial) {
+          themeMaterial = agGrid.themeMaterial;
+        }
+        return themeMaterial;
+      default:
+        console.warn(`[AGGrid] Unknown theme: ${themeName}, defaulting to quartz`);
+        if (!themeQuartz && agGrid.themeQuartz) {
+          themeQuartz = agGrid.themeQuartz;
+        }
+        return themeQuartz;
+    }
+  }, []);
 
   /**
    * Get localized text for AG Grid
@@ -194,9 +244,17 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
       }
 
       console.log('[AGGrid] Creating grid with initial data');
+      
+      // Get theme object for v33+ Theming API
+      const themeObject = getThemeObject(theme);
+      if (!themeObject) {
+        throw new Error(`Failed to load theme: ${theme}`);
+      }
+      
       // Prepare grid options
       // Use initial rowData captured on mount to avoid dependency issues
       const options: AGGridOptions = {
+        theme: themeObject, // v33+ Theming API: pass theme object, not CSS class
         columnDefs,
         rowData: initialRowDataRef.current,
         enableRtl: isRTL,
@@ -245,8 +303,7 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
       setIsLoading(false);
     }
     // Note: rowData is intentionally NOT in dependencies - we update it separately via setRowData
-    // Note: theme is intentionally NOT in dependencies - it's passed via gridOptions
-  }, [columnDefs, isRTL, getLocaleText, gridOptions, onGridReady]);
+  }, [columnDefs, theme, isRTL, getLocaleText, getThemeObject, gridOptions, onGridReady]);
 
   /**
    * Initialize grid when container ref is ready and grid not already initialized
@@ -300,16 +357,17 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
   }, [rowData, gridReady]);
 
   /**
-   * Reinitialize grid when language changes
-   * This is necessary because AG Grid doesn't support dynamically changing locale text
-   * Note: Theme changes are handled via gridOptions, not by reinitialization
+   * Reinitialize grid when language or theme changes
+   * This is necessary because:
+   * - AG Grid doesn't support dynamically changing locale text
+   * - Theme changes require passing a new theme object (v33+ Theming API)
    */
   useEffect(() => {
     if (gridReady) {
       initializeGrid();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language]);
+  }, [language, theme]);
 
   /**
    * Cleanup on unmount
@@ -363,6 +421,8 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
   // Expose api via ref for parent components
 
   // Render AG Grid
+  // Note: v33+ Theming API doesn't require ag-theme-* CSS classes
+  // The theme is passed via the theme grid option
   return (
     <div
       className={`ag-grid-wrapper ${containerClassName}`}
@@ -371,7 +431,7 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
     >
       <div
         ref={gridContainerRef}
-        className={`ag-theme-${theme} ${className} ${isRTL ? 'ag-grid-rtl' : 'ag-grid-ltr'}`}
+        className={`ag-grid-container ${className} ${isRTL ? 'ag-grid-rtl' : 'ag-grid-ltr'}`}
         style={{ height: '100%', width: '100%' }}
         data-id-ref={idRef ? `${idRef}-${theme}-container` : `ag-grid-${theme}-container`}
       />
