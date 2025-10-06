@@ -203,13 +203,11 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
     if (!gridContainerRef.current) return;
 
     try {
-      console.log('[AGGrid] Starting initialization...');
       // Note: isLoading is already set to true by the caller
       setError(null);
 
       // Destroy existing grid instance if it exists
       if (gridInstanceRef.current && gridApiRef.current) {
-        console.log('[AGGrid] Destroying existing grid instance');
         try {
           gridApiRef.current.destroy();
         } catch (e) {
@@ -226,11 +224,8 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
         gridContainerRef.current.innerHTML = '';
       }
 
-      console.log('[AGGrid] Loading AG Grid library...');
       // Load AG Grid library (theme is passed via gridOptions, not loaded as CSS)
       const agGrid = await loadAGGrid();
-      
-      console.log('[AGGrid] Library loaded successfully');
 
       if (!agGrid.createGrid) {
         throw new Error('AG Grid createGrid function not found');
@@ -242,8 +237,6 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
         setIsLoading(false);
         return;
       }
-
-      console.log('[AGGrid] Creating grid with initial data');
       
       // Get theme object for v33+ Theming API
       const themeObject = getThemeObject(theme);
@@ -271,14 +264,12 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
         ensureDomOrder: true,
         ...gridOptions,
         onGridReady: (params) => {
-          console.log('[AGGrid] onGridReady callback fired!');
           gridApiRef.current = params.api;
           columnApiRef.current = params.columnApi;
           setGridReady(true);
           
           // Grid is ready, stop showing loading spinner
           setIsLoading(false);
-          console.log('[AGGrid] Grid ready, loading state set to false');
           
           // Call user's onGridReady if provided
           if (onGridReady) {
@@ -295,8 +286,6 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
       // Create the grid using modern createGrid API
       const gridApi = agGrid.createGrid(gridContainerRef.current, options);
       gridInstanceRef.current = gridApi;
-
-      console.log('[AGGrid] Grid instance created, waiting for onGridReady...');
     } catch (err) {
       console.error('[AGGrid] Failed to initialize AG Grid:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -311,17 +300,14 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
   useEffect(() => {
     // Check if grid is already initialized
     if (gridReady) {
-      console.log('[AGGrid] Grid already initialized, skipping');
       return;
     }
     
     if (isLoading) {
-      console.log('[AGGrid] Grid is initializing, skipping');
       return;
     }
 
     if (gridContainerRef.current) {
-      console.log('[AGGrid] Container ref is ready, starting initialization');
       // Set loading BEFORE calling initializeGrid to prevent double initialization
       setIsLoading(true);
       initializeGrid();
@@ -330,7 +316,6 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
       // Schedule a retry
       const timer = setTimeout(() => {
         if (gridContainerRef.current && !gridReady && !isLoading) {
-          console.log('[AGGrid] Retrying grid initialization');
           setIsLoading(true);
           initializeGrid();
         }
@@ -344,13 +329,7 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
    * Update row data when it changes
    */
   useEffect(() => {
-    console.log('[AGGrid] Row data effect triggered:', { 
-      gridReady, 
-      hasGridApi: !!gridApiRef.current, 
-      rowDataLength: rowData?.length || 0 
-    });
     if (gridReady && gridApiRef.current && rowData) {
-      console.log('[AGGrid] Updating grid with', rowData.length, 'rows');
       // Use modern AG Grid API method
       gridApiRef.current.setGridOption('rowData', rowData);
     }

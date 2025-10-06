@@ -528,15 +528,6 @@ const DataTablePage: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {(() => {
-                    console.log('[DataTablePage] Rendering AGGridWrapper:', {
-                      loading,
-                      historyDataLength: historyData.length,
-                      rowDataLength: rowData.length,
-                      columnDefsLength: columnDefs.length
-                    });
-                    return null;
-                  })()}
                   <div className="w-100 h-100" style={{ minHeight: isMobile ? '300px' : '400px' }}>
                     <AGGridWrapper
                       ref={gridRef as React.Ref<AGGridApi>}
