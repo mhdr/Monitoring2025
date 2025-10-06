@@ -1,82 +1,65 @@
 # Monitoring2025 UI
-
 React + TypeScript + Redux + Bootstrap, Bilingual (fa/en), RTL, .NET API
 
 ## i18n
-⚠️ NEVER hardcode text - use i18next
-- Languages: Persian (fa) primary, English (en)
+⚠️ NEVER hardcode text
+- Hook: `useTranslation` (`src/hooks/useTranslation.ts`)
 - Files: `public/locales/{fa,en}/translation.json`
-- Keys: Hierarchical (`common.buttons.save`, `errors.validation.required`)
-- Hook: `useTranslation` from `src/hooks/useTranslation.ts`
-- RTL: `bootstrap-rtl.css` for Persian
+- Keys: Hierarchical (`common.buttons.save`)
+- RTL: `bootstrap-rtl.css`
 
 ✅ `const { t } = useTranslation(); <button>{t('common.save')}</button>`
 ❌ `<button>Save</button>`
 
-## Tech Stack
-- React + TypeScript (functional + hooks), Redux Toolkit
-- Bootstrap (responsive grid: xs/sm/md/lg/xl/xxl)
-- Lazy load: `React.lazy()` + `<Suspense fallback={<LoadingScreen />}>`
-- Types: Define in `src/types/`, no `any`
+## Stack
+- React + TypeScript (functional, hooks), Redux Toolkit
+- Bootstrap (xs/sm/md/lg/xl/xxl)
+- Lazy: `React.lazy()` + `<Suspense fallback={<LoadingScreen />}>`
+- Types: `src/types/`, no `any`
 - Styles: `src/styles/{bootstrap-ltr,bootstrap-rtl,theme}.css`
 
 ## AG Grid
-⚠️ ENTERPRISE version - use ALL enterprise features
-- Packages: `ag-grid-react@34.2.0`, `ag-grid-enterprise@34.2.0`, `@ag-grid-community/locale`
-- Component: `AGGridWrapper` from `src/components/AGGridWrapper.tsx`
-- Hook: `useAGGrid` from `src/hooks/useAGGrid.ts`
-- Types: `src/types/agGrid.ts` (re-exports official types)
-- Themes: alpine, balham, material, quartz (default: quartz)
+⚠️ ENTERPRISE v34.2.0 - ALL modules must be registered
+- Component: `AGGridWrapper` (`src/components/AGGridWrapper.tsx`)
+- Hook: `useAGGrid` (`src/hooks/useAGGrid.ts`)
+- Types: `src/types/agGrid.ts`
+- Themes: alpine, balham, material, quartz (default)
 - License: `DownloadDevTools_COM_NDEwMjM0NTgwMDAwMA==59158b5225400879a12a96634544f5b6`
+- Locale: `AG_GRID_LOCALE_IR` (`@ag-grid-community/locale`)
+- RTL: `enableRtl: true` for Persian
 
-🔧 **Official React Integration**
-- Uses `AgGridReact` component from `ag-grid-react`
-- Module registration at startup via `ModuleRegistry.registerModules()`
-- Persian locale: `AG_GRID_LOCALE_IR` from `@ag-grid-community/locale`
-- RTL: Auto-enabled for Persian via `enableRtl` prop
+⚠️ CRITICAL: Register `LocaleModule`, `RowSelectionModule`, `ColumnApiModule` in `ModuleRegistry.registerModules()`
 
-✅ `import { AGGridWrapper, useAGGrid } from '../agGrid'; <AGGridWrapper columnDefs={cols} rowData={data} theme="quartz" />`
-❌ `// Direct createGrid() or vanilla JS usage`
+✅ `<AGGridWrapper columnDefs={cols} rowData={data} theme="quartz" />`
+❌ `createGrid()` // vanilla JS
 
-**Enterprise Features:**
-- Row Grouping: `columnDef.rowGroup`, `groupDefaultExpanded`
-- Aggregation: `aggFunc: 'sum'|'avg'|'min'|'max'|'count'`
-- Pivoting: `pivot: true`, `pivotMode`
-- Excel Export: `gridApi.exportDataAsExcel()`
-- Master-Detail: `masterDetail: true`, `detailCellRenderer`
-- Advanced Filtering: Set filters, number filters, text filters
-- Server-Side: `rowModelType: 'serverSide'`
-- Tool Panels: `sideBar: 'columns'|'filters'`
-- Clipboard: Copy/paste with headers
+**Enterprise:** Row Grouping, Aggregation, Pivoting, Excel Export, Master-Detail, Advanced Filtering, Server-Side, Tool Panels, Clipboard
 
 ## Theme
-⚠️ NEVER hardcode colors/gradients/shadows - use CSS vars
+⚠️ NEVER hardcode colors/gradients/shadows
 - Files: `src/styles/theme.css`, `src/types/themes.ts`, `src/utils/themeUtils.ts`, `src/hooks/useTheme.ts`, `src/store/slices/themeSlice.ts`
 - Presets: Default, Green, Purple, Orange, Red, Teal, Indigo
-- Variables: `--primary-{dark,medium,light,lighter,darker}`, `--accent-{primary,hover,active}`, `--text-{primary,secondary}-{light,dark}`, `--success/warning/error/info`, `--bg-primary-{light,dark}`, `--border-{light,medium,dark}`, `--shadow-{xs,sm,md,lg,xl,2xl}`, `--gradient-{primary,sidebar,navbar,button,button-hover,button-disabled}`
-- Add color: `theme.css` → `themes.ts` → `themeUtils.ts`
+- Vars: `--primary-{dark,medium,light,lighter,darker}`, `--accent-{primary,hover,active}`, `--text-{primary,secondary}-{light,dark}`, `--success/warning/error/info`, `--bg-primary-{light,dark}`, `--border-{light,medium,dark}`, `--shadow-{xs,sm,md,lg,xl,2xl}`, `--gradient-{primary,sidebar,navbar,button,button-hover,button-disabled}`
 
-✅ `.btn { background: var(--primary-dark); box-shadow: var(--shadow-md); }`
-❌ `.btn { background: #2c3e50; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }`
+✅ `background: var(--primary-dark); box-shadow: var(--shadow-md);`
+❌ `background: #2c3e50;` // hardcoded
 
 ## Charts
-- Library: ECharts 5.6.0 + echarts-for-react 3.0.2
+- ECharts 5.6.0 + echarts-for-react 3.0.2
 - Component: `ReactECharts`, Type: `EChartsOption`
-- i18n: Translate titles/axes/legends/tooltips
-- RTL: Text direction, legend position, tooltip alignment
-- Performance: Sampling, progressive rendering, lazy load
+- i18n: Translate all text (titles/axes/legends/tooltips)
+- RTL: Direction, legend position, tooltip alignment
 
 ```typescript
 import ReactECharts from 'echarts-for-react';
-import type { EChartsOption } from 'echarts';
 const { t } = useTranslation();
-const option: EChartsOption = { title: { text: t('charts.title') }, xAxis: { type: 'category', data: [...] }, series: [{ data: [...], type: 'line' }] };
+const option: EChartsOption = { title: { text: t('charts.title') }, xAxis: { type: 'category' }, series: [{ type: 'line' }] };
 <ReactECharts option={option} data-id-ref="chart-name" style={{ height: '400px' }} />
 ```
 
 ## Responsive
-- Bootstrap grid: xs/sm/md/lg/xl/xxl
-- Test viewports: 1920x1080, 1366x768, 768x1024, 375x667, 414x896
+- Bootstrap: xs/sm/md/lg/xl/xxl
+- Test: 1920x1080, 1366x768, 768x1024, 375x667, 414x896
 
 ## API
 ⚠️ MANDATORY: Use DTO interfaces for ALL requests/responses
@@ -101,22 +84,21 @@ const option: EChartsOption = { title: { text: t('charts.title') }, xAxis: { typ
 ⚠️ Never manually refresh - `baseQueryWithAuth` handles it
 
 ## Development
-**i18n:** Both fa + en required, RTL for Persian, test both modes
+**i18n:** Both fa + en required, RTL tested
 
 **Styling:** Bootstrap first, component `.css` files, theme vars only
 
-**Code:** TypeScript, no `any`, ⚠️ DTOs mandatory for API requests/responses
+**Code:** TypeScript, no `any`, ⚠️ DTOs mandatory
 
 **Element IDs (MANDATORY):** `data-id-ref="component-element-purpose"` (kebab-case)
 ✅ `<button data-id-ref="login-form-submit-button">`
 
-**Testing:** Responsive (desktop/mobile), RTL/LTR, auth states, both languages
+**Testing:** Responsive, RTL/LTR, auth states, both languages
 
 **Ports:** Frontend 5173 (Vite), Backend 7136 (HTTPS)
 ⚠️ NEVER suggest alternate port - CORS restricted to 5173
 
-**DevTools MCP:** UI/layout, performance, console, network, RTL, responsive
-- Tools: `navigate_page`, `take_screenshot`, `take_snapshot`, `evaluate_script`, `list_console_messages`, `list_network_requests`, `resize_page`, `performance_{start,stop}_trace`
+**DevTools MCP:** `navigate_page`, `take_screenshot`, `take_snapshot`, `evaluate_script`, `list_console_messages`, `list_network_requests`, `resize_page`, `performance_{start,stop}_trace`
 
 ## Structure
 ```
@@ -138,11 +120,11 @@ public/locales/   # fa/, en/
 - [ ] TypeScript types (props, functions, API)
 - [ ] DTOs for all API requests/responses
 - [ ] Translation keys (fa + en), no hardcoded text
-- [ ] RTL tested (DevTools MCP)
-- [ ] Bootstrap components, responsive tested (DevTools MCP)
+- [ ] RTL tested
+- [ ] Bootstrap components, responsive tested
 - [ ] Redux state, existing patterns
-- [ ] HTTPS API + error handling (DevTools MCP)
+- [ ] HTTPS API + error handling
 - [ ] Auth states tested
 - [ ] Theme vars only, all themes verified
 - [ ] Charts: i18n, responsive, RTL
-- [ ] DevTools MCP: UI, console, performance
+- [ ] AG Grid: LocaleModule registered
