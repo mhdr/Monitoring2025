@@ -1,0 +1,332 @@
+/* Profile Page Styles */
+
+.profile-page {
+  padding: 2rem 1rem;
+  min-height: calc(100vh - 200px);
+}
+
+.profile-page .page-header {
+  margin-bottom: 2rem;
+}
+
+.profile-page .page-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary-dark);
+  margin-bottom: 0.5rem;
+}
+
+.profile-page .page-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary-dark);
+  margin-bottom: 0;
+}
+
+.profile-card {
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.3s ease;
+  background: var(--bg-primary-light);
+}
+
+.profile-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.profile-card .card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary-dark);
+  display: flex;
+  align-items: center;
+}
+
+.profile-card .card-title i {
+  font-size: 1.5rem;
+  color: var(--primary-medium);
+}
+
+/* User Information Styles */
+.user-info-content .info-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.user-info-content .info-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.user-info-content .info-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary-dark);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-info-content .info-value {
+  font-size: 1rem;
+  color: var(--text-primary-dark);
+  font-weight: 500;
+}
+
+.user-info-content .roles-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.user-info-content .roles-badges .badge {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  background: var(--gradient-button) !important;
+}
+
+/* Change Password Form Styles */
+.profile-page .form-label {
+  font-weight: 600;
+  color: var(--text-primary-dark);
+  margin-bottom: 0.5rem;
+}
+
+.profile-page .form-control {
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-page .form-control:focus {
+  border-color: var(--primary-medium);
+  box-shadow: 0 0 0 0.2rem rgba(var(--primary-medium-rgb), 0.25);
+}
+
+.profile-page .form-control.is-invalid {
+  border-color: var(--error);
+}
+
+.profile-page .form-control.is-invalid:focus {
+  box-shadow: 0 0 0 0.2rem rgba(var(--error-rgb), 0.25);
+}
+
+.profile-page .invalid-feedback {
+  font-size: 0.875rem;
+  color: var(--error);
+  margin-top: 0.25rem;
+}
+
+/* Button Styles */
+.profile-page .btn {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.profile-page .btn-primary {
+  background: var(--gradient-button);
+  color: var(--text-primary-light);
+}
+
+.profile-page .btn-primary:hover:not(:disabled) {
+  background: var(--gradient-button-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.profile-page .btn-primary:disabled {
+  background: var(--gradient-button-disabled);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.profile-page .btn-secondary {
+  background-color: var(--bg-primary-dark);
+  color: var(--text-primary-light);
+  border: 1px solid var(--border-medium);
+}
+
+.profile-page .btn-secondary:hover:not(:disabled) {
+  background-color: rgba(var(--primary-dark-rgb), 0.8);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Alert Styles */
+.profile-page .alert {
+  border-radius: 8px;
+  border: none;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.profile-page .alert-success {
+  background-color: rgba(var(--success-rgb), 0.1);
+  color: var(--success);
+  border-left: 4px solid var(--success);
+}
+
+.profile-page .alert-danger {
+  background-color: rgba(var(--error-rgb), 0.1);
+  color: var(--error);
+  border-left: 4px solid var(--error);
+}
+
+.profile-page .alert .btn-close {
+  filter: none;
+  opacity: 0.5;
+}
+
+.profile-page .alert .btn-close:hover {
+  opacity: 1;
+}
+
+/* Spinner Styles */
+.profile-page .spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.15em;
+}
+
+/* Responsive Styles */
+@media (max-width: 991px) {
+  .profile-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .profile-page .page-title {
+    font-size: 1.75rem;
+  }
+
+  .profile-page .page-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .profile-card .card-title {
+    font-size: 1.125rem;
+  }
+
+  .profile-card .card-title i {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .profile-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .profile-page .page-title {
+    font-size: 1.5rem;
+  }
+
+  .profile-page .page-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .profile-card {
+    border-radius: 8px;
+  }
+
+  .profile-card .card-title {
+    font-size: 1rem;
+  }
+
+  .profile-page .btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .user-info-content .info-value {
+    font-size: 0.95rem;
+  }
+
+  .user-info-content .roles-badges .badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .profile-page .page-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .profile-page .page-title {
+    font-size: 1.35rem;
+  }
+
+  .profile-page .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile-page .d-flex.gap-2 {
+    flex-direction: column;
+    gap: 0 !important;
+  }
+
+  .user-info-content .info-item {
+    padding: 0.5rem 0;
+  }
+}
+
+/* RTL Adjustments */
+[dir="rtl"] .profile-page .card-title i {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+[dir="rtl"] .profile-page .roles-badges {
+  direction: rtl;
+}
+
+/* Dark Mode Support (if needed in the future) */
+@media (prefers-color-scheme: dark) {
+  .profile-page .page-title {
+    color: var(--text-primary-light);
+  }
+
+  .profile-page .page-subtitle {
+    color: var(--text-secondary-light);
+  }
+
+  .profile-card {
+    background: var(--bg-primary-dark);
+  }
+
+  .profile-card .card-title {
+    color: var(--text-primary-light);
+  }
+
+  .user-info-content .info-label {
+    color: var(--text-secondary-light);
+  }
+
+  .user-info-content .info-value {
+    color: var(--text-primary-light);
+  }
+
+  .profile-page .form-label {
+    color: var(--text-primary-light);
+  }
+
+  .profile-page .form-control {
+    background-color: rgba(var(--bg-primary-dark-rgb), 0.5);
+    color: var(--text-primary-light);
+    border-color: var(--border-dark);
+  }
+
+  .profile-page .form-control:focus {
+    background-color: rgba(var(--bg-primary-dark-rgb), 0.7);
+  }
+}

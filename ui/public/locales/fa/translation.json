@@ -155,5 +155,39 @@
       "persianDescription": "فارسی (پیش‌فرض)",
       "englishDescription": "انگلیسی"
     }
+  },
+  "profilePage": {
+    "title": "پروفایل",
+    "subtitle": "مدیریت اطلاعات حساب کاربری و امنیت",
+    "userInfo": {
+      "title": "اطلاعات کاربری",
+      "username": "نام کاربری",
+      "firstName": "نام",
+      "lastName": "نام خانوادگی",
+      "roles": "نقش‌ها"
+    },
+    "changePassword": {
+      "title": "تغییر رمز عبور",
+      "subtitle": "رمز عبور حساب کاربری خود را به‌روز کنید",
+      "currentPassword": "رمز عبور فعلی",
+      "newPassword": "رمز عبور جدید",
+      "confirmNewPassword": "تأیید رمز عبور جدید",
+      "changePasswordButton": "تغییر رمز عبور",
+      "cancelButton": "انصراف"
+    },
+    "validation": {
+      "currentPasswordRequired": "رمز عبور فعلی الزامی است",
+      "newPasswordRequired": "رمز عبور جدید الزامی است",
+      "confirmPasswordRequired": "تأیید رمز عبور الزامی است",
+      "passwordsDoNotMatch": "رمزهای عبور مطابقت ندارند",
+      "passwordMinLength": "رمز عبور باید حداقل ۸ کاراکتر باشد",
+      "passwordComplexity": "رمز عبور باید شامل حروف بزرگ، کوچک، عدد و کاراکتر خاص باشد"
+    },
+    "messages": {
+      "changePasswordSuccess": "رمز عبور با موفقیت تغییر یافت",
+      "changePasswordError": "خطا در تغییر رمز عبور",
+      "currentPasswordIncorrect": "رمز عبور فعلی نادرست است",
+      "networkError": "خطای شبکه. لطفاً دوباره تلاش کنید."
+    }
   }
 }

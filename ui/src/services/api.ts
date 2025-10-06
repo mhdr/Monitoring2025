@@ -153,6 +153,21 @@ export const authApi = {
       throw transformApiError(error);
     }
   },
+
+  /**
+   * Change user password
+   */
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ isSuccessful: boolean }> => {
+    try {
+      const response = await axiosInstance.post<{ isSuccessful: boolean }>(
+        '/api/Auth/change-password',
+        { currentPassword, newPassword }
+      );
+      return response.data;
+    } catch (error: unknown) {
+      throw transformApiError(error);
+    }
+  },
 };
 
 // Monitoring API

@@ -155,5 +155,39 @@
       "persianDescription": "Persian (Default)",
       "englishDescription": "English"
     }
+  },
+  "profilePage": {
+    "title": "Profile",
+    "subtitle": "Manage your account information and security",
+    "userInfo": {
+      "title": "User Information",
+      "username": "Username",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "roles": "Roles"
+    },
+    "changePassword": {
+      "title": "Change Password",
+      "subtitle": "Update your account password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password",
+      "changePasswordButton": "Change Password",
+      "cancelButton": "Cancel"
+    },
+    "validation": {
+      "currentPasswordRequired": "Current password is required",
+      "newPasswordRequired": "New password is required",
+      "confirmPasswordRequired": "Confirm password is required",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordMinLength": "Password must be at least 8 characters",
+      "passwordComplexity": "Password must contain uppercase, lowercase, number and special character"
+    },
+    "messages": {
+      "changePasswordSuccess": "Password changed successfully",
+      "changePasswordError": "Failed to change password",
+      "currentPasswordIncorrect": "Current password is incorrect",
+      "networkError": "Network error. Please try again."
+    }
   }
 }

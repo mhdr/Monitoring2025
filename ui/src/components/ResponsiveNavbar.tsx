@@ -95,7 +95,7 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
               align="end"
               data-id-ref="responsive-navbar-user-dropdown"
             >
-              <NavDropdown.Item href="#profile" className="py-2" data-id-ref="responsive-navbar-user-profile-link">
+              <NavDropdown.Item href="/dashboard/profile" className="py-2" data-id-ref="responsive-navbar-user-profile-link">
                 <i className="fas fa-user me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-profile-icon"></i>
                 {t('profile')}
               </NavDropdown.Item>

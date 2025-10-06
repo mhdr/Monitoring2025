@@ -31,6 +31,7 @@ const DisabledAlarmsPage = lazy(() => import('./components/DisabledAlarmsPage'))
 const SchedulerPage = lazy(() => import('./components/SchedulerPage'));
 const ManagementPage = lazy(() => import('./components/ManagementPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
+const ProfilePage = lazy(() => import('./components/ProfilePage'));
 
 // Lazy load detail page components
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
@@ -132,6 +133,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen skeleton={<GenericPageSkeleton />} variant="skeleton" />}>
                 <SettingsPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="profile" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen skeleton={<GenericPageSkeleton />} variant="skeleton" />}>
+                <ProfilePage />
               </Suspense>
             </LazyErrorBoundary>
           } />
