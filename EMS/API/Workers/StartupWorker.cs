@@ -1,94 +1,159 @@
+using System;
+using System.Collections.Generic;
 using DB.User.Data;
 using DB.User.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace API.Workers;
 
-public class StartupWorker : BackgroundService, IDisposable
+/// <summary>
+/// Background worker that runs on startup to ensure initial roles, admin user, and permissions exist.
+/// </summary>
+public class StartupWorker : BackgroundService
 {
-    private CancellationTokenSource _cts = new();
     private readonly IServiceProvider _serviceProvider;
-    private static readonly string[] Roles = { "Admin", "Manager","BMS","EMS" };
+    private readonly ILogger<StartupWorker> _logger;
+    private static readonly string[] Roles = { "Admin", "Manager", "BMS", "EMS" };
 
-    public StartupWorker(IServiceProvider serviceProvider)
+    /// <summary>
+    /// Creates a new instance of <see cref="StartupWorker"/>.
+    /// </summary>
+    /// <param name="serviceProvider">Application service provider used to create scoped services.</param>
+    /// <param name="logger">Logger instance for structured logging.</param>
+    public StartupWorker(IServiceProvider serviceProvider, ILogger<StartupWorker> logger)
     {
-        _serviceProvider = serviceProvider;
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Executes startup initialization tasks. This method is called by the <see cref="BackgroundService"/>
+    /// infrastructure and should respect the provided <paramref name="stoppingToken"/>.
+    /// </summary>
+    /// <param name="stoppingToken">Cancellation token provided by the host.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await CreateRoles();
-        await CreateAdmin();
-        await ApplyAdminPermissions();
+        _logger.LogInformation("StartupWorker starting initialization tasks");
+
+        try
+        {
+            await CreateRoles(stoppingToken);
+            await CreateAdmin(stoppingToken);
+            await ApplyAdminPermissions(stoppingToken);
+            _logger.LogInformation("StartupWorker finished initialization tasks");
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("StartupWorker was canceled during initialization");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while running startup initialization");
+        }
     }
 
-    private async Task ApplyAdminPermissions()
+    private async Task ApplyAdminPermissions(CancellationToken cancellationToken)
     {
         using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
         var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var user = await userManager.FindByNameAsync("admin");
 
-        if (user != null)
+        if (user == null)
         {
-            var groups = await context.Groups.ToListAsync();
-            List<GroupPermission> groupPermissions = new();
-            foreach (var group in groups)
+            _logger.LogInformation("No admin user found; skipping permission application.");
+            return;
+        }
+
+        _logger.LogInformation("Applying permissions for admin user {UserId}", user.Id);
+
+        var groups = await context.Groups.ToListAsync(cancellationToken);
+        List<GroupPermission> groupPermissions = new();
+        foreach (var group in groups)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var match = await context.GroupPermissions
+                .FirstOrDefaultAsync(x => x.UserId == new Guid(user.Id)
+                                          && x.GroupId == group.Id, cancellationToken);
+
+            if (match == null)
             {
-                var match = await context.GroupPermissions
-                    .FirstOrDefaultAsync(x => x.UserId == new Guid(user.Id)
-                                              && x.GroupId == group.Id);
-
-                if (match == null)
+                groupPermissions.Add(new GroupPermission()
                 {
-                    groupPermissions.Add(new GroupPermission()
-                    {
-                        UserId = new Guid(user.Id),
-                        GroupId = group.Id,
-                    });
-                }
+                    UserId = new Guid(user.Id),
+                    GroupId = group.Id,
+                });
             }
+        }
 
-            var items = await Core.Points.ListPoints();
-            List<ItemPermission> itemPermissions = new();
+        var items = await Core.Points.ListPoints();
+        List<ItemPermission> itemPermissions = new();
 
-            foreach (var item in items)
+        foreach (var item in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var match = await context.ItemPermissions.FirstOrDefaultAsync(x => x.UserId == new Guid(user.Id)
+                && x.ItemId == item.Id, cancellationToken);
+
+            if (match == null)
             {
-                var match = await context.ItemPermissions.FirstOrDefaultAsync(x => x.UserId == new Guid(user.Id)
-                    && x.ItemId == item.Id);
-
-                if (match == null)
+                itemPermissions.Add(new ItemPermission()
                 {
-                    itemPermissions.Add(new ItemPermission()
-                    {
-                        UserId = new Guid(user.Id),
-                        ItemId = item.Id,
-                    });
-                }
+                    UserId = new Guid(user.Id),
+                    ItemId = item.Id,
+                });
             }
+        }
 
-            await context.GroupPermissions.AddRangeAsync(groupPermissions);
-            await context.ItemPermissions.AddRangeAsync(itemPermissions);
-            await context.SaveChangesAsync();
-            await context.DisposeAsync();
+        if (groupPermissions.Count > 0)
+        {
+            await context.GroupPermissions.AddRangeAsync(groupPermissions, cancellationToken);
+        }
+
+        if (itemPermissions.Count > 0)
+        {
+            await context.ItemPermissions.AddRangeAsync(itemPermissions, cancellationToken);
+        }
+
+        if (groupPermissions.Count > 0 || itemPermissions.Count > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Added {GroupCount} group permissions and {ItemCount} item permissions for admin", groupPermissions.Count, itemPermissions.Count);
+        }
+        else
+        {
+            _logger.LogInformation("No new permissions required for admin user {UserId}", user.Id);
         }
     }
 
-    private async Task CreateRoles()
+    private async Task CreateRoles(CancellationToken cancellationToken)
     {
         using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
         var roleManager = serviceScope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         foreach (var role in Roles)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (!await roleManager.RoleExistsAsync(role))
             {
-                await roleManager.CreateAsync(new IdentityRole(role));
+                var result = await roleManager.CreateAsync(new IdentityRole(role));
+                if (!result.Succeeded)
+                {
+                    _logger.LogWarning("Failed to create role {Role}: {Errors}", role, string.Join(';', result.Errors.Select(e => e.Description)));
+                }
+                else
+                {
+                    _logger.LogInformation("Created role {Role}", role);
+                }
             }
         }
     }
 
-    private async Task CreateAdmin()
+    private async Task CreateAdmin(CancellationToken cancellationToken)
     {
         using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
         var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -96,15 +161,27 @@ public class StartupWorker : BackgroundService, IDisposable
 
         if (user == null)
         {
-            var identity = new ApplicationUser("admin") { FirstName = "Admin", LastName = "Admin",FirstNameFa = "ادمین",LastNameFa = "ادمین"};
+            var identity = new ApplicationUser("admin") { FirstName = "Admin", LastName = "Admin", FirstNameFa = "ادمین", LastNameFa = "ادمین" };
+            // NOTE: In a production scenario choose a strong password or provision via secret management.
             var password = "12345";
-            await userManager.CreateAsync(identity, password);
-            await userManager.AddToRoleAsync(identity, "Admin");
+            var createResult = await userManager.CreateAsync(identity, password);
+            if (!createResult.Succeeded)
+            {
+                _logger.LogError("Failed to create admin user: {Errors}", string.Join(';', createResult.Errors.Select(e => e.Description)));
+                return;
+            }
+
+            var addRoleResult = await userManager.AddToRoleAsync(identity, "Admin");
+            if (!addRoleResult.Succeeded)
+            {
+                _logger.LogWarning("Failed to add admin user to Admin role: {Errors}", string.Join(';', addRoleResult.Errors.Select(e => e.Description)));
+            }
+            else
+            {
+                _logger.LogInformation("Created admin user and assigned Admin role");
+            }
         }
     }
 
-    public void Dispose()
-    {
-        _cts?.Dispose();
-    }
+    // BackgroundService already implements Dispose; no additional disposal required here.
 }
