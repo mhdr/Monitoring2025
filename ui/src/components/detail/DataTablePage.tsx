@@ -201,14 +201,6 @@ const DataTablePage: React.FC = () => {
     
     return [
       {
-        field: 'timeFormatted',
-        headerName: t('time'),
-        flex: 2,
-        sortable: true,
-        filter: 'agTextColumnFilter',
-        resizable: true,
-      },
-      {
         field: 'value',
         headerName: itemUnit ? `${t('value')} (${itemUnit})` : t('value'),
         flex: 1,
@@ -236,6 +228,14 @@ const DataTablePage: React.FC = () => {
           
           return formatted;
         },
+      },
+      {
+        field: 'timeFormatted',
+        headerName: t('time'),
+        flex: 2,
+        sortable: true,
+        filter: 'agTextColumnFilter',
+        resizable: true,
       },
     ];
   }, [language, t, itemUnit]);
@@ -557,7 +557,7 @@ const DataTablePage: React.FC = () => {
                         enableRangeSelection: true,
                         rowHeight: 50,
                         headerHeight: 50,
-                        sideBar: isMobile ? false : 'columns',
+                        sideBar: false,
                         statusBar: {
                           statusPanels: [
                             { statusPanel: 'agTotalRowCountComponent', align: 'left' },
