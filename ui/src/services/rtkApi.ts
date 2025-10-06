@@ -224,6 +224,7 @@ export const api = createApi({
     /**
      * Get current values for monitoring items
      * No caching - always fetch fresh data
+     * Note: Use pollingInterval option in components to enable auto-refresh
      */
     getValues: builder.query<ValuesResponseDto, ValuesRequestDto | void>({
       query: (params = { itemIds: null }) => ({

@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
-import { fetchGroups, fetchItems, setCurrentFolderId, fetchValues } from '../store/slices/monitoringSlice';
+import { fetchGroups, fetchItems, setCurrentFolderId } from '../store/slices/monitoringSlice';
+import { useGetValuesQuery } from '../services/rtkApi';
 import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
 import ItemCard from './ItemCard';
@@ -26,8 +27,6 @@ const MonitoringPage: React.FC = () => {
     items: allItems,
     itemsLoading: isLoadingItems,
     itemsError,
-    values: itemValues,
-    valuesLoading: isRefreshing,
   } = useAppSelector((state) => state.monitoring);
 
   // Fetch groups and items data on mount
@@ -89,9 +88,39 @@ const MonitoringPage: React.FC = () => {
     return allItems.filter((item) => item.groupId === currentFolderId);
   }, [allItems, currentFolderId]);
 
+  // Get item IDs for current folder (for values polling)
+  const currentFolderItemIds = useMemo(() => {
+    return currentFolderItems.map((item) => item.id);
+  }, [currentFolderItems]);
+
+  // RTK Query: Poll values every 5 seconds for items in current folder
+  // Skip polling if there are no items in the current folder
+  const { 
+    data: valuesResponse, 
+    isLoading: isRefreshing,
+    isFetching: isValuesFetching 
+  } = useGetValuesQuery(
+    { itemIds: currentFolderItemIds.length > 0 ? currentFolderItemIds : null },
+    {
+      // Poll every 5 seconds (5000ms)
+      pollingInterval: 5000,
+      // Skip query if there are no items in current folder
+      skip: currentFolderItemIds.length === 0,
+      // Refetch on focus to ensure fresh data when user returns
+      refetchOnFocus: true,
+      // Refetch when component mounts
+      refetchOnMountOrArgChange: true,
+    }
+  );
+
+  // Extract values from RTK Query response
+  const itemValues = useMemo(() => {
+    return valuesResponse?.values || [];
+  }, [valuesResponse]);
+
   // Manage refresh indicator visibility with minimum display time
   useEffect(() => {
-    if (isRefreshing) {
+    if (isRefreshing || isValuesFetching) {
       // Show indicator immediately when loading starts
       setShowRefreshIndicator(true);
       
@@ -114,31 +143,7 @@ const MonitoringPage: React.FC = () => {
         clearTimeout(loadingTimeoutRef.current);
       }
     };
-  }, [isRefreshing, showRefreshIndicator]);
-
-  // Poll values every 5 seconds for items in current folder
-  useEffect(() => {
-    // Only poll if we're in a folder with items
-    if (!currentFolderItems || currentFolderItems.length === 0) {
-      return;
-    }
-
-    // Extract item IDs from current folder items
-    const itemIds = currentFolderItems.map((item) => item.id);
-
-    // Fetch values immediately on mount or folder change
-    dispatch(fetchValues({ itemIds }));
-
-    // Set up interval to fetch values every 5 seconds
-    const intervalId = setInterval(() => {
-      dispatch(fetchValues({ itemIds }));
-    }, 5000);
-
-    // Cleanup: clear interval when component unmounts or folder changes
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [currentFolderItems, dispatch]);
+  }, [isRefreshing, isValuesFetching, showRefreshIndicator]);
 
   // Helper function to get display name based on language
   const getDisplayName = (group: Group) => {
