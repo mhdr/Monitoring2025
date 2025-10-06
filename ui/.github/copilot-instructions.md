@@ -20,46 +20,62 @@ React + TypeScript + Redux + Bootstrap, Bilingual (fa/en), RTL, .NET API
 - Types: Define in `src/types/`, no `any`
 - Styles: `src/styles/{bootstrap-ltr,bootstrap-rtl,theme}.css`
 
-## Theme System
-⚠️ NEVER hardcode colors/gradients/shadows - use CSS vars
+## AG Grid
+⚠️ ENTERPRISE version - use ALL enterprise features
+- Library: AG Grid Enterprise 34.1.2 (vanilla JS) + local React wrapper
+- Location: `public/ag/` (enterprise bundle), `src/components/AGGridWrapper.tsx` (wrapper)
+- Hook: `useAGGrid` from `src/hooks/useAGGrid.ts`
+- Types: `src/types/agGrid.ts`
+- Themes: alpine, balham, material, quartz (default: quartz)
+- Features: Row grouping, pivoting, aggregation, Excel export, master-detail, tree data, advanced filtering
 
-Files:
-- `src/styles/theme.css` - CSS custom properties
-- `src/types/themes.ts` - Interfaces, presets (Default, Green, Purple, Orange, Red, Teal, Indigo)
-- `src/utils/themeUtils.ts` - `applyTheme()`, `hexToRgb()`
-- `src/hooks/useTheme.ts` - Hook
-- `src/store/slices/themeSlice.ts` - State
+🔧 **React Wrapper (Local Implementation)**
+- Vanilla JS library requires React wrapper (`AGGridWrapper.tsx`)
+- Update wrapper when adding AG Grid features
+- Lazy loading via `src/utils/agGridLoader.ts`
+- RTL + i18n support built-in
+- Theme integration with project theme system
+
+✅ `import { AGGridWrapper, useAGGrid } from '../agGrid'; <AGGridWrapper columnDefs={cols} rowData={data} theme="quartz" />`
+❌ `// Direct AG Grid vanilla JS usage without wrapper`
+
+**Enterprise Features Available:**
+- Row Grouping: `columnDef.rowGroup`, `groupDefaultExpanded`
+- Aggregation: `aggFunc: 'sum'|'avg'|'min'|'max'|'count'`
+- Pivoting: `pivot: true`, `pivotMode`
+- Excel Export: `gridApi.exportDataAsExcel()`
+- Master-Detail: `masterDetail: true`, `detailCellRenderer`
+- Advanced Filtering: Set filters, number filters, text filters
+- Server-Side Row Model: `rowModelType: 'serverSide'`
+- Column Tool Panel: `sideBar: 'columns'`
+- Clipboard: Copy/paste with headers
+
+## Theme
+⚠️ NEVER hardcode colors/gradients/shadows - use CSS vars
+- Files: `src/styles/theme.css`, `src/types/themes.ts`, `src/utils/themeUtils.ts`, `src/hooks/useTheme.ts`, `src/store/slices/themeSlice.ts`
+- Presets: Default, Green, Purple, Orange, Red, Teal, Indigo
+- Variables: `--primary-{dark,medium,light,lighter,darker}`, `--accent-{primary,hover,active}`, `--text-{primary,secondary}-{light,dark}`, `--success/warning/error/info`, `--bg-primary-{light,dark}`, `--border-{light,medium,dark}`, `--shadow-{xs,sm,md,lg,xl,2xl}`, `--gradient-{primary,sidebar,navbar,button,button-hover,button-disabled}`
+- Add color: `theme.css` → `themes.ts` → `themeUtils.ts`
 
 ✅ `.btn { background: var(--primary-dark); box-shadow: var(--shadow-md); }`
 ❌ `.btn { background: #2c3e50; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }`
 
-Variables: `--primary-{dark,medium,light,lighter,darker}`, `--accent-{primary,hover,active}`, `--text-{primary,secondary}-{light,dark}`, `--success/warning/error/info`, `--bg-primary-{light,dark}`, `--border-{light,medium,dark}`, `--shadow-{xs,sm,md,lg,xl,2xl}`, `--gradient-{primary,sidebar,navbar,button,button-hover,button-disabled}`
-
-Add color: `theme.css` → `themes.ts` → `themeUtils.ts`
-
 ## Charts
-- Library: Apache ECharts 5.6.0 + echarts-for-react 3.0.2
-- Component: `ReactECharts`
-- Type: `EChartsOption`
+- Library: ECharts 5.6.0 + echarts-for-react 3.0.2
+- Component: `ReactECharts`, Type: `EChartsOption`
 - i18n: Translate titles/axes/legends/tooltips
-- RTL: Configure text direction, legend position, tooltip alignment
-- Responsive: Percentage dimensions, mobile adjustments
+- RTL: Text direction, legend position, tooltip alignment
 - Performance: Sampling, progressive rendering, lazy load
 
 ```typescript
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 const { t } = useTranslation();
-const option: EChartsOption = {
-  title: { text: t('charts.title') },
-  xAxis: { type: 'category', data: [...] },
-  series: [{ data: [...], type: 'line' }]
-};
+const option: EChartsOption = { title: { text: t('charts.title') }, xAxis: { type: 'category', data: [...] }, series: [{ data: [...], type: 'line' }] };
 <ReactECharts option={option} data-id-ref="chart-name" style={{ height: '400px' }} />
 ```
 
 ## Responsive
-- All components: desktop + tablet + mobile
 - Bootstrap grid: xs/sm/md/lg/xl/xxl
 - Test viewports: 1920x1080, 1366x768, 768x1024, 375x667, 414x896
 
@@ -77,60 +93,31 @@ const option: EChartsOption = {
 ❌ `// Using plain objects without DTO types`
 
 ## Auth
-⚠️ Refresh Token Rotation (OAuth 2.0)
-- Auto-refresh: RTK Query interceptor handles expired tokens
-- Rotation: Old refresh tokens invalidated on use
+⚠️ Refresh Token Rotation (OAuth 2.0) - auto-handled by RTK Query
+- Files: `src/services/rtkApi.ts`, `src/utils/authStorage.ts`, `src/contexts/AuthContext.tsx`
 - Mutex: Prevents concurrent refresh (`async-mutex`)
 - Storage: localStorage (persistent) or sessionStorage (session)
+- Flow: Login → 401 → Auto-refresh → New tokens → Retry
 
-Files:
-- `src/services/rtkApi.ts` - Interceptor + mutex
-- `src/utils/authStorage.ts` - Storage
-- `src/contexts/AuthContext.tsx` - State
-- `REFRESH_TOKEN_ROTATION.md` - Docs
-
-Flow: Login → 401 → Auto-refresh → New tokens → Retry → Seamless
-
-⚠️ Never manually refresh in components - `baseQueryWithAuth` handles it
+⚠️ Never manually refresh - `baseQueryWithAuth` handles it
 
 ## Development
-**i18n:**
-- Both fa + en required
-- RTL layout for Persian
-- Test both modes
+**i18n:** Both fa + en required, RTL for Persian, test both modes
 
-**Styling:**
-- Bootstrap first
-- Component `.css` files
-- Theme vars only
+**Styling:** Bootstrap first, component `.css` files, theme vars only
 
-**Code:**
-- Follow structure, reuse components
-- Full TypeScript, no `any`, no unused imports
-- ⚠️ API: DTOs mandatory for requests/responses
+**Code:** TypeScript, no `any`, ⚠️ DTOs mandatory for API requests/responses
 
-**Element IDs (MANDATORY):**
-- Every element: `data-id-ref="component-element-purpose"` (kebab-case)
-- Purpose: AI/testing/debugging
-
+**Element IDs (MANDATORY):** `data-id-ref="component-element-purpose"` (kebab-case)
 ✅ `<button data-id-ref="login-form-submit-button">`
 
-**Testing:**
-- Responsive: desktop + mobile
-- Language: RTL/LTR
-- Auth: authenticated + unauthenticated
-- Errors: both languages
+**Testing:** Responsive (desktop/mobile), RTL/LTR, auth states, both languages
 
-**Ports:**
-- Frontend: 5173 (Vite), Backend: 7136 (HTTPS)
-- ⚠️ Port 5173 in use → assume running, use `https://localhost:5173`
-- ⚠️ NEVER suggest alternate port - CORS restricted to 5173
+**Ports:** Frontend 5173 (Vite), Backend 7136 (HTTPS)
+⚠️ NEVER suggest alternate port - CORS restricted to 5173
 
-**DevTools MCP (debugging):**
-- Auto-launches Chrome
-- Use for: UI/layout, performance, console, network, RTL, responsive
+**DevTools MCP:** UI/layout, performance, console, network, RTL, responsive
 - Tools: `navigate_page`, `take_screenshot`, `take_snapshot`, `evaluate_script`, `list_console_messages`, `list_network_requests`, `resize_page`, `performance_{start,stop}_trace`
-- Workflow: Navigate → Interact → Inspect → Capture → Verify
 
 ## Structure
 ```
