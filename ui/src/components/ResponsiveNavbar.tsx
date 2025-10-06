@@ -1,4 +1,5 @@
 import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
 import './ResponsiveNavbar.css';
@@ -95,11 +96,11 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
               align="end"
               data-id-ref="responsive-navbar-user-dropdown"
             >
-              <NavDropdown.Item href="/dashboard/profile" className="py-2" data-id-ref="responsive-navbar-user-profile-link">
+              <NavDropdown.Item as={Link} to="/dashboard/profile" className="py-2" data-id-ref="responsive-navbar-user-profile-link">
                 <i className="fas fa-user me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-profile-icon"></i>
                 {t('profile')}
               </NavDropdown.Item>
-              <NavDropdown.Item href="/dashboard/settings" className="py-2" data-id-ref="responsive-navbar-user-settings-link">
+              <NavDropdown.Item as={Link} to="/dashboard/settings" className="py-2" data-id-ref="responsive-navbar-user-settings-link">
                 <i className="fas fa-cog me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-settings-icon"></i>
                 {t('settingsMenu')}
               </NavDropdown.Item>

@@ -20,7 +20,7 @@ interface ValidationErrors {
 
 const ProfilePage: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { language } = useLanguage();
   
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
@@ -100,6 +100,12 @@ const ProfilePage: React.FC = () => {
           confirmNewPassword: ''
         });
         setErrors({});
+        
+        // Log out the user after successful password change
+        // User needs to log in again with the new password
+        setTimeout(() => {
+          logout();
+        }, 2000); // Give user 2 seconds to see the success message
       } else {
         setErrorMessage(t('profilePage.messages.changePasswordError'));
       }
