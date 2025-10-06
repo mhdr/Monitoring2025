@@ -19,7 +19,8 @@ import 'ag-grid-community/styles/ag-theme-material.css';
 import {
   ClientSideRowModelModule, TextEditorModule, NumberEditorModule,
   DateEditorModule, TextFilterModule, NumberFilterModule, DateFilterModule,
-  PaginationModule, CsvExportModule, ValidationModule
+  PaginationModule, CsvExportModule, ValidationModule, LocaleModule,
+  RowSelectionModule, ColumnApiModule
 } from 'ag-grid-community';
 
 import {
@@ -31,9 +32,10 @@ import {
 ModuleRegistry.registerModules([
   ClientSideRowModelModule, TextEditorModule, NumberEditorModule, DateEditorModule,
   TextFilterModule, NumberFilterModule, DateFilterModule, PaginationModule, CsvExportModule,
+  ValidationModule, LocaleModule, RowSelectionModule, ColumnApiModule,
   RowGroupingModule, SetFilterModule, MultiFilterModule, ExcelExportModule, ClipboardModule,
   ColumnsToolPanelModule, FiltersToolPanelModule, SideBarModule, StatusBarModule,
-  ContextMenuModule, ColumnMenuModule, CellSelectionModule, PivotModule, ValidationModule,
+  ContextMenuModule, ColumnMenuModule, CellSelectionModule, PivotModule,
 ]);
 
 LicenseManager.setLicenseKey('DownloadDevTools_COM_NDEwMjM0NTgwMDAwMA==59158b5225400879a12a96634544f5b6');
