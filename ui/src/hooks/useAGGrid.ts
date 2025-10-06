@@ -4,21 +4,17 @@
  * Provides easy access to AG Grid API and utilities
  */
 
-import { useRef, useCallback, useState, useEffect } from 'react';
-import { loadAGGrid, preloadAGGrid } from '../utils/agGridLoader';
-import type { AGGridApi, AGGridColumnApi, AGGridRowData } from '../types/agGrid';
+import { useRef, useCallback, useState } from 'react';
+import type { AGGridApi, AGGridRowData } from '../types/agGrid';
 
 interface UseAGGridOptions {
-  preload?: boolean;
-  theme?: 'alpine' | 'balham' | 'material' | 'quartz';
+  // Options for future extensibility
 }
 
 interface UseAGGridReturn {
   gridApi: AGGridApi | null;
-  columnApi: AGGridColumnApi | null;
   setGridApi: (api: AGGridApi) => void;
-  setColumnApi: (api: AGGridColumnApi) => void;
-  handleGridReady: (api: AGGridApi, columnApi: AGGridColumnApi) => void;
+  handleGridReady: (api: AGGridApi, columnApi?: AGGridApi) => void;
   
   // Utility methods
   refreshData: (newData?: AGGridRowData[]) => void;
@@ -37,22 +33,8 @@ interface UseAGGridReturn {
  * Custom hook for AG Grid integration
  */
 export const useAGGrid = (options: UseAGGridOptions = {}): UseAGGridReturn => {
-  const { preload = false, theme = 'quartz' } = options;
-  
   const gridApiRef = useRef<AGGridApi | null>(null);
-  const columnApiRef = useRef<AGGridColumnApi | null>(null);
-  
   const [gridApi, setGridApiState] = useState<AGGridApi | null>(null);
-  const [columnApi, setColumnApiState] = useState<AGGridColumnApi | null>(null);
-
-  /**
-   * Preload AG Grid if requested
-   */
-  useEffect(() => {
-    if (preload) {
-      preloadAGGrid(theme);
-    }
-  }, [preload, theme]);
 
   /**
    * Set Grid API
@@ -63,20 +45,11 @@ export const useAGGrid = (options: UseAGGridOptions = {}): UseAGGridReturn => {
   }, []);
 
   /**
-   * Set Column API
-   */
-  const setColumnApi = useCallback((api: AGGridColumnApi) => {
-    columnApiRef.current = api;
-    setColumnApiState(api);
-  }, []);
-
-  /**
    * Handle grid ready event
    */
-  const handleGridReady = useCallback((api: AGGridApi, colApi: AGGridColumnApi) => {
+  const handleGridReady = useCallback((api: AGGridApi, columnApi?: AGGridApi) => {
     setGridApi(api);
-    setColumnApi(colApi);
-  }, [setGridApi, setColumnApi]);
+  }, [setGridApi]);
 
   /**
    * Refresh data in the grid
@@ -84,7 +57,7 @@ export const useAGGrid = (options: UseAGGridOptions = {}): UseAGGridReturn => {
   const refreshData = useCallback((newData?: AGGridRowData[]) => {
     if (gridApiRef.current) {
       if (newData) {
-        gridApiRef.current.setRowData(newData);
+        gridApiRef.current.setGridOption('rowData', newData);
       } else {
         gridApiRef.current.refreshCells();
       }
@@ -152,9 +125,7 @@ export const useAGGrid = (options: UseAGGridOptions = {}): UseAGGridReturn => {
    * Auto-size all columns based on content
    */
   const autoSizeAllColumns = useCallback(() => {
-    if (columnApiRef.current) {
-      columnApiRef.current.autoSizeAllColumns(false);
-    } else if (gridApiRef.current) {
+    if (gridApiRef.current) {
       gridApiRef.current.autoSizeAllColumns(false);
     }
   }, []);
@@ -179,9 +150,7 @@ export const useAGGrid = (options: UseAGGridOptions = {}): UseAGGridReturn => {
 
   return {
     gridApi,
-    columnApi,
     setGridApi,
-    setColumnApi,
     handleGridReady,
     refreshData,
     exportToCsv,
@@ -197,15 +166,9 @@ export const useAGGrid = (options: UseAGGridOptions = {}): UseAGGridReturn => {
 };
 
 /**
- * Hook to preload AG Grid
- * Useful for improving initial render performance
+ * Hook to preload AG Grid - deprecated, AG Grid modules are now registered at startup
+ * @deprecated AG Grid modules are now registered at application startup
  */
-export const useAGGridPreload = (theme?: 'alpine' | 'balham' | 'material' | 'quartz'): void => {
-  useEffect(() => {
-    loadAGGrid(theme).catch(error => {
-      console.error('Failed to preload AG Grid:', error);
-    });
-  }, [theme]);
+export const useAGGridPreload = () => {
+  console.warn('[useAGGridPreload] This hook is deprecated. AG Grid modules are now registered at application startup.');
 };
-
-export default useAGGrid;

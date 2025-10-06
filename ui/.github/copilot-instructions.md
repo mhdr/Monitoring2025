@@ -22,32 +22,32 @@ React + TypeScript + Redux + Bootstrap, Bilingual (fa/en), RTL, .NET API
 
 ## AG Grid
 ⚠️ ENTERPRISE version - use ALL enterprise features
-- Library: AG Grid Enterprise 34.1.2 (vanilla JS) + local React wrapper
-- Location: `public/ag/` (enterprise bundle), `src/components/AGGridWrapper.tsx` (wrapper)
+- Packages: `ag-grid-react@34.2.0`, `ag-grid-enterprise@34.2.0`, `@ag-grid-community/locale`
+- Component: `AGGridWrapper` from `src/components/AGGridWrapper.tsx`
 - Hook: `useAGGrid` from `src/hooks/useAGGrid.ts`
-- Types: `src/types/agGrid.ts`
+- Types: `src/types/agGrid.ts` (re-exports official types)
 - Themes: alpine, balham, material, quartz (default: quartz)
-- Features: Row grouping, pivoting, aggregation, Excel export, master-detail, tree data, advanced filtering
+- License: `DownloadDevTools_COM_NDEwMjM0NTgwMDAwMA==59158b5225400879a12a96634544f5b6`
 
-🔧 **React Wrapper (Local Implementation)**
-- Vanilla JS library requires React wrapper (`AGGridWrapper.tsx`)
-- Update wrapper when adding AG Grid features
-- Lazy loading via `src/utils/agGridLoader.ts`
-- RTL + i18n support built-in
-- Theme integration with project theme system
+🔧 **Official React Integration**
+- Uses `AgGridReact` component from `ag-grid-react`
+- Module registration at startup via `ModuleRegistry.registerModules()`
+- Persian locale: `AG_GRID_LOCALE_IR` from `@ag-grid-community/locale`
+- RTL: Auto-enabled for Persian via `enableRtl` prop
+- No lazy loading needed - modules registered once
 
 ✅ `import { AGGridWrapper, useAGGrid } from '../agGrid'; <AGGridWrapper columnDefs={cols} rowData={data} theme="quartz" />`
-❌ `// Direct AG Grid vanilla JS usage without wrapper`
+❌ `// Direct createGrid() or vanilla JS usage`
 
-**Enterprise Features Available:**
+**Enterprise Features:**
 - Row Grouping: `columnDef.rowGroup`, `groupDefaultExpanded`
 - Aggregation: `aggFunc: 'sum'|'avg'|'min'|'max'|'count'`
 - Pivoting: `pivot: true`, `pivotMode`
 - Excel Export: `gridApi.exportDataAsExcel()`
 - Master-Detail: `masterDetail: true`, `detailCellRenderer`
 - Advanced Filtering: Set filters, number filters, text filters
-- Server-Side Row Model: `rowModelType: 'serverSide'`
-- Column Tool Panel: `sideBar: 'columns'`
+- Server-Side: `rowModelType: 'serverSide'`
+- Tool Panels: `sideBar: 'columns'|'filters'`
 - Clipboard: Copy/paste with headers
 
 ## Theme

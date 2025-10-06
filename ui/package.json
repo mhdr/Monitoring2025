@@ -15,8 +15,11 @@
     "trust-certs:unix": "chmod +x trust-dev-certs.sh && ./trust-dev-certs.sh"
   },
   "dependencies": {
+    "@ag-grid-community/locale": "^34.2.0",
     "@majidh1/jalalidatepicker": "^0.9.12",
     "@reduxjs/toolkit": "^2.9.0",
+    "ag-grid-enterprise": "^34.2.0",
+    "ag-grid-react": "^34.2.0",
     "async-mutex": "^0.5.0",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
