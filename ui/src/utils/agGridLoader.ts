@@ -12,7 +12,8 @@ declare global {
 }
 
 interface AGGridLibrary {
-  Grid?: unknown;
+  Grid?: unknown; // Legacy constructor (not used in modern versions)
+  createGrid?: (element: HTMLElement, options: unknown) => unknown; // Modern API
   LicenseManager: {
     setLicenseKey: (key: string) => void;
   };

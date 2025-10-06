@@ -15,8 +15,13 @@ export type AGGridCellStyle = Record<string, string | number>;
 
 // Global AG Grid types
 export interface AGGridApi {
-  // Core API
+  // Core API (legacy)
   setRowData(rowData: AGGridRowData[]): void;
+  
+  // Modern API (v31+)
+  setGridOption<K extends keyof AGGridOptions>(key: K, value: AGGridOptions[K]): void;
+  updateGridOptions(options: Partial<AGGridOptions>): void;
+  
   getSelectedRows(): AGGridRowData[];
   getSelectedNodes(): AGGridNode[];
   sizeColumnsToFit(): void;
@@ -37,6 +42,9 @@ export interface AGGridApi {
   // Refresh
   refreshCells(params?: AGGridRefreshParams): void;
   redrawRows(params?: AGGridRefreshParams): void;
+  
+  // Lifecycle
+  destroy(): void;
   
   // Other
   showLoadingOverlay(): void;

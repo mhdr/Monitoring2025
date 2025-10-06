@@ -39,8 +39,10 @@ export const AGGridWrapper: React.FC<AGGridWrapperProps> = ({
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const gridApiRef = useRef<AGGridApi | null>(null);
   const columnApiRef = useRef<AGGridColumnApi | null>(null);
+  const gridInstanceRef = useRef<unknown>(null); // Store grid instance for cleanup
+  const initialRowDataRef = useRef(rowData); // Capture initial rowData
   
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start as false, will be set to true when initialization starts
   const [error, setError] = useState<string | null>(null);
   const [gridReady, setGridReady] = useState(false);
 
@@ -147,20 +149,52 @@ export const AGGridWrapper: React.FC<AGGridWrapperProps> = ({
     if (!gridContainerRef.current) return;
 
     try {
-      setIsLoading(true);
+      console.log('[AGGrid] Starting initialization...');
+      // Note: isLoading is already set to true by the caller
       setError(null);
 
-      // Load AG Grid library
-      const agGrid = await loadAGGrid(theme);
-
-      if (!agGrid.Grid) {
-        throw new Error('AG Grid Grid constructor not found');
+      // Destroy existing grid instance if it exists
+      if (gridInstanceRef.current && gridApiRef.current) {
+        console.log('[AGGrid] Destroying existing grid instance');
+        try {
+          gridApiRef.current.destroy();
+        } catch (e) {
+          console.warn('Error destroying existing grid:', e);
+        }
+        gridInstanceRef.current = null;
+        gridApiRef.current = null;
+        columnApiRef.current = null;
+        setGridReady(false);
       }
 
+      // Clear the container
+      if (gridContainerRef.current) {
+        gridContainerRef.current.innerHTML = '';
+      }
+
+      console.log('[AGGrid] Loading AG Grid library...');
+      // Load AG Grid library
+      const agGrid = await loadAGGrid(theme);
+      
+      console.log('[AGGrid] Library loaded successfully');
+
+      if (!agGrid.createGrid) {
+        throw new Error('AG Grid createGrid function not found');
+      }
+      
+      // Check if ref is still valid after async load
+      if (!gridContainerRef.current) {
+        console.warn('[AGGrid] Container ref became null after library load, aborting');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('[AGGrid] Creating grid with initial data');
       // Prepare grid options
+      // Use initial rowData captured on mount to avoid dependency issues
       const options: AGGridOptions = {
         columnDefs,
-        rowData,
+        rowData: initialRowDataRef.current,
         enableRtl: isRTL,
         localeText: getLocaleText(),
         animateRows: true,
@@ -170,9 +204,14 @@ export const AGGridWrapper: React.FC<AGGridWrapperProps> = ({
         ensureDomOrder: true,
         ...gridOptions,
         onGridReady: (params) => {
+          console.log('[AGGrid] onGridReady callback fired!');
           gridApiRef.current = params.api;
           columnApiRef.current = params.columnApi;
           setGridReady(true);
+          
+          // Grid is ready, stop showing loading spinner
+          setIsLoading(false);
+          console.log('[AGGrid] Grid ready, loading state set to false');
           
           // Call user's onGridReady if provided
           if (onGridReady) {
@@ -186,43 +225,95 @@ export const AGGridWrapper: React.FC<AGGridWrapperProps> = ({
         },
       };
 
-      // Create the grid - Cast agGrid.Grid as constructor
-      const GridConstructor = agGrid.Grid as new (element: HTMLElement, options: AGGridOptions) => void;
-      new GridConstructor(gridContainerRef.current, options);
+      // Create the grid using modern createGrid API
+      const gridApi = agGrid.createGrid(gridContainerRef.current, options);
+      gridInstanceRef.current = gridApi;
 
-      setIsLoading(false);
+      console.log('[AGGrid] Grid instance created, waiting for onGridReady...');
     } catch (err) {
-      console.error('Failed to initialize AG Grid:', err);
+      console.error('[AGGrid] Failed to initialize AG Grid:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
       setIsLoading(false);
     }
-  }, [columnDefs, rowData, theme, isRTL, getLocaleText, gridOptions, onGridReady]);
+    // Note: rowData is intentionally NOT in dependencies - we update it separately via setRowData
+  }, [columnDefs, theme, isRTL, getLocaleText, gridOptions, onGridReady]);
 
   /**
-   * Initialize grid on mount
+   * Initialize grid when container ref is ready and grid not already initialized
    */
   useEffect(() => {
-    initializeGrid();
-  }, [initializeGrid]);
+    // Check if grid is already initialized
+    if (gridReady) {
+      console.log('[AGGrid] Grid already initialized, skipping');
+      return;
+    }
+    
+    if (isLoading) {
+      console.log('[AGGrid] Grid is initializing, skipping');
+      return;
+    }
+
+    if (gridContainerRef.current) {
+      console.log('[AGGrid] Container ref is ready, starting initialization');
+      // Set loading BEFORE calling initializeGrid to prevent double initialization
+      setIsLoading(true);
+      initializeGrid();
+    } else {
+      console.warn('[AGGrid] Container ref not ready yet, will retry on next render');
+      // Schedule a retry
+      const timer = setTimeout(() => {
+        if (gridContainerRef.current && !gridReady && !isLoading) {
+          console.log('[AGGrid] Retrying grid initialization');
+          setIsLoading(true);
+          initializeGrid();
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gridContainerRef.current]); // Re-run when ref changes
 
   /**
    * Update row data when it changes
    */
   useEffect(() => {
+    console.log('[AGGrid] Row data effect triggered:', { 
+      gridReady, 
+      hasGridApi: !!gridApiRef.current, 
+      rowDataLength: rowData?.length || 0 
+    });
     if (gridReady && gridApiRef.current && rowData) {
-      gridApiRef.current.setRowData(rowData);
+      console.log('[AGGrid] Updating grid with', rowData.length, 'rows');
+      // Use modern AG Grid API method
+      gridApiRef.current.setGridOption('rowData', rowData);
     }
   }, [rowData, gridReady]);
 
   /**
-   * Update locale text when language changes
+   * Reinitialize grid when language or theme changes
+   * This is necessary because AG Grid doesn't support dynamically changing locale text
    */
   useEffect(() => {
-    if (gridReady && gridApiRef.current) {
-      // Re-initialize grid to apply new locale
+    if (gridReady) {
       initializeGrid();
     }
-  }, [language, gridReady, initializeGrid]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, theme]);
+
+  /**
+   * Cleanup on unmount
+   */
+  useEffect(() => {
+    return () => {
+      if (gridApiRef.current) {
+        try {
+          gridApiRef.current.destroy();
+        } catch (e) {
+          console.warn('Error destroying grid on unmount:', e);
+        }
+      }
+    };
+  }, []);
 
   // Render loading state
   if (isLoading) {

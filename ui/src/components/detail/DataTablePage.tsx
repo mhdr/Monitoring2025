@@ -27,11 +27,12 @@ const DataTablePage: React.FC = () => {
   const itemsLoading = useAppSelector((state) => state.monitoring.itemsLoading);
 
   // RTK Query lazy hook for fetching history
-  const [fetchHistory, { data: historyResponse, isLoading: loading, isError }] = useLazyGetHistoryQuery();
+  const [fetchHistory, { data: historyResponse, isError }] = useLazyGetHistoryQuery();
   
   // State management
   const [error, setError] = useState<string | null>(null);
   const [historyData, setHistoryData] = useState<HistoricalDataPoint[]>([]);
+  const [loading, setLoading] = useState<boolean>(false); // Local loading state for better control
   const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>('last24Hours');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
@@ -107,6 +108,7 @@ const DataTablePage: React.FC = () => {
     }
 
     setError(null);
+    setLoading(true);
 
     try {
       const { startDate, endDate } = getDateRange;
@@ -114,6 +116,7 @@ const DataTablePage: React.FC = () => {
       // Validate date range
       if (startDate >= endDate) {
         setError(t('startDateAfterEnd'));
+        setLoading(false);
         return;
       }
 
@@ -124,19 +127,24 @@ const DataTablePage: React.FC = () => {
       };
 
       // Trigger RTK Query to fetch history
-      await fetchHistory(request).unwrap();
+      const result = await fetchHistory(request).unwrap();
+      
+      // Update history data and stop loading
+      setHistoryData(result.values || []);
+      setLoading(false);
     } catch (err) {
       console.error('Error fetching history data:', err);
       setError(t('errorLoadingData'));
+      setLoading(false);
     }
   };
   
-  // Update historyData when RTK Query response changes
+  // Update historyData when RTK Query response changes (for cache hits)
   useEffect(() => {
-    if (historyResponse) {
+    if (historyResponse && !loading) {
       setHistoryData(historyResponse.values || []);
     }
-  }, [historyResponse]);
+  }, [historyResponse, loading]);
   
   // Set error when RTK Query has an error
   useEffect(() => {
@@ -474,26 +482,37 @@ const DataTablePage: React.FC = () => {
                   <p data-id-ref="data-table-no-data-text">{t('noData')}</p>
                 </div>
               ) : (
-                <div className="w-100 h-100" style={{ minHeight: isMobile ? '300px' : '400px' }}>
-                  <AGGridWrapper
-                    columnDefs={columnDefs}
-                    rowData={rowData}
-                    theme="quartz"
-                    height="100%"
-                    width="100%"
-                    gridOptions={{
-                      enableRtl: language === 'fa',
-                      pagination: true,
-                      paginationPageSize: isMobile ? 20 : 50,
-                      paginationAutoPageSize: false,
-                      domLayout: 'normal' as const,
-                      suppressMenuHide: true,
-                      enableCellTextSelection: true,
-                      animateRows: true,
-                    }}
-                    data-id-ref="data-table-grid"
-                  />
-                </div>
+                <>
+                  {(() => {
+                    console.log('[DataTablePage] Rendering AGGridWrapper:', {
+                      loading,
+                      historyDataLength: historyData.length,
+                      rowDataLength: rowData.length,
+                      columnDefsLength: columnDefs.length
+                    });
+                    return null;
+                  })()}
+                  <div className="w-100 h-100" style={{ minHeight: isMobile ? '300px' : '400px' }}>
+                    <AGGridWrapper
+                      columnDefs={columnDefs}
+                      rowData={rowData}
+                      theme="quartz"
+                      height="100%"
+                      width="100%"
+                      gridOptions={{
+                        enableRtl: language === 'fa',
+                        pagination: true,
+                        paginationPageSize: isMobile ? 20 : 50,
+                        paginationAutoPageSize: false,
+                        domLayout: 'normal' as const,
+                        suppressMenuHide: true,
+                        enableCellTextSelection: true,
+                        animateRows: true,
+                      }}
+                      data-id-ref="data-table-grid"
+                    />
+                  </div>
+                </>
               )}
             </div>
           </div>
