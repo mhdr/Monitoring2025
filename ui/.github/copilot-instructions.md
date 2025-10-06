@@ -64,7 +64,7 @@ const option: EChartsOption = {
 - Test viewports: 1920x1080, 1366x768, 768x1024, 375x667, 414x896
 
 ## API
-⚠️ MANDATORY: Use DTO classes for ALL requests/responses
+⚠️ MANDATORY: Use DTO interfaces for ALL requests/responses
 - Server: .NET Core ASP.NET, HTTPS-only
 - Base: `https://localhost:7136`
 - Swagger: `https://localhost:7136/swagger/v1/swagger.json`
