@@ -11,6 +11,7 @@ import { useAGGrid } from '../../hooks/useAGGrid';
 import type { AGGridApi, AGGridColumnApi } from '../../types/agGrid';
 import { useRef, useCallback } from 'react';
 import type { AGGridColumnDef } from '../../types/agGrid';
+import { formatDateByLanguage, createAGGridNumberFormatter } from '../../utils/numberFormatting';
 
 // Date range preset types
 type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
@@ -197,8 +198,6 @@ const DataTablePage: React.FC = () => {
 
   // Prepare AG Grid column definitions
   const columnDefs = useMemo<AGGridColumnDef[]>(() => {
-    const locale = language === 'fa' ? 'fa-IR' : 'en-US';
-    
     return [
       {
         field: 'value',
@@ -207,27 +206,10 @@ const DataTablePage: React.FC = () => {
         sortable: true,
         filter: 'agNumberColumnFilter',
         resizable: true,
-        valueFormatter: (params) => {
-          const rawValue = params.value;
-          if (rawValue === null || rawValue === undefined || rawValue === '') return '-';
-          
-          const value = parseFloat(String(rawValue));
-          if (isNaN(value)) return '-';
-          
-          // Format number based on locale
-          let formatted = value.toLocaleString(locale, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          });
-          
-          // Convert to Persian digits if in Persian mode
-          if (language === 'fa') {
-            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-            formatted = formatted.replace(/\d/g, (digit) => persianDigits[parseInt(digit)]);
-          }
-          
-          return formatted;
-        },
+        valueFormatter: createAGGridNumberFormatter(language, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
       },
       {
         field: 'timeFormatted',
@@ -242,13 +224,12 @@ const DataTablePage: React.FC = () => {
 
   // Prepare AG Grid row data
   const rowData = useMemo(() => {
-    const locale = language === 'fa' ? 'fa-IR' : 'en-US';
     // Create a shallow copy and sort by time descending (newest first)
     const sorted = [...historyData].sort((a, b) => b.time - a.time);
 
     return sorted.map((point, index) => {
       const date = new Date(point.time * 1000);
-      const timeFormatted = date.toLocaleString(locale, {
+      const timeFormatted = formatDateByLanguage(date, language, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',

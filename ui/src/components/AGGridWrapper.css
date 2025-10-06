@@ -58,7 +58,7 @@
 .ag-theme-alpine,
 .ag-theme-balham,
 .ag-theme-material {
-  /* Font Family */
+  /* Font Family - Default */
   font-family: inherit;
   
   /* Primary Color Integration */
@@ -268,6 +268,19 @@
 }
 
 /* RTL-specific adjustments */
+.ag-grid-rtl {
+  direction: rtl;
+}
+
+/* Persian/RTL Font Family - IranSans */
+.ag-grid-rtl .ag-theme-quartz,
+.ag-grid-rtl .ag-theme-alpine,
+.ag-grid-rtl .ag-theme-balham,
+.ag-grid-rtl .ag-theme-material,
+.ag-grid-rtl .ag-root-wrapper {
+  font-family: 'IRANSansX', 'Tahoma', 'Arial', sans-serif !important;
+}
+
 .ag-grid-rtl .ag-header-cell-menu-button {
   margin-left: 0;
   margin-right: 4px;
@@ -275,10 +288,28 @@
 
 .ag-grid-rtl .ag-cell {
   text-align: right;
+  font-family: 'IRANSansX', 'Tahoma', 'Arial', sans-serif;
 }
 
 .ag-grid-rtl .ag-header-cell-text {
   text-align: right;
+  font-family: 'IRANSansX', 'Tahoma', 'Arial', sans-serif;
+}
+
+.ag-grid-rtl .ag-paging-panel {
+  font-family: 'IRANSansX', 'Tahoma', 'Arial', sans-serif;
+}
+
+.ag-grid-rtl .ag-paging-page-summary-panel,
+.ag-grid-rtl .ag-paging-row-summary-panel {
+  font-family: 'IRANSansX', 'Tahoma', 'Arial', sans-serif;
+}
+
+/* Status Bar Persian Font */
+.ag-grid-rtl .ag-status-bar,
+.ag-grid-rtl .ag-status-name-value,
+.ag-grid-rtl .ag-status-panel {
+  font-family: 'IRANSansX', 'Tahoma', 'Arial', sans-serif;
 }
 
 /* Pinned columns in RTL */

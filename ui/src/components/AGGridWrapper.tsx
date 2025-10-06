@@ -110,6 +110,7 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
     return {
       // Pagination
       page: t('agGrid.page'),
+      pageSize: t('agGrid.pageSize'),
       more: t('agGrid.more'),
       to: t('agGrid.to'),
       of: t('agGrid.of'),
@@ -193,6 +194,41 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
       
       // Group
       group: t('agGrid.group'),
+      
+      // Pivot & Charts
+      pivotMode: t('agGrid.pivotMode'),
+      pivotChart: t('agGrid.pivotChart'),
+      chartRange: t('agGrid.chartRange'),
+      
+      // Aria Labels
+      ariaHidden: t('agGrid.ariaHidden'),
+      ariaVisible: t('agGrid.ariaVisible'),
+      ariaChecked: t('agGrid.ariaChecked'),
+      ariaUnchecked: t('agGrid.ariaUnchecked'),
+      ariaIndeterminate: t('agGrid.ariaIndeterminate'),
+      ariaDefaultListName: t('agGrid.ariaDefaultListName'),
+      ariaColumnSelectAll: t('agGrid.ariaColumnSelectAll'),
+      ariaInputEditor: t('agGrid.ariaInputEditor'),
+      ariaDateFilterInput: t('agGrid.ariaDateFilterInput'),
+      ariaFilterList: t('agGrid.ariaFilterList'),
+      ariaFilterInput: t('agGrid.ariaFilterInput'),
+      ariaFilterColumnsInput: t('agGrid.ariaFilterColumnsInput'),
+      ariaFilterValue: t('agGrid.ariaFilterValue'),
+      ariaFilterFromValue: t('agGrid.ariaFilterFromValue'),
+      ariaFilterToValue: t('agGrid.ariaFilterToValue'),
+      ariaFilteringOperator: t('agGrid.ariaFilteringOperator'),
+      ariaColumnToggleVisibility: t('agGrid.ariaColumnToggleVisibility'),
+      ariaColumnGroupToggleVisibility: t('agGrid.ariaColumnGroupToggleVisibility'),
+      ariaRowSelect: t('agGrid.ariaRowSelect'),
+      ariaRowDeselect: t('agGrid.ariaRowDeselect'),
+      ariaRowToggleSelection: t('agGrid.ariaRowToggleSelection'),
+      ariaRowSelectAll: t('agGrid.ariaRowSelectAll'),
+      ariaSearch: t('agGrid.ariaSearch'),
+      ariaSearchFilterValues: t('agGrid.ariaSearchFilterValues'),
+      
+      // Number separators for locale-specific formatting
+      thousandSeparator: t('agGrid.thousandSeparator'),
+      decimalSeparator: t('agGrid.decimalSeparator'),
     };
   }, [t]);
 
