@@ -555,6 +555,8 @@ const DataTablePage: React.FC = () => {
                         enableCellTextSelection: true,
                         animateRows: true,
                         enableRangeSelection: true,
+                        rowHeight: 50,
+                        headerHeight: 50,
                         sideBar: isMobile ? false : 'columns',
                         statusBar: {
                           statusPanels: [
