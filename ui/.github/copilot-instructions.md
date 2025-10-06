@@ -64,12 +64,17 @@ const option: EChartsOption = {
 - Test viewports: 1920x1080, 1366x768, 768x1024, 375x667, 414x896
 
 ## API
+⚠️ MANDATORY: Use DTO classes for ALL requests/responses
 - Server: .NET Core ASP.NET, HTTPS-only
 - Base: `https://localhost:7136`
 - Swagger: `https://localhost:7136/swagger/v1/swagger.json`
 - Auth: JWT + refresh token rotation
 - Test: `test` / `Password@12345`
 - Client: `src/services/rtkApi.ts` (RTK Query)
+- DTOs: Define in `src/types/api.ts`, match backend DTOs exactly
+
+✅ `interface LoginRequestDto { username: string; password: string; }`
+❌ `// Using plain objects without DTO types`
 
 ## Auth
 ⚠️ Refresh Token Rotation (OAuth 2.0)
@@ -100,10 +105,9 @@ Flow: Login → 401 → Auto-refresh → New tokens → Retry → Seamless
 - Theme vars only
 
 **Code:**
-- Follow structure
-- Reuse components
-- Full TypeScript
-- No unused imports
+- Follow structure, reuse components
+- Full TypeScript, no `any`, no unused imports
+- ⚠️ API: DTOs mandatory for requests/responses
 
 **Element IDs (MANDATORY):**
 - Every element: `data-id-ref="component-element-purpose"` (kebab-case)
@@ -146,16 +150,13 @@ public/locales/   # fa/, en/
 
 ## Checklist
 - [ ] TypeScript types (props, functions, API)
-- [ ] Translation keys (fa + en)
-- [ ] No hardcoded text
+- [ ] DTOs for all API requests/responses
+- [ ] Translation keys (fa + en), no hardcoded text
 - [ ] RTL tested (DevTools MCP)
-- [ ] Bootstrap components
-- [ ] Responsive tested (DevTools MCP)
-- [ ] Redux state
-- [ ] HTTPS API + errors (DevTools MCP)
-- [ ] Existing patterns
-- [ ] Auth states
-- [ ] Theme vars only
-- [ ] All themes verified
+- [ ] Bootstrap components, responsive tested (DevTools MCP)
+- [ ] Redux state, existing patterns
+- [ ] HTTPS API + error handling (DevTools MCP)
+- [ ] Auth states tested
+- [ ] Theme vars only, all themes verified
 - [ ] Charts: i18n, responsive, RTL
-- [ ] DevTools MCP: browser test, console, performance
+- [ ] DevTools MCP: UI, console, performance
