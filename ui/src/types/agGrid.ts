@@ -182,7 +182,7 @@ export interface AGGridOptions {
   suppressCellFocus?: boolean;
   undoRedoCellEditing?: boolean;
   undoRedoCellEditingLimit?: number;
-  enableRangeSelection?: boolean;
+  enableRangeSelection?: boolean; // Deprecated v32.2+: use cellSelection instead
   enableCharts?: boolean;
   enableFillHandle?: boolean | 'rangeSelection';
   getRowId?: (params: { data: AGGridRowData }) => string;
@@ -214,9 +214,26 @@ export interface AGGridOptions {
   enterNavigatesVerticallyAfterEdit?: boolean;
   paginationNumberFormatter?: (params: { value: number }) => string | number;
   
-  // Selection
-  rowSelection?: 'single' | 'multiple';
-  suppressRowClickSelection?: boolean;
+  // Selection (v32.2+ supports both old and new formats)
+  rowSelection?: 
+    | 'single' 
+    | 'multiple' 
+    | {
+        mode: 'singleRow' | 'multiRow';
+        enableClickSelection?: boolean | 'enableSelection' | 'enableDeselection';
+        checkboxes?: boolean | ((params: AGGridEventParams) => boolean);
+        headerCheckbox?: boolean;
+        isRowSelectable?: (rowNode: AGGridNode) => boolean;
+        [key: string]: unknown;
+      };
+  suppressRowClickSelection?: boolean; // Deprecated: use rowSelection.enableClickSelection
+  
+  // Cell Selection (v32.2+ replaces enableRangeSelection)
+  cellSelection?: boolean | {
+    suppressMultiRanges?: boolean;
+    enableHeaderHighlight?: boolean;
+    handle?: Record<string, unknown>;
+  };
   
   // Pagination
   pagination?: boolean;

@@ -177,8 +177,8 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
       }
 
       console.log('[AGGrid] Loading AG Grid library...');
-      // Load AG Grid library
-      const agGrid = await loadAGGrid(theme);
+      // Load AG Grid library (theme is passed via gridOptions, not loaded as CSS)
+      const agGrid = await loadAGGrid();
       
       console.log('[AGGrid] Library loaded successfully');
 
@@ -202,8 +202,13 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
         enableRtl: isRTL,
         localeText: getLocaleText(),
         animateRows: true,
-        rowSelection: 'multiple',
-        suppressRowClickSelection: true,
+        // v32.2+ row selection using object format
+        rowSelection: {
+          mode: 'multiRow',
+          enableClickSelection: false, // Replaces suppressRowClickSelection
+        },
+        // v32.2+ cell selection replaces enableRangeSelection
+        cellSelection: true,
         enableCellTextSelection: true,
         ensureDomOrder: true,
         ...gridOptions,
@@ -240,7 +245,8 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
       setIsLoading(false);
     }
     // Note: rowData is intentionally NOT in dependencies - we update it separately via setRowData
-  }, [columnDefs, theme, isRTL, getLocaleText, gridOptions, onGridReady]);
+    // Note: theme is intentionally NOT in dependencies - it's passed via gridOptions
+  }, [columnDefs, isRTL, getLocaleText, gridOptions, onGridReady]);
 
   /**
    * Initialize grid when container ref is ready and grid not already initialized
@@ -294,15 +300,16 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
   }, [rowData, gridReady]);
 
   /**
-   * Reinitialize grid when language or theme changes
+   * Reinitialize grid when language changes
    * This is necessary because AG Grid doesn't support dynamically changing locale text
+   * Note: Theme changes are handled via gridOptions, not by reinitialization
    */
   useEffect(() => {
     if (gridReady) {
       initializeGrid();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language, theme]);
+  }, [language]);
 
   /**
    * Cleanup on unmount

@@ -49,7 +49,9 @@ function loadScript(src: string): Promise<void> {
 
 /**
  * Load a stylesheet dynamically
+ * @deprecated Not used with Theming API, kept for potential future use
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function loadStylesheet(href: string): Promise<void> {
   return new Promise((resolve, reject) => {
     // Check if stylesheet already exists
@@ -69,10 +71,12 @@ function loadStylesheet(href: string): Promise<void> {
 }
 
 /**
- * Load AG Grid Enterprise library and required styles
+ * Load AG Grid Enterprise library
  * Returns a promise that resolves when AG Grid is ready to use
+ * Note: Since v33, themes are passed via the `theme` grid option (Theming API)
+ * and no longer loaded as CSS files
  */
-export async function loadAGGrid(theme: 'alpine' | 'balham' | 'material' | 'quartz' = 'quartz'): Promise<AGGridLibrary> {
+export async function loadAGGrid(): Promise<AGGridLibrary> {
   // If already loaded, return the cached promise
   if (agGridLoadPromise) {
     return agGridLoadPromise;
@@ -86,13 +90,9 @@ export async function loadAGGrid(theme: 'alpine' | 'balham' | 'material' | 'quar
   // Create the load promise
   agGridLoadPromise = (async () => {
     try {
-      // Load AG Grid core styles
-      await loadStylesheet('/ag/styles/ag-grid.min.css');
-      
-      // Load AG Grid theme styles
-      await loadStylesheet(`/ag/styles/ag-theme-${theme}.min.css`);
-      
       // Load AG Grid Enterprise JavaScript
+      // NOTE: Do NOT load ag-grid.css or ag-theme-*.css here
+      // The Theming API (v33+) manages styles internally
       await loadScript('/ag/dist/ag-grid-enterprise.min.js');
       
       // Wait a bit for the library to initialize
@@ -126,9 +126,9 @@ export async function loadAGGrid(theme: 'alpine' | 'balham' | 'material' | 'quar
  * Preload AG Grid to improve performance
  * This can be called early in the application lifecycle
  */
-export function preloadAGGrid(theme?: 'alpine' | 'balham' | 'material' | 'quartz'): void {
+export function preloadAGGrid(): void {
   // Start loading but don't wait for it
-  loadAGGrid(theme).catch(error => {
+  loadAGGrid().catch(error => {
     console.error('Failed to preload AG Grid:', error);
   });
 }
@@ -142,25 +142,26 @@ export function isAGGridLoaded(): boolean {
 
 /**
  * Load AG Grid theme stylesheet dynamically
- * Useful for switching themes at runtime
+ * @deprecated Since v33, themes are passed via the `theme` grid option (Theming API)
+ * This function is kept for backward compatibility but does nothing
  */
 export async function loadAGGridTheme(theme: 'alpine' | 'balham' | 'material' | 'quartz'): Promise<void> {
-  try {
-    await loadStylesheet(`/ag/styles/ag-theme-${theme}.min.css`);
-  } catch (error) {
-    console.error(`Failed to load AG Grid theme: ${theme}`, error);
-    throw error;
-  }
+  console.warn(
+    `[AGGrid] loadAGGridTheme is deprecated. Since v33, themes are passed via the 'theme' grid option.`,
+    `Use: <AGGridWrapper theme="${theme}" /> instead.`
+  );
+  // No-op: Theming API handles styles internally
 }
 
 /**
  * Unload AG Grid theme stylesheet
- * Useful for cleaning up when switching themes
+ * @deprecated Since v33, themes are passed via the `theme` grid option (Theming API)
+ * This function is kept for backward compatibility but does nothing
  */
 export function unloadAGGridTheme(theme: 'alpine' | 'balham' | 'material' | 'quartz'): void {
-  const href = `/ag/styles/ag-theme-${theme}.min.css`;
-  const existingLink = document.querySelector(`link[href="${href}"]`);
-  if (existingLink) {
-    existingLink.remove();
-  }
+  console.warn(
+    `[AGGrid] unloadAGGridTheme("${theme}") is deprecated. Since v33, themes are managed by the Theming API.`,
+    `Theme switching is automatic when you change the 'theme' prop.`
+  );
+  // No-op: Theming API handles cleanup internally
 }

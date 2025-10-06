@@ -554,7 +554,7 @@ const DataTablePage: React.FC = () => {
                         suppressMenuHide: true,
                         enableCellTextSelection: true,
                         animateRows: true,
-                        enableRangeSelection: true,
+                        cellSelection: true, // v32.2+ replaces enableRangeSelection
                         rowHeight: 50,
                         headerHeight: 50,
                         sideBar: false,
