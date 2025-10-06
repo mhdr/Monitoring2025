@@ -87,6 +87,8 @@
   "managementDetail": "مدیریت",
   "itemDetailTitle": "جزئیات پوینت",
   "trendAnalysisTitle": "تحلیل روند تاریخی",
+  "dataTableTitle": "جدول داده‌های تاریخی",
+  "loadingTable": "در حال بارگذاری جدول...",
   "dateRange": "بازه زمانی",
   "date": "تاریخ",
   "startDate": "تاریخ شروع",

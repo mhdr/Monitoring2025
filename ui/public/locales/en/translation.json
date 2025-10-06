@@ -87,6 +87,8 @@
   "managementDetail": "Management",
   "itemDetailTitle": "Point Details",
   "trendAnalysisTitle": "Historical Trend Analysis",
+  "dataTableTitle": "Historical Data Table",
+  "loadingTable": "Loading table...",
   "dateRange": "Date Range",
   "date": "Date",
   "startDate": "Start Date",
