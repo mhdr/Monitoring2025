@@ -16,6 +16,7 @@ import authReducer from './slices/authSlice';
 import languageReducer from './slices/languageSlice';
 import monitoringReducer from './slices/monitoringSlice';
 import themeReducer from './slices/themeSlice';
+import { api } from '../services/rtkApi';
 
 /**
  * Persistence configuration for language
@@ -56,6 +57,8 @@ const rootReducer = combineReducers({
   language: persistReducer(languagePersistConfig, languageReducer),
   theme: persistReducer(themePersistConfig, themeReducer),
   monitoring: monitoringReducer,
+  // Add RTK Query API reducer
+  [api.reducerPath]: api.reducer,
 });
 
 /**
@@ -69,7 +72,9 @@ export const store = configureStore({
         // Ignore redux-persist actions
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }),
+    })
+    // Add RTK Query middleware for caching, invalidation, polling, and more
+    .concat(api.middleware),
   devTools: import.meta.env.DEV, // Enable Redux DevTools in development
 });
 

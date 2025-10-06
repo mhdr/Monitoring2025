@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap'
 import { useTranslation } from '../hooks/useTranslation';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../hooks/useLanguage';
-import { authApi } from '../services/api';
+import { useChangePasswordMutation } from '../services/rtkApi';
 import './ProfilePage.css';
 
 interface PasswordForm {
@@ -23,6 +23,9 @@ const ProfilePage: React.FC = () => {
   const { user, logout } = useAuth();
   const { language } = useLanguage();
   
+  // RTK Query mutation hook
+  const [changePassword, { isLoading: isSubmitting }] = useChangePasswordMutation();
+  
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
     currentPassword: '',
     newPassword: '',
@@ -30,7 +33,6 @@ const ProfilePage: React.FC = () => {
   });
   
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
@@ -82,14 +84,12 @@ const ProfilePage: React.FC = () => {
       return;
     }
     
-    setIsSubmitting(true);
-    
     try {
-      // Call the change password API
-      const response = await authApi.changePassword(
-        passwordForm.currentPassword,
-        passwordForm.newPassword
-      );
+      // Call the RTK Query mutation
+      const response = await changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      }).unwrap();
       
       if (response.isSuccessful) {
         setSuccessMessage(t('profilePage.messages.changePasswordSuccess'));
@@ -121,8 +121,6 @@ const ProfilePage: React.FC = () => {
       } else {
         setErrorMessage(apiError.message || t('profilePage.messages.changePasswordError'));
       }
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

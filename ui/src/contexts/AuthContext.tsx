@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { AuthContextType, LoginRequest, ApiError, User } from '../types/auth';
-import { authApi } from '../services/api';
+import { useLoginMutation } from '../services/rtkApi';
 import { authStorageHelpers } from '../utils/authStorage';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -15,6 +15,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   // Start loading true until we initialize auth state from storage
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // RTK Query login mutation hook
+  const [loginMutation] = useLoginMutation();
 
   // Initialize auth state on mount from storage
   useEffect(() => {
@@ -49,12 +52,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      // Call the Axios API
-      const response = await authApi.login(credentials);
+      // Call the RTK Query mutation
+      const result = await loginMutation(credentials).unwrap();
       
       // Update auth state
-      setUser(response.user);
-      setToken(response.accessToken);
+      setUser(result.user);
+      setToken(result.accessToken);
       setIsAuthenticated(true);
       setIsLoading(false);
       
@@ -63,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Re-throw the error to let the calling component handle it
       throw error as ApiError;
     }
-  }, []);
+  }, [loginMutation]);
 
   const logout = useCallback(() => {
     setUser(null);

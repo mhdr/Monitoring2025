@@ -17,7 +17,6 @@
   "dependencies": {
     "@majidh1/jalalidatepicker": "^0.9.12",
     "@reduxjs/toolkit": "^2.9.0",
-    "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "echarts": "^5.6.0",

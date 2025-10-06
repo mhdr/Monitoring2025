@@ -1,8 +1,8 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { monitoringApi } from '../../services/api';
-import type { Group, GroupsResponseDto, ItemsResponseDto, Item, ValuesResponseDto, MultiValue } from '../../types/api';
+import type { Group, Item, MultiValue } from '../../types/api';
 import type { ApiError } from '../../types/auth';
+import { api } from '../../services/rtkApi';
 
 /**
  * Monitoring state interface
@@ -46,62 +46,8 @@ const initialState: MonitoringState = {
   currentFolderId: null,
 };
 
-/**
- * Async thunk to fetch groups
- */
-export const fetchGroups = createAsyncThunk<
-  GroupsResponseDto,
-  void,
-  { rejectValue: ApiError }
->(
-  'monitoring/fetchGroups',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await monitoringApi.getGroups();
-      return response;
-    } catch (error) {
-      return rejectWithValue(error as ApiError);
-    }
-  }
-);
-
-/**
- * Async thunk to fetch items
- */
-export const fetchItems = createAsyncThunk<
-  ItemsResponseDto,
-  { showOrphans?: boolean },
-  { rejectValue: ApiError }
->(
-  'monitoring/fetchItems',
-  async ({ showOrphans = false }, { rejectWithValue }) => {
-    try {
-      const response = await monitoringApi.getItems({ showOrphans });
-      return response;
-    } catch (error) {
-      return rejectWithValue(error as ApiError);
-    }
-  }
-);
-
-/**
- * Async thunk to fetch values for monitoring items
- */
-export const fetchValues = createAsyncThunk<
-  ValuesResponseDto,
-  { itemIds?: string[] },
-  { rejectValue: ApiError }
->(
-  'monitoring/fetchValues',
-  async ({ itemIds }, { rejectWithValue }) => {
-    try {
-      const response = await monitoringApi.getValues({ itemIds: itemIds || null });
-      return response;
-    } catch (error) {
-      return rejectWithValue(error as ApiError);
-    }
-  }
-);
+// Note: Data fetching is now handled by RTK Query
+// This slice maintains the state for compatibility with existing components
 
 /**
  * Monitoring slice
@@ -131,59 +77,86 @@ const monitoringSlice = createSlice({
     resetMonitoring: () => initialState,
   },
   extraReducers: (builder) => {
-    // Fetch groups
+    // Handle RTK Query getGroups
     builder
-      .addCase(fetchGroups.pending, (state) => {
-        state.groupsLoading = true;
-        state.groupsError = null;
-      })
-      .addCase(fetchGroups.fulfilled, (state, action) => {
-        state.groupsLoading = false;
-        state.groups = action.payload.groups || [];
-      })
-      .addCase(fetchGroups.rejected, (state, action) => {
-        state.groupsLoading = false;
-        state.groupsError = action.payload || {
-          message: 'Failed to fetch groups',
-          status: 500,
-        };
-      });
+      .addMatcher(
+        api.endpoints.getGroups.matchPending,
+        (state) => {
+          state.groupsLoading = true;
+          state.groupsError = null;
+        }
+      )
+      .addMatcher(
+        api.endpoints.getGroups.matchFulfilled,
+        (state, action) => {
+          state.groupsLoading = false;
+          state.groups = action.payload.groups || [];
+        }
+      )
+      .addMatcher(
+        api.endpoints.getGroups.matchRejected,
+        (state, action) => {
+          state.groupsLoading = false;
+          state.groupsError = (action.payload as unknown as ApiError) || {
+            message: 'Failed to fetch groups',
+            status: 500,
+          };
+        }
+      );
 
-    // Fetch items
+    // Handle RTK Query getItems
     builder
-      .addCase(fetchItems.pending, (state) => {
-        state.itemsLoading = true;
-        state.itemsError = null;
-      })
-      .addCase(fetchItems.fulfilled, (state, action) => {
-        state.itemsLoading = false;
-        state.items = action.payload.items || [];
-      })
-      .addCase(fetchItems.rejected, (state, action) => {
-        state.itemsLoading = false;
-        state.itemsError = action.payload || {
-          message: 'Failed to fetch items',
-          status: 500,
-        };
-      });
+      .addMatcher(
+        api.endpoints.getItems.matchPending,
+        (state) => {
+          state.itemsLoading = true;
+          state.itemsError = null;
+        }
+      )
+      .addMatcher(
+        api.endpoints.getItems.matchFulfilled,
+        (state, action) => {
+          state.itemsLoading = false;
+          state.items = action.payload.items || [];
+        }
+      )
+      .addMatcher(
+        api.endpoints.getItems.matchRejected,
+        (state, action) => {
+          state.itemsLoading = false;
+          state.itemsError = (action.payload as unknown as ApiError) || {
+            message: 'Failed to fetch items',
+            status: 500,
+          };
+        }
+      );
 
-    // Fetch values
+    // Handle RTK Query getValues
     builder
-      .addCase(fetchValues.pending, (state) => {
-        state.valuesLoading = true;
-        state.valuesError = null;
-      })
-      .addCase(fetchValues.fulfilled, (state, action) => {
-        state.valuesLoading = false;
-        state.values = action.payload.values || [];
-      })
-      .addCase(fetchValues.rejected, (state, action) => {
-        state.valuesLoading = false;
-        state.valuesError = action.payload || {
-          message: 'Failed to fetch values',
-          status: 500,
-        };
-      });
+      .addMatcher(
+        api.endpoints.getValues.matchPending,
+        (state) => {
+          state.valuesLoading = true;
+          state.valuesError = null;
+        }
+      )
+      .addMatcher(
+        api.endpoints.getValues.matchFulfilled,
+        (state, action) => {
+          state.valuesLoading = false;
+          state.values = action.payload.values || [];
+        }
+      )
+      .addMatcher(
+        api.endpoints.getValues.matchRejected,
+        (state, action) => {
+          state.valuesLoading = false;
+          state.valuesError = (action.payload as unknown as ApiError) || {
+            message: 'Failed to fetch values',
+            status: 500,
+          };
+        }
+      );
   },
 });
 
@@ -196,3 +169,21 @@ export const { setCurrentFolderId, clearErrors, resetMonitoring } = monitoringSl
  * Export reducer
  */
 export default monitoringSlice.reducer;
+
+/**
+ * Wrapper thunks for backward compatibility with existing components
+ * These dispatch RTK Query endpoints and update the monitoring slice
+ */
+import type { AppDispatch } from '../index';
+
+export const fetchGroups = () => (dispatch: AppDispatch) => {
+  return dispatch(api.endpoints.getGroups.initiate());
+};
+
+export const fetchItems = ({ showOrphans = false }: { showOrphans?: boolean }) => (dispatch: AppDispatch) => {
+  return dispatch(api.endpoints.getItems.initiate({ showOrphans }));
+};
+
+export const fetchValues = ({ itemIds }: { itemIds?: string[] }) => (dispatch: AppDispatch) => {
+  return dispatch(api.endpoints.getValues.initiate({ itemIds: itemIds || null }));
+};

@@ -5,8 +5,8 @@ import type { EChartsOption } from 'echarts';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
 import { fetchItems } from '../../store/slices/monitoringSlice';
-import { monitoringApi } from '../../services/api';
-import type { HistoryRequestDto, HistoryResponseDto, HistoricalDataPoint, Item } from '../../types/api';
+import { useLazyGetHistoryQuery } from '../../services/rtkApi';
+import type { HistoryRequestDto, HistoricalDataPoint, Item } from '../../types/api';
 import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
 
 // Date range preset types
@@ -25,8 +25,10 @@ const TrendAnalysisPage: React.FC = () => {
   );
   const itemsLoading = useAppSelector((state) => state.monitoring.itemsLoading);
 
+  // RTK Query lazy hook for fetching history
+  const [fetchHistory, { data: historyResponse, isLoading: loading, isError }] = useLazyGetHistoryQuery();
+  
   // State management
-  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [historyData, setHistoryData] = useState<HistoricalDataPoint[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>('last24Hours');
@@ -139,11 +141,9 @@ const TrendAnalysisPage: React.FC = () => {
   const fetchHistoryData = async () => {
     if (!itemId) {
       setError(t('itemNotFound'));
-      setLoading(false);
       return;
     }
 
-    setLoading(true);
     setError(null);
 
     try {
@@ -152,7 +152,6 @@ const TrendAnalysisPage: React.FC = () => {
       // Validate date range
       if (startDate >= endDate) {
         setError(t('startDateAfterEnd'));
-        setLoading(false);
         return;
       }
 
@@ -162,15 +161,27 @@ const TrendAnalysisPage: React.FC = () => {
         endDate,
       };
 
-      const response: HistoryResponseDto = await monitoringApi.getHistory(request);
-      setHistoryData(response.values || []);
+      // Trigger RTK Query to fetch history
+      await fetchHistory(request).unwrap();
     } catch (err) {
       console.error('Error fetching history data:', err);
       setError(t('errorLoadingData'));
-    } finally {
-      setLoading(false);
     }
   };
+  
+  // Update historyData when RTK Query response changes
+  useEffect(() => {
+    if (historyResponse) {
+      setHistoryData(historyResponse.values || []);
+    }
+  }, [historyResponse]);
+  
+  // Set error when RTK Query has an error
+  useEffect(() => {
+    if (isError) {
+      setError(t('errorLoadingData'));
+    }
+  }, [isError, t]);
 
   // Fetch data on mount and when preset changes (not when custom dates change)
   useEffect(() => {

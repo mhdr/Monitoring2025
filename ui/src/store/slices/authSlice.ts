@@ -1,7 +1,7 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import type { User, LoginRequest, ApiError } from '../../types/auth';
-import { authApi } from '../../services/api';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import type { User } from '../../types/auth';
 import { authStorageHelpers } from '../../utils/authStorage';
+import { api } from '../../services/rtkApi';
 
 interface AuthState {
   user: User | null;
@@ -19,46 +19,8 @@ const initialState: AuthState = {
   error: null,
 };
 
-/**
- * Async thunk for user login
- * Handles API call and storage management
- */
-export const loginAsync = createAsyncThunk<
-  { user: User; accessToken: string },
-  LoginRequest,
-  { rejectValue: string }
->(
-  'auth/login',
-  async (credentials, { rejectWithValue }) => {
-    try {
-      const response = await authApi.login(credentials);
-      return response;
-    } catch (error) {
-      const apiError = error as ApiError;
-      return rejectWithValue(apiError.message || 'خطا در ورود به سیستم');
-    }
-  }
-);
-
-/**
- * Async thunk for token refresh
- */
-export const refreshTokenAsync = createAsyncThunk<
-  { accessToken: string; user: User },
-  { accessToken: string; refreshToken: string },
-  { rejectValue: string }
->(
-  'auth/refreshToken',
-  async (tokens, { rejectWithValue }) => {
-    try {
-      const response = await authApi.refreshToken(tokens);
-      return response;
-    } catch (error) {
-      const apiError = error as ApiError;
-      return rejectWithValue(apiError.message || 'خطا در بازیابی توکن');
-    }
-  }
-);
+// Note: Login and refresh token logic is now handled by RTK Query mutations
+// The authentication state management remains in this slice for compatibility
 
 const authSlice = createSlice({
   name: 'auth',
@@ -110,42 +72,62 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Login async thunk handlers
+    // Handle RTK Query login mutation
     builder
-      .addCase(loginAsync.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(loginAsync.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.accessToken;
-        state.isAuthenticated = true;
-        state.error = null;
-      })
-      .addCase(loginAsync.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload || 'خطا در ورود به سیستم';
-        state.isAuthenticated = false;
-      });
+      .addMatcher(
+        api.endpoints.login.matchPending,
+        (state) => {
+          state.isLoading = true;
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        api.endpoints.login.matchFulfilled,
+        (state, action) => {
+          state.isLoading = false;
+          state.user = action.payload.user;
+          state.token = action.payload.accessToken;
+          state.isAuthenticated = true;
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        api.endpoints.login.matchRejected,
+        (state, action) => {
+          state.isLoading = false;
+          const errorData = action.payload as { message?: string };
+          state.error = errorData?.message || 'خطا در ورود به سیستم';
+          state.isAuthenticated = false;
+        }
+      );
 
-    // Refresh token async thunk handlers
+    // Handle RTK Query refresh token mutation
     builder
-      .addCase(refreshTokenAsync.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(refreshTokenAsync.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.accessToken;
-        state.isAuthenticated = true;
-        state.error = null;
-      })
-      .addCase(refreshTokenAsync.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload || 'خطا در بازیابی توکن';
-        // Don't clear auth on refresh failure - let the user stay logged in
-      });
+      .addMatcher(
+        api.endpoints.refreshToken.matchPending,
+        (state) => {
+          state.isLoading = true;
+        }
+      )
+      .addMatcher(
+        api.endpoints.refreshToken.matchFulfilled,
+        (state, action) => {
+          state.isLoading = false;
+          state.user = action.payload.user;
+          state.token = action.payload.accessToken;
+          state.isAuthenticated = true;
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        api.endpoints.refreshToken.matchRejected,
+        (state, action) => {
+          state.isLoading = false;
+          const errorData = action.payload as { message?: string };
+          state.error = errorData?.message || 'خطا در بازیابی توکن';
+          // Don't clear auth on refresh failure - let the user stay logged in
+        }
+      );
   },
 });
 
