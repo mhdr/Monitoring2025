@@ -280,6 +280,52 @@ Authorization: Bearer {{authTokenHTTP}}
 
 ###
 
+### Change current user's password - HTTP
+POST {{API_HostAddress}}/api/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "currentPassword": "12345",
+  "newPassword": "newPassword123"
+}
+
+###
+
+### Change current user's password - HTTPS
+POST {{API_HostAddress}}/api/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "currentPassword": "456",
+  "newPassword": "newPassword456"
+}
+
+###
+
+### Reset a user's password to default (Admin functionality) - HTTP
+POST {{API_HostAddress}}/api/auth/reset-password
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userName": "johndoe"
+}
+
+###
+
+### Reset a user's password to default (Admin functionality) - HTTPS
+POST {{API_HostAddress}}/api/auth/reset-password
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userName": "janesmith"
+}
+
+###
+
 #################################################################################
 # MONITORING CONTROLLER - GROUPS ENDPOINTS
 #################################################################################

@@ -88,6 +88,8 @@ chmod +x run-api.sh
 - `POST /api/auth/logout` - Logout user
 - `PUT /api/auth/update-user/{userId?}` - Update user information (requires auth)
 - `POST /api/auth/disable-user` - Disable/enable user account (admin functionality)
+- `POST /api/auth/change-password` - Change current user's password (requires auth)
+- `POST /api/auth/reset-password` - Reset a user's password to default (admin functionality, requires auth)
 
 ### Protected Endpoints
 

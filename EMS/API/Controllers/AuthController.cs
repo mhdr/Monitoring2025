@@ -607,4 +607,137 @@ public class AuthController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Reset a user's password to the default value (12345)
+    /// </summary>
+    /// <param name="request">Reset password request containing the username</param>
+    /// <returns>Result indicating success or failure of password reset operation</returns>
+    /// <response code="200">Returns success status of the password reset</response>
+    /// <response code="400">If the input is invalid or user not found</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpPost("reset-password")]
+    [Authorize]
+    [ProducesResponseType(typeof(ResetPasswordResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResetPasswordResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ResetPasswordResponseDto
+                {
+                    IsSuccessful = false
+                });
+            }
+
+            if (string.IsNullOrEmpty(request.UserName))
+            {
+                return BadRequest(new ResetPasswordResponseDto
+                {
+                    IsSuccessful = false
+                });
+            }
+
+            var user = await _userManager.FindByNameAsync(request.UserName);
+
+            if (user == null)
+            {
+                return BadRequest(new ResetPasswordResponseDto
+                {
+                    IsSuccessful = false
+                });
+            }
+
+            var password = "12345";
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var resetPassResult = await _userManager.ResetPasswordAsync(user, resetToken, password);
+
+            _logger.LogInformation("Password reset for user {UserName} - Success: {Success}", 
+                request.UserName, resetPassResult.Succeeded);
+
+            return Ok(new ResetPasswordResponseDto
+            {
+                IsSuccessful = resetPassResult.Succeeded
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resetting password for user {UserName}", request.UserName);
+            return StatusCode(500, new ResetPasswordResponseDto
+            {
+                IsSuccessful = false
+            });
+        }
+    }
+
+    /// <summary>
+    /// Allow the current user to change their own password
+    /// </summary>
+    /// <param name="request">Change password request containing current password and new password</param>
+    /// <returns>Result indicating success or failure of password change operation</returns>
+    /// <response code="200">Returns success status of the password change</response>
+    /// <response code="400">If the input is invalid or current password is incorrect</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpPost("change-password")]
+    [Authorize]
+    [ProducesResponseType(typeof(ChangePasswordResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ChangePasswordResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ChangePasswordResponseDto
+                {
+                    IsSuccessful = false
+                });
+            }
+
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("Password changed successfully for user {UserId}", userId);
+            }
+            else
+            {
+                _logger.LogWarning("Password change failed for user {UserId}", userId);
+            }
+
+            return Ok(new ChangePasswordResponseDto
+            {
+                IsSuccessful = result.Succeeded
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error changing password for user");
+            return StatusCode(500, new ChangePasswordResponseDto
+            {
+                IsSuccessful = false
+            });
+        }
+    }
 }

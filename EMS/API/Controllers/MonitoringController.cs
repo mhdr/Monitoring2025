@@ -1394,68 +1394,7 @@ public class MonitoringController : ControllerBase
         return BadRequest(ModelState);
     }
 
-    /// <summary>
-    /// Reset a user's password to the default value (12345)
-    /// </summary>
-    /// <param name="request">Reset password request containing the username</param>
-    /// <returns>Result indicating success or failure of password reset operation</returns>
-    /// <response code="200">Returns success status of the password reset</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
-    [HttpPost("ResetPassword")]
-    [ProducesResponseType(typeof(ResetPasswordResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
-    {
-        try
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
-            var response = new ResetPasswordResponseDto();
-
-            if (string.IsNullOrEmpty(request.UserName))
-            {
-                response.IsSuccessful = false;
-                return Ok(response);
-            }
-
-            var user = await _userManager.FindByNameAsync(request.UserName);
-
-            if (user != null)
-            {
-                var password = "12345";
-                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var resetPassResult = await _userManager.ResetPasswordAsync(user, resetToken, password);
-
-                if (resetPassResult.Succeeded)
-                {
-                    response.IsSuccessful = true;
-                }
-                else
-                {
-                    response.IsSuccessful = false;
-                }
-            }
-            else
-            {
-                response.IsSuccessful = false;
-            }
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-        }
-
-        return BadRequest(ModelState);
-    }
 
     /// <summary>
     /// Get all available system roles
@@ -1614,53 +1553,7 @@ public class MonitoringController : ControllerBase
         return BadRequest(ModelState);
     }
 
-    /// <summary>
-    /// Allow the current user to change their own password
-    /// </summary>
-    /// <param name="request">Change password request containing current password and new password</param>
-    /// <returns>Result indicating success or failure of password change operation</returns>
-    /// <response code="200">Returns success status of the password change</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request or current password is incorrect</response>
-    [HttpPost("ChangePassword")]
-    [ProducesResponseType(typeof(ChangePasswordResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
-    {
-        try
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
-            // var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
-            var user = await _userManager.FindByIdAsync(userId);
-
-            if (user == null)
-            {
-                return Unauthorized();
-            }
-
-            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
-
-            var response = new ChangePasswordResponseDto()
-            {
-                IsSuccessful = result.Succeeded,
-            };
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-        }
-
-        return BadRequest(ModelState);
-    }
 
     /// <summary>
     /// Save user permissions for accessing groups and monitoring items
