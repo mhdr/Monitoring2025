@@ -1,0 +1,289 @@
+/**
+ * AG Grid Wrapper Styles
+ * Custom styles for AG Grid integration with RTL support
+ */
+
+/* Loading Container */
+.ag-grid-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-primary-light);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+}
+
+.ag-grid-loading-spinner {
+  text-align: center;
+}
+
+.ag-grid-loading-spinner p {
+  color: var(--text-secondary-light);
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* Error Container */
+.ag-grid-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.ag-grid-error .alert {
+  max-width: 500px;
+  width: 100%;
+}
+
+/* AG Grid Wrapper */
+.ag-grid-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* RTL Support */
+.ag-grid-rtl {
+  direction: rtl;
+}
+
+.ag-grid-ltr {
+  direction: ltr;
+}
+
+/* Theme Overrides for Integration */
+.ag-theme-quartz,
+.ag-theme-alpine,
+.ag-theme-balham,
+.ag-theme-material {
+  /* Font Family */
+  font-family: inherit;
+  
+  /* Primary Color Integration */
+  --ag-alpine-active-color: var(--primary-medium);
+  --ag-selected-row-background-color: var(--primary-lighter);
+  --ag-range-selection-border-color: var(--primary-medium);
+  
+  /* Background Colors */
+  --ag-background-color: var(--bg-primary-light);
+  --ag-header-background-color: var(--bg-secondary-light);
+  --ag-odd-row-background-color: var(--bg-primary-light);
+  --ag-row-hover-color: var(--primary-lighter);
+  
+  /* Border Colors */
+  --ag-border-color: var(--border-medium);
+  --ag-header-column-separator-color: var(--border-medium);
+  
+  /* Text Colors */
+  --ag-foreground-color: var(--text-primary-light);
+  --ag-secondary-foreground-color: var(--text-secondary-light);
+  --ag-header-foreground-color: var(--text-primary-light);
+  
+  /* Focus & Selection */
+  --ag-input-focus-border-color: var(--primary-medium);
+  --ag-checkbox-checked-color: var(--primary-medium);
+  
+  /* Borders */
+  --ag-borders: solid 1px;
+  --ag-row-border-color: var(--border-light);
+}
+
+/* Dark Theme Support */
+.dark-theme .ag-theme-quartz,
+.dark-theme .ag-theme-alpine,
+.dark-theme .ag-theme-balham,
+.dark-theme .ag-theme-material {
+  --ag-background-color: var(--bg-primary-dark);
+  --ag-header-background-color: var(--bg-secondary-dark);
+  --ag-odd-row-background-color: var(--bg-primary-dark);
+  --ag-foreground-color: var(--text-primary-dark);
+  --ag-secondary-foreground-color: var(--text-secondary-dark);
+  --ag-header-foreground-color: var(--text-primary-dark);
+  --ag-border-color: var(--border-dark);
+  --ag-header-column-separator-color: var(--border-dark);
+  --ag-row-border-color: var(--border-medium);
+}
+
+/* Header Styling */
+.ag-header {
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-medium) !important;
+}
+
+.ag-header-cell {
+  padding: 0.75rem 1rem;
+}
+
+.ag-header-cell-label {
+  font-weight: 600;
+}
+
+/* Cell Styling */
+.ag-cell {
+  padding: 0.5rem 1rem;
+  line-height: 1.5;
+}
+
+/* Pagination Styling */
+.ag-paging-panel {
+  border-top: 2px solid var(--border-medium);
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-secondary-light);
+}
+
+.dark-theme .ag-paging-panel {
+  background-color: var(--bg-secondary-dark);
+}
+
+/* Filter Panel */
+.ag-filter {
+  background-color: var(--bg-primary-light);
+  border: 1px solid var(--border-medium);
+  box-shadow: var(--shadow-md);
+}
+
+.dark-theme .ag-filter {
+  background-color: var(--bg-primary-dark);
+}
+
+/* Context Menu */
+.ag-menu {
+  background-color: var(--bg-primary-light);
+  border: 1px solid var(--border-medium);
+  box-shadow: var(--shadow-lg);
+}
+
+.dark-theme .ag-menu {
+  background-color: var(--bg-primary-dark);
+}
+
+.ag-menu-option-active {
+  background-color: var(--primary-lighter);
+}
+
+/* Column Menu */
+.ag-column-select-panel {
+  background-color: var(--bg-primary-light);
+}
+
+.dark-theme .ag-column-select-panel {
+  background-color: var(--bg-primary-dark);
+}
+
+/* Scrollbar Styling */
+.ag-body-horizontal-scroll::-webkit-scrollbar,
+.ag-body-vertical-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.ag-body-horizontal-scroll::-webkit-scrollbar-track,
+.ag-body-vertical-scroll::-webkit-scrollbar-track {
+  background: var(--bg-secondary-light);
+}
+
+.dark-theme .ag-body-horizontal-scroll::-webkit-scrollbar-track,
+.dark-theme .ag-body-vertical-scroll::-webkit-scrollbar-track {
+  background: var(--bg-secondary-dark);
+}
+
+.ag-body-horizontal-scroll::-webkit-scrollbar-thumb,
+.ag-body-vertical-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 4px;
+}
+
+.ag-body-horizontal-scroll::-webkit-scrollbar-thumb:hover,
+.ag-body-vertical-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-medium);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ag-header-cell {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .ag-cell {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .ag-paging-panel {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Loading Overlay */
+.ag-overlay-loading-wrapper {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.dark-theme .ag-overlay-loading-wrapper {
+  background-color: rgba(0, 0, 0, 0.95);
+}
+
+/* No Rows Overlay */
+.ag-overlay-no-rows-wrapper {
+  background-color: var(--bg-primary-light);
+}
+
+.dark-theme .ag-overlay-no-rows-wrapper {
+  background-color: var(--bg-primary-dark);
+}
+
+/* Selection Checkbox */
+.ag-checkbox-input-wrapper {
+  color: var(--primary-medium);
+}
+
+.ag-checkbox-input-wrapper.ag-checked::after {
+  color: var(--primary-medium);
+}
+
+/* Focus Ring */
+.ag-cell-focus:not(.ag-cell-range-selected):focus-within {
+  border: 2px solid var(--primary-medium) !important;
+  outline: none;
+}
+
+/* Sort Indicator */
+.ag-header-cell-sorted-asc .ag-sort-indicator-icon,
+.ag-header-cell-sorted-desc .ag-sort-indicator-icon {
+  color: var(--primary-medium);
+}
+
+/* Filter Icon */
+.ag-header-cell-filtered .ag-filter-icon {
+  color: var(--accent-primary);
+}
+
+/* RTL-specific adjustments */
+.ag-grid-rtl .ag-header-cell-menu-button {
+  margin-left: 0;
+  margin-right: 4px;
+}
+
+.ag-grid-rtl .ag-cell {
+  text-align: right;
+}
+
+.ag-grid-rtl .ag-header-cell-text {
+  text-align: right;
+}
+
+/* Pinned columns in RTL */
+.ag-grid-rtl .ag-pinned-left-header,
+.ag-grid-rtl .ag-pinned-left-cols-container {
+  left: auto;
+  right: 0;
+}
+
+.ag-grid-rtl .ag-pinned-right-header,
+.ag-grid-rtl .ag-pinned-right-cols-container {
+  right: auto;
+  left: 0;
+}
