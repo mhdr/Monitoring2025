@@ -8,6 +8,7 @@ import type { User } from '../types/auth';
 
 // Constants
 const AUTH_TOKEN_KEY = 'auth_token';
+const AUTH_REFRESH_TOKEN_KEY = 'auth_refresh_token';
 const AUTH_USER_KEY = 'auth_user';
 const AUTH_EXPIRATION_KEY = 'auth_expiration';
 const REMEMBER_ME_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
@@ -15,6 +16,10 @@ const REMEMBER_ME_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 export const authStorageHelpers = {
   getStoredToken: (): string | null => {
     return localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY);
+  },
+
+  getStoredRefreshToken: (): string | null => {
+    return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY) || sessionStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
   },
 
   getStoredUser: (): User | null => {
@@ -50,33 +55,43 @@ export const authStorageHelpers = {
     }
   },
 
-  setStoredAuth: (token: string, user: User, rememberMe: boolean = true): void => {
+  setStoredAuth: (token: string, user: User, rememberMe: boolean = true, refreshToken?: string): void => {
     if (rememberMe) {
       // Persistent storage - survives browser restart with 7-day rolling expiration
       const expiration = Date.now() + REMEMBER_ME_DURATION;
       localStorage.setItem(AUTH_TOKEN_KEY, token);
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
       localStorage.setItem(AUTH_EXPIRATION_KEY, expiration.toString());
+      if (refreshToken) {
+        localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
+      }
       // Clear any existing session storage
       sessionStorage.removeItem(AUTH_TOKEN_KEY);
       sessionStorage.removeItem(AUTH_USER_KEY);
+      sessionStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
     } else {
       // Session storage - cleared when browser/tab is closed
       sessionStorage.setItem(AUTH_TOKEN_KEY, token);
       sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      if (refreshToken) {
+        sessionStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
+      }
       // Clear any existing persistent storage
       localStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem(AUTH_USER_KEY);
       localStorage.removeItem(AUTH_EXPIRATION_KEY);
+      localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
     }
   },
 
   clearStoredAuth: (): void => {
     // Clear both localStorage and sessionStorage to ensure complete logout
     localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(AUTH_EXPIRATION_KEY);
     sessionStorage.removeItem(AUTH_TOKEN_KEY);
+    sessionStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
     sessionStorage.removeItem(AUTH_USER_KEY);
   },
 
@@ -87,6 +102,7 @@ export const authStorageHelpers = {
       authStorageHelpers.clearStoredAuth();
       return {
         token: null,
+        refreshToken: null,
         user: null,
       };
     }
@@ -96,6 +112,7 @@ export const authStorageHelpers = {
 
     return {
       token: authStorageHelpers.getStoredToken(),
+      refreshToken: authStorageHelpers.getStoredRefreshToken(),
       user: authStorageHelpers.getStoredUser(),
     };
   },

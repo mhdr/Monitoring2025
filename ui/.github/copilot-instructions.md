@@ -95,9 +95,40 @@ const option: EChartsOption = {
 - **Server:** .NET Core ASP.NET Web API, HTTPS-only
 - **Base URL:** `https://localhost:7136`
 - **Swagger:** `https://localhost:7136/swagger/v1/swagger.json`
-- **Auth:** JWT tokens (`src/utils/authStorage.ts`, `src/contexts/AuthContext.tsx`, `src/store/slices/authSlice.ts`)
+- **Auth:** JWT tokens with refresh token rotation (`src/utils/authStorage.ts`, `src/contexts/AuthContext.tsx`, `src/services/rtkApi.ts`)
 - **Test Credentials:** username: `test`, password: `Password@12345` (for debugging/DevTools MCP)
-- **API Client:** `src/services/api.ts`
+- **API Client:** `src/services/rtkApi.ts` (RTK Query)
+
+## 🔐 Authentication & Security
+
+⚠️ **CRITICAL:** This project implements **Refresh Token Rotation** following OAuth 2.0 best practices.
+
+**Features:**
+- **Automatic Token Refresh:** RTK Query interceptor automatically refreshes expired tokens
+- **Token Rotation:** Old refresh tokens are invalidated when used
+- **Mutex Protection:** Prevents concurrent refresh requests using `async-mutex`
+- **Secure Storage:** Tokens stored in localStorage (persistent) or sessionStorage (session-only)
+
+**Key Files:**
+- `src/services/rtkApi.ts` - Token refresh interceptor with mutex
+- `src/utils/authStorage.ts` - Token storage management
+- `src/contexts/AuthContext.tsx` - Authentication state
+- `REFRESH_TOKEN_ROTATION.md` - Complete documentation
+
+**How It Works:**
+1. User logs in → Both access token and refresh token stored
+2. API request with expired token → 401 response
+3. Interceptor automatically calls refresh endpoint with stored tokens
+4. Backend returns new access token + new refresh token (rotation!)
+5. Old refresh token is now invalid (prevents replay attacks)
+6. Original request is retried with new token
+7. User experiences seamless authentication (no interruption)
+
+**Important:**
+- Never manually handle token refresh in components
+- RTK Query's `baseQueryWithAuth` handles it automatically
+- Failed refresh triggers automatic logout and redirect to login
+- See `REFRESH_TOKEN_ROTATION.md` for detailed documentation
 
 ---
 

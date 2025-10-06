@@ -16,6 +16,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Start loading true until we initialize auth state from storage
   const [isLoading, setIsLoading] = useState<boolean>(true);
   
+  // Note: refreshToken is managed in authStorage and used by RTK Query's interceptor
+  // It doesn't need to be in React state since it's never displayed or used in components
+  
   // RTK Query login mutation hook
   const [loginMutation] = useLoginMutation();
 
@@ -26,6 +29,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const authState = authStorageHelpers.getCurrentAuth();
       setUser(authState.user);
       setToken(authState.token);
+      // refreshToken is stored but not kept in React state - it's only used by RTK Query
       setIsAuthenticated(Boolean(authState.token && authState.user));
     } finally {
       // Ensure loading flag is cleared after initialization
@@ -55,7 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Call the RTK Query mutation
       const result = await loginMutation(credentials).unwrap();
       
-      // Update auth state
+      // Update auth state (refresh token is stored in authStorage by the login mutation)
       setUser(result.user);
       setToken(result.accessToken);
       setIsAuthenticated(true);
@@ -73,7 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     setIsAuthenticated(false);
     setIsLoading(false);
-    // Clear from storage
+    // Clear from storage (including refresh token)
     authStorageHelpers.clearStoredAuth();
   }, []);
 

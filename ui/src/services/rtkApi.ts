@@ -12,54 +12,129 @@ import type {
   HistoryResponseDto 
 } from '../types/api';
 import { authStorageHelpers } from '../utils/authStorage';
+import { Mutex } from 'async-mutex';
 
 // API configuration - Use relative path for development with Vite proxy
 // In production, this should be set to the actual API server URL
 const API_BASE_URL = import.meta.env.PROD ? 'https://localhost:7136' : '';
 
+// Mutex to prevent multiple concurrent refresh token requests
+const refreshMutex = new Mutex();
+
 /**
- * Custom base query with authentication and token refresh logic
+ * Base query configuration
+ */
+const baseQuery = fetchBaseQuery({
+  baseUrl: API_BASE_URL,
+  timeout: 10000,
+  prepareHeaders: (headers) => {
+    const token = authStorageHelpers.getStoredToken();
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+      // Extend expiration on each API call (user activity)
+      authStorageHelpers.extendAuthExpiration();
+    }
+    return headers;
+  },
+});
+
+/**
+ * Custom base query with automatic token refresh on 401 errors
+ * Implements refresh token rotation with mutex to prevent concurrent refresh requests
  */
 const baseQueryWithAuth: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-  const baseQuery = fetchBaseQuery({
-    baseUrl: API_BASE_URL,
-    timeout: 10000,
-    prepareHeaders: (headers) => {
-      const token = authStorageHelpers.getStoredToken();
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-        // Extend expiration on each API call (user activity)
-        authStorageHelpers.extendAuthExpiration();
-      }
-      return headers;
-    },
-  });
+  // Wait until any ongoing refresh is complete
+  await refreshMutex.waitForUnlock();
+  
+  // Execute the initial query
+  let result = await baseQuery(args, api, extraOptions);
 
-  const result = await baseQuery(args, api, extraOptions);
-
-  // Handle 401 errors - auto-logout except for login requests
+  // Handle 401 Unauthorized errors
   if (result.error && result.error.status === 401) {
-    // Determine if this is a login request
+    // Determine if this is a login or refresh request
     const url = typeof args === 'string' ? args : args.url;
     const isLoginRequest = /\/api\/auth\/login/i.test(url || '');
+    const isRefreshRequest = /\/api\/auth\/refresh-token/i.test(url || '');
 
-    // Only handle logout for non-login 401s
-    if (!isLoginRequest) {
-      const isExpired = authStorageHelpers.isAuthExpired();
-      const hadToken = !!authStorageHelpers.getStoredToken();
+    // Only attempt refresh for non-login/non-refresh 401s
+    if (!isLoginRequest && !isRefreshRequest) {
+      // Check if another request is already refreshing
+      if (!refreshMutex.isLocked()) {
+        const release = await refreshMutex.acquire();
+        
+        try {
+          // Get current auth state
+          const currentToken = authStorageHelpers.getStoredToken();
+          const currentRefreshToken = authStorageHelpers.getStoredRefreshToken();
+          const currentUser = authStorageHelpers.getStoredUser();
 
-      // Clear auth storage when token was present (expired/invalid)
-      if (hadToken || isExpired) {
-        authStorageHelpers.clearStoredAuth();
+          // Only attempt refresh if we have both tokens
+          if (currentToken && currentRefreshToken && currentUser) {
+            // Attempt to refresh the token
+            const refreshResult = await baseQuery(
+              {
+                url: '/api/Auth/refresh-token',
+                method: 'POST',
+                body: {
+                  accessToken: currentToken,
+                  refreshToken: currentRefreshToken,
+                },
+              },
+              api,
+              extraOptions
+            );
+
+            if (refreshResult.data) {
+              // Token refresh successful - extract new tokens
+              const refreshData = refreshResult.data as LoginResponse;
+              
+              if (refreshData.success && refreshData.accessToken) {
+                // Determine if remember me is active
+                const isRemembered = !!localStorage.getItem('auth_token');
+                
+                // Store new tokens (rotation: old refresh token is now invalid)
+                authStorageHelpers.setStoredAuth(
+                  refreshData.accessToken,
+                  refreshData.user,
+                  isRemembered,
+                  refreshData.refreshToken
+                );
+
+                // Retry the original request with new token
+                result = await baseQuery(args, api, extraOptions);
+              } else {
+                // Refresh returned unsuccessful response
+                authStorageHelpers.clearStoredAuth();
+              }
+            } else {
+              // Refresh failed - clear auth and redirect
+              authStorageHelpers.clearStoredAuth();
+            }
+          } else {
+            // Missing tokens - clear auth
+            authStorageHelpers.clearStoredAuth();
+          }
+        } finally {
+          // Always release the mutex
+          release();
+        }
+      } else {
+        // Another request is refreshing - wait for it to complete
+        await refreshMutex.waitForUnlock();
+        // Retry the original request with potentially new token
+        result = await baseQuery(args, api, extraOptions);
       }
 
-      // Redirect to login if not already there
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      // If we still have a 401 after refresh attempt, redirect to login
+      if (result.error && result.error.status === 401) {
+        authStorageHelpers.clearStoredAuth();
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
   }
@@ -90,11 +165,13 @@ export const api = createApi({
       transformResponse: (response: LoginResponse, _meta, arg) => {
         // Check if login was successful
         if (response.success) {
-          // Store token and user data based on rememberMe preference
+          // Store tokens and user data based on rememberMe preference
+          // This includes the refresh token for token rotation
           authStorageHelpers.setStoredAuth(
             response.accessToken,
             response.user,
-            arg.rememberMe || false
+            arg.rememberMe || false,
+            response.refreshToken
           );
         }
         return response;
@@ -132,6 +209,8 @@ export const api = createApi({
 
     /**
      * Refresh access token
+     * Note: This endpoint is primarily used by the automatic refresh interceptor
+     * Manual calls should be rare as the baseQueryWithAuth handles refresh automatically
      */
     refreshToken: builder.mutation<LoginResponse, RefreshTokenRequest>({
       query: (tokens) => ({
@@ -140,14 +219,16 @@ export const api = createApi({
         body: tokens,
       }),
       transformResponse: (response: LoginResponse) => {
-        // Update stored token
+        // Update stored tokens with rotation
         const currentUser = authStorageHelpers.getStoredUser();
         if (currentUser && response.success) {
           const isRemembered = !!localStorage.getItem('auth_token');
+          // Store new access token AND new refresh token (rotation)
           authStorageHelpers.setStoredAuth(
             response.accessToken,
             response.user,
-            isRemembered
+            isRemembered,
+            response.refreshToken
           );
         }
         return response;

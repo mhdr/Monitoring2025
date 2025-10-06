@@ -25,7 +25,8 @@ const LoginPage: React.FC = () => {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [formData, setFormData] = useState({ username: '', password: '', rememberMe: false });
+  // Initialize rememberMe as true to match the default checked state of the checkbox
+  const [formData, setFormData] = useState({ username: '', password: '', rememberMe: true });
   const [errors, setErrors] = useState<FormErrors>({});
   // Local API error 
   const [apiError, setApiError] = useState<string>('');
