@@ -1,121 +1,129 @@
+using System.Security.Cryptography;
+using System.Text;
 using API.Libs;
 using Core.Models;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace API.Workers;
 
-public class ActiveAlarmsBackgroundWorker : IHostedService, IDisposable
+/// <summary>
+/// Background worker that polls active alarms and notifies connected SignalR clients when the set changes.
+/// Uses BackgroundService for proper cancellation and lifecycle management.
+/// </summary>
+public class ActiveAlarmsBackgroundWorker : BackgroundService, IDisposable
 {
-    private Thread? _workerThread;
-    private CancellationTokenSource _cts;
-    private bool _disposed = false;
-    private List<ActiveAlarm>? _activeAlarms = null;
     private readonly IHubContext<MyHub> _hubContext;
+    private readonly ILogger<ActiveAlarmsBackgroundWorker> _logger;
+    private List<ActiveAlarm>? _activeAlarms;
+    private bool _disposed;
 
-    public ActiveAlarmsBackgroundWorker(IHubContext<MyHub> hubContext)
+    /// <summary>
+    /// Create a new ActiveAlarmsBackgroundWorker.
+    /// </summary>
+    /// <param name="hubContext">SignalR hub context used to broadcast messages.</param>
+    /// <param name="logger">Logger instance for structured logging.</param>
+    public ActiveAlarmsBackgroundWorker(IHubContext<MyHub> hubContext, ILogger<ActiveAlarmsBackgroundWorker> logger)
     {
-        _hubContext = hubContext;
+        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Main background loop. Runs until the host cancellation token is signaled.
+    /// </summary>
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _workerThread = new Thread(Start);
-        _workerThread.Start();
-        return Task.CompletedTask;
-    }
+        _logger.LogInformation("ActiveAlarmsBackgroundWorker starting.");
 
-    private async void Start()
-    {
-        await WorkerThread();
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (_workerThread != null)
+        try
         {
-            _cts.Cancel();
-            _workerThread.Join();
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private async Task WorkerThread()
-    {
-        while (!_cts.Token.IsCancellationRequested)
-        {
-            try
+            while (!stoppingToken.IsCancellationRequested)
             {
-                // Perform background work here
-                var alarms = await ActiveAlarms();
-
-                if (alarms != null)
+                try
                 {
-                    await _hubContext.Clients.All.SendAsync("ActiveAlarms", alarms.Count.ToString());
-                }
+                    var alarms = await GetActiveAlarmsIfChanged(stoppingToken);
 
-                // Thread.Sleep(1000); // Sleep for 1 seconds between checks
-                await Task.Delay(1000, _cts.Token);
+                    if (alarms != null)
+                    {
+                        _logger.LogInformation("Active alarms changed. Broadcasting count={count}", alarms.Count);
+                        // send count as integer; clients should expect an integer
+                        await _hubContext.Clients.All.SendAsync("ActiveAlarms", alarms.Count, stoppingToken);
+                    }
+
+                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    // expected during shutdown - swallow to allow graceful exit
+                    _logger.LogDebug("ActiveAlarmsBackgroundWorker cancellation requested.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error while polling active alarms.");
+                }
             }
-            catch (Exception e)
-            {
-                // MyLog.LogJson("ex", e);
-            }
+        }
+        finally
+        {
+            _logger.LogInformation("ActiveAlarmsBackgroundWorker stopping.");
         }
     }
 
-    private async Task<List<ActiveAlarm>?> ActiveAlarms()
+    private async Task<List<ActiveAlarm>?> GetActiveAlarmsIfChanged(CancellationToken cancellationToken)
     {
+        // Core.Alarms.ActiveAlarms() is assumed to be an async call that honors cancellation via token if available.
         var alarms = await Core.Alarms.ActiveAlarms();
+
         if (_activeAlarms == null)
         {
             _activeAlarms = alarms;
+            return alarms;
         }
-        else
-        {
-            var currentDigest = GetDigest(alarms);
-            var prevDigest = GetDigest(_activeAlarms);
 
-            if (currentDigest != prevDigest)
-            {
-                _activeAlarms = alarms;
-                return alarms;
-            }
+        var currentDigest = ComputeDigest(alarms);
+        var prevDigest = ComputeDigest(_activeAlarms);
+
+        if (!currentDigest.SequenceEqual(prevDigest))
+        {
+            _activeAlarms = alarms;
+            return alarms;
         }
 
         return null;
     }
 
-    public string GetDigest(List<ActiveAlarm> activeAlarms)
+    private static byte[] ComputeDigest(List<ActiveAlarm> activeAlarms)
     {
-        string result = "";
-
-        foreach (var activeAlarm in activeAlarms)
+        // Use a stable SHA256 digest over concatenated Ids to detect changes.
+        // This avoids building large strings and provides a compact comparison.
+        if (activeAlarms == null || activeAlarms.Count == 0)
         {
-            result += activeAlarm.Id;
+            return Array.Empty<byte>();
         }
 
-        return result;
+        var sb = new StringBuilder(activeAlarms.Count * 16);
+        foreach (var a in activeAlarms)
+        {
+            sb.Append(a.Id);
+            sb.Append('|');
+        }
+
+        using var sha = SHA256.Create();
+        return sha.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
     }
 
-    public void Dispose()
+    /// <summary>
+    /// Dispose managed resources.
+    /// </summary>
+    public override void Dispose()
     {
+        if (_disposed) return;
+
         _activeAlarms = null;
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
+        _disposed = true;
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                _cts?.Dispose();
-            }
-
-            _disposed = true;
-        }
+        base.Dispose();
     }
 }
