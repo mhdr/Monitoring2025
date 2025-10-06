@@ -75,71 +75,36 @@ Files: `path/to/file.ts`
 | Long example with comments | Single ✅/❌ example |
 | 3 paragraphs explaining | 5 bullet points |
 
-### 5. Section-Specific Rules
-
-**i18n Section:**
-
-- Keep: Translation file paths, key format, RTL rules
-- Remove: Why i18n matters, benefits of bilingual support
-
-**Theme System:**
-
-- Keep: CSS variables list, file paths, adding new color steps
-- Remove: Explanation of CSS custom properties, design philosophy
-
-**Charts:**
-
-- Keep: Library versions, import pattern, configuration requirements
-- Remove: Why ECharts was chosen, benefits of charting
-
-**Auth/API:**
-
-- Keep: Endpoints, token flow steps, file paths, error codes
-- Remove: OAuth background, security best practices explanation
-
-**Guidelines:**
-
-- Keep: Exact rules, file patterns, mandatory attributes
-- Remove: "Why this matters" explanations
-
-### 6. AI-Optimized Output Format
+### 5. AI-Optimized Output Format
 
 **Target Structure:**
 
 ```markdown
-# Copilot Instructions: Monitoring2025 UI
+# [Project Title]
 
-React + TypeScript + Redux + Bootstrap | Bilingual (fa/en) | RTL Support
+[One-line project summary with key tech stack]
 
-## i18n
-⚠️ NEVER hardcode text - use i18next
-- Primary: Persian (fa), Secondary: English (en)
-- Keys: `public/locales/{fa,en}/translation.json`
-- Format: `section.subsection.key`
-- Hook: `src/hooks/useTranslation.ts`
-- RTL: `bootstrap-rtl.css` for Persian
+## [Section Name]
+⚠️ CRITICAL: [Non-negotiable constraint]
+- [Imperative rule 1]
+- [Imperative rule 2]
+- Files: `path/to/file`
+- Hook/API: `functionName()`
 
-## Tech Stack
-Framework: React 18 + TypeScript | State: RTK | UI: Bootstrap
-Code Split: `React.lazy()` + `Suspense` + `<LoadingScreen />`
-Types: `src/types/` | No `any` | Full typing required
+✅ Correct: [code pattern]
+❌ Wrong: [anti-pattern]
 
-## Theme System
-⚠️ NEVER hardcode colors - use CSS variables from `src/styles/theme.css`
+## [Next Section]
+[Key requirement]: [Technology/approach]
+- [Rule with exact path/command]
+- [Configuration requirement]
 
-Files: `theme.css`, `themes.ts`, `themeUtils.ts`, `useTheme.ts`, `themeSlice.ts`
+Variables/Config: `--variable-{variant1,variant2}`, `API_ENDPOINT`
 
-✅ `background: var(--primary-dark);`
-❌ `background: #2c3e50;`
-
-Variables: `--primary-{dark,medium,light}`, `--accent-{primary,hover,active}`, 
-`--text-{primary,secondary}-{light,dark}`, `--shadow-{xs,sm,md,lg,xl,2xl}`, 
-`--gradient-{primary,sidebar,navbar,button}`
-
-[Continue with similar condensed sections...]
+[Continue with terse, imperative sections...]
 ```
 
-### 7. Quality Checks
+### 6. Quality Checks
 
 Before saving, verify:
 
@@ -153,7 +118,7 @@ Before saving, verify:
 - [ ] Imperative language throughout
 - [ ] Zero redundancy
 
-### 8. Save and Report
+### 7. Save and Report
 
 1. Save to `.github/copilot-instructions.md`
 2. Report:
@@ -167,19 +132,27 @@ Before saving, verify:
 **Before (verbose):**
 
 ```markdown
-It's very important that you always remember to use the i18next library 
-for all user-facing text in the application. This is because the application 
-needs to support both Persian and English languages. You should never hardcode 
-any strings directly in your components as this would make it difficult to 
-maintain translations and add new languages in the future.
+## Feature X Implementation
+
+It's very important that you always ensure Feature X is implemented correctly 
+throughout the application. When working with Feature X, make sure to follow 
+the established patterns. Feature X is crucial because it affects system 
+performance and maintainability. You should use Library Y for this purpose, 
+as it is the industry standard and provides good performance. Remember to 
+configure it properly in the configuration files.
 ```
 
 **After (condensed):**
 
 ```markdown
-⚠️ NEVER hardcode text - use i18next for ALL user-facing text
-- Persian (fa) + English (en) required
-- Hook: `useTranslation()` from `src/hooks/useTranslation.ts`
+## Feature X
+⚠️ Follow established patterns - impacts performance
+- Use Library Y
+- Files: `src/feature-x/`, `config/feature-x.config.ts`
+- Config: Set `option.enabled = true` before use
+
+✅ `import { featureX } from 'library-y';`
+❌ `// Custom implementation - avoid`
 ```
 
 ## Usage
