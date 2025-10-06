@@ -623,56 +623,80 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ResetPasswordResponseDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
     {
-        try
-        {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(new ResetPasswordResponseDto
+                var operation = "ResetPassword";
+                var requestId = HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString();
+
+                if (!ModelState.IsValid)
                 {
-                    IsSuccessful = false
+                    _logger.LogWarning("{Operation} - {RequestId} - Invalid model state for reset password request", operation, requestId);
+                    return BadRequest(new ResetPasswordResponseDto
+                    {
+                        IsSuccessful = false,
+                        Message = "Invalid input data",
+                        Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserName))
+                {
+                    _logger.LogWarning("{Operation} - {RequestId} - Empty userName provided", operation, requestId);
+                    return BadRequest(new ResetPasswordResponseDto
+                    {
+                        IsSuccessful = false,
+                        Message = "UserName is required",
+                    });
+                }
+
+                var user = await _userManager.FindByNameAsync(request.UserName);
+
+                if (user == null)
+                {
+                    _logger.LogWarning("{Operation} - {RequestId} - User not found: {UserName}", operation, requestId, request.UserName);
+                    return NotFound(new ResetPasswordResponseDto
+                    {
+                        IsSuccessful = false,
+                        Message = "User not found"
+                    });
+                }
+
+                var password = "12345"; // Default password per project spec
+                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var resetPassResult = await _userManager.ResetPasswordAsync(user, resetToken, password);
+
+                _logger.LogInformation("{Operation} - {RequestId} - Password reset for user {UserName} - Success: {Success}", 
+                    operation, requestId, request.UserName, resetPassResult.Succeeded);
+
+                if (!resetPassResult.Succeeded)
+                {
+                    var errors = resetPassResult.Errors.Select(e => e.Description).ToList();
+                    return BadRequest(new ResetPasswordResponseDto
+                    {
+                        IsSuccessful = false,
+                        Message = "Failed to reset password",
+                        Errors = errors
+                    });
+                }
+
+                return Ok(new ResetPasswordResponseDto
+                {
+                    IsSuccessful = true,
+                    Message = "Password has been reset to default",
                 });
             }
-
-            if (string.IsNullOrEmpty(request.UserName))
+            catch (Exception ex)
             {
-                return BadRequest(new ResetPasswordResponseDto
+                var requestId = HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString();
+                _logger.LogError(ex, "ResetPassword - {RequestId} - Error resetting password for user {UserName}", requestId, request?.UserName);
+                return StatusCode(500, new ResetPasswordResponseDto
                 {
-                    IsSuccessful = false
+                    IsSuccessful = false,
+                    Message = "Internal server error"
                 });
             }
-
-            var user = await _userManager.FindByNameAsync(request.UserName);
-
-            if (user == null)
-            {
-                return BadRequest(new ResetPasswordResponseDto
-                {
-                    IsSuccessful = false
-                });
-            }
-
-            var password = "12345";
-            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var resetPassResult = await _userManager.ResetPasswordAsync(user, resetToken, password);
-
-            _logger.LogInformation("Password reset for user {UserName} - Success: {Success}", 
-                request.UserName, resetPassResult.Succeeded);
-
-            return Ok(new ResetPasswordResponseDto
-            {
-                IsSuccessful = resetPassResult.Succeeded
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error resetting password for user {UserName}", request.UserName);
-            return StatusCode(500, new ResetPasswordResponseDto
-            {
-                IsSuccessful = false
-            });
-        }
     }
 
     /// <summary>
