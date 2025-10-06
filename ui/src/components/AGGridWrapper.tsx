@@ -8,7 +8,7 @@
  * - TypeScript support
  */
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage } from '../hooks/useLanguage';
 import { loadAGGrid } from '../utils/agGridLoader';
@@ -23,7 +23,7 @@ import './AGGridWrapper.css';
 /**
  * AG Grid Wrapper Component
  */
-export const AGGridWrapper: React.FC<AGGridWrapperProps> = ({
+export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({ 
   columnDefs,
   rowData = [],
   gridOptions = {},
@@ -33,7 +33,8 @@ export const AGGridWrapper: React.FC<AGGridWrapperProps> = ({
   theme = 'quartz',
   className = '',
   containerClassName = '',
-}) => {
+  idRef,
+}, ref) => {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -48,6 +49,9 @@ export const AGGridWrapper: React.FC<AGGridWrapperProps> = ({
 
   // Check if RTL is needed
   const isRTL = language === 'fa';
+
+  // Expose api via ref early (will update when api ref assigned)
+  useImperativeHandle(ref, () => (gridApiRef.current ?? ({} as AGGridApi)), []);
 
   /**
    * Get localized text for AG Grid
@@ -349,21 +353,25 @@ export const AGGridWrapper: React.FC<AGGridWrapperProps> = ({
     );
   }
 
+  // Expose api via ref for parent components
+
   // Render AG Grid
   return (
     <div
       className={`ag-grid-wrapper ${containerClassName}`}
       style={{ height, width }}
-      data-id-ref="ag-grid-wrapper-container"
+      data-id-ref={idRef ? `${idRef}-wrapper-container` : 'ag-grid-wrapper-container'}
     >
       <div
         ref={gridContainerRef}
         className={`ag-theme-${theme} ${className} ${isRTL ? 'ag-grid-rtl' : 'ag-grid-ltr'}`}
         style={{ height: '100%', width: '100%' }}
-        data-id-ref={`ag-grid-${theme}-container`}
+        data-id-ref={idRef ? `${idRef}-${theme}-container` : `ag-grid-${theme}-container`}
       />
     </div>
   );
-};
+});
+
+AGGridWrapper.displayName = 'AGGridWrapper';
 
 export default AGGridWrapper;

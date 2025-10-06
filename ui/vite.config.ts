@@ -86,6 +86,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // Increase maximum precache file size to allow large AG Grid Enterprise bundles (default is 2 * 1024 * 1024)
+        // AG Grid enterprise bundles are ~5MB uncompressed; adjust cautiously to avoid bloating precache.
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10 MiB cap for selected large vendor assets
         runtimeCaching: [
           // Cache Bootstrap CSS variants (RTL/LTR) - CacheFirst with long expiration
           {

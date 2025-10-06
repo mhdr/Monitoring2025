@@ -3,17 +3,18 @@
  * Demonstrates how to use the AG Grid wrapper
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { AGGridWrapper } from './AGGridWrapper';
 import { useAGGrid } from '../hooks/useAGGrid';
 import { useTranslation } from '../hooks/useTranslation';
-import type { AGGridColumnDef, AGGridRowData } from '../types/agGrid';
+import type { AGGridColumnDef, AGGridRowData, AGGridApi } from '../types/agGrid';
 
 /**
  * Example component showing AG Grid usage
  */
 export const AGGridExample: React.FC = () => {
   const { t } = useTranslation();
+  const gridRef = useRef<AGGridApi | null>(null);
   const {
     handleGridReady,
     exportToCsv,
@@ -63,6 +64,8 @@ export const AGGridExample: React.FC = () => {
         }
         return '';
       },
+      enableValue: true,
+      aggFunc: 'sum'
     },
     {
       field: 'status',
@@ -76,6 +79,8 @@ export const AGGridExample: React.FC = () => {
         const text = status === 'active' ? 'Active' : 'Inactive';
         return `<span class="${className}">${text}</span>`;
       },
+      rowGroup: true,
+      enableRowGroup: true
     },
     {
       field: 'date',
@@ -85,6 +90,20 @@ export const AGGridExample: React.FC = () => {
       filter: 'agDateColumnFilter',
     },
   ], [t]);
+
+  const handleCreateRangeChart = useCallback(() => {
+  const api = gridRef.current as (AGGridApi & { createRangeChart?: (p: unknown) => void }) | null;
+  if (api && api.createRangeChart) {
+      try {
+        api.createRangeChart({
+          cellRange: { columns: ['name', 'value'] },
+          chartType: 'groupedColumn'
+        });
+      } catch (e) {
+        console.warn('Chart creation failed', e);
+      }
+    }
+  }, []);
 
   // Handle export CSV
   const handleExportCsv = () => {
@@ -133,6 +152,15 @@ export const AGGridExample: React.FC = () => {
                 <i className="bi bi-file-earmark-excel me-2"></i>
                 {t('agGrid.excelExport')}
               </button>
+              <div className="btn-group" role="group">
+                <button
+                  onClick={handleCreateRangeChart}
+                  className="btn btn-outline-primary"
+                  data-id-ref="ag-grid-create-chart-button"
+                >
+                  <i className="bi bi-bar-chart me-2" />Chart
+                </button>
+              </div>
             </div>
             
             <div className="btn-group me-2" role="group">
@@ -180,6 +208,7 @@ export const AGGridExample: React.FC = () => {
       <div className="row">
         <div className="col-12">
           <AGGridWrapper
+            ref={gridRef}
             columnDefs={columnDefs}
             rowData={rowData}
             onGridReady={handleGridReady}
@@ -191,6 +220,9 @@ export const AGGridExample: React.FC = () => {
               rowSelection: 'multiple',
               suppressRowClickSelection: true,
               animateRows: true,
+              enableRangeSelection: true,
+              enableCharts: true,
+              groupDisplayType: 'singleColumn',
               onCellValueChanged: (event) => {
                 console.log('Cell value changed:', event);
               },

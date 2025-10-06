@@ -8,7 +8,23 @@ export type AGGridRowData = Record<string, unknown>;
 export type AGGridNode = Record<string, unknown>;
 export type AGGridColumn = Record<string, unknown>;
 export type AGGridFilterModel = Record<string, unknown>;
-export type AGGridExportParams = Record<string, unknown>;
+export interface AGGridExportParams {
+  /** File name without extension */
+  fileName?: string;
+  /** Whether to include headers */
+  includeHeaders?: boolean;
+  /** Only export selected rows */
+  onlySelected?: boolean;
+  /** Column keys to export */
+  columnKeys?: string[];
+  /** Sheet name for Excel */
+  sheetName?: string;
+  /** Custom process callback */
+  processCellCallback?: (params: Record<string, unknown>) => string | null | undefined;
+  /** Suppress quotes (CSV) */
+  suppressQuotes?: boolean;
+  [key: string]: unknown;
+}
 export type AGGridCellParams = Record<string, unknown>;
 export type AGGridRefreshParams = Record<string, unknown>;
 export type AGGridCellStyle = Record<string, string | number>;
@@ -26,29 +42,62 @@ export interface AGGridApi {
   getSelectedNodes(): AGGridNode[];
   sizeColumnsToFit(): void;
   autoSizeAllColumns(skipHeader?: boolean): void;
+  sizeColumnsToFit(): void; // ensure declared
+
+  // Column state
+  getColumnDefs(): AGGridColumnDef[] | undefined;
+  applyColumnState?(state: unknown): boolean;
+  getColumnState?(): unknown;
+  resetColumnState?(): void;
+
+  // Column sizing extras
+  autoSizeColumns?(keys: string[], skipHeader?: boolean): void;
+
+  // Charts
+  createRangeChart?(params: Record<string, unknown>): void;
+  createPivotChart?(params: Record<string, unknown>): void;
+  createCrossFilterChart?(params: Record<string, unknown>): void;
+  getChartModels?(): unknown[];
+  restoreChart?(model: unknown): void;
+  downloadChart?(params?: Record<string, unknown>): void;
   
   // Export
   exportDataAsCsv(params?: AGGridExportParams): void;
   exportDataAsExcel(params?: AGGridExportParams): void;
+  getDataAsCsv?(params?: AGGridExportParams): string | undefined;
+  getDataAsExcel?(params?: AGGridExportParams): Blob | undefined;
   
   // Filtering
   setFilterModel(model: AGGridFilterModel): void;
   getFilterModel(): AGGridFilterModel;
+  getColumnFilterModel?(colKey: string): unknown;
+  setColumnFilterModel?(colKey: string, model: unknown): Promise<void> | void;
   
   // Selection
   selectAll(): void;
   deselectAll(): void;
+  getCellRanges?(): unknown[];
+  addCellRange?(range: Record<string, unknown>): void;
+  clearCellSelection?(): void;
   
   // Refresh
   refreshCells(params?: AGGridRefreshParams): void;
   redrawRows(params?: AGGridRefreshParams): void;
+  refreshHeader?(): void;
+  flashCells?(params?: Record<string, unknown>): void;
   
   // Lifecycle
   destroy(): void;
+  isDestroyed?(): boolean;
   
   // Other
   showLoadingOverlay(): void;
   hideOverlay(): void;
+  showNoRowsOverlay?(): void;
+  getDisplayedRowCount?(): number;
+  getDisplayedRowAtIndex?(index: number): AGGridNode | undefined;
+  getFocusedCell?(): Record<string, unknown> | null;
+  setFocusedCell?(rowIndex: number, colKey: string, rowPinned?: string | null): void;
 }
 
 export interface AGGridColumnApi {
@@ -85,6 +134,19 @@ export interface AGGridColumnDef {
   suppressSizeToFit?: boolean;
   tooltipField?: string;
   tooltipValueGetter?: (params: AGGridCellParams) => string;
+  rowGroup?: boolean;
+  pivot?: boolean;
+  aggFunc?: string | ((values: unknown[]) => unknown);
+  enableRowGroup?: boolean;
+  enablePivot?: boolean;
+  enableValue?: boolean;
+  valueParser?: (params: AGGridCellParams) => unknown;
+  filterParams?: Record<string, unknown>;
+  cellEditor?: string | ((params: AGGridCellParams) => unknown);
+  cellDataType?: string | boolean;
+  cellRendererParams?: Record<string, unknown>;
+  lockPinned?: boolean;
+  menuTabs?: string[];
   [key: string]: unknown;
 }
 
@@ -97,12 +159,60 @@ export type AGGridCellClickedEvent = AGGridEventParams;
 export type AGGridCellValueChangedEvent = AGGridEventParams;
 export type AGGridFilterChangedEvent = AGGridEventParams;
 export type AGGridSortChangedEvent = AGGridEventParams;
+export type AGGridFirstDataRenderedEvent = AGGridEventParams;
+export type AGGridColumnResizedEvent = AGGridEventParams;
+export type AGGridColumnVisibleEvent = AGGridEventParams;
+export type AGGridColumnPinnedEvent = AGGridEventParams;
+export type AGGridModelUpdatedEvent = AGGridEventParams;
+export type AGGridSelectionChangedEventSource = 'api' | string;
 
 // Grid Options
 export interface AGGridOptions {
   columnDefs?: AGGridColumnDef[];
   rowData?: AGGridRowData[];
   defaultColDef?: AGGridColumnDef;
+  autoSizeStrategy?: 'fitGridWidth' | 'fitCellContents';
+  suppressFieldDotNotation?: boolean;
+  rowModelType?: 'clientSide' | 'infinite' | 'serverSide';
+  serverSideDatasource?: unknown;
+  cacheBlockSize?: number;
+  maxBlocksInCache?: number;
+  sideBar?: boolean | string | Record<string, unknown>;
+  statusBar?: { statusPanels: Array<Record<string, unknown>> };
+  suppressCellFocus?: boolean;
+  undoRedoCellEditing?: boolean;
+  undoRedoCellEditingLimit?: number;
+  enableRangeSelection?: boolean;
+  enableCharts?: boolean;
+  enableFillHandle?: boolean | 'rangeSelection';
+  getRowId?: (params: { data: AGGridRowData }) => string;
+  masterDetail?: boolean;
+  detailCellRenderer?: unknown;
+  detailRowHeight?: number;
+  treeData?: boolean;
+  getDataPath?: (data: AGGridRowData) => string[];
+  groupDefaultExpanded?: number;
+  // animateRows already declared below
+  suppressAggFuncInHeader?: boolean;
+  pivotMode?: boolean;
+  // suppressRowClickSelection declared below in Selection section
+  groupDisplayType?: 'singleColumn' | 'custom' | 'multipleColumns' | 'groupRows';
+  // pagination* options declared below in Pagination section
+  suppressDragLeaveHidesColumns?: boolean;
+  suppressMovableColumns?: boolean;
+  loadingOverlayComponent?: unknown;
+  noRowsOverlayComponent?: unknown;
+  // overlay templates & rowSelection declared later
+  groupSelectsChildren?: boolean;
+  suppressRowDeselection?: boolean;
+  suppressScrollOnNewData?: boolean;
+  stopEditingWhenCellsLoseFocus?: boolean;
+  suppressClickEdit?: boolean;
+  readOnlyEdit?: boolean;
+  singleClickEdit?: boolean;
+  enterNavigatesVertically?: boolean;
+  enterNavigatesVerticallyAfterEdit?: boolean;
+  paginationNumberFormatter?: (params: { value: number }) => string | number;
   
   // Selection
   rowSelection?: 'single' | 'multiple';
@@ -138,6 +248,11 @@ export interface AGGridOptions {
   onCellValueChanged?: (params: AGGridCellValueChangedEvent) => void;
   onFilterChanged?: (params: AGGridFilterChangedEvent) => void;
   onSortChanged?: (params: AGGridSortChangedEvent) => void;
+  onFirstDataRendered?: (params: AGGridFirstDataRenderedEvent) => void;
+  onColumnResized?: (params: AGGridColumnResizedEvent) => void;
+  onColumnVisible?: (params: AGGridColumnVisibleEvent) => void;
+  onColumnPinned?: (params: AGGridColumnPinnedEvent) => void;
+  onModelUpdated?: (params: AGGridModelUpdatedEvent) => void;
   
   // Overlay
   overlayLoadingTemplate?: string;
@@ -162,6 +277,8 @@ export interface AGGridWrapperProps {
   theme?: 'alpine' | 'balham' | 'material' | 'quartz';
   className?: string;
   containerClassName?: string;
+  /** Provide a stable id reference for testing */
+  idRef?: string;
 }
 
 // AG Grid Locale Text Type
