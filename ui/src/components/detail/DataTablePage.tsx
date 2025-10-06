@@ -243,8 +243,10 @@ const DataTablePage: React.FC = () => {
   // Prepare AG Grid row data
   const rowData = useMemo(() => {
     const locale = language === 'fa' ? 'fa-IR' : 'en-US';
-    
-    return historyData.map((point, index) => {
+    // Create a shallow copy and sort by time descending (newest first)
+    const sorted = [...historyData].sort((a, b) => b.time - a.time);
+
+    return sorted.map((point, index) => {
       const date = new Date(point.time * 1000);
       const timeFormatted = date.toLocaleString(locale, {
         year: 'numeric',
