@@ -34,7 +34,6 @@ React + TypeScript + Redux + Bootstrap, Bilingual (fa/en), RTL, .NET API
 - Module registration at startup via `ModuleRegistry.registerModules()`
 - Persian locale: `AG_GRID_LOCALE_IR` from `@ag-grid-community/locale`
 - RTL: Auto-enabled for Persian via `enableRtl` prop
-- No lazy loading needed - modules registered once
 
 ✅ `import { AGGridWrapper, useAGGrid } from '../agGrid'; <AGGridWrapper columnDefs={cols} rowData={data} theme="quartz" />`
 ❌ `// Direct createGrid() or vanilla JS usage`

@@ -7,7 +7,6 @@ import { AgGridReact } from 'ag-grid-react';
 import { ModuleRegistry } from 'ag-grid-community';
 import { LicenseManager } from 'ag-grid-enterprise';
 import { AG_GRID_LOCALE_IR } from '@ag-grid-community/locale';
-import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage } from '../hooks/useLanguage';
 import type { AGGridApi, AGGridWrapperProps } from '../types/agGrid';
 import './AGGridWrapper.css';
@@ -44,7 +43,6 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
   height = '500px', width = '100%', theme = 'quartz',
   className = '', containerClassName = '', idRef
 }, ref) => {
-  const { t } = useTranslation();
   const { language } = useLanguage();
   const gridApiRef = useRef<AGGridApi | null>(null);
   const isRTL = language === 'fa';
@@ -53,8 +51,8 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
 
   const localeText = useMemo(() => {
     if (language === 'fa') return AG_GRID_LOCALE_IR;
-    return { page: t('agGrid.page'), more: t('agGrid.more'), to: t('agGrid.to'), of: t('agGrid.of') };
-  }, [language, t]);
+    return undefined;
+  }, [language]);
 
   const handleGridReady = useCallback((params: { api: AGGridApi }) => {
     gridApiRef.current = params.api;
