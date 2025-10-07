@@ -4,12 +4,15 @@
  * Uses official ag-grid-react types where possible
  */
 
-import type { GridApi, ColDef, GridOptions, CsvExportParams, ExcelExportParams } from 'ag-grid-community';
+import type { GridApi, ColDef, GridOptions, CsvExportParams, ExcelExportParams, ValueFormatterParams } from 'ag-grid-community';
 
 // Re-export official AG Grid types for easier imports
 export type AGGridApi = GridApi;
 export type AGGridColumnDef = ColDef;
 export type AGGridOptions = GridOptions;
+
+// Value formatter params used by AG Grid valueFormatter functions
+export type AGGridValueFormatterParams = ValueFormatterParams<unknown, unknown>;
 
 // Utility types
 export type AGGridRowData = Record<string, unknown>;

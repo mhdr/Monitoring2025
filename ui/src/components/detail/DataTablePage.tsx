@@ -47,38 +47,13 @@ const DataTablePage: React.FC = () => {
   const { exportToCsv, exportToExcel, handleGridReady } = useAGGrid();
   const gridRef = useRef<AGGridApi | null>(null);
   const columnApiRef = useRef<AGGridColumnApi | null>(null);
-
-  // Column state persistence keys
-  const COLUMN_STATE_KEY = 'dataTable.columnState.v1';
-
   const onGridReadyInternal = useCallback((api: AGGridApi, colApi: AGGridColumnApi) => {
     gridRef.current = api;
     columnApiRef.current = colApi;
     handleGridReady(api, colApi);
-    // Restore column state if stored
-    try {
-      const saved = localStorage.getItem(COLUMN_STATE_KEY);
-      if (saved) {
-        const state = JSON.parse(saved);
-        if (api.applyColumnState && state) {
-          api.applyColumnState(state);
-        }
-      }
-    } catch (e) {
-      console.warn('[DataTablePage] Failed to restore column state', e);
-    }
   }, [handleGridReady]);
 
-  const saveColumnState = useCallback(() => {
-    if (gridRef.current?.getColumnState) {
-      try {
-        const state = gridRef.current.getColumnState?.();
-        localStorage.setItem(COLUMN_STATE_KEY, JSON.stringify(state));
-      } catch (e) {
-        console.warn('[DataTablePage] Failed to save column state', e);
-      }
-    }
-  }, []);
+  
 
   // Fetch items if not loaded (for direct URL access)
   useEffect(() => {
@@ -476,15 +451,7 @@ const DataTablePage: React.FC = () => {
                         >
                           <i className="bi bi-file-earmark-excel" />
                         </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={saveColumnState}
-                          data-id-ref="data-table-save-state-button"
-                          title={t('export') + ' state'}
-                        >
-                          <i className="bi bi-save" />
-                        </button>
+                        
                       </>
                     )}
                   </>
@@ -545,7 +512,6 @@ const DataTablePage: React.FC = () => {
                         rowSelection: {
                           mode: 'singleRow',
                           checkboxes: false,
-                          headerCheckbox: false,
                         },
 
                         defaultColDef: {
@@ -555,10 +521,7 @@ const DataTablePage: React.FC = () => {
                           flex: 1,
                           minWidth: 120,
                         },
-                        onColumnMoved: saveColumnState,
-                        onColumnVisible: saveColumnState,
-                        onColumnPinned: saveColumnState,
-                        onColumnResized: saveColumnState,
+                        
                       }}
                       data-id-ref="data-table-grid"
                     />

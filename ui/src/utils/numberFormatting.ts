@@ -1,3 +1,6 @@
+import type { AGGridValueFormatterParams } from '../types/agGrid';
+
+// ... existing imports if any
 /**
  * Number Formatting Utilities
  * Utilities for formatting numbers with locale-specific formatting
@@ -129,7 +132,7 @@ export function createAGGridNumberFormatter(
   language: 'fa' | 'en',
   options?: Intl.NumberFormatOptions
 ) {
-  return (params: Record<string, unknown>): string => {
+  return (params: AGGridValueFormatterParams): string => {
     const rawValue = params.value;
     
     if (rawValue === null || rawValue === undefined || rawValue === '') {
