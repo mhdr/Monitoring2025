@@ -4,6 +4,7 @@ import type { Group, Item, MultiValue, AlarmDto } from '../../types/api';
 import type { ApiError } from '../../types/auth';
 import { api } from '../../services/rtkApi';
 import { logout as authLogout } from './authSlice';
+import { monitoringStorageHelpers } from '../../utils/monitoringStorage';
 
 /**
  * Stream connection status for gRPC active alarms
@@ -53,6 +54,8 @@ export const saveSyncStatusToStorage = (isSynced: boolean): void => {
 export const clearSyncStatusFromStorage = (): void => {
   try {
     sessionStorage.removeItem(SYNC_STATUS_STORAGE_KEY);
+    // Also clear all monitoring data from sessionStorage
+    monitoringStorageHelpers.clearAllMonitoringData();
   } catch (error) {
     console.warn('Failed to clear sync status from sessionStorage:', error);
   }

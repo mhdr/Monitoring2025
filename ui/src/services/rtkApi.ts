@@ -97,6 +97,7 @@ import type {
   SettingsVersionResponseDto
 } from '../types/api';
 import { authStorageHelpers } from '../utils/authStorage';
+import { storeMonitoringResponseData } from '../utils/monitoringStorage';
 import { Mutex } from 'async-mutex';
 
 // API configuration - Use relative path for development with Vite proxy
@@ -352,6 +353,10 @@ export const api = createApi({
         method: 'POST',
         body: params,
       }),
+      transformResponse: (response: GroupsResponseDto) => {
+        // Store groups data in sessionStorage when fetched
+        return storeMonitoringResponseData.storeGroupsResponse(response);
+      },
       providesTags: (result) =>
         result
           ? [
@@ -373,6 +378,10 @@ export const api = createApi({
         method: 'POST',
         body: params,
       }),
+      transformResponse: (response: ItemsResponseDto) => {
+        // Store items data in sessionStorage when fetched
+        return storeMonitoringResponseData.storeItemsResponse(response);
+      },
       providesTags: (result) =>
         result
           ? [
@@ -565,6 +574,10 @@ export const api = createApi({
         method: 'POST',
         body: params,
       }),
+      transformResponse: (response: AlarmsResponseDto) => {
+        // Store alarms data in sessionStorage when fetched
+        return storeMonitoringResponseData.storeAlarmsResponse(response);
+      },
       providesTags: ['Items'],
       keepUnusedDataFor: 300,
     }),
