@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option csharp_namespace = "API.Grpc";
+
+package monitoring;
+
+// Monitoring service for real-time updates
+service MonitoringService {
+  // Server streaming endpoint for active alarms count
+  rpc StreamActiveAlarms (ActiveAlarmsRequest) returns (stream ActiveAlarmsUpdate);
+}
+
+// Request message for active alarms stream
+message ActiveAlarmsRequest {
+  // Client can specify filter criteria if needed in the future
+  string client_id = 1;
+}
+
+// Active alarms update message
+message ActiveAlarmsUpdate {
+  int32 alarm_count = 1;
+  int64 timestamp = 2;
+}
