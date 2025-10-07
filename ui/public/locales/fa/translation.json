@@ -210,6 +210,9 @@
     "completing": "تکمیل همگام‌سازی...",
     "redirecting": "انتقال به داشبورد...",
     "retry": "تلاش مجدد",
-    "skipAndContinue": "رد کردن و ادامه"
+    "skipAndContinue": "رد کردن و ادامه",
+    "errors": {
+      "synchronizationFailed": "برخی داده‌ها در همگام‌سازی ناموفق بودند"
+    }
   }
 }

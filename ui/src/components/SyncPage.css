@@ -138,45 +138,172 @@
   box-shadow: var(--shadow-sm);
 }
 
+.sync-status-messages .btn:focus {
+  outline: 2px solid var(--primary-medium);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(var(--primary-medium-rgb), 0.2);
+}
+
 .sync-status-messages .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
-/* Responsive Design */
-@media (max-width: 576px) {
+/* Focus indicators for accessibility */
+.sync-page *:focus {
+  outline: 2px solid var(--primary-medium);
+  outline-offset: 2px;
+}
+
+.sync-page button:focus,
+.sync-page [role="progressbar"]:focus {
+  box-shadow: 0 0 0 3px rgba(var(--primary-medium-rgb), 0.2);
+}
+
+/* Responsive Design - Mobile First Approach */
+
+/* Base styles (Mobile - xs: < 576px) */
+.sync-card .card-body {
+  padding: 1.5rem;
+}
+
+.sync-logo {
+  width: 60px;
+  height: 60px;
+}
+
+.sync-icon {
+  font-size: 2rem;
+}
+
+.sync-title {
+  font-size: 1.5rem;
+}
+
+.sync-subtitle {
+  font-size: 0.9rem;
+}
+
+.sync-progress-item {
+  padding: 0.75rem;
+}
+
+.sync-status-messages .d-flex.gap-2 {
+  flex-direction: column;
+  gap: 0.5rem !important;
+}
+
+.sync-status-messages .btn {
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+/* Small devices (sm: ≥ 576px) */
+@media (min-width: 576px) {
   .sync-card .card-body {
-    padding: 1.5rem !important;
+    padding: 2rem;
   }
   
   .sync-logo {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
   }
   
   .sync-icon {
-    font-size: 2rem;
+    font-size: 2.25rem;
   }
   
   .sync-title {
-    font-size: 1.5rem;
+    font-size: 1.625rem;
   }
   
   .sync-subtitle {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
   }
   
   .sync-progress-item {
-    padding: 0.75rem;
+    padding: 1rem;
   }
   
   .sync-status-messages .d-flex.gap-2 {
-    flex-direction: column;
+    flex-direction: row;
+    gap: 0.5rem !important;
   }
   
   .sync-status-messages .btn {
-    width: 100%;
+    width: auto;
+    min-width: 120px;
+  }
+}
+
+/* Medium devices (md: ≥ 768px) */
+@media (min-width: 768px) {
+  .sync-card .card-body {
+    padding: 2.5rem;
+  }
+  
+  .sync-logo {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .sync-icon {
+    font-size: 2.5rem;
+  }
+  
+  .sync-title {
+    font-size: 1.75rem;
+  }
+  
+  .sync-subtitle {
+    font-size: 1rem;
+  }
+  
+  .sync-progress-item {
+    padding: 1.25rem;
+  }
+  
+  .sync-status-messages .btn {
+    font-size: 0.9rem;
+    min-width: 140px;
+  }
+}
+
+/* Large devices (lg: ≥ 992px) */
+@media (min-width: 992px) {
+  .sync-card {
+    max-width: 550px;
+  }
+  
+  .sync-card .card-body {
+    padding: 3rem;
+  }
+  
+  .sync-overall-progress {
+    height: 10px;
+  }
+  
+  .sync-progress-bar {
+    height: 8px;
+  }
+}
+
+/* Extra large devices (xl: ≥ 1200px) */
+@media (min-width: 1200px) {
+  .sync-card {
+    max-width: 600px;
+  }
+}
+
+/* Extra extra large devices (xxl: ≥ 1400px) */
+@media (min-width: 1400px) {
+  .sync-card {
+    max-width: 650px;
+  }
+  
+  .sync-card .card-body {
+    padding: 3.5rem;
   }
 }
 
@@ -186,12 +313,31 @@
 }
 
 [dir="rtl"] .sync-status-icon {
-  margin-left: 1rem;
-  margin-right: 0;
+  margin-inline-start: 1rem;
+  margin-inline-end: 0;
 }
 
 [dir="rtl"] .sync-icon {
   animation: rotate-rtl 2s linear infinite;
+}
+
+/* RTL-specific button spacing adjustments */
+[dir="rtl"] .sync-status-messages .btn .bi {
+  margin-inline-end: 0.25rem;
+  margin-inline-start: 0;
+}
+
+/* RTL-specific progress bar adjustments */
+[dir="rtl"] .sync-progress-item {
+  text-align: right;
+}
+
+[dir="rtl"] .sync-overall-progress-header {
+  direction: rtl;
+}
+
+[dir="rtl"] .progress-bar {
+  direction: rtl;
 }
 
 @keyframes rotate-rtl {
@@ -292,7 +438,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.3),
+    rgba(var(--text-primary-light-rgb, 255, 255, 255), 0.3),
     transparent
   );
   animation: shimmer 1.5s infinite;

@@ -210,6 +210,9 @@
     "completing": "Finalizing synchronization...",
     "redirecting": "Redirecting to dashboard...",
     "retry": "Retry",
-    "skipAndContinue": "Skip and Continue"
+    "skipAndContinue": "Skip and Continue",
+    "errors": {
+      "synchronizationFailed": "Some data failed to synchronize"
+    }
   }
 }
