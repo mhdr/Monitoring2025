@@ -34,7 +34,6 @@ public class MonitoringController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<MonitoringController> _logger;
-    private readonly IHubContext<MyHub> _hubContext;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IBus _bus;
 
@@ -44,21 +43,18 @@ public class MonitoringController : ControllerBase
     /// <param name="userManager">The user manager service</param>
     /// <param name="context">The application database context</param>
     /// <param name="logger">The logger service</param>
-    /// <param name="hubContext">The SignalR hub context</param>
     /// <param name="httpContextAccessor">The HTTP context accessor</param>
     /// <param name="bus">The MassTransit bus service</param>
     public MonitoringController(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
         ILogger<MonitoringController> logger,
-        IHubContext<MyHub> hubContext,
         IHttpContextAccessor httpContextAccessor,
         IBus bus)
     {
         _userManager = userManager;
         _context = context;
         _logger = logger;
-        _hubContext = hubContext;
         _httpContextAccessor = httpContextAccessor;
         _bus = bus;
     }
@@ -942,11 +938,6 @@ public class MonitoringController : ControllerBase
 
                 var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
 
-                // update version
-                await Core.Settings.Init();
-                var version = await Core.Settings.GetVersion();
-                await _hubContext.Clients.All.SendAsync("Version", version.ToString());
-
                 await _context.AuditLogs.AddAsync(new AuditLog()
                 {
                     IsUser = true,
@@ -1123,11 +1114,6 @@ public class MonitoringController : ControllerBase
             {
                 response.IsSuccessful = true;
                 var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-
-                // update version
-                await Core.Settings.Init();
-                var version = await Core.Settings.GetVersion();
-                await _hubContext.Clients.All.SendAsync("Version", version.ToString());
 
                 await _context.AuditLogs.AddAsync(new AuditLog()
                 {
@@ -1320,11 +1306,6 @@ public class MonitoringController : ControllerBase
             await _context.SaveChangesAsync();
 
             response.IsSuccessful = true;
-
-            // update version
-            await Core.Settings.Init();
-            var version = await Core.Settings.GetVersion();
-            await _hubContext.Clients.All.SendAsync("Version", version.ToString());
 
             return Ok(response);
         }
@@ -1639,8 +1620,6 @@ public class MonitoringController : ControllerBase
                 }
 
                 await _context.SaveChangesAsync();
-
-                await _hubContext.Clients.User(user.Id).SendAsync("UserVersion", userVersion.Version);
             }
 
             return Ok(response);
@@ -1705,11 +1684,6 @@ public class MonitoringController : ControllerBase
             long epochTime = currentTimeUtc.ToUnixTimeSeconds();
 
             var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-
-            // update version
-            await Core.Settings.Init();
-            var version = await Core.Settings.GetVersion();
-            await _hubContext.Clients.All.SendAsync("Version", version.ToString());
 
             await _context.AuditLogs.AddAsync(new AuditLog()
             {
@@ -1972,11 +1946,6 @@ public class MonitoringController : ControllerBase
                 }
             }
 
-            // update version
-            await Core.Settings.Init();
-            var version = await Core.Settings.GetVersion();
-            await _hubContext.Clients.All.SendAsync("Version", version.ToString());
-
             return Ok(response);
         }
         catch (Exception e)
@@ -2046,11 +2015,6 @@ public class MonitoringController : ControllerBase
                 return Ok(response);
             }
 
-            // update version
-            await Core.Settings.Init();
-            var version = await Core.Settings.GetVersion();
-            await _hubContext.Clients.All.SendAsync("Version", version.ToString());
-
             response.IsSuccessful = true;
             return Ok(response);
         }
@@ -2089,11 +2053,6 @@ public class MonitoringController : ControllerBase
 
             var result = await Core.Points.DeletePoint(x => x.Id == request.Id);
             response.IsSuccessful = result;
-
-            // update version
-            await Core.Settings.Init();
-            var version = await Core.Settings.GetVersion();
-            await _hubContext.Clients.All.SendAsync("Version", version.ToString());
 
             return Ok(response);
         }
@@ -2163,11 +2122,6 @@ public class MonitoringController : ControllerBase
                 IsDisabled = request.IsDisabled,
             });
 
-            // update version
-            await Core.Settings.Init();
-            var version = await Core.Settings.GetVersion();
-            await _hubContext.Clients.All.SendAsync("Version", version.ToString());
-
             response.IsSuccessful = result;
             return Ok(response);
         }
@@ -2212,11 +2166,6 @@ public class MonitoringController : ControllerBase
                 await _context.SaveChangesAsync();
                 response.IsSuccessful = true;
             }
-
-            // update version
-            await Core.Settings.Init();
-            var version = await Core.Settings.GetVersion();
-            await _hubContext.Clients.All.SendAsync("Version", version.ToString());
 
             return Ok(response);
         }
@@ -2268,11 +2217,6 @@ public class MonitoringController : ControllerBase
             {
                 point.GroupId = request.ParentId;
             }
-
-            // update version
-            await Core.Settings.Init();
-            var version = await Core.Settings.GetVersion();
-            await _hubContext.Clients.All.SendAsync("Version", version.ToString());
 
             await _context.SaveChangesAsync();
             response.IsSuccessful = true;
@@ -2491,11 +2435,6 @@ public class MonitoringController : ControllerBase
                 response.IsSuccessful = true;
                 var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
 
-                // update version
-                await Core.Settings.Init();
-                var version = await Core.Settings.GetVersion();
-                await _hubContext.Clients.All.SendAsync("Version", version.ToString());
-
                 await _context.AuditLogs.AddAsync(new AuditLog()
                 {
                     IsUser = true,
@@ -2573,11 +2512,6 @@ public class MonitoringController : ControllerBase
 
                 response.IsSuccess = true;
                 var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-
-                // update version
-                await Core.Settings.Init();
-                var version = await Core.Settings.GetVersion();
-                await _hubContext.Clients.All.SendAsync("Version", version.ToString());
 
                 await _context.AuditLogs.AddAsync(new AuditLog()
                 {
@@ -2832,11 +2766,6 @@ public class MonitoringController : ControllerBase
             await _context.AuditLogs.AddRangeAsync(logs);
             await _context.SaveChangesAsync();
 
-            // update version
-            await Core.Settings.Init();
-            var version = await Core.Settings.GetVersion();
-            await _hubContext.Clients.All.SendAsync("Version", version.ToString());
-
             response.IsSuccess = result;
             return Ok(response);
         }
@@ -2868,11 +2797,6 @@ public class MonitoringController : ControllerBase
             }
 
             var response = new PushUpdateAllClientsResponse();
-
-            // update version
-            await Core.Settings.Init();
-            var version = await Core.Settings.GetVersion();
-            await _hubContext.Clients.All.SendAsync("Version", version.ToString());
 
             response.Success = true;
             return Ok(response);
