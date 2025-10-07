@@ -5,6 +5,19 @@ import type { ApiError } from '../../types/auth';
 import { api } from '../../services/rtkApi';
 
 /**
+ * Stream connection status for gRPC active alarms
+ */
+export const StreamStatus = {
+  IDLE: 'idle',
+  CONNECTING: 'connecting',
+  CONNECTED: 'connected',
+  ERROR: 'error',
+  DISCONNECTED: 'disconnected'
+} as const;
+
+export type StreamStatus = typeof StreamStatus[keyof typeof StreamStatus];
+
+/**
  * Monitoring state interface
  */
 export interface MonitoringState {
@@ -25,6 +38,14 @@ export interface MonitoringState {
   
   // Navigation
   currentFolderId: string | null;
+  
+  // Active Alarms Stream (global subscription)
+  activeAlarms: {
+    alarmCount: number;
+    lastUpdate: number | null;
+    streamStatus: StreamStatus;
+    streamError: string | null;
+  };
 }
 
 /**
@@ -44,6 +65,13 @@ const initialState: MonitoringState = {
   valuesError: null,
   
   currentFolderId: null,
+  
+  activeAlarms: {
+    alarmCount: 0,
+    lastUpdate: null,
+    streamStatus: StreamStatus.IDLE,
+    streamError: null,
+  },
 };
 
 // Note: Data fetching is now handled by RTK Query
@@ -75,6 +103,41 @@ const monitoringSlice = createSlice({
      * Reset monitoring state to initial
      */
     resetMonitoring: () => initialState,
+    
+    /**
+     * Update active alarms count and timestamp from gRPC stream
+     */
+    updateActiveAlarms: (state, action: PayloadAction<{ alarmCount: number; timestamp: number }>) => {
+      state.activeAlarms.alarmCount = action.payload.alarmCount;
+      state.activeAlarms.lastUpdate = action.payload.timestamp;
+      state.activeAlarms.streamStatus = StreamStatus.CONNECTED;
+      state.activeAlarms.streamError = null;
+    },
+    
+    /**
+     * Set active alarms stream connection status
+     */
+    setActiveAlarmsStreamStatus: (state, action: PayloadAction<StreamStatus>) => {
+      state.activeAlarms.streamStatus = action.payload;
+      if (action.payload === StreamStatus.CONNECTED) {
+        state.activeAlarms.streamError = null;
+      }
+    },
+    
+    /**
+     * Set active alarms stream error
+     */
+    setActiveAlarmsStreamError: (state, action: PayloadAction<string>) => {
+      state.activeAlarms.streamError = action.payload;
+      state.activeAlarms.streamStatus = StreamStatus.ERROR;
+    },
+    
+    /**
+     * Reset active alarms stream state
+     */
+    resetActiveAlarmsStream: (state) => {
+      state.activeAlarms = initialState.activeAlarms;
+    },
   },
   extraReducers: (builder) => {
     // Handle RTK Query getGroups
@@ -163,7 +226,15 @@ const monitoringSlice = createSlice({
 /**
  * Export actions
  */
-export const { setCurrentFolderId, clearErrors, resetMonitoring } = monitoringSlice.actions;
+export const { 
+  setCurrentFolderId, 
+  clearErrors, 
+  resetMonitoring,
+  updateActiveAlarms,
+  setActiveAlarmsStreamStatus,
+  setActiveAlarmsStreamError,
+  resetActiveAlarmsStream,
+} = monitoringSlice.actions;
 
 /**
  * Export reducer

@@ -6,6 +6,8 @@ import { useLanguage } from './hooks/useLanguage';
 import { useTranslation } from './hooks/useTranslation';
 import { useRoutePreloader } from './hooks/useRoutePreloader';
 import { useTheme } from './hooks/useTheme';
+import { useAuth } from './hooks/useAuth';
+import { useGlobalActiveAlarmsStream } from './hooks/useGlobalActiveAlarmsStream';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -219,6 +221,7 @@ const AppRoutes = () => {
 function App() {
   const { isLoadingLanguage } = useLanguage();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
   
   // Dynamically load Bootstrap CSS based on language direction
   useBootstrapRTL();
@@ -228,6 +231,10 @@ function App() {
   
   // Initialize and apply theme (load from localStorage and apply CSS variables)
   useTheme();
+  
+  // Global active alarms subscription - runs automatically when authenticated
+  // Updates Redux store with real-time alarm count data accessible from anywhere
+  useGlobalActiveAlarmsStream(isAuthenticated);
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {

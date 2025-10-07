@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
+import { useActiveAlarms } from '../hooks/useRedux';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -17,6 +18,7 @@ interface MenuItem {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   const { t, language } = useLanguage();
   const location = useLocation();
+  const { alarmCount, streamStatus } = useActiveAlarms();
 
   const menuItems: MenuItem[] = [
     { path: '/dashboard/monitoring', key: 'monitoring', icon: 'bi-display' },
@@ -86,6 +88,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
                 >
                   <i className={item.icon} data-id-ref={`sidebar-nav-icon-${item.key}`}></i>
                   {t(item.key)}
+                  {/* Show live alarm count badge for active alarms menu item */}
+                  {item.key === 'activeAlarms' && streamStatus === 'connected' && alarmCount > 0 && (
+                    <span 
+                      className="badge bg-danger ms-2 rounded-pill"
+                      data-id-ref="sidebar-active-alarms-badge"
+                      title={`${alarmCount} active alarms`}
+                    >
+                      {alarmCount}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
