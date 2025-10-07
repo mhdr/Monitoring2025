@@ -77,9 +77,9 @@
   --ag-header-column-separator-color: var(--border-medium);
   
   /* Text Colors */
-  --ag-foreground-color: var(--text-primary-light);
-  --ag-secondary-foreground-color: var(--text-secondary-light);
-  --ag-header-foreground-color: var(--text-primary-light);
+  --ag-foreground-color: var(--text-primary-dark);
+  --ag-secondary-foreground-color: var(--text-secondary-dark);
+  --ag-header-foreground-color: var(--text-primary-dark);
   
   /* Focus & Selection */
   --ag-input-focus-border-color: var(--primary-medium);
@@ -98,9 +98,9 @@
   --ag-background-color: var(--bg-primary-dark);
   --ag-header-background-color: var(--bg-secondary-dark);
   --ag-odd-row-background-color: var(--bg-primary-dark);
-  --ag-foreground-color: var(--text-primary-dark);
-  --ag-secondary-foreground-color: var(--text-secondary-dark);
-  --ag-header-foreground-color: var(--text-primary-dark);
+  --ag-foreground-color: var(--text-primary-light);
+  --ag-secondary-foreground-color: var(--text-secondary-light);
+  --ag-header-foreground-color: var(--text-primary-light);
   --ag-border-color: var(--border-dark);
   --ag-header-column-separator-color: var(--border-dark);
   --ag-row-border-color: var(--border-medium);

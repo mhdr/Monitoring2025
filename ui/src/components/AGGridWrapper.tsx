@@ -10,7 +10,7 @@ import { AG_GRID_LOCALE_IR } from '@ag-grid-community/locale';
 import { useLanguage } from '../hooks/useLanguage';
 import type { AGGridApi, AGGridWrapperProps } from '../types/agGrid';
 import './AGGridWrapper.css';
-import 'ag-grid-community/styles/ag-grid.css';
+// Legacy ag-grid.css removed - using Theming API (v33+)
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import 'ag-grid-community/styles/ag-theme-balham.css';
