@@ -38,6 +38,38 @@ const loadSyncStatusFromStorage = (): boolean => {
 };
 
 /**
+ * Load monitoring data from session storage if sync is complete
+ */
+const loadMonitoringDataFromStorage = () => {
+  const isSynced = loadSyncStatusFromStorage();
+  
+  if (!isSynced) {
+    console.info('[MonitoringSlice] Data not synced, starting with empty state');
+    return {
+      groups: [],
+      items: [],
+      alarms: [],
+    };
+  }
+
+  const storedGroups = monitoringStorageHelpers.getStoredGroups() || [];
+  const storedItems = monitoringStorageHelpers.getStoredItems() || [];
+  const storedAlarms = monitoringStorageHelpers.getStoredAlarms() || [];
+
+  console.info('[MonitoringSlice] Restoring data from sessionStorage:', {
+    groups: storedGroups.length,
+    items: storedItems.length,
+    alarms: storedAlarms.length,
+  });
+
+  return {
+    groups: storedGroups,
+    items: storedItems,
+    alarms: storedAlarms,
+  };
+};
+
+/**
  * Save data sync status to session storage
  */
 export const saveSyncStatusToStorage = (isSynced: boolean): void => {
@@ -103,35 +135,41 @@ export interface MonitoringState {
 /**
  * Initial state
  */
-const initialState: MonitoringState = {
-  groups: [],
-  groupsLoading: false,
-  groupsError: null,
+const initialState: MonitoringState = (() => {
+  // Load data from sessionStorage if sync is complete
+  const restoredData = loadMonitoringDataFromStorage();
+  const isSynced = loadSyncStatusFromStorage();
   
-  items: [],
-  itemsLoading: false,
-  itemsError: null,
-  
-  alarms: [],
-  alarmsLoading: false,
-  alarmsError: null,
-  
-  values: [],
-  valuesLoading: false,
-  valuesError: null,
-  
-  currentFolderId: null,
-  
-  // Load sync status from session storage on initialization
-  isDataSynced: loadSyncStatusFromStorage(),
-  
-  activeAlarms: {
-    alarmCount: 0,
-    lastUpdate: null,
-    streamStatus: StreamStatus.IDLE,
-    streamError: null,
-  },
-};
+  return {
+    groups: restoredData.groups,
+    groupsLoading: false,
+    groupsError: null,
+    
+    items: restoredData.items,
+    itemsLoading: false,
+    itemsError: null,
+    
+    alarms: restoredData.alarms,
+    alarmsLoading: false,
+    alarmsError: null,
+    
+    values: [],
+    valuesLoading: false,
+    valuesError: null,
+    
+    currentFolderId: null,
+    
+    // Load sync status from session storage on initialization
+    isDataSynced: isSynced,
+    
+    activeAlarms: {
+      alarmCount: 0,
+      lastUpdate: null,
+      streamStatus: StreamStatus.IDLE,
+      streamError: null,
+    },
+  };
+})();
 
 // Note: Data fetching is now handled by RTK Query
 // This slice maintains the state for compatibility with existing components
