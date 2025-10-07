@@ -207,9 +207,6 @@ builder.Services.AddHostedService<MyBackgroundWorker>();
 ```protobuf
 service MonitoringService {
   rpc StreamActiveAlarms(ActiveAlarmsRequest) returns (stream ActiveAlarmsUpdate);
-  rpc StreamMessages(MessageRequest) returns (stream MessageUpdate);
-  rpc StreamVersionUpdates(VersionUpdateRequest) returns (stream VersionUpdate);
-  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
 }
 ```
 
@@ -219,12 +216,6 @@ private readonly GrpcBroadcastService _grpcBroadcastService;
 
 // Broadcast active alarms to all clients
 await _grpcBroadcastService.BroadcastActiveAlarmsAsync(alarmCount, cancellationToken);
-
-// Broadcast message to all clients
-await _grpcBroadcastService.BroadcastMessageAsync(username, message, cancellationToken);
-
-// Broadcast version update to all clients
-await _grpcBroadcastService.BroadcastVersionUpdateAsync(version, message, cancellationToken);
 ```
 
 **Client Connection (C#):**
