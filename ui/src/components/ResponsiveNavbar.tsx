@@ -104,6 +104,16 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
                 <i className="fas fa-cog me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-settings-icon"></i>
                 {t('settingsMenu')}
               </NavDropdown.Item>
+              <NavDropdown.Divider data-id-ref="responsive-navbar-user-divider-1" />
+              <NavDropdown.Item 
+                as={Link} 
+                to={`/dashboard/sync?force=true&redirect=${encodeURIComponent(window.location.pathname)}`}
+                className="py-2" 
+                data-id-ref="responsive-navbar-user-force-sync-link"
+              >
+                <i className="fas fa-sync-alt me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-force-sync-icon"></i>
+                {t('forceSync')}
+              </NavDropdown.Item>
               <NavDropdown.Divider data-id-ref="responsive-navbar-user-divider-2" />
               <NavDropdown.Item 
                 onClick={handleLogout}

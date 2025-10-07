@@ -8,6 +8,8 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../hooks/useTranslation';
 import { useDataSync } from '../hooks/useDataSync';
+import { useAppDispatch } from '../hooks/useRedux';
+import { clearDataSyncStatus } from '../store/slices/monitoringSlice';
 import type { SyncProgress } from '../hooks/useDataSync';
 import './SyncPage.css';
 
@@ -107,9 +109,13 @@ const SyncPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { syncState, startSync, retryFailed } = useDataSync();
+  const dispatch = useAppDispatch();
   
   // Get the intended redirect URL from query params, default to dashboard
   const redirectTo = searchParams.get('redirect') || '/dashboard';
+  
+  // Check if this is a forced sync (initiated from navbar)
+  const isForceSync = searchParams.get('force') === 'true';
   
   // State for handling redirect delay
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -122,10 +128,15 @@ const SyncPage: React.FC = () => {
 
   /**
    * Start sync process on component mount
+   * If this is a forced sync, clear the existing sync status first
    */
   useEffect(() => {
+    if (isForceSync) {
+      // Clear the existing sync status to force a fresh sync
+      dispatch(clearDataSyncStatus());
+    }
     startSync();
-  }, [startSync]);
+  }, [startSync, isForceSync, dispatch]);
 
   /**
    * Handle successful sync completion
