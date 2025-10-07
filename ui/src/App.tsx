@@ -8,7 +8,7 @@ import { useRoutePreloader } from './hooks/useRoutePreloader';
 import { useTheme } from './hooks/useTheme';
 import { useAuth } from './hooks/useAuth';
 import { useGlobalActiveAlarmsStream } from './hooks/useGlobalActiveAlarmsStream';
-import { useGlobalDataInitialization } from './hooks/useGlobalDataInitialization';
+// import { useGlobalDataInitialization } from './hooks/useGlobalDataInitialization';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -18,6 +18,10 @@ import MonitoringPageSkeleton from './components/MonitoringPageSkeleton';
 import GenericPageSkeleton from './components/GenericPageSkeleton';
 import ServiceWorkerPrompt from './components/ServiceWorkerPrompt';
 import './App.css';
+
+// Lazy load page components
+const LoginPage = lazy(() => import('./components/LoginPage'));
+const SyncPage = lazy(() => import('./components/SyncPage'));
 
 // Lazy load layout components
 const DashboardLayout = lazy(() => import('./components/DashboardLayout'));
@@ -60,6 +64,15 @@ const AppRoutes = () => {
   return (
       <Routes>
         <Route path="/login" element={<PublicRoute />} />
+        <Route path="/sync" element={
+          <ProtectedRoute>
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <SyncPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          </ProtectedRoute>
+        } />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <LazyErrorBoundary>
@@ -237,9 +250,9 @@ function App() {
   // Updates Redux store with real-time alarm count data accessible from anywhere
   useGlobalActiveAlarmsStream(isAuthenticated);
 
-  // Global data initialization - fetches groups and items when authenticated
-  // Ensures monitoring data is available app-wide without component-level fetching
-  useGlobalDataInitialization(isAuthenticated);
+  // Note: Global data initialization is now handled by the SyncPage component
+  // to provide better user experience with progress indicators
+  // useGlobalDataInitialization(isAuthenticated);
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {

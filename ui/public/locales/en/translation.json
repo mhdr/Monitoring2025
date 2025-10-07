@@ -191,5 +191,25 @@
       "currentPasswordIncorrect": "Current password is incorrect",
       "networkError": "Network error. Please try again."
     }
+  },
+  "sync": {
+    "title": "Synchronizing Data",
+    "subtitle": "Please wait while we prepare your dashboard",
+    "groups": {
+      "title": "Loading Groups",
+      "description": "Synchronizing monitoring groups...",
+      "success": "Groups loaded successfully",
+      "error": "Failed to load groups"
+    },
+    "items": {
+      "title": "Loading Items", 
+      "description": "Synchronizing monitoring points...",
+      "success": "Items loaded successfully",
+      "error": "Failed to load items"
+    },
+    "completing": "Finalizing synchronization...",
+    "redirecting": "Redirecting to dashboard...",
+    "retry": "Retry",
+    "skipAndContinue": "Skip and Continue"
   }
 }

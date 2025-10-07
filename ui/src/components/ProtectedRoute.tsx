@@ -1,8 +1,10 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useAppSelector } from '../hooks/useRedux';
 import { Container, Spinner, Row, Col } from 'react-bootstrap';
 import { useLanguage } from '../hooks/useLanguage';
+import { isDataSyncNeeded, buildSyncUrl, pathRequiresSync } from '../utils/syncUtils';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,6 +14,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
+  const monitoringState = useAppSelector((state) => state.monitoring);
 
   if (isLoading) {
     return (
@@ -31,6 +34,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (!isAuthenticated) {
     // Save the current location they were trying to access
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // If authenticated and current path requires sync but data is not synced, redirect to sync
+  if (pathRequiresSync(location.pathname) && isDataSyncNeeded(monitoringState)) {
+    const currentUrl = `${location.pathname}${location.search}${location.hash}`;
+    const syncUrl = buildSyncUrl(currentUrl);
+    return <Navigate to={syncUrl} replace data-id-ref="protected-route-navigate-sync" />;
   }
 
   return <>{children}</>;
