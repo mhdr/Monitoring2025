@@ -5,6 +5,7 @@
   "type": "module",
   "description": "سیستم مانیتورینگ انبار - رابط کاربری فارسی",
   "scripts": {
+    "postinstall": "npm run grpc:generate",
     "predev": "node scripts/check-ssl.cjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
