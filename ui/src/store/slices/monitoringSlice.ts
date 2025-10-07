@@ -217,6 +217,14 @@ const monitoringSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    // Handle auth logout - clear sync status when user logs out
+    // NOTE: addCase must be called before addMatcher in Redux Toolkit
+    builder.addCase(authLogout, (state) => {
+      // Clear sync status from storage and state when user logs out
+      clearSyncStatusFromStorage();
+      state.isDataSynced = false;
+    });
+
     // Handle RTK Query getGroups
     builder
       .addMatcher(
@@ -324,13 +332,6 @@ const monitoringSlice = createSlice({
           };
         }
       );
-
-    // Handle auth logout - clear sync status when user logs out
-    builder.addCase(authLogout, (state) => {
-      // Clear sync status from storage and state when user logs out
-      clearSyncStatusFromStorage();
-      state.isDataSynced = false;
-    });
   },
 });
 
