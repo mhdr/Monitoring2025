@@ -50,7 +50,7 @@ export function useGlobalDataInitialization(
   const isLoadingRef = useRef<boolean>(false);
   
   // Get current state from store
-  const { groups, items, groupsLoading, itemsLoading } = useAppSelector((state) => state.monitoring);
+  const { groups, items, groupsLoading, itemsLoading, isDataSynced } = useAppSelector((state) => state.monitoring);
 
   /**
    * Fetches groups and items data
@@ -58,6 +58,18 @@ export function useGlobalDataInitialization(
   const loadData = useCallback(async () => {
     // Only load if authenticated and not already loading
     if (!isAuthenticated || isLoadingRef.current) {
+      return;
+    }
+
+    // If data is already synced and we have data in state, skip fetching
+    if (isDataSynced && (groups.length > 0 || items.length > 0)) {
+      console.info('[useGlobalDataInitialization] Data already synced, skipping fetch:', {
+        groupsCount: groups.length,
+        itemsCount: items.length,
+        isDataSynced,
+        timestamp: new Date().toISOString()
+      });
+      hasInitializedRef.current = true;
       return;
     }
 
@@ -76,7 +88,7 @@ export function useGlobalDataInitialization(
     } finally {
       isLoadingRef.current = false;
     }
-  }, [isAuthenticated, dispatch]);
+  }, [isAuthenticated, dispatch, isDataSynced, groups.length, items.length]);
 
   /**
    * Manually refresh data
@@ -97,11 +109,12 @@ export function useGlobalDataInitialization(
   }, [isAuthenticated, loadData]);
 
   // Determine if we consider the data "initialized"
-  // Data is initialized if we have groups and items loaded, or if we've tried to load and failed
-  const isInitialized = hasInitializedRef.current && 
-    !groupsLoading && 
-    !itemsLoading && 
-    (groups.length > 0 || items.length > 0 || hasInitializedRef.current);
+  // Data is initialized if:
+  // 1. Data is synced and we have data in state (loaded from sessionStorage), OR
+  // 2. We've tried to load data and fetching is complete
+  const isInitialized = 
+    (isDataSynced && (groups.length > 0 || items.length > 0)) ||
+    (hasInitializedRef.current && !groupsLoading && !itemsLoading);
 
   return {
     refreshData,

@@ -77,6 +77,10 @@ export function useDataSync(): UseDataSyncResult {
   const dispatch = useAppDispatch();
   const items = useAppSelector(state => state.monitoring.items);
   const isSyncingRef = useRef<boolean>(false);
+  
+  // Keep a ref to the latest items for use in async functions
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
   const [syncState, setSyncState] = useState<SyncState>({
     overall: 'idle',
@@ -251,8 +255,18 @@ export function useDataSync(): UseDataSyncResult {
       // After items are synced, get the item IDs and sync alarms
       let alarmsSuccess = false;
       if (itemsSuccess) {
-        // Extract item IDs from the current Redux state
-        const itemIds = items.map(item => item.id);
+        // Add a small delay to ensure Redux state has been updated
+        // RTK Query updates might not be reflected immediately
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Get fresh items from ref (always has latest state)
+        const freshItems = itemsRef.current;
+        const itemIds = freshItems.map(item => item.id);
+        console.info('[useDataSync] Extracted item IDs for alarm sync:', {
+          itemCount: itemIds.length,
+          sampleIds: itemIds.slice(0, 5),
+          timestamp: new Date().toISOString()
+        });
         alarmsSuccess = await syncAlarms(itemIds);
       } else {
         // If items sync failed, mark alarms as failed too
@@ -300,7 +314,7 @@ export function useDataSync(): UseDataSyncResult {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [syncGroups, syncItems, syncAlarms, updateOverallStatus, items, updateAlarmsProgress, dispatch]);
+  }, [syncGroups, syncItems, syncAlarms, updateOverallStatus, updateAlarmsProgress, dispatch]);
 
   /**
    * Retry failed sync operations
@@ -323,8 +337,8 @@ export function useDataSync(): UseDataSyncResult {
     }
 
     // Retry alarms if failed (but only if we have items available)
-    if (syncState.alarms.status === 'error' && items.length > 0) {
-      const itemIds = items.map(item => item.id);
+    if (syncState.alarms.status === 'error' && itemsRef.current.length > 0) {
+      const itemIds = itemsRef.current.map(item => item.id);
       failedOperations.push(syncAlarms(itemIds));
     }
 
@@ -372,7 +386,7 @@ export function useDataSync(): UseDataSyncResult {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [syncState.groups.status, syncState.items.status, syncState.alarms.status, syncGroups, syncItems, syncAlarms, updateOverallStatus, items, dispatch]);
+  }, [syncState.groups.status, syncState.items.status, syncState.alarms.status, syncGroups, syncItems, syncAlarms, updateOverallStatus, dispatch]);
 
   /**
    * Reset sync state to initial values
