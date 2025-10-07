@@ -311,6 +311,9 @@ if (app.Environment.IsDevelopment())
 // Enable CORS
 app.UseCors("ReactClientPolicy");
 
+// Enable gRPC-Web for browser clients
+app.UseGrpcWeb();
+
 // Use HTTPS redirection - this will redirect HTTP requests to HTTPS
 // Can be disabled in development by setting Development:DisableHttpsRedirection to true
 var disableHttpsRedirection = builder.Configuration.GetValue<bool>("Development:DisableHttpsRedirection", false);
@@ -332,9 +335,9 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Map gRPC services
-app.MapGrpcService<API.Services.Grpc.MonitoringGrpcService>();
+app.MapGrpcService<API.Services.Grpc.MonitoringGrpcService>().EnableGrpcWeb();
 
-Console.WriteLine("[gRPC] MonitoringGrpcService mapped and ready");
+Console.WriteLine("[gRPC] MonitoringGrpcService mapped and ready with gRPC-Web support");
 
 // Ensure database is created and migrated
 using (var scope = app.Services.CreateScope())

@@ -7,6 +7,7 @@
 import { createClient } from '@connectrpc/connect';
 import { createGrpcWebTransport } from '@connectrpc/connect-web';
 import { MonitoringService } from '../gen/monitoring_pb';
+import { authStorageHelpers } from '../utils/authStorage';
 
 // Base URL for the gRPC server - matches the backend API
 // The .NET server must be configured with gRPC-web middleware
@@ -15,15 +16,26 @@ const GRPC_BASE_URL = 'https://localhost:7136';
 /**
  * Creates the gRPC-web transport for browser clients
  * Uses the fetch API under the hood for HTTP/1.1 communication
+ * Includes JWT authentication headers automatically
  */
 const transport = createGrpcWebTransport({
   baseUrl: GRPC_BASE_URL,
-  // Add credentials to include cookies/auth headers
-  fetch: (input, init) => 
-    fetch(input, { 
+  // Add credentials and authentication headers
+  fetch: (input, init) => {
+    const token = authStorageHelpers.getStoredToken();
+    const headers = new Headers(init?.headers);
+    
+    // Add JWT Bearer token if available
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    
+    return fetch(input, { 
       ...init, 
-      credentials: 'include' 
-    }),
+      credentials: 'include',
+      headers 
+    });
+  },
 });
 
 /**
