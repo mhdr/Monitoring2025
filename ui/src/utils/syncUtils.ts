@@ -29,15 +29,22 @@ export function isDataSyncNeeded(monitoringState: {
   items: unknown[];
   groupsLoading: boolean;
   itemsLoading: boolean;
+  isDataSynced: boolean;
 }): boolean {
-  const { groups, items, groupsLoading, itemsLoading } = monitoringState;
+  const { groups, items, groupsLoading, itemsLoading, isDataSynced } = monitoringState;
   
   // If currently loading, don't need to sync again
   if (groupsLoading || itemsLoading) {
     return false;
   }
   
-  // If we have both groups and items data, sync is not needed
+  // If data has been synced in this browser session, don't sync again
+  if (isDataSynced) {
+    return false;
+  }
+  
+  // If we have both groups and items data, assume it's still valid
+  // (this provides fallback for cases where sessionStorage might be cleared)
   if (groups.length > 0 && items.length > 0) {
     return false;
   }

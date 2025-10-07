@@ -3,6 +3,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Group, Item, MultiValue, AlarmDto } from '../../types/api';
 import type { ApiError } from '../../types/auth';
 import { api } from '../../services/rtkApi';
+import { logout as authLogout } from './authSlice';
 
 /**
  * Stream connection status for gRPC active alarms
@@ -16,6 +17,46 @@ export const StreamStatus = {
 } as const;
 
 export type StreamStatus = typeof StreamStatus[keyof typeof StreamStatus];
+
+/**
+ * Session storage key for data sync status
+ */
+const SYNC_STATUS_STORAGE_KEY = 'monitoring_data_synced';
+
+/**
+ * Load data sync status from session storage
+ */
+const loadSyncStatusFromStorage = (): boolean => {
+  try {
+    const stored = sessionStorage.getItem(SYNC_STATUS_STORAGE_KEY);
+    return stored === 'true';
+  } catch (error) {
+    console.warn('Failed to read sync status from sessionStorage:', error);
+    return false;
+  }
+};
+
+/**
+ * Save data sync status to session storage
+ */
+export const saveSyncStatusToStorage = (isSynced: boolean): void => {
+  try {
+    sessionStorage.setItem(SYNC_STATUS_STORAGE_KEY, isSynced.toString());
+  } catch (error) {
+    console.warn('Failed to save sync status to sessionStorage:', error);
+  }
+};
+
+/**
+ * Clear data sync status from session storage
+ */
+export const clearSyncStatusFromStorage = (): void => {
+  try {
+    sessionStorage.removeItem(SYNC_STATUS_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear sync status from sessionStorage:', error);
+  }
+};
 
 /**
  * Monitoring state interface
@@ -43,6 +84,9 @@ export interface MonitoringState {
   
   // Navigation
   currentFolderId: string | null;
+  
+  // Data synchronization status
+  isDataSynced: boolean;
   
   // Active Alarms Stream (global subscription)
   activeAlarms: {
@@ -75,6 +119,9 @@ const initialState: MonitoringState = {
   
   currentFolderId: null,
   
+  // Load sync status from session storage on initialization
+  isDataSynced: loadSyncStatusFromStorage(),
+  
   activeAlarms: {
     alarmCount: 0,
     lastUpdate: null,
@@ -101,6 +148,22 @@ const monitoringSlice = createSlice({
     },
     
     /**
+     * Set data sync completion status
+     */
+    setDataSynced: (state, action: PayloadAction<boolean>) => {
+      state.isDataSynced = action.payload;
+      saveSyncStatusToStorage(action.payload);
+    },
+    
+    /**
+     * Clear data sync status (when logging out)
+     */
+    clearDataSyncStatus: (state) => {
+      state.isDataSynced = false;
+      clearSyncStatusFromStorage();
+    },
+    
+    /**
      * Clear all errors
      */
     clearErrors: (state) => {
@@ -112,7 +175,11 @@ const monitoringSlice = createSlice({
     /**
      * Reset monitoring state to initial
      */
-    resetMonitoring: () => initialState,
+    resetMonitoring: () => {
+      // Clear sync status from storage when resetting
+      clearSyncStatusFromStorage();
+      return initialState;
+    },
     
     /**
      * Update active alarms count and timestamp from gRPC stream
@@ -257,6 +324,13 @@ const monitoringSlice = createSlice({
           };
         }
       );
+
+    // Handle auth logout - clear sync status when user logs out
+    builder.addCase(authLogout, (state) => {
+      // Clear sync status from storage and state when user logs out
+      clearSyncStatusFromStorage();
+      state.isDataSynced = false;
+    });
   },
 });
 
@@ -264,7 +338,9 @@ const monitoringSlice = createSlice({
  * Export actions
  */
 export const { 
-  setCurrentFolderId, 
+  setCurrentFolderId,
+  setDataSynced,
+  clearDataSyncStatus,
   clearErrors, 
   resetMonitoring,
   updateActiveAlarms,

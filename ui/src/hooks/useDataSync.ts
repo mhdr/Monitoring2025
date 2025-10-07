@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from './useRedux';
-import { fetchGroups, fetchItems, fetchAlarms } from '../store/slices/monitoringSlice';
+import { fetchGroups, fetchItems, fetchAlarms, setDataSynced } from '../store/slices/monitoringSlice';
 
 export interface SyncProgress {
   /** Progress percentage (0-100) */
@@ -272,6 +272,11 @@ export function useDataSync(): UseDataSyncResult {
         hasErrors,
       }));
 
+      // Set the sync flag in Redux store if all operations succeeded
+      if (allSuccess) {
+        dispatch(setDataSynced(true));
+      }
+
       return allSuccess;
     } catch (error) {
       console.error('Sync process failed:', error);
@@ -281,7 +286,7 @@ export function useDataSync(): UseDataSyncResult {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [syncGroups, syncItems, syncAlarms, updateOverallStatus, items, updateAlarmsProgress]);
+  }, [syncGroups, syncItems, syncAlarms, updateOverallStatus, items, updateAlarmsProgress, dispatch]);
 
   /**
    * Retry failed sync operations
@@ -327,6 +332,11 @@ export function useDataSync(): UseDataSyncResult {
         hasErrors: !allSuccess,
       }));
 
+      // Set the sync flag in Redux store if all retry operations succeeded
+      if (allSuccess) {
+        dispatch(setDataSynced(true));
+      }
+
       return allSuccess;
     } catch (error) {
       console.error('Retry sync failed:', error);
@@ -335,7 +345,7 @@ export function useDataSync(): UseDataSyncResult {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [syncState.groups.status, syncState.items.status, syncState.alarms.status, syncGroups, syncItems, syncAlarms, updateOverallStatus, items]);
+  }, [syncState.groups.status, syncState.items.status, syncState.alarms.status, syncGroups, syncItems, syncAlarms, updateOverallStatus, items, dispatch]);
 
   /**
    * Reset sync state to initial values
