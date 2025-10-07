@@ -228,6 +228,17 @@ const monitoringSlice = createSlice({
       state.isDataSynced = false;
     });
 
+    // Handle auth login success - clear sync status to allow fresh data sync for new session
+    builder.addMatcher(
+      api.endpoints.login.matchFulfilled,
+      (state) => {
+        // Clear sync status from storage and state when user logs in
+        // This ensures fresh data sync for the new authenticated session
+        clearSyncStatusFromStorage();
+        state.isDataSynced = false;
+      }
+    );
+
     // Handle RTK Query getGroups
     builder
       .addMatcher(
