@@ -83,6 +83,67 @@ const option: EChartsOption = { title: { text: t('charts.title') }, xAxis: { typ
 
 ⚠️ Never manually refresh - `baseQueryWithAuth` handles it
 
+## gRPC / Connect-RPC
+⚠️ MANDATORY: Use Connect-RPC for real-time streaming data
+- **Stack**: Connect-ES + gRPC-web, Buf CLI, @bufbuild/protobuf v2.9.0
+- **Client**: `src/services/grpcClient.ts` (gRPC-web transport)
+- **Hooks**: `src/hooks/useMonitoringStream.ts` (streaming lifecycle)
+- **Protobuf**: `Protos/monitoring.proto` → `src/gen/monitoring_pb.ts`
+- **Backend**: .NET Core gRPC server, same HTTPS port (7136)
+
+### Client Configuration
+⚠️ Always use `createGrpcWebTransport` for browser clients
+- Transport: `createGrpcWebTransport({ baseUrl: 'https://localhost:7136' })`
+- Auth: JWT Bearer tokens via fetch interceptor
+- Client: `createClient(MonitoringService, transport)`
+
+✅ `const client = createClient(MonitoringService, transport);`
+❌ `// Using vanilla gRPC or wrong transport`
+
+### Server Streaming
+⚠️ Use `for await...of` for async stream iteration
+- Pattern: `for await (const update of client.streamMethod(request)) { }`
+- Lifecycle: Connection, streaming, error handling, cleanup
+- Hook: `useMonitoringStream(clientId, autoConnect)`
+- Abort: `AbortController` for graceful disconnection
+
+✅ `for await (const update of stream) { setData(update); }`
+❌ `stream.on('data', ...)` // callback style
+
+### Code Generation
+⚠️ Use Buf CLI + protoc-gen-es for TypeScript generation
+- **Buf Config**: `buf.yaml` (modules), `buf.gen.yaml` (generation)
+- **Command**: `npm run grpc:generate` (buf generate)
+- **Output**: `src/gen/` (TypeScript schemas + services)
+- **Version**: protoc-gen-es v2.9.0, target=ts, import_extension=none
+
+✅ `buf generate` → `src/gen/monitoring_pb.ts`
+❌ `// Manual protoc commands or outdated generators`
+
+### Message Handling
+⚠️ Use schema-based creation with @bufbuild/protobuf v2
+- **Create**: `create(MessageSchema, data)` (not new Message())
+- **Types**: Generated TypeScript interfaces (strict typing)
+- **Serialization**: `toBinary()`, `toJson()` standalone functions
+- **Validation**: TypeScript compiler enforces message contracts
+
+✅ `create(ActiveAlarmsRequestSchema, { clientId: 'web-client' })`
+❌ `new ActiveAlarmsRequest({ clientId: 'web-client' })` // v1 pattern
+
+### Error Handling
+⚠️ Handle ConnectError and connection states
+- **Types**: `ConnectError` from `@connectrpc/connect`
+- **States**: IDLE, CONNECTING, CONNECTED, ERROR, DISCONNECTED
+- **Retries**: Exponential backoff, manual reconnection
+- **Cleanup**: Always abort streams on unmount
+
+### Integration Patterns
+- **Redux**: Store stream state in slices
+- **React**: Custom hooks for stream lifecycle
+- **Auth**: Automatic JWT refresh in transport
+- **i18n**: Translate error messages and connection states
+- **RTL**: Consider RTL layouts for streaming indicators
+
 ## Development
 **i18n:** Both fa + en required, RTL tested
 
@@ -105,15 +166,17 @@ const option: EChartsOption = { title: { text: t('charts.title') }, xAxis: { typ
 src/
 ├── components/   # React components
 ├── contexts/     # Auth, Language
+├── gen/          # Generated gRPC/Protobuf files
 ├── hooks/        # Custom hooks
 ├── i18n/         # i18n config
-├── services/     # API (rtkApi.ts)
+├── services/     # API (rtkApi.ts, grpcClient.ts)
 ├── store/        # Redux + slices
 ├── styles/       # Global styles
 ├── types/        # TypeScript types
 └── utils/        # Helpers
 
 public/locales/   # fa/, en/
+Protos/           # Protocol buffer definitions
 ```
 
 ## Checklist
@@ -128,3 +191,5 @@ public/locales/   # fa/, en/
 - [ ] Theme vars only, all themes verified
 - [ ] Charts: i18n, responsive, RTL
 - [ ] AG Grid: LocaleModule registered
+- [ ] gRPC: Stream lifecycle, AbortController cleanup
+- [ ] Protobuf: Schema-based creation, no v1 patterns
