@@ -31,7 +31,7 @@ This is a production-grade enterprise monitoring dashboard with:
 ```typescript
 const { t } = useTranslation();
 return (
-  <button className="btn btn-primary">
+  <button className="btn btn-primary" data-id-ref="save-button">
     {t('common.buttons.save')}
   </button>
 );
@@ -39,8 +39,8 @@ return (
 
 ❌ **WRONG - Hardcoded text:**
 ```typescript
-<button>Save</button>
-<div>Welcome to Dashboard</div>
+<button>Save</button> {/* Missing data-id-ref */}
+<div>Welcome to Dashboard</div> {/* Missing data-id-ref */}
 ```
 
 ✅ **CORRECT - Dynamic translations with variables:**
@@ -107,6 +107,7 @@ return <p>{t('items.count', { count })}</p>;
 ⚠️ **NO `any` type** - Use `unknown` with type guards or proper interfaces
 ⚠️ **NO class components** - Only functional components with hooks
 ⚠️ **NO inline styles** - Use CSS modules or theme CSS variables
+⚠️ **MANDATORY: Element identification** - ALL elements created by AI must have `data-id-ref` attribute
 
 ### Component Patterns
 
@@ -133,24 +134,31 @@ export const UserCard: React.FC<UserCardProps> = ({
 
   return (
     <div className="card" data-id-ref="user-card">
-      <h3>{name}</h3>
-      <p>{email}</p>
-      {onEdit && (
-        <button onClick={handleEdit} data-id-ref="user-card-edit-button">
-          Edit
-        </button>
-      )}
+      <div data-id-ref="user-card-body">
+        <h3 data-id-ref="user-name-heading">{name}</h3>
+        <p data-id-ref="user-email-text">{email}</p>
+        {onEdit && (
+          <button 
+            onClick={handleEdit} 
+            data-id-ref="user-card-edit-button"
+            className="btn btn-primary"
+          >
+            Edit
+          </button>
+        )}
+      </div>
     </div>
   );
 };
 ```
 
-❌ **WRONG - Missing types, inline styles:**
+❌ **WRONG - Missing types, inline styles, missing data-id-ref:**
 ```typescript
 export const UserCard = ({ userId, name, email, onEdit }) => { // No types!
   return (
-    <div style={{ padding: '10px' }}> {/* Inline styles! */}
-      <h3>{name}</h3>
+    <div style={{ padding: '10px' }}> {/* Inline styles! Missing data-id-ref! */}
+      <h3>{name}</h3> {/* Missing data-id-ref! */}
+      <p>{email}</p> {/* Missing data-id-ref! */}
     </div>
   );
 };
@@ -345,9 +353,9 @@ Must test on these standard resolutions:
 
 ✅ **CORRECT - Mobile-first responsive classes:**
 ```tsx
-<div className="container">
-  <div className="row">
-    <div className="col-12 col-md-6 col-lg-4">
+<div className="container" data-id-ref="responsive-container">
+  <div className="row" data-id-ref="responsive-row">
+    <div className="col-12 col-md-6 col-lg-4" data-id-ref="responsive-column">
       {/* Full width on mobile, half on tablet, third on desktop */}
     </div>
   </div>
@@ -356,11 +364,11 @@ Must test on these standard resolutions:
 
 ✅ **CORRECT - Responsive utilities:**
 ```tsx
-<div className="d-none d-md-block">
+<div className="d-none d-md-block" data-id-ref="desktop-only-content">
   {/* Hidden on mobile, visible on tablet+ */}
 </div>
 
-<h1 className="fs-6 fs-md-4 fs-lg-2">
+<h1 className="fs-6 fs-md-4 fs-lg-2" data-id-ref="responsive-heading">
   {/* Smaller text on mobile, larger on desktop */}
 </h1>
 ```
@@ -492,7 +500,7 @@ const handleClick = useCallback(() => {
 
 ❌ **WRONG - Recreating functions on every render:**
 ```typescript
-<button onClick={() => handleAction(id)}>Click</button>
+<button onClick={() => handleAction(id)}>Click</button> {/* Missing data-id-ref */}
 // Should use useCallback or bind outside render
 ```
 
@@ -518,7 +526,7 @@ const handleClick = useCallback(() => {
 ✅ **CORRECT - Safe user content rendering:**
 ```typescript
 // React automatically escapes content
-<div>{userProvidedText}</div>
+<div data-id-ref="user-content">{userProvidedText}</div>
 ```
 
 ❌ **WRONG - Dangerous HTML injection:**
@@ -573,7 +581,7 @@ const handleSubmit = async (credentials: LoginDto) => {
 
 // Display error in UI
 {error && (
-  <div className="alert alert-danger">
+  <div className="alert alert-danger" data-id-ref="error-message">
     {t('errors.loginFailed')}
   </div>
 )}
@@ -656,22 +664,48 @@ All route components should be wrapped with error boundaries:
 4. Verify SSL: Navigate to `https://localhost:5173`
 
 ### Element Identification
-⚠️ **MANDATORY: All interactive elements must have `data-id-ref` attribute**
+⚠️ **MANDATORY: ALL elements created by AI must have `data-id-ref` attribute**
+
+**Scope**: Every HTML element that you create (divs, buttons, inputs, forms, cards, modals, etc.) must include a `data-id-ref` attribute for automated testing, debugging, and element identification.
 
 **Format**: `data-id-ref="component-element-purpose"` (kebab-case)
 
-✅ **CORRECT:**
+✅ **CORRECT - All elements have data-id-ref:**
 ```tsx
-<button data-id-ref="login-form-submit-button">Login</button>
-<input data-id-ref="search-input-field" />
-<div data-id-ref="user-profile-card">...</div>
+<div data-id-ref="user-profile-container">
+  <form data-id-ref="login-form">
+    <div data-id-ref="form-group-username">
+      <label data-id-ref="username-label">Username</label>
+      <input data-id-ref="username-input-field" />
+    </div>
+    <div data-id-ref="form-group-password">
+      <label data-id-ref="password-label">Password</label>
+      <input data-id-ref="password-input-field" type="password" />
+    </div>
+    <button data-id-ref="login-form-submit-button">Login</button>
+  </form>
+  <div data-id-ref="user-profile-card">
+    <h3 data-id-ref="user-name-heading">{name}</h3>
+    <p data-id-ref="user-email-text">{email}</p>
+    <button data-id-ref="user-card-edit-button">Edit</button>
+  </div>
+</div>
 ```
 
-❌ **WRONG:**
+❌ **WRONG - Missing data-id-ref attributes:**
 ```tsx
-<button>Login</button> // Missing data-id-ref
-<button data-id-ref="loginBtn">Login</button> // Wrong case
+<div> {/* Missing data-id-ref */}
+  <button>Login</button> {/* Missing data-id-ref */}
+  <input /> {/* Missing data-id-ref */}
+</div>
+<button data-id-ref="loginBtn">Login</button> // Wrong case (use kebab-case)
 ```
+
+**Naming Convention Guidelines**:
+- Use descriptive, hierarchical names: `component-element-purpose`
+- Examples: `user-card-edit-button`, `search-input-field`, `dashboard-header-logo`
+- For lists/grids: Include context like `user-list-item-{id}` or `data-grid-row-{index}`
+- For modals/dialogs: Include modal name like `confirm-delete-modal-cancel-button`
 
 ### Chrome DevTools MCP Integration
 ⚠️ **MANDATORY: Use Chrome DevTools MCP for comprehensive development workflow**
@@ -1294,7 +1328,7 @@ Protos/           # Protocol buffer definitions
 - [ ] **DevTools**: Network requests successful
 
 ### Documentation
-- [ ] **Element IDs**: All interactive elements have `data-id-ref`
+- [ ] **Element IDs**: All elements created by AI have `data-id-ref`
 - [ ] **Code Comments**: Complex logic documented
 - [ ] **README**: Updated if new setup steps required
 - [ ] **Types Exported**: Public types exported from index files
