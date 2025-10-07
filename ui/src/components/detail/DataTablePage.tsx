@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
-import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
-import { fetchItems } from '../../store/slices/monitoringSlice';
+import { useAppSelector } from '../../hooks/useRedux';
 import { useLazyGetHistoryQuery } from '../../services/rtkApi';
 import type { HistoryRequestDto, HistoricalDataPoint, Item } from '../../types/api';
 import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
@@ -18,16 +17,13 @@ type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
 
 const DataTablePage: React.FC = () => {
   const { t, language } = useLanguage();
-  const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
   const itemId = searchParams.get('itemId');
 
   // Get item from Redux store
-  const items = useAppSelector((state) => state.monitoring.items);
   const item = useAppSelector((state) => 
     state.monitoring.items.find((item) => item.id === itemId)
   );
-  const itemsLoading = useAppSelector((state) => state.monitoring.itemsLoading);
 
   // RTK Query lazy hook for fetching history
   const [fetchHistory, { data: historyResponse, isError }] = useLazyGetHistoryQuery();
@@ -52,15 +48,6 @@ const DataTablePage: React.FC = () => {
     columnApiRef.current = colApi;
     handleGridReady(api, colApi);
   }, [handleGridReady]);
-
-  
-
-  // Fetch items if not loaded (for direct URL access)
-  useEffect(() => {
-    if (items.length === 0 && !itemsLoading) {
-      dispatch(fetchItems({ showOrphans: false }));
-    }
-  }, [dispatch, items.length, itemsLoading]);
 
   // Handle window resize for responsive layout
   useEffect(() => {

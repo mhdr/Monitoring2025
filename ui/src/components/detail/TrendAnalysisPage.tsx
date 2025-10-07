@@ -3,8 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 import { useLanguage } from '../../hooks/useLanguage';
-import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
-import { fetchItems } from '../../store/slices/monitoringSlice';
+import { useAppSelector } from '../../hooks/useRedux';
 import { useLazyGetHistoryQuery } from '../../services/rtkApi';
 import type { HistoryRequestDto, HistoricalDataPoint, Item } from '../../types/api';
 import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
@@ -14,12 +13,10 @@ type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
 
 const TrendAnalysisPage: React.FC = () => {
   const { t, language } = useLanguage();
-  const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
   const itemId = searchParams.get('itemId');
 
   // Get item from Redux store
-  const items = useAppSelector((state) => state.monitoring.items);
   const item = useAppSelector((state) => 
     state.monitoring.items.find((item) => item.id === itemId)
   );
@@ -37,13 +34,6 @@ const TrendAnalysisPage: React.FC = () => {
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
   // Collapsed state for the Date Range card on mobile
   const [dateRangeCollapsed, setDateRangeCollapsed] = useState<boolean>(window.innerWidth < 768);
-
-  // Fetch items if not loaded (for direct URL access)
-  useEffect(() => {
-    if (items.length === 0 && !itemsLoading) {
-      dispatch(fetchItems({ showOrphans: false }));
-    }
-  }, [dispatch, items.length, itemsLoading]);
 
   // Handle window resize for responsive chart title
   useEffect(() => {

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
-import { fetchGroups, fetchItems, setCurrentFolderId } from '../store/slices/monitoringSlice';
+import { setCurrentFolderId } from '../store/slices/monitoringSlice';
 import { useGetValuesQuery } from '../services/rtkApi';
 import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
@@ -28,12 +28,6 @@ const MonitoringPage: React.FC = () => {
     itemsLoading: isLoadingItems,
     itemsError,
   } = useAppSelector((state) => state.monitoring);
-
-  // Fetch groups and items data on mount
-  useEffect(() => {
-    dispatch(fetchGroups());
-    dispatch(fetchItems({ showOrphans: false }));
-  }, [dispatch]);
 
   // Update current folder ID in Redux when URL parameter changes
   useEffect(() => {

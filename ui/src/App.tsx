@@ -8,6 +8,7 @@ import { useRoutePreloader } from './hooks/useRoutePreloader';
 import { useTheme } from './hooks/useTheme';
 import { useAuth } from './hooks/useAuth';
 import { useGlobalActiveAlarmsStream } from './hooks/useGlobalActiveAlarmsStream';
+import { useGlobalDataInitialization } from './hooks/useGlobalDataInitialization';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -235,6 +236,10 @@ function App() {
   // Global active alarms subscription - runs automatically when authenticated
   // Updates Redux store with real-time alarm count data accessible from anywhere
   useGlobalActiveAlarmsStream(isAuthenticated);
+
+  // Global data initialization - fetches groups and items when authenticated
+  // Ensures monitoring data is available app-wide without component-level fetching
+  useGlobalDataInitialization(isAuthenticated);
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {
