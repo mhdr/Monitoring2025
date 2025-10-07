@@ -1,6 +1,5 @@
 using System.Text;
 using System.Net;
-using API.Libs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -202,8 +201,11 @@ builder.Services.AddAuthorization();
 // Add JWT Token Service
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
-// Add SignalR services
-builder.Services.AddSignalR();
+// Add gRPC services
+builder.Services.AddGrpc();
+
+// Add gRPC broadcast service as singleton to maintain state across requests
+builder.Services.AddSingleton<API.Services.Grpc.GrpcBroadcastService>();
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -323,6 +325,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Map gRPC services
+app.MapGrpcService<API.Services.Grpc.MonitoringGrpcService>();
+
+Console.WriteLine("[gRPC] MonitoringGrpcService mapped and ready");
+
 // Ensure database is created and migrated
 using (var scope = app.Services.CreateScope())
 {
@@ -337,7 +344,5 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"Database migration failed: {ex.Message}");
     }
 }
-
-app.MapHub<MyHub>("hub");
 
 app.Run();

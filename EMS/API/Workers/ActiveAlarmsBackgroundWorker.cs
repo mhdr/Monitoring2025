@@ -1,20 +1,19 @@
 using System.Security.Cryptography;
 using System.Text;
-using API.Libs;
+using API.Services.Grpc;
 using Core.Models;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace API.Workers;
 
 /// <summary>
-/// Background worker that polls active alarms and notifies connected SignalR clients when the set changes.
+/// Background worker that polls active alarms and notifies connected gRPC streaming clients when the set changes.
 /// Uses BackgroundService for proper cancellation and lifecycle management.
 /// </summary>
 public class ActiveAlarmsBackgroundWorker : BackgroundService, IDisposable
 {
-    private readonly IHubContext<MyHub> _hubContext;
+    private readonly GrpcBroadcastService _grpcBroadcastService;
     private readonly ILogger<ActiveAlarmsBackgroundWorker> _logger;
     private List<ActiveAlarm>? _activeAlarms;
     private bool _disposed;
@@ -22,11 +21,11 @@ public class ActiveAlarmsBackgroundWorker : BackgroundService, IDisposable
     /// <summary>
     /// Create a new ActiveAlarmsBackgroundWorker.
     /// </summary>
-    /// <param name="hubContext">SignalR hub context used to broadcast messages.</param>
+    /// <param name="grpcBroadcastService">gRPC broadcast service used to broadcast messages to streaming clients.</param>
     /// <param name="logger">Logger instance for structured logging.</param>
-    public ActiveAlarmsBackgroundWorker(IHubContext<MyHub> hubContext, ILogger<ActiveAlarmsBackgroundWorker> logger)
+    public ActiveAlarmsBackgroundWorker(GrpcBroadcastService grpcBroadcastService, ILogger<ActiveAlarmsBackgroundWorker> logger)
     {
-        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
+        _grpcBroadcastService = grpcBroadcastService ?? throw new ArgumentNullException(nameof(grpcBroadcastService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -48,8 +47,8 @@ public class ActiveAlarmsBackgroundWorker : BackgroundService, IDisposable
                     if (alarms != null)
                     {
                         _logger.LogInformation("Active alarms changed. Broadcasting count={count}", alarms.Count);
-                        // send count as integer; clients should expect an integer
-                        await _hubContext.Clients.All.SendAsync("ActiveAlarms", alarms.Count, stoppingToken);
+                        // Broadcast to all connected gRPC streaming clients
+                        await _grpcBroadcastService.BroadcastActiveAlarmsAsync(alarms.Count, stoppingToken);
                     }
 
                     await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);

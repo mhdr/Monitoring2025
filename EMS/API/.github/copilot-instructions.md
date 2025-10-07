@@ -6,7 +6,7 @@
 - ASP.NET Core 9.0 Web API
 - PostgreSQL with Entity Framework Core
 - JWT Authentication (ASP.NET Core Identity)
-- SignalR for real-time updates
+- gRPC for real-time updates
 - MassTransit for message queuing
 - Background Workers for scheduled tasks
 
@@ -14,7 +14,7 @@
 - Repository pattern with Core library
 - DTO-based request/response models
 - Structured logging with context
-- Real-time notifications via SignalR
+- Real-time notifications via gRPC server streaming
 - Background service workers
 
 ---
@@ -201,39 +201,42 @@ builder.Services.AddHostedService<MyBackgroundWorker>();
 
 ---
 
-### SignalR Real-Time Updates
+### gRPC Real-Time Updates
 
-**Hub Definition:**
-```csharp
-public class MyHub : Hub
-{
-    // Optional: Override methods for connection management
+**Service Definition (monitoring.proto):**
+```protobuf
+service MonitoringService {
+  rpc StreamActiveAlarms(ActiveAlarmsRequest) returns (stream ActiveAlarmsUpdate);
+  rpc StreamMessages(MessageRequest) returns (stream MessageUpdate);
+  rpc StreamVersionUpdates(VersionUpdateRequest) returns (stream VersionUpdate);
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
 }
 ```
 
 **Broadcasting from Services/Workers:**
 ```csharp
-private readonly IHubContext<MyHub> _hubContext;
+private readonly GrpcBroadcastService _grpcBroadcastService;
 
-// Send to all clients
-await _hubContext.Clients.All.SendAsync("EventName", data, cancellationToken);
+// Broadcast active alarms to all clients
+await _grpcBroadcastService.BroadcastActiveAlarmsAsync(alarmCount, cancellationToken);
 
-// Send to specific user
-await _hubContext.Clients.User(userId).SendAsync("EventName", data, cancellationToken);
+// Broadcast message to all clients
+await _grpcBroadcastService.BroadcastMessageAsync(username, message, cancellationToken);
 
-// Send to group
-await _hubContext.Clients.Group(groupName).SendAsync("EventName", data, cancellationToken);
+// Broadcast version update to all clients
+await _grpcBroadcastService.BroadcastVersionUpdateAsync(version, message, cancellationToken);
 ```
 
-**Client Connection:**
-```javascript
-const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://localhost:7136/myHub")
-    .build();
+**Client Connection (C#):**
+```csharp
+var channel = GrpcChannel.ForAddress("https://localhost:7136");
+var client = new MonitoringService.MonitoringServiceClient(channel);
 
-connection.on("EventName", (data) => {
-    console.log("Received:", data);
-});
+using var call = client.StreamActiveAlarms(new ActiveAlarmsRequest());
+await foreach (var update in call.ResponseStream.ReadAllAsync())
+{
+    Console.WriteLine($"Active alarms: {update.ActiveAlarmsCount}");
+}
 ```
 
 ---
@@ -372,7 +375,7 @@ When implementing new features, verify:
 - [ ] Endpoint tested via API.http
 - [ ] Error cases validated
 - [ ] Authorization tested
-- [ ] SignalR notifications verified (if applicable)
+- [ ] gRPC streaming verified (if applicable)
 - [ ] Background worker behavior verified (if applicable)
 
 ---
@@ -443,14 +446,15 @@ public MyClass(ILogger<MyClass> logger, IHubContext<MyHub> hubContext)
 - Controllers: `Controllers/`
 - DTOs: `Models/Dto/`
 - Background Workers: `Workers/`
-- SignalR Hubs: `Libs/`
+- gRPC Services: `Services/Grpc/`
+- Proto Files: `Protos/`
 - Services: `Services/`
 - Configuration: `appsettings.json`, `appsettings.Development.json`
 
 **Key URLs:**
 - API Base: `https://localhost:7136`
 - Swagger UI: `https://localhost:7136/swagger`
-- SignalR Hub: `https://localhost:7136/myHub`
+- gRPC Endpoint: `https://localhost:7136` (MonitoringService)
 
 **Database:**
 - Connection: PostgreSQL on localhost

@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using API.Libs;
 using API.Models.Dto;
 using API.Models.ModelDto;
 using Contracts;
@@ -13,7 +12,6 @@ using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Share.Libs;
@@ -2778,7 +2776,7 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
-    /// Manually trigger a version update notification to all connected clients via SignalR
+    /// Manually trigger a version update notification to all connected clients via gRPC
     /// </summary>
     /// <returns>Result indicating success or failure of the client update push</returns>
     /// <response code="200">Returns success status of the update push operation</response>

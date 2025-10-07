@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+option csharp_namespace = "API.Grpc";
+
+package monitoring;
+
+// Monitoring service for real-time updates
+service MonitoringService {
+  // Server streaming endpoint for active alarms count
+  rpc StreamActiveAlarms (ActiveAlarmsRequest) returns (stream ActiveAlarmsUpdate);
+  
+  // Server streaming endpoint for general messages (replaces SignalR SendMessage)
+  rpc StreamMessages (MessageRequest) returns (stream MessageUpdate);
+  
+  // Server streaming endpoint for system version updates
+  rpc StreamVersionUpdates (VersionUpdateRequest) returns (stream VersionUpdate);
+  
+  // Unary method to send a message to all clients
+  rpc SendMessage (SendMessageRequest) returns (SendMessageResponse);
+}
+
+// Request message for active alarms stream
+message ActiveAlarmsRequest {
+  // Client can specify filter criteria if needed in the future
+  string client_id = 1;
+}
+
+// Active alarms update message
+message ActiveAlarmsUpdate {
+  int32 alarm_count = 1;
+  int64 timestamp = 2;
+}
+
+// Request message for general message stream
+message MessageRequest {
+  string client_id = 1;
+}
+
+// Message update 
+message MessageUpdate {
+  string user = 1;
+  string message = 2;
+  int64 timestamp = 3;
+}
+
+// Request message for version update stream
+message VersionUpdateRequest {
+  string client_id = 1;
+}
+
+// Version update message
+message VersionUpdate {
+  int32 system_version = 1;
+  int64 timestamp = 2;
+  string message = 3;
+}
+
+// Send message request (unary)
+message SendMessageRequest {
+  string user = 1;
+  string message = 2;
+}
+
+// Send message response
+message SendMessageResponse {
+  bool success = 1;
+  string error_message = 2;
+}

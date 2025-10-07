@@ -8,6 +8,7 @@ This API project includes JWT-based authentication using ASP.NET Core Identity w
 - JWT access token generation
 - Refresh token support
 - Role-based authentication
+- gRPC server streaming for real-time updates
 - CORS configured for React client
 - Swagger UI with JWT Bearer token support
 - Database migrations with Entity Framework Core
@@ -228,6 +229,92 @@ curl -X POST "http://localhost:5030/api/auth/disable-user" \
     "disable": false,
     "reason": "User issue has been resolved"
   }'
+```
+
+## gRPC Real-Time Updates
+
+The API provides real-time updates via gRPC server streaming. The service is available at `https://localhost:7136`.
+
+### gRPC Service Definition
+
+The `MonitoringService` provides the following server streaming endpoints:
+
+- `StreamActiveAlarms` - Receive real-time updates about active alarm counts
+- `StreamMessages` - Receive broadcast messages
+- `StreamVersionUpdates` - Receive system version updates
+- `SendMessage` - Send a message (unary RPC)
+
+### Using gRPC with C# Client
+
+```csharp
+using Grpc.Net.Client;
+using API.Grpc; // Generated from monitoring.proto
+
+// Create channel
+var channel = GrpcChannel.ForAddress("https://localhost:7136");
+var client = new MonitoringService.MonitoringServiceClient(channel);
+
+// Stream active alarms
+using var call = client.StreamActiveAlarms(new ActiveAlarmsRequest());
+await foreach (var update in call.ResponseStream.ReadAllAsync())
+{
+    Console.WriteLine($"Active alarms: {update.ActiveAlarmsCount} at {update.Timestamp}");
+}
+```
+
+### Using gRPC with JavaScript/TypeScript
+
+```bash
+# Install required packages
+npm install @grpc/grpc-js @grpc/proto-loader
+```
+
+```javascript
+const grpc = require('@grpc/grpc-js');
+const protoLoader = require('@grpc/proto-loader');
+
+// Load proto file
+const packageDefinition = protoLoader.loadSync('Protos/monitoring.proto');
+const monitoringProto = grpc.loadPackageDefinition(packageDefinition).monitoring;
+
+// Create client
+const client = new monitoringProto.MonitoringService(
+    'localhost:7136',
+    grpc.credentials.createSsl()
+);
+
+// Stream active alarms
+const call = client.StreamActiveAlarms({});
+call.on('data', (update) => {
+    console.log(`Active alarms: ${update.activeAlarmsCount} at ${update.timestamp}`);
+});
+call.on('end', () => console.log('Stream ended'));
+call.on('error', (error) => console.error('Stream error:', error));
+```
+
+### Authentication with gRPC
+
+The gRPC service requires JWT authentication. Include the token in metadata:
+
+```csharp
+// C# example with authentication
+var headers = new Metadata();
+headers.Add("Authorization", $"Bearer {jwtToken}");
+
+using var call = client.StreamActiveAlarms(new ActiveAlarmsRequest(), headers);
+await foreach (var update in call.ResponseStream.ReadAllAsync())
+{
+    // Process update
+}
+```
+
+```javascript
+// JavaScript example with authentication
+const metadata = new grpc.Metadata();
+metadata.add('Authorization', `Bearer ${jwtToken}`);
+
+const call = client.StreamActiveAlarms({}, metadata);
+// ... handle stream
 ```
 
 ## React Client Integration

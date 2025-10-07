@@ -8,14 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
         <PackageReference Include="MassTransit" Version="8.5.3" />
         <PackageReference Include="MassTransit.AspNetCore" Version="7.3.1" />
         <PackageReference Include="MassTransit.Newtonsoft" Version="8.5.3" />
         <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.3" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.9" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.Json" Version="9.0.9" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
           <PrivateAssets>all</PrivateAssets>
@@ -38,6 +37,11 @@
     <!-- Ensure development certificates are copied to output so Program.cs can load them -->
     <ItemGroup>
       <None Include="certificates/**" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <!-- Include proto files for gRPC code generation -->
+    <ItemGroup>
+      <Protobuf Include="Protos\monitoring.proto" GrpcServices="Server" />
     </ItemGroup>
 
 </Project>
