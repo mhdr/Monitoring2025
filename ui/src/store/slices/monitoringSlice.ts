@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { Group, Item, MultiValue } from '../../types/api';
+import type { Group, Item, MultiValue, AlarmDto } from '../../types/api';
 import type { ApiError } from '../../types/auth';
 import { api } from '../../services/rtkApi';
 
@@ -31,6 +31,11 @@ export interface MonitoringState {
   itemsLoading: boolean;
   itemsError: ApiError | null;
   
+  // Alarms data
+  alarms: AlarmDto[];
+  alarmsLoading: boolean;
+  alarmsError: ApiError | null;
+  
   // Values data
   values: MultiValue[];
   valuesLoading: boolean;
@@ -59,6 +64,10 @@ const initialState: MonitoringState = {
   items: [],
   itemsLoading: false,
   itemsError: null,
+  
+  alarms: [],
+  alarmsLoading: false,
+  alarmsError: null,
   
   values: [],
   valuesLoading: false,
@@ -97,6 +106,7 @@ const monitoringSlice = createSlice({
     clearErrors: (state) => {
       state.groupsError = null;
       state.itemsError = null;
+      state.alarmsError = null;
     },
     
     /**
@@ -194,6 +204,33 @@ const monitoringSlice = createSlice({
         }
       );
 
+    // Handle RTK Query getAlarms
+    builder
+      .addMatcher(
+        api.endpoints.getAlarms.matchPending,
+        (state) => {
+          state.alarmsLoading = true;
+          state.alarmsError = null;
+        }
+      )
+      .addMatcher(
+        api.endpoints.getAlarms.matchFulfilled,
+        (state, action) => {
+          state.alarmsLoading = false;
+          state.alarms = action.payload.data || [];
+        }
+      )
+      .addMatcher(
+        api.endpoints.getAlarms.matchRejected,
+        (state, action) => {
+          state.alarmsLoading = false;
+          state.alarmsError = (action.payload as unknown as ApiError) || {
+            message: 'Failed to fetch alarms',
+            status: 500,
+          };
+        }
+      );
+
     // Handle RTK Query getValues
     builder
       .addMatcher(
@@ -253,6 +290,10 @@ export const fetchGroups = () => (dispatch: AppDispatch) => {
 
 export const fetchItems = ({ showOrphans = false }: { showOrphans?: boolean }) => (dispatch: AppDispatch) => {
   return dispatch(api.endpoints.getItems.initiate({ showOrphans }));
+};
+
+export const fetchAlarms = ({ itemIds }: { itemIds?: string[] } = {}) => (dispatch: AppDispatch) => {
+  return dispatch(api.endpoints.getAlarms.initiate({ itemIds: itemIds || null }));
 };
 
 export const fetchValues = ({ itemIds }: { itemIds?: string[] }) => (dispatch: AppDispatch) => {

@@ -177,8 +177,8 @@ const SyncPage: React.FC = () => {
    * Calculate overall progress percentage
    */
   const overallProgress = useMemo(() => {
-    return Math.round((syncState.groups.progress + syncState.items.progress) / 2);
-  }, [syncState.groups.progress, syncState.items.progress]);
+    return Math.round((syncState.groups.progress + syncState.items.progress + syncState.alarms.progress) / 3);
+  }, [syncState.groups.progress, syncState.items.progress, syncState.alarms.progress]);
 
   return (
     <div className="sync-page" data-id-ref="sync-page" role="main" aria-live="polite">
@@ -228,6 +228,14 @@ const SyncPage: React.FC = () => {
                     progress={syncState.items}
                     successMessage={t('sync.items.success')}
                     errorMessage={t('sync.items.error')}
+                  />
+                  
+                  <ProgressBar
+                    title={t('sync.alarms.title')}
+                    description={t('sync.alarms.description')}
+                    progress={syncState.alarms}
+                    successMessage={t('sync.alarms.success')}
+                    errorMessage={t('sync.alarms.error')}
                   />
                 </section>
 

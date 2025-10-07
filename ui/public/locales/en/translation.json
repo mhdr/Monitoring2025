@@ -207,6 +207,12 @@
       "success": "Items loaded successfully",
       "error": "Failed to load items"
     },
+    "alarms": {
+      "title": "Loading Alarms",
+      "description": "Synchronizing alarm configurations...",
+      "success": "Alarms loaded successfully",
+      "error": "Failed to load alarms"
+    },
     "completing": "Finalizing synchronization...",
     "redirecting": "Redirecting to dashboard...",
     "retry": "Retry",

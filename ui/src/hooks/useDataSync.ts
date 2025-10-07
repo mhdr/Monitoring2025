@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useAppDispatch } from './useRedux';
-import { fetchGroups, fetchItems } from '../store/slices/monitoringSlice';
+import { fetchGroups, fetchItems, fetchAlarms } from '../store/slices/monitoringSlice';
 
 export interface SyncProgress {
   /** Progress percentage (0-100) */
@@ -24,6 +24,8 @@ export interface SyncState {
   groups: SyncProgress;
   /** Items sync progress */
   items: SyncProgress;
+  /** Alarms sync progress */
+  alarms: SyncProgress;
   /** Whether sync has been completed successfully */
   isCompleted: boolean;
   /** Whether any sync operation failed */
@@ -78,6 +80,7 @@ export function useDataSync(): UseDataSyncResult {
     overall: 'idle',
     groups: { progress: 0, status: 'idle' },
     items: { progress: 0, status: 'idle' },
+    alarms: { progress: 0, status: 'idle' },
     isCompleted: false,
     hasErrors: false,
   });
@@ -99,6 +102,16 @@ export function useDataSync(): UseDataSyncResult {
     setSyncState(prev => ({
       ...prev,
       items: { ...prev.items, ...update }
+    }));
+  }, []);
+
+  /**
+   * Update alarms sync progress
+   */
+  const updateAlarmsProgress = useCallback((update: Partial<SyncProgress>) => {
+    setSyncState(prev => ({
+      ...prev,
+      alarms: { ...prev.alarms, ...update }
     }));
   }, []);
 
@@ -174,6 +187,37 @@ export function useDataSync(): UseDataSyncResult {
   }, [dispatch, updateItemsProgress]);
 
   /**
+   * Sync alarms data
+   */
+  const syncAlarms = useCallback(async (): Promise<boolean> => {
+    updateAlarmsProgress({ progress: 0, status: 'loading', error: undefined });
+
+    try {
+      // Simulate progress updates
+      updateAlarmsProgress({ progress: 25 });
+      
+      // Fetch all alarms (no itemIds filter)
+      const result = await dispatch(fetchAlarms());
+      
+      // Check if the result has an error
+      if ('error' in result) {
+        throw new Error('Failed to fetch alarms');
+      }
+      
+      updateAlarmsProgress({ progress: 100, status: 'success' });
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      updateAlarmsProgress({ 
+        progress: 0, 
+        status: 'error', 
+        error: errorMessage 
+      });
+      return false;
+    }
+  }, [dispatch, updateAlarmsProgress]);
+
+  /**
    * Start the complete synchronization process
    */
   const startSync = useCallback(async (): Promise<boolean> => {
@@ -191,18 +235,20 @@ export function useDataSync(): UseDataSyncResult {
         ...prev,
         groups: { progress: 0, status: 'idle' },
         items: { progress: 0, status: 'idle' },
+        alarms: { progress: 0, status: 'idle' },
         isCompleted: false,
         hasErrors: false,
       }));
 
       // Execute sync operations in parallel for better performance
-      const [groupsSuccess, itemsSuccess] = await Promise.all([
+      const [groupsSuccess, itemsSuccess, alarmsSuccess] = await Promise.all([
         syncGroups(),
-        syncItems()
+        syncItems(),
+        syncAlarms()
       ]);
 
-      const allSuccess = groupsSuccess && itemsSuccess;
-      const hasErrors = !groupsSuccess || !itemsSuccess;
+      const allSuccess = groupsSuccess && itemsSuccess && alarmsSuccess;
+      const hasErrors = !groupsSuccess || !itemsSuccess || !alarmsSuccess;
 
       setSyncState(prev => ({
         ...prev,
@@ -220,7 +266,7 @@ export function useDataSync(): UseDataSyncResult {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [syncGroups, syncItems, updateOverallStatus]);
+  }, [syncGroups, syncItems, syncAlarms, updateOverallStatus]);
 
   /**
    * Retry failed sync operations
@@ -240,6 +286,11 @@ export function useDataSync(): UseDataSyncResult {
     // Retry items if failed
     if (syncState.items.status === 'error') {
       failedOperations.push(syncItems());
+    }
+
+    // Retry alarms if failed
+    if (syncState.alarms.status === 'error') {
+      failedOperations.push(syncAlarms());
     }
 
     if (failedOperations.length === 0) {
@@ -268,7 +319,7 @@ export function useDataSync(): UseDataSyncResult {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [syncState.groups.status, syncState.items.status, syncGroups, syncItems, updateOverallStatus]);
+  }, [syncState.groups.status, syncState.items.status, syncState.alarms.status, syncGroups, syncItems, syncAlarms, updateOverallStatus]);
 
   /**
    * Reset sync state to initial values
@@ -278,6 +329,7 @@ export function useDataSync(): UseDataSyncResult {
       overall: 'idle',
       groups: { progress: 0, status: 'idle' },
       items: { progress: 0, status: 'idle' },
+      alarms: { progress: 0, status: 'idle' },
       isCompleted: false,
       hasErrors: false,
     });
