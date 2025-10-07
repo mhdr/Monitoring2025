@@ -673,16 +673,516 @@ All route components should be wrapped with error boundaries:
 <button data-id-ref="loginBtn">Login</button> // Wrong case
 ```
 
-### DevTools MCP Integration
-Available MCP tools for browser automation:
-- `navigate_page` - Navigate to URLs
-- `take_screenshot` - Capture visual state
-- `take_snapshot` - Get DOM snapshot
-- `evaluate_script` - Run JavaScript
-- `list_console_messages` - Check console logs
-- `list_network_requests` - Monitor API calls
-- `resize_page` - Test responsive behavior
-- `performance_start_trace` / `performance_stop_trace` - Performance profiling
+### Chrome DevTools MCP Integration
+⚠️ **MANDATORY: Use Chrome DevTools MCP for comprehensive development workflow**
+
+The Chrome DevTools Model Context Protocol (MCP) server provides powerful browser automation and debugging capabilities essential for modern web development. Use these tools for real-time debugging, user behavior simulation, live styling inspection, and performance optimization.
+
+#### 🔧 Core MCP Tools Overview
+**Navigation & Setup:**
+- `mcp_chromedevtool_list_pages` - List all open browser pages
+- `mcp_chromedevtool_select_page` - Set active page for operations
+- `mcp_chromedevtool_new_page` - Create new browser page
+- `mcp_chromedevtool_navigate_page` - Navigate to URLs
+- `mcp_chromedevtool_close_page` - Close specific pages
+
+**Live Inspection & Interaction:**
+- `mcp_chromedevtool_take_snapshot` - Get DOM snapshot with element UIDs
+- `mcp_chromedevtool_take_screenshot` - Capture visual state (full page or element)
+- `mcp_chromedevtool_click` - Click elements (single/double click)
+- `mcp_chromedevtool_hover` - Hover over elements
+- `mcp_chromedevtool_fill` - Fill input fields and forms
+- `mcp_chromedevtool_drag` - Drag and drop interactions
+
+**Real-Time Debugging:**
+- `mcp_chromedevtool_evaluate_script` - Execute JavaScript in browser context
+- `mcp_chromedevtool_list_console_messages` - Monitor console output
+- `mcp_chromedevtool_list_network_requests` - Track API calls and responses
+- `mcp_chromedevtool_get_network_request` - Get detailed request information
+
+**Performance & Testing:**
+- `mcp_chromedevtool_performance_start_trace` - Start performance recording
+- `mcp_chromedevtool_performance_stop_trace` - Stop and analyze performance
+- `mcp_chromedevtool_performance_analyze_insight` - Get detailed performance insights
+- `mcp_chromedevtool_resize_page` - Test responsive breakpoints
+- `mcp_chromedevtool_emulate_network` - Simulate network conditions
+- `mcp_chromedevtool_emulate_cpu` - Throttle CPU for testing
+
+#### 🐛 Real-Time Debugging and Error Diagnosis
+
+**Critical Debugging Workflow:**
+⚠️ **MANDATORY: Always take snapshots before debugging** to identify element UIDs
+
+**1. Console Error Monitoring**
+```typescript
+// Step 1: Check for console errors
+const consoleMessages = await mcp_chromedevtool_list_console_messages();
+// Look for errors, warnings, and network failures
+
+// Step 2: Monitor real-time console output while reproducing issues
+// Execute user actions and watch for new console messages
+```
+
+**2. Network Request Debugging**
+```typescript
+// Monitor API calls and responses
+const networkRequests = await mcp_chromedevtool_list_network_requests({
+  resourceTypes: ['xhr', 'fetch', 'websocket']
+});
+
+// Get detailed request information
+const requestDetails = await mcp_chromedevtool_get_network_request({
+  url: 'https://localhost:7136/api/auth/login'
+});
+```
+
+**3. Live JavaScript Debugging**
+```typescript
+// Execute debugging scripts in browser context
+const debugInfo = await mcp_chromedevtool_evaluate_script({
+  function: `() => {
+    return {
+      reduxState: window.__REDUX_DEVTOOLS_EXTENSION__?.getState?.() || 'Not available',
+      authToken: localStorage.getItem('accessToken') ? 'Present' : 'Missing',
+      currentTheme: document.documentElement.getAttribute('data-theme'),
+      language: document.documentElement.getAttribute('lang'),
+      grpcConnectionState: window.grpcConnectionState || 'Unknown'
+    };
+  }`
+});
+```
+
+**4. Real-Time State Inspection**
+✅ **CORRECT - Live state debugging pattern:**
+```typescript
+// Take snapshot to get element UIDs
+const snapshot = await mcp_chromedevtool_take_snapshot();
+
+// Inspect specific component state
+const componentState = await mcp_chromedevtool_evaluate_script({
+  function: `(element) => {
+    // Access React component props/state
+    const reactInstance = element._reactInternalInstance || 
+                         element._reactInternals ||
+                         Object.keys(element).find(key => key.startsWith('__reactInternalInstance'));
+    
+    return {
+      props: reactInstance?.memoizedProps || 'Not found',
+      state: reactInstance?.memoizedState || 'Not found',
+      elementText: element.textContent,
+      computedStyles: window.getComputedStyle(element)
+    };
+  }`,
+  args: [{ uid: 'element-uid-from-snapshot' }]
+});
+```
+
+#### 👤 User Behavior Simulation
+
+**Comprehensive User Journey Testing:**
+⚠️ **MANDATORY: Test complete user workflows** including bilingual scenarios
+
+**1. Authentication Flow Simulation**
+```typescript
+// Simulate complete login process
+await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173/login' });
+await mcp_chromedevtool_take_snapshot(); // Get form element UIDs
+
+await mcp_chromedevtool_fill_form({
+  elements: [
+    { uid: 'login-username-input', value: 'test' },
+    { uid: 'login-password-input', value: 'Password@12345' }
+  ]
+});
+
+await mcp_chromedevtool_click({ uid: 'login-form-submit-button' });
+await mcp_chromedevtool_wait_for({ text: 'Dashboard', timeout: 5000 });
+```
+
+**2. Bilingual User Experience Testing**
+```typescript
+// Test Persian (RTL) user flow
+await mcp_chromedevtool_click({ uid: 'language-switcher-fa-button' });
+await mcp_chromedevtool_take_screenshot({ fullPage: true }); // Verify RTL layout
+
+// Test form interaction in Persian
+await mcp_chromedevtool_fill({ uid: 'search-input-field', value: 'جستجو' });
+await mcp_chromedevtool_take_snapshot(); // Verify RTL text input
+
+// Switch back to English and verify layout
+await mcp_chromedevtool_click({ uid: 'language-switcher-en-button' });
+await mcp_chromedevtool_take_screenshot({ fullPage: true });
+```
+
+**3. Real-Time Monitoring Workflow**
+```typescript
+// Simulate monitoring dashboard usage
+await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173/monitoring' });
+
+// Test gRPC streaming connection
+const streamingTest = await mcp_chromedevtool_evaluate_script({
+  function: `() => {
+    // Trigger streaming connection
+    window.testGrpcStream = true;
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve({
+          connectionState: window.grpcConnectionState,
+          dataReceived: window.streamingDataCount || 0,
+          errors: window.grpcErrors || []
+        });
+      }, 3000);
+    });
+  }`
+});
+```
+
+**4. Complex User Interactions**
+```typescript
+// Test drag and drop functionality
+await mcp_chromedevtool_take_snapshot();
+await mcp_chromedevtool_drag({
+  from_uid: 'draggable-chart-element',
+  to_uid: 'dashboard-drop-zone'
+});
+
+// Test keyboard navigation
+await mcp_chromedevtool_evaluate_script({
+  function: `() => {
+    // Simulate keyboard navigation
+    const event = new KeyboardEvent('keydown', { key: 'Tab' });
+    document.dispatchEvent(event);
+    return document.activeElement?.getAttribute('data-id-ref');
+  }`
+});
+```
+
+#### 🎨 Live Styling and Layout Inspection
+
+**Real-Time Theme and Layout Testing:**
+⚠️ **MANDATORY: Test all 7 theme presets** and responsive breakpoints
+
+**1. Theme System Testing**
+```typescript
+// Test all theme presets
+const themes = ['default', 'green', 'purple', 'orange', 'red', 'teal', 'indigo'];
+
+for (const theme of themes) {
+  await mcp_chromedevtool_evaluate_script({
+    function: `(themeName) => {
+      // Apply theme
+      document.documentElement.setAttribute('data-theme', themeName);
+      return {
+        appliedTheme: themeName,
+        primaryColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-medium'),
+        accentColor: getComputedStyle(document.documentElement).getPropertyValue('--accent-primary')
+      };
+    }`,
+    args: [{ uid: theme }] // Note: Using uid parameter as string container
+  });
+  
+  await mcp_chromedevtool_take_screenshot({ 
+    filePath: `theme-${theme}-test.png` 
+  });
+}
+```
+
+**2. Responsive Layout Testing**
+```typescript
+// Test all Bootstrap breakpoints
+const breakpoints = [
+  { width: 375, height: 667, name: 'mobile' },    // iPhone SE
+  { width: 768, height: 1024, name: 'tablet' },   // iPad
+  { width: 1366, height: 768, name: 'laptop' },   // Standard laptop
+  { width: 1920, height: 1080, name: 'desktop' }  // Full HD
+];
+
+for (const bp of breakpoints) {
+  await mcp_chromedevtool_resize_page({ width: bp.width, height: bp.height });
+  await mcp_chromedevtool_take_screenshot({ 
+    filePath: `responsive-${bp.name}.png` 
+  });
+  
+  // Check for layout issues
+  const layoutCheck = await mcp_chromedevtool_evaluate_script({
+    function: `() => {
+      return {
+        hasHorizontalScroll: document.body.scrollWidth > window.innerWidth,
+        hasOverflowElements: Array.from(document.querySelectorAll('*')).some(el => 
+          el.scrollWidth > el.clientWidth
+        ),
+        breakpoint: window.getComputedStyle(document.body, '::before').content
+      };
+    }`
+  });
+}
+```
+
+**3. RTL Layout Verification**
+```typescript
+// Comprehensive RTL layout testing
+await mcp_chromedevtool_evaluate_script({
+  function: `() => {
+    // Switch to Persian
+    document.documentElement.setAttribute('lang', 'fa');
+    document.documentElement.setAttribute('dir', 'rtl');
+    
+    return {
+      direction: document.documentElement.dir,
+      language: document.documentElement.lang,
+      rtlStylesheet: document.querySelector('link[href*="bootstrap-rtl"]') ? 'Loaded' : 'Missing'
+    };
+  }`
+});
+
+await mcp_chromedevtool_take_screenshot({ 
+  fullPage: true, 
+  filePath: 'rtl-layout-verification.png' 
+});
+
+// Check for RTL-specific issues
+const rtlIssues = await mcp_chromedevtool_evaluate_script({
+  function: `() => {
+    const issues = [];
+    
+    // Check for elements with hardcoded left/right positioning
+    document.querySelectorAll('*').forEach(el => {
+      const styles = window.getComputedStyle(el);
+      if (styles.textAlign === 'left' || styles.textAlign === 'right') {
+        issues.push({
+          element: el.tagName + (el.className ? '.' + el.className : ''),
+          issue: 'Hardcoded text alignment: ' + styles.textAlign
+        });
+      }
+    });
+    
+    return issues;
+  }`
+});
+```
+
+**4. CSS Variable Inspection**
+```typescript
+// Verify theme CSS variables are properly applied
+const themeVariables = await mcp_chromedevtool_evaluate_script({
+  function: `() => {
+    const root = document.documentElement;
+    const computedStyle = getComputedStyle(root);
+    
+    return {
+      primary: {
+        dark: computedStyle.getPropertyValue('--primary-dark'),
+        medium: computedStyle.getPropertyValue('--primary-medium'),
+        light: computedStyle.getPropertyValue('--primary-light')
+      },
+      accent: {
+        primary: computedStyle.getPropertyValue('--accent-primary'),
+        hover: computedStyle.getPropertyValue('--accent-hover')
+      },
+      shadows: {
+        md: computedStyle.getPropertyValue('--shadow-md'),
+        lg: computedStyle.getPropertyValue('--shadow-lg')
+      }
+    };
+  }`
+});
+```
+
+#### ⚡ Performance Audits and Optimization
+
+**Comprehensive Performance Testing:**
+⚠️ **MANDATORY: Test Core Web Vitals** and streaming performance
+
+**1. Core Web Vitals Measurement**
+```typescript
+// Start performance trace
+await mcp_chromedevtool_performance_start_trace({ 
+  reload: true, 
+  autoStop: false 
+});
+
+// Navigate and interact with the application
+await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173/dashboard' });
+await mcp_chromedevtool_wait_for({ text: 'Dashboard', timeout: 10000 });
+
+// Stop trace and analyze
+await mcp_chromedevtool_performance_stop_trace();
+
+// Get detailed performance insights
+const performanceInsights = await mcp_chromedevtool_performance_analyze_insight({
+  insightName: 'LCPBreakdown'
+});
+```
+
+**2. Network Performance Testing**
+```typescript
+// Test different network conditions
+const networkConditions = ['Fast 3G', 'Slow 3G', 'Fast 4G', 'Slow 4G'];
+
+for (const condition of networkConditions) {
+  await mcp_chromedevtool_emulate_network({ throttlingOption: condition });
+  
+  // Measure load time
+  const startTime = Date.now();
+  await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173' });
+  await mcp_chromedevtool_wait_for({ text: 'Dashboard' });
+  const loadTime = Date.now() - startTime;
+  
+  console.log(`${condition} load time: ${loadTime}ms`);
+}
+
+// Reset to no throttling
+await mcp_chromedevtool_emulate_network({ throttlingOption: 'No emulation' });
+```
+
+**3. CPU Performance Testing**
+```typescript
+// Test under CPU throttling
+await mcp_chromedevtool_emulate_cpu({ throttlingRate: 4 }); // 4x slowdown
+
+// Test heavy operations
+const heavyOperationTest = await mcp_chromedevtool_evaluate_script({
+  function: `() => {
+    const start = performance.now();
+    
+    // Simulate heavy data processing (like AG Grid rendering)
+    const data = Array.from({ length: 10000 }, (_, i) => ({
+      id: i,
+      name: 'Item ' + i,
+      value: Math.random() * 1000
+    }));
+    
+    // Process data
+    const processed = data.map(item => ({
+      ...item,
+      formatted: new Intl.NumberFormat('fa-IR').format(item.value)
+    }));
+    
+    const end = performance.now();
+    return {
+      processingTime: end - start,
+      dataSize: processed.length,
+      memoryUsage: performance.memory ? {
+        used: performance.memory.usedJSHeapSize,
+        total: performance.memory.totalJSHeapSize
+      } : 'Not available'
+    };
+  }`
+});
+
+// Reset CPU throttling
+await mcp_chromedevtool_emulate_cpu({ throttlingRate: 1 });
+```
+
+**4. gRPC Streaming Performance**
+```typescript
+// Test real-time streaming performance
+const streamingPerformance = await mcp_chromedevtool_evaluate_script({
+  function: `() => {
+    return new Promise(resolve => {
+      const metrics = {
+        startTime: performance.now(),
+        messagesReceived: 0,
+        avgLatency: 0,
+        errors: []
+      };
+      
+      // Monitor streaming for 30 seconds
+      setTimeout(() => {
+        resolve({
+          ...metrics,
+          duration: performance.now() - metrics.startTime,
+          messagesPerSecond: metrics.messagesReceived / 30
+        });
+      }, 30000);
+      
+      // Hook into gRPC stream monitoring
+      if (window.grpcStreamMonitor) {
+        window.grpcStreamMonitor.onMessage = () => metrics.messagesReceived++;
+        window.grpcStreamMonitor.onError = (error) => metrics.errors.push(error);
+      }
+    });
+  }`
+});
+```
+
+**5. Memory Leak Detection**
+```typescript
+// Monitor memory usage over time
+const memoryLeakTest = await mcp_chromedevtool_evaluate_script({
+  function: `() => {
+    const measurements = [];
+    let interval;
+    
+    return new Promise(resolve => {
+      // Take memory measurements every 5 seconds
+      interval = setInterval(() => {
+        if (performance.memory) {
+          measurements.push({
+            timestamp: Date.now(),
+            used: performance.memory.usedJSHeapSize,
+            total: performance.memory.totalJSHeapSize
+          });
+        }
+        
+        // Run for 2 minutes
+        if (measurements.length >= 24) {
+          clearInterval(interval);
+          
+          // Analyze memory trend
+          const trend = measurements.map((m, i) => ({
+            time: i * 5,
+            memoryMB: Math.round(m.used / 1024 / 1024)
+          }));
+          
+          resolve({
+            measurements: trend,
+            memoryIncrease: trend[trend.length - 1].memoryMB - trend[0].memoryMB,
+            possibleLeak: trend[trend.length - 1].memoryMB > trend[0].memoryMB * 1.5
+          });
+        }
+      }, 5000);
+    });
+  }`
+});
+```
+
+#### 🔄 DevTools MCP Best Practices
+
+**Workflow Integration:**
+1. **Start with snapshots** - Always take DOM snapshots to get element UIDs
+2. **Monitor console** - Check for errors before and after each test
+3. **Test incrementally** - Break complex scenarios into smaller steps
+4. **Capture evidence** - Take screenshots at key points
+5. **Verify cleanup** - Ensure no memory leaks or hanging connections
+
+**Error Handling Pattern:**
+```typescript
+try {
+  await mcp_chromedevtool_take_snapshot();
+  await mcp_chromedevtool_click({ uid: 'target-element' });
+  await mcp_chromedevtool_wait_for({ text: 'Expected Result' });
+} catch (error) {
+  // Capture failure state
+  await mcp_chromedevtool_take_screenshot({ 
+    filePath: 'error-state.png' 
+  });
+  await mcp_chromedevtool_list_console_messages();
+  throw error;
+}
+```
+
+**Multi-Browser Testing:**
+```typescript
+// Test multiple pages simultaneously
+const pages = await mcp_chromedevtool_list_pages();
+for (let i = 0; i < pages.length; i++) {
+  await mcp_chromedevtool_select_page({ pageIdx: i });
+  await mcp_chromedevtool_take_screenshot({ 
+    filePath: `page-${i}-state.png` 
+  });
+}
+```
 
 ## Structure
 ```
