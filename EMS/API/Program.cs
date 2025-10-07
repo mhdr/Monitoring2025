@@ -113,7 +113,13 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins.ToArray())
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials();
+              .AllowCredentials()
+              .WithExposedHeaders(
+                  "Grpc-Status",
+                  "Grpc-Message",
+                  "Grpc-Encoding",
+                  "Grpc-Accept-Encoding"
+              );
     });
 });
 
