@@ -6,11 +6,34 @@ namespace API.Models.Dto;
 /// <summary>
 /// Response DTO containing alarm configurations for monitoring items
 /// </summary>
+/// <example>
+/// {
+///   "data": [
+///     {
+///       "id": "550e8400-e29b-41d4-a716-446655440000",
+///       "itemId": "550e8400-e29b-41d4-a716-446655440001",
+///       "alarmType": 1,
+///       "alarmPriority": 2,
+///       "compareType": 0,
+///       "isDisabled": false,
+///       "alarmDelay": 30,
+///       "message": "Temperature too high",
+///       "value1": "75.5",
+///       "value2": "85.0",
+///       "timeout": 3600,
+///       "hasExternalAlarm": true
+///     }
+///   ]
+/// }
+/// </example>
 public class AlarmsResponseDto
 {
     /// <summary>
     /// List of alarm configurations
     /// </summary>
+    /// <example>
+    /// See class example above
+    /// </example>
     public List<Alarm> Data { get; set; }
 
     /// <summary>

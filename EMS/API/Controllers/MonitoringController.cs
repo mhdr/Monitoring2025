@@ -629,6 +629,7 @@ public class MonitoringController : ControllerBase
     [ProducesResponseType(typeof(AlarmsResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Alarms([FromBody] AlarmsRequestDto request)
     {
         try
@@ -637,23 +638,46 @@ public class MonitoringController : ControllerBase
 
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogWarning("Unauthorized access attempt to Alarms endpoint (no user id)");
                 return Unauthorized();
             }
 
-            // var userGuid = Guid.Parse(userId);
+            // Ensure request is not null
+            if (request == null)
+            {
+                _logger.LogWarning("Null request received for Alarms endpoint by user {UserId}", userId);
+                return BadRequest(new { success = false, message = "Request body is required" });
+            }
 
-            var alarms = await Core.Alarms.ListAlarms(request.ItemIds);
+            // Validate model state
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("Validation failed for Alarms request by {UserId}: {Errors}", userId, string.Join("; ", errors));
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Validation failed",
+                    errors = errors
+                });
+            }
+
+            _logger.LogInformation("Fetching alarms for user {UserId} (items: {ItemCount})", userId, request?.ItemIds?.Count ?? 0);
+
+            var alarms = await Core.Alarms.ListAlarms(request.ItemIds ?? new List<string>());
 
             var response = new AlarmsResponseDto();
 
             foreach (var a in alarms)
             {
-                if (a.IsDeleted.HasValue)
+                if (a.IsDeleted.HasValue && a.IsDeleted.Value)
                 {
-                    if (a.IsDeleted.Value)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 response.Data.Add(new AlarmsResponseDto.Alarm()
@@ -673,14 +697,23 @@ public class MonitoringController : ControllerBase
                 });
             }
 
-            return Ok(response);
+            return Ok(new { success = true, data = response, message = "Alarms retrieved successfully" });
         }
-        catch (Exception e)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogWarning(ex, "Validation error in Alarms endpoint for user {UserId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return BadRequest(new { success = false, message = ex.Message });
         }
-
-        return BadRequest(ModelState);
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized access in Alarms endpoint for user {UserId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled error in Alarms endpoint for user {UserId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return StatusCode(StatusCodes.Status500InternalServerError, new { success = false, message = "Internal server error" });
+        }
     }
 
     /// <summary>
