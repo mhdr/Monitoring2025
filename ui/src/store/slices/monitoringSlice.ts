@@ -30,7 +30,13 @@ const SYNC_STATUS_STORAGE_KEY = 'monitoring_data_synced';
 const loadSyncStatusFromStorage = (): boolean => {
   try {
     const stored = sessionStorage.getItem(SYNC_STATUS_STORAGE_KEY);
-    return stored === 'true';
+    const isSynced = stored === 'true';
+    console.info('[MonitoringSlice] Loading sync status from storage:', {
+      storedValue: stored,
+      isSynced,
+      timestamp: new Date().toISOString()
+    });
+    return isSynced;
   } catch (error) {
     console.warn('Failed to read sync status from sessionStorage:', error);
     return false;
@@ -42,6 +48,11 @@ const loadSyncStatusFromStorage = (): boolean => {
  */
 const loadMonitoringDataFromStorage = () => {
   const isSynced = loadSyncStatusFromStorage();
+  
+  console.info('[MonitoringSlice] Loading monitoring data from storage:', {
+    isSynced,
+    timestamp: new Date().toISOString()
+  });
   
   if (!isSynced) {
     console.info('[MonitoringSlice] Data not synced, starting with empty state');
@@ -60,6 +71,7 @@ const loadMonitoringDataFromStorage = () => {
     groups: storedGroups.length,
     items: storedItems.length,
     alarms: storedAlarms.length,
+    timestamp: new Date().toISOString()
   });
 
   return {
@@ -85,6 +97,11 @@ export const saveSyncStatusToStorage = (isSynced: boolean): void => {
  */
 export const clearSyncStatusFromStorage = (): void => {
   try {
+    console.warn('[MonitoringSlice] Clearing sync status and all monitoring data from sessionStorage:', {
+      timestamp: new Date().toISOString(),
+      stackTrace: new Error().stack
+    });
+    
     sessionStorage.removeItem(SYNC_STATUS_STORAGE_KEY);
     // Also clear all monitoring data from sessionStorage
     monitoringStorageHelpers.clearAllMonitoringData();
@@ -194,6 +211,15 @@ const monitoringSlice = createSlice({
     setDataSynced: (state, action: PayloadAction<boolean>) => {
       state.isDataSynced = action.payload;
       saveSyncStatusToStorage(action.payload);
+      console.info('[MonitoringSlice] Data sync status updated:', {
+        isDataSynced: action.payload,
+        timestamp: new Date().toISOString(),
+        currentDataCounts: {
+          groups: state.groups.length,
+          items: state.items.length,
+          alarms: state.alarms.length
+        }
+      });
     },
     
     /**
@@ -272,6 +298,9 @@ const monitoringSlice = createSlice({
       (state) => {
         // Clear sync status from storage and state when user logs in
         // This ensures fresh data sync for the new authenticated session
+        console.info('[MonitoringSlice] Login detected, clearing sync status for fresh session:', {
+          timestamp: new Date().toISOString()
+        });
         clearSyncStatusFromStorage();
         state.isDataSynced = false;
       }
@@ -291,6 +320,14 @@ const monitoringSlice = createSlice({
         (state, action) => {
           state.groupsLoading = false;
           state.groups = action.payload.groups || [];
+          // Ensure data is stored in sessionStorage (redundant safeguard)
+          if (action.payload.groups && action.payload.groups.length > 0) {
+            monitoringStorageHelpers.setStoredGroups(action.payload.groups);
+            console.info('[MonitoringSlice] Groups data updated in Redux and sessionStorage:', {
+              count: action.payload.groups.length,
+              timestamp: new Date().toISOString()
+            });
+          }
         }
       )
       .addMatcher(
@@ -318,6 +355,14 @@ const monitoringSlice = createSlice({
         (state, action) => {
           state.itemsLoading = false;
           state.items = action.payload.items || [];
+          // Ensure data is stored in sessionStorage (redundant safeguard)
+          if (action.payload.items && action.payload.items.length > 0) {
+            monitoringStorageHelpers.setStoredItems(action.payload.items);
+            console.info('[MonitoringSlice] Items data updated in Redux and sessionStorage:', {
+              count: action.payload.items.length,
+              timestamp: new Date().toISOString()
+            });
+          }
         }
       )
       .addMatcher(
@@ -345,6 +390,14 @@ const monitoringSlice = createSlice({
         (state, action) => {
           state.alarmsLoading = false;
           state.alarms = action.payload.data || [];
+          // Ensure data is stored in sessionStorage (redundant safeguard)
+          if (action.payload.data && action.payload.data.length > 0) {
+            monitoringStorageHelpers.setStoredAlarms(action.payload.data);
+            console.info('[MonitoringSlice] Alarms data updated in Redux and sessionStorage:', {
+              count: action.payload.data.length,
+              timestamp: new Date().toISOString()
+            });
+          }
         }
       )
       .addMatcher(

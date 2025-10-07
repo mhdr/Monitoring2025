@@ -54,7 +54,14 @@ const safeParseJSON = <T>(data: string | null): T | null => {
  */
 const safeSetItem = (key: string, data: unknown): void => {
   try {
-    sessionStorage.setItem(key, JSON.stringify(data));
+    const jsonData = JSON.stringify(data);
+    sessionStorage.setItem(key, jsonData);
+    console.info(`[MonitoringStorage] Stored ${key} in sessionStorage:`, {
+      key,
+      dataLength: Array.isArray(data) ? data.length : 'N/A',
+      storageSize: jsonData.length,
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
     console.warn(`Failed to store ${key} in sessionStorage:`, error);
   }
@@ -76,7 +83,14 @@ const safeRemoveItem = (key: string): void => {
  */
 const safeGetItem = (key: string): string | null => {
   try {
-    return sessionStorage.getItem(key);
+    const data = sessionStorage.getItem(key);
+    console.info(`[MonitoringStorage] Retrieved ${key} from sessionStorage:`, {
+      key,
+      hasData: !!data,
+      dataLength: data?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+    return data;
   } catch (error) {
     console.warn(`Failed to get ${key} from sessionStorage:`, error);
     return null;
@@ -183,6 +197,12 @@ export const storeMonitoringResponseData = {
    * Store groups response data
    */
   storeGroupsResponse: (response: GroupsResponseDto): GroupsResponseDto => {
+    console.info('[MonitoringStorage] Processing groups response for storage:', {
+      hasGroups: !!response.groups,
+      groupsCount: response.groups?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+    
     if (response.groups) {
       monitoringStorageHelpers.setStoredGroups(response.groups);
     }
@@ -193,6 +213,12 @@ export const storeMonitoringResponseData = {
    * Store items response data
    */
   storeItemsResponse: (response: ItemsResponseDto): ItemsResponseDto => {
+    console.info('[MonitoringStorage] Processing items response for storage:', {
+      hasItems: !!response.items,
+      itemsCount: response.items?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+    
     if (response.items) {
       monitoringStorageHelpers.setStoredItems(response.items);
     }
@@ -203,6 +229,12 @@ export const storeMonitoringResponseData = {
    * Store alarms response data
    */
   storeAlarmsResponse: (response: AlarmsResponseDto): AlarmsResponseDto => {
+    console.info('[MonitoringStorage] Processing alarms response for storage:', {
+      hasAlarms: !!response.data,
+      alarmsCount: response.data?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+    
     if (response.data) {
       monitoringStorageHelpers.setStoredAlarms(response.data);
     }

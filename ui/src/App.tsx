@@ -158,6 +158,13 @@ const AppRoutes = () => {
               </Suspense>
             </LazyErrorBoundary>
           } />
+          <Route path="sync" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <SyncPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
         </Route>
         <Route path="/item-detail" element={
           <ProtectedRoute>

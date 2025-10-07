@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useTranslation } from '../hooks/useTranslation';
+import { useLanguage } from '../hooks/useLanguage';
 import { useDataSync } from '../hooks/useDataSync';
 import { useAppDispatch } from '../hooks/useRedux';
 import { clearDataSyncStatus } from '../store/slices/monitoringSlice';
@@ -105,7 +105,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
  * Main synchronization page component
  */
 const SyncPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { syncState, startSync, retryFailed } = useDataSync();

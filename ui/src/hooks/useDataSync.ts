@@ -7,6 +7,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from './useRedux';
 import { fetchGroups, fetchItems, fetchAlarms, setDataSynced } from '../store/slices/monitoringSlice';
+import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 
 export interface SyncProgress {
   /** Progress percentage (0-100) */
@@ -275,6 +276,19 @@ export function useDataSync(): UseDataSyncResult {
       // Set the sync flag in Redux store if all operations succeeded
       if (allSuccess) {
         dispatch(setDataSynced(true));
+        
+        // Additional safeguard: verify data is actually stored in sessionStorage
+        const storedGroups = monitoringStorageHelpers.getStoredGroups();
+        const storedItems = monitoringStorageHelpers.getStoredItems();
+        
+        console.info('[useDataSync] Sync completed successfully. Verification:', {
+          syncedDataCounts: {
+            groups: storedGroups?.length || 0,
+            items: storedItems?.length || 0
+          },
+          syncStatusSet: true,
+          timestamp: new Date().toISOString()
+        });
       }
 
       return allSuccess;
@@ -335,6 +349,19 @@ export function useDataSync(): UseDataSyncResult {
       // Set the sync flag in Redux store if all retry operations succeeded
       if (allSuccess) {
         dispatch(setDataSynced(true));
+        
+        // Additional safeguard: verify data is actually stored in sessionStorage
+        const storedGroups = monitoringStorageHelpers.getStoredGroups();
+        const storedItems = monitoringStorageHelpers.getStoredItems();
+        
+        console.info('[useDataSync] Retry completed successfully. Verification:', {
+          syncedDataCounts: {
+            groups: storedGroups?.length || 0,
+            items: storedItems?.length || 0
+          },
+          syncStatusSet: true,
+          timestamp: new Date().toISOString()
+        });
       }
 
       return allSuccess;
