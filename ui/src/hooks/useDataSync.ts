@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { useAppDispatch } from './useRedux';
+import { useAppDispatch, useAppSelector } from './useRedux';
 import { fetchGroups, fetchItems, fetchAlarms } from '../store/slices/monitoringSlice';
 
 export interface SyncProgress {
@@ -74,6 +74,7 @@ export interface UseDataSyncResult {
  */
 export function useDataSync(): UseDataSyncResult {
   const dispatch = useAppDispatch();
+  const items = useAppSelector(state => state.monitoring.items);
   const isSyncingRef = useRef<boolean>(false);
 
   const [syncState, setSyncState] = useState<SyncState>({
@@ -189,15 +190,15 @@ export function useDataSync(): UseDataSyncResult {
   /**
    * Sync alarms data
    */
-  const syncAlarms = useCallback(async (): Promise<boolean> => {
+  const syncAlarms = useCallback(async (itemIds: string[]): Promise<boolean> => {
     updateAlarmsProgress({ progress: 0, status: 'loading', error: undefined });
 
     try {
       // Simulate progress updates
       updateAlarmsProgress({ progress: 25 });
       
-      // Fetch all alarms (no itemIds filter)
-      const result = await dispatch(fetchAlarms());
+      // Fetch alarms for the provided item IDs
+      const result = await dispatch(fetchAlarms({ itemIds }));
       
       // Check if the result has an error
       if ('error' in result) {
@@ -240,12 +241,26 @@ export function useDataSync(): UseDataSyncResult {
         hasErrors: false,
       }));
 
-      // Execute sync operations in parallel for better performance
-      const [groupsSuccess, itemsSuccess, alarmsSuccess] = await Promise.all([
+      // Execute groups and items sync in parallel first
+      const [groupsSuccess, itemsSuccess] = await Promise.all([
         syncGroups(),
-        syncItems(),
-        syncAlarms()
+        syncItems()
       ]);
+
+      // After items are synced, get the item IDs and sync alarms
+      let alarmsSuccess = false;
+      if (itemsSuccess) {
+        // Extract item IDs from the current Redux state
+        const itemIds = items.map(item => item.id);
+        alarmsSuccess = await syncAlarms(itemIds);
+      } else {
+        // If items sync failed, mark alarms as failed too
+        updateAlarmsProgress({ 
+          progress: 0, 
+          status: 'error', 
+          error: 'Cannot sync alarms: items sync failed' 
+        });
+      }
 
       const allSuccess = groupsSuccess && itemsSuccess && alarmsSuccess;
       const hasErrors = !groupsSuccess || !itemsSuccess || !alarmsSuccess;
@@ -266,7 +281,7 @@ export function useDataSync(): UseDataSyncResult {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [syncGroups, syncItems, syncAlarms, updateOverallStatus]);
+  }, [syncGroups, syncItems, syncAlarms, updateOverallStatus, items, updateAlarmsProgress]);
 
   /**
    * Retry failed sync operations
@@ -288,9 +303,10 @@ export function useDataSync(): UseDataSyncResult {
       failedOperations.push(syncItems());
     }
 
-    // Retry alarms if failed
-    if (syncState.alarms.status === 'error') {
-      failedOperations.push(syncAlarms());
+    // Retry alarms if failed (but only if we have items available)
+    if (syncState.alarms.status === 'error' && items.length > 0) {
+      const itemIds = items.map(item => item.id);
+      failedOperations.push(syncAlarms(itemIds));
     }
 
     if (failedOperations.length === 0) {
@@ -319,7 +335,7 @@ export function useDataSync(): UseDataSyncResult {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [syncState.groups.status, syncState.items.status, syncState.alarms.status, syncGroups, syncItems, syncAlarms, updateOverallStatus]);
+  }, [syncState.groups.status, syncState.items.status, syncState.alarms.status, syncGroups, syncItems, syncAlarms, updateOverallStatus, items]);
 
   /**
    * Reset sync state to initial values
