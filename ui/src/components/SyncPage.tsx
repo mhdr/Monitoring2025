@@ -113,6 +113,12 @@ const SyncPage: React.FC = () => {
   
   // State for handling redirect delay
   const [isRedirecting, setIsRedirecting] = useState(false);
+  
+  // Ref to track if redirect has been initiated (prevents double-redirect)
+  const redirectInitiatedRef = React.useRef(false);
+  
+  // Ref to store the redirect timer ID (persists through StrictMode re-renders)
+  const redirectTimerRef = React.useRef<number | null>(null);
 
   /**
    * Start sync process on component mount
@@ -125,17 +131,33 @@ const SyncPage: React.FC = () => {
    * Handle successful sync completion
    */
   useEffect(() => {
-    if (syncState.isCompleted && !isRedirecting) {
+    // Only initiate redirect once when sync completes
+    if (syncState.isCompleted && !redirectInitiatedRef.current) {
+      redirectInitiatedRef.current = true;
       setIsRedirecting(true);
       
+      // Clear any existing timer (in case of multiple effect runs)
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+      
       // Add a small delay to show completion state before redirecting
-      const redirectTimer = setTimeout(() => {
+      redirectTimerRef.current = window.setTimeout(() => {
         navigate(redirectTo, { replace: true });
       }, 1500);
-
-      return () => clearTimeout(redirectTimer);
     }
-  }, [syncState.isCompleted, isRedirecting, navigate, redirectTo]);
+    
+    // Cleanup: DO NOT clear timer if redirect has been initiated
+    // This prevents StrictMode from canceling the redirect
+    return () => {
+      // Only clear timer if we haven't started redirecting
+      // (i.e., component is unmounting before sync completed)
+      if (redirectTimerRef.current && !redirectInitiatedRef.current) {
+        clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+    };
+  }, [syncState.isCompleted, navigate, redirectTo]);
 
   /**
    * Handle retry button click

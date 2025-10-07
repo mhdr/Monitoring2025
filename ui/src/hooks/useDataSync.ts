@@ -119,7 +119,14 @@ export function useDataSync(): UseDataSyncResult {
       // Simulate progress updates
       updateGroupsProgress({ progress: 25 });
       
-      await dispatch(fetchGroups()).unwrap();
+      // RTK Query initiate() returns a QueryActionCreatorResult
+      // We need to await it directly without unwrap()
+      const result = await dispatch(fetchGroups());
+      
+      // Check if the result has an error
+      if ('error' in result) {
+        throw new Error('Failed to fetch groups');
+      }
       
       updateGroupsProgress({ progress: 100, status: 'success' });
       return true;
@@ -144,7 +151,14 @@ export function useDataSync(): UseDataSyncResult {
       // Simulate progress updates
       updateItemsProgress({ progress: 25 });
       
-      await dispatch(fetchItems({ showOrphans: false })).unwrap();
+      // RTK Query initiate() returns a QueryActionCreatorResult
+      // We need to await it directly without unwrap()
+      const result = await dispatch(fetchItems({ showOrphans: false }));
+      
+      // Check if the result has an error
+      if ('error' in result) {
+        throw new Error('Failed to fetch items');
+      }
       
       updateItemsProgress({ progress: 100, status: 'success' });
       return true;
