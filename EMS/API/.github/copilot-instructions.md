@@ -7,7 +7,7 @@
 - PostgreSQL with Entity Framework Core
 - JWT Authentication (ASP.NET Core Identity)
 - gRPC for real-time updates
-- MassTransit for message queuing
+- MassTransit for message queuing (RabbitMQ transport)
 - Background Workers for scheduled tasks
 
 **Key Patterns:**
@@ -16,6 +16,14 @@
 - Structured logging with context
 - Real-time notifications via gRPC server streaming
 - Background service workers
+- Domain-Driven Design (DDD) with separate projects for DB, Contracts, and Core
+
+**Project Structure:**
+- `API` - Web API project (this project)
+- `Core` - Business logic and repository implementations
+- `DB.User` - User database context and models
+- `Contracts` - Shared contracts for messaging
+- `Share` - Shared utilities and helpers
 
 ---
 
@@ -42,6 +50,12 @@
 try
 {
     _logger.LogInformation("Operation started: {Operation}, User: {UserId}", operation, userId);
+    
+    if (!ModelState.IsValid)
+    {
+        return BadRequest(new { success = false, message = "Invalid input data" });
+    }
+    
     // operation code
     return Ok(new { success = true, data = result });
 }
@@ -50,19 +64,35 @@ catch (ArgumentException ex)
     _logger.LogWarning(ex, "Validation failed: {Operation}", operation);
     return BadRequest(new { success = false, message = ex.Message });
 }
+catch (KeyNotFoundException ex)
+{
+    _logger.LogWarning(ex, "Resource not found: {Operation}", operation);
+    return NotFound(new { success = false, message = ex.Message });
+}
+catch (UnauthorizedAccessException ex)
+{
+    _logger.LogWarning(ex, "Unauthorized access: {Operation}", operation);
+    return Forbid();
+}
 catch (Exception ex)
 {
     _logger.LogError(ex, "Error in {Operation}: {Message}", operation, ex.Message);
-    return StatusCode(500, new { success = false, message = "Internal server error", errors = new[] { ex.Message } });
+    return StatusCode(500, new { success = false, message = "Internal server error" });
 }
 ```
 
 **Requirements:**
 - Wrap ALL controller actions and service methods in try-catch
+- ALWAYS check `ModelState.IsValid` for endpoints with request DTOs
 - Use structured logging with context (operation, userId, requestId)
-- Log at appropriate levels: Info (success), Warning (validation), Error (exceptions)
-- Return structured errors: `{success: false, message: "...", errors: [...]}`
-- Never expose stack traces or sensitive data to clients
+- Log at appropriate levels: 
+  - `LogInformation`: Successful operations, key actions
+  - `LogWarning`: Validation failures, expected errors, not found
+  - `LogError`: Unexpected exceptions, system errors
+  - `LogDebug`: Detailed tracing (dev only)
+- Return structured errors: `{success: false, message: "..."}`
+- NEVER expose stack traces, inner exception messages, or sensitive data to clients
+- Use specific exception types for better error handling (ArgumentException, KeyNotFoundException, etc.)
 
 ---
 
@@ -88,12 +118,26 @@ catch (Exception ex)
 
 **Response Format:**
 ```csharp
-// Success
+// Success (with data)
 { "success": true, "data": {...}, "message": "Operation completed" }
 
+// Success (without data)
+{ "success": true, "message": "Operation completed successfully" }
+
 // Error
-{ "success": false, "message": "Validation failed", "errors": ["Field X is required", "Field Y is invalid"] }
+{ "success": false, "message": "Validation failed" }
+{ "success": false, "errorMessage": "Invalid credentials" }
+
+// Error with details (use sparingly, avoid exposing internals)
+{ "success": false, "message": "Validation failed", "errors": ["Field X is required"] }
 ```
+
+**Important Response Guidelines:**
+- Use consistent property names across the API (e.g., `errorMessage` vs `message`)
+- Include `success` boolean flag in all responses for easy client-side handling
+- Return appropriate HTTP status codes (don't return 200 with `success: false`)
+- For lists/collections, wrap in a data object: `{ "success": true, "data": [...], "totalCount": 100 }`
+- For pagination, include metadata: `{ "success": true, "data": [...], "page": 1, "pageSize": 20, "totalCount": 100 }`
 
 ---
 
@@ -255,17 +299,101 @@ public class SecureController : ControllerBase
 
 ---
 
+### MassTransit Message Publishing
+
+**Publishing Messages:**
+```csharp
+private readonly IPublishEndpoint _publishEndpoint;
+
+public MyService(IPublishEndpoint publishEndpoint)
+{
+    _publishEndpoint = publishEndpoint;
+}
+
+// Publish an event
+await _publishEndpoint.Publish(new MyEvent
+{
+    Id = eventId,
+    Timestamp = DateTime.UtcNow,
+    Data = eventData
+});
+```
+
+**Consuming Messages:**
+```csharp
+public class MyEventConsumer : IConsumer<MyEvent>
+{
+    private readonly ILogger<MyEventConsumer> _logger;
+
+    public MyEventConsumer(ILogger<MyEventConsumer> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task Consume(ConsumeContext<MyEvent> context)
+    {
+        try
+        {
+            _logger.LogInformation("Processing event: {EventId}", context.Message.Id);
+            
+            // Process the message
+            await ProcessEventAsync(context.Message);
+            
+            _logger.LogInformation("Event processed successfully: {EventId}", context.Message.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing event: {EventId}", context.Message.Id);
+            throw; // Let MassTransit handle retries
+        }
+    }
+}
+```
+
+**Register in Program.cs:**
+```csharp
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<MyEventConsumer>();
+    
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+        
+        cfg.ConfigureEndpoints(context);
+    });
+});
+```
+
+---
+
 ## 📚 Documentation Requirements (CRITICAL)
 
 ### XML Documentation for Swagger
 
-**Required for ALL public members:**
+**Required for ALL public members (controllers, DTOs, services):**
 ```csharp
 /// <summary>
 /// Adds a new user to the system with specified permissions.
 /// </summary>
 /// <param name="request">User registration details including username and group assignment.</param>
 /// <returns>Response containing the created user ID and confirmation message.</returns>
+/// <remarks>
+/// Sample request:
+/// 
+///     POST /api/users/add
+///     {
+///        "userName": "johndoe",
+///        "password": "SecurePass123!",
+///        "groupId": 1,
+///        "email": "john@example.com"
+///     }
+///     
+/// </remarks>
 /// <response code="201">User created successfully</response>
 /// <response code="400">Validation error - invalid username format or duplicate entry</response>
 /// <response code="401">Unauthorized - valid JWT token required</response>
@@ -274,19 +402,47 @@ public class SecureController : ControllerBase
 [Authorize(Roles = "Admin")]
 [ProducesResponseType(typeof(AddUserResponseDto), StatusCodes.Status201Created)]
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status403Forbidden)]
 public async Task<IActionResult> AddUser([FromBody] AddUserRequestDto request)
 {
     // implementation
 }
 ```
 
+**DTO Documentation Example:**
+```csharp
+/// <summary>
+/// Request model for adding a new user to the system
+/// </summary>
+public class AddUserRequestDto
+{
+    /// <summary>
+    /// Unique username for the user (3-50 characters, alphanumeric)
+    /// </summary>
+    /// <example>johndoe</example>
+    [Required(ErrorMessage = "Username is required")]
+    [StringLength(50, MinimumLength = 3)]
+    public string UserName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// User's email address for notifications
+    /// </summary>
+    /// <example>john@example.com</example>
+    [EmailAddress]
+    public string? Email { get; set; }
+}
+```
+
 **Swagger Configuration Elements:**
+- Controller-level documentation with `[Produces("application/json")]`
 - Endpoint summary (brief description)
-- Detailed description (if complex)
-- All parameters with types, constraints, examples
-- Return types with status codes
+- Detailed description with `<remarks>` tag (include sample requests/responses)
+- All parameters with types, constraints, examples using `<example>` tag
+- Return types with status codes using `[ProducesResponseType]`
 - Error scenarios with status codes and reasons
-- Authorization requirements
+- Authorization requirements with `[Authorize]` attributes
+- Document all DTOs with XML comments for properties
 
 ---
 
@@ -364,10 +520,13 @@ When implementing new features, verify:
 
 **Testing:**
 - [ ] Endpoint tested via API.http
-- [ ] Error cases validated
-- [ ] Authorization tested
+- [ ] Error cases validated (400, 401, 403, 404, 500)
+- [ ] Authorization tested (with/without token, different roles)
+- [ ] Input validation tested (missing fields, invalid formats, edge cases)
 - [ ] gRPC streaming verified (if applicable)
 - [ ] Background worker behavior verified (if applicable)
+- [ ] Database operations verified (create, read, update, delete)
+- [ ] Concurrent request handling tested (if stateful)
 
 ---
 
@@ -429,6 +588,53 @@ public MyClass(ILogger<MyClass> logger, IHubContext<MyHub> hubContext)
 }
 ```
 
+### Model Validation Pattern
+```csharp
+[HttpPost("endpoint")]
+public async Task<IActionResult> Endpoint([FromBody] RequestDto request)
+{
+    try
+    {
+        // ALWAYS check ModelState first
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            
+            return BadRequest(new 
+            { 
+                success = false, 
+                message = "Validation failed", 
+                errors = errors 
+            });
+        }
+        
+        // Business logic here
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error in endpoint");
+        return StatusCode(500, new { success = false, message = "Internal server error" });
+    }
+}
+```
+
+### User Claims Access Pattern
+```csharp
+// Extract user information from JWT claims
+var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+var userName = User.Identity?.Name;
+var userRoles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+
+// Validate user ID
+if (string.IsNullOrEmpty(userId))
+{
+    return Unauthorized(new { success = false, message = "Invalid token" });
+}
+```
+
 ---
 
 ## 📋 Quick Reference
@@ -451,6 +657,142 @@ public MyClass(ILogger<MyClass> logger, IHubContext<MyHub> hubContext)
 - Connection: PostgreSQL on localhost
 - Database: `monitoring_users`
 - Migrations: Auto-applied on startup in development
+
+---
+
+---
+
+## 🚨 Common Pitfalls to Avoid
+
+### Security Issues
+- ❌ **DON'T** return detailed exception messages to clients
+- ❌ **DON'T** expose internal error details or stack traces
+- ❌ **DON'T** log sensitive information (passwords, tokens, PII)
+- ❌ **DON'T** use string concatenation for SQL queries
+- ❌ **DON'T** skip input validation on any user-supplied data
+- ✅ **DO** validate and sanitize all inputs
+- ✅ **DO** use parameterized queries or EF Core
+- ✅ **DO** apply `[Authorize]` attributes to protected endpoints
+
+### Performance Issues
+- ❌ **DON'T** use `.Result` or `.Wait()` on async methods (causes deadlocks)
+- ❌ **DON'T** make synchronous calls in async methods
+- ❌ **DON'T** forget to use `.ConfigureAwait(false)` in library code
+- ❌ **DON'T** load entire collections when you only need a few items
+- ✅ **DO** use async/await consistently
+- ✅ **DO** implement pagination for large datasets
+- ✅ **DO** use `.Include()` for eager loading related data
+- ✅ **DO** add database indexes for frequently queried columns
+
+### Code Quality Issues
+- ❌ **DON'T** catch exceptions without logging them
+- ❌ **DON'T** return success=true with an error status code
+- ❌ **DON'T** skip ModelState validation
+- ❌ **DON'T** use magic strings or numbers (use constants/enums)
+- ✅ **DO** use structured logging with context
+- ✅ **DO** follow naming conventions consistently
+- ✅ **DO** document all public APIs with XML comments
+- ✅ **DO** write descriptive commit messages
+
+---
+
+## 🔧 Troubleshooting Guide
+
+### Common Issues & Solutions
+
+**Issue: Certificate errors on startup**
+- Solution: Run `create-certificates.ps1` to generate development certificate
+- Verify certificate exists at `certificates/api-cert.pfx`
+
+**Issue: Database connection fails**
+- Solution: Check PostgreSQL is running
+- Verify connection string in `appsettings.json`
+- Check if database `monitoring_users` exists
+
+**Issue: JWT token validation fails**
+- Solution: Verify JWT configuration in `appsettings.json`
+- Check token expiration time
+- Ensure `Issuer` and `Audience` match between generation and validation
+
+**Issue: CORS errors from frontend**
+- Solution: Check frontend URL is in allowed origins list in `Program.cs`
+- Verify CORS policy is applied correctly
+- Check if request includes credentials/headers
+
+**Issue: gRPC streaming not working**
+- Solution: Verify gRPC is configured in `Program.cs`
+- Check proto files are compiled correctly
+- Ensure client is using correct endpoint URL
+
+**Issue: Background worker not executing**
+- Solution: Verify worker is registered with `AddHostedService<T>()`
+- Check worker logs for exceptions
+- Ensure `CancellationToken` is handled correctly
+
+---
+
+## 📝 Git Workflow
+
+### Commit Message Format
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+
+**Examples:**
+```
+feat(auth): add refresh token endpoint
+
+Implements JWT refresh token flow for seamless authentication
+- Add RefreshToken endpoint to AuthController
+- Update JwtTokenService with refresh logic
+- Add refresh token validation
+
+Closes #123
+```
+
+```
+fix(monitoring): resolve memory leak in background worker
+
+The active alarms worker was not disposing database contexts properly
+- Add proper disposal in finally block
+- Implement IDisposable pattern
+- Add cancellation token checks
+```
+
+### Branch Naming
+- `feature/description` - New features
+- `bugfix/description` - Bug fixes
+- `hotfix/description` - Urgent production fixes
+- `refactor/description` - Code refactoring
+
+---
+
+## 🎓 Learning Resources
+
+### Official Documentation
+- [ASP.NET Core Documentation](https://docs.microsoft.com/aspnet/core)
+- [Entity Framework Core](https://docs.microsoft.com/ef/core)
+- [gRPC in .NET](https://docs.microsoft.com/aspnet/core/grpc)
+- [MassTransit Documentation](https://masstransit.io/documentation)
+
+### Best Practices
+- [REST API Design Guidelines](https://docs.microsoft.com/azure/architecture/best-practices/api-design)
+- [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
+- [Structured Logging Best Practices](https://stackify.com/structured-logging-best-practices/)
 
 ---
 
