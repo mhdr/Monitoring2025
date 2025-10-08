@@ -107,6 +107,22 @@
   /* Muted text */
   --text-muted-light: #9ca3af;
   --text-muted-dark: #6b7280;
+  
+  /* Additional text colors */
+  --text-white: #ffffff;
+  --text-white-rgb: 255, 255, 255;
+  
+  --text-black: #333333;
+  --text-black-rgb: 51, 51, 51;
+  
+  --text-gray: #666666;
+  --text-gray-rgb: 102, 102, 102;
+  
+  --text-body: #212529;
+  --text-body-rgb: 33, 37, 41;
+  
+  /* Bootstrap text colors with transparency */
+  --text-white-87: rgba(255, 255, 255, 0.87);
 
   /* ========================================================================== */
   /* SEMANTIC COLORS - Status & Feedback */
@@ -139,6 +155,32 @@
   --info-bg: rgba(14, 165, 233, 0.1);
   --info-border: #0284c7;
   --info-text: #075985;
+  
+  /* ========================================================================== */
+  /* BOOTSTRAP COLORS - Framework Compatibility */
+  /* ========================================================================== */
+  
+  /* Bootstrap Primary (Blue) */
+  --bs-primary: #0d6efd;
+  --bs-primary-rgb: 13, 110, 253;
+  --bs-primary-bg: rgba(13, 110, 253, 0.1);
+  
+  /* Bootstrap Success (Green) */
+  --bs-success: #198754;
+  --bs-success-rgb: 25, 135, 84;
+  --bs-success-bg: rgba(25, 135, 84, 0.1);
+  
+  /* Bootstrap Body Color */
+  --bs-body-color: #212529;
+  --bs-body-color-rgb: 33, 37, 41;
+  
+  /* Bootstrap Body Background */
+  --bs-body-bg: #ffffff;
+  --bs-body-bg-rgb: 255, 255, 255;
+  
+  /* Bootstrap Pink/Magenta */
+  --bs-pink: #d63384;
+  --bs-pink-rgb: 214, 51, 132;
 
   /* ========================================================================== */
   /* BACKGROUND COLORS */
@@ -158,6 +200,26 @@
   --surface-light: rgba(255, 255, 255, 0.95);
   --surface-dark: rgba(17, 24, 39, 0.95);
   --surface-overlay: rgba(52, 73, 94, 0.3);
+  
+  /* Additional neutral backgrounds */
+  --bg-white: #ffffff;
+  --bg-white-rgb: 255, 255, 255;
+  
+  --bg-light-gray: #f8f9fa;
+  --bg-light-gray-rgb: 248, 249, 250;
+  
+  --bg-lighter-gray: #f9fafb;
+  --bg-lighter-gray-rgb: 249, 250, 251;
+  
+  /* Overlay and backdrop colors */
+  --overlay-dark: rgba(0, 0, 0, 0.5);
+  --overlay-darker: rgba(0, 0, 0, 0.7);
+  --overlay-light: rgba(255, 255, 255, 0.05);
+  --overlay-lighter: rgba(255, 255, 255, 0.2);
+  
+  /* AG Grid specific overlays */
+  --ag-overlay-light: rgba(255, 255, 255, 0.95);
+  --ag-overlay-dark: rgba(0, 0, 0, 0.95);
 
   /* ========================================================================== */
   /* BORDER COLORS */
@@ -174,6 +236,16 @@
   
   --border-focus: #4f46e5;
   --border-focus-rgb: 79, 70, 229;
+  
+  /* Additional border colors */
+  --border-lighter: #e9ecef;
+  --border-lighter-rgb: 233, 236, 239;
+  
+  --border-subtle: #e0e0e0;
+  --border-subtle-rgb: 224, 224, 224;
+  
+  --border-black-transparent: rgba(0, 0, 0, 0.1);
+  --border-black-transparent-md: rgba(0, 0, 0, 0.05);
 
   /* ========================================================================== */
   /* SHADOW DEFINITIONS */
@@ -232,6 +304,24 @@
   
   /* Overlay gradients */
   --gradient-overlay-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+
+  /* ========================================================================== */
+  /* SKELETON LOADER COLORS */
+  /* ========================================================================== */
+  
+  /* Skeleton backgrounds for light mode */
+  --skeleton-bg-light: #f0f0f0;
+  --skeleton-bg-light-rgb: 240, 240, 240;
+  
+  --skeleton-shimmer-light: #e0e0e0;
+  --skeleton-shimmer-light-rgb: 224, 224, 224;
+  
+  /* Skeleton backgrounds for dark mode */
+  --skeleton-bg-dark: #2a2a2a;
+  --skeleton-bg-dark-rgb: 42, 42, 42;
+  
+  --skeleton-shimmer-dark: #3a3a3a;
+  --skeleton-shimmer-dark-rgb: 58, 58, 58;
 
   /* ========================================================================== */
   /* SPACING & SIZING (Optional - for consistency) */

@@ -33,7 +33,7 @@
 .sidebar-toggle-btn {
   border: none !important;
   background: none !important;
-  color: #ffffff !important;
+  color: var(--text-white) !important;
   transition: all var(--transition-base) var(--ease-in-out);
 }
 
@@ -117,7 +117,7 @@
 .user-dropdown .dropdown-menu {
   background: var(--surface-light);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--overlay-lighter);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-primary-lg);
   margin-top: 0.5rem;
@@ -197,17 +197,17 @@
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .user-dropdown .dropdown-menu {
-    background: rgba(17, 24, 39, 0.95);
-    color: #f9fafb;
+    background: var(--surface-dark);
+    color: var(--bg-lighter-gray);
   }
   
   .user-dropdown .dropdown-item {
-    color: #f9fafb;
+    color: var(--bg-lighter-gray);
   }
   
   .user-dropdown .dropdown-item:hover {
-    background: rgba(52, 152, 219, 0.2);
-    color: #f9fafb;
+    background: rgba(var(--accent-primary-rgb), 0.2);
+    color: var(--bg-lighter-gray);
   }
 }
 

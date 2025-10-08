@@ -225,11 +225,11 @@
 
 /* Loading Overlay */
 .ag-overlay-loading-wrapper {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: var(--ag-overlay-light);
 }
 
 .dark-theme .ag-overlay-loading-wrapper {
-  background-color: rgba(0, 0, 0, 0.95);
+  background-color: var(--ag-overlay-dark);
 }
 
 /* No Rows Overlay */

@@ -276,7 +276,7 @@ const TrendAnalysisPage: React.FC = () => {
             width: 2,
           },
           itemStyle: {
-            color: '#0d6efd',
+            color: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#0d6efd',
           },
           label: {
             fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,

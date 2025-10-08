@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--bs-body-bg, #ffffff);
+  background-color: var(--bs-body-bg, var(--bg-white));
   display: flex;
   justify-content: center;
   align-items: center;
@@ -25,7 +25,7 @@
 }
 
 .loading-message {
-  color: var(--bs-body-color, #212529);
+  color: var(--bs-body-color, var(--text-body));
   font-size: 1rem;
   text-align: center;
   margin: 0;
@@ -45,7 +45,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--bs-body-bg, #f8f9fa);
+  background-color: var(--bs-body-bg, var(--bg-secondary-light));
   z-index: 9999;
   overflow-y: auto;
 }
