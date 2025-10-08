@@ -77,13 +77,13 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
   return (
     <div className="sync-progress-item" data-id-ref={`sync-progress-${title.toLowerCase()}`} role="region" aria-labelledby={`progress-title-${title.toLowerCase()}`}>
-      <div className="d-flex align-items-center mb-2" data-id-ref={`progress-header-${title.toLowerCase()}`}>
-        <div className="sync-status-icon me-3" data-id-ref={`progress-icon-container-${title.toLowerCase()}`} aria-hidden="true">
+      <div className="d-flex align-items-center mb-1" data-id-ref={`progress-header-${title.toLowerCase()}`}>
+        <div className="sync-status-icon me-2" data-id-ref={`progress-icon-container-${title.toLowerCase()}`} aria-hidden="true">
           {getStatusIcon()}
         </div>
         <div className="flex-grow-1" data-id-ref={`progress-content-${title.toLowerCase()}`}>
-          <h6 className="mb-1 fw-semibold" data-id-ref={`progress-title-${title.toLowerCase()}`} id={`progress-title-${title.toLowerCase()}`}>{title}</h6>
-          <p className="mb-0 text-muted small" data-id-ref={`progress-message-${title.toLowerCase()}`} id={`progress-message-${title.toLowerCase()}`}>{getStatusMessage()}</p>
+          <h6 className="mb-0 fw-semibold small" data-id-ref={`progress-title-${title.toLowerCase()}`} id={`progress-title-${title.toLowerCase()}`}>{title}</h6>
+          <p className="mb-0 text-muted" style={{ fontSize: '0.75rem' }} data-id-ref={`progress-message-${title.toLowerCase()}`} id={`progress-message-${title.toLowerCase()}`}>{getStatusMessage()}</p>
         </div>
       </div>
       
@@ -197,19 +197,19 @@ const SyncPage: React.FC = () => {
         <div className="row h-100 justify-content-center align-items-center" data-id-ref="sync-page-row">
           <div className="col-12 col-md-8 col-lg-6 col-xl-5" data-id-ref="sync-page-col">
             <section className="sync-card card shadow-lg border-0" data-id-ref="sync-card" aria-labelledby="sync-title" aria-describedby="sync-subtitle">
-              <div className="card-body p-4 p-md-5" data-id-ref="sync-card-body">
+              <div className="card-body p-3 p-md-4" data-id-ref="sync-card-body">
                 
                 {/* Header */}
-                <header className="text-center mb-4" data-id-ref="sync-header">
-                  <div className="sync-logo mb-3" data-id-ref="sync-logo" aria-hidden="true">
+                <header className="text-center mb-3" data-id-ref="sync-header">
+                  <div className="sync-logo mb-2" data-id-ref="sync-logo" aria-hidden="true">
                     <i className="bi bi-arrow-clockwise sync-icon" data-id-ref="sync-icon" />
                   </div>
-                  <h1 className="sync-title mb-2" data-id-ref="sync-title" id="sync-title">{t('sync.title')}</h1>
-                  <p className="text-muted sync-subtitle" data-id-ref="sync-subtitle" id="sync-subtitle">{t('sync.subtitle')}</p>
+                  <h1 className="sync-title mb-1" data-id-ref="sync-title" id="sync-title">{t('sync.title')}</h1>
+                  <p className="text-muted sync-subtitle mb-0" data-id-ref="sync-subtitle" id="sync-subtitle">{t('sync.subtitle')}</p>
                 </header>
 
                 {/* Overall Progress */}
-                <section className="mb-4" data-id-ref="sync-overall-progress-section" aria-labelledby="overall-progress-label">
+                <section className="mb-3" data-id-ref="sync-overall-progress-section" aria-labelledby="overall-progress-label">
                   <div className="d-flex justify-content-between align-items-center mb-2" data-id-ref="sync-overall-progress-header">
                     <span className="fw-medium" data-id-ref="sync-overall-progress-label" id="overall-progress-label">{t('sync.title')}</span>
                     <span className="badge bg-primary" data-id-ref="sync-overall-progress-badge" aria-label={`${overallProgress} percent complete`}>{overallProgress}%</span>
@@ -251,7 +251,7 @@ const SyncPage: React.FC = () => {
                 </section>
 
                 {/* Status Messages */}
-                <section className="sync-status-messages mt-4" data-id-ref="sync-status-messages" aria-label="Synchronization status messages">
+                <section className="sync-status-messages mt-3" data-id-ref="sync-status-messages" aria-label="Synchronization status messages">
                   {syncState.overall === 'syncing' && !syncState.hasErrors && (
                     <div className="alert alert-info d-flex align-items-center" data-id-ref="sync-status-syncing" role="status" aria-live="polite">
                       <div className="spinner-border spinner-border-sm me-2" role="status" data-id-ref="sync-status-syncing-spinner" aria-label="Synchronizing" />
