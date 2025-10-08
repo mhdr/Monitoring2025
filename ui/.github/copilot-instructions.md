@@ -25,58 +25,11 @@ This is a production-grade enterprise monitoring dashboard with:
 - **RTL Stylesheet**: `bootstrap-rtl.css` (automatically loaded for Persian)
 - **Font**: IRANSansX for Persian, system fonts for English
 
-### Code Patterns
-
-✅ **CORRECT - Using translation hook:**
-```typescript
-const { t } = useTranslation();
-return (
-  <button className="btn btn-primary" data-id-ref="save-button">
-    {t('common.buttons.save')}
-  </button>
-);
-```
-
-❌ **WRONG - Hardcoded text:**
-```typescript
-<button>Save</button> {/* Missing data-id-ref */}
-<div>Welcome to Dashboard</div> {/* Missing data-id-ref */}
-```
-
-✅ **CORRECT - Dynamic translations with variables:**
-```typescript
-const { t } = useTranslation();
-const userName = "Ahmad";
-return <p>{t('messages.welcome', { name: userName })}</p>;
-// Translation: "Welcome, {{name}}!"
-```
-
-✅ **CORRECT - Pluralization:**
-```typescript
-const { t } = useTranslation();
-const count = 5;
-return <p>{t('items.count', { count })}</p>;
-// Translation handles: "1 item" vs "5 items"
-```
-
-### Translation Key Organization
-```json
-{
-  "common": {
-    "buttons": { "save": "Save", "cancel": "Cancel", "delete": "Delete" },
-    "labels": { "username": "Username", "password": "Password" },
-    "messages": { "loading": "Loading...", "error": "An error occurred" }
-  },
-  "pages": {
-    "dashboard": { "title": "Dashboard", "subtitle": "System Overview" },
-    "monitoring": { "title": "Real-time Monitoring" }
-  },
-  "errors": {
-    "network": "Network connection failed",
-    "auth": "Authentication failed"
-  }
-}
-```
+### Key Requirements
+- Use `useTranslation()` hook and `t()` function for all user-facing text
+- Support dynamic translations with variables: `t('messages.welcome', { name: userName })`
+- Support pluralization: `t('items.count', { count })`
+- Translation keys use hierarchical dot notation (e.g., `pages.dashboard.title`, `common.buttons.save`)
 
 ### RTL Considerations
 - **Flexbox/Grid**: Automatically flips with `dir="rtl"` on `<html>`
@@ -109,80 +62,18 @@ return <p>{t('items.count', { count })}</p>;
 ⚠️ **NO inline styles** - Use CSS modules or theme CSS variables
 ⚠️ **MANDATORY: Element identification** - ALL elements created by AI must have `data-id-ref` attribute
 
-### Component Patterns
-
-✅ **CORRECT - Functional component with TypeScript:**
-```typescript
-import React from 'react';
-
-interface UserCardProps {
-  userId: string;
-  name: string;
-  email: string;
-  onEdit?: (userId: string) => void;
-}
-
-export const UserCard: React.FC<UserCardProps> = ({ 
-  userId, 
-  name, 
-  email, 
-  onEdit 
-}) => {
-  const handleEdit = () => {
-    onEdit?.(userId);
-  };
-
-  return (
-    <div className="card" data-id-ref="user-card">
-      <div data-id-ref="user-card-body">
-        <h3 data-id-ref="user-name-heading">{name}</h3>
-        <p data-id-ref="user-email-text">{email}</p>
-        {onEdit && (
-          <button 
-            onClick={handleEdit} 
-            data-id-ref="user-card-edit-button"
-            className="btn btn-primary"
-          >
-            Edit
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-```
-
-❌ **WRONG - Missing types, inline styles, missing data-id-ref:**
-```typescript
-export const UserCard = ({ userId, name, email, onEdit }) => { // No types!
-  return (
-    <div style={{ padding: '10px' }}> {/* Inline styles! Missing data-id-ref! */}
-      <h3>{name}</h3> {/* Missing data-id-ref! */}
-      <p>{email}</p> {/* Missing data-id-ref! */}
-    </div>
-  );
-};
-```
+### Component Requirements
+- Always define TypeScript interfaces for component props
+- Use functional components with React.FC type
+- Include `data-id-ref` attribute on all elements
+- No inline styles - use CSS classes or CSS modules
+- Use proper event handler typing
 
 ### Code Splitting & Lazy Loading
 ⚠️ **MANDATORY: Lazy load all page components** to optimize bundle size
-
-✅ **CORRECT - Lazy loading with Suspense:**
-```typescript
-import React, { Suspense } from 'react';
-import { LoadingScreen } from './components/LoadingScreen';
-
-const Dashboard = React.lazy(() => import('./components/Dashboard'));
-const MonitoringPage = React.lazy(() => import('./components/MonitoringPage'));
-
-function App() {
-  return (
-    <Suspense fallback={<LoadingScreen />}>
-      <Dashboard />
-    </Suspense>
-  );
-}
-```
+- Use `React.lazy()` for route components
+- Wrap with `Suspense` and provide fallback component
+- Import `LoadingScreen` component for fallbacks
 
 ### File Organization
 - **Components**: `src/components/` - React components
@@ -211,20 +102,15 @@ function App() {
 - RTL: `enableRtl: true` for Persian
 
 ⚠️ CRITICAL: Register `LocaleModule`, `RowSelectionModule`, `ColumnApiModule` in `ModuleRegistry.registerModules()`
-
-✅ `<AGGridWrapper columnDefs={cols} rowData={data} theme="quartz" />`
-❌ `createGrid()` // vanilla JS
-
-**Enterprise:** Row Grouping, Aggregation, Pivoting, Excel Export, Master-Detail, Advanced Filtering, Server-Side, Tool Panels, Clipboard
+- Use `AGGridWrapper` component, not vanilla `createGrid()`
+- Enterprise features: Row Grouping, Aggregation, Pivoting, Excel Export, Master-Detail, Advanced Filtering, Server-Side, Tool Panels, Clipboard
 
 ## Theme
 ⚠️ NEVER hardcode colors/gradients/shadows
 - Files: `src/styles/theme.css`, `src/types/themes.ts`, `src/utils/themeUtils.ts`, `src/hooks/useTheme.ts`, `src/store/slices/themeSlice.ts`
 - Presets: Default, Green, Purple, Orange, Red, Teal, Indigo
 - Vars: `--primary-{dark,medium,light,lighter,darker}`, `--accent-{primary,hover,active}`, `--text-{primary,secondary}-{light,dark}`, `--success/warning/error/info`, `--bg-primary-{light,dark}`, `--border-{light,medium,dark}`, `--shadow-{xs,sm,md,lg,xl,2xl}`, `--gradient-{primary,sidebar,navbar,button,button-hover,button-disabled}`
-
-✅ `background: var(--primary-dark); box-shadow: var(--shadow-md);`
-❌ `background: #2c3e50;` // hardcoded
+- Always use CSS variables: `var(--primary-dark)`, `var(--shadow-md)`
 
 ## 📊 Charts (ECharts)
 
@@ -239,87 +125,13 @@ function App() {
 ⚠️ **MANDATORY: RTL support** - adjust direction, legend position, tooltip alignment
 ⚠️ **MANDATORY: Responsive sizing** - charts must adapt to container size
 
-### Implementation Pattern
-
-✅ **CORRECT - Full implementation:**
-```typescript
-import React, { useMemo } from 'react';
-import ReactECharts from 'echarts-for-react';
-import type { EChartsOption } from 'echarts';
-import { useTranslation } from '../hooks/useTranslation';
-import { useLanguage } from '../hooks/useLanguage';
-
-interface ChartProps {
-  data: number[];
-  categories: string[];
-  title?: string;
-}
-
-export const LineChart: React.FC<ChartProps> = ({ data, categories, title }) => {
-  const { t } = useTranslation();
-  const { language, isRTL } = useLanguage();
-
-  const option: EChartsOption = useMemo(() => ({
-    title: {
-      text: title || t('charts.defaultTitle'),
-      left: isRTL ? 'right' : 'left',
-      textStyle: {
-        color: 'var(--text-primary-light)'
-      }
-    },
-    tooltip: {
-      trigger: 'axis',
-      position: isRTL ? 'left' : 'right'
-    },
-    legend: {
-      orient: 'horizontal',
-      left: isRTL ? 'right' : 'left',
-      textStyle: {
-        color: 'var(--text-secondary-light)'
-      }
-    },
-    xAxis: {
-      type: 'category',
-      data: categories,
-      axisLabel: {
-        color: 'var(--text-secondary-light)'
-      }
-    },
-    yAxis: {
-      type: 'value',
-      axisLabel: {
-        color: 'var(--text-secondary-light)'
-      }
-    },
-    series: [{
-      name: t('charts.series.data'),
-      type: 'line',
-      data: data,
-      itemStyle: {
-        color: 'var(--primary-medium)'
-      },
-      lineStyle: {
-        color: 'var(--primary-medium)'
-      }
-    }],
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    }
-  }), [data, categories, title, t, isRTL]);
-
-  return (
-    <ReactECharts 
-      option={option} 
-      data-id-ref="line-chart"
-      style={{ height: '400px', width: '100%' }} 
-      opts={{ renderer: 'svg' }}
-    />
-  );
-};
-```
+### Key Requirements
+- Always define TypeScript interfaces for chart props
+- Use `useTranslation()` and `useLanguage()` hooks
+- Use `useMemo` for chart options to prevent recalculations
+- Adjust layout based on `isRTL` (title, legend, tooltip positions)
+- Use theme CSS variables for all colors
+- Include `data-id-ref` on chart components
 
 ### Performance Tips
 - Use `useMemo` to prevent unnecessary option recalculations
@@ -349,29 +161,11 @@ Must test on these standard resolutions:
 - **375x667** - iPhone SE
 - **414x896** - iPhone XR/11
 
-### Responsive Patterns
-
-✅ **CORRECT - Mobile-first responsive classes:**
-```tsx
-<div className="container" data-id-ref="responsive-container">
-  <div className="row" data-id-ref="responsive-row">
-    <div className="col-12 col-md-6 col-lg-4" data-id-ref="responsive-column">
-      {/* Full width on mobile, half on tablet, third on desktop */}
-    </div>
-  </div>
-</div>
-```
-
-✅ **CORRECT - Responsive utilities:**
-```tsx
-<div className="d-none d-md-block" data-id-ref="desktop-only-content">
-  {/* Hidden on mobile, visible on tablet+ */}
-</div>
-
-<h1 className="fs-6 fs-md-4 fs-lg-2" data-id-ref="responsive-heading">
-  {/* Smaller text on mobile, larger on desktop */}
-</h1>
-```
+### Key Patterns
+- Use Bootstrap mobile-first responsive classes (col-12 col-md-6 col-lg-4)
+- Use display utilities (d-none d-md-block) for conditional visibility
+- Use font size utilities (fs-6 fs-md-4 fs-lg-2) for responsive typography
+- Always include `data-id-ref` attributes on all elements
 
 ### Testing Checklist
 - [ ] Layout doesn't break at any breakpoint
@@ -391,9 +185,6 @@ Must test on these standard resolutions:
 - Test: `test` / `Password@12345`
 - Client: `src/services/rtkApi.ts` (RTK Query)
 - DTOs: Define in `src/types/api.ts`, match backend DTOs exactly
-
-✅ `interface LoginRequestDto { username: string; password: string; }`
-❌ `// Using plain objects without DTO types`
 
 ## Auth
 ⚠️ Refresh Token Rotation (OAuth 2.0) - auto-handled by RTK Query
@@ -418,18 +209,12 @@ Must test on these standard resolutions:
 - Auth: JWT Bearer tokens via fetch interceptor
 - Client: `createClient(MonitoringService, transport)`
 
-✅ `const client = createClient(MonitoringService, transport);`
-❌ `// Using vanilla gRPC or wrong transport`
-
 ### Server Streaming
 ⚠️ Use `for await...of` for async stream iteration
 - Pattern: `for await (const update of client.streamMethod(request)) { }`
 - Lifecycle: Connection, streaming, error handling, cleanup
 - Hook: `useMonitoringStream(clientId, autoConnect)`
 - Abort: `AbortController` for graceful disconnection
-
-✅ `for await (const update of stream) { setData(update); }`
-❌ `stream.on('data', ...)` // callback style
 
 ### Code Generation
 ⚠️ Use Buf CLI + protoc-gen-es for TypeScript generation
@@ -438,18 +223,12 @@ Must test on these standard resolutions:
 - **Output**: `src/gen/` (TypeScript schemas + services)
 - **Version**: protoc-gen-es v2.9.0, target=ts, import_extension=none
 
-✅ `buf generate` → `src/gen/monitoring_pb.ts`
-❌ `// Manual protoc commands or outdated generators`
-
 ### Message Handling
 ⚠️ Use schema-based creation with @bufbuild/protobuf v2
 - **Create**: `create(MessageSchema, data)` (not new Message())
 - **Types**: Generated TypeScript interfaces (strict typing)
 - **Serialization**: `toBinary()`, `toJson()` standalone functions
 - **Validation**: TypeScript compiler enforces message contracts
-
-✅ `create(ActiveAlarmsRequestSchema, { clientId: 'web-client' })`
-❌ `new ActiveAlarmsRequest({ clientId: 'web-client' })` // v1 pattern
 
 ### Error Handling
 ⚠️ Handle ConnectError and connection states
@@ -477,32 +256,10 @@ Must test on these standard resolutions:
 5. **Bundle Size**: Keep individual chunks under 500KB
 
 ### Performance Patterns
-
-✅ **CORRECT - Memoized expensive computation:**
-```typescript
-const expensiveValue = useMemo(() => {
-  return data.reduce((acc, item) => acc + item.value, 0);
-}, [data]);
-
-const handleClick = useCallback(() => {
-  onAction(expensiveValue);
-}, [expensiveValue, onAction]);
-```
-
-✅ **CORRECT - Conditional rendering for heavy components:**
-```typescript
-{isVisible && (
-  <Suspense fallback={<Spinner />}>
-    <HeavyChartComponent data={chartData} />
-  </Suspense>
-)}
-```
-
-❌ **WRONG - Recreating functions on every render:**
-```typescript
-<button onClick={() => handleAction(id)}>Click</button> {/* Missing data-id-ref */}
-// Should use useCallback or bind outside render
-```
+- Use `useMemo` to memoize expensive computations
+- Use `useCallback` to memoize event handlers and callbacks
+- Use conditional rendering with `Suspense` for heavy components
+- Avoid recreating functions on every render - use `useCallback` or define outside component
 
 ### Performance Monitoring
 - Use React DevTools Profiler to identify slow renders
@@ -522,25 +279,10 @@ const handleClick = useCallback(() => {
 5. **CORS**: Only `https://localhost:5173` is whitelisted
 
 ### Security Patterns
-
-✅ **CORRECT - Safe user content rendering:**
-```typescript
-// React automatically escapes content
-<div data-id-ref="user-content">{userProvidedText}</div>
-```
-
-❌ **WRONG - Dangerous HTML injection:**
-```typescript
-<div dangerouslySetInnerHTML={{ __html: userInput }} />
-// Never do this without sanitization!
-```
-
-✅ **CORRECT - Secure token storage:**
-```typescript
-// Use authStorage utility, never console.log tokens
-import { authStorage } from '../utils/authStorage';
-authStorage.saveTokens(accessToken, refreshToken);
-```
+- React automatically escapes content - just render user text directly
+- Never use `dangerouslySetInnerHTML` without proper sanitization
+- Use `authStorage` utility for token storage - never log tokens
+- Always validate user input on both client and server
 
 ### Security Checklist
 - [ ] No sensitive data in localStorage without encryption
@@ -556,68 +298,21 @@ authStorage.saveTokens(accessToken, refreshToken);
 ⚠️ **MANDATORY: Comprehensive error handling**
 
 ### RTK Query Error Handling
-
-✅ **CORRECT - Handling API errors:**
-```typescript
-import { useLoginMutation } from '../services/rtkApi';
-
-const [login, { isLoading, error }] = useLoginMutation();
-
-const handleSubmit = async (credentials: LoginDto) => {
-  try {
-    await login(credentials).unwrap();
-    // Success handling
-  } catch (err) {
-    // Error is already in the error state
-    if ('status' in err) {
-      // RTK Query error
-      const errorMessage = 'error' in err 
-        ? String(err.error) 
-        : t('errors.network');
-      showToast(errorMessage, 'error');
-    }
-  }
-};
-
-// Display error in UI
-{error && (
-  <div className="alert alert-danger" data-id-ref="error-message">
-    {t('errors.loginFailed')}
-  </div>
-)}
-```
+- Use `unwrap()` on mutations to handle errors in try/catch blocks
+- Check for `'status' in err` to identify RTK Query errors
+- Display error state in UI using error property from mutation hook
+- Always translate error messages using `t()` function
 
 ### gRPC Stream Error Handling
-
-✅ **CORRECT - Handling stream errors:**
-```typescript
-try {
-  for await (const update of stream) {
-    setData(update);
-  }
-} catch (error) {
-  if (error instanceof ConnectError) {
-    console.error('gRPC Error:', error.code, error.message);
-    setConnectionState('ERROR');
-    
-    // Retry logic
-    if (error.code === Code.Unavailable) {
-      setTimeout(() => reconnect(), 5000);
-    }
-  }
-}
-```
+- Use try/catch around `for await...of` stream iteration
+- Check `error instanceof ConnectError` for gRPC-specific errors
+- Implement retry logic for transient failures (Code.Unavailable)
+- Always update connection state on errors
 
 ### Global Error Boundary
-
-All route components should be wrapped with error boundaries:
-```typescript
-<LazyErrorBoundary>
-  <Suspense fallback={<LoadingScreen />}>
-    <SomeComponent />
-  </Suspense>
-</LazyErrorBoundary>
-```
+- Wrap all route components with `LazyErrorBoundary`
+- Use `Suspense` with `LoadingScreen` fallback
+- Provide user-friendly error messages
 
 ## 🧪 Testing Guidelines
 
@@ -670,37 +365,6 @@ All route components should be wrapped with error boundaries:
 
 **Format**: `data-id-ref="component-element-purpose"` (kebab-case)
 
-✅ **CORRECT - All elements have data-id-ref:**
-```tsx
-<div data-id-ref="user-profile-container">
-  <form data-id-ref="login-form">
-    <div data-id-ref="form-group-username">
-      <label data-id-ref="username-label">Username</label>
-      <input data-id-ref="username-input-field" />
-    </div>
-    <div data-id-ref="form-group-password">
-      <label data-id-ref="password-label">Password</label>
-      <input data-id-ref="password-input-field" type="password" />
-    </div>
-    <button data-id-ref="login-form-submit-button">Login</button>
-  </form>
-  <div data-id-ref="user-profile-card">
-    <h3 data-id-ref="user-name-heading">{name}</h3>
-    <p data-id-ref="user-email-text">{email}</p>
-    <button data-id-ref="user-card-edit-button">Edit</button>
-  </div>
-</div>
-```
-
-❌ **WRONG - Missing data-id-ref attributes:**
-```tsx
-<div> {/* Missing data-id-ref */}
-  <button>Login</button> {/* Missing data-id-ref */}
-  <input /> {/* Missing data-id-ref */}
-</div>
-<button data-id-ref="loginBtn">Login</button> // Wrong case (use kebab-case)
-```
-
 **Naming Convention Guidelines**:
 - Use descriptive, hierarchical names: `component-element-purpose`
 - Examples: `user-card-edit-button`, `search-input-field`, `dashboard-header-logo`
@@ -747,439 +411,45 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 **Critical Debugging Workflow:**
 ⚠️ **MANDATORY: Always take snapshots before debugging** to identify element UIDs
 
-**1. Console Error Monitoring**
-```typescript
-// Step 1: Check for console errors
-const consoleMessages = await mcp_chromedevtool_list_console_messages();
-// Look for errors, warnings, and network failures
-
-// Step 2: Monitor real-time console output while reproducing issues
-// Execute user actions and watch for new console messages
-```
-
-**2. Network Request Debugging**
-```typescript
-// Monitor API calls and responses
-const networkRequests = await mcp_chromedevtool_list_network_requests({
-  resourceTypes: ['xhr', 'fetch', 'websocket']
-});
-
-// Get detailed request information
-const requestDetails = await mcp_chromedevtool_get_network_request({
-  url: 'https://localhost:7136/api/auth/login'
-});
-```
-
-**3. Live JavaScript Debugging**
-```typescript
-// Execute debugging scripts in browser context
-const debugInfo = await mcp_chromedevtool_evaluate_script({
-  function: `() => {
-    return {
-      reduxState: window.__REDUX_DEVTOOLS_EXTENSION__?.getState?.() || 'Not available',
-      authToken: localStorage.getItem('accessToken') ? 'Present' : 'Missing',
-      currentTheme: document.documentElement.getAttribute('data-theme'),
-      language: document.documentElement.getAttribute('lang'),
-      grpcConnectionState: window.grpcConnectionState || 'Unknown'
-    };
-  }`
-});
-```
-
-**4. Real-Time State Inspection**
-✅ **CORRECT - Live state debugging pattern:**
-```typescript
-// Take snapshot to get element UIDs
-const snapshot = await mcp_chromedevtool_take_snapshot();
-
-// Inspect specific component state
-const componentState = await mcp_chromedevtool_evaluate_script({
-  function: `(element) => {
-    // Access React component props/state
-    const reactInstance = element._reactInternalInstance || 
-                         element._reactInternals ||
-                         Object.keys(element).find(key => key.startsWith('__reactInternalInstance'));
-    
-    return {
-      props: reactInstance?.memoizedProps || 'Not found',
-      state: reactInstance?.memoizedState || 'Not found',
-      elementText: element.textContent,
-      computedStyles: window.getComputedStyle(element)
-    };
-  }`,
-  args: [{ uid: 'element-uid-from-snapshot' }]
-});
-```
+**Key Debugging Steps:**
+1. **Console Monitoring**: Use `list_console_messages` to check for errors, warnings, network failures
+2. **Network Debugging**: Use `list_network_requests` with resourceTypes filter to monitor API calls
+3. **Live JavaScript**: Use `evaluate_script` to inspect Redux state, auth tokens, theme, language settings
+4. **State Inspection**: Take snapshot first, then use `evaluate_script` with element UID to inspect React component props/state
 
 #### 👤 User Behavior Simulation
 
 **Comprehensive User Journey Testing:**
 ⚠️ **MANDATORY: Test complete user workflows** including bilingual scenarios
 
-**1. Authentication Flow Simulation**
-```typescript
-// Simulate complete login process
-await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173/login' });
-await mcp_chromedevtool_take_snapshot(); // Get form element UIDs
-
-await mcp_chromedevtool_fill_form({
-  elements: [
-    { uid: 'login-username-input', value: 'test' },
-    { uid: 'login-password-input', value: 'Password@12345' }
-  ]
-});
-
-await mcp_chromedevtool_click({ uid: 'login-form-submit-button' });
-await mcp_chromedevtool_wait_for({ text: 'Dashboard', timeout: 5000 });
-```
-
-**2. Bilingual User Experience Testing**
-```typescript
-// Test Persian (RTL) user flow
-await mcp_chromedevtool_click({ uid: 'language-switcher-fa-button' });
-await mcp_chromedevtool_take_screenshot({ fullPage: true }); // Verify RTL layout
-
-// Test form interaction in Persian
-await mcp_chromedevtool_fill({ uid: 'search-input-field', value: 'جستجو' });
-await mcp_chromedevtool_take_snapshot(); // Verify RTL text input
-
-// Switch back to English and verify layout
-await mcp_chromedevtool_click({ uid: 'language-switcher-en-button' });
-await mcp_chromedevtool_take_screenshot({ fullPage: true });
-```
-
-**3. Real-Time Monitoring Workflow**
-```typescript
-// Simulate monitoring dashboard usage
-await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173/monitoring' });
-
-// Test gRPC streaming connection
-const streamingTest = await mcp_chromedevtool_evaluate_script({
-  function: `() => {
-    // Trigger streaming connection
-    window.testGrpcStream = true;
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({
-          connectionState: window.grpcConnectionState,
-          dataReceived: window.streamingDataCount || 0,
-          errors: window.grpcErrors || []
-        });
-      }, 3000);
-    });
-  }`
-});
-```
-
-**4. Complex User Interactions**
-```typescript
-// Test drag and drop functionality
-await mcp_chromedevtool_take_snapshot();
-await mcp_chromedevtool_drag({
-  from_uid: 'draggable-chart-element',
-  to_uid: 'dashboard-drop-zone'
-});
-
-// Test keyboard navigation
-await mcp_chromedevtool_evaluate_script({
-  function: `() => {
-    // Simulate keyboard navigation
-    const event = new KeyboardEvent('keydown', { key: 'Tab' });
-    document.dispatchEvent(event);
-    return document.activeElement?.getAttribute('data-id-ref');
-  }`
-});
-```
+**Key Testing Scenarios:**
+1. **Authentication Flow**: Navigate to login, take snapshot, fill form with UIDs, click submit, wait for Dashboard
+2. **Bilingual Testing**: Click language switcher, take full-page screenshots for RTL verification, test form inputs in both languages
+3. **Real-Time Monitoring**: Navigate to monitoring page, use `evaluate_script` to test gRPC streaming connection state
+4. **Complex Interactions**: Test drag-and-drop with element UIDs, test keyboard navigation using KeyboardEvent simulation
 
 #### 🎨 Live Styling and Layout Inspection
 
 **Real-Time Theme and Layout Testing:**
 ⚠️ **MANDATORY: Test all 7 theme presets** and responsive breakpoints
 
-**1. Theme System Testing**
-```typescript
-// Test all theme presets
-const themes = ['default', 'green', 'purple', 'orange', 'red', 'teal', 'indigo'];
-
-for (const theme of themes) {
-  await mcp_chromedevtool_evaluate_script({
-    function: `(themeName) => {
-      // Apply theme
-      document.documentElement.setAttribute('data-theme', themeName);
-      return {
-        appliedTheme: themeName,
-        primaryColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-medium'),
-        accentColor: getComputedStyle(document.documentElement).getPropertyValue('--accent-primary')
-      };
-    }`,
-    args: [{ uid: theme }] // Note: Using uid parameter as string container
-  });
-  
-  await mcp_chromedevtool_take_screenshot({ 
-    filePath: `theme-${theme}-test.png` 
-  });
-}
-```
-
-**2. Responsive Layout Testing**
-```typescript
-// Test all Bootstrap breakpoints
-const breakpoints = [
-  { width: 375, height: 667, name: 'mobile' },    // iPhone SE
-  { width: 768, height: 1024, name: 'tablet' },   // iPad
-  { width: 1366, height: 768, name: 'laptop' },   // Standard laptop
-  { width: 1920, height: 1080, name: 'desktop' }  // Full HD
-];
-
-for (const bp of breakpoints) {
-  await mcp_chromedevtool_resize_page({ width: bp.width, height: bp.height });
-  await mcp_chromedevtool_take_screenshot({ 
-    filePath: `responsive-${bp.name}.png` 
-  });
-  
-  // Check for layout issues
-  const layoutCheck = await mcp_chromedevtool_evaluate_script({
-    function: `() => {
-      return {
-        hasHorizontalScroll: document.body.scrollWidth > window.innerWidth,
-        hasOverflowElements: Array.from(document.querySelectorAll('*')).some(el => 
-          el.scrollWidth > el.clientWidth
-        ),
-        breakpoint: window.getComputedStyle(document.body, '::before').content
-      };
-    }`
-  });
-}
-```
-
-**3. RTL Layout Verification**
-```typescript
-// Comprehensive RTL layout testing
-await mcp_chromedevtool_evaluate_script({
-  function: `() => {
-    // Switch to Persian
-    document.documentElement.setAttribute('lang', 'fa');
-    document.documentElement.setAttribute('dir', 'rtl');
-    
-    return {
-      direction: document.documentElement.dir,
-      language: document.documentElement.lang,
-      rtlStylesheet: document.querySelector('link[href*="bootstrap-rtl"]') ? 'Loaded' : 'Missing'
-    };
-  }`
-});
-
-await mcp_chromedevtool_take_screenshot({ 
-  fullPage: true, 
-  filePath: 'rtl-layout-verification.png' 
-});
-
-// Check for RTL-specific issues
-const rtlIssues = await mcp_chromedevtool_evaluate_script({
-  function: `() => {
-    const issues = [];
-    
-    // Check for elements with hardcoded left/right positioning
-    document.querySelectorAll('*').forEach(el => {
-      const styles = window.getComputedStyle(el);
-      if (styles.textAlign === 'left' || styles.textAlign === 'right') {
-        issues.push({
-          element: el.tagName + (el.className ? '.' + el.className : ''),
-          issue: 'Hardcoded text alignment: ' + styles.textAlign
-        });
-      }
-    });
-    
-    return issues;
-  }`
-});
-```
-
-**4. CSS Variable Inspection**
-```typescript
-// Verify theme CSS variables are properly applied
-const themeVariables = await mcp_chromedevtool_evaluate_script({
-  function: `() => {
-    const root = document.documentElement;
-    const computedStyle = getComputedStyle(root);
-    
-    return {
-      primary: {
-        dark: computedStyle.getPropertyValue('--primary-dark'),
-        medium: computedStyle.getPropertyValue('--primary-medium'),
-        light: computedStyle.getPropertyValue('--primary-light')
-      },
-      accent: {
-        primary: computedStyle.getPropertyValue('--accent-primary'),
-        hover: computedStyle.getPropertyValue('--accent-hover')
-      },
-      shadows: {
-        md: computedStyle.getPropertyValue('--shadow-md'),
-        lg: computedStyle.getPropertyValue('--shadow-lg')
-      }
-    };
-  }`
-});
-```
+**Key Testing Procedures:**
+1. **Theme System**: Loop through all 7 themes, use `evaluate_script` to set theme attribute and capture CSS variables, take screenshots
+2. **Responsive Layout**: Test breakpoints (375×667, 768×1024, 1366×768, 1920×1080) using `resize_page`, check for horizontal scroll and overflow
+3. **RTL Layout**: Switch to Persian using `evaluate_script`, verify dir="rtl" and bootstrap-rtl.css, check for hardcoded left/right positioning
+4. **CSS Variables**: Use `evaluate_script` to inspect `getComputedStyle` and verify all theme CSS variables are applied correctly
 
 #### ⚡ Performance Audits and Optimization
 
 **Comprehensive Performance Testing:**
 ⚠️ **MANDATORY: Test Core Web Vitals** and streaming performance
 
-**1. Core Web Vitals Measurement**
-```typescript
-// Start performance trace
-await mcp_chromedevtool_performance_start_trace({ 
-  reload: true, 
-  autoStop: false 
-});
-
-// Navigate and interact with the application
-await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173/dashboard' });
-await mcp_chromedevtool_wait_for({ text: 'Dashboard', timeout: 10000 });
-
-// Stop trace and analyze
-await mcp_chromedevtool_performance_stop_trace();
-
-// Get detailed performance insights
-const performanceInsights = await mcp_chromedevtool_performance_analyze_insight({
-  insightName: 'LCPBreakdown'
-});
-```
-
-**2. Network Performance Testing**
-```typescript
-// Test different network conditions
-const networkConditions = ['Fast 3G', 'Slow 3G', 'Fast 4G', 'Slow 4G'];
-
-for (const condition of networkConditions) {
-  await mcp_chromedevtool_emulate_network({ throttlingOption: condition });
-  
-  // Measure load time
-  const startTime = Date.now();
-  await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173' });
-  await mcp_chromedevtool_wait_for({ text: 'Dashboard' });
-  const loadTime = Date.now() - startTime;
-  
-  console.log(`${condition} load time: ${loadTime}ms`);
-}
-
-// Reset to no throttling
-await mcp_chromedevtool_emulate_network({ throttlingOption: 'No emulation' });
-```
-
-**3. CPU Performance Testing**
-```typescript
-// Test under CPU throttling
-await mcp_chromedevtool_emulate_cpu({ throttlingRate: 4 }); // 4x slowdown
-
-// Test heavy operations
-const heavyOperationTest = await mcp_chromedevtool_evaluate_script({
-  function: `() => {
-    const start = performance.now();
-    
-    // Simulate heavy data processing (like AG Grid rendering)
-    const data = Array.from({ length: 10000 }, (_, i) => ({
-      id: i,
-      name: 'Item ' + i,
-      value: Math.random() * 1000
-    }));
-    
-    // Process data
-    const processed = data.map(item => ({
-      ...item,
-      formatted: new Intl.NumberFormat('fa-IR').format(item.value)
-    }));
-    
-    const end = performance.now();
-    return {
-      processingTime: end - start,
-      dataSize: processed.length,
-      memoryUsage: performance.memory ? {
-        used: performance.memory.usedJSHeapSize,
-        total: performance.memory.totalJSHeapSize
-      } : 'Not available'
-    };
-  }`
-});
-
-// Reset CPU throttling
-await mcp_chromedevtool_emulate_cpu({ throttlingRate: 1 });
-```
-
-**4. gRPC Streaming Performance**
-```typescript
-// Test real-time streaming performance
-const streamingPerformance = await mcp_chromedevtool_evaluate_script({
-  function: `() => {
-    return new Promise(resolve => {
-      const metrics = {
-        startTime: performance.now(),
-        messagesReceived: 0,
-        avgLatency: 0,
-        errors: []
-      };
-      
-      // Monitor streaming for 30 seconds
-      setTimeout(() => {
-        resolve({
-          ...metrics,
-          duration: performance.now() - metrics.startTime,
-          messagesPerSecond: metrics.messagesReceived / 30
-        });
-      }, 30000);
-      
-      // Hook into gRPC stream monitoring
-      if (window.grpcStreamMonitor) {
-        window.grpcStreamMonitor.onMessage = () => metrics.messagesReceived++;
-        window.grpcStreamMonitor.onError = (error) => metrics.errors.push(error);
-      }
-    });
-  }`
-});
-```
-
-**5. Memory Leak Detection**
-```typescript
-// Monitor memory usage over time
-const memoryLeakTest = await mcp_chromedevtool_evaluate_script({
-  function: `() => {
-    const measurements = [];
-    let interval;
-    
-    return new Promise(resolve => {
-      // Take memory measurements every 5 seconds
-      interval = setInterval(() => {
-        if (performance.memory) {
-          measurements.push({
-            timestamp: Date.now(),
-            used: performance.memory.usedJSHeapSize,
-            total: performance.memory.totalJSHeapSize
-          });
-        }
-        
-        // Run for 2 minutes
-        if (measurements.length >= 24) {
-          clearInterval(interval);
-          
-          // Analyze memory trend
-          const trend = measurements.map((m, i) => ({
-            time: i * 5,
-            memoryMB: Math.round(m.used / 1024 / 1024)
-          }));
-          
-          resolve({
-            measurements: trend,
-            memoryIncrease: trend[trend.length - 1].memoryMB - trend[0].memoryMB,
-            possibleLeak: trend[trend.length - 1].memoryMB > trend[0].memoryMB * 1.5
-          });
-        }
-      }, 5000);
-    });
-  }`
-});
-```
+**Key Performance Tests:**
+1. **Core Web Vitals**: Use `performance_start_trace`, navigate/interact, then `performance_stop_trace` and `performance_analyze_insight` for LCP breakdown
+2. **Network Testing**: Loop through network conditions (Fast/Slow 3G/4G) using `emulate_network`, measure load times, reset to "No emulation"
+3. **CPU Testing**: Use `emulate_cpu` with throttlingRate 4, run heavy operations via `evaluate_script`, measure processing time and memory
+4. **gRPC Streaming**: Use `evaluate_script` to monitor streaming metrics over 30 seconds (messages received, latency, errors)
+5. **Memory Leaks**: Use `evaluate_script` to sample memory every 5 seconds for 2 minutes, analyze trend for memory increases
 
 #### 🔄 DevTools MCP Best Practices
 
@@ -1191,32 +461,14 @@ const memoryLeakTest = await mcp_chromedevtool_evaluate_script({
 5. **Verify cleanup** - Ensure no memory leaks or hanging connections
 
 **Error Handling Pattern:**
-```typescript
-try {
-  await mcp_chromedevtool_take_snapshot();
-  await mcp_chromedevtool_click({ uid: 'target-element' });
-  await mcp_chromedevtool_wait_for({ text: 'Expected Result' });
-} catch (error) {
-  // Capture failure state
-  await mcp_chromedevtool_take_screenshot({ 
-    filePath: 'error-state.png' 
-  });
-  await mcp_chromedevtool_list_console_messages();
-  throw error;
-}
-```
+- Wrap test sequences in try/catch blocks
+- On error, capture screenshot and console messages before re-throwing
+- Always document the failure state for debugging
 
 **Multi-Browser Testing:**
-```typescript
-// Test multiple pages simultaneously
-const pages = await mcp_chromedevtool_list_pages();
-for (let i = 0; i < pages.length; i++) {
-  await mcp_chromedevtool_select_page({ pageIdx: i });
-  await mcp_chromedevtool_take_screenshot({ 
-    filePath: `page-${i}-state.png` 
-  });
-}
-```
+- Use `list_pages` to get all open pages
+- Loop through and `select_page` by index
+- Take screenshots of each page state for comparison
 
 ## Structure
 ```
