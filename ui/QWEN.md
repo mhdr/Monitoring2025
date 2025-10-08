@@ -154,43 +154,6 @@ This is a production-grade enterprise monitoring dashboard with:
 **Dividers and Borders**:
 - `theme.palette.divider` - Divider/border color
 
-### Usage Examples
-```tsx
-// Correct - Use sx prop with theme values
-<Box
-  sx={{
-    backgroundColor: 'background.paper',
-    color: 'text.primary',
-    border: 1,
-    borderColor: 'divider',
-  }}
->
-  Content
-</Box>
-
-// Correct - Use useTheme hook
-const theme = useTheme();
-<Box
-  sx={{
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
-    padding: theme.spacing(2),
-  }}
->
-  Content
-</Box>
-
-// WRONG - Never hardcode colors
-<Box
-  sx={{
-    backgroundColor: '#1976d2',  /* ❌ WRONG */
-    color: '#ffffff',             /* ❌ WRONG */
-  }}
->
-  Content
-</Box>
-```
-
 ### MUI Components (Use These First)
 MUI provides comprehensive component library:
 - **Layout**: `Box`, `Container`, `Grid`, `Stack`, `Paper`
@@ -228,27 +191,6 @@ MUI provides comprehensive component library:
 - Adjust layout based on `isRTL` (title, legend, tooltip positions)
 - Use MUI theme colors via `useTheme()` hook
 - Include `data-id-ref` on chart components
-
-### Chart Color Guidelines
-```typescript
-// Use MUI theme colors for charts
-const theme = useTheme();
-
-// Use in ECharts options
-const option = {
-  color: [
-    theme.palette.primary.main,
-    theme.palette.success.main,
-    theme.palette.error.main,
-    theme.palette.warning.main,
-    theme.palette.info.main,
-  ],
-  backgroundColor: theme.palette.background.default,
-  textStyle: {
-    color: theme.palette.text.primary
-  }
-};
-```
 
 ### Performance Tips
 - Use `useMemo` to prevent unnecessary option recalculations
@@ -484,9 +426,8 @@ Must test on these standard resolutions:
 
 **Naming Convention Guidelines**:
 - Use descriptive, hierarchical names: `component-element-purpose`
-- Examples: `user-card-edit-button`, `search-input-field`, `dashboard-header-logo`
-- For lists/grids: Include context like `user-list-item-{id}` or `data-grid-row-{index}`
-- For modals/dialogs: Include modal name like `confirm-delete-modal-cancel-button`
+- For lists/grids: Include context like element identifiers
+- For modals/dialogs: Include modal name in the identifier
 
 ### Chrome DevTools MCP Integration
 ⚠️ **MANDATORY: Use Chrome DevTools MCP for comprehensive development workflow**
@@ -587,6 +528,115 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 - Loop through and `select_page` by index
 - Take screenshots of each page state for comparison
 
+### MUI MCP Server Integration
+⚠️ **MANDATORY: Use MUI MCP Server for Material-UI documentation and examples**
+
+The MUI MCP Server provides direct access to official Material-UI documentation and code examples, ensuring you're using the latest MUI patterns, components, and best practices.
+
+#### 📚 MUI Documentation Access
+
+**Available Tools:**
+- `mcp_mui-mcp_useMuiDocs` - Access Material-UI documentation for specific versions
+- `mcp_mui-mcp_fetchDocs` - Fetch detailed documentation from specific URLs
+
+**Supported MUI Packages:**
+- **@mui/material** - Core Material-UI components (v5.17.1, v6.4.12, v7.2.0)
+- **@mui/x-data-grid** - Data Grid components (v7.29.7, v8.8.0)
+- **@mui/x-charts** - Chart components (v7.29.1, v8.8.0)
+- **@mui/x-date-pickers** - Date/Time pickers (v7.29.4, v8.8.0)
+- **@mui/x-tree-view** - Tree view components (v7.29.1, v8.8.0)
+- **@mui/x-common-concepts** - Common concepts across MUI X components (v7.29.7, v8.8.0)
+
+#### 🎯 When to Use MUI MCP
+
+**MANDATORY Usage Scenarios:**
+- Before implementing any MUI component for the first time
+- When encountering MUI component errors or unexpected behavior
+- Before using MUI theme customization features
+- When implementing responsive layouts with MUI Grid/Stack
+- Before using MUI sx prop patterns or styling solutions
+- When working with MUI form components and validation
+- Before implementing MUI data display components (Tables, Cards, Lists)
+- When setting up MUI RTL support for Persian language
+- Before using advanced MUI features (virtualization, customization, etc.)
+
+#### 📖 Usage Pattern
+
+**Step 1: Identify the MUI Package and Version**
+This project uses **@mui/material v6** - always reference v6 documentation using the MUI MCP server
+
+**Step 2: Fetch Specific Documentation**
+After getting the documentation structure, fetch specific pages using the appropriate MUI MCP tool
+
+#### 🔍 Common Use Cases
+
+**1. Component Implementation:**
+- Use MUI MCP before creating any component using MUI
+- Verify current API and prop interfaces
+- Check for deprecated patterns or new features
+- Get official code examples
+
+**2. Theme Customization:**
+- Reference official theming documentation
+- Verify palette structure and theme values
+- Check RTL support requirements
+- Understand theme provider patterns
+
+**3. Responsive Design:**
+- Get documentation on Grid system usage
+- Verify breakpoint definitions and usage
+- Check responsive prop patterns
+- Understand sx prop breakpoint syntax
+
+**4. Form Components:**
+- Verify TextField, Select, Checkbox patterns
+- Check form validation integration
+- Understand controlled/uncontrolled patterns
+- Get accessibility best practices
+
+**5. Data Display:**
+- Check Table, Card, List component APIs
+- Verify data formatting patterns
+- Understand virtualization options
+- Check pagination and sorting patterns
+
+#### ⚡ MUI MCP Best Practices
+
+**Workflow Integration:**
+1. **Documentation First** - Always check MUI docs before implementation
+2. **Version Specific** - Use @mui/material v6 documentation for this project
+3. **Code Examples** - Fetch and adapt official examples
+4. **Pattern Consistency** - Follow documented patterns throughout the codebase
+5. **Update Knowledge** - Your training data may be outdated - always verify with MUI MCP
+
+**Critical Guidelines:**
+- Never assume MUI API from memory - always verify with MUI MCP
+- Check for breaking changes between versions
+- Verify prop interfaces before using components
+- Follow official styling patterns (sx prop over inline styles)
+- Check RTL considerations for bilingual support
+- Verify theme integration patterns
+- Reference official TypeScript types
+
+**Integration with Project Standards:**
+- Use MUI MCP to verify theme palette access patterns
+- Check official examples for responsive design
+- Verify component prop TypeScript interfaces
+- Ensure RTL support follows MUI guidelines
+- Validate accessibility patterns from official docs
+
+#### 🎨 MUI Theme System Reference
+
+When using MUI MCP for theme documentation:
+- Verify current theme palette structure
+- Check theme spacing and breakpoint definitions
+- Understand theme provider configuration
+- Learn about theme customization patterns
+- Verify RTL theme configuration
+- Check dark mode implementation patterns
+
+**Remember:** This project uses MUI v6 with custom theme configuration. Always cross-reference MUI MCP documentation with the project's `MuiThemeProvider.tsx` implementation.
+
 ## Structure
 ```
 src/
@@ -653,6 +703,17 @@ Protos/           # Protocol buffer definitions
 - [ ] **Error States**: ConnectError handled appropriately
 - [ ] **Connection UI**: Show connection status to user
 
+### MUI Components & Theming
+- [ ] **MUI MCP Verified**: Checked official MUI docs for component usage
+- [ ] **Version Specific**: Used @mui/material v6 documentation
+- [ ] **Theme Palette Only**: NO hardcoded colors, only theme palette values
+- [ ] **MUI Components First**: Used built-in MUI components before custom ones
+- [ ] **Prop Interfaces**: Verified component prop TypeScript interfaces
+- [ ] **sx Prop Pattern**: Used `sx` prop for styling, not inline styles
+- [ ] **RTL Compatible**: Component works correctly in RTL mode
+- [ ] **Responsive Props**: Used responsive props (xs, sm, md, lg, xl)
+- [ ] **Accessibility**: Followed MUI accessibility guidelines
+
 ### AG Grid
 - [ ] **Modules Registered**: All required modules in `ModuleRegistry`
 - [ ] **LocaleModule**: Persian locale loaded
@@ -709,6 +770,7 @@ Protos/           # Protocol buffer definitions
 - Use functional components with hooks
 - Use TypeScript with strict types
 - Use translation system for all text
+- Use MUI MCP Server to verify component usage and APIs
 - Use MUI theme palette values for ALL colors
 - Use MUI components first before custom implementations
 - Use lazy loading for routes
@@ -725,6 +787,7 @@ Protos/           # Protocol buffer definitions
 - Don't use class components
 - Don't use `any` type
 - Don't hardcode text strings
+- Don't assume MUI APIs from memory - verify with MUI MCP
 - Don't hardcode colors (hex, rgb, color names) - ONLY use MUI theme palette
 - Don't create custom color variables outside of MUI theme
 - Don't use inline styles when `sx` prop is available

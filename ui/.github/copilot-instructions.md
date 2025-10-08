@@ -154,43 +154,6 @@ This is a production-grade enterprise monitoring dashboard with:
 **Dividers and Borders**:
 - `theme.palette.divider` - Divider/border color
 
-### Usage Examples
-```tsx
-// Correct - Use sx prop with theme values
-<Box
-  sx={{
-    backgroundColor: 'background.paper',
-    color: 'text.primary',
-    border: 1,
-    borderColor: 'divider',
-  }}
->
-  Content
-</Box>
-
-// Correct - Use useTheme hook
-const theme = useTheme();
-<Box
-  sx={{
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
-    padding: theme.spacing(2),
-  }}
->
-  Content
-</Box>
-
-// WRONG - Never hardcode colors
-<Box
-  sx={{
-    backgroundColor: '#1976d2',  /* ❌ WRONG */
-    color: '#ffffff',             /* ❌ WRONG */
-  }}
->
-  Content
-</Box>
-```
-
 ### MUI Components (Use These First)
 MUI provides comprehensive component library:
 - **Layout**: `Box`, `Container`, `Grid`, `Stack`, `Paper`
@@ -228,27 +191,6 @@ MUI provides comprehensive component library:
 - Adjust layout based on `isRTL` (title, legend, tooltip positions)
 - Use MUI theme colors via `useTheme()` hook
 - Include `data-id-ref` on chart components
-
-### Chart Color Guidelines
-```typescript
-// Use MUI theme colors for charts
-const theme = useTheme();
-
-// Use in ECharts options
-const option = {
-  color: [
-    theme.palette.primary.main,
-    theme.palette.success.main,
-    theme.palette.error.main,
-    theme.palette.warning.main,
-    theme.palette.info.main,
-  ],
-  backgroundColor: theme.palette.background.default,
-  textStyle: {
-    color: theme.palette.text.primary
-  }
-};
-```
 
 ### Performance Tips
 - Use `useMemo` to prevent unnecessary option recalculations
@@ -484,9 +426,8 @@ Must test on these standard resolutions:
 
 **Naming Convention Guidelines**:
 - Use descriptive, hierarchical names: `component-element-purpose`
-- Examples: `user-card-edit-button`, `search-input-field`, `dashboard-header-logo`
-- For lists/grids: Include context like `user-list-item-{id}` or `data-grid-row-{index}`
-- For modals/dialogs: Include modal name like `confirm-delete-modal-cancel-button`
+- For lists/grids: Include context like element identifiers
+- For modals/dialogs: Include modal name in the identifier
 
 ### Chrome DevTools MCP Integration
 ⚠️ **MANDATORY: Use Chrome DevTools MCP for comprehensive development workflow**
@@ -622,16 +563,10 @@ The MUI MCP Server provides direct access to official Material-UI documentation 
 #### 📖 Usage Pattern
 
 **Step 1: Identify the MUI Package and Version**
-This project uses **@mui/material v6** - always reference v6 documentation:
-```
-mcp_mui-mcp_useMuiDocs with urlList: ["https://llms.mui.com/material-ui/6.4.12/llms.txt"]
-```
+This project uses **@mui/material v6** - always reference v6 documentation using the MUI MCP server
 
 **Step 2: Fetch Specific Documentation**
-After getting the documentation structure, fetch specific pages:
-```
-mcp_mui-mcp_fetchDocs with urls: ["https://mui.com/material-ui/react-button/", "https://mui.com/material-ui/customization/theming/"]
-```
+After getting the documentation structure, fetch specific pages using the appropriate MUI MCP tool
 
 #### 🔍 Common Use Cases
 
