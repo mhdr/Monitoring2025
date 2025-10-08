@@ -134,47 +134,9 @@
       "later": "بعداً"
     }
   },
-  "theme": {
-    "title": "تم",
-    "categories": {
-      "light": "تم‌های روشن",
-      "dark": "تم‌های تیره",
-      "colorful": "تم‌های رنگارنگ"
-    },
-    "default": "بوت‌استرپ پیش‌فرض",
-    "cerulean": "آبی آسمانی",
-    "cosmo": "کاسمو",
-    "cyborg": "سایبورگ",
-    "darkly": "تاریکی",
-    "flatly": "فلت",
-    "journal": "ژورنال",
-    "litera": "لیترا",
-    "lumen": "لومن",
-    "lux": "لاکس",
-    "materia": "متریال",
-    "minty": "نعنایی",
-    "morph": "مورف",
-    "pulse": "پالس",
-    "quartz": "کوارتز",
-    "sandstone": "ماسه‌سنگ",
-    "simplex": "ساده",
-    "sketchy": "اسکچی",
-    "slate": "اسلیت",
-    "solar": "خورشیدی",
-    "spacelab": "فضایی",
-    "superhero": "ابرقهرمان",
-    "united": "یونایتد",
-    "vapor": "بخار",
-    "yeti": "یتی",
-    "zephyr": "زفیر"
-  },
   "settings": {
     "pageTitle": "تنظیمات",
     "pageDescription": "تنظیمات شخصی‌سازی و ترجیحات خود را مدیریت کنید",
-    "theme": {
-      "sectionTitle": "پوسته رنگی",
-      "sectionDescription": "یک پوسته رنگی را برای شخصی‌سازی رابط کاربری انتخاب کنید"
-    },
     "language": {
       "title": "زبان",
       "sectionTitle": "زبان",

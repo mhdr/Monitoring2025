@@ -134,47 +134,9 @@
       "later": "Later"
     }
   },
-  "theme": {
-    "title": "Theme",
-    "categories": {
-      "light": "Light Themes",
-      "dark": "Dark Themes",
-      "colorful": "Colorful Themes"
-    },
-    "default": "Default Bootstrap",
-    "cerulean": "Cerulean",
-    "cosmo": "Cosmo",
-    "cyborg": "Cyborg",
-    "darkly": "Darkly",
-    "flatly": "Flatly",
-    "journal": "Journal",
-    "litera": "Litera",
-    "lumen": "Lumen",
-    "lux": "Lux",
-    "materia": "Materia",
-    "minty": "Minty",
-    "morph": "Morph",
-    "pulse": "Pulse",
-    "quartz": "Quartz",
-    "sandstone": "Sandstone",
-    "simplex": "Simplex",
-    "sketchy": "Sketchy",
-    "slate": "Slate",
-    "solar": "Solar",
-    "spacelab": "Spacelab",
-    "superhero": "Superhero",
-    "united": "United",
-    "vapor": "Vapor",
-    "yeti": "Yeti",
-    "zephyr": "Zephyr"
-  },
   "settings": {
     "pageTitle": "Settings",
     "pageDescription": "Manage your personalization and preferences",
-    "theme": {
-      "sectionTitle": "Theme",
-      "sectionDescription": "Choose a color theme to personalize your interface"
-    },
     "language": {
       "title": "Language",
       "sectionTitle": "Language",

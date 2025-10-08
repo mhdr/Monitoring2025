@@ -1,12 +1,12 @@
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { useTranslation } from '../hooks/useTranslation';
-import ThemeSwitcher from './ThemeSwitcher';
+import { useLanguage } from '../hooks/useLanguage';
 import './SettingsPage.css';
 
 /**
  * SettingsPage Component
  * 
- * Displays user settings including theme and language preferences.
+ * Displays user settings including language preferences.
  * Accessible from the user dropdown menu.
  */
 const SettingsPage = () => {
@@ -30,25 +30,9 @@ const SettingsPage = () => {
         </Row>
 
         <Row className="g-4" data-id-ref="settings-page-content-row">
-          {/* Theme Settings */}
-          <Col xs={12} lg={6} data-id-ref="settings-page-theme-col">
-            <Card className="h-100 shadow-sm settings-card" data-id-ref="settings-page-theme-card">
-              <Card.Body data-id-ref="settings-page-theme-card-body">
-                <Card.Title className="mb-4" data-id-ref="settings-page-theme-card-title">
-                  <i className="bi bi-palette-fill me-2" data-id-ref="settings-page-theme-icon"></i>
-                  {t('settings.theme.sectionTitle')}
-                </Card.Title>
-                <Card.Text className="text-muted mb-4" data-id-ref="settings-page-theme-description">
-                  {t('settings.theme.sectionDescription')}
-                </Card.Text>
-                <ThemeSwitcher />
-              </Card.Body>
-            </Card>
-          </Col>
-
           {/* Language Settings */}
-          <Col xs={12} lg={6} data-id-ref="settings-page-language-col">
-            <Card className="h-100 shadow-sm settings-card" data-id-ref="settings-page-language-card">
+          <Col xs={12} data-id-ref="settings-page-language-col">
+            <Card className="shadow-sm settings-card" data-id-ref="settings-page-language-card">
               <Card.Body data-id-ref="settings-page-language-card-body">
                 <Card.Title className="mb-4" data-id-ref="settings-page-language-card-title">
                   <i className="bi bi-globe me-2" data-id-ref="settings-page-language-icon"></i>
@@ -127,8 +111,5 @@ const LanguageOptions = () => {
     </div>
   );
 };
-
-// Need to import useLanguage
-import { useLanguage } from '../hooks/useLanguage';
 
 export default SettingsPage;
