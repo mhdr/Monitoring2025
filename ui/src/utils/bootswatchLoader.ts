@@ -48,6 +48,8 @@ const BOOTSWATCH_LINK_ID = 'bootswatch-theme-stylesheet';
 // Vite will process these at build time and bundle them for offline use
 const bootswatchThemes: Record<string, Record<string, () => Promise<{ default: string }>>> = {
   ltr: {
+    // Default Bootstrap theme (not a Bootswatch theme)
+    default: () => import('bootstrap/dist/css/bootstrap.min.css?url'),
     cerulean: () => import('bootswatch/dist/cerulean/bootstrap.min.css?url'),
     cosmo: () => import('bootswatch/dist/cosmo/bootstrap.min.css?url'),
     cyborg: () => import('bootswatch/dist/cyborg/bootstrap.min.css?url'),
@@ -75,6 +77,8 @@ const bootswatchThemes: Record<string, Record<string, () => Promise<{ default: s
     zephyr: () => import('bootswatch/dist/zephyr/bootstrap.min.css?url'),
   },
   rtl: {
+    // Default Bootstrap theme RTL variant
+    default: () => import('bootstrap/dist/css/bootstrap.rtl.min.css?url'),
     cerulean: () => import('bootswatch/dist/cerulean/bootstrap.rtl.min.css?url'),
     cosmo: () => import('bootswatch/dist/cosmo/bootstrap.rtl.min.css?url'),
     cyborg: () => import('bootswatch/dist/cyborg/bootstrap.rtl.min.css?url'),
@@ -108,33 +112,28 @@ const bootswatchThemes: Record<string, Record<string, () => Promise<{ default: s
  * Uses Vite's dynamic import with ?url to get the resolved CSS file path
  * All CSS files are bundled at build time for offline use
  * 
- * @param theme - The Bootswatch theme to load
+ * @param theme - The Bootswatch theme to load (including default Bootstrap)
  * @param language - Current language ('fa' for RTL, 'en' for LTR)
  * @returns Promise that resolves when the theme CSS is loaded
  */
 export const loadBootswatchTheme = async (theme: BootswatchTheme, language: string = 'en'): Promise<void> => {
-  // Remove existing Bootswatch theme if present
+  // Remove existing theme stylesheet if present
   const existingLink = document.getElementById(BOOTSWATCH_LINK_ID);
   if (existingLink) {
     existingLink.remove();
-  }
-
-  // If theme is default (null path), remove theme and use default Bootstrap
-  if (!theme.path) {
-    // Increased delay to ensure CSS is fully applied after removing Bootswatch
-    await new Promise(resolve => setTimeout(resolve, 300));
-    extractAndApplyThemeColors();
-    return;
   }
 
   try {
     // Determine direction based on language
     const direction = language === 'fa' ? 'rtl' : 'ltr';
     
+    // For default theme (null path), use 'default' key to load Bootstrap CSS
+    const themePath = theme.path || 'default';
+    
     // Get the theme loader function
-    const themeLoader = bootswatchThemes[direction][theme.path];
+    const themeLoader = bootswatchThemes[direction][themePath];
     if (!themeLoader) {
-      throw new Error(`Theme not found: ${theme.path} (${direction})`);
+      throw new Error(`Theme not found: ${themePath} (${direction})`);
     }
 
     // Dynamically import the CSS file and get its URL
@@ -142,7 +141,7 @@ export const loadBootswatchTheme = async (theme: BootswatchTheme, language: stri
     const cssModule = await themeLoader();
     const cssUrl = cssModule.default;
 
-    // Create new link element for Bootswatch theme
+    // Create new link element for the theme
     return new Promise((resolve, reject) => {
       const link = document.createElement('link');
       link.id = BOOTSWATCH_LINK_ID;
@@ -161,7 +160,7 @@ export const loadBootswatchTheme = async (theme: BootswatchTheme, language: stri
 
       // Handle load error with detailed information
       link.onerror = (event) => {
-        const errorMessage = `Failed to load Bootswatch theme: ${theme.name} (${theme.id}) from ${cssUrl}`;
+        const errorMessage = `Failed to load theme: ${theme.name} (${theme.id}) from ${cssUrl}`;
         console.error(errorMessage, event);
         
         // Fallback: try to extract colors from any existing CSS (graceful degradation)
@@ -185,7 +184,7 @@ export const loadBootswatchTheme = async (theme: BootswatchTheme, language: stri
       }
     });
   } catch (error) {
-    const errorMessage = `Failed to load Bootswatch theme: ${theme.name} (${theme.id})`;
+    const errorMessage = `Failed to load theme: ${theme.name} (${theme.id})`;
     console.error(errorMessage, error);
     throw new Error(errorMessage);
   }
