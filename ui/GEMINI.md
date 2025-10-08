@@ -1,5 +1,5 @@
-# Monitoring2025 UI - QEMINI Instructions
-**Enterprise React + TypeScript + Redux Toolkit + Bootstrap 5**  
+# Monitoring2025 UI - GEMINI Instructions
+**Enterprise React + TypeScript + Redux Toolkit + Material-UI (MUI)**  
 **Bilingual (fa/en) • RTL/LTR Support • Real-time Monitoring • .NET Core API**
 
 ## 🎯 Project Overview
@@ -8,7 +8,7 @@ This is a production-grade enterprise monitoring dashboard with:
 - **Bilingual support** (Persian/English) with full RTL/LTR layouts
 - **Advanced data grids** using AG Grid Enterprise
 - **Secure authentication** with JWT + refresh token rotation
-- **Theme system** with 26 Bootswatch themes using Bootstrap CSS variables
+- **Theme system** with Material-UI theming (light/dark modes)
 - **Interactive charts** using ECharts with i18n support
 
 ## 🌍 Internationalization (i18n)
@@ -22,7 +22,7 @@ This is a production-grade enterprise monitoring dashboard with:
 - **Hook**: `useTranslation()` from `src/hooks/useTranslation.ts`
 - **Translation Files**: `public/locales/{fa,en}/translation.json`
 - **Key Structure**: Hierarchical dot notation (e.g., `pages.dashboard.title`, `common.buttons.save`)
-- **RTL Stylesheet**: `bootstrap-rtl.css` (automatically loaded for Persian)
+- **RTL Support**: MUI automatically handles RTL when `direction: 'rtl'` is set in theme
 - **Font**: IRANSansX for Persian, system fonts for English
 
 ### Key Requirements
@@ -32,11 +32,11 @@ This is a production-grade enterprise monitoring dashboard with:
 - Translation keys use hierarchical dot notation (e.g., `pages.dashboard.title`, `common.buttons.save`)
 
 ### RTL Considerations
-- **Flexbox/Grid**: Automatically flips with `dir="rtl"` on `<html>`
+- **MUI Theme**: Automatically flips layouts when `direction: 'rtl'` is set in theme
 - **Text Alignment**: Use `start`/`end` instead of `left`/`right`
 - **Margins/Padding**: Use logical properties (`margin-inline-start` vs `margin-left`)
 - **Icons**: Some icons may need mirroring (arrows, chevrons)
-- **Bootstrap**: `bootstrap-rtl.css` handles most RTL adjustments
+- **MUI Components**: Built-in RTL support for all components (Grid, Stack, Box, etc.)
 
 ### Testing Checklist
 - [ ] All text goes through `t()` function
@@ -52,7 +52,7 @@ This is a production-grade enterprise monitoring dashboard with:
 - **React 18**: Functional components only, hooks-based
 - **TypeScript 5**: Strict mode, no `any` type allowed
 - **Redux Toolkit**: State management with RTK Query for API calls
-- **Bootstrap 5**: Responsive grid system (xs/sm/md/lg/xl/xxl)
+- **Material-UI (MUI) v6**: Responsive grid system (xs/sm/md/lg/xl/xxl)
 - **Vite**: Build tool and dev server (port 5173)
 
 ### Code Quality Standards
@@ -60,7 +60,7 @@ This is a production-grade enterprise monitoring dashboard with:
 ⚠️ **NO `any` type** - Use `unknown` with type guards or proper interfaces
 ⚠️ **NO class components** - Only functional components with hooks
 ⚠️ **NO inline styles** - Use CSS classes with Bootstrap variables
-⚠️ **NO custom colors** - ONLY use Bootstrap CSS variables (--bs-primary, --bs-body-bg, etc.)
+⚠️ **NO custom colors** - ONLY use MUI theme values (theme.palette.primary, theme.palette.body-bg, etc.)
 ⚠️ **MANDATORY: Element identification** - ALL elements created by AI must have `data-id-ref` attribute
 
 ### Component Requirements
@@ -68,7 +68,7 @@ This is a production-grade enterprise monitoring dashboard with:
 - Use functional components with React.FC type
 - Include `data-id-ref` attribute on all elements
 - No inline styles - use CSS classes with Bootstrap variables
-- ONLY use Bootstrap CSS variables for colors (--bs-primary, --bs-secondary, --bs-success, --bs-danger, --bs-warning, --bs-info, --bs-light, --bs-dark, --bs-body-bg, --bs-body-color, etc.)
+- ONLY use MUI theme values for colors (theme.palette.primary, theme.palette.secondary, theme.palette.success, theme.palette.danger, theme.palette.warning, theme.palette.info, theme.palette.light, theme.palette.dark, theme.palette.body-bg, theme.palette.body-color, etc.)
 - Use proper event handler typing
 
 ### Code Splitting & Lazy Loading
@@ -109,16 +109,16 @@ This is a production-grade enterprise monitoring dashboard with:
 
 ## 🎨 Theme System (Bootstrap + Bootswatch)
 
-⚠️ **CRITICAL: The project uses Bootstrap and Bootswatch themes exclusively**
+⚠️ **CRITICAL: The project uses Material-UI theming system exclusively**
 ⚠️ **NEVER hardcode colors, gradients, or shadows**
-⚠️ **ONLY use Bootstrap CSS variables (--bs-*)**
+⚠️ **ONLY use MUI theme values (theme.palette.*)**
 
 ### How Theming Works
 1. User selects a Bootswatch theme (or default Bootstrap) from 26 available themes
 2. `bootswatchLoader.ts` dynamically loads the theme CSS file
    - For Persian (RTL): loads `bootstrap.rtl.min.css` variant
    - For English (LTR): loads `bootstrap.min.css` variant
-3. Bootstrap CSS variables are automatically set by the loaded theme
+3. MUI theme values are automatically set by the loaded theme
 4. All UI elements, charts, and components use Bootstrap variables directly
 
 ### Files
@@ -130,42 +130,42 @@ This is a production-grade enterprise monitoring dashboard with:
 - **Theme CSS**: `src/styles/theme.css` (global overrides using Bootstrap vars)
 
 ### Available Themes (26 Total)
-**Default**: Bootstrap 5 (no Bootswatch)
+**Default**: Material-UI (MUI) v6 (no Bootswatch)
 **Light Themes** (16): Cerulean, Cosmo, Flatly, Journal, Litera, Lumen, Lux, Materia, Minty, Morph, Pulse, Quartz, Sandstone, Simplex, Spacelab, Yeti, Zephyr
 **Dark Themes** (6): Cyborg, Darkly, Slate, Solar, Superhero, Vapor
 **Colorful Themes** (2): Sketchy, United
 
-### Bootstrap CSS Variables (MANDATORY)
-**Colors**: `--bs-primary`, `--bs-secondary`, `--bs-success`, `--bs-info`, `--bs-warning`, `--bs-danger`, `--bs-light`, `--bs-dark`
+### MUI theme values (MANDATORY)
+**Colors**: `theme.palette.primary`, `theme.palette.secondary`, `theme.palette.success`, `theme.palette.info`, `theme.palette.warning`, `theme.palette.danger`, `theme.palette.light`, `theme.palette.dark`
 
-**RGB Variants** (for rgba usage): `--bs-primary-rgb`, `--bs-secondary-rgb`, `--bs-success-rgb`, `--bs-danger-rgb`, etc.
+**RGB Variants** (for rgba usage): `theme.palette.primary-rgb`, `theme.palette.secondary-rgb`, `theme.palette.success-rgb`, `theme.palette.danger-rgb`, etc.
 
-**Body**: `--bs-body-bg`, `--bs-body-color`, `--bs-body-bg-rgb`, `--bs-body-color-rgb`
+**Body**: `theme.palette.body-bg`, `theme.palette.body-color`, `theme.palette.body-bg-rgb`, `theme.palette.body-color-rgb`
 
-**Text**: `--bs-emphasis-color`, `--bs-secondary-color`, `--bs-tertiary-color`
+**Text**: `theme.palette.emphasis-color`, `theme.palette.secondary-color`, `theme.palette.tertiary-color`
 
-**Backgrounds**: `--bs-secondary-bg`, `--bs-tertiary-bg`
+**Backgrounds**: `theme.palette.secondary-bg`, `theme.palette.tertiary-bg`
 
-**Borders**: `--bs-border-color`, `--bs-border-width`, `--bs-border-radius`
+**Borders**: `theme.palette.border-color`, `theme.palette.border-width`, `theme.palette.border-radius`
 
-**Shadows**: `--bs-box-shadow`, `--bs-box-shadow-sm`, `--bs-box-shadow-lg`
+**Shadows**: `theme.palette.box-shadow`, `theme.palette.box-shadow-sm`, `theme.palette.box-shadow-lg`
 
-**Links**: `--bs-link-color`, `--bs-link-hover-color`
+**Links**: `theme.palette.link-color`, `theme.palette.link-hover-color`
 
 ### Usage Examples
 ```css
 /* Correct - Use Bootstrap variables */
 .my-component {
-  background-color: var(--bs-primary);
-  color: var(--bs-body-color);
-  border: 1px solid var(--bs-border-color);
-  box-shadow: var(--bs-box-shadow);
+  background-color: var(theme.palette.primary);
+  color: var(theme.palette.body-color);
+  border: 1px solid var(theme.palette.border-color);
+  box-shadow: var(theme.palette.box-shadow);
 }
 
 /* Correct - Use RGB variants for transparency */
 .overlay {
-  background-color: rgba(var(--bs-dark-rgb), 0.8);
-  border: 1px solid rgba(var(--bs-primary-rgb), 0.3);
+  background-color: rgba(var(theme.palette.dark-rgb), 0.8);
+  border: 1px solid rgba(var(theme.palette.primary-rgb), 0.3);
 }
 
 /* WRONG - Never hardcode colors */
@@ -187,7 +187,7 @@ Bootstrap provides pre-built classes for colors:
 2. **NEVER hardcode hex/rgb colors** - always use Bootstrap variables
 3. **Always test with multiple themes** - switch between light/dark themes to verify
 4. **Use Bootstrap utility classes first** - before writing custom CSS
-5. **For custom CSS, ONLY use Bootstrap variables** - `var(--bs-primary)`, etc.
+5. **For custom CSS, ONLY use Bootstrap variables** - `var(theme.palette.primary)`, etc.
 
 ## 📊 Charts (ECharts)
 
@@ -207,22 +207,22 @@ Bootstrap provides pre-built classes for colors:
 - Use `useTranslation()` and `useLanguage()` hooks
 - Use `useMemo` for chart options to prevent recalculations
 - Adjust layout based on `isRTL` (title, legend, tooltip positions)
-- Use Bootstrap CSS variables for all colors (read via JavaScript: `getComputedStyle(document.documentElement).getPropertyValue('--bs-primary')`)
+- Use MUI theme values for all colors (read via JavaScript: `getComputedStyle(document.documentElement).getPropertyValue('theme.palette.primary')`)
 - Include `data-id-ref` on chart components
 
 ### Chart Color Guidelines
 ```javascript
 // Read Bootstrap colors for charts
-const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim();
-const successColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-success').trim();
-const dangerColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-danger').trim();
+const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('theme.palette.primary').trim();
+const successColor = getComputedStyle(document.documentElement).getPropertyValue('theme.palette.success').trim();
+const dangerColor = getComputedStyle(document.documentElement).getPropertyValue('theme.palette.danger').trim();
 
 // Use in ECharts options
 const option = {
   color: [primaryColor, successColor, dangerColor],
-  backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bs-body-bg').trim(),
+  backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('theme.palette.body-bg').trim(),
   textStyle: {
-    color: getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color').trim()
+    color: getComputedStyle(document.documentElement).getPropertyValue('theme.palette.body-color').trim()
   }
 };
 ```
@@ -528,10 +528,10 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 ⚠️ **MANDATORY: Test all 7 theme presets** and responsive breakpoints
 
 **Key Testing Procedures:**
-1. **Theme System**: Test multiple Bootswatch themes (light/dark/colorful), use `evaluate_script` to change theme and verify Bootstrap CSS variables, take screenshots
+1. **Theme System**: Test multiple Bootswatch themes (light/dark/colorful), use `evaluate_script` to change theme and verify MUI theme values, take screenshots
 2. **Responsive Layout**: Test breakpoints (375×667, 768×1024, 1366×768, 1920×1080) using `resize_page`, check for horizontal scroll and overflow
 3. **RTL Layout**: Switch to Persian using `evaluate_script`, verify dir="rtl" and bootstrap-rtl.css, check for hardcoded left/right positioning
-4. **Bootstrap Variables**: Use `evaluate_script` to inspect `getComputedStyle` and verify all Bootstrap CSS variables (--bs-*) are applied correctly
+4. **Bootstrap Variables**: Use `evaluate_script` to inspect `getComputedStyle` and verify all MUI theme values (theme.palette.*) are applied correctly
 
 #### ⚡ Performance Audits and Optimization
 
@@ -603,7 +603,7 @@ Protos/           # Protocol buffer definitions
 
 ### Styling & Theming
 - [ ] **Bootstrap First**: Bootstrap utilities used before custom CSS
-- [ ] **Bootstrap Variables Only**: ONLY Bootstrap CSS variables (--bs-*) used, NO hardcoded colors
+- [ ] **Bootstrap Variables Only**: ONLY MUI theme values (theme.palette.*) used, NO hardcoded colors
 - [ ] **Multiple Themes**: Tested with at least 3 different themes (light, dark, colorful)
 - [ ] **No Inline Styles**: No `style` prop used (use CSS classes)
 - [ ] **Responsive**: Mobile, tablet, desktop all tested
@@ -641,7 +641,7 @@ Protos/           # Protocol buffer definitions
 - [ ] **i18n**: All chart text translated
 - [ ] **RTL Support**: Legend, tooltip position adjusted for RTL
 - [ ] **Responsive**: Chart resizes with container
-- [ ] **Bootstrap Colors**: Uses Bootstrap CSS variables read via JavaScript
+- [ ] **Bootstrap Colors**: Uses MUI theme values read via JavaScript
 - [ ] **Theme Compatibility**: Chart colors update when theme changes
 - [ ] **Performance**: `useMemo` used for chart options
 
@@ -686,7 +686,7 @@ Protos/           # Protocol buffer definitions
 - Use functional components with hooks
 - Use TypeScript with strict types
 - Use translation system for all text
-- Use Bootstrap CSS variables (--bs-*) for ALL colors
+- Use MUI theme values (theme.palette.*) for ALL colors
 - Use Bootstrap utility classes first
 - Use lazy loading for routes
 - Use memoization for performance

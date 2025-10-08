@@ -5,16 +5,14 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: var(--bs-body-color);
-  background-color: var(--bs-body-bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Note: All colors come from Bootstrap CSS variables (--bs-*) */
-  /* Bootstrap/Bootswatch themes provide all color definitions */
+  /* Note: All colors now come from MUI theme */
+  /* MUI ThemeProvider provides all color definitions */
 }
 
 /* Variable Font Support - for modern browsers */
@@ -85,12 +83,7 @@ body {
 }
 
 /* Light mode adjustments */
-@media (prefers-color-scheme: light) {
-  :root {
-    color: var(--bs-body-color);
-    background-color: var(--bs-body-bg);
-  }
-}
+/* Note: Color scheme is now handled by MUI theme provider */
 
 /* JalaliDatePicker Font Styling - Apply IranSans in Persian mode */
 /* Note: jdp-container is a custom HTML element, not a class */

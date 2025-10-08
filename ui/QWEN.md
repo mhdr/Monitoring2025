@@ -1,5 +1,5 @@
 # Monitoring2025 UI - QWEN Instructions
-**Enterprise React + TypeScript + Redux Toolkit + Bootstrap 5**  
+**Enterprise React + TypeScript + Redux Toolkit + Material-UI (MUI)**  
 **Bilingual (fa/en) • RTL/LTR Support • Real-time Monitoring • .NET Core API**
 
 ## 🎯 Project Overview
@@ -8,7 +8,7 @@ This is a production-grade enterprise monitoring dashboard with:
 - **Bilingual support** (Persian/English) with full RTL/LTR layouts
 - **Advanced data grids** using AG Grid Enterprise
 - **Secure authentication** with JWT + refresh token rotation
-- **Theme system** with 26 Bootswatch themes using Bootstrap CSS variables
+- **Theme system** with Material-UI theming (light/dark modes)
 - **Interactive charts** using ECharts with i18n support
 
 ## 🌍 Internationalization (i18n)
@@ -22,7 +22,7 @@ This is a production-grade enterprise monitoring dashboard with:
 - **Hook**: `useTranslation()` from `src/hooks/useTranslation.ts`
 - **Translation Files**: `public/locales/{fa,en}/translation.json`
 - **Key Structure**: Hierarchical dot notation (e.g., `pages.dashboard.title`, `common.buttons.save`)
-- **RTL Stylesheet**: `bootstrap-rtl.css` (automatically loaded for Persian)
+- **RTL Support**: MUI automatically handles RTL when `direction: 'rtl'` is set in theme
 - **Font**: IRANSansX for Persian, system fonts for English
 
 ### Key Requirements
@@ -32,11 +32,11 @@ This is a production-grade enterprise monitoring dashboard with:
 - Translation keys use hierarchical dot notation (e.g., `pages.dashboard.title`, `common.buttons.save`)
 
 ### RTL Considerations
-- **Flexbox/Grid**: Automatically flips with `dir="rtl"` on `<html>`
+- **MUI Theme**: Automatically flips layouts when `direction: 'rtl'` is set in theme
 - **Text Alignment**: Use `start`/`end` instead of `left`/`right`
 - **Margins/Padding**: Use logical properties (`margin-inline-start` vs `margin-left`)
 - **Icons**: Some icons may need mirroring (arrows, chevrons)
-- **Bootstrap**: `bootstrap-rtl.css` handles most RTL adjustments
+- **MUI Components**: Built-in RTL support for all components (Grid, Stack, Box, etc.)
 
 ### Testing Checklist
 - [ ] All text goes through `t()` function
@@ -52,23 +52,23 @@ This is a production-grade enterprise monitoring dashboard with:
 - **React 18**: Functional components only, hooks-based
 - **TypeScript 5**: Strict mode, no `any` type allowed
 - **Redux Toolkit**: State management with RTK Query for API calls
-- **Bootstrap 5**: Responsive grid system (xs/sm/md/lg/xl/xxl)
+- **Material-UI (MUI) v6**: Component library with responsive grid system (xs/sm/md/lg/xl)
 - **Vite**: Build tool and dev server (port 5173)
 
 ### Code Quality Standards
 ⚠️ **MANDATORY: TypeScript strict mode** - All code must be fully typed
 ⚠️ **NO `any` type** - Use `unknown` with type guards or proper interfaces
 ⚠️ **NO class components** - Only functional components with hooks
-⚠️ **NO inline styles** - Use CSS classes with Bootstrap variables
-⚠️ **NO custom colors** - ONLY use Bootstrap CSS variables (--bs-primary, --bs-body-bg, etc.)
+⚠️ **USE MUI sx prop or styled components** - Avoid inline styles when possible
+⚠️ **USE MUI theme colors** - Access via theme palette (theme.palette.primary.main, etc.)
 ⚠️ **MANDATORY: Element identification** - ALL elements created by AI must have `data-id-ref` attribute
 
 ### Component Requirements
 - Always define TypeScript interfaces for component props
 - Use functional components with React.FC type
 - Include `data-id-ref` attribute on all elements
-- No inline styles - use CSS classes with Bootstrap variables
-- ONLY use Bootstrap CSS variables for colors (--bs-primary, --bs-secondary, --bs-success, --bs-danger, --bs-warning, --bs-info, --bs-light, --bs-dark, --bs-body-bg, --bs-body-color, etc.)
+- Prefer MUI `sx` prop for styling over inline styles
+- Use MUI theme system for colors (theme.palette.primary.main, theme.palette.background.paper, etc.)
 - Use proper event handler typing
 
 ### Code Splitting & Lazy Loading
@@ -107,87 +107,106 @@ This is a production-grade enterprise monitoring dashboard with:
 - Use `AGGridWrapper` component, not vanilla `createGrid()`
 - Enterprise features: Row Grouping, Aggregation, Pivoting, Excel Export, Master-Detail, Advanced Filtering, Server-Side, Tool Panels, Clipboard
 
-## 🎨 Theme System (Bootstrap + Bootswatch)
+## 🎨 Theme System (Material-UI)
 
-⚠️ **CRITICAL: The project uses Bootstrap and Bootswatch themes exclusively**
+⚠️ **CRITICAL: The project uses Material-UI theming system**
 ⚠️ **NEVER hardcode colors, gradients, or shadows**
-⚠️ **ONLY use Bootstrap CSS variables (--bs-*)**
+⚠️ **ALWAYS use MUI theme palette and system values**
 
 ### How Theming Works
-1. User selects a Bootswatch theme (or default Bootstrap) from 26 available themes
-2. `bootswatchLoader.ts` dynamically loads the theme CSS file
-   - For Persian (RTL): loads `bootstrap.rtl.min.css` variant
-   - For English (LTR): loads `bootstrap.min.css` variant
-3. Bootstrap CSS variables are automatically set by the loaded theme
-4. All UI elements, charts, and components use Bootstrap variables directly
+1. User selects light or dark mode
+2. MUI theme provider applies theme with RTL support for Persian
+3. All MUI components automatically adapt to theme
+4. Custom components use theme values via `sx` prop or `useTheme()` hook
 
 ### Files
-- **Theme Types**: `src/types/themes.ts` (BootswatchTheme interface, 26 themes)
-- **Theme Loader**: `src/utils/bootswatchLoader.ts` (dynamic CSS loading)
-- **Theme Utils**: `src/utils/themeUtils.ts` (applyTheme, getCurrentThemeColors)
-- **Theme Hook**: `src/hooks/useTheme.ts` (React hook for theme management)
-- **Theme State**: `src/store/slices/themeSlice.ts` (Redux state)
-- **Theme CSS**: `src/styles/theme.css` (global overrides using Bootstrap vars)
+- **Theme Provider**: `src/contexts/MuiThemeProvider.tsx` (Theme provider wrapper)
+- **Theme Hook**: `src/hooks/useMuiTheme.ts` (React hook for theme management)
+- **Theme Switcher**: `src/components/MuiThemeSwitcher.tsx` (UI control for theme)
 
-### Available Themes (26 Total)
-**Default**: Bootstrap 5 (no Bootswatch)
-**Light Themes** (16): Cerulean, Cosmo, Flatly, Journal, Litera, Lumen, Lux, Materia, Minty, Morph, Pulse, Quartz, Sandstone, Simplex, Spacelab, Yeti, Zephyr
-**Dark Themes** (6): Cyborg, Darkly, Slate, Solar, Superhero, Vapor
-**Colorful Themes** (2): Sketchy, United
+### Available Modes
+- **Light Mode**: Default light theme
+- **Dark Mode**: Dark theme with appropriate contrast
 
-### Bootstrap CSS Variables (MANDATORY)
-**Colors**: `--bs-primary`, `--bs-secondary`, `--bs-success`, `--bs-info`, `--bs-warning`, `--bs-danger`, `--bs-light`, `--bs-dark`
+### MUI Theme Palette (MANDATORY)
+**Primary Colors**: 
+- `theme.palette.primary.main`, `theme.palette.primary.light`, `theme.palette.primary.dark`
+- `theme.palette.primary.contrastText`
 
-**RGB Variants** (for rgba usage): `--bs-primary-rgb`, `--bs-secondary-rgb`, `--bs-success-rgb`, `--bs-danger-rgb`, etc.
+**Secondary Colors**: 
+- `theme.palette.secondary.main`, `theme.palette.secondary.light`, `theme.palette.secondary.dark`
 
-**Body**: `--bs-body-bg`, `--bs-body-color`, `--bs-body-bg-rgb`, `--bs-body-color-rgb`
+**Status Colors**:
+- `theme.palette.error.main` - Error/danger states
+- `theme.palette.warning.main` - Warning states
+- `theme.palette.info.main` - Informational states
+- `theme.palette.success.main` - Success states
 
-**Text**: `--bs-emphasis-color`, `--bs-secondary-color`, `--bs-tertiary-color`
+**Background Colors**:
+- `theme.palette.background.default` - Page background
+- `theme.palette.background.paper` - Card/surface background
 
-**Backgrounds**: `--bs-secondary-bg`, `--bs-tertiary-bg`
+**Text Colors**:
+- `theme.palette.text.primary` - Primary text
+- `theme.palette.text.secondary` - Secondary/muted text
+- `theme.palette.text.disabled` - Disabled text
 
-**Borders**: `--bs-border-color`, `--bs-border-width`, `--bs-border-radius`
-
-**Shadows**: `--bs-box-shadow`, `--bs-box-shadow-sm`, `--bs-box-shadow-lg`
-
-**Links**: `--bs-link-color`, `--bs-link-hover-color`
+**Dividers and Borders**:
+- `theme.palette.divider` - Divider/border color
 
 ### Usage Examples
-```css
-/* Correct - Use Bootstrap variables */
-.my-component {
-  background-color: var(--bs-primary);
-  color: var(--bs-body-color);
-  border: 1px solid var(--bs-border-color);
-  box-shadow: var(--bs-box-shadow);
-}
+```tsx
+// Correct - Use sx prop with theme values
+<Box
+  sx={{
+    backgroundColor: 'background.paper',
+    color: 'text.primary',
+    border: 1,
+    borderColor: 'divider',
+  }}
+>
+  Content
+</Box>
 
-/* Correct - Use RGB variants for transparency */
-.overlay {
-  background-color: rgba(var(--bs-dark-rgb), 0.8);
-  border: 1px solid rgba(var(--bs-primary-rgb), 0.3);
-}
+// Correct - Use useTheme hook
+const theme = useTheme();
+<Box
+  sx={{
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.primary.contrastText,
+    padding: theme.spacing(2),
+  }}
+>
+  Content
+</Box>
 
-/* WRONG - Never hardcode colors */
-.my-component {
-  background-color: #007bff;  /* ❌ WRONG */
-  color: #212529;              /* ❌ WRONG */
-}
+// WRONG - Never hardcode colors
+<Box
+  sx={{
+    backgroundColor: '#1976d2',  /* ❌ WRONG */
+    color: '#ffffff',             /* ❌ WRONG */
+  }}
+>
+  Content
+</Box>
 ```
 
-### Bootstrap Classes (Use These First)
-Bootstrap provides pre-built classes for colors:
-- **Text**: `.text-primary`, `.text-secondary`, `.text-success`, `.text-danger`, `.text-warning`, `.text-info`, `.text-light`, `.text-dark`, `.text-body`, `.text-muted`
-- **Backgrounds**: `.bg-primary`, `.bg-secondary`, `.bg-success`, `.bg-danger`, `.bg-warning`, `.bg-info`, `.bg-light`, `.bg-dark`, `.bg-body`
-- **Buttons**: `.btn-primary`, `.btn-secondary`, `.btn-success`, `.btn-danger`, `.btn-warning`, `.btn-info`, `.btn-light`, `.btn-dark`
-- **Borders**: `.border`, `.border-primary`, `.border-secondary`, etc.
+### MUI Components (Use These First)
+MUI provides comprehensive component library:
+- **Layout**: `Box`, `Container`, `Grid`, `Stack`, `Paper`
+- **Buttons**: `Button`, `IconButton`, `Fab`, `ButtonGroup`
+- **Inputs**: `TextField`, `Select`, `Checkbox`, `Radio`, `Switch`
+- **Data Display**: `Typography`, `Card`, `Chip`, `Avatar`, `Badge`
+- **Feedback**: `Alert`, `Snackbar`, `Dialog`, `Backdrop`, `CircularProgress`
+- **Navigation**: `AppBar`, `Drawer`, `Tabs`, `Menu`, `Breadcrumbs`
 
 ### Critical Rules
-1. **NEVER create custom color CSS variables** - Bootstrap provides everything
-2. **NEVER hardcode hex/rgb colors** - always use Bootstrap variables
-3. **Always test with multiple themes** - switch between light/dark themes to verify
-4. **Use Bootstrap utility classes first** - before writing custom CSS
-5. **For custom CSS, ONLY use Bootstrap variables** - `var(--bs-primary)`, etc.
+1. **NEVER hardcode colors** - always use theme palette values
+2. **Use `sx` prop** - for component-level styling with theme access
+3. **Use `useTheme()` hook** - when you need theme values in JavaScript logic
+4. **Always test both modes** - switch between light/dark themes to verify
+5. **Use MUI components** - leverage built-in components before creating custom ones
+6. **Respect spacing** - use `theme.spacing()` for consistent spacing
 
 ## 📊 Charts (ECharts)
 

@@ -181,12 +181,35 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth={false} className="profile-page" data-id-ref="profile-page-container">
-      <Box className="page-header mb-4" data-id-ref="profile-page-header">
-        <Typography variant="h4" component="h1" className="page-title" data-id-ref="profile-page-title">
+    <Container 
+      maxWidth={false} 
+      sx={{ 
+        padding: { xs: '1rem 0.5rem', sm: '1.5rem 1rem', md: '2rem 1rem' },
+        minHeight: 'calc(100vh - 200px)'
+      }} 
+      data-id-ref="profile-page-container"
+    >
+      <Box sx={{ mb: 4 }} data-id-ref="profile-page-header">
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          sx={{ 
+            fontSize: { xs: '1.35rem', sm: '1.5rem', md: '1.75rem', lg: '2rem' },
+            fontWeight: 600,
+            mb: 0.5 
+          }} 
+          data-id-ref="profile-page-title"
+        >
           {t('profilePage.title')}
         </Typography>
-        <Typography variant="body1" className="page-subtitle text-muted" data-id-ref="profile-page-subtitle">
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            color: 'text.secondary',
+            fontSize: { xs: '0.9rem', sm: '0.95rem', md: '1rem' }
+          }} 
+          data-id-ref="profile-page-subtitle"
+        >
           {t('profilePage.subtitle')}
         </Typography>
       </Box>
@@ -194,55 +217,182 @@ const ProfilePage: React.FC = () => {
       <Grid container spacing={3}>
         {/* User Information Card */}
         <Grid size={{ xs: 12, lg: 6 }}>
-          <Card className="profile-card h-100" data-id-ref="profile-page-user-info-card">
+          <Card 
+            elevation={2}
+            sx={{ 
+              height: '100%',
+              borderRadius: { xs: '8px', md: '12px' },
+              transition: 'box-shadow 0.3s ease',
+              '&:hover': {
+                boxShadow: 4
+              }
+            }} 
+            data-id-ref="profile-page-user-info-card"
+          >
             <CardContent data-id-ref="profile-page-user-info-card-body">
-              <Typography variant="h6" className="card-title mb-4" data-id-ref="profile-page-user-info-title">
-                <i className="bi bi-person-circle me-2" data-id-ref="profile-page-user-info-icon"></i>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontSize: { xs: '1rem', md: '1.125rem', lg: '1.25rem' },
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  mb: 4
+                }} 
+                data-id-ref="profile-page-user-info-title"
+              >
+                <i className="bi bi-person-circle" data-id-ref="profile-page-user-info-icon"></i>
                 {t('profilePage.userInfo.title')}
               </Typography>
               
               <Box className="user-info-content" data-id-ref="profile-page-user-info-content">
-                <Box className="info-item mb-3" data-id-ref="profile-page-user-info-username-item">
-                  <Typography component="label" className="info-label" data-id-ref="profile-page-user-info-username-label">
+                <Box 
+                  sx={{ 
+                    padding: { xs: '0.5rem 0', md: '0.75rem 0' },
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                    mb: 3
+                  }} 
+                  data-id-ref="profile-page-user-info-username-item"
+                >
+                  <Typography 
+                    component="label" 
+                    sx={{ 
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      mb: 0.25,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }} 
+                    data-id-ref="profile-page-user-info-username-label"
+                  >
                     {t('profilePage.userInfo.username')}
                   </Typography>
-                  <Typography className="info-value" data-id-ref="profile-page-user-info-username-value">
+                  <Typography 
+                    sx={{ 
+                      fontSize: { xs: '0.95rem', md: '1rem' },
+                      fontWeight: 500 
+                    }} 
+                    data-id-ref="profile-page-user-info-username-value"
+                  >
                     {user?.userName || '-'}
                   </Typography>
                 </Box>
 
-                <Box className="info-item mb-3" data-id-ref="profile-page-user-info-firstname-item">
-                  <Typography component="label" className="info-label" data-id-ref="profile-page-user-info-firstname-label">
+                <Box 
+                  sx={{ 
+                    padding: { xs: '0.5rem 0', md: '0.75rem 0' },
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                    mb: 3
+                  }} 
+                  data-id-ref="profile-page-user-info-firstname-item"
+                >
+                  <Typography 
+                    component="label" 
+                    sx={{ 
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      mb: 0.25,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }} 
+                    data-id-ref="profile-page-user-info-firstname-label"
+                  >
                     {t('profilePage.userInfo.firstName')}
                   </Typography>
-                  <Typography className="info-value" data-id-ref="profile-page-user-info-firstname-value">
+                  <Typography 
+                    sx={{ 
+                      fontSize: { xs: '0.95rem', md: '1rem' },
+                      fontWeight: 500 
+                    }} 
+                    data-id-ref="profile-page-user-info-firstname-value"
+                  >
                     {getFirstName()}
                   </Typography>
                 </Box>
 
-                <Box className="info-item mb-3" data-id-ref="profile-page-user-info-lastname-item">
-                  <Typography component="label" className="info-label" data-id-ref="profile-page-user-info-lastname-label">
+                <Box 
+                  sx={{ 
+                    padding: { xs: '0.5rem 0', md: '0.75rem 0' },
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                    mb: 3
+                  }} 
+                  data-id-ref="profile-page-user-info-lastname-item"
+                >
+                  <Typography 
+                    component="label" 
+                    sx={{ 
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      mb: 0.25,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }} 
+                    data-id-ref="profile-page-user-info-lastname-label"
+                  >
                     {t('profilePage.userInfo.lastName')}
                   </Typography>
-                  <Typography className="info-value" data-id-ref="profile-page-user-info-lastname-value">
+                  <Typography 
+                    sx={{ 
+                      fontSize: { xs: '0.95rem', md: '1rem' },
+                      fontWeight: 500 
+                    }} 
+                    data-id-ref="profile-page-user-info-lastname-value"
+                  >
                     {getLastName()}
                   </Typography>
                 </Box>
 
-                <Box className="info-item" data-id-ref="profile-page-user-info-roles-item">
-                  <Typography component="label" className="info-label" data-id-ref="profile-page-user-info-roles-label">
+                <Box 
+                  sx={{ 
+                    padding: { xs: '0.5rem 0', md: '0.75rem 0' }
+                  }} 
+                  data-id-ref="profile-page-user-info-roles-item"
+                >
+                  <Typography 
+                    component="label" 
+                    sx={{ 
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      mb: 0.25,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }} 
+                    data-id-ref="profile-page-user-info-roles-label"
+                  >
                     {t('profilePage.userInfo.roles')}
                   </Typography>
-                  <Box className="info-value" data-id-ref="profile-page-user-info-roles-value">
+                  <Box data-id-ref="profile-page-user-info-roles-value">
                     {user?.roles && user.roles.length > 0 ? (
-                      <Box className="roles-badges" data-id-ref="profile-page-user-info-roles-badges">
+                      <Box 
+                        sx={{ 
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 0.5
+                        }} 
+                        data-id-ref="profile-page-user-info-roles-badges"
+                      >
                         {user.roles.map((role, index) => (
                           <Chip
                             key={index}
                             label={role}
                             color="primary"
                             size="small"
-                            sx={{ mr: 1, mb: 1 }}
+                            sx={{ 
+                              fontSize: { xs: '0.8rem', md: '0.875rem' },
+                              fontWeight: 500,
+                              padding: { xs: '0.4rem 0.8rem', md: '0.5rem 1rem' }
+                            }}
                             data-id-ref={`profile-page-user-info-role-badge-${index}`}
                           />
                         ))}
@@ -259,14 +409,42 @@ const ProfilePage: React.FC = () => {
 
         {/* Change Password Card */}
         <Grid size={{ xs: 12, lg: 6 }}>
-          <Card className="profile-card h-100" data-id-ref="profile-page-change-password-card">
+          <Card 
+            elevation={2}
+            sx={{ 
+              height: '100%',
+              borderRadius: { xs: '8px', md: '12px' },
+              transition: 'box-shadow 0.3s ease',
+              '&:hover': {
+                boxShadow: 4
+              }
+            }} 
+            data-id-ref="profile-page-change-password-card"
+          >
             <CardContent data-id-ref="profile-page-change-password-card-body">
-              <Typography variant="h6" className="card-title mb-4" data-id-ref="profile-page-change-password-title">
-                <i className="bi bi-shield-lock me-2" data-id-ref="profile-page-change-password-icon"></i>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontSize: { xs: '1rem', md: '1.125rem', lg: '1.25rem' },
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  mb: 4
+                }} 
+                data-id-ref="profile-page-change-password-title"
+              >
+                <i className="bi bi-shield-lock" data-id-ref="profile-page-change-password-icon"></i>
                 {t('profilePage.changePassword.title')}
               </Typography>
               
-              <Typography variant="body2" className="text-muted mb-4" data-id-ref="profile-page-change-password-subtitle">
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: 'text.secondary',
+                  mb: 4
+                }} 
+                data-id-ref="profile-page-change-password-subtitle"
+              >
                 {t('profilePage.changePassword.subtitle')}
               </Typography>
 
@@ -335,13 +513,29 @@ const ProfilePage: React.FC = () => {
                   data-id-ref="profile-page-change-password-confirm-input"
                 />
 
-                <Box sx={{ display: 'flex', gap: 2, mt: 3 }} data-id-ref="profile-page-change-password-buttons">
+                <Box 
+                  sx={{ 
+                    display: 'flex', 
+                    gap: 2, 
+                    mt: 3,
+                    flexDirection: { xs: 'column', sm: 'row' }
+                  }} 
+                  data-id-ref="profile-page-change-password-buttons"
+                >
                   <Button
                     variant="contained"
                     color="primary"
                     type="submit"
                     disabled={isSubmitting}
                     startIcon={isSubmitting ? <CircularProgress size={16} /> : null}
+                    sx={{
+                      padding: { xs: '0.625rem 1.25rem', md: '0.75rem 1.5rem' },
+                      fontWeight: 600,
+                      transition: 'all 0.3s ease',
+                      '&:hover:not(:disabled)': {
+                        transform: 'translateY(-2px)'
+                      }
+                    }}
                     data-id-ref="profile-page-change-password-submit-button"
                   >
                     {isSubmitting ? t('loading') : t('profilePage.changePassword.changePasswordButton')}
@@ -352,6 +546,14 @@ const ProfilePage: React.FC = () => {
                     type="button"
                     onClick={handleCancel}
                     disabled={isSubmitting}
+                    sx={{
+                      padding: { xs: '0.625rem 1.25rem', md: '0.75rem 1.5rem' },
+                      fontWeight: 600,
+                      transition: 'all 0.3s ease',
+                      '&:hover:not(:disabled)': {
+                        transform: 'translateY(-2px)'
+                      }
+                    }}
                     data-id-ref="profile-page-change-password-cancel-button"
                   >
                     {t('profilePage.changePassword.cancelButton')}
