@@ -1,52 +1,64 @@
 /**
  * ============================================================================
- * MONITORING2025 UI THEME CONFIGURATION
+ * MONITORING2025 UI THEME CONFIGURATION (BOOTSWATCH THEMES)
  * ============================================================================
  * 
- * Centralized theme file for all color definitions, gradients, shadows, and
- * design tokens used throughout the application.
+ * This application now uses Bootswatch themes for dynamic theming.
+ * Color values defined below are DEFAULT FALLBACKS only.
  * 
- * HOW TO MODIFY COLORS:
- * 1. Find the color category you want to change (Primary, Accent, etc.)
- * 2. Update the hex values in the CSS custom properties
- * 3. The changes will automatically apply throughout the entire application
+ * HOW THEMING WORKS:
+ * 1. User selects a Bootswatch theme (or default Bootstrap)
+ * 2. The bootswatchLoader.ts dynamically loads the theme CSS
+ * 3. Colors are extracted from Bootstrap CSS variables (--bs-primary, etc.)
+ * 4. Custom CSS variables below are updated dynamically to match theme
+ * 5. All UI elements, charts, icons automatically adapt to the new colors
+ * 
+ * IMPORTANT:
+ * - Do NOT hardcode these values in components
+ * - Always use var(--primary-light), var(--accent-primary), etc.
+ * - Color values are updated dynamically when theme changes
+ * - Charts and visual elements automatically inherit theme colors
  * 
  * USAGE IN COMPONENTS:
- * - Use var(--primary-dark) instead of hardcoded colors
- * - Use var(--gradient-primary) for consistent gradient backgrounds
+ * - Use var(--primary-dark) for backgrounds
+ * - Use var(--accent-primary) for interactive elements
+ * - Use var(--gradient-primary) for consistent gradients
  * - Use var(--shadow-md) for standardized shadows
+ * - ECharts: getComputedStyle(document.documentElement).getPropertyValue('--primary-light')
  * 
  * ============================================================================
  */
 
 :root {
   /* ========================================================================== */
-  /* PRIMARY COLORS - Main Brand Colors (Dark Blue/Slate Theme) */
+  /* PRIMARY COLORS - Dynamically updated from Bootswatch theme */
   /* ========================================================================== */
+  /* These values are DEFAULTS - they are overridden when a theme is selected */
   
-  /* Dark slate blue - used for main sidebar, navbar, and dark surfaces */
+  /* Dark - used for main sidebar, navbar, and dark surfaces */
   --primary-dark: #2c3e50;
   --primary-dark-rgb: 44, 62, 80;
   
-  /* Medium slate blue - used for secondary surfaces and gradients */
+  /* Medium - used for secondary surfaces and gradients */
   --primary-medium: #34495e;
   --primary-medium-rgb: 52, 73, 94;
   
-  /* Light blue accent - used for interactive elements */
+  /* Light - used for interactive elements */
   --primary-light: #3498db;
   --primary-light-rgb: 52, 152, 219;
   
-  /* Lighter blue - used for hover states and highlights */
+  /* Lighter - used for hover states and highlights */
   --primary-lighter: #5dade2;
   --primary-lighter-rgb: 93, 173, 226;
   
-  /* Darker blue for hover/pressed states */
+  /* Darker - for hover/pressed states */
   --primary-darker: #1a252f;
   --primary-darker-rgb: 26, 37, 47;
 
   /* ========================================================================== */
-  /* ACCENT COLORS - Interactive Elements & Call-to-Actions */
+  /* ACCENT COLORS - Dynamically updated from Bootswatch theme */
   /* ========================================================================== */
+  /* These values are DEFAULTS - they are overridden when a theme is selected */
   
   /* Main accent color for buttons, links, and active states */
   --accent-primary: #3498db;
@@ -61,7 +73,9 @@
   --accent-active-rgb: 33, 97, 140;
 
   /* ========================================================================== */
-  /* GRADIENT COLORS - Login Page & Special Backgrounds */
+  /* GRADIENT COLORS - Dynamically updated from Bootswatch theme */
+  /* ========================================================================== */
+  /* These values are DEFAULTS - they are overridden when a theme is selected */
   /* ========================================================================== */
   
   /* Purple-blue gradient (Login page, loading screens) */
@@ -155,32 +169,6 @@
   --info-bg: rgba(14, 165, 233, 0.1);
   --info-border: #0284c7;
   --info-text: #075985;
-  
-  /* ========================================================================== */
-  /* BOOTSTRAP COLORS - Framework Compatibility */
-  /* ========================================================================== */
-  
-  /* Bootstrap Primary (Blue) */
-  --bs-primary: #0d6efd;
-  --bs-primary-rgb: 13, 110, 253;
-  --bs-primary-bg: rgba(13, 110, 253, 0.1);
-  
-  /* Bootstrap Success (Green) */
-  --bs-success: #198754;
-  --bs-success-rgb: 25, 135, 84;
-  --bs-success-bg: rgba(25, 135, 84, 0.1);
-  
-  /* Bootstrap Body Color */
-  --bs-body-color: #212529;
-  --bs-body-color-rgb: 33, 37, 41;
-  
-  /* Bootstrap Body Background */
-  --bs-body-bg: #ffffff;
-  --bs-body-bg-rgb: 255, 255, 255;
-  
-  /* Bootstrap Pink/Magenta */
-  --bs-pink: #d63384;
-  --bs-pink-rgb: 214, 51, 132;
 
   /* ========================================================================== */
   /* BACKGROUND COLORS */

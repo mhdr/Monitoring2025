@@ -1,24 +1,30 @@
 /**
- * Theme Presets Configuration
+ * Bootswatch Theme Configuration
  * 
- * This file defines all available theme presets that users can switch between.
- * Each theme contains all necessary color values and design tokens.
+ * This file defines all available Bootswatch themes that users can switch between,
+ * including the default Bootstrap theme (no Bootswatch).
  */
 
+export interface BootswatchTheme {
+  id: string;
+  name: string;
+  nameKey: string; // i18n key for theme name
+  description?: string;
+  emoji?: string;
+  path: string | null; // null for default Bootstrap, path for Bootswatch themes
+  category: 'light' | 'dark' | 'colorful';
+}
+
+// Legacy interface for backwards compatibility
 export interface ThemeColors {
-  // Primary Colors
   primaryDark: string;
   primaryMedium: string;
   primaryLight: string;
   primaryLighter: string;
   primaryDarker: string;
-  
-  // Accent Colors
   accentPrimary: string;
   accentHover: string;
   accentActive: string;
-  
-  // Gradient Colors
   gradientPurpleStart: string;
   gradientPurpleEnd: string;
   gradientIndigoStart: string;
@@ -29,267 +35,309 @@ export interface ThemeColors {
   gradientGrayEnd: string;
 }
 
+// Legacy interface for backwards compatibility
 export interface Theme {
   id: string;
   name: string;
-  nameKey: string; // i18n key for theme name
+  nameKey: string;
   colors: ThemeColors;
   description?: string;
   emoji?: string;
 }
 
-export type ThemeId = 'default' | 'green' | 'purple' | 'orange' | 'red' | 'teal' | 'indigo';
+export type ThemeId = 
+  | 'default'
+  | 'cerulean'
+  | 'cosmo'
+  | 'cyborg'
+  | 'darkly'
+  | 'flatly'
+  | 'journal'
+  | 'litera'
+  | 'lumen'
+  | 'lux'
+  | 'materia'
+  | 'minty'
+  | 'morph'
+  | 'pulse'
+  | 'quartz'
+  | 'sandstone'
+  | 'simplex'
+  | 'sketchy'
+  | 'slate'
+  | 'solar'
+  | 'spacelab'
+  | 'superhero'
+  | 'united'
+  | 'vapor'
+  | 'yeti'
+  | 'zephyr';
 
 /**
- * Default Theme - Professional Blue/Slate
+ * All available Bootswatch themes
+ * Bootstrap 5.3 compatible themes from Bootswatch
  */
-const defaultTheme: Theme = {
-  id: 'default',
-  name: 'Professional Blue',
-  nameKey: 'themes.default',
-  emoji: '🔵',
-  description: 'Professional dark blue/slate theme',
-  colors: {
-    primaryDark: '#2c3e50',
-    primaryMedium: '#34495e',
-    primaryLight: '#3498db',
-    primaryLighter: '#5dade2',
-    primaryDarker: '#1a252f',
-    
-    accentPrimary: '#3498db',
-    accentHover: '#2980b9',
-    accentActive: '#21618c',
-    
-    gradientPurpleStart: '#667eea',
-    gradientPurpleEnd: '#764ba2',
-    gradientIndigoStart: '#4f46e5',
-    gradientIndigoEnd: '#667eea',
-    gradientIndigoHoverStart: '#4338ca',
-    gradientIndigoHoverEnd: '#5b6de8',
-    gradientGrayStart: '#9ca3af',
-    gradientGrayEnd: '#d1d5db',
+export const AVAILABLE_THEMES: BootswatchTheme[] = [
+  // Default Bootstrap (no Bootswatch theme)
+  {
+    id: 'default',
+    name: 'Default Bootstrap',
+    nameKey: 'theme.default',
+    emoji: '🔵',
+    description: 'Standard Bootstrap 5 theme',
+    path: null,
+    category: 'light',
   },
-};
-
-/**
- * Green Theme - Nature Inspired
- */
-const greenTheme: Theme = {
-  id: 'green',
-  name: 'Nature Green',
-  nameKey: 'themes.green',
-  emoji: '🟢',
-  description: 'Fresh and natural green theme',
-  colors: {
-    primaryDark: '#1e4620',
-    primaryMedium: '#2d5f30',
-    primaryLight: '#4caf50',
-    primaryLighter: '#66bb6a',
-    primaryDarker: '#0d2e0f',
-    
-    accentPrimary: '#8bc34a',
-    accentHover: '#7cb342',
-    accentActive: '#689f38',
-    
-    gradientPurpleStart: '#43a047',
-    gradientPurpleEnd: '#2e7d32',
-    gradientIndigoStart: '#66bb6a',
-    gradientIndigoEnd: '#4caf50',
-    gradientIndigoHoverStart: '#558b2f',
-    gradientIndigoHoverEnd: '#689f38',
-    gradientGrayStart: '#9ca3af',
-    gradientGrayEnd: '#d1d5db',
+  
+  // Light Themes
+  {
+    id: 'cerulean',
+    name: 'Cerulean',
+    nameKey: 'theme.cerulean',
+    emoji: '🌊',
+    description: 'A calm blue sky',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/cerulean/bootstrap.min.css',
+    category: 'light',
   },
-};
-
-/**
- * Purple Theme - Creative and Modern
- */
-const purpleTheme: Theme = {
-  id: 'purple',
-  name: 'Royal Purple',
-  nameKey: 'themes.purple',
-  emoji: '🟣',
-  description: 'Elegant and creative purple theme',
-  colors: {
-    primaryDark: '#4a148c',
-    primaryMedium: '#6a1b9a',
-    primaryLight: '#9c27b0',
-    primaryLighter: '#ba68c8',
-    primaryDarker: '#311b92',
-    
-    accentPrimary: '#e040fb',
-    accentHover: '#d500f9',
-    accentActive: '#aa00ff',
-    
-    gradientPurpleStart: '#8e24aa',
-    gradientPurpleEnd: '#6a1b9a',
-    gradientIndigoStart: '#ab47bc',
-    gradientIndigoEnd: '#9c27b0',
-    gradientIndigoHoverStart: '#7b1fa2',
-    gradientIndigoHoverEnd: '#8e24aa',
-    gradientGrayStart: '#9ca3af',
-    gradientGrayEnd: '#d1d5db',
+  {
+    id: 'cosmo',
+    name: 'Cosmo',
+    nameKey: 'theme.cosmo',
+    emoji: '🌸',
+    description: 'An ode to Metro',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/cosmo/bootstrap.min.css',
+    category: 'light',
   },
-};
-
-/**
- * Orange Theme - Energetic and Bold
- */
-const orangeTheme: Theme = {
-  id: 'orange',
-  name: 'Vibrant Orange',
-  nameKey: 'themes.orange',
-  emoji: '🟠',
-  description: 'Energetic and warm orange theme',
-  colors: {
-    primaryDark: '#e65100',
-    primaryMedium: '#ef6c00',
-    primaryLight: '#ff9800',
-    primaryLighter: '#ffb74d',
-    primaryDarker: '#bf360c',
-    
-    accentPrimary: '#ffa726',
-    accentHover: '#fb8c00',
-    accentActive: '#f57c00',
-    
-    gradientPurpleStart: '#ff6f00',
-    gradientPurpleEnd: '#e65100',
-    gradientIndigoStart: '#ffa726',
-    gradientIndigoEnd: '#ff9800',
-    gradientIndigoHoverStart: '#f57c00',
-    gradientIndigoHoverEnd: '#fb8c00',
-    gradientGrayStart: '#9ca3af',
-    gradientGrayEnd: '#d1d5db',
+  {
+    id: 'flatly',
+    name: 'Flatly',
+    nameKey: 'theme.flatly',
+    emoji: '🎨',
+    description: 'Flat and modern',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/flatly/bootstrap.min.css',
+    category: 'light',
   },
-};
-
-/**
- * Red Theme - Powerful and Dynamic
- */
-const redTheme: Theme = {
-  id: 'red',
-  name: 'Dynamic Red',
-  nameKey: 'themes.red',
-  emoji: '🔴',
-  description: 'Bold and powerful red theme',
-  colors: {
-    primaryDark: '#b71c1c',
-    primaryMedium: '#c62828',
-    primaryLight: '#f44336',
-    primaryLighter: '#ef5350',
-    primaryDarker: '#7f0000',
-    
-    accentPrimary: '#ff5252',
-    accentHover: '#ff1744',
-    accentActive: '#d50000',
-    
-    gradientPurpleStart: '#e53935',
-    gradientPurpleEnd: '#c62828',
-    gradientIndigoStart: '#ef5350',
-    gradientIndigoEnd: '#f44336',
-    gradientIndigoHoverStart: '#d32f2f',
-    gradientIndigoHoverEnd: '#e53935',
-    gradientGrayStart: '#9ca3af',
-    gradientGrayEnd: '#d1d5db',
+  {
+    id: 'journal',
+    name: 'Journal',
+    nameKey: 'theme.journal',
+    emoji: '📰',
+    description: 'Crisp like a new sheet of paper',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/journal/bootstrap.min.css',
+    category: 'light',
   },
-};
-
-/**
- * Teal Theme - Modern and Fresh
- */
-const tealTheme: Theme = {
-  id: 'teal',
-  name: 'Ocean Teal',
-  nameKey: 'themes.teal',
-  emoji: '🌊',
-  description: 'Cool and refreshing teal theme',
-  colors: {
-    primaryDark: '#004d40',
-    primaryMedium: '#00695c',
-    primaryLight: '#009688',
-    primaryLighter: '#4db6ac',
-    primaryDarker: '#00251a',
-    
-    accentPrimary: '#26a69a',
-    accentHover: '#00897b',
-    accentActive: '#00796b',
-    
-    gradientPurpleStart: '#00897b',
-    gradientPurpleEnd: '#00695c',
-    gradientIndigoStart: '#26a69a',
-    gradientIndigoEnd: '#009688',
-    gradientIndigoHoverStart: '#00796b',
-    gradientIndigoHoverEnd: '#00897b',
-    gradientGrayStart: '#9ca3af',
-    gradientGrayEnd: '#d1d5db',
+  {
+    id: 'litera',
+    name: 'Litera',
+    nameKey: 'theme.litera',
+    emoji: '📖',
+    description: 'The medium is the message',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/litera/bootstrap.min.css',
+    category: 'light',
   },
-};
-
-/**
- * Indigo Theme - Deep and Professional
- */
-const indigoTheme: Theme = {
-  id: 'indigo',
-  name: 'Deep Indigo',
-  nameKey: 'themes.indigo',
-  emoji: '🔮',
-  description: 'Deep and sophisticated indigo theme',
-  colors: {
-    primaryDark: '#1a237e',
-    primaryMedium: '#283593',
-    primaryLight: '#3f51b5',
-    primaryLighter: '#5c6bc0',
-    primaryDarker: '#0d1642',
-    
-    accentPrimary: '#536dfe',
-    accentHover: '#3d5afe',
-    accentActive: '#304ffe',
-    
-    gradientPurpleStart: '#3949ab',
-    gradientPurpleEnd: '#283593',
-    gradientIndigoStart: '#5c6bc0',
-    gradientIndigoEnd: '#3f51b5',
-    gradientIndigoHoverStart: '#303f9f',
-    gradientIndigoHoverEnd: '#3949ab',
-    gradientGrayStart: '#9ca3af',
-    gradientGrayEnd: '#d1d5db',
+  {
+    id: 'lumen',
+    name: 'Lumen',
+    nameKey: 'theme.lumen',
+    emoji: '�',
+    description: 'Light and shadow',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/lumen/bootstrap.min.css',
+    category: 'light',
   },
-};
-
-/**
- * All available themes
- */
-export const themes: Theme[] = [
-  defaultTheme,
-  greenTheme,
-  purpleTheme,
-  orangeTheme,
-  redTheme,
-  tealTheme,
-  indigoTheme,
+  {
+    id: 'lux',
+    name: 'Lux',
+    nameKey: 'theme.lux',
+    emoji: '✨',
+    description: 'A touch of class',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/lux/bootstrap.min.css',
+    category: 'light',
+  },
+  {
+    id: 'materia',
+    name: 'Materia',
+    nameKey: 'theme.materia',
+    emoji: '🎯',
+    description: 'Material is the metaphor',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/materia/bootstrap.min.css',
+    category: 'light',
+  },
+  {
+    id: 'minty',
+    name: 'Minty',
+    nameKey: 'theme.minty',
+    emoji: '🍃',
+    description: 'A fresh feel',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/minty/bootstrap.min.css',
+    category: 'light',
+  },
+  {
+    id: 'morph',
+    name: 'Morph',
+    nameKey: 'theme.morph',
+    emoji: '�',
+    description: 'A neumorphic design',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/morph/bootstrap.min.css',
+    category: 'light',
+  },
+  {
+    id: 'pulse',
+    name: 'Pulse',
+    nameKey: 'theme.pulse',
+    emoji: '💓',
+    description: 'A trace of purple',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/pulse/bootstrap.min.css',
+    category: 'light',
+  },
+  {
+    id: 'quartz',
+    name: 'Quartz',
+    nameKey: 'theme.quartz',
+    emoji: '💎',
+    description: 'A glassmorphic design',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/quartz/bootstrap.min.css',
+    category: 'light',
+  },
+  {
+    id: 'sandstone',
+    name: 'Sandstone',
+    nameKey: 'theme.sandstone',
+    emoji: '🏜️',
+    description: 'A touch of warmth',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/sandstone/bootstrap.min.css',
+    category: 'light',
+  },
+  {
+    id: 'simplex',
+    name: 'Simplex',
+    nameKey: 'theme.simplex',
+    emoji: '⚪',
+    description: 'Mini and minimalist',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/simplex/bootstrap.min.css',
+    category: 'light',
+  },
+  {
+    id: 'sketchy',
+    name: 'Sketchy',
+    nameKey: 'theme.sketchy',
+    emoji: '✏️',
+    description: 'A hand-drawn look',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/sketchy/bootstrap.min.css',
+    category: 'colorful',
+  },
+  {
+    id: 'spacelab',
+    name: 'Spacelab',
+    nameKey: 'theme.spacelab',
+    emoji: '🚀',
+    description: 'Silvery and sleek',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/spacelab/bootstrap.min.css',
+    category: 'light',
+  },
+  {
+    id: 'united',
+    name: 'United',
+    nameKey: 'theme.united',
+    emoji: '�🇸',
+    description: 'Ubuntu orange and unique font',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/united/bootstrap.min.css',
+    category: 'colorful',
+  },
+  {
+    id: 'yeti',
+    name: 'Yeti',
+    nameKey: 'theme.yeti',
+    emoji: '❄️',
+    description: 'A friendly foundation',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/yeti/bootstrap.min.css',
+    category: 'light',
+  },
+  {
+    id: 'zephyr',
+    name: 'Zephyr',
+    nameKey: 'theme.zephyr',
+    emoji: '🌬️',
+    description: 'Breezy and beautiful',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/zephyr/bootstrap.min.css',
+    category: 'light',
+  },
+  
+  // Dark Themes
+  {
+    id: 'cyborg',
+    name: 'Cyborg',
+    nameKey: 'theme.cyborg',
+    emoji: '🤖',
+    description: 'Jet black and electric blue',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/cyborg/bootstrap.min.css',
+    category: 'dark',
+  },
+  {
+    id: 'darkly',
+    name: 'Darkly',
+    nameKey: 'theme.darkly',
+    emoji: '🌑',
+    description: 'Flatly in night mode',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/darkly/bootstrap.min.css',
+    category: 'dark',
+  },
+  {
+    id: 'slate',
+    name: 'Slate',
+    nameKey: 'theme.slate',
+    emoji: '🪨',
+    description: 'Shades of gunmetal gray',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/slate/bootstrap.min.css',
+    category: 'dark',
+  },
+  {
+    id: 'solar',
+    name: 'Solar',
+    nameKey: 'theme.solar',
+    emoji: '☀️',
+    description: 'A spin on Solarized',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/solar/bootstrap.min.css',
+    category: 'dark',
+  },
+  {
+    id: 'superhero',
+    name: 'Superhero',
+    nameKey: 'theme.superhero',
+    emoji: '🦸',
+    description: 'The brave and the blue',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/superhero/bootstrap.min.css',
+    category: 'dark',
+  },
+  {
+    id: 'vapor',
+    name: 'Vapor',
+    nameKey: 'theme.vapor',
+    emoji: '🌈',
+    description: 'A cyberpunk aesthetic',
+    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/vapor/bootstrap.min.css',
+    category: 'dark',
+  },
 ];
-
-/**
- * All available themes (alias for easier imports)
- */
-export const AVAILABLE_THEMES = themes;
 
 /**
  * Default theme ID
  */
-export const DEFAULT_THEME_ID = 'default';
+export const DEFAULT_THEME_ID: ThemeId = 'default';
 
 /**
  * Get theme by ID
  */
-export const getThemeById = (id: string): Theme | undefined => {
-  return themes.find(theme => theme.id === id);
+export const getThemeById = (themeId: string): BootswatchTheme | undefined => {
+  return AVAILABLE_THEMES.find((theme) => theme.id === themeId);
 };
 
 /**
- * Get default theme
+ * Get themes by category
  */
-export const getDefaultTheme = (): Theme => {
-  return defaultTheme;
+export const getThemesByCategory = (category: 'light' | 'dark' | 'colorful'): BootswatchTheme[] => {
+  return AVAILABLE_THEMES.filter((theme) => theme.category === category);
 };
+
+// Legacy exports for backwards compatibility
+export const themes = AVAILABLE_THEMES;
+export const getDefaultTheme = () => getThemeById(DEFAULT_THEME_ID);
