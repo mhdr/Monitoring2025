@@ -3,27 +3,37 @@
  * MONITORING2025 UI THEME CONFIGURATION (BOOTSWATCH THEMES)
  * ============================================================================
  * 
- * This application now uses Bootswatch themes for dynamic theming.
+ * This application uses Bootswatch themes for dynamic theming.
  * Color values defined below are DEFAULT FALLBACKS only.
  * 
  * HOW THEMING WORKS:
  * 1. User selects a Bootswatch theme (or default Bootstrap)
- * 2. The bootswatchLoader.ts dynamically loads the theme CSS
- * 3. Colors are extracted from Bootstrap CSS variables (--bs-primary, etc.)
- * 4. Custom CSS variables below are updated dynamically to match theme
- * 5. All UI elements, charts, icons automatically adapt to the new colors
+ * 2. bootswatchLoader.ts dynamically loads theme-specific CSS from CDN
+ *    - For Persian (RTL): loads bootstrap.rtl.min.css variant
+ *    - For English (LTR): loads bootstrap.min.css variant
+ * 3. Bootstrap CSS variables (--bs-primary, --bs-body-bg, etc.) are set by theme
+ * 4. extractAndApplyThemeColors() reads Bootstrap variables and updates custom variables
+ * 5. All UI elements, charts, and icons automatically adapt to theme colors
  * 
- * IMPORTANT:
- * - Do NOT hardcode these values in components
- * - Always use var(--primary-light), var(--accent-primary), etc.
- * - Color values are updated dynamically when theme changes
- * - Charts and visual elements automatically inherit theme colors
+ * IMPORTANT NOTES:
+ * - Bootstrap CSS variables (--bs-*) are NOT defined here - they come from Bootswatch themes
+ * - Defining --bs-* variables here would override themes (CSS specificity issue)
+ * - Custom variables (--primary-*, --accent-*, etc.) ARE defined here with defaults
+ * - Custom variables are dynamically updated via inline styles by bootswatchLoader.ts
+ * - Do NOT hardcode color values in components - always use CSS variables
+ * 
+ * CSS LOADING ORDER & SPECIFICITY:
+ * 1. Bootswatch theme CSS loaded as <link> element (external stylesheet)
+ * 2. This theme.css loaded as <style> element (inline style, higher specificity)
+ * 3. If this file defined --bs-* variables, they would override Bootswatch themes
+ * 4. Solution: Only define custom variables here, let Bootswatch provide --bs-* variables
  * 
  * USAGE IN COMPONENTS:
  * - Use var(--primary-dark) for backgrounds
  * - Use var(--accent-primary) for interactive elements
  * - Use var(--gradient-primary) for consistent gradients
  * - Use var(--shadow-md) for standardized shadows
+ * - Use var(--bs-body-bg) and var(--bs-body-color) for theme-aware backgrounds/text
  * - ECharts: getComputedStyle(document.documentElement).getPropertyValue('--primary-light')
  * 
  * ============================================================================

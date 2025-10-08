@@ -20,9 +20,8 @@ import { loadBootswatchTheme, getCurrentThemeColors as getBootswatchColors } fro
 export const applyTheme = async (theme: BootswatchTheme, language: string = 'en'): Promise<void> => {
   try {
     await loadBootswatchTheme(theme, language);
-    console.log(`✅ Theme applied: ${theme.name} (${theme.id}) [${language === 'fa' ? 'RTL' : 'LTR'}]`);
   } catch (error) {
-    console.error(`❌ Failed to apply theme: ${theme.name}`, error);
+    console.error(`Failed to apply theme: ${theme.name}`, error);
     throw error;
   }
 };

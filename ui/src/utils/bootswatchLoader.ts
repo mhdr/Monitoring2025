@@ -7,6 +7,38 @@
 
 import type { BootswatchTheme } from '../types/themes';
 
+/**
+ * Bootstrap color variables extracted from loaded theme
+ */
+interface BootstrapColors {
+  primary: string;
+  secondary: string;
+  success: string;
+  danger: string;
+  warning: string;
+  info: string;
+  light: string;
+  dark: string;
+  bodyBg: string;
+  bodyColor: string;
+  borderColor: string;
+  emphasisColor: string;
+}
+
+/**
+ * Current theme colors interface for custom CSS variables
+ */
+export interface CurrentThemeColors {
+  primaryDark: string;
+  primaryMedium: string;
+  primaryLight: string;
+  accentPrimary: string;
+  success: string;
+  warning: string;
+  error: string;
+  info: string;
+}
+
 // ID for the dynamically loaded Bootswatch theme stylesheet
 const BOOTSWATCH_LINK_ID = 'bootswatch-theme-stylesheet';
 
@@ -27,7 +59,6 @@ export const loadBootswatchTheme = async (theme: BootswatchTheme, language: stri
 
     // If theme is default (null path), remove theme and use default Bootstrap
     if (!theme.path) {
-      console.log('✅ Using default Bootstrap theme (no Bootswatch)');
       // Increased delay to ensure CSS is fully applied after removing Bootswatch
       setTimeout(() => {
         extractAndApplyThemeColors();
@@ -42,7 +73,6 @@ export const loadBootswatchTheme = async (theme: BootswatchTheme, language: stri
     if (language === 'fa') {
       // Replace bootstrap.min.css with bootstrap.rtl.min.css for RTL support
       themePath = theme.path.replace('bootstrap.min.css', 'bootstrap.rtl.min.css');
-      console.log(`🔄 Loading RTL version of ${theme.name}: ${themePath}`);
     }
 
     // Create new link element for Bootswatch theme
@@ -54,7 +84,6 @@ export const loadBootswatchTheme = async (theme: BootswatchTheme, language: stri
 
     // Handle successful load
     link.onload = () => {
-      console.log(`✅ Bootswatch theme loaded: ${theme.name} (${theme.id})`);
       // Increased delay to ensure CSS is fully applied (especially for dark themes)
       setTimeout(() => {
         extractAndApplyThemeColors();
@@ -62,10 +91,21 @@ export const loadBootswatchTheme = async (theme: BootswatchTheme, language: stri
       }, 300);
     };
 
-    // Handle load error
-    link.onerror = () => {
-      console.error(`❌ Failed to load Bootswatch theme: ${theme.name} (${theme.id})`);
-      reject(new Error(`Failed to load theme: ${theme.name}`));
+    // Handle load error with detailed information
+    link.onerror = (event) => {
+      const errorMessage = `Failed to load Bootswatch theme: ${theme.name} (${theme.id}) from ${themePath}`;
+      console.error(errorMessage, event);
+      
+      // Fallback: try to extract colors from any existing CSS (graceful degradation)
+      setTimeout(() => {
+        try {
+          extractAndApplyThemeColors();
+        } catch (extractError) {
+          console.error('Failed to extract fallback colors:', extractError);
+        }
+      }, 100);
+      
+      reject(new Error(errorMessage));
     };
 
     // Insert link element before the first stylesheet (high priority)
@@ -81,43 +121,55 @@ export const loadBootswatchTheme = async (theme: BootswatchTheme, language: stri
 /**
  * Extract Bootstrap CSS variables from the loaded theme
  * and update custom CSS variables for charts, icons, and other elements
+ * 
+ * @throws Error if CSS variable extraction fails critically
  */
 export const extractAndApplyThemeColors = (): void => {
-  const root = document.documentElement;
-  const computedStyle = getComputedStyle(root);
+  try {
+    const root = document.documentElement;
+    const computedStyle = getComputedStyle(root);
 
-  // Extract Bootstrap color variables
-  const bootstrapColors = {
-    // Primary Bootstrap colors
-    primary: computedStyle.getPropertyValue('--bs-primary').trim() || '#0d6efd',
-    secondary: computedStyle.getPropertyValue('--bs-secondary').trim() || '#6c757d',
-    success: computedStyle.getPropertyValue('--bs-success').trim() || '#198754',
-    danger: computedStyle.getPropertyValue('--bs-danger').trim() || '#dc3545',
-    warning: computedStyle.getPropertyValue('--bs-warning').trim() || '#ffc107',
-    info: computedStyle.getPropertyValue('--bs-info').trim() || '#0dcaf0',
-    light: computedStyle.getPropertyValue('--bs-light').trim() || '#f8f9fa',
-    dark: computedStyle.getPropertyValue('--bs-dark').trim() || '#212529',
-    
-    // Body and text colors
-    bodyBg: computedStyle.getPropertyValue('--bs-body-bg').trim() || '#ffffff',
-    bodyColor: computedStyle.getPropertyValue('--bs-body-color').trim() || '#212529',
-    
-    // Border and emphasis colors
-    borderColor: computedStyle.getPropertyValue('--bs-border-color').trim() || '#dee2e6',
-    emphasisColor: computedStyle.getPropertyValue('--bs-emphasis-color').trim() || '#000000',
-  };
+    // Extract Bootstrap color variables with fallbacks
+    const bootstrapColors: BootstrapColors = {
+      // Primary Bootstrap colors
+      primary: computedStyle.getPropertyValue('--bs-primary').trim() || '#0d6efd',
+      secondary: computedStyle.getPropertyValue('--bs-secondary').trim() || '#6c757d',
+      success: computedStyle.getPropertyValue('--bs-success').trim() || '#198754',
+      danger: computedStyle.getPropertyValue('--bs-danger').trim() || '#dc3545',
+      warning: computedStyle.getPropertyValue('--bs-warning').trim() || '#ffc107',
+      info: computedStyle.getPropertyValue('--bs-info').trim() || '#0dcaf0',
+      light: computedStyle.getPropertyValue('--bs-light').trim() || '#f8f9fa',
+      dark: computedStyle.getPropertyValue('--bs-dark').trim() || '#212529',
+      
+      // Body and text colors
+      bodyBg: computedStyle.getPropertyValue('--bs-body-bg').trim() || '#ffffff',
+      bodyColor: computedStyle.getPropertyValue('--bs-body-color').trim() || '#212529',
+      
+      // Border and emphasis colors
+      borderColor: computedStyle.getPropertyValue('--bs-border-color').trim() || '#dee2e6',
+      emphasisColor: computedStyle.getPropertyValue('--bs-emphasis-color').trim() || '#000000',
+    };
 
-  // Update custom CSS variables for application elements
-  updateCustomVariables(bootstrapColors);
+    // Validate critical color values
+    if (!bootstrapColors.bodyBg || !bootstrapColors.bodyColor) {
+      console.warn('Theme CSS may not be fully loaded. Using fallback colors.');
+    }
 
-  console.log('✅ Theme colors extracted and applied:', bootstrapColors);
+    // Update custom CSS variables for application elements
+    updateCustomVariables(bootstrapColors);
+  } catch (error) {
+    console.error('Failed to extract and apply theme colors:', error);
+    // Continue with fallback colors - don't break the application
+  }
 };
 
 /**
  * Update custom CSS variables to match the loaded Bootstrap theme
  * This ensures charts, icons, and other elements use theme colors
+ * 
+ * @param colors - Bootstrap color variables extracted from theme
  */
-const updateCustomVariables = (colors: Record<string, string>): void => {
+const updateCustomVariables = (colors: BootstrapColors): void => {
   const root = document.documentElement;
 
   // Update primary colors for sidebar, navbar, and main UI elements
@@ -186,8 +238,10 @@ const updateCustomVariables = (colors: Record<string, string>): void => {
 
 /**
  * Update pre-configured gradient CSS variables
+ * 
+ * @param colors - Bootstrap color variables extracted from theme
  */
-const updateGradients = (colors: Record<string, string>): void => {
+const updateGradients = (colors: BootstrapColors): void => {
   const root = document.documentElement;
 
   // Primary gradient (login page, loading screens)
@@ -244,8 +298,10 @@ const updateGradients = (colors: Record<string, string>): void => {
 
 /**
  * Update text colors based on theme background
+ * 
+ * @param colors - Bootstrap color variables extracted from theme
  */
-const updateTextColors = (colors: Record<string, string>): void => {
+const updateTextColors = (colors: BootstrapColors): void => {
   const root = document.documentElement;
 
   // Determine if theme is dark or light based on body background
@@ -384,10 +440,12 @@ export const isColorDark = (hex: string): boolean => {
 };
 
 /**
- * Get the current theme colors from CSS variables
- * (Used for debugging or theme detection)
+ * Get current theme colors from CSS variables
+ * Used for debugging, theme detection, or dynamic color access in components
+ * 
+ * @returns Object containing current theme color values
  */
-export const getCurrentThemeColors = (): Record<string, string> => {
+export const getCurrentThemeColors = (): CurrentThemeColors => {
   const root = document.documentElement;
   const style = getComputedStyle(root);
 
