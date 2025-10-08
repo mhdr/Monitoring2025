@@ -36,14 +36,14 @@
 
 .group-card-icon {
   font-size: 3.5rem;
-  color: var(--bs-warning);
+  color: var(--warning);
   margin-bottom: 1rem;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .group-card:hover .group-card-icon {
   transform: scale(1.1);
-  color: var(--bs-primary);
+  color: var(--accent-primary);
 }
 
 .group-card-content {
