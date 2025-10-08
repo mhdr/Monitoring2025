@@ -52,23 +52,23 @@ This is a production-grade enterprise monitoring dashboard with:
 - **React 18**: Functional components only, hooks-based
 - **TypeScript 5**: Strict mode, no `any` type allowed
 - **Redux Toolkit**: State management with RTK Query for API calls
-- **Material-UI (MUI) v6**: Responsive grid system (xs/sm/md/lg/xl/xxl)
+- **Material-UI (MUI) v6**: Component library with responsive grid system (xs/sm/md/lg/xl)
 - **Vite**: Build tool and dev server (port 5173)
 
 ### Code Quality Standards
 ⚠️ **MANDATORY: TypeScript strict mode** - All code must be fully typed
 ⚠️ **NO `any` type** - Use `unknown` with type guards or proper interfaces
 ⚠️ **NO class components** - Only functional components with hooks
-⚠️ **NO inline styles** - Use CSS classes with Bootstrap variables
-⚠️ **NO custom colors** - ONLY use MUI theme values (theme.palette.primary, theme.palette.body-bg, etc.)
+⚠️ **USE MUI sx prop or styled components** - Avoid inline styles when possible
+⚠️ **USE MUI theme colors** - Access via theme palette (theme.palette.primary.main, etc.)
 ⚠️ **MANDATORY: Element identification** - ALL elements created by AI must have `data-id-ref` attribute
 
 ### Component Requirements
 - Always define TypeScript interfaces for component props
 - Use functional components with React.FC type
 - Include `data-id-ref` attribute on all elements
-- No inline styles - use CSS classes with Bootstrap variables
-- ONLY use MUI theme values for colors (theme.palette.primary, theme.palette.secondary, theme.palette.success, theme.palette.danger, theme.palette.warning, theme.palette.info, theme.palette.light, theme.palette.dark, theme.palette.body-bg, theme.palette.body-color, etc.)
+- Prefer MUI `sx` prop for styling over inline styles
+- Use MUI theme system for colors (theme.palette.primary.main, theme.palette.background.paper, etc.)
 - Use proper event handler typing
 
 ### Code Splitting & Lazy Loading
@@ -107,87 +107,106 @@ This is a production-grade enterprise monitoring dashboard with:
 - Use `AGGridWrapper` component, not vanilla `createGrid()`
 - Enterprise features: Row Grouping, Aggregation, Pivoting, Excel Export, Master-Detail, Advanced Filtering, Server-Side, Tool Panels, Clipboard
 
-## 🎨 Theme System (Bootstrap + Bootswatch)
+## 🎨 Theme System (Material-UI)
 
-⚠️ **CRITICAL: The project uses Material-UI theming system exclusively**
+⚠️ **CRITICAL: The project uses Material-UI theming system**
 ⚠️ **NEVER hardcode colors, gradients, or shadows**
-⚠️ **ONLY use MUI theme values (theme.palette.*)**
+⚠️ **ALWAYS use MUI theme palette and system values**
 
 ### How Theming Works
-1. User selects a Bootswatch theme (or default Bootstrap) from 26 available themes
-2. `bootswatchLoader.ts` dynamically loads the theme CSS file
-   - For Persian (RTL): loads `bootstrap.rtl.min.css` variant
-   - For English (LTR): loads `bootstrap.min.css` variant
-3. MUI theme values are automatically set by the loaded theme
-4. All UI elements, charts, and components use Bootstrap variables directly
+1. User selects light or dark mode
+2. MUI theme provider applies theme with RTL support for Persian
+3. All MUI components automatically adapt to theme
+4. Custom components use theme values via `sx` prop or `useTheme()` hook
 
 ### Files
-- **Theme Types**: `src/types/themes.ts` (BootswatchTheme interface, 26 themes)
-- **Theme Loader**: `src/utils/bootswatchLoader.ts` (dynamic CSS loading)
-- **Theme Utils**: `src/utils/themeUtils.ts` (applyTheme, getCurrentThemeColors)
-- **Theme Hook**: `src/hooks/useTheme.ts` (React hook for theme management)
-- **Theme State**: `src/store/slices/themeSlice.ts` (Redux state)
-- **Theme CSS**: `src/styles/theme.css` (global overrides using Bootstrap vars)
+- **Theme Provider**: `src/contexts/MuiThemeProvider.tsx` (Theme provider wrapper)
+- **Theme Hook**: `src/hooks/useMuiTheme.ts` (React hook for theme management)
+- **Theme Switcher**: `src/components/MuiThemeSwitcher.tsx` (UI control for theme)
 
-### Available Themes (26 Total)
-**Default**: Material-UI (MUI) v6 (no Bootswatch)
-**Light Themes** (16): Cerulean, Cosmo, Flatly, Journal, Litera, Lumen, Lux, Materia, Minty, Morph, Pulse, Quartz, Sandstone, Simplex, Spacelab, Yeti, Zephyr
-**Dark Themes** (6): Cyborg, Darkly, Slate, Solar, Superhero, Vapor
-**Colorful Themes** (2): Sketchy, United
+### Available Modes
+- **Light Mode**: Default light theme
+- **Dark Mode**: Dark theme with appropriate contrast
 
-### MUI theme values (MANDATORY)
-**Colors**: `theme.palette.primary`, `theme.palette.secondary`, `theme.palette.success`, `theme.palette.info`, `theme.palette.warning`, `theme.palette.danger`, `theme.palette.light`, `theme.palette.dark`
+### MUI Theme Palette (MANDATORY)
+**Primary Colors**: 
+- `theme.palette.primary.main`, `theme.palette.primary.light`, `theme.palette.primary.dark`
+- `theme.palette.primary.contrastText`
 
-**RGB Variants** (for rgba usage): `theme.palette.primary-rgb`, `theme.palette.secondary-rgb`, `theme.palette.success-rgb`, `theme.palette.danger-rgb`, etc.
+**Secondary Colors**: 
+- `theme.palette.secondary.main`, `theme.palette.secondary.light`, `theme.palette.secondary.dark`
 
-**Body**: `theme.palette.body-bg`, `theme.palette.body-color`, `theme.palette.body-bg-rgb`, `theme.palette.body-color-rgb`
+**Status Colors**:
+- `theme.palette.error.main` - Error/danger states
+- `theme.palette.warning.main` - Warning states
+- `theme.palette.info.main` - Informational states
+- `theme.palette.success.main` - Success states
 
-**Text**: `theme.palette.emphasis-color`, `theme.palette.secondary-color`, `theme.palette.tertiary-color`
+**Background Colors**:
+- `theme.palette.background.default` - Page background
+- `theme.palette.background.paper` - Card/surface background
 
-**Backgrounds**: `theme.palette.secondary-bg`, `theme.palette.tertiary-bg`
+**Text Colors**:
+- `theme.palette.text.primary` - Primary text
+- `theme.palette.text.secondary` - Secondary/muted text
+- `theme.palette.text.disabled` - Disabled text
 
-**Borders**: `theme.palette.border-color`, `theme.palette.border-width`, `theme.palette.border-radius`
-
-**Shadows**: `theme.palette.box-shadow`, `theme.palette.box-shadow-sm`, `theme.palette.box-shadow-lg`
-
-**Links**: `theme.palette.link-color`, `theme.palette.link-hover-color`
+**Dividers and Borders**:
+- `theme.palette.divider` - Divider/border color
 
 ### Usage Examples
-```css
-/* Correct - Use Bootstrap variables */
-.my-component {
-  background-color: var(theme.palette.primary);
-  color: var(theme.palette.body-color);
-  border: 1px solid var(theme.palette.border-color);
-  box-shadow: var(theme.palette.box-shadow);
-}
+```tsx
+// Correct - Use sx prop with theme values
+<Box
+  sx={{
+    backgroundColor: 'background.paper',
+    color: 'text.primary',
+    border: 1,
+    borderColor: 'divider',
+  }}
+>
+  Content
+</Box>
 
-/* Correct - Use RGB variants for transparency */
-.overlay {
-  background-color: rgba(var(theme.palette.dark-rgb), 0.8);
-  border: 1px solid rgba(var(theme.palette.primary-rgb), 0.3);
-}
+// Correct - Use useTheme hook
+const theme = useTheme();
+<Box
+  sx={{
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.primary.contrastText,
+    padding: theme.spacing(2),
+  }}
+>
+  Content
+</Box>
 
-/* WRONG - Never hardcode colors */
-.my-component {
-  background-color: #007bff;  /* ❌ WRONG */
-  color: #212529;              /* ❌ WRONG */
-}
+// WRONG - Never hardcode colors
+<Box
+  sx={{
+    backgroundColor: '#1976d2',  /* ❌ WRONG */
+    color: '#ffffff',             /* ❌ WRONG */
+  }}
+>
+  Content
+</Box>
 ```
 
-### Bootstrap Classes (Use These First)
-Bootstrap provides pre-built classes for colors:
-- **Text**: `.text-primary`, `.text-secondary`, `.text-success`, `.text-danger`, `.text-warning`, `.text-info`, `.text-light`, `.text-dark`, `.text-body`, `.text-muted`
-- **Backgrounds**: `.bg-primary`, `.bg-secondary`, `.bg-success`, `.bg-danger`, `.bg-warning`, `.bg-info`, `.bg-light`, `.bg-dark`, `.bg-body`
-- **Buttons**: `.btn-primary`, `.btn-secondary`, `.btn-success`, `.btn-danger`, `.btn-warning`, `.btn-info`, `.btn-light`, `.btn-dark`
-- **Borders**: `.border`, `.border-primary`, `.border-secondary`, etc.
+### MUI Components (Use These First)
+MUI provides comprehensive component library:
+- **Layout**: `Box`, `Container`, `Grid`, `Stack`, `Paper`
+- **Buttons**: `Button`, `IconButton`, `Fab`, `ButtonGroup`
+- **Inputs**: `TextField`, `Select`, `Checkbox`, `Radio`, `Switch`
+- **Data Display**: `Typography`, `Card`, `Chip`, `Avatar`, `Badge`
+- **Feedback**: `Alert`, `Snackbar`, `Dialog`, `Backdrop`, `CircularProgress`
+- **Navigation**: `AppBar`, `Drawer`, `Tabs`, `Menu`, `Breadcrumbs`
 
 ### Critical Rules
-1. **NEVER create custom color CSS variables** - Bootstrap provides everything
-2. **NEVER hardcode hex/rgb colors** - always use Bootstrap variables
-3. **Always test with multiple themes** - switch between light/dark themes to verify
-4. **Use Bootstrap utility classes first** - before writing custom CSS
-5. **For custom CSS, ONLY use Bootstrap variables** - `var(theme.palette.primary)`, etc.
+1. **NEVER hardcode colors** - always use theme palette values
+2. **Use `sx` prop** - for component-level styling with theme access
+3. **Use `useTheme()` hook** - when you need theme values in JavaScript logic
+4. **Always test both modes** - switch between light/dark themes to verify
+5. **Use MUI components** - leverage built-in components before creating custom ones
+6. **Respect spacing** - use `theme.spacing()` for consistent spacing
 
 ## 📊 Charts (ECharts)
 
@@ -207,22 +226,26 @@ Bootstrap provides pre-built classes for colors:
 - Use `useTranslation()` and `useLanguage()` hooks
 - Use `useMemo` for chart options to prevent recalculations
 - Adjust layout based on `isRTL` (title, legend, tooltip positions)
-- Use MUI theme values for all colors (read via JavaScript: `getComputedStyle(document.documentElement).getPropertyValue('theme.palette.primary')`)
+- Use MUI theme colors via `useTheme()` hook
 - Include `data-id-ref` on chart components
 
 ### Chart Color Guidelines
-```javascript
-// Read Bootstrap colors for charts
-const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('theme.palette.primary').trim();
-const successColor = getComputedStyle(document.documentElement).getPropertyValue('theme.palette.success').trim();
-const dangerColor = getComputedStyle(document.documentElement).getPropertyValue('theme.palette.danger').trim();
+```typescript
+// Use MUI theme colors for charts
+const theme = useTheme();
 
 // Use in ECharts options
 const option = {
-  color: [primaryColor, successColor, dangerColor],
-  backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('theme.palette.body-bg').trim(),
+  color: [
+    theme.palette.primary.main,
+    theme.palette.success.main,
+    theme.palette.error.main,
+    theme.palette.warning.main,
+    theme.palette.info.main,
+  ],
+  backgroundColor: theme.palette.background.default,
   textStyle: {
-    color: getComputedStyle(document.documentElement).getPropertyValue('theme.palette.body-color').trim()
+    color: theme.palette.text.primary
   }
 };
 ```
@@ -235,17 +258,16 @@ const option = {
 
 ## 📱 Responsive Design
 
-### Bootstrap Breakpoints
+### MUI Breakpoints
 ⚠️ **MANDATORY: Test all breakpoints** before considering work complete
 
-| Breakpoint | Min Width | Device Type | Class Prefix |
-|------------|-----------|-------------|--------------|
-| xs | < 576px | Small phones | (none) |
-| sm | ≥ 576px | Phones | `sm` |
-| md | ≥ 768px | Tablets | `md` |
-| lg | ≥ 992px | Desktops | `lg` |
-| xl | ≥ 1200px | Large desktops | `xl` |
-| xxl | ≥ 1400px | Extra large desktops | `xxl` |
+| Breakpoint | Min Width | Device Type | Grid Prop |
+|------------|-----------|-------------|-----------|
+| xs | 0px | Small phones | `xs` |
+| sm | 600px | Phones | `sm` |
+| md | 900px | Tablets | `md` |
+| lg | 1200px | Desktops | `lg` |
+| xl | 1536px | Large desktops | `xl` |
 
 ### Test Resolutions
 Must test on these standard resolutions:
@@ -256,9 +278,10 @@ Must test on these standard resolutions:
 - **414x896** - iPhone XR/11
 
 ### Key Patterns
-- Use Bootstrap mobile-first responsive classes (col-12 col-md-6 col-lg-4)
-- Use display utilities (d-none d-md-block) for conditional visibility
-- Use font size utilities (fs-6 fs-md-4 fs-lg-2) for responsive typography
+- Use MUI Grid system with responsive props: `<Grid xs={12} md={6} lg={4}>`
+- Use `sx` prop with breakpoints: `sx={{ display: { xs: 'none', md: 'block' } }}`
+- Use MUI `Typography` with responsive variants
+- Use `useMediaQuery` hook for programmatic breakpoint detection
 - Always include `data-id-ref` attributes on all elements
 
 ### Testing Checklist
@@ -422,14 +445,14 @@ Must test on these standard resolutions:
 - [ ] **Loading States**: Shows appropriate loading indicators
 - [ ] **Empty States**: Handles empty data gracefully
 - [ ] **Auth States**: Works for authenticated/unauthenticated users
-- [ ] **Theme Compatibility**: Works with multiple Bootswatch themes (test light/dark/colorful)
+- [ ] **Theme Compatibility**: Works with both light and dark modes
 - [ ] **Accessibility**: Keyboard navigation and screen readers
 
 ### Manual Testing Process
 1. Test in English (LTR)
 2. Switch to Persian and verify RTL layout
 3. Resize browser through all breakpoints
-4. Try all theme presets
+4. Switch between light and dark themes
 5. Test error scenarios (network failures, invalid input)
 6. Test with authentication (logged in/out)
 7. Check console for errors or warnings
@@ -525,13 +548,13 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 #### 🎨 Live Styling and Layout Inspection
 
 **Real-Time Theme and Layout Testing:**
-⚠️ **MANDATORY: Test all 7 theme presets** and responsive breakpoints
+⚠️ **MANDATORY: Test both light and dark themes** and responsive breakpoints
 
 **Key Testing Procedures:**
-1. **Theme System**: Test multiple Bootswatch themes (light/dark/colorful), use `evaluate_script` to change theme and verify MUI theme values, take screenshots
+1. **Theme System**: Test light and dark modes, use `evaluate_script` to inspect MUI theme values, take screenshots
 2. **Responsive Layout**: Test breakpoints (375×667, 768×1024, 1366×768, 1920×1080) using `resize_page`, check for horizontal scroll and overflow
-3. **RTL Layout**: Switch to Persian using `evaluate_script`, verify dir="rtl" and bootstrap-rtl.css, check for hardcoded left/right positioning
-4. **Bootstrap Variables**: Use `evaluate_script` to inspect `getComputedStyle` and verify all MUI theme values (theme.palette.*) are applied correctly
+3. **RTL Layout**: Switch to Persian using `evaluate_script`, verify MUI RTL handling (direction: 'rtl' in theme), check for hardcoded left/right positioning
+4. **MUI Theme Values**: Use `evaluate_script` to inspect theme palette values and verify correct application
 
 #### ⚡ Performance Audits and Optimization
 
@@ -602,10 +625,10 @@ Protos/           # Protocol buffer definitions
 - [ ] **Date/Time**: Localized date/time formatting used
 
 ### Styling & Theming
-- [ ] **Bootstrap First**: Bootstrap utilities used before custom CSS
-- [ ] **Bootstrap Variables Only**: ONLY MUI theme values (theme.palette.*) used, NO hardcoded colors
-- [ ] **Multiple Themes**: Tested with at least 3 different themes (light, dark, colorful)
-- [ ] **No Inline Styles**: No `style` prop used (use CSS classes)
+- [ ] **MUI Components First**: MUI components used before custom implementations
+- [ ] **MUI Theme Values Only**: ONLY MUI theme palette values used, NO hardcoded colors
+- [ ] **Both Theme Modes**: Tested with both light and dark modes
+- [ ] **Use sx Prop**: MUI `sx` prop preferred over inline styles
 - [ ] **Responsive**: Mobile, tablet, desktop all tested
 - [ ] **RTL Styling**: No broken layouts in RTL mode
 
@@ -641,7 +664,7 @@ Protos/           # Protocol buffer definitions
 - [ ] **i18n**: All chart text translated
 - [ ] **RTL Support**: Legend, tooltip position adjusted for RTL
 - [ ] **Responsive**: Chart resizes with container
-- [ ] **Bootstrap Colors**: Uses MUI theme values read via JavaScript
+- [ ] **MUI Theme Colors**: Uses MUI theme palette colors via `useTheme()` hook
 - [ ] **Theme Compatibility**: Chart colors update when theme changes
 - [ ] **Performance**: `useMemo` used for chart options
 
@@ -686,8 +709,8 @@ Protos/           # Protocol buffer definitions
 - Use functional components with hooks
 - Use TypeScript with strict types
 - Use translation system for all text
-- Use MUI theme values (theme.palette.*) for ALL colors
-- Use Bootstrap utility classes first
+- Use MUI theme palette values for ALL colors
+- Use MUI components first before custom implementations
 - Use lazy loading for routes
 - Use memoization for performance
 - Use error boundaries
@@ -695,16 +718,16 @@ Protos/           # Protocol buffer definitions
 - Use existing patterns and conventions
 - Test in both languages
 - Test RTL layout
-- Test multiple themes (light/dark/colorful)
+- Test both theme modes (light/dark)
 - Test all breakpoints
 
 ### DON'T ❌
 - Don't use class components
 - Don't use `any` type
 - Don't hardcode text strings
-- Don't hardcode colors (hex, rgb, color names) - ONLY use Bootstrap variables
-- Don't create custom color CSS variables
-- Don't use inline styles
+- Don't hardcode colors (hex, rgb, color names) - ONLY use MUI theme palette
+- Don't create custom color variables outside of MUI theme
+- Don't use inline styles when `sx` prop is available
 - Don't use alternate ports
 - Don't skip error handling
 - Don't forget loading states
