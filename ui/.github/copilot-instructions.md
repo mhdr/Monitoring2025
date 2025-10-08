@@ -8,7 +8,7 @@ This is a production-grade enterprise monitoring dashboard with:
 - **Bilingual support** (Persian/English) with full RTL/LTR layouts
 - **Advanced data grids** using AG Grid Enterprise
 - **Secure authentication** with JWT + refresh token rotation
-- **Theme system** with 7 preset themes and CSS custom properties
+- **Theme system** with 26 Bootswatch themes using Bootstrap CSS variables
 - **Interactive charts** using ECharts with i18n support
 
 ## 🌍 Internationalization (i18n)
@@ -59,14 +59,16 @@ This is a production-grade enterprise monitoring dashboard with:
 ⚠️ **MANDATORY: TypeScript strict mode** - All code must be fully typed
 ⚠️ **NO `any` type** - Use `unknown` with type guards or proper interfaces
 ⚠️ **NO class components** - Only functional components with hooks
-⚠️ **NO inline styles** - Use CSS modules or theme CSS variables
+⚠️ **NO inline styles** - Use CSS classes with Bootstrap variables
+⚠️ **NO custom colors** - ONLY use Bootstrap CSS variables (--bs-primary, --bs-body-bg, etc.)
 ⚠️ **MANDATORY: Element identification** - ALL elements created by AI must have `data-id-ref` attribute
 
 ### Component Requirements
 - Always define TypeScript interfaces for component props
 - Use functional components with React.FC type
 - Include `data-id-ref` attribute on all elements
-- No inline styles - use CSS classes or CSS modules
+- No inline styles - use CSS classes with Bootstrap variables
+- ONLY use Bootstrap CSS variables for colors (--bs-primary, --bs-secondary, --bs-success, --bs-danger, --bs-warning, --bs-info, --bs-light, --bs-dark, --bs-body-bg, --bs-body-color, etc.)
 - Use proper event handler typing
 
 ### Code Splitting & Lazy Loading
@@ -105,12 +107,87 @@ This is a production-grade enterprise monitoring dashboard with:
 - Use `AGGridWrapper` component, not vanilla `createGrid()`
 - Enterprise features: Row Grouping, Aggregation, Pivoting, Excel Export, Master-Detail, Advanced Filtering, Server-Side, Tool Panels, Clipboard
 
-## Theme
-⚠️ NEVER hardcode colors/gradients/shadows
-- Files: `src/styles/theme.css`, `src/types/themes.ts`, `src/utils/themeUtils.ts`, `src/hooks/useTheme.ts`, `src/store/slices/themeSlice.ts`
-- Presets: Default, Green, Purple, Orange, Red, Teal, Indigo
-- Vars: `--primary-{dark,medium,light,lighter,darker}`, `--accent-{primary,hover,active}`, `--text-{primary,secondary}-{light,dark}`, `--success/warning/error/info`, `--bg-primary-{light,dark}`, `--border-{light,medium,dark}`, `--shadow-{xs,sm,md,lg,xl,2xl}`, `--gradient-{primary,sidebar,navbar,button,button-hover,button-disabled}`
-- Always use CSS variables: `var(--primary-dark)`, `var(--shadow-md)`
+## 🎨 Theme System (Bootstrap + Bootswatch)
+
+⚠️ **CRITICAL: The project uses Bootstrap and Bootswatch themes exclusively**
+⚠️ **NEVER hardcode colors, gradients, or shadows**
+⚠️ **ONLY use Bootstrap CSS variables (--bs-*)**
+
+### How Theming Works
+1. User selects a Bootswatch theme (or default Bootstrap) from 26 available themes
+2. `bootswatchLoader.ts` dynamically loads the theme CSS file
+   - For Persian (RTL): loads `bootstrap.rtl.min.css` variant
+   - For English (LTR): loads `bootstrap.min.css` variant
+3. Bootstrap CSS variables are automatically set by the loaded theme
+4. All UI elements, charts, and components use Bootstrap variables directly
+
+### Files
+- **Theme Types**: `src/types/themes.ts` (BootswatchTheme interface, 26 themes)
+- **Theme Loader**: `src/utils/bootswatchLoader.ts` (dynamic CSS loading)
+- **Theme Utils**: `src/utils/themeUtils.ts` (applyTheme, getCurrentThemeColors)
+- **Theme Hook**: `src/hooks/useTheme.ts` (React hook for theme management)
+- **Theme State**: `src/store/slices/themeSlice.ts` (Redux state)
+- **Theme CSS**: `src/styles/theme.css` (global overrides using Bootstrap vars)
+
+### Available Themes (26 Total)
+**Default**: Bootstrap 5 (no Bootswatch)
+**Light Themes** (16): Cerulean, Cosmo, Flatly, Journal, Litera, Lumen, Lux, Materia, Minty, Morph, Pulse, Quartz, Sandstone, Simplex, Spacelab, Yeti, Zephyr
+**Dark Themes** (6): Cyborg, Darkly, Slate, Solar, Superhero, Vapor
+**Colorful Themes** (2): Sketchy, United
+
+### Bootstrap CSS Variables (MANDATORY)
+**Colors**: `--bs-primary`, `--bs-secondary`, `--bs-success`, `--bs-info`, `--bs-warning`, `--bs-danger`, `--bs-light`, `--bs-dark`
+
+**RGB Variants** (for rgba usage): `--bs-primary-rgb`, `--bs-secondary-rgb`, `--bs-success-rgb`, `--bs-danger-rgb`, etc.
+
+**Body**: `--bs-body-bg`, `--bs-body-color`, `--bs-body-bg-rgb`, `--bs-body-color-rgb`
+
+**Text**: `--bs-emphasis-color`, `--bs-secondary-color`, `--bs-tertiary-color`
+
+**Backgrounds**: `--bs-secondary-bg`, `--bs-tertiary-bg`
+
+**Borders**: `--bs-border-color`, `--bs-border-width`, `--bs-border-radius`
+
+**Shadows**: `--bs-box-shadow`, `--bs-box-shadow-sm`, `--bs-box-shadow-lg`
+
+**Links**: `--bs-link-color`, `--bs-link-hover-color`
+
+### Usage Examples
+```css
+/* Correct - Use Bootstrap variables */
+.my-component {
+  background-color: var(--bs-primary);
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-border-color);
+  box-shadow: var(--bs-box-shadow);
+}
+
+/* Correct - Use RGB variants for transparency */
+.overlay {
+  background-color: rgba(var(--bs-dark-rgb), 0.8);
+  border: 1px solid rgba(var(--bs-primary-rgb), 0.3);
+}
+
+/* WRONG - Never hardcode colors */
+.my-component {
+  background-color: #007bff;  /* ❌ WRONG */
+  color: #212529;              /* ❌ WRONG */
+}
+```
+
+### Bootstrap Classes (Use These First)
+Bootstrap provides pre-built classes for colors:
+- **Text**: `.text-primary`, `.text-secondary`, `.text-success`, `.text-danger`, `.text-warning`, `.text-info`, `.text-light`, `.text-dark`, `.text-body`, `.text-muted`
+- **Backgrounds**: `.bg-primary`, `.bg-secondary`, `.bg-success`, `.bg-danger`, `.bg-warning`, `.bg-info`, `.bg-light`, `.bg-dark`, `.bg-body`
+- **Buttons**: `.btn-primary`, `.btn-secondary`, `.btn-success`, `.btn-danger`, `.btn-warning`, `.btn-info`, `.btn-light`, `.btn-dark`
+- **Borders**: `.border`, `.border-primary`, `.border-secondary`, etc.
+
+### Critical Rules
+1. **NEVER create custom color CSS variables** - Bootstrap provides everything
+2. **NEVER hardcode hex/rgb colors** - always use Bootstrap variables
+3. **Always test with multiple themes** - switch between light/dark themes to verify
+4. **Use Bootstrap utility classes first** - before writing custom CSS
+5. **For custom CSS, ONLY use Bootstrap variables** - `var(--bs-primary)`, etc.
 
 ## 📊 Charts (ECharts)
 
@@ -130,8 +207,25 @@ This is a production-grade enterprise monitoring dashboard with:
 - Use `useTranslation()` and `useLanguage()` hooks
 - Use `useMemo` for chart options to prevent recalculations
 - Adjust layout based on `isRTL` (title, legend, tooltip positions)
-- Use theme CSS variables for all colors
+- Use Bootstrap CSS variables for all colors (read via JavaScript: `getComputedStyle(document.documentElement).getPropertyValue('--bs-primary')`)
 - Include `data-id-ref` on chart components
+
+### Chart Color Guidelines
+```javascript
+// Read Bootstrap colors for charts
+const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim();
+const successColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-success').trim();
+const dangerColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-danger').trim();
+
+// Use in ECharts options
+const option = {
+  color: [primaryColor, successColor, dangerColor],
+  backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bs-body-bg').trim(),
+  textStyle: {
+    color: getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color').trim()
+  }
+};
+```
 
 ### Performance Tips
 - Use `useMemo` to prevent unnecessary option recalculations
@@ -328,7 +422,7 @@ Must test on these standard resolutions:
 - [ ] **Loading States**: Shows appropriate loading indicators
 - [ ] **Empty States**: Handles empty data gracefully
 - [ ] **Auth States**: Works for authenticated/unauthenticated users
-- [ ] **Theme Compatibility**: Works with all 7 theme presets
+- [ ] **Theme Compatibility**: Works with multiple Bootswatch themes (test light/dark/colorful)
 - [ ] **Accessibility**: Keyboard navigation and screen readers
 
 ### Manual Testing Process
@@ -434,10 +528,10 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 ⚠️ **MANDATORY: Test all 7 theme presets** and responsive breakpoints
 
 **Key Testing Procedures:**
-1. **Theme System**: Loop through all 7 themes, use `evaluate_script` to set theme attribute and capture CSS variables, take screenshots
+1. **Theme System**: Test multiple Bootswatch themes (light/dark/colorful), use `evaluate_script` to change theme and verify Bootstrap CSS variables, take screenshots
 2. **Responsive Layout**: Test breakpoints (375×667, 768×1024, 1366×768, 1920×1080) using `resize_page`, check for horizontal scroll and overflow
 3. **RTL Layout**: Switch to Persian using `evaluate_script`, verify dir="rtl" and bootstrap-rtl.css, check for hardcoded left/right positioning
-4. **CSS Variables**: Use `evaluate_script` to inspect `getComputedStyle` and verify all theme CSS variables are applied correctly
+4. **Bootstrap Variables**: Use `evaluate_script` to inspect `getComputedStyle` and verify all Bootstrap CSS variables (--bs-*) are applied correctly
 
 #### ⚡ Performance Audits and Optimization
 
@@ -509,8 +603,8 @@ Protos/           # Protocol buffer definitions
 
 ### Styling & Theming
 - [ ] **Bootstrap First**: Bootstrap utilities used before custom CSS
-- [ ] **Theme Variables**: Only CSS variables used, no hardcoded colors
-- [ ] **All Themes**: Tested with all 7 theme presets
+- [ ] **Bootstrap Variables Only**: ONLY Bootstrap CSS variables (--bs-*) used, NO hardcoded colors
+- [ ] **Multiple Themes**: Tested with at least 3 different themes (light, dark, colorful)
 - [ ] **No Inline Styles**: No `style` prop used (use CSS classes)
 - [ ] **Responsive**: Mobile, tablet, desktop all tested
 - [ ] **RTL Styling**: No broken layouts in RTL mode
@@ -547,7 +641,8 @@ Protos/           # Protocol buffer definitions
 - [ ] **i18n**: All chart text translated
 - [ ] **RTL Support**: Legend, tooltip position adjusted for RTL
 - [ ] **Responsive**: Chart resizes with container
-- [ ] **Theme Colors**: Uses CSS variables for colors
+- [ ] **Bootstrap Colors**: Uses Bootstrap CSS variables read via JavaScript
+- [ ] **Theme Compatibility**: Chart colors update when theme changes
 - [ ] **Performance**: `useMemo` used for chart options
 
 ### Performance
@@ -591,8 +686,8 @@ Protos/           # Protocol buffer definitions
 - Use functional components with hooks
 - Use TypeScript with strict types
 - Use translation system for all text
-- Use theme CSS variables for styling
-- Use Bootstrap utilities first
+- Use Bootstrap CSS variables (--bs-*) for ALL colors
+- Use Bootstrap utility classes first
 - Use lazy loading for routes
 - Use memoization for performance
 - Use error boundaries
@@ -600,13 +695,15 @@ Protos/           # Protocol buffer definitions
 - Use existing patterns and conventions
 - Test in both languages
 - Test RTL layout
+- Test multiple themes (light/dark/colorful)
 - Test all breakpoints
 
 ### DON'T ❌
 - Don't use class components
 - Don't use `any` type
 - Don't hardcode text strings
-- Don't hardcode colors/styles
+- Don't hardcode colors (hex, rgb, color names) - ONLY use Bootstrap variables
+- Don't create custom color CSS variables
 - Don't use inline styles
 - Don't use alternate ports
 - Don't skip error handling
@@ -615,5 +712,6 @@ Protos/           # Protocol buffer definitions
 - Don't forget to clean up streams/subscriptions
 - Don't skip RTL testing
 - Don't skip responsive testing
+- Don't skip theme compatibility testing
 - Don't log sensitive data
 - Don't use outdated Protobuf patterns (v1)
