@@ -4,16 +4,16 @@
   justify-content: center;
   min-height: 400px;
   padding: 2rem;
-  background-color: var(--bg-secondary-light);
+  background-color: var(--bs-light);
 }
 
 .lazy-error-boundary .error-content {
   max-width: 600px;
   text-align: center;
   padding: 2rem;
-  background: var(--bg-white);
+  background: var(--bs-body-bg);
   border-radius: 8px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bs-box-shadow);
 }
 
 .lazy-error-boundary .error-icon {
@@ -30,12 +30,12 @@
 }
 
 .lazy-error-boundary .error-title {
-  color: var(--text-black);
+  color: var(--bs-body-color);
   font-weight: 600;
 }
 
 .lazy-error-boundary .error-message {
-  color: var(--text-gray);
+  color: var(--bs-secondary-color);
   line-height: 1.6;
 }
 

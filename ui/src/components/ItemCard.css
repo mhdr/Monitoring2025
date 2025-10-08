@@ -4,13 +4,13 @@
   border-radius: 0.5rem;
   padding: 1rem;
   transition: all 0.2s ease;
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--bs-box-shadow-sm);
 }
 
 .item-card:hover {
   background-color: var(--bs-secondary-bg);
   border-color: var(--bs-primary);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bs-box-shadow);
 }
 
 .item-card-header {

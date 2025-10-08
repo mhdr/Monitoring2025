@@ -18,7 +18,7 @@
   background-color: var(--bs-secondary-bg);
   border-color: var(--bs-primary);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bs-box-shadow);
 }
 
 .group-card:active {
@@ -36,7 +36,7 @@
 
 .group-card-icon {
   font-size: 3.5rem;
-  color: var(--warning);
+  color: var(--bs-warning);
   margin-bottom: 1rem;
   transition: transform 0.2s ease, color 0.2s ease;
 }

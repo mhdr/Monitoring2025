@@ -13,9 +13,9 @@
 }
 
 .sync-card {
-  background: var(--bg-primary-light);
+  background: var(--bs-body-bg);
   border-radius: 0.75rem;
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--bs-box-shadow-lg);
   max-width: 480px;
   width: 100%;
 }
@@ -30,7 +30,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bs-box-shadow);
 }
 
 .sync-icon {
@@ -59,7 +59,7 @@
 /* Progress Bar Styles */
 .sync-overall-progress {
   height: 6px;
-  background-color: var(--bg-secondary-light);
+  background-color: var(--bs-light);
   border-radius: 0.5rem;
   overflow: hidden;
 }
@@ -76,7 +76,7 @@
 .sync-progress-item {
   margin-bottom: 0.75rem;
   padding: 0.65rem;
-  background: var(--bg-secondary-light);
+  background: var(--bs-light);
   border-radius: 0.5rem;
   border: 1px solid var(--bs-border-color);
 }
@@ -95,7 +95,7 @@
 
 .sync-progress-bar {
   height: 4px;
-  background-color: var(--bg-primary-light);
+  background-color: var(--bs-body-bg);
   border-radius: 0.375rem;
   overflow: hidden;
 }
@@ -118,13 +118,13 @@
 }
 
 .sync-status-messages .alert-success {
-  background-color: rgba(var(--success-rgb), 0.1);
-  color: var(--success);
+  background-color: rgba(var(--bs-success-rgb), 0.1);
+  color: var(--bs-success);
 }
 
 .sync-status-messages .alert-danger {
-  background-color: rgba(var(--error-rgb), 0.1);
-  color: var(--error);
+  background-color: rgba(var(--bs-danger-rgb), 0.1);
+  color: var(--bs-danger);
 }
 
 /* Button Styles */
@@ -136,7 +136,7 @@
 
 .sync-status-messages .btn:hover {
   transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--bs-box-shadow-sm);
 }
 
 .sync-status-messages .btn:focus {
@@ -366,7 +366,7 @@
 }
 
 [data-theme="dark"] .sync-card {
-  background: var(--bg-primary-dark);
+  background: var(--bs-dark);
   border-color: var(--bs-border-color);
 }
 
@@ -379,16 +379,16 @@
 }
 
 [data-theme="dark"] .sync-progress-item {
-  background: var(--bg-secondary-dark);
+  background: var(--bs-gray-800);
   border-color: var(--bs-border-color);
 }
 
 [data-theme="dark"] .sync-overall-progress {
-  background-color: var(--bg-secondary-dark);
+  background-color: var(--bs-gray-800);
 }
 
 [data-theme="dark"] .sync-progress-bar {
-  background-color: var(--bg-primary-dark);
+  background-color: var(--bs-dark);
 }
 
 /* Loading Animation for Status Icons */

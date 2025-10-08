@@ -30,7 +30,7 @@
 }
 
 .settings-card:hover {
-  box-shadow: var(--shadow-md) !important;
+  box-shadow: var(--bs-box-shadow) !important;
   transform: translateY(-2px);
 }
 
@@ -67,15 +67,15 @@
 
 .language-option-btn:hover {
   border-color: var(--bs-primary);
-  background: var(--bg-primary-light);
+  background: var(--bs-body-bg);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--bs-box-shadow-sm);
 }
 
 .language-option-btn.active {
   border-color: var(--bs-primary);
-  background: linear-gradient(135deg, var(--bg-primary-light) 0%, white 100%);
-  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, var(--bs-body-bg) 0%, white 100%);
+  box-shadow: var(--bs-box-shadow);
 }
 
 .language-option-btn .language-flag {

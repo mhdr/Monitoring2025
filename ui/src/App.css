@@ -34,7 +34,7 @@ body.ltr #root {
 
 .hover-lift:hover {
   transform: translateY(-5px);
-  box-shadow: var(--shadow-primary-lg) !important;
+  box-shadow: var(--bs-box-shadow-lg) !important;
 }
 
 /* Light mode adjustments */

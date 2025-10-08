@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-primary-light);
+  background-color: var(--bs-body-bg);
   border: 1px solid var(--bs-border-color);
   border-radius: 8px;
 }
@@ -41,7 +41,7 @@
   position: relative;
   overflow: hidden;
   border-radius: 8px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--bs-box-shadow-sm);
 }
 
 /* RTL Support */
@@ -63,14 +63,14 @@
   
   /* Primary Color Integration */
   --ag-alpine-active-color: var(--bs-secondary);
-  --ag-selected-row-background-color: var(--primary-lighter);
+  --ag-selected-row-background-color: var(--bs-light);
   --ag-range-selection-border-color: var(--bs-secondary);
   
   /* Background Colors */
-  --ag-background-color: var(--bg-primary-light);
-  --ag-header-background-color: var(--bg-secondary-light);
-  --ag-odd-row-background-color: var(--bg-primary-light);
-  --ag-row-hover-color: var(--primary-lighter);
+  --ag-background-color: var(--bs-body-bg);
+  --ag-header-background-color: var(--bs-light);
+  --ag-odd-row-background-color: var(--bs-body-bg);
+  --ag-row-hover-color: var(--bs-light);
   
   /* Border Colors */
   --ag-border-color: var(--bs-border-color);
@@ -95,9 +95,9 @@
 .dark-theme .ag-theme-alpine,
 .dark-theme .ag-theme-balham,
 .dark-theme .ag-theme-material {
-  --ag-background-color: var(--bg-primary-dark);
-  --ag-header-background-color: var(--bg-secondary-dark);
-  --ag-odd-row-background-color: var(--bg-primary-dark);
+  --ag-background-color: var(--bs-dark);
+  --ag-header-background-color: var(--bs-gray-800);
+  --ag-odd-row-background-color: var(--bs-dark);
   --ag-foreground-color: var(--bs-light);
   --ag-secondary-foreground-color: var(rgba(var(--bs-white-rgb), 0.75));
   --ag-header-foreground-color: var(--bs-light);
@@ -136,46 +136,46 @@
 .ag-paging-panel {
   border-top: 2px solid var(--bs-border-color);
   padding: 0.75rem 1rem;
-  background-color: var(--bg-secondary-light);
+  background-color: var(--bs-light);
 }
 
 .dark-theme .ag-paging-panel {
-  background-color: var(--bg-secondary-dark);
+  background-color: var(--bs-gray-800);
 }
 
 /* Filter Panel */
 .ag-filter {
-  background-color: var(--bg-primary-light);
+  background-color: var(--bs-body-bg);
   border: 1px solid var(--bs-border-color);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bs-box-shadow);
 }
 
 .dark-theme .ag-filter {
-  background-color: var(--bg-primary-dark);
+  background-color: var(--bs-dark);
 }
 
 /* Context Menu */
 .ag-menu {
-  background-color: var(--bg-primary-light);
+  background-color: var(--bs-body-bg);
   border: 1px solid var(--bs-border-color);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--bs-box-shadow-lg);
 }
 
 .dark-theme .ag-menu {
-  background-color: var(--bg-primary-dark);
+  background-color: var(--bs-dark);
 }
 
 .ag-menu-option-active {
-  background-color: var(--primary-lighter);
+  background-color: var(--bs-light);
 }
 
 /* Column Menu */
 .ag-column-select-panel {
-  background-color: var(--bg-primary-light);
+  background-color: var(--bs-body-bg);
 }
 
 .dark-theme .ag-column-select-panel {
-  background-color: var(--bg-primary-dark);
+  background-color: var(--bs-dark);
 }
 
 /* Scrollbar Styling */
@@ -187,12 +187,12 @@
 
 .ag-body-horizontal-scroll::-webkit-scrollbar-track,
 .ag-body-vertical-scroll::-webkit-scrollbar-track {
-  background: var(--bg-secondary-light);
+  background: var(--bs-light);
 }
 
 .dark-theme .ag-body-horizontal-scroll::-webkit-scrollbar-track,
 .dark-theme .ag-body-vertical-scroll::-webkit-scrollbar-track {
-  background: var(--bg-secondary-dark);
+  background: var(--bs-gray-800);
 }
 
 .ag-body-horizontal-scroll::-webkit-scrollbar-thumb,
@@ -234,11 +234,11 @@
 
 /* No Rows Overlay */
 .ag-overlay-no-rows-wrapper {
-  background-color: var(--bg-primary-light);
+  background-color: var(--bs-body-bg);
 }
 
 .dark-theme .ag-overlay-no-rows-wrapper {
-  background-color: var(--bg-primary-dark);
+  background-color: var(--bs-dark);
 }
 
 /* Selection Checkbox */

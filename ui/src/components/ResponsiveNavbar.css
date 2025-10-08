@@ -115,11 +115,11 @@
 }
 
 .user-dropdown .dropdown-menu {
-  background: var(--surface-light);
+  background: var(--bs-body-bg);
   backdrop-filter: blur(10px);
-  border: 1px solid var(--overlay-lighter);
+  border: 1px solid var(--bs-border-color);
   border-radius: var(--bs-border-radius-lg);
-  box-shadow: var(--shadow-primary-lg);
+  box-shadow: var(--bs-box-shadow-lg);
   margin-top: 0.5rem;
   min-width: 200px;
   max-height: calc(100vh - 100px);
@@ -145,8 +145,8 @@
 }
 
 .user-dropdown .dropdown-item.text-danger:hover {
-  background: var(--error-bg);
-  color: var(--error) !important;
+  background: rgba(var(--bs-danger-rgb), 0.1);
+  color: var(--bs-danger) !important;
 }
 
 /* RTL Support */
@@ -197,17 +197,17 @@
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .user-dropdown .dropdown-menu {
-    background: var(--surface-dark);
-    color: var(--bg-lighter-gray);
+    background: var(--bs-dark);
+    color: var(--bs-light);
   }
   
   .user-dropdown .dropdown-item {
-    color: var(--bg-lighter-gray);
+    color: var(--bs-light);
   }
   
   .user-dropdown .dropdown-item:hover {
     background: rgba(var(--bs-primary-rgb), 0.2);
-    color: var(--bg-lighter-gray);
+    color: var(--bs-light);
   }
 }
 

@@ -65,7 +65,7 @@
   padding: 0.625rem 0.5rem;
   border: 2px solid transparent;
   border-radius: var(--bs-border-radius);
-  background: var(--bg-secondary-light);
+  background: var(--bs-light);
   cursor: pointer;
   transition: all var(--transition-base) ease;
   position: relative;
@@ -76,13 +76,13 @@
   border-color: rgba(var(--bs-primary-rgb), 0.3);
   background: rgba(var(--bs-primary-rgb), 0.05);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--bs-box-shadow-sm);
 }
 
 .theme-option.active {
   border-color: var(--bs-primary);
   background: rgba(var(--bs-primary-rgb), 0.1);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bs-box-shadow);
 }
 
 .theme-option.active::after {
@@ -143,7 +143,7 @@
   }
 
   .theme-option {
-    background: var(--bg-secondary-dark);
+    background: var(--bs-gray-800);
   }
 
   .theme-name {

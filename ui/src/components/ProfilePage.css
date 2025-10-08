@@ -25,13 +25,13 @@
 .profile-card {
   border: 1px solid var(--bs-border-color);
   border-radius: 12px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--bs-box-shadow-sm);
   transition: box-shadow 0.3s ease;
-  background: var(--bg-primary-light);
+  background: var(--bs-body-bg);
 }
 
 .profile-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bs-box-shadow);
 }
 
 .profile-card .card-title {
@@ -109,16 +109,16 @@
 }
 
 .profile-page .form-control.is-invalid {
-  border-color: var(--error);
+  border-color: var(--bs-danger);
 }
 
 .profile-page .form-control.is-invalid:focus {
-  box-shadow: 0 0 0 0.2rem rgba(var(--error-rgb), 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-danger-rgb), 0.25);
 }
 
 .profile-page .invalid-feedback {
   font-size: 0.875rem;
-  color: var(--error);
+  color: var(--bs-danger);
   margin-top: 0.25rem;
 }
 
@@ -137,19 +137,19 @@
 }
 
 .profile-page .btn-primary:hover:not(:disabled) {
-  background: var(--gradient-button-hover);
+  background: linear-gradient(135deg, var(--bs-primary-dark) 0%, var(--bs-primary) 100%);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bs-box-shadow);
 }
 
 .profile-page .btn-primary:disabled {
-  background: var(--gradient-button-disabled);
+  background: linear-gradient(135deg, var(--bs-secondary) 0%, var(--bs-light) 100%);
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 .profile-page .btn-secondary {
-  background-color: var(--bg-primary-dark);
+  background-color: var(--bs-secondary);
   color: var(--bs-light);
   border: 1px solid var(--bs-border-color);
 }
@@ -157,7 +157,7 @@
 .profile-page .btn-secondary:hover:not(:disabled) {
   background-color: rgba(var(--bs-dark-rgb), 0.8);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--bs-box-shadow-sm);
 }
 
 /* Alert Styles */
@@ -170,15 +170,15 @@
 }
 
 .profile-page .alert-success {
-  background-color: rgba(var(--success-rgb), 0.1);
-  color: var(--success);
-  border-left: 4px solid var(--success);
+  background-color: rgba(var(--bs-success-rgb), 0.1);
+  color: var(--bs-success);
+  border-left: 4px solid var(--bs-success);
 }
 
 .profile-page .alert-danger {
-  background-color: rgba(var(--error-rgb), 0.1);
-  color: var(--error);
-  border-left: 4px solid var(--error);
+  background-color: rgba(var(--bs-danger-rgb), 0.1);
+  color: var(--bs-danger);
+  border-left: 4px solid var(--bs-danger);
 }
 
 .profile-page .alert .btn-close {
@@ -301,7 +301,7 @@
   }
 
   .profile-card {
-    background: var(--bg-primary-dark);
+    background: var(--bs-dark);
   }
 
   .profile-card .card-title {
@@ -321,12 +321,12 @@
   }
 
   .profile-page .form-control {
-    background-color: rgba(var(--bg-primary-dark-rgb), 0.5);
+    background-color: rgba(var(--bs-dark-rgb), 0.5);
     color: var(--bs-light);
     border-color: var(--bs-gray-700);
   }
 
   .profile-page .form-control:focus {
-    background-color: rgba(var(--bg-primary-dark-rgb), 0.7);
+    background-color: rgba(var(--bs-dark-rgb), 0.7);
   }
 }

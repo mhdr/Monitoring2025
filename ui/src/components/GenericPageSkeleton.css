@@ -1,9 +1,9 @@
 .generic-skeleton {
   min-height: 400px;
-  background-color: var(--bg-secondary-light);
+  background-color: var(--bs-light);
 }
 
 .generic-skeleton .card {
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--bs-border-color);
+  box-shadow: var(--bs-box-shadow-sm);
 }
