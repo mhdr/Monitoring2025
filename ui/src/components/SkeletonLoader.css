@@ -1,8 +1,8 @@
 .skeleton-loader {
-  background: var(--gradient-shimmer-light);
+  background: linear-gradient(90deg, var(--bs-secondary-bg) 25%, var(--bs-tertiary-bg) 50%, var(--bs-secondary-bg) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
-  border-radius: var(--radius-sm);
+  border-radius: var(--bs-border-radius-sm);
 }
 
 @keyframes skeleton-loading {
@@ -24,7 +24,7 @@
 }
 
 .skeleton-rectangular {
-  border-radius: var(--radius-md);
+  border-radius: var(--bs-border-radius);
 }
 
 /* Dark mode support (if needed in future) */

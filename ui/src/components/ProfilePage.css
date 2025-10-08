@@ -12,18 +12,18 @@
 .profile-page .page-title {
   font-size: 2rem;
   font-weight: 600;
-  color: var(--text-primary-dark);
+  color: var(--bs-body-color);
   margin-bottom: 0.5rem;
 }
 
 .profile-page .page-subtitle {
   font-size: 1rem;
-  color: var(--text-secondary-dark);
+  color: var(--bs-secondary-color);
   margin-bottom: 0;
 }
 
 .profile-card {
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--bs-border-color);
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.3s ease;
@@ -37,20 +37,20 @@
 .profile-card .card-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text-primary-dark);
+  color: var(--bs-body-color);
   display: flex;
   align-items: center;
 }
 
 .profile-card .card-title i {
   font-size: 1.5rem;
-  color: var(--primary-medium);
+  color: var(--bs-secondary);
 }
 
 /* User Information Styles */
 .user-info-content .info-item {
   padding: 0.75rem 0;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--bs-border-color);
 }
 
 .user-info-content .info-item:last-child {
@@ -62,7 +62,7 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-secondary-dark);
+  color: var(--bs-secondary-color);
   margin-bottom: 0.25rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -70,7 +70,7 @@
 
 .user-info-content .info-value {
   font-size: 1rem;
-  color: var(--text-primary-dark);
+  color: var(--bs-body-color);
   font-weight: 500;
 }
 
@@ -85,18 +85,18 @@
   font-weight: 500;
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  background: var(--gradient-button) !important;
+  background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary) 100%) !important;
 }
 
 /* Change Password Form Styles */
 .profile-page .form-label {
   font-weight: 600;
-  color: var(--text-primary-dark);
+  color: var(--bs-body-color);
   margin-bottom: 0.5rem;
 }
 
 .profile-page .form-control {
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--bs-border-color);
   border-radius: 8px;
   padding: 0.75rem 1rem;
   font-size: 1rem;
@@ -104,8 +104,8 @@
 }
 
 .profile-page .form-control:focus {
-  border-color: var(--primary-medium);
-  box-shadow: 0 0 0 0.2rem rgba(var(--primary-medium-rgb), 0.25);
+  border-color: var(--bs-secondary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-secondary-rgb), 0.25);
 }
 
 .profile-page .form-control.is-invalid {
@@ -132,8 +132,8 @@
 }
 
 .profile-page .btn-primary {
-  background: var(--gradient-button);
-  color: var(--text-primary-light);
+  background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary) 100%);
+  color: var(--bs-light);
 }
 
 .profile-page .btn-primary:hover:not(:disabled) {
@@ -150,12 +150,12 @@
 
 .profile-page .btn-secondary {
   background-color: var(--bg-primary-dark);
-  color: var(--text-primary-light);
-  border: 1px solid var(--border-medium);
+  color: var(--bs-light);
+  border: 1px solid var(--bs-border-color);
 }
 
 .profile-page .btn-secondary:hover:not(:disabled) {
-  background-color: rgba(var(--primary-dark-rgb), 0.8);
+  background-color: rgba(var(--bs-dark-rgb), 0.8);
   transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
 }
@@ -293,11 +293,11 @@
 /* Dark Mode Support (if needed in the future) */
 @media (prefers-color-scheme: dark) {
   .profile-page .page-title {
-    color: var(--text-primary-light);
+    color: var(--bs-light);
   }
 
   .profile-page .page-subtitle {
-    color: var(--text-secondary-light);
+    color: var(rgba(var(--bs-white-rgb), 0.75));
   }
 
   .profile-card {
@@ -305,25 +305,25 @@
   }
 
   .profile-card .card-title {
-    color: var(--text-primary-light);
+    color: var(--bs-light);
   }
 
   .user-info-content .info-label {
-    color: var(--text-secondary-light);
+    color: var(rgba(var(--bs-white-rgb), 0.75));
   }
 
   .user-info-content .info-value {
-    color: var(--text-primary-light);
+    color: var(--bs-light);
   }
 
   .profile-page .form-label {
-    color: var(--text-primary-light);
+    color: var(--bs-light);
   }
 
   .profile-page .form-control {
     background-color: rgba(var(--bg-primary-dark-rgb), 0.5);
-    color: var(--text-primary-light);
-    border-color: var(--border-dark);
+    color: var(--bs-light);
+    border-color: var(--bs-gray-700);
   }
 
   .profile-page .form-control:focus {

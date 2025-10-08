@@ -24,7 +24,7 @@ body.ltr #root {
 
 /* Custom Bootstrap gradient background for header */
 .bg-gradient {
-  background: var(--gradient-navbar) !important;
+  background: linear-gradient(135deg, var(--bs-dark) 0%, var(--bs-secondary) 100%) !important;
 }
 
 /* Hover effect for cards */

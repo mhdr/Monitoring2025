@@ -5,17 +5,16 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: var(--text-white-87);
-  background-color: var(--bg-secondary-dark);
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Note: All color variables are now defined in styles/theme.css */
-  /* These legacy variable names are kept for backward compatibility */
-  /* but will reference the new theme variables */
+  /* Note: All colors come from Bootstrap CSS variables (--bs-*) */
+  /* Bootstrap/Bootswatch themes provide all color definitions */
 }
 
 /* Variable Font Support - for modern browsers */
@@ -88,8 +87,8 @@ body {
 /* Light mode adjustments */
 @media (prefers-color-scheme: light) {
   :root {
-    color: var(--text-primary-dark);
-    background-color: var(--bg-white);
+    color: var(--bs-body-color);
+    background-color: var(--bs-body-bg);
   }
 }
 

@@ -62,7 +62,7 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ isOpen, onToggle }) => {
         className={`sidebar ${language === 'fa' ? 'sidebar-rtl' : 'sidebar-ltr'} ${isOpen ? 'sidebar-open' : ''}`}
         dir={language === 'fa' ? 'rtl' : 'ltr'}
         data-sidebar="detail"
-        style={{ backgroundColor: 'var(--primary-dark)' }}
+        style={{ backgroundColor: 'var(--bs-dark)' }}
         data-id-ref="detail-sidebar-root-container"
       >
         <div className="sidebar-header" data-id-ref="detail-sidebar-header">

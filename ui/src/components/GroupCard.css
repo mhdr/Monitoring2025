@@ -43,7 +43,7 @@
 
 .group-card:hover .group-card-icon {
   transform: scale(1.1);
-  color: var(--accent-primary);
+  color: var(--bs-primary);
 }
 
 .group-card-content {
