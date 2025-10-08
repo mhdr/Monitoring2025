@@ -51,8 +51,9 @@ function loadScript(src: string): Promise<void> {
  * Load a stylesheet dynamically
  * @deprecated Not used with Theming API, kept for potential future use
  */
+/*
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function loadStylesheet(href: string): Promise<void> {
+function _loadStylesheet(href: string): Promise<void> {
   return new Promise((resolve, reject) => {
     // Check if stylesheet already exists
     const existingLink = document.querySelector(`link[href="${href}"]`);
@@ -69,6 +70,7 @@ function loadStylesheet(href: string): Promise<void> {
     document.head.appendChild(link);
   });
 }
+*/
 
 /**
  * Load AG Grid Enterprise library

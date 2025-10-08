@@ -32,7 +32,7 @@ interface UseAGGridReturn {
 /**
  * Custom hook for AG Grid integration
  */
-export const useAGGrid = (options: UseAGGridOptions = {}): UseAGGridReturn => {
+export const useAGGrid = (_options: UseAGGridOptions = {}): UseAGGridReturn => {
   const gridApiRef = useRef<AGGridApi | null>(null);
   const [gridApi, setGridApiState] = useState<AGGridApi | null>(null);
 
@@ -47,7 +47,7 @@ export const useAGGrid = (options: UseAGGridOptions = {}): UseAGGridReturn => {
   /**
    * Handle grid ready event
    */
-  const handleGridReady = useCallback((api: AGGridApi, columnApi?: AGGridApi) => {
+  const handleGridReady = useCallback((api: AGGridApi, _columnApi?: AGGridApi) => {
     setGridApi(api);
   }, [setGridApi]);
 

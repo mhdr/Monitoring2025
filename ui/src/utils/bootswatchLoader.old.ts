@@ -1,10 +1,8 @@
 /**
  * Bootswatch Theme Loader Utility
  * 
- * This utility dynamically loads Bootswatch CSS files from local node_modules
- * and extracts colors from the loaded theme to update custom CSS variables for charts, icons, and other elements.
- * 
- * All theme files are bundled offline for use without internet access.
+ * This utility dynamically loads Bootswatch CSS files and extracts colors
+ * from the loaded theme to update custom CSS variables for charts, icons, and other elements.
  */
 
 import type { BootswatchTheme } from '../types/themes';
@@ -30,7 +28,7 @@ interface BootstrapColors {
 /**
  * Current theme colors interface for custom CSS variables
  */
-export interface CurrentThemeColors extends Record<string, string> {
+export interface CurrentThemeColors {
   primaryDark: string;
   primaryMedium: string;
   primaryLight: string;
@@ -44,111 +42,49 @@ export interface CurrentThemeColors extends Record<string, string> {
 // ID for the dynamically loaded Bootswatch theme stylesheet
 const BOOTSWATCH_LINK_ID = 'bootswatch-theme-stylesheet';
 
-// Dynamic imports for all Bootswatch themes (LTR and RTL)
-// Vite will process these at build time and bundle them for offline use
-const bootswatchThemes: Record<string, Record<string, () => Promise<{ default: string }>>> = {
-  ltr: {
-    cerulean: () => import('bootswatch/dist/cerulean/bootstrap.min.css?url'),
-    cosmo: () => import('bootswatch/dist/cosmo/bootstrap.min.css?url'),
-    cyborg: () => import('bootswatch/dist/cyborg/bootstrap.min.css?url'),
-    darkly: () => import('bootswatch/dist/darkly/bootstrap.min.css?url'),
-    flatly: () => import('bootswatch/dist/flatly/bootstrap.min.css?url'),
-    journal: () => import('bootswatch/dist/journal/bootstrap.min.css?url'),
-    litera: () => import('bootswatch/dist/litera/bootstrap.min.css?url'),
-    lumen: () => import('bootswatch/dist/lumen/bootstrap.min.css?url'),
-    lux: () => import('bootswatch/dist/lux/bootstrap.min.css?url'),
-    materia: () => import('bootswatch/dist/materia/bootstrap.min.css?url'),
-    minty: () => import('bootswatch/dist/minty/bootstrap.min.css?url'),
-    morph: () => import('bootswatch/dist/morph/bootstrap.min.css?url'),
-    pulse: () => import('bootswatch/dist/pulse/bootstrap.min.css?url'),
-    quartz: () => import('bootswatch/dist/quartz/bootstrap.min.css?url'),
-    sandstone: () => import('bootswatch/dist/sandstone/bootstrap.min.css?url'),
-    simplex: () => import('bootswatch/dist/simplex/bootstrap.min.css?url'),
-    sketchy: () => import('bootswatch/dist/sketchy/bootstrap.min.css?url'),
-    slate: () => import('bootswatch/dist/slate/bootstrap.min.css?url'),
-    solar: () => import('bootswatch/dist/solar/bootstrap.min.css?url'),
-    spacelab: () => import('bootswatch/dist/spacelab/bootstrap.min.css?url'),
-    superhero: () => import('bootswatch/dist/superhero/bootstrap.min.css?url'),
-    united: () => import('bootswatch/dist/united/bootstrap.min.css?url'),
-    vapor: () => import('bootswatch/dist/vapor/bootstrap.min.css?url'),
-    yeti: () => import('bootswatch/dist/yeti/bootstrap.min.css?url'),
-    zephyr: () => import('bootswatch/dist/zephyr/bootstrap.min.css?url'),
-  },
-  rtl: {
-    cerulean: () => import('bootswatch/dist/cerulean/bootstrap.rtl.min.css?url'),
-    cosmo: () => import('bootswatch/dist/cosmo/bootstrap.rtl.min.css?url'),
-    cyborg: () => import('bootswatch/dist/cyborg/bootstrap.rtl.min.css?url'),
-    darkly: () => import('bootswatch/dist/darkly/bootstrap.rtl.min.css?url'),
-    flatly: () => import('bootswatch/dist/flatly/bootstrap.rtl.min.css?url'),
-    journal: () => import('bootswatch/dist/journal/bootstrap.rtl.min.css?url'),
-    litera: () => import('bootswatch/dist/litera/bootstrap.rtl.min.css?url'),
-    lumen: () => import('bootswatch/dist/lumen/bootstrap.rtl.min.css?url'),
-    lux: () => import('bootswatch/dist/lux/bootstrap.rtl.min.css?url'),
-    materia: () => import('bootswatch/dist/materia/bootstrap.rtl.min.css?url'),
-    minty: () => import('bootswatch/dist/minty/bootstrap.rtl.min.css?url'),
-    morph: () => import('bootswatch/dist/morph/bootstrap.rtl.min.css?url'),
-    pulse: () => import('bootswatch/dist/pulse/bootstrap.rtl.min.css?url'),
-    quartz: () => import('bootswatch/dist/quartz/bootstrap.rtl.min.css?url'),
-    sandstone: () => import('bootswatch/dist/sandstone/bootstrap.rtl.min.css?url'),
-    simplex: () => import('bootswatch/dist/simplex/bootstrap.rtl.min.css?url'),
-    sketchy: () => import('bootswatch/dist/sketchy/bootstrap.rtl.min.css?url'),
-    slate: () => import('bootswatch/dist/slate/bootstrap.rtl.min.css?url'),
-    solar: () => import('bootswatch/dist/solar/bootstrap.rtl.min.css?url'),
-    spacelab: () => import('bootswatch/dist/spacelab/bootstrap.rtl.min.css?url'),
-    superhero: () => import('bootswatch/dist/superhero/bootstrap.rtl.min.css?url'),
-    united: () => import('bootswatch/dist/united/bootstrap.rtl.min.css?url'),
-    vapor: () => import('bootswatch/dist/vapor/bootstrap.rtl.min.css?url'),
-    yeti: () => import('bootswatch/dist/yeti/bootstrap.rtl.min.css?url'),
-    zephyr: () => import('bootswatch/dist/zephyr/bootstrap.rtl.min.css?url'),
-  },
-};
-
 /**
  * Load a Bootswatch theme dynamically from local node_modules
- * Uses Vite's dynamic import with ?url to get the resolved CSS file path
- * All CSS files are bundled at build time for offline use
  * 
  * @param theme - The Bootswatch theme to load
  * @param language - Current language ('fa' for RTL, 'en' for LTR)
  * @returns Promise that resolves when the theme CSS is loaded
  */
-export const loadBootswatchTheme = async (theme: BootswatchTheme, language: string = 'en'): Promise<void> => {
-  // Remove existing Bootswatch theme if present
-  const existingLink = document.getElementById(BOOTSWATCH_LINK_ID);
-  if (existingLink) {
-    existingLink.remove();
-  }
-
-  // If theme is default (null path), remove theme and use default Bootstrap
-  if (!theme.path) {
-    // Increased delay to ensure CSS is fully applied after removing Bootswatch
-    await new Promise(resolve => setTimeout(resolve, 300));
-    extractAndApplyThemeColors();
-    return;
-  }
-
-  try {
-    // Determine direction based on language
-    const direction = language === 'fa' ? 'rtl' : 'ltr';
-    
-    // Get the theme loader function
-    const themeLoader = bootswatchThemes[direction][theme.path];
-    if (!themeLoader) {
-      throw new Error(`Theme not found: ${theme.path} (${direction})`);
+export const loadBootswatchTheme = (theme: BootswatchTheme, language: string = 'en'): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    // Remove existing Bootswatch theme if present
+    const existingLink = document.getElementById(BOOTSWATCH_LINK_ID);
+    if (existingLink) {
+      existingLink.remove();
     }
 
-    // Dynamically import the CSS file and get its URL
-    // Vite will bundle this CSS file and provide a URL to it
-    const cssModule = await themeLoader();
-    const cssUrl = cssModule.default;
+    // If theme is default (null path), remove theme and use default Bootstrap
+    if (!theme.path) {
+      // Increased delay to ensure CSS is fully applied after removing Bootswatch
+      setTimeout(() => {
+        extractAndApplyThemeColors();
+        resolve();
+      }, 300);
+      return;
+    }
 
-    // Create new link element for Bootswatch theme
-    return new Promise((resolve, reject) => {
+    try {
+      // Determine the correct CSS file based on language direction
+      // For RTL (Persian), use bootstrap.rtl.min.css; for LTR (English), use bootstrap.min.css
+      const cssFileName = language === 'fa' ? 'bootstrap.rtl.min.css' : 'bootstrap.min.css';
+      
+      // Construct the path to the Bootswatch CSS file in node_modules
+      // Vite will resolve node_modules paths automatically
+      // Path format: /node_modules/bootswatch/dist/{themeName}/{cssFileName}
+      const themePath = `/node_modules/bootswatch/dist/${theme.path}/${cssFileName}`;
+      
+      // Create new link element for Bootswatch theme
+      // Vite dev server will serve files from node_modules automatically
+      // In production build, these will be bundled/copied appropriately
       const link = document.createElement('link');
       link.id = BOOTSWATCH_LINK_ID;
       link.rel = 'stylesheet';
       link.type = 'text/css';
-      link.href = cssUrl;
+      link.href = themePath;
 
       // Handle successful load
       link.onload = () => {
@@ -161,7 +97,7 @@ export const loadBootswatchTheme = async (theme: BootswatchTheme, language: stri
 
       // Handle load error with detailed information
       link.onerror = (event) => {
-        const errorMessage = `Failed to load Bootswatch theme: ${theme.name} (${theme.id}) from ${cssUrl}`;
+        const errorMessage = `Failed to load Bootswatch theme: ${theme.name} (${theme.id}) from ${themePath}`;
         console.error(errorMessage, event);
         
         // Fallback: try to extract colors from any existing CSS (graceful degradation)
@@ -183,12 +119,12 @@ export const loadBootswatchTheme = async (theme: BootswatchTheme, language: stri
       } else {
         document.head.appendChild(link);
       }
-    });
-  } catch (error) {
-    const errorMessage = `Failed to load Bootswatch theme: ${theme.name} (${theme.id})`;
-    console.error(errorMessage, error);
-    throw new Error(errorMessage);
-  }
+    } catch (error) {
+      const errorMessage = `Failed to construct path for Bootswatch theme: ${theme.name} (${theme.id})`;
+      console.error(errorMessage, error);
+      reject(new Error(errorMessage));
+    }
+  });
 };
 
 /**

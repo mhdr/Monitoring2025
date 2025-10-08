@@ -96,7 +96,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.cerulean',
     emoji: '🌊',
     description: 'A calm blue sky',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/cerulean/bootstrap.min.css',
+    path: 'cerulean',
     category: 'light',
   },
   {
@@ -105,7 +105,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.cosmo',
     emoji: '🌸',
     description: 'An ode to Metro',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/cosmo/bootstrap.min.css',
+    path: 'cosmo',
     category: 'light',
   },
   {
@@ -114,7 +114,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.flatly',
     emoji: '🎨',
     description: 'Flat and modern',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/flatly/bootstrap.min.css',
+    path: 'flatly',
     category: 'light',
   },
   {
@@ -123,7 +123,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.journal',
     emoji: '📰',
     description: 'Crisp like a new sheet of paper',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/journal/bootstrap.min.css',
+    path: 'journal',
     category: 'light',
   },
   {
@@ -132,7 +132,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.litera',
     emoji: '📖',
     description: 'The medium is the message',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/litera/bootstrap.min.css',
+    path: 'litera',
     category: 'light',
   },
   {
@@ -141,7 +141,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.lumen',
     emoji: '�',
     description: 'Light and shadow',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/lumen/bootstrap.min.css',
+    path: 'lumen',
     category: 'light',
   },
   {
@@ -150,7 +150,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.lux',
     emoji: '✨',
     description: 'A touch of class',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/lux/bootstrap.min.css',
+    path: 'lux',
     category: 'light',
   },
   {
@@ -159,7 +159,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.materia',
     emoji: '🎯',
     description: 'Material is the metaphor',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/materia/bootstrap.min.css',
+    path: 'materia',
     category: 'light',
   },
   {
@@ -168,7 +168,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.minty',
     emoji: '🍃',
     description: 'A fresh feel',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/minty/bootstrap.min.css',
+    path: 'minty',
     category: 'light',
   },
   {
@@ -177,7 +177,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.morph',
     emoji: '�',
     description: 'A neumorphic design',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/morph/bootstrap.min.css',
+    path: 'morph',
     category: 'light',
   },
   {
@@ -186,7 +186,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.pulse',
     emoji: '💓',
     description: 'A trace of purple',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/pulse/bootstrap.min.css',
+    path: 'pulse',
     category: 'light',
   },
   {
@@ -195,7 +195,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.quartz',
     emoji: '💎',
     description: 'A glassmorphic design',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/quartz/bootstrap.min.css',
+    path: 'quartz',
     category: 'light',
   },
   {
@@ -204,7 +204,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.sandstone',
     emoji: '🏜️',
     description: 'A touch of warmth',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/sandstone/bootstrap.min.css',
+    path: 'sandstone',
     category: 'light',
   },
   {
@@ -213,7 +213,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.simplex',
     emoji: '⚪',
     description: 'Mini and minimalist',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/simplex/bootstrap.min.css',
+    path: 'simplex',
     category: 'light',
   },
   {
@@ -222,7 +222,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.sketchy',
     emoji: '✏️',
     description: 'A hand-drawn look',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/sketchy/bootstrap.min.css',
+    path: 'sketchy',
     category: 'colorful',
   },
   {
@@ -231,7 +231,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.spacelab',
     emoji: '🚀',
     description: 'Silvery and sleek',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/spacelab/bootstrap.min.css',
+    path: 'spacelab',
     category: 'light',
   },
   {
@@ -240,7 +240,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.united',
     emoji: '�🇸',
     description: 'Ubuntu orange and unique font',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/united/bootstrap.min.css',
+    path: 'united',
     category: 'colorful',
   },
   {
@@ -249,7 +249,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.yeti',
     emoji: '❄️',
     description: 'A friendly foundation',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/yeti/bootstrap.min.css',
+    path: 'yeti',
     category: 'light',
   },
   {
@@ -258,7 +258,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.zephyr',
     emoji: '🌬️',
     description: 'Breezy and beautiful',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/zephyr/bootstrap.min.css',
+    path: 'zephyr',
     category: 'light',
   },
   
@@ -269,7 +269,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.cyborg',
     emoji: '🤖',
     description: 'Jet black and electric blue',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/cyborg/bootstrap.min.css',
+    path: 'cyborg',
     category: 'dark',
   },
   {
@@ -278,7 +278,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.darkly',
     emoji: '🌑',
     description: 'Flatly in night mode',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/darkly/bootstrap.min.css',
+    path: 'darkly',
     category: 'dark',
   },
   {
@@ -287,7 +287,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.slate',
     emoji: '🪨',
     description: 'Shades of gunmetal gray',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/slate/bootstrap.min.css',
+    path: 'slate',
     category: 'dark',
   },
   {
@@ -296,7 +296,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.solar',
     emoji: '☀️',
     description: 'A spin on Solarized',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/solar/bootstrap.min.css',
+    path: 'solar',
     category: 'dark',
   },
   {
@@ -305,7 +305,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.superhero',
     emoji: '🦸',
     description: 'The brave and the blue',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/superhero/bootstrap.min.css',
+    path: 'superhero',
     category: 'dark',
   },
   {
@@ -314,7 +314,7 @@ export const AVAILABLE_THEMES: BootswatchTheme[] = [
     nameKey: 'theme.vapor',
     emoji: '🌈',
     description: 'A cyberpunk aesthetic',
-    path: 'https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/vapor/bootstrap.min.css',
+    path: 'vapor',
     category: 'dark',
   },
 ];

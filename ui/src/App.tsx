@@ -18,7 +18,6 @@ import ServiceWorkerPrompt from './components/ServiceWorkerPrompt';
 import './App.css';
 
 // Lazy load page components
-const LoginPage = lazy(() => import('./components/LoginPage'));
 const SyncPage = lazy(() => import('./components/SyncPage'));
 
 // Lazy load layout components
