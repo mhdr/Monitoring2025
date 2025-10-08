@@ -1,70 +1,16 @@
-/* Critical CSS - Inline above-the-fold styles for faster First Contentful Paint */
-
-/* 
- * These styles should be inlined in index.html <head> for optimal performance.
- * They cover:
- * 1. Loading screen (first thing users see)
- * 2. Basic layout structure
- * 3. Essential typography
- * 4. Critical spacing/positioning
+/**
+ * Critical CSS - Above-the-fold styles for faster First Contentful Paint
+ * Migrated to MUI - uses minimal CSS as MUI components handle most styling
  * 
- * Total size target: < 14 KB (inline limit recommendation)
+ * NOTE: MUI's CssBaseline component provides most of the critical styles.
+ * This file now contains only essential overrides and custom elements.
  */
 
 /* ==================== */
-/* 1. Loading Screen */
+/* 1. Base Layout */
 /* ==================== */
 
-/* Loading screen is the first thing users see while React hydrates */
-.loading-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-secondary) 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-loading-screen);
-}
-
-.loading-screen-spinner {
-  width: 3rem;
-  height: 3rem;
-  border: 0.25rem solid rgba(var(--bs-white-rgb), 0.2);
-  border-top-color: var(--bs-white);
-  border-radius: 50rem;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-screen-text {
-  margin-top: 1.5rem;
-  color: var(--bs-white);
-  font-size: 1.125rem;
-  font-weight: 500;
-}
-
-/* ==================== */
-/* 2. Base Layout */
-/* ==================== */
-
-/* Prevent flash of unstyled content */
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bs-secondary-bg);
-}
-
+/* Prevent flash of unstyled content - MUI handles most body styles via CssBaseline */
 #root {
   min-height: 100vh;
   display: flex;
@@ -72,107 +18,17 @@ body {
 }
 
 /* ==================== */
-/* 3. Login Page Critical Styles */
+/* 2. RTL Support Critical */
 /* ==================== */
 
-/* Login page is often the first page users see */
-.login-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-secondary) 100%);
-}
-
-.login-card {
-  background: var(--bs-body-bg);
-  border-radius: var(--bs-border-radius-xl);
-  padding: 2rem;
-  box-shadow: var(--bs-box-shadow-lg);
-  max-width: 400px;
-  width: 90%;
-}
-
-/* ==================== */
-/* 4. Dashboard Layout Critical */
-/* ==================== */
-
-/* Dashboard header and sidebar positioning */
-.dashboard-container {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: 250px;
-  background-color: var(--bs-dark);
-  color: var(--bs-light);
-  transition: transform var(--transition-medium) ease;
-}
-
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* ==================== */
-/* 5. Typography Critical */
-/* ==================== */
-
-/* Essential heading styles to prevent layout shift */
-h1, h2, h3, h4, h5, h6 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  line-height: 1.2;
-}
-
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; }
-h3 { font-size: 1.75rem; }
-h4 { font-size: 1.5rem; }
-h5 { font-size: 1.25rem; }
-h6 { font-size: 1rem; }
-
-/* ==================== */
-/* 6. RTL Support Critical */
-/* ==================== */
-
-/* Essential RTL styles for Persian language */
+/* Essential RTL styles for Persian language - MUI handles most RTL automatically */
 [dir="rtl"] {
   direction: rtl;
   text-align: right;
 }
 
-[dir="rtl"] .sidebar {
-  right: 0;
-}
-
 /* ==================== */
-/* 7. Mobile Responsive Critical */
-/* ==================== */
-
-@media (max-width: 768px) {
-  .sidebar {
-    transform: translateX(-100%);
-    position: fixed;
-    z-index: 1000;
-    height: 100vh;
-  }
-  
-  [dir="rtl"] .sidebar {
-    transform: translateX(100%);
-  }
-  
-  .login-card {
-    padding: 1.5rem;
-  }
-}
-
-/* ==================== */
-/* 8. Prevent FOUC */
+/* 3. Prevent FOUC */
 /* ==================== */
 
 /* Hide content until React is ready */

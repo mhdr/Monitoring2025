@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import type { MouseEvent } from 'react';
 import { AppBar, Toolbar, IconButton, Typography, Menu, MenuItem, Divider, Box, Container } from '@mui/material';
-import { Menu as MenuIcon, AccountCircle } from '@mui/icons-material';
+import { 
+  Menu as MenuIcon, 
+  AccountCircle, 
+  Person as PersonIcon,
+  Settings as SettingsIcon,
+  Sync as SyncIcon,
+  Logout as LogoutIcon
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
@@ -101,8 +108,16 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
           <Typography
             variant="h6"
             component="div"
-            className="fw-bold navbar-brand-gradient"
-            sx={{ flexGrow: 1 }}
+            className="navbar-brand-gradient"
+            sx={{ 
+              flexGrow: 1,
+              fontWeight: 700,
+              background: (theme) => `linear-gradient(45deg, ${theme.palette.common.white}, ${theme.palette.primary.light})`,
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
             data-id-ref="responsive-navbar-brand"
           >
             {t('monitoring')}
@@ -119,12 +134,18 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
               aria-expanded={Boolean(anchorEl)}
               data-id-ref="responsive-navbar-user-dropdown"
             >
-              <AccountCircle sx={{ mr: 1 }} data-id-ref="responsive-navbar-user-icon" />
+              <AccountCircle 
+                sx={{ mr: 1 }} 
+                data-id-ref="responsive-navbar-user-icon" 
+              />
               <Typography 
                 variant="body2" 
                 component="span"
-                className="text-white fw-medium"
-                sx={{ display: { xs: 'none', sm: 'inline' } }}
+                sx={{ 
+                  display: { xs: 'none', sm: 'inline' },
+                  color: 'common.white',
+                  fontWeight: 500
+                }}
                 data-id-ref="responsive-navbar-user-dropdown-title"
               >
                 {getUserDisplayName()}
@@ -160,14 +181,22 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
                 onClick={handleProfileClick}
                 data-id-ref="responsive-navbar-user-profile-link"
               >
-                <i className="fas fa-user me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-profile-icon"></i>
+                <PersonIcon 
+                  sx={{ mr: 1.5, fontSize: 20 }} 
+                  aria-hidden="true" 
+                  data-id-ref="responsive-navbar-user-profile-icon"
+                />
                 {t('profile')}
               </MenuItem>
               <MenuItem 
                 onClick={handleSettingsClick}
                 data-id-ref="responsive-navbar-user-settings-link"
               >
-                <i className="fas fa-cog me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-settings-icon"></i>
+                <SettingsIcon 
+                  sx={{ mr: 1.5, fontSize: 20 }} 
+                  aria-hidden="true" 
+                  data-id-ref="responsive-navbar-user-settings-icon"
+                />
                 {t('settingsMenu')}
               </MenuItem>
               <Divider data-id-ref="responsive-navbar-user-divider-1" />
@@ -175,16 +204,24 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
                 onClick={handleForceSyncClick}
                 data-id-ref="responsive-navbar-user-force-sync-link"
               >
-                <i className="fas fa-sync-alt me-2" aria-hidden="true" data-id-ref="responsive-navbar-user-force-sync-icon"></i>
+                <SyncIcon 
+                  sx={{ mr: 1.5, fontSize: 20 }} 
+                  aria-hidden="true" 
+                  data-id-ref="responsive-navbar-user-force-sync-icon"
+                />
                 {t('forceSync')}
               </MenuItem>
               <Divider data-id-ref="responsive-navbar-user-divider-2" />
               <MenuItem 
                 onClick={handleLogout}
-                className="text-danger"
+                sx={{ color: 'error.main' }}
                 data-id-ref="responsive-navbar-logout-link"
               >
-                <i className="fas fa-sign-out-alt me-2" aria-hidden="true" data-id-ref="responsive-navbar-logout-icon"></i>
+                <LogoutIcon 
+                  sx={{ mr: 1.5, fontSize: 20 }} 
+                  aria-hidden="true" 
+                  data-id-ref="responsive-navbar-logout-icon"
+                />
                 {t('logout')}
               </MenuItem>
             </Menu>

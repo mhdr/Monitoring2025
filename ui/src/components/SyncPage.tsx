@@ -6,6 +6,29 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { 
+  Box, 
+  Container, 
+  Card, 
+  CardContent, 
+  Typography, 
+  LinearProgress, 
+  Alert, 
+  Button,
+  CircularProgress,
+  Chip,
+  Stack
+} from '@mui/material';
+import { 
+  CheckCircle as CheckCircleIcon, 
+  Cancel as CancelIcon, 
+  Circle as CircleIcon,
+  Refresh as RefreshIcon,
+  SkipNext as SkipNextIcon,
+  Autorenew as AutorenewIcon,
+  CheckCircle as CheckCircleFillIcon,
+  Warning as WarningIcon
+} from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useDataSync } from '../hooks/useDataSync';
 import { useAppDispatch } from '../hooks/useRedux';
@@ -36,29 +59,29 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   successMessage,
   errorMessage
 }) => {
-  const getProgressBarClass = useCallback(() => {
+  const getProgressBarColor = useCallback((): 'success' | 'error' | 'primary' | 'secondary' => {
     switch (progress.status) {
       case 'success':
-        return 'bg-success';
+        return 'success';
       case 'error':
-        return 'bg-danger';
+        return 'error';
       case 'loading':
-        return 'bg-primary';
+        return 'primary';
       default:
-        return 'bg-secondary';
+        return 'secondary';
     }
   }, [progress.status]);
 
   const getStatusIcon = useCallback(() => {
     switch (progress.status) {
       case 'success':
-        return <i className="bi bi-check-circle-fill text-success" data-id-ref={`progress-icon-success-${title.toLowerCase()}`} aria-label="Success" />;
+        return <CheckCircleIcon sx={{ color: 'success.main' }} data-id-ref={`progress-icon-success-${title.toLowerCase()}`} aria-label="Success" />;
       case 'error':
-        return <i className="bi bi-x-circle-fill text-danger" data-id-ref={`progress-icon-error-${title.toLowerCase()}`} aria-label="Error" />;
+        return <CancelIcon sx={{ color: 'error.main' }} data-id-ref={`progress-icon-error-${title.toLowerCase()}`} aria-label="Error" />;
       case 'loading':
-        return <div className="spinner-border spinner-border-sm text-primary" role="status" data-id-ref={`progress-icon-loading-${title.toLowerCase()}`} aria-label="Loading" />;
+        return <CircularProgress size={20} sx={{ color: 'primary.main' }} data-id-ref={`progress-icon-loading-${title.toLowerCase()}`} aria-label="Loading" />;
       default:
-        return <i className="bi bi-circle text-muted" data-id-ref={`progress-icon-idle-${title.toLowerCase()}`} aria-label="Waiting" />;
+        return <CircleIcon sx={{ color: 'text.disabled' }} data-id-ref={`progress-icon-idle-${title.toLowerCase()}`} aria-label="Waiting" />;
     }
   }, [progress.status, title]);
 
@@ -76,28 +99,52 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   }, [progress.status, progress.error, successMessage, errorMessage, description]);
 
   return (
-    <div className="sync-progress-item" data-id-ref={`sync-progress-${title.toLowerCase()}`} role="region" aria-labelledby={`progress-title-${title.toLowerCase()}`}>
-      <div className="d-flex align-items-center mb-1" data-id-ref={`progress-header-${title.toLowerCase()}`}>
-        <div className="sync-status-icon me-2" data-id-ref={`progress-icon-container-${title.toLowerCase()}`} aria-hidden="true">
+    <Box 
+      className="sync-progress-item" 
+      sx={{ mb: 2 }}
+      data-id-ref={`sync-progress-${title.toLowerCase()}`} 
+      role="region" 
+      aria-labelledby={`progress-title-${title.toLowerCase()}`}
+    >
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }} data-id-ref={`progress-header-${title.toLowerCase()}`}>
+        <Box 
+          className="sync-status-icon" 
+          data-id-ref={`progress-icon-container-${title.toLowerCase()}`} 
+          aria-hidden="true"
+        >
           {getStatusIcon()}
-        </div>
-        <div className="flex-grow-1" data-id-ref={`progress-content-${title.toLowerCase()}`}>
-          <h6 className="mb-0 fw-semibold small" data-id-ref={`progress-title-${title.toLowerCase()}`} id={`progress-title-${title.toLowerCase()}`}>{title}</h6>
-          <p className="mb-0 text-muted" style={{ fontSize: '0.75rem' }} data-id-ref={`progress-message-${title.toLowerCase()}`} id={`progress-message-${title.toLowerCase()}`}>{getStatusMessage()}</p>
-        </div>
-      </div>
+        </Box>
+        <Box sx={{ flexGrow: 1 }} data-id-ref={`progress-content-${title.toLowerCase()}`}>
+          <Typography 
+            variant="subtitle2" 
+            sx={{ fontWeight: 600, mb: 0 }} 
+            data-id-ref={`progress-title-${title.toLowerCase()}`} 
+            id={`progress-title-${title.toLowerCase()}`}
+          >
+            {title}
+          </Typography>
+          <Typography 
+            variant="caption" 
+            sx={{ color: 'text.secondary', display: 'block' }} 
+            data-id-ref={`progress-message-${title.toLowerCase()}`} 
+            id={`progress-message-${title.toLowerCase()}`}
+          >
+            {getStatusMessage()}
+          </Typography>
+        </Box>
+      </Stack>
       
-      <div className="progress sync-progress-bar" data-id-ref={`progress-bar-container-${title.toLowerCase()}`} role="progressbar" aria-labelledby={`progress-title-${title.toLowerCase()}`} aria-describedby={`progress-message-${title.toLowerCase()}`}>
-        <div
-          className={`progress-bar ${getProgressBarClass()}`}
-          style={{ width: `${progress.progress}%` }}
-          aria-valuenow={progress.progress}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          data-id-ref={`progress-bar-${title.toLowerCase()}`}
-        />
-      </div>
-    </div>
+      <LinearProgress 
+        variant="determinate" 
+        value={progress.progress} 
+        color={getProgressBarColor()}
+        className="sync-progress-bar"
+        data-id-ref={`progress-bar-${title.toLowerCase()}`}
+        aria-labelledby={`progress-title-${title.toLowerCase()}`}
+        aria-describedby={`progress-message-${title.toLowerCase()}`}
+        sx={{ height: 8, borderRadius: 1 }}
+      />
+    </Box>
   );
 };
 
@@ -192,119 +239,271 @@ const SyncPage: React.FC = () => {
   }, [syncState.groups.progress, syncState.items.progress, syncState.alarms.progress]);
 
   return (
-    <div className="sync-page" data-id-ref="sync-page" role="main" aria-live="polite">
-      <div className="container-fluid h-100" data-id-ref="sync-page-container">
-        <div className="row h-100 justify-content-center align-items-center" data-id-ref="sync-page-row">
-          <div className="col-12 col-md-8 col-lg-6 col-xl-5" data-id-ref="sync-page-col">
-            <section className="sync-card card shadow-lg border-0" data-id-ref="sync-card" aria-labelledby="sync-title" aria-describedby="sync-subtitle">
-              <div className="card-body p-3 p-md-4" data-id-ref="sync-card-body">
+    <Box 
+      className="sync-page" 
+      data-id-ref="sync-page" 
+      role="main" 
+      aria-live="polite"
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+        padding: { xs: 2, sm: 3, md: 4 }
+      }}
+    >
+      <Container 
+        maxWidth="md" 
+        data-id-ref="sync-page-container"
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center' 
+        }}
+      >
+        <Box 
+          sx={{ 
+            width: '100%', 
+            maxWidth: { xs: '100%', sm: '90%', md: '75%', lg: '60%', xl: '50%' } 
+          }} 
+          data-id-ref="sync-page-col"
+        >
+          <Card 
+            component="section"
+            className="sync-card"
+            elevation={8}
+            data-id-ref="sync-card" 
+            aria-labelledby="sync-title" 
+            aria-describedby="sync-subtitle"
+            sx={{
+              borderRadius: { xs: 2, md: 3 },
+              overflow: 'hidden'
+            }}
+          >
+            <CardContent 
+              data-id-ref="sync-card-body"
+              sx={{ 
+                padding: { xs: 3, md: 4 } 
+              }}
+            >
+              
+              {/* Header */}
+              <Box 
+                component="header" 
+                sx={{ textAlign: 'center', mb: 3 }} 
+                data-id-ref="sync-header"
+              >
+                <Box 
+                  className="sync-logo" 
+                  sx={{ mb: 2 }} 
+                  data-id-ref="sync-logo" 
+                  aria-hidden="true"
+                >
+                  <AutorenewIcon 
+                    className="sync-icon" 
+                    data-id-ref="sync-icon"
+                    sx={{ 
+                      fontSize: { xs: 48, md: 64 }, 
+                      color: 'primary.main',
+                      animation: syncState.overall === 'syncing' ? 'spin 2s linear infinite' : 'none',
+                      '@keyframes spin': {
+                        '0%': { transform: 'rotate(0deg)' },
+                        '100%': { transform: 'rotate(360deg)' }
+                      }
+                    }} 
+                  />
+                </Box>
+                <Typography 
+                  variant="h4" 
+                  component="h1" 
+                  className="sync-title" 
+                  sx={{ 
+                    mb: 1, 
+                    fontWeight: 600,
+                    fontSize: { xs: '1.5rem', md: '2rem' } 
+                  }} 
+                  data-id-ref="sync-title" 
+                  id="sync-title"
+                >
+                  {t('sync.title')}
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  className="sync-subtitle" 
+                  sx={{ 
+                    color: 'text.secondary', 
+                    mb: 0 
+                  }} 
+                  data-id-ref="sync-subtitle" 
+                  id="sync-subtitle"
+                >
+                  {t('sync.subtitle')}
+                </Typography>
+              </Box>
+
+              {/* Overall Progress */}
+              <Box 
+                component="section" 
+                sx={{ mb: 3 }} 
+                data-id-ref="sync-overall-progress-section" 
+                aria-labelledby="overall-progress-label"
+              >
+                <Stack 
+                  direction="row" 
+                  justifyContent="space-between" 
+                  alignItems="center" 
+                  sx={{ mb: 2 }} 
+                  data-id-ref="sync-overall-progress-header"
+                >
+                  <Typography 
+                    variant="body1" 
+                    sx={{ fontWeight: 500 }} 
+                    data-id-ref="sync-overall-progress-label" 
+                    id="overall-progress-label"
+                  >
+                    {t('sync.title')}
+                  </Typography>
+                  <Chip 
+                    label={`${overallProgress}%`} 
+                    color="primary" 
+                    size="small"
+                    data-id-ref="sync-overall-progress-badge" 
+                    aria-label={`${overallProgress} percent complete`}
+                  />
+                </Stack>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={overallProgress} 
+                  className="sync-overall-progress"
+                  data-id-ref="sync-overall-progress-bar"
+                  aria-labelledby="overall-progress-label"
+                  sx={{ height: 10, borderRadius: 1 }}
+                />
+              </Box>
+
+              {/* Individual Progress Bars */}
+              <Box 
+                component="section" 
+                className="sync-progress-list" 
+                data-id-ref="sync-progress-list" 
+                aria-label="Individual synchronization progress"
+              >
+                <ProgressBar
+                  title={t('sync.groups.title')}
+                  description={t('sync.groups.description')}
+                  progress={syncState.groups}
+                  successMessage={t('sync.groups.success')}
+                  errorMessage={t('sync.groups.error')}
+                />
                 
-                {/* Header */}
-                <header className="text-center mb-3" data-id-ref="sync-header">
-                  <div className="sync-logo mb-2" data-id-ref="sync-logo" aria-hidden="true">
-                    <i className="bi bi-arrow-clockwise sync-icon" data-id-ref="sync-icon" />
-                  </div>
-                  <h1 className="sync-title mb-1" data-id-ref="sync-title" id="sync-title">{t('sync.title')}</h1>
-                  <p className="text-muted sync-subtitle mb-0" data-id-ref="sync-subtitle" id="sync-subtitle">{t('sync.subtitle')}</p>
-                </header>
+                <ProgressBar
+                  title={t('sync.items.title')}
+                  description={t('sync.items.description')}
+                  progress={syncState.items}
+                  successMessage={t('sync.items.success')}
+                  errorMessage={t('sync.items.error')}
+                />
+                
+                <ProgressBar
+                  title={t('sync.alarms.title')}
+                  description={t('sync.alarms.description')}
+                  progress={syncState.alarms}
+                  successMessage={t('sync.alarms.success')}
+                  errorMessage={t('sync.alarms.error')}
+                />
+              </Box>
 
-                {/* Overall Progress */}
-                <section className="mb-3" data-id-ref="sync-overall-progress-section" aria-labelledby="overall-progress-label">
-                  <div className="d-flex justify-content-between align-items-center mb-2" data-id-ref="sync-overall-progress-header">
-                    <span className="fw-medium" data-id-ref="sync-overall-progress-label" id="overall-progress-label">{t('sync.title')}</span>
-                    <span className="badge bg-primary" data-id-ref="sync-overall-progress-badge" aria-label={`${overallProgress} percent complete`}>{overallProgress}%</span>
-                  </div>
-                  <div className="progress sync-overall-progress" data-id-ref="sync-overall-progress-container" role="progressbar" aria-labelledby="overall-progress-label" aria-valuenow={overallProgress} aria-valuemin={0} aria-valuemax={100}>
-                    <div
-                      className="progress-bar bg-primary"
-                      style={{ width: `${overallProgress}%` }}
-                      data-id-ref="sync-overall-progress-bar"
-                    />
-                  </div>
-                </section>
+              {/* Status Messages */}
+              <Box 
+                component="section" 
+                className="sync-status-messages" 
+                sx={{ mt: 3 }} 
+                data-id-ref="sync-status-messages" 
+                aria-label="Synchronization status messages"
+              >
+                {syncState.overall === 'syncing' && !syncState.hasErrors && (
+                  <Alert 
+                    severity="info" 
+                    icon={<CircularProgress size={20} />}
+                    data-id-ref="sync-status-syncing" 
+                    role="status" 
+                    aria-live="polite"
+                    sx={{ display: 'flex', alignItems: 'center' }}
+                  >
+                    <Typography variant="body2" data-id-ref="sync-status-syncing-text">
+                      {t('sync.completing')}
+                    </Typography>
+                  </Alert>
+                )}
+                
+                {syncState.isCompleted && (
+                  <Alert 
+                    severity="success" 
+                    icon={<CheckCircleFillIcon />}
+                    data-id-ref="sync-status-completed" 
+                    role="status" 
+                    aria-live="polite"
+                    sx={{ display: 'flex', alignItems: 'center' }}
+                  >
+                    <Typography variant="body2" data-id-ref="sync-status-completed-text">
+                      {isRedirecting ? t('sync.redirecting') : t('sync.completing')}
+                    </Typography>
+                  </Alert>
+                )}
+                
+                {syncState.hasErrors && (
+                  <Alert 
+                    severity="error" 
+                    data-id-ref="sync-status-error" 
+                    role="alert" 
+                    aria-live="assertive"
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }} data-id-ref="sync-status-error-header">
+                      <WarningIcon data-id-ref="sync-status-error-icon" aria-label="Error" />
+                      <Typography variant="body2" data-id-ref="sync-status-error-text">
+                        {t('sync.errors.synchronizationFailed')}
+                      </Typography>
+                    </Stack>
+                    <Stack 
+                      direction={{ xs: 'column', sm: 'row' }} 
+                      spacing={1} 
+                      data-id-ref="sync-status-error-actions"
+                      sx={{ flexWrap: 'wrap' }}
+                    >
+                      <Button 
+                        variant="outlined" 
+                        color="error"
+                        size="small"
+                        onClick={handleRetry}
+                        data-id-ref="sync-retry-button"
+                        disabled={syncState.overall === 'syncing'}
+                        aria-label="Retry failed synchronization operations"
+                        startIcon={<RefreshIcon data-id-ref="sync-retry-button-icon" aria-hidden="true" />}
+                      >
+                        {t('sync.retry')}
+                      </Button>
+                      <Button 
+                        variant="outlined" 
+                        color="secondary"
+                        size="small"
+                        onClick={handleSkipAndContinue}
+                        data-id-ref="sync-skip-button"
+                        aria-label="Skip synchronization and continue to dashboard"
+                        startIcon={<SkipNextIcon data-id-ref="sync-skip-button-icon" aria-hidden="true" />}
+                      >
+                        {t('sync.skipAndContinue')}
+                      </Button>
+                    </Stack>
+                  </Alert>
+                )}
+              </Box>
 
-                {/* Individual Progress Bars */}
-                <section className="sync-progress-list" data-id-ref="sync-progress-list" aria-label="Individual synchronization progress">
-                  <ProgressBar
-                    title={t('sync.groups.title')}
-                    description={t('sync.groups.description')}
-                    progress={syncState.groups}
-                    successMessage={t('sync.groups.success')}
-                    errorMessage={t('sync.groups.error')}
-                  />
-                  
-                  <ProgressBar
-                    title={t('sync.items.title')}
-                    description={t('sync.items.description')}
-                    progress={syncState.items}
-                    successMessage={t('sync.items.success')}
-                    errorMessage={t('sync.items.error')}
-                  />
-                  
-                  <ProgressBar
-                    title={t('sync.alarms.title')}
-                    description={t('sync.alarms.description')}
-                    progress={syncState.alarms}
-                    successMessage={t('sync.alarms.success')}
-                    errorMessage={t('sync.alarms.error')}
-                  />
-                </section>
-
-                {/* Status Messages */}
-                <section className="sync-status-messages mt-3" data-id-ref="sync-status-messages" aria-label="Synchronization status messages">
-                  {syncState.overall === 'syncing' && !syncState.hasErrors && (
-                    <div className="alert alert-info d-flex align-items-center" data-id-ref="sync-status-syncing" role="status" aria-live="polite">
-                      <div className="spinner-border spinner-border-sm me-2" role="status" data-id-ref="sync-status-syncing-spinner" aria-label="Synchronizing" />
-                      <span data-id-ref="sync-status-syncing-text">{t('sync.completing')}</span>
-                    </div>
-                  )}
-                  
-                  {syncState.isCompleted && (
-                    <div className="alert alert-success d-flex align-items-center" data-id-ref="sync-status-completed" role="status" aria-live="polite">
-                      <i className="bi bi-check-circle-fill me-2" data-id-ref="sync-status-completed-icon" aria-label="Completed successfully" />
-                      <span data-id-ref="sync-status-completed-text">{isRedirecting ? t('sync.redirecting') : t('sync.completing')}</span>
-                    </div>
-                  )}
-                  
-                  {syncState.hasErrors && (
-                    <div className="alert alert-danger" data-id-ref="sync-status-error" role="alert" aria-live="assertive">
-                      <div className="d-flex align-items-center mb-2" data-id-ref="sync-status-error-header">
-                        <i className="bi bi-exclamation-triangle-fill me-2" data-id-ref="sync-status-error-icon" aria-label="Error" />
-                        <span data-id-ref="sync-status-error-text">{t('sync.errors.synchronizationFailed')}</span>
-                      </div>
-                      <div className="d-flex gap-2 flex-wrap" data-id-ref="sync-status-error-actions">
-                        <button 
-                          type="button" 
-                          className="btn btn-outline-danger btn-sm"
-                          onClick={handleRetry}
-                          data-id-ref="sync-retry-button"
-                          disabled={syncState.overall === 'syncing'}
-                          aria-label="Retry failed synchronization operations"
-                        >
-                          <i className="bi bi-arrow-clockwise me-1" data-id-ref="sync-retry-button-icon" aria-hidden="true" />
-                          {t('sync.retry')}
-                        </button>
-                        <button 
-                          type="button" 
-                          className="btn btn-outline-secondary btn-sm"
-                          onClick={handleSkipAndContinue}
-                          data-id-ref="sync-skip-button"
-                          aria-label="Skip synchronization and continue to dashboard"
-                        >
-                          <i className="bi bi-skip-forward me-1" data-id-ref="sync-skip-button-icon" aria-hidden="true" />
-                          {t('sync.skipAndContinue')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </section>
-
-              </div>
-            </section>
-          </div>
-        </div>
-      </div>
-    </div>
+            </CardContent>
+          </Card>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 

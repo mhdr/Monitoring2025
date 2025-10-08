@@ -1,137 +1,19 @@
-/* Custom navbar styling with Bootstrap integration and Material-UI */
-.custom-navbar {
-  background: linear-gradient(135deg, var(--bs-dark) 0%, var(--bs-secondary) 100%) !important;
-  width: 100% !important;
-  margin: 0 !important;
-  border-radius: 0 !important;
-  min-height: 50px !important;
-  padding: 0.25rem 0 !important;
-  overflow: visible !important;
-  position: relative !important;
-  border-bottom: 1px solid var(--bs-gray-700);
-  z-index: var(--z-navbar) !important;
-}
+/**
+ * ResponsiveNavbar Styles
+ * Minimal CSS - most styling moved to MUI sx prop
+ * MUI handles theming, RTL, and responsive design
+ */
 
-/* MUI AppBar specific overrides */
-.custom-navbar.MuiAppBar-root {
-  background: linear-gradient(135deg, var(--bs-dark) 0%, var(--bs-secondary) 100%) !important;
-}
-
-.navbar-brand-gradient {
-  background: linear-gradient(45deg, var(--bs-white), var(--bs-primary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 600;
-}
-
-/* Sidebar toggle button - MUI IconButton styling */
-.sidebar-toggle-btn {
-  color: var(--bs-white) !important;
-  transition: all var(--transition-base) var(--ease-in-out);
-}
-
-.sidebar-toggle-btn:hover {
-  color: var(--bs-primary) !important;
-  background: rgba(var(--bs-primary-rgb), 0.1) !important;
-}
-
-.sidebar-toggle-btn:focus {
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-/* User dropdown toggle button - MUI IconButton */
-.user-dropdown-toggle {
-  background: rgba(var(--bs-primary-rgb), 0.15) !important;
-  border: 1px solid rgba(var(--bs-primary-rgb), 0.3) !important;
-  border-radius: 50rem !important;
-  padding: 0.375rem 0.75rem !important;
-  transition: all var(--transition-medium) ease !important;
-  color: var(--bs-light) !important;
-}
-
-.user-dropdown-toggle:hover {
-  background: rgba(var(--bs-primary-rgb), 0.25) !important;
-  border-color: rgba(var(--bs-primary-rgb), 0.4) !important;
-  transform: translateY(-1px);
-}
-
-/* MUI Menu (dropdown) styling */
-.user-dropdown .MuiPaper-root {
-  background: var(--bs-body-bg) !important;
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--bs-border-color) !important;
-  border-radius: var(--bs-border-radius-lg) !important;
-  box-shadow: var(--bs-box-shadow-lg) !important;
-  min-width: 200px;
-  max-height: calc(100vh - 100px);
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-/* MUI MenuItem styling */
+/* Minimal CSS for transitions and hover effects */
 .user-dropdown .MuiMenuItem-root {
-  transition: all var(--transition-medium) ease;
-  border-radius: var(--bs-border-radius);
-  margin: 0.25rem 0.5rem;
-  padding: 0.5rem 1rem;
+  transition: transform 0.2s ease;
 }
 
 .user-dropdown .MuiMenuItem-root:hover {
-  background: rgba(var(--bs-primary-rgb), 0.1) !important;
   transform: translateX(3px);
-}
-
-.user-dropdown .MuiMenuItem-root.text-danger {
-  color: var(--bs-danger) !important;
-}
-
-.user-dropdown .MuiMenuItem-root.text-danger:hover {
-  background: rgba(var(--bs-danger-rgb), 0.1) !important;
-  color: var(--bs-danger) !important;
-}
-
-/* MUI Divider styling */
-.user-dropdown .MuiDivider-root {
-  border-color: var(--bs-border-color) !important;
-  margin: 0.25rem 0.5rem !important;
 }
 
 /* RTL Support */
 [dir="rtl"] .user-dropdown .MuiMenuItem-root:hover {
   transform: translateX(-3px);
-}
-
-/* Mobile-specific styles */
-@media (max-width: 991.98px) {
-  .custom-navbar {
-    margin: 0 !important;
-    overflow: visible !important;
-  }
-  
-  .user-dropdown-toggle {
-    width: auto !important;
-  }
-  
-  .user-dropdown .MuiPaper-root {
-    max-width: calc(100vw - 40px);
-  }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .user-dropdown .MuiPaper-root {
-    background: var(--bs-dark) !important;
-    color: var(--bs-light) !important;
-  }
-  
-  .user-dropdown .MuiMenuItem-root {
-    color: var(--bs-light) !important;
-  }
-  
-  .user-dropdown .MuiMenuItem-root:hover {
-    background: rgba(var(--bs-primary-rgb), 0.2) !important;
-    color: var(--bs-light) !important;
-  }
 }
