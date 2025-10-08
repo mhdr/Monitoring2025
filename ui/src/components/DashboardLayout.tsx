@@ -1,47 +1,81 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
+import { Box, useTheme, useMediaQuery } from '@mui/material';
 import ResponsiveNavbar from './ResponsiveNavbar';
 import Sidebar from './Sidebar';
-import { useLanguage } from '../hooks/useLanguage';
-import './DashboardLayout.css';
+
+const SIDEBAR_WIDTH = 280;
 
 const DashboardLayout: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const { language } = useLanguage();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Mark layout as ready after mount to prevent flash
+  // Update sidebar state when screen size changes
   useEffect(() => {
-    setIsReady(true);
-  }, []);
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   return (
-    <div
-      className={`dashboard-container d-flex vh-100 ${language === 'fa' ? 'flex-row-reverse' : ''} ${isReady ? 'dashboard-ready' : ''}`}
-      dir={language === 'fa' ? 'rtl' : 'ltr'}
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        backgroundColor: 'background.default',
+      }}
       data-id-ref="dashboard-layout-root-container"
     >
       {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} data-id-ref="dashboard-layout-sidebar-component" />
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onToggle={toggleSidebar}
+      />
 
       {/* Main Content Area */}
-      <div
-        className={`flex-fill d-flex flex-column overflow-hidden ${language === 'fa' ? 'main-content-rtl' : 'main-content-ltr'}`}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
+          minHeight: '100vh',
+          transition: theme.transitions.create(['margin-inline-start'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+          }),
+          ...(sidebarOpen && !isMobile && {
+            transition: theme.transitions.create(['margin-inline-start'], {
+              easing: theme.transitions.easing.easeOut,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
+            marginInlineStart: `${SIDEBAR_WIDTH}px`,
+          }),
+        }}
         data-id-ref="dashboard-layout-main-content-area"
       >
         {/* Top Navigation */}
-        <ResponsiveNavbar onToggleSidebar={toggleSidebar} data-id-ref="dashboard-layout-navbar-component" />
+        <ResponsiveNavbar 
+          onToggleSidebar={toggleSidebar}
+        />
 
         {/* Page Content */}
-        <main className="flex-fill overflow-auto bg-light" data-id-ref="dashboard-layout-page-content-main">
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflow: 'auto',
+            backgroundColor: 'background.default',
+          }}
+          data-id-ref="dashboard-layout-page-content-main"
+        >
           <Outlet />
-        </main>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

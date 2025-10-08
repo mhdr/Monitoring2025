@@ -1,8 +1,33 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  IconButton,
+  Badge,
+  Divider,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import {
+  Close as CloseIcon,
+  Dashboard as DashboardIcon,
+  ShowChart as PlotsIcon,
+  Warning as ActiveAlarmsIcon,
+  Description as AlarmLogIcon,
+  ChecklistRtl as AuditTrailIcon,
+  NotificationsOff as DisabledAlarmsIcon,
+  Event as SchedulerIcon,
+  Settings as ManagementIcon,
+} from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useActiveAlarms } from '../hooks/useRedux';
-import './Sidebar.css';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,99 +37,219 @@ interface SidebarProps {
 interface MenuItem {
   path: string;
   key: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
+const SIDEBAR_WIDTH = 280;
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
+  const theme = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const { alarmCount, streamStatus } = useActiveAlarms();
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
   const menuItems: MenuItem[] = [
-    { path: '/dashboard/monitoring', key: 'monitoring', icon: 'bi-display' },
-    { path: '/dashboard/plots', key: 'plots', icon: 'bi-graph-up' },
-    { path: '/dashboard/active-alarms', key: 'activeAlarms', icon: 'bi-exclamation-triangle-fill' },
-    { path: '/dashboard/alarm-log', key: 'alarmLog', icon: 'bi-journal-text' },
-    { path: '/dashboard/audit-trail', key: 'auditTrail', icon: 'bi-list-check' },
-    { path: '/dashboard/disabled-alarms', key: 'disabledAlarms', icon: 'bi-bell-slash' },
-    { path: '/dashboard/scheduler', key: 'scheduler', icon: 'bi-calendar-event' },
-    { path: '/dashboard/management', key: 'management', icon: 'bi-gear' },
+    { path: '/dashboard/monitoring', key: 'monitoring', icon: <DashboardIcon /> },
+    { path: '/dashboard/plots', key: 'plots', icon: <PlotsIcon /> },
+    { path: '/dashboard/active-alarms', key: 'activeAlarms', icon: <ActiveAlarmsIcon /> },
+    { path: '/dashboard/alarm-log', key: 'alarmLog', icon: <AlarmLogIcon /> },
+    { path: '/dashboard/audit-trail', key: 'auditTrail', icon: <AuditTrailIcon /> },
+    { path: '/dashboard/disabled-alarms', key: 'disabledAlarms', icon: <DisabledAlarmsIcon /> },
+    { path: '/dashboard/scheduler', key: 'scheduler', icon: <SchedulerIcon /> },
+    { path: '/dashboard/management', key: 'management', icon: <ManagementIcon /> },
   ];
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
+  const isActive = (path: string) => location.pathname === path;
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (isMobile) {
+      onToggle();
+    }
   };
 
-  return (
-    <>
-      {/* Mobile backdrop */}
-      {isOpen && (
-        <div 
-          className="sidebar-backdrop d-lg-none" 
-          onClick={onToggle}
-          data-id-ref="sidebar-mobile-backdrop"
-        ></div>
-      )}
-
-      {/* Sidebar */}
-      <div 
-        id="main-sidebar"
-        className={`sidebar ${language === 'fa' ? 'sidebar-rtl' : 'sidebar-ltr'} ${isOpen ? 'sidebar-open' : ''}`}
-        dir={language === 'fa' ? 'rtl' : 'ltr'}
-        data-sidebar="main"
-        style={{ backgroundColor: 'var(--bs-dark)' }}
-        data-id-ref="sidebar-root-container"
+  const drawerContent = (
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'background.paper',
+      }}
+      data-id-ref="sidebar-root-container"
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 2.5,
+          py: 2,
+          borderBottom: 1,
+          borderColor: 'divider',
+          minHeight: 64,
+        }}
+        data-id-ref="sidebar-header"
       >
-        <div className="sidebar-header" data-id-ref="sidebar-header">
-          <h5 className="sidebar-title mb-0" data-id-ref="sidebar-title">
-            {t('systemTitle')}
-          </h5>
-          <button
-            className="btn btn-link sidebar-toggle d-lg-none p-0"
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{
+            fontWeight: 700,
+            color: 'primary.main',
+            letterSpacing: 0.5,
+          }}
+          data-id-ref="sidebar-title"
+        >
+          {t('systemTitle')}
+        </Typography>
+        {isMobile && (
+          <IconButton
             onClick={onToggle}
-            aria-label="Close sidebar"
+            edge="end"
+            aria-label={t('common.buttons.close')}
+            size="small"
             data-id-ref="sidebar-toggle-close-btn"
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'primary.main',
+              },
+            }}
           >
-            <i className="bi bi-x-lg" data-id-ref="sidebar-toggle-close-icon"></i>
-          </button>
-        </div>
+            <CloseIcon data-id-ref="sidebar-toggle-close-icon" />
+          </IconButton>
+        )}
+      </Box>
 
-        <div className="sidebar-divider" data-id-ref="sidebar-divider"></div>
+      <Divider data-id-ref="sidebar-divider" />
 
-        <nav className="sidebar-nav" data-id-ref="sidebar-nav">
-          <ul className="nav flex-column" data-id-ref="sidebar-nav-list">
-            {menuItems.map((item) => (
-              <li key={item.key} className="nav-item" data-id-ref={`sidebar-nav-item-${item.key}`}>
-                <Link
-                  to={item.path}
-                  className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
-                  onClick={() => {
-                    // Close sidebar on mobile after navigation
-                    if (window.innerWidth < 992) {
-                      onToggle();
-                    }
-                  }}
+      {/* Navigation Menu */}
+      <Box
+        component="nav"
+        sx={{ 
+          flex: 1, 
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          py: 1,
+        }}
+        data-id-ref="sidebar-nav"
+      >
+        <List sx={{ px: 1 }} data-id-ref="sidebar-nav-list">
+          {menuItems.map((item) => {
+            const active = isActive(item.path);
+            const showBadge = item.key === 'activeAlarms' && streamStatus === 'connected' && alarmCount > 0;
+
+            return (
+              <ListItem
+                key={item.key}
+                disablePadding
+                sx={{ mb: 0.5 }}
+                data-id-ref={`sidebar-nav-item-${item.key}`}
+              >
+                <ListItemButton
+                  onClick={() => handleNavigation(item.path)}
+                  selected={active}
                   data-id-ref={`sidebar-nav-link-${item.key}`}
+                  sx={{
+                    borderRadius: 2,
+                    py: 1.5,
+                    px: 2,
+                    transition: 'all 0.2s ease-in-out',
+                    '&.Mui-selected': {
+                      backgroundColor: 'primary.main',
+                      color: 'primary.contrastText',
+                      '&:hover': {
+                        backgroundColor: 'primary.dark',
+                      },
+                      '& .MuiListItemIcon-root': {
+                        color: 'primary.contrastText',
+                      },
+                    },
+                    '&:hover': {
+                      backgroundColor: active ? 'primary.dark' : 'action.hover',
+                    },
+                  }}
                 >
-                  <i className={item.icon} data-id-ref={`sidebar-nav-icon-${item.key}`}></i>
-                  {t(item.key)}
-                  {/* Show live alarm count badge for active alarms menu item */}
-                  {item.key === 'activeAlarms' && streamStatus === 'connected' && alarmCount > 0 && (
-                    <span 
-                      className="badge bg-danger ms-2 rounded-pill"
-                      data-id-ref="sidebar-active-alarms-badge"
-                      title={`${alarmCount} active alarms`}
-                    >
-                      {alarmCount}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-    </>
+                  <ListItemIcon
+                    data-id-ref={`sidebar-nav-icon-${item.key}`}
+                    sx={{
+                      minWidth: 40,
+                      color: active ? 'primary.contrastText' : 'text.secondary',
+                      transition: 'color 0.2s ease-in-out',
+                    }}
+                  >
+                    {showBadge ? (
+                      <Badge
+                        badgeContent={alarmCount}
+                        color="error"
+                        max={999}
+                        data-id-ref="sidebar-active-alarms-badge"
+                        sx={{
+                          '& .MuiBadge-badge': {
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            minWidth: 20,
+                            height: 20,
+                          },
+                        }}
+                      >
+                        {item.icon}
+                      </Badge>
+                    ) : (
+                      item.icon
+                    )}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t(item.key)}
+                    primaryTypographyProps={{
+                      fontWeight: active ? 600 : 500,
+                      fontSize: '0.9rem',
+                      sx: {
+                        color: active ? 'primary.contrastText' : 'text.primary',
+                      },
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <Drawer
+      variant={isMobile ? 'temporary' : 'persistent'}
+      anchor="left"
+      open={isOpen}
+      onClose={onToggle}
+      data-id-ref="sidebar-drawer"
+      sx={{
+        width: isOpen ? SIDEBAR_WIDTH : 0,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: SIDEBAR_WIDTH,
+          boxSizing: 'border-box',
+          border: 'none',
+          boxShadow: theme.shadows[4],
+          // Fix RTL positioning issue
+          left: '0 !important',
+          right: 'auto !important',
+          insetInlineStart: 0,
+          insetInlineEnd: 'auto',
+        },
+      }}
+      ModalProps={{
+        keepMounted: true, // Better mobile performance
+      }}
+    >
+      {drawerContent}
+    </Drawer>
   );
 };
 
