@@ -20,7 +20,17 @@ const ThemeSwitcher = memo(() => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>('light');
 
   const handleThemeChange = (themeId: ThemeId) => {
+    // Only proceed if theme is actually changing
+    if (themeId === currentThemeId) {
+      return;
+    }
+
+    // Dispatch theme change to Redux store (saves to localStorage)
     dispatch(setTheme(themeId));
+
+    // Refresh the page to apply the theme immediately
+    // This ensures all Bootstrap CSS variables are properly loaded
+    window.location.reload();
   };
 
   const toggleCategory = (category: string) => {
