@@ -1,5 +1,17 @@
 import { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
+import { 
+  Container, 
+  Grid2 as Grid, 
+  Card, 
+  CardContent, 
+  TextField, 
+  Button, 
+  Alert, 
+  Typography,
+  Box,
+  Chip,
+  CircularProgress
+} from '@mui/material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../hooks/useLanguage';
@@ -169,99 +181,100 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <Container fluid className="profile-page" data-id-ref="profile-page-container">
-      <div className="page-header mb-4" data-id-ref="profile-page-header">
-        <h1 className="page-title" data-id-ref="profile-page-title">
+    <Container maxWidth={false} className="profile-page" data-id-ref="profile-page-container">
+      <Box className="page-header mb-4" data-id-ref="profile-page-header">
+        <Typography variant="h4" component="h1" className="page-title" data-id-ref="profile-page-title">
           {t('profilePage.title')}
-        </h1>
-        <p className="page-subtitle text-muted" data-id-ref="profile-page-subtitle">
+        </Typography>
+        <Typography variant="body1" className="page-subtitle text-muted" data-id-ref="profile-page-subtitle">
           {t('profilePage.subtitle')}
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <Row className="g-4">
+      <Grid container spacing={3}>
         {/* User Information Card */}
-        <Col xs={12} lg={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Card className="profile-card h-100" data-id-ref="profile-page-user-info-card">
-            <Card.Body data-id-ref="profile-page-user-info-card-body">
-              <h5 className="card-title mb-4" data-id-ref="profile-page-user-info-title">
+            <CardContent data-id-ref="profile-page-user-info-card-body">
+              <Typography variant="h6" className="card-title mb-4" data-id-ref="profile-page-user-info-title">
                 <i className="bi bi-person-circle me-2" data-id-ref="profile-page-user-info-icon"></i>
                 {t('profilePage.userInfo.title')}
-              </h5>
+              </Typography>
               
-              <div className="user-info-content" data-id-ref="profile-page-user-info-content">
-                <div className="info-item mb-3" data-id-ref="profile-page-user-info-username-item">
-                  <label className="info-label" data-id-ref="profile-page-user-info-username-label">
+              <Box className="user-info-content" data-id-ref="profile-page-user-info-content">
+                <Box className="info-item mb-3" data-id-ref="profile-page-user-info-username-item">
+                  <Typography component="label" className="info-label" data-id-ref="profile-page-user-info-username-label">
                     {t('profilePage.userInfo.username')}
-                  </label>
-                  <div className="info-value" data-id-ref="profile-page-user-info-username-value">
+                  </Typography>
+                  <Typography className="info-value" data-id-ref="profile-page-user-info-username-value">
                     {user?.userName || '-'}
-                  </div>
-                </div>
+                  </Typography>
+                </Box>
 
-                <div className="info-item mb-3" data-id-ref="profile-page-user-info-firstname-item">
-                  <label className="info-label" data-id-ref="profile-page-user-info-firstname-label">
+                <Box className="info-item mb-3" data-id-ref="profile-page-user-info-firstname-item">
+                  <Typography component="label" className="info-label" data-id-ref="profile-page-user-info-firstname-label">
                     {t('profilePage.userInfo.firstName')}
-                  </label>
-                  <div className="info-value" data-id-ref="profile-page-user-info-firstname-value">
+                  </Typography>
+                  <Typography className="info-value" data-id-ref="profile-page-user-info-firstname-value">
                     {getFirstName()}
-                  </div>
-                </div>
+                  </Typography>
+                </Box>
 
-                <div className="info-item mb-3" data-id-ref="profile-page-user-info-lastname-item">
-                  <label className="info-label" data-id-ref="profile-page-user-info-lastname-label">
+                <Box className="info-item mb-3" data-id-ref="profile-page-user-info-lastname-item">
+                  <Typography component="label" className="info-label" data-id-ref="profile-page-user-info-lastname-label">
                     {t('profilePage.userInfo.lastName')}
-                  </label>
-                  <div className="info-value" data-id-ref="profile-page-user-info-lastname-value">
+                  </Typography>
+                  <Typography className="info-value" data-id-ref="profile-page-user-info-lastname-value">
                     {getLastName()}
-                  </div>
-                </div>
+                  </Typography>
+                </Box>
 
-                <div className="info-item" data-id-ref="profile-page-user-info-roles-item">
-                  <label className="info-label" data-id-ref="profile-page-user-info-roles-label">
+                <Box className="info-item" data-id-ref="profile-page-user-info-roles-item">
+                  <Typography component="label" className="info-label" data-id-ref="profile-page-user-info-roles-label">
                     {t('profilePage.userInfo.roles')}
-                  </label>
-                  <div className="info-value" data-id-ref="profile-page-user-info-roles-value">
+                  </Typography>
+                  <Box className="info-value" data-id-ref="profile-page-user-info-roles-value">
                     {user?.roles && user.roles.length > 0 ? (
-                      <div className="roles-badges" data-id-ref="profile-page-user-info-roles-badges">
+                      <Box className="roles-badges" data-id-ref="profile-page-user-info-roles-badges">
                         {user.roles.map((role, index) => (
-                          <span 
-                            key={index} 
-                            className="badge bg-primary me-2 mb-2"
+                          <Chip
+                            key={index}
+                            label={role}
+                            color="primary"
+                            size="small"
+                            sx={{ mr: 1, mb: 1 }}
                             data-id-ref={`profile-page-user-info-role-badge-${index}`}
-                          >
-                            {role}
-                          </span>
+                          />
                         ))}
-                      </div>
+                      </Box>
                     ) : (
-                      <span data-id-ref="profile-page-user-info-no-roles">-</span>
+                      <Typography component="span" data-id-ref="profile-page-user-info-no-roles">-</Typography>
                     )}
-                  </div>
-                </div>
-              </div>
-            </Card.Body>
+                  </Box>
+                </Box>
+              </Box>
+            </CardContent>
           </Card>
-        </Col>
+        </Grid>
 
         {/* Change Password Card */}
-        <Col xs={12} lg={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Card className="profile-card h-100" data-id-ref="profile-page-change-password-card">
-            <Card.Body data-id-ref="profile-page-change-password-card-body">
-              <h5 className="card-title mb-4" data-id-ref="profile-page-change-password-title">
+            <CardContent data-id-ref="profile-page-change-password-card-body">
+              <Typography variant="h6" className="card-title mb-4" data-id-ref="profile-page-change-password-title">
                 <i className="bi bi-shield-lock me-2" data-id-ref="profile-page-change-password-icon"></i>
                 {t('profilePage.changePassword.title')}
-              </h5>
+              </Typography>
               
-              <p className="text-muted mb-4" data-id-ref="profile-page-change-password-subtitle">
+              <Typography variant="body2" className="text-muted mb-4" data-id-ref="profile-page-change-password-subtitle">
                 {t('profilePage.changePassword.subtitle')}
-              </p>
+              </Typography>
 
               {successMessage && (
                 <Alert 
-                  variant="success" 
-                  dismissible 
+                  severity="success"
                   onClose={() => setSuccessMessage('')}
+                  sx={{ mb: 2 }}
                   data-id-ref="profile-page-change-password-success-alert"
                 >
                   {successMessage}
@@ -270,102 +283,72 @@ const ProfilePage: React.FC = () => {
 
               {errorMessage && (
                 <Alert 
-                  variant="danger" 
-                  dismissible 
+                  severity="error"
                   onClose={() => setErrorMessage('')}
+                  sx={{ mb: 2 }}
                   data-id-ref="profile-page-change-password-error-alert"
                 >
                   {errorMessage}
                 </Alert>
               )}
 
-              <Form onSubmit={handlePasswordChange} data-id-ref="profile-page-change-password-form">
-                <Form.Group className="mb-3" data-id-ref="profile-page-change-password-current-group">
-                  <Form.Label data-id-ref="profile-page-change-password-current-label">
-                    {t('profilePage.changePassword.currentPassword')}
-                  </Form.Label>
-                  <Form.Control
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-                    isInvalid={!!errors.currentPassword}
-                    disabled={isSubmitting}
-                    autoComplete="current-password"
-                    data-id-ref="profile-page-change-password-current-input"
-                  />
-                  <Form.Control.Feedback 
-                    type="invalid"
-                    data-id-ref="profile-page-change-password-current-error"
-                  >
-                    {errors.currentPassword}
-                  </Form.Control.Feedback>
-                </Form.Group>
+              <Box component="form" onSubmit={handlePasswordChange} data-id-ref="profile-page-change-password-form">
+                <TextField
+                  type="password"
+                  label={t('profilePage.changePassword.currentPassword')}
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => handleInputChange('currentPassword', e.target.value)}
+                  error={!!errors.currentPassword}
+                  helperText={errors.currentPassword}
+                  disabled={isSubmitting}
+                  autoComplete="current-password"
+                  fullWidth
+                  margin="normal"
+                  data-id-ref="profile-page-change-password-current-input"
+                />
 
-                <Form.Group className="mb-3" data-id-ref="profile-page-change-password-new-group">
-                  <Form.Label data-id-ref="profile-page-change-password-new-label">
-                    {t('profilePage.changePassword.newPassword')}
-                  </Form.Label>
-                  <Form.Control
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                    isInvalid={!!errors.newPassword}
-                    disabled={isSubmitting}
-                    autoComplete="new-password"
-                    data-id-ref="profile-page-change-password-new-input"
-                  />
-                  <Form.Control.Feedback 
-                    type="invalid"
-                    data-id-ref="profile-page-change-password-new-error"
-                  >
-                    {errors.newPassword}
-                  </Form.Control.Feedback>
-                </Form.Group>
+                <TextField
+                  type="password"
+                  label={t('profilePage.changePassword.newPassword')}
+                  value={passwordForm.newPassword}
+                  onChange={(e) => handleInputChange('newPassword', e.target.value)}
+                  error={!!errors.newPassword}
+                  helperText={errors.newPassword}
+                  disabled={isSubmitting}
+                  autoComplete="new-password"
+                  fullWidth
+                  margin="normal"
+                  data-id-ref="profile-page-change-password-new-input"
+                />
 
-                <Form.Group className="mb-4" data-id-ref="profile-page-change-password-confirm-group">
-                  <Form.Label data-id-ref="profile-page-change-password-confirm-label">
-                    {t('profilePage.changePassword.confirmNewPassword')}
-                  </Form.Label>
-                  <Form.Control
-                    type="password"
-                    value={passwordForm.confirmNewPassword}
-                    onChange={(e) => handleInputChange('confirmNewPassword', e.target.value)}
-                    isInvalid={!!errors.confirmNewPassword}
-                    disabled={isSubmitting}
-                    autoComplete="new-password"
-                    data-id-ref="profile-page-change-password-confirm-input"
-                  />
-                  <Form.Control.Feedback 
-                    type="invalid"
-                    data-id-ref="profile-page-change-password-confirm-error"
-                  >
-                    {errors.confirmNewPassword}
-                  </Form.Control.Feedback>
-                </Form.Group>
+                <TextField
+                  type="password"
+                  label={t('profilePage.changePassword.confirmNewPassword')}
+                  value={passwordForm.confirmNewPassword}
+                  onChange={(e) => handleInputChange('confirmNewPassword', e.target.value)}
+                  error={!!errors.confirmNewPassword}
+                  helperText={errors.confirmNewPassword}
+                  disabled={isSubmitting}
+                  autoComplete="new-password"
+                  fullWidth
+                  margin="normal"
+                  data-id-ref="profile-page-change-password-confirm-input"
+                />
 
-                <div className="d-flex gap-2" data-id-ref="profile-page-change-password-buttons">
+                <Box sx={{ display: 'flex', gap: 2, mt: 3 }} data-id-ref="profile-page-change-password-buttons">
                   <Button
-                    variant="primary"
+                    variant="contained"
+                    color="primary"
                     type="submit"
                     disabled={isSubmitting}
+                    startIcon={isSubmitting ? <CircularProgress size={16} /> : null}
                     data-id-ref="profile-page-change-password-submit-button"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <span 
-                          className="spinner-border spinner-border-sm me-2" 
-                          role="status" 
-                          aria-hidden="true"
-                          data-id-ref="profile-page-change-password-submit-spinner"
-                        ></span>
-                        {t('loading')}
-                      </>
-                    ) : (
-                      t('profilePage.changePassword.changePasswordButton')
-                    )}
+                    {isSubmitting ? t('loading') : t('profilePage.changePassword.changePasswordButton')}
                   </Button>
                   <Button
-                    variant="secondary"
+                    variant="outlined"
+                    color="secondary"
                     type="button"
                     onClick={handleCancel}
                     disabled={isSubmitting}
@@ -373,12 +356,12 @@ const ProfilePage: React.FC = () => {
                   >
                     {t('profilePage.changePassword.cancelButton')}
                   </Button>
-                </div>
-              </Form>
-            </Card.Body>
+                </Box>
+              </Box>
+            </CardContent>
           </Card>
-        </Col>
-      </Row>
+        </Grid>
+      </Grid>
     </Container>
   );
 };

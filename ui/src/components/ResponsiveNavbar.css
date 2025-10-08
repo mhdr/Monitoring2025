@@ -1,4 +1,4 @@
-/* Custom navbar styling with Bootstrap integration */
+/* Custom navbar styling with Bootstrap integration and Material-UI */
 .custom-navbar {
   background: linear-gradient(135deg, var(--bs-dark) 0%, var(--bs-secondary) 100%) !important;
   width: 100% !important;
@@ -12,13 +12,9 @@
   z-index: var(--z-navbar) !important;
 }
 
-/* Prevent body scrollbars when dropdown is open */
-.custom-navbar .navbar-nav {
-  overflow: visible !important;
-}
-
-.custom-navbar .nav-item {
-  overflow: visible !important;
+/* MUI AppBar specific overrides */
+.custom-navbar.MuiAppBar-root {
+  background: linear-gradient(135deg, var(--bs-dark) 0%, var(--bs-secondary) 100%) !important;
 }
 
 .navbar-brand-gradient {
@@ -29,10 +25,8 @@
   font-weight: 600;
 }
 
-/* Sidebar toggle button */
+/* Sidebar toggle button - MUI IconButton styling */
 .sidebar-toggle-btn {
-  border: none !important;
-  background: none !important;
   color: var(--bs-white) !important;
   transition: all var(--transition-base) var(--ease-in-out);
 }
@@ -40,7 +34,6 @@
 .sidebar-toggle-btn:hover {
   color: var(--bs-primary) !important;
   background: rgba(var(--bs-primary-rgb), 0.1) !important;
-  border-radius: var(--bs-border-radius-sm);
 }
 
 .sidebar-toggle-btn:focus {
@@ -48,125 +41,66 @@
   outline: none !important;
 }
 
-/* Hide sidebar toggle button on desktop screens */
-@media (min-width: 992px) {
-  .sidebar-toggle-btn {
-    display: none !important;
-  }
-}
-
-.nav-link-hover {
-  transition: all var(--transition-medium) ease;
-}
-
-.nav-link-hover:hover {
-  background-color: rgba(var(--bs-primary-rgb), 0.15) !important;
-  transform: translateY(-2px);
+/* User dropdown toggle button - MUI IconButton */
+.user-dropdown-toggle {
+  background: rgba(var(--bs-primary-rgb), 0.15) !important;
+  border: 1px solid rgba(var(--bs-primary-rgb), 0.3) !important;
+  border-radius: 50rem !important;
+  padding: 0.375rem 0.75rem !important;
+  transition: all var(--transition-medium) ease !important;
   color: var(--bs-light) !important;
 }
 
-.custom-collapse {
-  background: transparent;
-  border-radius: var(--bs-border-radius);
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(var(--bs-primary-rgb), 0.2);
-}
-
-/* Remove borders coming from Bootstrap's collapse/nav container */
-#basic-navbar-nav,
-.custom-collapse,
-.custom-collapse .navbar-nav {
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* More specific rule to override .navbar-collapse border if present */
-.navbar-collapse#basic-navbar-nav {
-  border: none !important;
-}
-
-/* User dropdown styling */
-.user-dropdown {
-  position: relative !important;
-  overflow: visible !important;
-  z-index: var(--z-user-dropdown) !important;
-}
-
-.user-dropdown .dropdown-toggle {
-  background: rgba(var(--bs-primary-rgb), 0.15);
-  border: 1px solid rgba(var(--bs-primary-rgb), 0.3);
-  border-radius: var(50rem);
-  padding: 0.375rem 0.75rem;
-  transition: all var(--transition-medium) ease;
-  overflow: visible !important;
-  color: var(--bs-light);
-}
-
-.user-dropdown .dropdown-toggle:hover {
-  background: rgba(var(--bs-primary-rgb), 0.25);
-  border-color: rgba(var(--bs-primary-rgb), 0.4);
+.user-dropdown-toggle:hover {
+  background: rgba(var(--bs-primary-rgb), 0.25) !important;
+  border-color: rgba(var(--bs-primary-rgb), 0.4) !important;
   transform: translateY(-1px);
 }
 
-.user-dropdown .dropdown-toggle::after {
-  margin-left: 0.5rem;
-}
-
-.user-dropdown .dropdown-menu {
-  background: var(--bs-body-bg);
+/* MUI Menu (dropdown) styling */
+.user-dropdown .MuiPaper-root {
+  background: var(--bs-body-bg) !important;
   backdrop-filter: blur(10px);
-  border: 1px solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius-lg);
-  box-shadow: var(--bs-box-shadow-lg);
-  margin-top: 0.5rem;
+  border: 1px solid var(--bs-border-color) !important;
+  border-radius: var(--bs-border-radius-lg) !important;
+  box-shadow: var(--bs-box-shadow-lg) !important;
   min-width: 200px;
   max-height: calc(100vh - 100px);
   overflow-y: auto;
   overflow-x: hidden;
-  position: absolute !important;
-  top: 100% !important;
-  right: 0 !important;
-  left: auto !important;
-  z-index: var(--z-loading-screen) !important;
-  transform: none !important;
 }
 
-.user-dropdown .dropdown-item {
+/* MUI MenuItem styling */
+.user-dropdown .MuiMenuItem-root {
   transition: all var(--transition-medium) ease;
   border-radius: var(--bs-border-radius);
   margin: 0.25rem 0.5rem;
+  padding: 0.5rem 1rem;
 }
 
-.user-dropdown .dropdown-item:hover {
-  background: rgba(var(--bs-primary-rgb), 0.1);
+.user-dropdown .MuiMenuItem-root:hover {
+  background: rgba(var(--bs-primary-rgb), 0.1) !important;
   transform: translateX(3px);
 }
 
-.user-dropdown .dropdown-item.text-danger:hover {
-  background: rgba(var(--bs-danger-rgb), 0.1);
+.user-dropdown .MuiMenuItem-root.text-danger {
   color: var(--bs-danger) !important;
 }
 
+.user-dropdown .MuiMenuItem-root.text-danger:hover {
+  background: rgba(var(--bs-danger-rgb), 0.1) !important;
+  color: var(--bs-danger) !important;
+}
+
+/* MUI Divider styling */
+.user-dropdown .MuiDivider-root {
+  border-color: var(--bs-border-color) !important;
+  margin: 0.25rem 0.5rem !important;
+}
+
 /* RTL Support */
-[dir="rtl"] .navbar-nav {
-  margin-left: 0;
-  margin-right: auto;
-}
-
-[dir="rtl"] .user-dropdown .dropdown-toggle::after {
-  margin-left: 0;
-  margin-right: 0.5rem;
-}
-
-[dir="rtl"] .user-dropdown .dropdown-item:hover {
+[dir="rtl"] .user-dropdown .MuiMenuItem-root:hover {
   transform: translateX(-3px);
-}
-
-[dir="rtl"] .user-dropdown .dropdown-menu {
-  right: auto !important;
-  left: 0 !important;
 }
 
 /* Mobile-specific styles */
@@ -176,61 +110,28 @@
     overflow: visible !important;
   }
   
-  .user-dropdown .dropdown-toggle {
-    width: 100%;
-    text-align: center;
-    margin-top: 0.5rem;
+  .user-dropdown-toggle {
+    width: auto !important;
   }
   
-  .user-dropdown .dropdown-menu {
-    width: 100%;
-    margin-top: 0.25rem;
+  .user-dropdown .MuiPaper-root {
     max-width: calc(100vw - 40px);
-    left: auto !important;
-    right: 0 !important;
-    transform: none !important;
-    position: absolute !important;
-    top: 100% !important;
   }
 }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  .user-dropdown .dropdown-menu {
-    background: var(--bs-dark);
-    color: var(--bs-light);
+  .user-dropdown .MuiPaper-root {
+    background: var(--bs-dark) !important;
+    color: var(--bs-light) !important;
   }
   
-  .user-dropdown .dropdown-item {
-    color: var(--bs-light);
+  .user-dropdown .MuiMenuItem-root {
+    color: var(--bs-light) !important;
   }
   
-  .user-dropdown .dropdown-item:hover {
-    background: rgba(var(--bs-primary-rgb), 0.2);
-    color: var(--bs-light);
+  .user-dropdown .MuiMenuItem-root:hover {
+    background: rgba(var(--bs-primary-rgb), 0.2) !important;
+    color: var(--bs-light) !important;
   }
-}
-
-/* Prevent unwanted scrollbars from dropdown */
-.navbar-nav .nav-item.dropdown {
-  overflow: visible !important;
-  position: relative !important;
-}
-
-/* Ensure Bootstrap dropdown is always on top */
-.navbar .dropdown-menu {
-  z-index: 9999 !important;
-}
-
-/* Force Bootstrap dropdown stacking context */
-.navbar-nav .nav-item.dropdown.show {
-  z-index: 9999 !important;
-  position: relative !important;
-}
-
-/* Additional dropdown visibility fixes */
-.navbar-nav .dropdown-menu.show {
-  display: block !important;
-  z-index: 9999 !important;
-  position: absolute !important;
 }
