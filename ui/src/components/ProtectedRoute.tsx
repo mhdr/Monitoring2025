@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useAppSelector } from '../hooks/useRedux';
-import { Container, Spinner, Row, Col } from 'react-bootstrap';
+import { Container, Box, CircularProgress, Typography } from '@mui/material';
 import { useLanguage } from '../hooks/useLanguage';
 import { isDataSyncNeeded, buildSyncUrl, pathRequiresSync } from '../utils/syncUtils';
 
@@ -18,15 +18,35 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (isLoading) {
     return (
-      <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center" data-id-ref="protected-route-loading-container">
-        <Row data-id-ref="protected-route-loading-row">
-          <Col className="text-center" data-id-ref="protected-route-loading-col">
-            <Spinner animation="border" role="status" variant="primary" className="mb-3" data-id-ref="protected-route-loading-spinner">
-              <span className="visually-hidden" data-id-ref="protected-route-loading-spinner-label">{t('loading')}</span>
-            </Spinner>
-            <p className="text-muted" data-id-ref="protected-route-loading-text">{t('loading')}</p>
-          </Col>
-        </Row>
+      <Container
+        maxWidth={false}
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        data-id-ref="protected-route-loading-container"
+      >
+        <Box
+          sx={{
+            textAlign: 'center',
+          }}
+          data-id-ref="protected-route-loading-box"
+        >
+          <CircularProgress
+            color="primary"
+            sx={{ mb: 2 }}
+            data-id-ref="protected-route-loading-spinner"
+          />
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            data-id-ref="protected-route-loading-text"
+          >
+            {t('loading')}
+          </Typography>
+        </Box>
       </Container>
     );
   }

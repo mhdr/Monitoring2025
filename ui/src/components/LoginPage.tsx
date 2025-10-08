@@ -1,10 +1,24 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
+import {
+  Container,
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Alert,
+  AlertTitle,
+  Typography,
+  CircularProgress,
+  Checkbox,
+  FormControlLabel,
+  IconButton,
+} from '@mui/material';
+import { Warehouse as WarehouseIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
 import type { ApiError } from '../types/auth';
-import './LoginPage.css';
 
 interface FormErrors {
   username?: string;
@@ -120,135 +134,155 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div data-id-ref="login-page-container" className="login-page min-vh-100 d-flex align-items-center">
-      <Container>
-        <Row className="justify-content-center">
-          <Col xs={12} sm={8} md={6} lg={5} xl={4}>
-            <Card data-id-ref="login-card" className="login-card shadow-lg border-0">
-              <Card.Body data-id-ref="login-card-body" className="p-4 p-md-5">
-                {/* Header */}
-                <div data-id-ref="login-header" className="text-center mb-4">
-                  <div data-id-ref="login-logo" className="login-logo mb-3">
-                    <div data-id-ref="login-logo-icon" className="logo-icon">
-                      <i data-id-ref="login-logo-icon-visual" className="fas fa-warehouse" aria-hidden="true"></i>
-                    </div>
-                  </div>
-                  <h1 data-id-ref="login-title" className="h3 mb-2 fw-bold text-primary">
-                    {t('loginTitle')}
-                  </h1>
-                  <p data-id-ref="login-subtitle" className="text-muted mb-0">
-                    {t('loginSubtitle')}
-                  </p>
-                </div>
+    <Box
+      data-id-ref="login-page-container"
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        bgcolor: 'background.default',
+      }}
+    >
+      <Container maxWidth="sm">
+        <Card data-id-ref="login-card" elevation={8} sx={{ borderRadius: 3 }}>
+          <CardContent data-id-ref="login-card-body" sx={{ p: { xs: 3, md: 5 } }}>
+            {/* Header */}
+            <Box data-id-ref="login-header" sx={{ textAlign: 'center', mb: 4 }}>
+              <Box data-id-ref="login-logo" sx={{ mb: 2 }}>
+                <WarehouseIcon
+                  data-id-ref="login-logo-icon-visual"
+                  sx={{ fontSize: 64 }}
+                  color="primary"
+                />
+              </Box>
+              <Typography
+                variant="h4"
+                component="h1"
+                data-id-ref="login-title"
+                sx={{ mb: 1, fontWeight: 'bold', color: 'primary.main' }}
+              >
+                {t('loginTitle')}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                data-id-ref="login-subtitle"
+              >
+                {t('loginSubtitle')}
+              </Typography>
+            </Box>
 
-                {/* Error Alert */}
-                {apiError && (
-                  <Alert 
-                    data-id-ref="login-error-alert"
-                    variant="danger" 
-                    className="mb-4" 
-                    dismissible 
-                    onClose={clearApiError}
+            {/* Error Alert */}
+            {apiError && (
+              <Alert
+                severity="error"
+                data-id-ref="login-error-alert"
+                sx={{ mb: 3 }}
+                action={
+                  <IconButton
+                    aria-label="close"
+                    color="inherit"
+                    size="small"
+                    onClick={clearApiError}
                   >
-                    <Alert.Heading data-id-ref="login-error-heading" className="h6 mb-2">
-                      {t('loginError')}
-                    </Alert.Heading>
-                    <div data-id-ref="login-error-message">{apiError}</div>
-                  </Alert>
-                )}
+                    <CloseIcon fontSize="inherit" />
+                  </IconButton>
+                }
+              >
+                <AlertTitle data-id-ref="login-error-heading">
+                  {t('loginError')}
+                </AlertTitle>
+                <Box data-id-ref="login-error-message">{apiError}</Box>
+              </Alert>
+            )}
 
-                {/* Login Form */}
-                <Form data-id-ref="login-form" onSubmit={handleSubmit} noValidate>
-                  <Form.Group data-id-ref="login-username-group" className="mb-3">
-                    <Form.Label data-id-ref="login-username-label" className="fw-medium">
-                      {t('username')} *
-                    </Form.Label>
-                    <Form.Control
-                      data-id-ref="login-username-input"
-                      type="text"
-                      name="username"
-                      value={formData.username}
-                      onChange={handleInputChange}
-                      onKeyPress={handleKeyPress}
-                      isInvalid={!!errors.username}
-                      disabled={isLoading}
-                      autoComplete="username"
-                      className="form-control-lg"
-                      placeholder={t('username')}
-                    />
-                    <Form.Control.Feedback data-id-ref="login-username-feedback" type="invalid">
-                      {errors.username}
-                    </Form.Control.Feedback>
-                  </Form.Group>
+            {/* Login Form */}
+            <Box
+              component="form"
+              data-id-ref="login-form"
+              onSubmit={handleSubmit}
+              noValidate
+            >
+              <TextField
+                data-id-ref="login-username-input"
+                fullWidth
+                label={t('username') + ' *'}
+                name="username"
+                value={formData.username}
+                onChange={handleInputChange}
+                onKeyPress={handleKeyPress}
+                error={!!errors.username}
+                helperText={errors.username}
+                disabled={isLoading}
+                autoComplete="username"
+                placeholder={t('username')}
+                sx={{ mb: 3 }}
+                inputProps={{
+                  'data-id-ref': 'login-username-field',
+                }}
+              />
 
-                  <Form.Group data-id-ref="login-password-group" className="mb-4">
-                    <Form.Label data-id-ref="login-password-label" className="fw-medium">
-                      {t('password')} *
-                    </Form.Label>
-                    <Form.Control
-                      data-id-ref="login-password-input"
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      onKeyPress={handleKeyPress}
-                      isInvalid={!!errors.password}
-                      disabled={isLoading}
-                      autoComplete="current-password"
-                      className="form-control-lg"
-                      placeholder={t('password')}
-                    />
-                    <Form.Control.Feedback data-id-ref="login-password-feedback" type="invalid">
-                      {errors.password}
-                    </Form.Control.Feedback>
-                  </Form.Group>
+              <TextField
+                data-id-ref="login-password-input"
+                fullWidth
+                type="password"
+                label={t('password') + ' *'}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                onKeyPress={handleKeyPress}
+                error={!!errors.password}
+                helperText={errors.password}
+                disabled={isLoading}
+                autoComplete="current-password"
+                placeholder={t('password')}
+                sx={{ mb: 3 }}
+                inputProps={{
+                  'data-id-ref': 'login-password-field',
+                }}
+              />
 
-                  <Form.Group data-id-ref="login-remember-group" className="mb-4">
-                    <Form.Check
-                      data-id-ref="login-remember-checkbox"
-                      type="checkbox"
-                      name="rememberMe"
-                      id="rememberMe"
-                      checked={formData.rememberMe}
-                      onChange={handleInputChange}
-                      disabled={isLoading}
-                      label={t('rememberMe')}
-                      className="fw-medium"
-                    />
-                  </Form.Group>
-
-                  <Button
-                    data-id-ref="login-submit-button"
-                    type="submit"
-                    variant="primary"
-                    size="lg"
-                    className="w-100 fw-medium"
+              <FormControlLabel
+                data-id-ref="login-remember-checkbox"
+                control={
+                  <Checkbox
+                    name="rememberMe"
+                    checked={formData.rememberMe}
+                    onChange={handleInputChange}
                     disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Spinner
-                          data-id-ref="login-loading-spinner"
-                          as="span"
-                          animation="border"
-                          size="sm"
-                          role="status"
-                          aria-hidden="true"
-                          className="me-2"
-                        />
-                        {t('loading')}
-                      </>
-                    ) : (
-                      t('loginButton')
-                    )}
-                  </Button>
-                </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+                  />
+                }
+                label={t('rememberMe')}
+                sx={{ mb: 3 }}
+              />
+
+              <Button
+                data-id-ref="login-submit-button"
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={isLoading}
+                sx={{ py: 1.5 }}
+              >
+                {isLoading ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress
+                      data-id-ref="login-loading-spinner"
+                      size={20}
+                      color="inherit"
+                    />
+                    {t('loading')}
+                  </Box>
+                ) : (
+                  t('loginButton')
+                )}
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
       </Container>
-    </div>
+    </Box>
   );
 };
 

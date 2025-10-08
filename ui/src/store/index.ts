@@ -15,6 +15,7 @@ import sessionStorage from 'redux-persist/lib/storage/session'; // sessionStorag
 import authReducer from './slices/authSlice';
 import languageReducer from './slices/languageSlice';
 import monitoringReducer from './slices/monitoringSlice';
+import muiThemeReducer from './slices/muiThemeSlice';
 import { api } from '../services/rtkApi';
 
 /**
@@ -25,6 +26,16 @@ const languagePersistConfig = {
   key: 'language',
   storage, // localStorage
   whitelist: ['currentLanguage'], // Only persist language selection
+};
+
+/**
+ * Persistence configuration for MUI theme
+ * Theme preference is stored in localStorage
+ */
+const muiThemePersistConfig = {
+  key: 'muiTheme',
+  storage, // localStorage
+  whitelist: ['currentTheme'], // Only persist theme selection
 };
 
 /**
@@ -44,6 +55,7 @@ const authPersistConfig = {
 const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authReducer),
   language: persistReducer(languagePersistConfig, languageReducer),
+  muiTheme: persistReducer(muiThemePersistConfig, muiThemeReducer),
   monitoring: monitoringReducer,
   // Add RTK Query API reducer
   [api.reducerPath]: api.reducer,

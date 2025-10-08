@@ -143,6 +143,16 @@
       "sectionDescription": "زبان مورد نظر خود را برای رابط کاربری انتخاب کنید",
       "persianDescription": "فارسی (پیش‌فرض)",
       "englishDescription": "انگلیسی"
+    },
+    "theme": {
+      "title": "پوسته",
+      "sectionTitle": "پوسته",
+      "sectionDescription": "پوسته رنگی مورد نظر خود را انتخاب کنید",
+      "categories": {
+        "light": "پوسته‌های روشن",
+        "dark": "پوسته‌های تیره",
+        "colorful": "پوسته‌های رنگی"
+      }
     }
   },
   "profilePage": {

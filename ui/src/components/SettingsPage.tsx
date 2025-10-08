@@ -1,55 +1,90 @@
-import { Container, Row, Col, Card } from 'react-bootstrap';
+import {
+  Container,
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  Grid,
+} from '@mui/material';
+import {
+  Settings as SettingsIcon,
+  Language as LanguageIcon,
+  CheckCircle as CheckCircleIcon,
+} from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage } from '../hooks/useLanguage';
-import './SettingsPage.css';
+import { MuiThemeSwitcher } from './MuiThemeSwitcher';
 
 /**
  * SettingsPage Component
  * 
- * Displays user settings including language preferences.
+ * Displays user settings including language preferences and theme selection.
  * Accessible from the user dropdown menu.
  */
-const SettingsPage = () => {
+const SettingsPage = (): React.ReactElement => {
   const { t } = useTranslation();
 
   return (
-    <div className="settings-page" data-id-ref="settings-page-root">
-      <Container fluid className="py-4" data-id-ref="settings-page-container">
-        <Row data-id-ref="settings-page-header-row">
-          <Col data-id-ref="settings-page-header-col">
-            <div className="page-header mb-4" data-id-ref="settings-page-header">
-              <h1 className="page-title" data-id-ref="settings-page-title">
-                <i className="bi bi-gear-fill me-2" data-id-ref="settings-page-title-icon"></i>
-                {t('settings.pageTitle')}
-              </h1>
-              <p className="page-description text-muted" data-id-ref="settings-page-description">
-                {t('settings.pageDescription')}
-              </p>
-            </div>
-          </Col>
-        </Row>
+    <Box data-id-ref="settings-page-root" sx={{ py: 3 }}>
+      <Container maxWidth="xl" data-id-ref="settings-page-container">
+        <Box data-id-ref="settings-page-header" sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <SettingsIcon color="primary" data-id-ref="settings-page-title-icon" />
+            <Typography variant="h4" component="h1" data-id-ref="settings-page-title">
+              {t('settings.pageTitle')}
+            </Typography>
+          </Box>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            data-id-ref="settings-page-description"
+          >
+            {t('settings.pageDescription')}
+          </Typography>
+        </Box>
 
-        <Row className="g-4" data-id-ref="settings-page-content-row">
+        <Grid container spacing={3} data-id-ref="settings-page-content-row">
           {/* Language Settings */}
-          <Col xs={12} data-id-ref="settings-page-language-col">
-            <Card className="shadow-sm settings-card" data-id-ref="settings-page-language-card">
-              <Card.Body data-id-ref="settings-page-language-card-body">
-                <Card.Title className="mb-4" data-id-ref="settings-page-language-card-title">
-                  <i className="bi bi-globe me-2" data-id-ref="settings-page-language-icon"></i>
-                  {t('settings.language.sectionTitle')}
-                </Card.Title>
-                <Card.Text className="text-muted mb-4" data-id-ref="settings-page-language-description">
+          <Grid item xs={12} data-id-ref="settings-page-language-col">
+            <Card elevation={2} data-id-ref="settings-page-language-card">
+              <CardContent data-id-ref="settings-page-language-card-body">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <LanguageIcon color="primary" data-id-ref="settings-page-language-icon" />
+                  <Typography
+                    variant="h5"
+                    component="h2"
+                    data-id-ref="settings-page-language-card-title"
+                  >
+                    {t('settings.language.sectionTitle')}
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 3 }}
+                  data-id-ref="settings-page-language-description"
+                >
                   {t('settings.language.sectionDescription')}
-                </Card.Text>
-                <div className="language-switcher-section" data-id-ref="settings-page-language-switcher-section">
+                </Typography>
+                <Box data-id-ref="settings-page-language-switcher-section">
                   <LanguageOptions />
-                </div>
-              </Card.Body>
+                </Box>
+              </CardContent>
             </Card>
-          </Col>
-        </Row>
+          </Grid>
+
+          {/* Theme Settings */}
+          <Grid item xs={12} data-id-ref="settings-page-theme-col">
+            <Card elevation={2} data-id-ref="settings-page-theme-card">
+              <CardContent data-id-ref="settings-page-theme-card-body">
+                <MuiThemeSwitcher />
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       </Container>
-    </div>
+    </Box>
   );
 };
 
@@ -58,57 +93,105 @@ const SettingsPage = () => {
  * 
  * Displays language selection options for Persian and English.
  */
-const LanguageOptions = () => {
+const LanguageOptions = (): React.ReactElement => {
   const { t } = useTranslation();
   const { language, changeLanguage } = useLanguage();
 
   return (
-    <div className="language-options-grid" data-id-ref="settings-language-options-grid">
-      <button
-        type="button"
-        className={`language-option-btn ${language === 'fa' ? 'active' : ''}`}
-        onClick={() => changeLanguage('fa')}
-        aria-label="فارسی"
-        data-id-ref="settings-language-option-fa"
-      >
-        <span className="language-flag" data-id-ref="settings-language-flag-fa">
-          🇮🇷
-        </span>
-        <div className="language-info" data-id-ref="settings-language-info-fa">
-          <span className="language-name" data-id-ref="settings-language-name-fa">
-            فارسی
-          </span>
-          <span className="language-description" data-id-ref="settings-language-desc-fa">
-            {t('settings.language.persianDescription')}
-          </span>
-        </div>
-        {language === 'fa' && (
-          <i className="bi bi-check-circle-fill language-check" data-id-ref="settings-language-check-fa"></i>
-        )}
-      </button>
-      <button
-        type="button"
-        className={`language-option-btn ${language === 'en' ? 'active' : ''}`}
-        onClick={() => changeLanguage('en')}
-        aria-label="English"
-        data-id-ref="settings-language-option-en"
-      >
-        <span className="language-flag" data-id-ref="settings-language-flag-en">
-          🇬🇧
-        </span>
-        <div className="language-info" data-id-ref="settings-language-info-en">
-          <span className="language-name" data-id-ref="settings-language-name-en">
-            English
-          </span>
-          <span className="language-description" data-id-ref="settings-language-desc-en">
-            {t('settings.language.englishDescription')}
-          </span>
-        </div>
-        {language === 'en' && (
-          <i className="bi bi-check-circle-fill language-check" data-id-ref="settings-language-check-en"></i>
-        )}
-      </button>
-    </div>
+    <Grid container spacing={2} data-id-ref="settings-language-options-grid">
+      <Grid item xs={12} sm={6}>
+        <Button
+          fullWidth
+          variant={language === 'fa' ? 'contained' : 'outlined'}
+          onClick={() => changeLanguage('fa')}
+          aria-label="فارسی"
+          data-id-ref="settings-language-option-fa"
+          sx={{
+            p: 2,
+            justifyContent: 'flex-start',
+            textTransform: 'none',
+            height: 'auto',
+          }}
+          startIcon={
+            <Typography variant="h4" component="span" data-id-ref="settings-language-flag-fa">
+              🇮🇷
+            </Typography>
+          }
+          endIcon={
+            language === 'fa' ? (
+              <CheckCircleIcon data-id-ref="settings-language-check-fa" />
+            ) : null
+          }
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              flex: 1,
+            }}
+            data-id-ref="settings-language-info-fa"
+          >
+            <Typography variant="h6" component="span" data-id-ref="settings-language-name-fa">
+              فارسی
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              data-id-ref="settings-language-desc-fa"
+            >
+              {t('settings.language.persianDescription')}
+            </Typography>
+          </Box>
+        </Button>
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <Button
+          fullWidth
+          variant={language === 'en' ? 'contained' : 'outlined'}
+          onClick={() => changeLanguage('en')}
+          aria-label="English"
+          data-id-ref="settings-language-option-en"
+          sx={{
+            p: 2,
+            justifyContent: 'flex-start',
+            textTransform: 'none',
+            height: 'auto',
+          }}
+          startIcon={
+            <Typography variant="h4" component="span" data-id-ref="settings-language-flag-en">
+              🇬🇧
+            </Typography>
+          }
+          endIcon={
+            language === 'en' ? (
+              <CheckCircleIcon data-id-ref="settings-language-check-en" />
+            ) : null
+          }
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              flex: 1,
+            }}
+            data-id-ref="settings-language-info-en"
+          >
+            <Typography variant="h6" component="span" data-id-ref="settings-language-name-en">
+              English
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              data-id-ref="settings-language-desc-en"
+            >
+              {t('settings.language.englishDescription')}
+            </Typography>
+          </Box>
+        </Button>
+      </Grid>
+    </Grid>
   );
 };
 

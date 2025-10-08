@@ -143,6 +143,16 @@
       "sectionDescription": "Choose your preferred language for the interface",
       "persianDescription": "Persian (Default)",
       "englishDescription": "English"
+    },
+    "theme": {
+      "title": "Theme",
+      "sectionTitle": "Theme",
+      "sectionDescription": "Choose your preferred color theme",
+      "categories": {
+        "light": "Light Themes",
+        "dark": "Dark Themes",
+        "colorful": "Colorful Themes"
+      }
     }
   },
   "profilePage": {
