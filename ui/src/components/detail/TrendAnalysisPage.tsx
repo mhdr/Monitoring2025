@@ -273,11 +273,10 @@ const TrendAnalysisPage: React.FC = () => {
           data: values,
           smooth: true,
           lineStyle: {
-            width: 2,
-            color: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#0d6efd',
+            color: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim(),
           },
           itemStyle: {
-            color: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#0d6efd',
+            color: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim(),
           },
           label: {
             fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
