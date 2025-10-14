@@ -2,6 +2,29 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  ButtonGroup,
+  Alert,
+  CircularProgress,
+  Chip,
+  IconButton,
+  Collapse,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import {
+  Refresh as RefreshIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Warning as WarningIcon,
+  ArrowBack as ArrowBackIcon,
+  Inbox as InboxIcon,
+} from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useAppSelector } from '../../hooks/useRedux';
 import { useLazyGetHistoryQuery } from '../../services/rtkApi';
@@ -13,8 +36,10 @@ type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
 
 const TrendAnalysisPage: React.FC = () => {
   const { t, language } = useLanguage();
+  const theme = useTheme();
   const [searchParams] = useSearchParams();
   const itemId = searchParams.get('itemId');
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Get item from Redux store
   const item = useAppSelector((state) => 
@@ -31,19 +56,8 @@ const TrendAnalysisPage: React.FC = () => {
   const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>('last24Hours');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
-  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
   // Collapsed state for the Date Range card on mobile
-  const [dateRangeCollapsed, setDateRangeCollapsed] = useState<boolean>(window.innerWidth < 768);
-
-  // Handle window resize for responsive chart title
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const [dateRangeCollapsed, setDateRangeCollapsed] = useState<boolean>(isMobile);
 
   // Calculate Unix timestamps based on date range
   const getDateRange = useMemo(() => {
@@ -273,10 +287,10 @@ const TrendAnalysisPage: React.FC = () => {
           data: values,
           smooth: true,
           lineStyle: {
-            color: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim(),
+            color: theme.palette.primary.main,
           },
           itemStyle: {
-            color: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim(),
+            color: theme.palette.primary.main,
           },
           label: {
             fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
@@ -320,7 +334,7 @@ const TrendAnalysisPage: React.FC = () => {
         left: isRTL ? 20 : 'auto',
       },
     };
-  }, [historyData, language, t, itemUnit, composedChartTitle, isMobile]);
+  }, [historyData, language, t, itemUnit, composedChartTitle, isMobile, theme.palette.primary.main]);
 
   // Handle date range preset change
   const handlePresetChange = (preset: DateRangePreset) => {
@@ -354,219 +368,260 @@ const TrendAnalysisPage: React.FC = () => {
   // Show helpful message when itemId is missing
   if (!itemId) {
     return (
-      <div
-        className="container-fluid h-100 d-flex align-items-center justify-content-center"
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 400,
+          p: 3,
+        }}
         data-id-ref="trend-analysis-no-item-container"
       >
-        <div className="text-center" data-id-ref="trend-analysis-no-item-content">
-          <i className="bi bi-exclamation-triangle text-warning display-1 mb-4" data-id-ref="trend-analysis-no-item-icon" />
-          <h3 className="mb-3" data-id-ref="trend-analysis-no-item-title">
+        <Box sx={{ textAlign: 'center' }} data-id-ref="trend-analysis-no-item-content">
+          <WarningIcon
+            sx={{ fontSize: 80, color: 'warning.main', mb: 3 }}
+            data-id-ref="trend-analysis-no-item-icon"
+          />
+          <Typography variant="h5" gutterBottom data-id-ref="trend-analysis-no-item-title">
             {t('itemNotFound')}
-          </h3>
-          <p className="text-muted mb-4" data-id-ref="trend-analysis-no-item-description">
+          </Typography>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 4 }}
+            data-id-ref="trend-analysis-no-item-description"
+          >
             {language === 'fa' 
               ? 'برای مشاهده تحلیل روند، لطفاً از صفحه مانیتورینگ یک پوینت را انتخاب کنید.'
               : 'To view trend analysis, please select a monitoring item from the Monitoring page.'}
-          </p>
-          <a
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
             href="/dashboard/monitoring"
-            className="btn btn-primary"
+            startIcon={<ArrowBackIcon />}
             data-id-ref="trend-analysis-no-item-back-button"
           >
-            <i className="bi bi-arrow-left me-2" data-id-ref="trend-analysis-no-item-back-icon" />
             {language === 'fa' ? 'بازگشت به مانیتورینگ' : 'Go to Monitoring'}
-          </a>
-        </div>
-      </div>
+          </Button>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div
-      className={`h-100 d-flex flex-column ${isMobile ? 'py-1' : 'py-3 py-md-4'}`}
-      style={{ 
-        padding: isMobile ? '0.5rem' : '1.5rem 2rem',
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        p: isMobile ? 1 : 3,
         maxWidth: '100%',
-        margin: '0 auto',
       }}
       data-id-ref="trend-analysis-page-container"
     >
       {/* Error Alert */}
       {error && (
-        <div className="row mb-3" data-id-ref="trend-analysis-error-row">
-          <div className="col-12">
-            <div
-              className="alert alert-danger alert-dismissible fade show"
-              role="alert"
-              data-id-ref="trend-analysis-error-alert"
-            >
-              {error}
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setError(null)}
-                aria-label="Close"
-                data-id-ref="trend-analysis-error-close-button"
-              />
-            </div>
-          </div>
-        </div>
+        <Alert
+          severity="error"
+          onClose={() => setError(null)}
+          sx={{ mb: 3 }}
+          data-id-ref="trend-analysis-error-alert"
+        >
+          {error}
+        </Alert>
       )}
 
       {/* Date Range Selector */}
-      <div className="row mb-3" data-id-ref="trend-analysis-date-range-row">
-        <div className="col-12">
-          <div className="card" data-id-ref="trend-analysis-date-range-card">
-            <div className="card-header d-flex align-items-center justify-content-between p-2">
-              <div className="d-flex align-items-center">
-                <strong className="small mb-0" data-id-ref="trend-analysis-date-range-label">{t('dateRange')}</strong>
-              </div>
-              {/* Toggle button visible only on mobile */}
-              {isMobile && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={() => setDateRangeCollapsed((s) => !s)}
-                  aria-expanded={!dateRangeCollapsed}
-                  data-id-ref="trend-analysis-date-range-toggle-button"
+      <Card sx={{ mb: 3 }} data-id-ref="trend-analysis-date-range-card">
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2,
+            py: 1.5,
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold" data-id-ref="trend-analysis-date-range-label">
+            {t('dateRange')}
+          </Typography>
+          {/* Toggle button visible only on mobile */}
+          {isMobile && (
+            <IconButton
+              size="small"
+              onClick={() => setDateRangeCollapsed((s) => !s)}
+              aria-expanded={!dateRangeCollapsed}
+              data-id-ref="trend-analysis-date-range-toggle-button"
+            >
+              {dateRangeCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+            </IconButton>
+          )}
+        </Box>
+
+        {/* Card body: hidden on mobile when collapsed */}
+        <Collapse in={!isMobile || !dateRangeCollapsed}>
+          <CardContent sx={{ p: isMobile ? 2 : 3 }} data-id-ref="trend-analysis-date-range-card-body">
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                alignItems: { xs: 'stretch', md: 'flex-end' },
+                gap: 2,
+              }}
+            >
+              {/* Preset Buttons */}
+              <ButtonGroup
+                variant="outlined"
+                size="small"
+                sx={{ flexWrap: 'wrap' }}
+                data-id-ref="trend-analysis-preset-button-group"
+              >
+                <Button
+                  variant={selectedPreset === 'last24Hours' ? 'contained' : 'outlined'}
+                  onClick={() => handlePresetChange('last24Hours')}
+                  data-id-ref="trend-analysis-preset-24h-button"
                 >
-                  <i className={`bi ${dateRangeCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'}`} />
-                </button>
+                  {t('last24Hours')}
+                </Button>
+                <Button
+                  variant={selectedPreset === 'last7Days' ? 'contained' : 'outlined'}
+                  onClick={() => handlePresetChange('last7Days')}
+                  data-id-ref="trend-analysis-preset-7d-button"
+                >
+                  {t('last7Days')}
+                </Button>
+                <Button
+                  variant={selectedPreset === 'last30Days' ? 'contained' : 'outlined'}
+                  onClick={() => handlePresetChange('last30Days')}
+                  data-id-ref="trend-analysis-preset-30d-button"
+                >
+                  {t('last30Days')}
+                </Button>
+                <Button
+                  variant={selectedPreset === 'custom' ? 'contained' : 'outlined'}
+                  onClick={() => handlePresetChange('custom')}
+                  data-id-ref="trend-analysis-preset-custom-button"
+                >
+                  {t('customRange')}
+                </Button>
+              </ButtonGroup>
+
+              {/* Custom Date Inputs (shown only when custom is selected) */}
+              {selectedPreset === 'custom' && (
+                <>
+                  <SeparatedDateTimePicker
+                    id="startDate"
+                    value={customStartDate}
+                    onChange={setCustomStartDate}
+                    data-id-ref="trend-analysis-start-date"
+                    className=""
+                    dateLabel={t('startDate')}
+                    timeLabel={t('startTime')}
+                  />
+                  <SeparatedDateTimePicker
+                    id="endDate"
+                    value={customEndDate}
+                    onChange={setCustomEndDate}
+                    data-id-ref="trend-analysis-end-date"
+                    className=""
+                    dateLabel={t('endDate')}
+                    timeLabel={t('endTime')}
+                  />
+                </>
               )}
-            </div>
 
-            {/* Card body: hidden on mobile when collapsed */}
-              {(!isMobile || !dateRangeCollapsed) && (
-              <div className={`card-body ${isMobile ? 'p-2' : 'p-3'}`} data-id-ref="trend-analysis-date-range-card-body">
-                <div className="row g-2 align-items-end">
-                  {/* Preset Buttons */}
-                  <div className="col-12 col-md-auto">
-                    <div className="btn-group flex-wrap mt-1 mt-md-0 ms-md-2" role="group" data-id-ref="trend-analysis-preset-button-group">
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${selectedPreset === 'last24Hours' ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => handlePresetChange('last24Hours')}
-                        data-id-ref="trend-analysis-preset-24h-button"
-                      >
-                        {t('last24Hours')}
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${selectedPreset === 'last7Days' ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => handlePresetChange('last7Days')}
-                        data-id-ref="trend-analysis-preset-7d-button"
-                      >
-                        {t('last7Days')}
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${selectedPreset === 'last30Days' ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => handlePresetChange('last30Days')}
-                        data-id-ref="trend-analysis-preset-30d-button"
-                      >
-                        {t('last30Days')}
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${selectedPreset === 'custom' ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => handlePresetChange('custom')}
-                        data-id-ref="trend-analysis-preset-custom-button"
-                      >
-                        {t('customRange')}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Custom Date Inputs (shown only when custom is selected) */}
-                  {selectedPreset === 'custom' && (
-                    <>
-                      <SeparatedDateTimePicker
-                        id="startDate"
-                        value={customStartDate}
-                        onChange={setCustomStartDate}
-                        data-id-ref="trend-analysis-start-date"
-                        className="col-12 col-md-auto"
-                        dateLabel={t('startDate')}
-                        timeLabel={t('startTime')}
-                      />
-                      <SeparatedDateTimePicker
-                        id="endDate"
-                        value={customEndDate}
-                        onChange={setCustomEndDate}
-                        data-id-ref="trend-analysis-end-date"
-                        className="col-12 col-md-auto"
-                        dateLabel={t('endDate')}
-                        timeLabel={t('endTime')}
-                      />
-                    </>
-                  )}
-
-                  {/* Refresh Button */}
-                  <div className="col-12 col-md-auto ms-md-auto">
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-success w-100 w-md-auto"
-                      onClick={fetchHistoryData}
-                      disabled={loading}
-                      data-id-ref="trend-analysis-refresh-button"
-                    >
-                      <i className="bi bi-arrow-clockwise me-1" data-id-ref="trend-analysis-refresh-icon" />
-                      {loading ? t('fetchingData') : t('refresh')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+              {/* Refresh Button */}
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={fetchHistoryData}
+                disabled={loading}
+                startIcon={<RefreshIcon />}
+                sx={{ ml: { md: 'auto' }, minWidth: { xs: '100%', md: 'auto' } }}
+                data-id-ref="trend-analysis-refresh-button"
+              >
+                {loading ? t('fetchingData') : t('refresh')}
+              </Button>
+            </Box>
+          </CardContent>
+        </Collapse>
+      </Card>
 
       {/* Chart Section */}
-      <div className="row flex-fill" data-id-ref="trend-analysis-chart-row">
-        <div className={`col-12 h-100 ${isMobile ? 'px-1' : ''}`} data-id-ref="trend-analysis-chart-col">
-      <div className="card h-100 d-flex flex-column" data-id-ref="trend-analysis-chart-card">
-            <div className={`card-header d-flex justify-content-between align-items-center ${isMobile ? 'py-1' : ''}`} data-id-ref="trend-analysis-chart-card-header">
-              <h5 className="card-title mb-0" data-id-ref="trend-analysis-chart-title">
-                {t('trendAnalysisTitle')}
-              </h5>
-              {/* Data Point Count */}
-              {historyData.length > 0 && !loading && (
-                <span className="badge bg-secondary" data-id-ref="trend-analysis-data-count">
-                  {historyData.length} {t('dataPoints')}
-                </span>
-              )}
-            </div>
-            <div
-              className={`card-body flex-fill d-flex align-items-center ${isMobile ? '' : 'justify-content-center'}`}
-              data-id-ref="trend-analysis-chart-card-body"
-            >
-              {loading ? (
-                <div className="text-center" data-id-ref="trend-analysis-loading-container">
-                  <div className="spinner-border text-primary mb-3" role="status" data-id-ref="trend-analysis-loading-spinner">
-                    <span className="visually-hidden">{t('loadingChart')}</span>
-                  </div>
-                  <p className="text-muted" data-id-ref="trend-analysis-loading-text">
-                    {t('loadingChart')}
-                  </p>
-                </div>
-              ) : historyData.length === 0 ? (
-                <div className="text-center text-muted" data-id-ref="trend-analysis-no-data-container">
-                  <i className="bi bi-inbox fs-1 mb-3 d-block" data-id-ref="trend-analysis-no-data-icon" />
-                  <p data-id-ref="trend-analysis-no-data-text">{t('noData')}</p>
-                </div>
-              ) : (
-                <ReactECharts
-                  option={chartOption}
-                  style={{ height: '100%', width: '100%', minHeight: isMobile ? '260px' : '400px' }}
-                  opts={{ renderer: 'canvas' }}
-                  data-id-ref="trend-analysis-chart"
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      <Card
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+        data-id-ref="trend-analysis-chart-card"
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            px: 2,
+            py: isMobile ? 1 : 2,
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
+          data-id-ref="trend-analysis-chart-card-header"
+        >
+          <Typography variant="h6" component="h5" data-id-ref="trend-analysis-chart-title">
+            {t('trendAnalysisTitle')}
+          </Typography>
+          {/* Data Point Count */}
+          {historyData.length > 0 && !loading && (
+            <Chip
+              label={`${historyData.length} ${t('dataPoints')}`}
+              color="secondary"
+              size="small"
+              data-id-ref="trend-analysis-data-count"
+            />
+          )}
+        </Box>
+        <CardContent
+          sx={{
+            flexGrow: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: isMobile ? 'flex-start' : 'center',
+            minHeight: 0,
+          }}
+          data-id-ref="trend-analysis-chart-card-body"
+        >
+          {loading ? (
+            <Box sx={{ textAlign: 'center' }} data-id-ref="trend-analysis-loading-container">
+              <CircularProgress sx={{ mb: 3 }} data-id-ref="trend-analysis-loading-spinner" />
+              <Typography color="text.secondary" data-id-ref="trend-analysis-loading-text">
+                {t('loadingChart')}
+              </Typography>
+            </Box>
+          ) : historyData.length === 0 ? (
+            <Box sx={{ textAlign: 'center' }} data-id-ref="trend-analysis-no-data-container">
+              <InboxIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 3 }} data-id-ref="trend-analysis-no-data-icon" />
+              <Typography color="text.secondary" data-id-ref="trend-analysis-no-data-text">
+                {t('noData')}
+              </Typography>
+            </Box>
+          ) : (
+            <ReactECharts
+              option={chartOption}
+              style={{ height: '100%', width: '100%', minHeight: isMobile ? '260px' : '400px' }}
+              opts={{ renderer: 'canvas' }}
+              data-id-ref="trend-analysis-chart"
+            />
+          )}
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 
