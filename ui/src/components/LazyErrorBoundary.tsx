@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import type { ReactNode } from 'react';
+import { Warning, Refresh, Replay } from '@mui/icons-material';
 import './LazyErrorBoundary.css';
 
 interface LazyErrorBoundaryProps {
@@ -100,7 +101,7 @@ class LazyErrorBoundary extends Component<LazyErrorBoundaryProps, LazyErrorBound
               className="error-icon mb-3" 
               data-id-ref="lazy-error-boundary-icon"
             >
-              <i className="bi bi-exclamation-triangle-fill text-warning" style={{ fontSize: '3rem' }}></i>
+              <Warning className="text-warning" style={{ fontSize: '3rem' }} />
             </div>
             
             <h3 
@@ -146,7 +147,7 @@ class LazyErrorBoundary extends Component<LazyErrorBoundaryProps, LazyErrorBound
                 onClick={this.handleRetry}
                 data-id-ref="lazy-error-boundary-retry-button"
               >
-                <i className="bi bi-arrow-clockwise me-2"></i>
+                <Refresh className="me-2" />
                 Try Again
               </button>
               
@@ -155,7 +156,7 @@ class LazyErrorBoundary extends Component<LazyErrorBoundaryProps, LazyErrorBound
                 onClick={this.handleReload}
                 data-id-ref="lazy-error-boundary-reload-button"
               >
-                <i className="bi bi-arrow-repeat me-2"></i>
+                <Replay className="me-2" />
                 Reload Page
               </button>
             </div>

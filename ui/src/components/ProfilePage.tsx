@@ -12,6 +12,7 @@ import {
   Chip,
   CircularProgress
 } from '@mui/material';
+import { AccountCircle, Lock } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../hooks/useLanguage';
@@ -240,11 +241,12 @@ const ProfilePage: React.FC = () => {
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
+                  gap: 1,
                   mb: 4
                 }} 
                 data-id-ref="profile-page-user-info-title"
               >
-                <i className="bi bi-person-circle" data-id-ref="profile-page-user-info-icon"></i>
+                <AccountCircle data-id-ref="profile-page-user-info-icon" />
                 {t('profilePage.userInfo.title')}
               </Typography>
               
@@ -432,11 +434,12 @@ const ProfilePage: React.FC = () => {
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
+                  gap: 1,
                   mb: 4
                 }} 
                 data-id-ref="profile-page-change-password-title"
               >
-                <i className="bi bi-shield-lock" data-id-ref="profile-page-change-password-icon"></i>
+                <Lock data-id-ref="profile-page-change-password-icon" />
                 {t('profilePage.changePassword.title')}
               </Typography>
               

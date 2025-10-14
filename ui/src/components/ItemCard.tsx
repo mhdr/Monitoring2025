@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { OpenInNew } from '@mui/icons-material';
 
 // Extend window type for Bootstrap 5
 declare global {
@@ -60,7 +61,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, t
           title={t('openInNewTab')}
           ref={openBtnRef}
         >
-          <i className="bi bi-box-arrow-up-right" data-id-ref="item-card-open-icon"></i>
+          <OpenInNew data-id-ref="item-card-open-icon" />
         </button>
       </div>
       <div className="item-card-body" data-id-ref="item-card-body">

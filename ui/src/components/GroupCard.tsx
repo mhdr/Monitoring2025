@@ -1,4 +1,5 @@
 import React from 'react';
+import { Folder } from '@mui/icons-material';
 import type { Group } from '../types/api';
 import { useLanguage } from '../hooks/useLanguage';
 import './GroupCard.css';
@@ -32,7 +33,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
       data-id-ref="group-card-root-container"
     >
       <div className="group-card-icon" data-id-ref="group-card-icon-container">
-        <i className="bi bi-folder-fill" data-id-ref="group-card-folder-icon"></i>
+        <Folder data-id-ref="group-card-folder-icon" />
       </div>
       <div className="group-card-content" data-id-ref="group-card-content-container">
         <h6 className="group-card-title" data-id-ref="group-card-title-heading">{displayName}</h6>

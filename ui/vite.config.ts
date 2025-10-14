@@ -25,7 +25,7 @@ export default defineConfig({
     // PWA plugin - service worker, manifest, and offline support
     VitePWA({
       registerType: 'prompt', // User consent before updating
-      includeAssets: ['fonts/woff2/IRANSansXV.woff2', 'fonts/woff/IRANSansXV.woff', 'bootstrap-icons/fonts/*.woff*'], // Bootstrap Icons font only, not Bootstrap CSS
+      includeAssets: ['fonts/woff2/IRANSansXV.woff2', 'fonts/woff/IRANSansXV.woff'], // Persian fonts
       manifest: {
         name: 'Monitoring System 2025',
         short_name: 'Monitoring',
