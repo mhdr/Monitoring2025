@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { useLanguage } from '../../hooks/useLanguage';
+import { CardHeader } from '../shared/CardHeader';
 
 const AlarmLogDetailPage: React.FC = () => {
   const { t } = useLanguage();
@@ -23,19 +24,10 @@ const AlarmLogDetailPage: React.FC = () => {
         }}
         data-id-ref="alarm-log-detail-page-card"
       >
-        <Box
-          sx={{
-            px: 2,
-            py: 2,
-            borderBottom: 1,
-            borderColor: 'divider',
-          }}
-          data-id-ref="alarm-log-detail-page-card-header"
-        >
-          <Typography variant="h6" component="h4" data-id-ref="alarm-log-detail-page-title">
-            {t('alarmLogDetail')}
-          </Typography>
-        </Box>
+        <CardHeader 
+          title={t('alarmLogDetail')}
+          dataIdRef="alarm-log-detail-page-header"
+        />
         <CardContent
           sx={{
             flexGrow: 1,

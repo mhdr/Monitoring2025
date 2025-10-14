@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { useLanguage } from '../../hooks/useLanguage';
+import { CardHeader } from '../shared/CardHeader';
 
 const LiveMonitoringDetailPage: React.FC = () => {
   const { t } = useLanguage();
@@ -23,19 +24,10 @@ const LiveMonitoringDetailPage: React.FC = () => {
         }}
         data-id-ref="live-monitoring-detail-page-card"
       >
-        <Box
-          sx={{
-            px: 2,
-            py: 2,
-            borderBottom: 1,
-            borderColor: 'divider',
-          }}
-          data-id-ref="live-monitoring-detail-page-card-header"
-        >
-          <Typography variant="h6" component="h4" data-id-ref="live-monitoring-detail-page-title">
-            {t('liveMonitoring')}
-          </Typography>
-        </Box>
+        <CardHeader 
+          title={t('liveMonitoring')}
+          dataIdRef="live-monitoring-detail-page-header"
+        />
         <CardContent
           sx={{
             flexGrow: 1,

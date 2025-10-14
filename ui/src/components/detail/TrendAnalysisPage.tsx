@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 import {
   Box,
@@ -10,7 +9,6 @@ import {
   Button,
   ButtonGroup,
   Alert,
-  CircularProgress,
   Chip,
   IconButton,
   Collapse,
@@ -23,13 +21,14 @@ import {
   ExpandLess as ExpandLessIcon,
   Warning as WarningIcon,
   ArrowBack as ArrowBackIcon,
-  Inbox as InboxIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useAppSelector } from '../../hooks/useRedux';
 import { useLazyGetHistoryQuery } from '../../services/rtkApi';
 import type { HistoryRequestDto, HistoricalDataPoint, Item } from '../../types/api';
 import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
+import { EChartsWrapper } from '../shared/EChartsWrapper';
+import { CardHeader } from '../shared/CardHeader';
 
 // Date range preset types
 type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
@@ -562,63 +561,39 @@ const TrendAnalysisPage: React.FC = () => {
         }}
         data-id-ref="trend-analysis-chart-card"
       >
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            px: 2,
-            py: isMobile ? 1 : 2,
-            borderBottom: 1,
-            borderColor: 'divider',
-          }}
-          data-id-ref="trend-analysis-chart-card-header"
-        >
-          <Typography variant="h6" component="h5" data-id-ref="trend-analysis-chart-title">
-            {t('trendAnalysisTitle')}
-          </Typography>
-          {/* Data Point Count */}
-          {historyData.length > 0 && !loading && (
+        <CardHeader
+          title={t('trendAnalysisTitle')}
+          action={historyData.length > 0 && !loading ? (
             <Chip
               label={`${historyData.length} ${t('dataPoints')}`}
               color="secondary"
               size="small"
               data-id-ref="trend-analysis-data-count"
             />
-          )}
-        </Box>
+          ) : undefined}
+          dataIdRef="trend-analysis-chart-header"
+        />
         <CardContent
           sx={{
             flexGrow: 1,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: isMobile ? 'flex-start' : 'center',
+            justifyContent: 'center',
             minHeight: 0,
+            p: isMobile ? 1 : 2,
           }}
           data-id-ref="trend-analysis-chart-card-body"
         >
-          {loading ? (
-            <Box sx={{ textAlign: 'center' }} data-id-ref="trend-analysis-loading-container">
-              <CircularProgress sx={{ mb: 3 }} data-id-ref="trend-analysis-loading-spinner" />
-              <Typography color="text.secondary" data-id-ref="trend-analysis-loading-text">
-                {t('loadingChart')}
-              </Typography>
-            </Box>
-          ) : historyData.length === 0 ? (
-            <Box sx={{ textAlign: 'center' }} data-id-ref="trend-analysis-no-data-container">
-              <InboxIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 3 }} data-id-ref="trend-analysis-no-data-icon" />
-              <Typography color="text.secondary" data-id-ref="trend-analysis-no-data-text">
-                {t('noData')}
-              </Typography>
-            </Box>
-          ) : (
-            <ReactECharts
-              option={chartOption}
-              style={{ height: '100%', width: '100%', minHeight: isMobile ? '260px' : '400px' }}
-              opts={{ renderer: 'canvas' }}
-              data-id-ref="trend-analysis-chart"
-            />
-          )}
+          <EChartsWrapper
+            option={chartOption}
+            loading={loading}
+            error={error}
+            emptyMessage={t('noData')}
+            height="100%"
+            width="100%"
+            onRetry={fetchHistoryData}
+            dataIdRef="trend-analysis-chart"
+          />
         </CardContent>
       </Card>
     </Box>

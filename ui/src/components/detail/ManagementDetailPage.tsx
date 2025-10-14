@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { useLanguage } from '../../hooks/useLanguage';
+import { CardHeader } from '../shared/CardHeader';
 
 const ManagementDetailPage: React.FC = () => {
   const { t } = useLanguage();
@@ -23,19 +24,10 @@ const ManagementDetailPage: React.FC = () => {
         }}
         data-id-ref="management-detail-page-card"
       >
-        <Box
-          sx={{
-            px: 2,
-            py: 2,
-            borderBottom: 1,
-            borderColor: 'divider',
-          }}
-          data-id-ref="management-detail-page-card-header"
-        >
-          <Typography variant="h6" component="h4" data-id-ref="management-detail-page-title">
-            {t('managementDetail')}
-          </Typography>
-        </Box>
+        <CardHeader 
+          title={t('managementDetail')}
+          dataIdRef="management-detail-page-header"
+        />
         <CardContent
           sx={{
             flexGrow: 1,
