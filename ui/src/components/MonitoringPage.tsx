@@ -1,5 +1,23 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  Container,
+  Card,
+  CardHeader,
+  CardContent,
+  Typography,
+  Box,
+  Breadcrumbs,
+  Link,
+  CircularProgress,
+  Alert,
+  Chip,
+} from '@mui/material';
+import {
+  Home as HomeIcon,
+  Folder as FolderIcon,
+  Description as DescriptionIcon,
+} from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
 import { setCurrentFolderId } from '../store/slices/monitoringSlice';
@@ -210,213 +228,231 @@ const MonitoringPage: React.FC = () => {
   };
 
   return (
-    <div className="container-fluid h-100 d-flex flex-column py-4" data-id-ref="monitoring-page-root-container">
-      <div className="row flex-fill" data-id-ref="monitoring-page-main-row">
-        <div className="col-12 h-100" data-id-ref="monitoring-page-main-col">
-          <div className="card h-100 d-flex flex-column" data-id-ref="monitoring-page-main-card">
-            <div className="card-header" data-id-ref="monitoring-page-header">
-              <div className="d-flex justify-content-between align-items-center" data-id-ref="monitoring-page-header-row">
-                <div className="d-flex align-items-center" data-id-ref="monitoring-page-title-row">
-                  <h4 className="card-title mb-0" data-id-ref="monitoring-page-title">{t('monitoring')}</h4>
-                  {showRefreshIndicator && currentFolderItems.length > 0 && (
-                    <div className="ms-3 d-flex align-items-center text-muted" data-id-ref="monitoring-page-refresh-indicator-container">
-                      <div 
-                        className="spinner-border spinner-border-sm me-2" 
-                        role="status"
-                        style={{ width: '1rem', height: '1rem' }}
-                        data-id-ref="monitoring-page-refresh-spinner"
-                      >
-                        <span className="visually-hidden" data-id-ref="monitoring-page-refresh-spinner-label">{t('refreshingData')}</span>
-                      </div>
-                      <small className="d-none d-md-inline" data-id-ref="monitoring-page-refresh-label">{t('refreshingData')}</small>
-                    </div>
-                  )}
-                </div>
-                { /* back-to-parent button removed as requested */ }
-              </div>
-            </div>
-            
-            <div className="card-body flex-fill overflow-auto" data-id-ref="monitoring-page-body">
-              {/* Breadcrumb Navigation */}
-              {breadcrumbs.length > 0 && (
-                // Hide breadcrumb on small screens (mobile) and show from md and up
-                <nav aria-label="breadcrumb" className="mb-4 d-none d-md-block" data-id-ref="monitoring-page-breadcrumb-nav">
-                  <ol className="breadcrumb mb-0" data-id-ref="monitoring-page-breadcrumb-list">
-                    <li className="breadcrumb-item" data-id-ref="monitoring-page-breadcrumb-root-item">
-                      <a 
-                        href="#" 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleBreadcrumbClick(null);
-                        }}
-                        data-id-ref="monitoring-page-breadcrumb-root-link"
-                      >
-                        <i className="bi bi-house-door-fill me-1" data-id-ref="monitoring-page-breadcrumb-root-icon"></i>
-                        {t('rootFolder')}
-                      </a>
-                    </li>
-                    {breadcrumbs.map((folder, index) => (
-                      <li 
-                        key={folder.id} 
-                        className={`breadcrumb-item ${index === breadcrumbs.length - 1 ? 'active' : ''}`}
-                        aria-current={index === breadcrumbs.length - 1 ? 'page' : undefined}
-                        data-id-ref={`monitoring-page-breadcrumb-item-${folder.id}`}
-                      >
-                        {index === breadcrumbs.length - 1 ? (
-                          getDisplayName(folder)
-                        ) : (
-                          <a 
-                            href="#" 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleBreadcrumbClick(folder.id);
-                            }}
-                            data-id-ref={`monitoring-page-breadcrumb-link-${folder.id}`}
-                          >
-                            {getDisplayName(folder)}
-                          </a>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                </nav>
+    <Container maxWidth="xl" data-id-ref="monitoring-page-root-container" sx={{ py: 4 }}>
+      <Card data-id-ref="monitoring-page-main-card">
+        <CardHeader 
+          data-id-ref="monitoring-page-header"
+          title={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }} data-id-ref="monitoring-page-title-row">
+              <Typography variant="h4" component="h1" data-id-ref="monitoring-page-title">
+                {t('monitoring')}
+              </Typography>
+              {showRefreshIndicator && currentFolderItems.length > 0 && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-id-ref="monitoring-page-refresh-indicator-container">
+                  <CircularProgress 
+                    size={16} 
+                    data-id-ref="monitoring-page-refresh-spinner"
+                  />
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    sx={{ display: { xs: 'none', md: 'inline' } }}
+                    data-id-ref="monitoring-page-refresh-label"
+                  >
+                    {t('refreshingData')}
+                  </Typography>
+                </Box>
               )}
+            </Box>
+          }
+        />
+        
+        <CardContent data-id-ref="monitoring-page-body">
+          {/* Breadcrumb Navigation */}
+          {breadcrumbs.length > 0 && (
+            <Box 
+              sx={{ mb: 3, display: { xs: 'none', md: 'block' } }} 
+              data-id-ref="monitoring-page-breadcrumb-nav"
+            >
+              <Breadcrumbs aria-label="breadcrumb" data-id-ref="monitoring-page-breadcrumb-list">
+                <Link
+                  underline="hover"
+                  sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                  color="inherit"
+                  onClick={() => handleBreadcrumbClick(null)}
+                  data-id-ref="monitoring-page-breadcrumb-root-link"
+                >
+                  <HomeIcon sx={{ mr: 0.5 }} fontSize="small" data-id-ref="monitoring-page-breadcrumb-root-icon" />
+                  {t('rootFolder')}
+                </Link>
+                {breadcrumbs.map((folder, index) => (
+                  index === breadcrumbs.length - 1 ? (
+                    <Typography 
+                      key={folder.id}
+                      color="text.primary"
+                      data-id-ref={`monitoring-page-breadcrumb-item-${folder.id}`}
+                    >
+                      {getDisplayName(folder)}
+                    </Typography>
+                  ) : (
+                    <Link
+                      key={folder.id}
+                      underline="hover"
+                      sx={{ cursor: 'pointer' }}
+                      color="inherit"
+                      onClick={() => handleBreadcrumbClick(folder.id)}
+                      data-id-ref={`monitoring-page-breadcrumb-link-${folder.id}`}
+                    >
+                      {getDisplayName(folder)}
+                    </Link>
+                  )
+                ))}
+              </Breadcrumbs>
+            </Box>
+          )}
 
-              {/* Loading State */}
-              {isLoading && (
-                <div className="d-flex align-items-center justify-content-center h-100" data-id-ref="monitoring-page-loading-groups-container">
-                  <div className="text-center" data-id-ref="monitoring-page-loading-groups-center">
-                    <div className="spinner-border text-primary mb-3" role="status" data-id-ref="monitoring-page-loading-groups-spinner">
-                      <span className="visually-hidden" data-id-ref="monitoring-page-loading-groups-label">{t('loadingGroups')}</span>
-                    </div>
-                    <p className="text-muted" data-id-ref="monitoring-page-loading-groups-text">{t('loadingGroups')}</p>
-                  </div>
-                </div>
-              )}
+          {/* Loading State */}
+          {isLoading && (
+            <Box 
+              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }} 
+              data-id-ref="monitoring-page-loading-groups-container"
+            >
+              <Box sx={{ textAlign: 'center' }} data-id-ref="monitoring-page-loading-groups-center">
+                <CircularProgress sx={{ mb: 2 }} data-id-ref="monitoring-page-loading-groups-spinner" />
+                <Typography color="text.secondary" data-id-ref="monitoring-page-loading-groups-text">
+                  {t('loadingGroups')}
+                </Typography>
+              </Box>
+            </Box>
+          )}
 
-              {/* Error State */}
-              {error && (
-                <div className="alert alert-danger d-flex align-items-center" role="alert" data-id-ref="monitoring-page-groups-error-alert">
-                  <i className="bi bi-exclamation-triangle-fill me-2" data-id-ref="monitoring-page-groups-error-icon"></i>
-                  <div data-id-ref="monitoring-page-groups-error-content">
-                    <strong data-id-ref="monitoring-page-groups-error-title">{t('errorLoadingGroups')}</strong>
-                    {error.status && (
-                      <div className="small mt-1" data-id-ref="monitoring-page-groups-error-status">
-                        {`Error ${error.status}`}
-                      </div>
-                    )}
-                  </div>
-                </div>
+          {/* Error State */}
+          {error && (
+            <Alert severity="error" data-id-ref="monitoring-page-groups-error-alert">
+              <Typography variant="body1" fontWeight="bold" data-id-ref="monitoring-page-groups-error-title">
+                {t('errorLoadingGroups')}
+              </Typography>
+              {error.status && (
+                <Typography variant="body2" sx={{ mt: 0.5 }} data-id-ref="monitoring-page-groups-error-status">
+                  {`Error ${error.status}`}
+                </Typography>
               )}
+            </Alert>
+          )}
 
-              {/* Empty State */}
-              {!isLoading && !error && childGroups.length === 0 && (
-                <div className="d-flex align-items-center justify-content-center h-100" data-id-ref="monitoring-page-empty-state-container">
-                  <div className="text-center text-muted" data-id-ref="monitoring-page-empty-state-center">
-                    <i className="bi bi-folder-x" style={{ fontSize: '3rem' }} data-id-ref="monitoring-page-empty-state-icon"></i>
-                    <p className="mt-3" data-id-ref="monitoring-page-empty-state-text">
-                      {currentFolder ? t('noItemsInFolder') : t('noGroups')}
-                    </p>
-                  </div>
-                </div>
-              )}
+          {/* Empty State */}
+          {!isLoading && !error && childGroups.length === 0 && (
+            <Box 
+              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }} 
+              data-id-ref="monitoring-page-empty-state-container"
+            >
+              <Box sx={{ textAlign: 'center' }} data-id-ref="monitoring-page-empty-state-center">
+                <FolderIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} data-id-ref="monitoring-page-empty-state-icon" />
+                <Typography color="text.secondary" data-id-ref="monitoring-page-empty-state-text">
+                  {currentFolder ? t('noItemsInFolder') : t('noGroups')}
+                </Typography>
+              </Box>
+            </Box>
+          )}
 
-              {/* Folder Grid View */}
-              {!isLoading && !error && childGroups.length > 0 && (
-                <div className="mb-4" data-id-ref="monitoring-page-folder-grid-section">
-                  {/* Hide header on small screens (mobile); show from md and up */}
-                  <div className="d-none d-md-flex align-items-center mb-3" data-id-ref="monitoring-page-folder-grid-header">
-                    <i className="bi bi-folder-fill me-2 text-warning" data-id-ref="monitoring-page-folder-grid-icon"></i>
-                    <h5 className="mb-0" data-id-ref="monitoring-page-folder-grid-title">
-                      {t('folders')}
-                    </h5>
-                    <span className="badge bg-secondary ms-2" data-id-ref="monitoring-page-folder-grid-count">
-                      {childGroups.length}
-                    </span>
-                  </div>
-                  
-                  <div className="groups-grid" data-id-ref="monitoring-page-folder-grid">
-                    {childGroups.map((group: Group) => {
-                      const subgroupCount = allGroups.filter((g: Group) => g.parentId === group.id).length;
-                      const itemCount = allItems.filter((item) => item.groupId === group.id).length;
-                      return (
-                        <GroupCard
-                          key={group.id}
-                          group={group}
-                          subgroupCount={subgroupCount}
-                          itemCount={itemCount}
-                          onClick={() => handleFolderClick(group.id)}
-                          data-id-ref={`monitoring-page-group-card-${group.id}`}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+          {/* Folder Grid View */}
+          {!isLoading && !error && childGroups.length > 0 && (
+            <Box sx={{ mb: 4 }} data-id-ref="monitoring-page-folder-grid-section">
+              {/* Hide header on small screens (mobile); show from md and up */}
+              <Box 
+                sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1, mb: 3 }} 
+                data-id-ref="monitoring-page-folder-grid-header"
+              >
+                <FolderIcon color="warning" data-id-ref="monitoring-page-folder-grid-icon" />
+                <Typography variant="h5" component="h2" data-id-ref="monitoring-page-folder-grid-title">
+                  {t('folders')}
+                </Typography>
+                <Chip 
+                  label={childGroups.length} 
+                  size="small" 
+                  color="secondary"
+                  data-id-ref="monitoring-page-folder-grid-count"
+                />
+              </Box>
+              
+              <Box className="groups-grid" data-id-ref="monitoring-page-folder-grid">
+                {childGroups.map((group: Group) => {
+                  const subgroupCount = allGroups.filter((g: Group) => g.parentId === group.id).length;
+                  const itemCount = allItems.filter((item) => item.groupId === group.id).length;
+                  return (
+                    <GroupCard
+                      key={group.id}
+                      group={group}
+                      subgroupCount={subgroupCount}
+                      itemCount={itemCount}
+                      onClick={() => handleFolderClick(group.id)}
+                      data-id-ref={`monitoring-page-group-card-${group.id}`}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+          )}
 
-              {/* Items List View */}
-              {!isLoadingItems && !itemsError && currentFolderItems.length > 0 && (
-                <div data-id-ref="monitoring-page-items-list-section">
-              <div className="d-none d-md-flex align-items-center mb-3" data-id-ref="monitoring-page-items-list-header">
-                    <i className="bi bi-file-earmark-text-fill me-2 text-primary" data-id-ref="monitoring-page-items-list-icon"></i>
-                    <h5 className="mb-0" data-id-ref="monitoring-page-items-list-title">
-                      {t('items')}
-                    </h5>
-                    <span className="badge bg-secondary ms-2" data-id-ref="monitoring-page-items-list-count">
-                      {currentFolderItems.length}
-                    </span>
-                  </div>
-                  
-                  <div className="items-grid" data-id-ref="monitoring-page-items-grid">
-                    {currentFolderItems.map((item: typeof currentFolderItems[0]) => {
-                      const itemValue = getItemValue(item.id);
-                      return (
-                        <ItemCard
-                          key={item.id}
-                          itemId={item.id}
-                          name={getItemDisplayName(item)}
-                          pointNumber={item.pointNumber}
-                          value={itemValue ? formatItemValue(item, itemValue.value) : t('loadingValue')}
-                          time={itemValue ? formatTimestamp(itemValue.time) : t('loadingValue')}
-                          data-id-ref={`monitoring-page-item-card-${item.id}`}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+          {/* Items List View */}
+          {!isLoadingItems && !itemsError && currentFolderItems.length > 0 && (
+            <Box data-id-ref="monitoring-page-items-list-section">
+              <Box 
+                sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1, mb: 3 }} 
+                data-id-ref="monitoring-page-items-list-header"
+              >
+                <DescriptionIcon color="primary" data-id-ref="monitoring-page-items-list-icon" />
+                <Typography variant="h5" component="h2" data-id-ref="monitoring-page-items-list-title">
+                  {t('items')}
+                </Typography>
+                <Chip 
+                  label={currentFolderItems.length} 
+                  size="small" 
+                  color="secondary"
+                  data-id-ref="monitoring-page-items-list-count"
+                />
+              </Box>
+              
+              <Box className="items-grid" data-id-ref="monitoring-page-items-grid">
+                {currentFolderItems.map((item: typeof currentFolderItems[0]) => {
+                  const itemValue = getItemValue(item.id);
+                  return (
+                    <ItemCard
+                      key={item.id}
+                      itemId={item.id}
+                      name={getItemDisplayName(item)}
+                      pointNumber={item.pointNumber}
+                      value={itemValue ? formatItemValue(item, itemValue.value) : t('loadingValue')}
+                      time={itemValue ? formatTimestamp(itemValue.time) : t('loadingValue')}
+                      data-id-ref={`monitoring-page-item-card-${item.id}`}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+          )}
 
-              {/* Items Loading State */}
-              {isLoadingItems && (
-                <div className="d-flex align-items-center justify-content-center py-4" data-id-ref="monitoring-page-loading-items-container">
-                  <div className="text-center" data-id-ref="monitoring-page-loading-items-center">
-                    <div className="spinner-border text-primary mb-2" role="status" style={{ width: '2rem', height: '2rem' }} data-id-ref="monitoring-page-loading-items-spinner">
-                      <span className="visually-hidden" data-id-ref="monitoring-page-loading-items-label">{t('loadingItems')}</span>
-                    </div>
-                    <p className="text-muted small" data-id-ref="monitoring-page-loading-items-text">{t('loadingItems')}</p>
-                  </div>
-                </div>
-              )}
+          {/* Items Loading State */}
+          {isLoadingItems && (
+            <Box 
+              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }} 
+              data-id-ref="monitoring-page-loading-items-container"
+            >
+              <Box sx={{ textAlign: 'center' }} data-id-ref="monitoring-page-loading-items-center">
+                <CircularProgress sx={{ mb: 1 }} data-id-ref="monitoring-page-loading-items-spinner" />
+                <Typography variant="body2" color="text.secondary" data-id-ref="monitoring-page-loading-items-text">
+                  {t('loadingItems')}
+                </Typography>
+              </Box>
+            </Box>
+          )}
 
-              {/* Items Error State */}
-              {itemsError && (
-                <div className="alert alert-warning d-flex align-items-center" role="alert" data-id-ref="monitoring-page-items-error-alert">
-                  <i className="bi bi-exclamation-triangle me-2" data-id-ref="monitoring-page-items-error-icon"></i>
-                  <div data-id-ref="monitoring-page-items-error-content">
-                    <strong data-id-ref="monitoring-page-items-error-title">{t('errorLoadingItems')}</strong>
-                    {itemsError.status && (
-                      <div className="small mt-1" data-id-ref="monitoring-page-items-error-status">
-                        {`Error ${itemsError.status}`}
-                      </div>
-                    )}
-                  </div>
-                </div>
+          {/* Items Error State */}
+          {itemsError && (
+            <Alert severity="warning" data-id-ref="monitoring-page-items-error-alert">
+              <Typography variant="body1" fontWeight="bold" data-id-ref="monitoring-page-items-error-title">
+                {t('errorLoadingItems')}
+              </Typography>
+              {itemsError.status && (
+                <Typography variant="body2" sx={{ mt: 0.5 }} data-id-ref="monitoring-page-items-error-status">
+                  {`Error ${itemsError.status}`}
+                </Typography>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    </Container>
   );
 };
 
