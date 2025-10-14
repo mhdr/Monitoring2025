@@ -1,5 +1,30 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  ButtonGroup,
+  Alert,
+  CircularProgress,
+  Chip,
+  IconButton,
+  Collapse,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import {
+  Refresh as RefreshIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Warning as WarningIcon,
+  ArrowBack as ArrowBackIcon,
+  Inbox as InboxIcon,
+  FileDownload as FileDownloadIcon,
+  Description as DescriptionIcon,
+} from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useAppSelector } from '../../hooks/useRedux';
 import { useLazyGetHistoryQuery } from '../../services/rtkApi';
@@ -17,8 +42,10 @@ type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
 
 const DataTablePage: React.FC = () => {
   const { t, language } = useLanguage();
+  const theme = useTheme();
   const [searchParams] = useSearchParams();
   const itemId = searchParams.get('itemId');
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Get item from Redux store
   const item = useAppSelector((state) => 
@@ -35,9 +62,8 @@ const DataTablePage: React.FC = () => {
   const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>('last24Hours');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
-  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
   // Collapsed state for the Date Range card on mobile
-  const [dateRangeCollapsed, setDateRangeCollapsed] = useState<boolean>(window.innerWidth < 768);
+  const [dateRangeCollapsed, setDateRangeCollapsed] = useState<boolean>(isMobile);
 
   // AG Grid integration
   const { exportToCsv, exportToExcel, handleGridReady } = useAGGrid();
@@ -48,16 +74,6 @@ const DataTablePage: React.FC = () => {
     columnApiRef.current = colApi;
     handleGridReady(api, colApi);
   }, [handleGridReady]);
-
-  // Handle window resize for responsive layout
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Calculate Unix timestamps based on date range
   const getDateRange = useMemo(() => {
@@ -241,285 +257,329 @@ const DataTablePage: React.FC = () => {
   // Show helpful message when itemId is missing
   if (!itemId) {
     return (
-      <div
-        className="container-fluid h-100 d-flex align-items-center justify-content-center"
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 400,
+          p: 3,
+        }}
         data-id-ref="data-table-no-item-container"
       >
-        <div className="text-center" data-id-ref="data-table-no-item-content">
-          <i className="bi bi-exclamation-triangle text-warning display-1 mb-4" data-id-ref="data-table-no-item-icon" />
-          <h3 className="mb-3" data-id-ref="data-table-no-item-title">
+        <Box sx={{ textAlign: 'center' }} data-id-ref="data-table-no-item-content">
+          <WarningIcon
+            sx={{ fontSize: 80, color: 'warning.main', mb: 3 }}
+            data-id-ref="data-table-no-item-icon"
+          />
+          <Typography variant="h5" gutterBottom data-id-ref="data-table-no-item-title">
             {t('itemNotFound')}
-          </h3>
-          <p className="text-muted mb-4" data-id-ref="data-table-no-item-description">
+          </Typography>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 4 }}
+            data-id-ref="data-table-no-item-description"
+          >
             {language === 'fa' 
               ? 'برای مشاهده جدول داده‌ها، لطفاً از صفحه مانیتورینگ یک پوینت را انتخاب کنید.'
               : 'To view data table, please select a monitoring item from the Monitoring page.'}
-          </p>
-          <a
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
             href="/dashboard/monitoring"
-            className="btn btn-primary"
+            startIcon={<ArrowBackIcon />}
             data-id-ref="data-table-no-item-back-button"
           >
-            <i className="bi bi-arrow-left me-2" data-id-ref="data-table-no-item-back-icon" />
             {language === 'fa' ? 'بازگشت به مانیتورینگ' : 'Go to Monitoring'}
-          </a>
-        </div>
-      </div>
+          </Button>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div
-      className={`container-fluid h-100 d-flex flex-column ${isMobile ? 'py-1' : 'py-3 py-md-4'}`}
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        p: isMobile ? 1 : 3,
+        maxWidth: '100%',
+      }}
       data-id-ref="data-table-page-container"
     >
       {/* Error Alert */}
       {error && (
-        <div className="row mb-3" data-id-ref="data-table-error-row">
-          <div className="col-12">
-            <div
-              className="alert alert-danger alert-dismissible fade show"
-              role="alert"
-              data-id-ref="data-table-error-alert"
-            >
-              {error}
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setError(null)}
-                aria-label="Close"
-                data-id-ref="data-table-error-close-button"
-              />
-            </div>
-          </div>
-        </div>
+        <Alert
+          severity="error"
+          onClose={() => setError(null)}
+          sx={{ mb: 3 }}
+          data-id-ref="data-table-error-alert"
+        >
+          {error}
+        </Alert>
       )}
 
       {/* Date Range Selector */}
-      <div className="row mb-3" data-id-ref="data-table-date-range-row">
-        <div className="col-12">
-          <div className="card" data-id-ref="data-table-date-range-card">
-            <div className="card-header d-flex align-items-center justify-content-between p-2">
-              <div className="d-flex align-items-center">
-                <strong className="small mb-0" data-id-ref="data-table-date-range-label">{t('dateRange')}</strong>
-              </div>
-              {/* Toggle button visible only on mobile */}
-              {isMobile && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={() => setDateRangeCollapsed((s) => !s)}
-                  aria-expanded={!dateRangeCollapsed}
-                  data-id-ref="data-table-date-range-toggle-button"
-                >
-                  <i className={`bi ${dateRangeCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'}`} />
-                </button>
-              )}
-            </div>
-
-            {/* Card body: hidden on mobile when collapsed */}
-            {(!isMobile || !dateRangeCollapsed) && (
-              <div className={`card-body ${isMobile ? 'p-2' : 'p-3'}`} data-id-ref="data-table-date-range-card-body">
-                <div className="row g-2 align-items-end">
-                  {/* Preset Buttons */}
-                  <div className="col-12 col-md-auto">
-                    <div className="btn-group flex-wrap mt-1 mt-md-0 ms-md-2" role="group" data-id-ref="data-table-preset-button-group">
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${selectedPreset === 'last24Hours' ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => handlePresetChange('last24Hours')}
-                        data-id-ref="data-table-preset-24h-button"
-                      >
-                        {t('last24Hours')}
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${selectedPreset === 'last7Days' ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => handlePresetChange('last7Days')}
-                        data-id-ref="data-table-preset-7d-button"
-                      >
-                        {t('last7Days')}
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${selectedPreset === 'last30Days' ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => handlePresetChange('last30Days')}
-                        data-id-ref="data-table-preset-30d-button"
-                      >
-                        {t('last30Days')}
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${selectedPreset === 'custom' ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => handlePresetChange('custom')}
-                        data-id-ref="data-table-preset-custom-button"
-                      >
-                        {t('customRange')}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Custom Date Inputs (shown only when custom is selected) */}
-                  {selectedPreset === 'custom' && (
-                    <>
-                      <SeparatedDateTimePicker
-                        id="startDate"
-                        value={customStartDate}
-                        onChange={setCustomStartDate}
-                        data-id-ref="data-table-start-date"
-                        className="col-12 col-md-auto"
-                        dateLabel={t('startDate')}
-                        timeLabel={t('startTime')}
-                      />
-                      <SeparatedDateTimePicker
-                        id="endDate"
-                        value={customEndDate}
-                        onChange={setCustomEndDate}
-                        data-id-ref="data-table-end-date"
-                        className="col-12 col-md-auto"
-                        dateLabel={t('endDate')}
-                        timeLabel={t('endTime')}
-                      />
-                    </>
-                  )}
-
-                  {/* Refresh Button */}
-                  <div className="col-12 col-md-auto ms-md-auto">
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-success w-100 w-md-auto"
-                      onClick={fetchHistoryData}
-                      disabled={loading}
-                      data-id-ref="data-table-refresh-button"
-                    >
-                      <i className="bi bi-arrow-clockwise me-1" data-id-ref="data-table-refresh-icon" />
-                      {loading ? t('fetchingData') : t('refresh')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Table Section */}
-      <div className="row flex-fill" data-id-ref="data-table-table-row">
-        <div className={`col-12 h-100 ${isMobile ? 'px-1' : ''}`} data-id-ref="data-table-table-col">
-          <div className="card h-100 d-flex flex-column" data-id-ref="data-table-table-card">
-            <div className={`card-header d-flex justify-content-between align-items-center ${isMobile ? 'py-1' : ''}`} data-id-ref="data-table-table-card-header">
-              <h5 className="card-title mb-0" data-id-ref="data-table-table-title">
-                {t('dataTableTitle')}
-              </h5>
-              {/* Export buttons and data point count */}
-              <div className="d-flex align-items-center gap-2">
-                {historyData.length > 0 && !loading && (
-                  <>
-                    <span className="badge bg-secondary" data-id-ref="data-table-data-count">
-                      {historyData.length} {t('dataPoints')}
-                    </span>
-                    {!isMobile && (
-                      <>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => exportToCsv('historical-data.csv')}
-                          data-id-ref="data-table-export-csv-button"
-                          title={t('export') + ' CSV'}
-                        >
-                          <i className="bi bi-filetype-csv" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-success"
-                          onClick={() => exportToExcel('historical-data.xlsx')}
-                          data-id-ref="data-table-export-excel-button"
-                          title={t('export') + ' Excel'}
-                        >
-                          <i className="bi bi-file-earmark-excel" />
-                        </button>
-                        
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-            <div
-              className={`card-body flex-fill d-flex align-items-center ${isMobile ? 'p-1' : ''}`}
-              data-id-ref="data-table-table-card-body"
+      <Card sx={{ mb: 3 }} data-id-ref="data-table-date-range-card">
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2,
+            py: 1.5,
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold" data-id-ref="data-table-date-range-label">
+            {t('dateRange')}
+          </Typography>
+          {/* Toggle button visible only on mobile */}
+          {isMobile && (
+            <IconButton
+              size="small"
+              onClick={() => setDateRangeCollapsed((s) => !s)}
+              aria-expanded={!dateRangeCollapsed}
+              data-id-ref="data-table-date-range-toggle-button"
             >
-              {loading ? (
-                <div className="text-center w-100" data-id-ref="data-table-loading-container">
-                  <div className="spinner-border text-primary mb-3" role="status" data-id-ref="data-table-loading-spinner">
-                    <span className="visually-hidden">{t('loadingTable')}</span>
-                  </div>
-                  <p className="text-muted" data-id-ref="data-table-loading-text">
-                    {t('loadingTable')}
-                  </p>
-                </div>
-              ) : historyData.length === 0 ? (
-                <div className="text-center text-muted w-100" data-id-ref="data-table-no-data-container">
-                  <i className="bi bi-inbox fs-1 mb-3 d-block" data-id-ref="data-table-no-data-icon" />
-                  <p data-id-ref="data-table-no-data-text">{t('noData')}</p>
-                </div>
-              ) : (
-                <>
-                  <div className="w-100 h-100" style={{ minHeight: isMobile ? '300px' : '400px' }}>
-                    <AGGridWrapper
-                      ref={gridRef as React.Ref<AGGridApi>}
-                      columnDefs={columnDefs}
-                      rowData={rowData}
-                      theme="quartz"
-                      height="100%"
-                      width="100%"
-                      onGridReady={onGridReadyInternal}
-                      gridOptions={{
-                        enableRtl: language === 'fa',
-                        pagination: true,
-                        paginationPageSize: isMobile ? 20 : 50,
-                        paginationAutoPageSize: false,
-                        suppressMenuHide: true,
-                        enableCellTextSelection: true,
-                        animateRows: true,
-                        cellSelection: true, // v32.2+ replaces enableRangeSelection
-                        rowHeight: 50,
-                        headerHeight: 50,
-                        sideBar: false,
-                        statusBar: {
-                          statusPanels: [
-                            { statusPanel: 'agTotalRowCountComponent', align: 'left' },
-                            { statusPanel: 'agFilteredRowCountComponent' },
-                            { statusPanel: 'agAggregationComponent' }
-                          ]
-                        },
-                        // Explicitly disable checkbox selection for columns in this table
-                        // and use single row selection without checkboxes so the selection
-                        // column (checkbox column) does not appear.
-                        rowSelection: {
-                          mode: 'singleRow',
-                          checkboxes: false,
-                        },
+              {dateRangeCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+            </IconButton>
+          )}
+        </Box>
 
-                        defaultColDef: {
-                          resizable: true,
-                          sortable: true,
-                          filter: true,
-                          flex: 1,
-                          minWidth: 120,
-                        },
-                        
-                      }}
-                      data-id-ref="data-table-grid"
-                    />
-                  </div>
+        {/* Card body: hidden on mobile when collapsed */}
+        <Collapse in={!isMobile || !dateRangeCollapsed}>
+          <CardContent sx={{ p: isMobile ? 2 : 3 }} data-id-ref="data-table-date-range-card-body">
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                alignItems: { xs: 'stretch', md: 'flex-end' },
+                gap: 2,
+              }}
+            >
+              {/* Preset Buttons */}
+              <ButtonGroup
+                variant="outlined"
+                size="small"
+                sx={{ flexWrap: 'wrap' }}
+                data-id-ref="data-table-preset-button-group"
+              >
+                <Button
+                  variant={selectedPreset === 'last24Hours' ? 'contained' : 'outlined'}
+                  onClick={() => handlePresetChange('last24Hours')}
+                  data-id-ref="data-table-preset-24h-button"
+                >
+                  {t('last24Hours')}
+                </Button>
+                <Button
+                  variant={selectedPreset === 'last7Days' ? 'contained' : 'outlined'}
+                  onClick={() => handlePresetChange('last7Days')}
+                  data-id-ref="data-table-preset-7d-button"
+                >
+                  {t('last7Days')}
+                </Button>
+                <Button
+                  variant={selectedPreset === 'last30Days' ? 'contained' : 'outlined'}
+                  onClick={() => handlePresetChange('last30Days')}
+                  data-id-ref="data-table-preset-30d-button"
+                >
+                  {t('last30Days')}
+                </Button>
+                <Button
+                  variant={selectedPreset === 'custom' ? 'contained' : 'outlined'}
+                  onClick={() => handlePresetChange('custom')}
+                  data-id-ref="data-table-preset-custom-button"
+                >
+                  {t('customRange')}
+                </Button>
+              </ButtonGroup>
+
+              {/* Custom Date Inputs (shown only when custom is selected) */}
+              {selectedPreset === 'custom' && (
+                <>
+                  <SeparatedDateTimePicker
+                    id="startDate"
+                    value={customStartDate}
+                    onChange={setCustomStartDate}
+                    data-id-ref="data-table-start-date"
+                    className=""
+                    dateLabel={t('startDate')}
+                    timeLabel={t('startTime')}
+                  />
+                  <SeparatedDateTimePicker
+                    id="endDate"
+                    value={customEndDate}
+                    onChange={setCustomEndDate}
+                    data-id-ref="data-table-end-date"
+                    className=""
+                    dateLabel={t('endDate')}
+                    timeLabel={t('endTime')}
+                  />
                 </>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+
+              {/* Refresh Button */}
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={fetchHistoryData}
+                disabled={loading}
+                startIcon={<RefreshIcon />}
+                sx={{ ml: { md: 'auto' }, minWidth: { xs: '100%', md: 'auto' } }}
+                data-id-ref="data-table-refresh-button"
+              >
+                {loading ? t('fetchingData') : t('refresh')}
+              </Button>
+            </Box>
+          </CardContent>
+        </Collapse>
+      </Card>
+
+      {/* Table Section */}
+      <Card
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+        data-id-ref="data-table-table-card"
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            px: 2,
+            py: isMobile ? 1 : 2,
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
+          data-id-ref="data-table-table-card-header"
+        >
+          <Typography variant="h6" component="h5" data-id-ref="data-table-table-title">
+            {t('dataTableTitle')}
+          </Typography>
+          {/* Export buttons and data point count */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {historyData.length > 0 && !loading && (
+              <>
+                <Chip
+                  label={`${historyData.length} ${t('dataPoints')}`}
+                  color="secondary"
+                  size="small"
+                  data-id-ref="data-table-data-count"
+                />
+                {!isMobile && (
+                  <>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => exportToCsv('historical-data.csv')}
+                      data-id-ref="data-table-export-csv-button"
+                      title={t('export') + ' CSV'}
+                    >
+                      <DescriptionIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="success"
+                      onClick={() => exportToExcel('historical-data.xlsx')}
+                      data-id-ref="data-table-export-excel-button"
+                      title={t('export') + ' Excel'}
+                    >
+                      <FileDownloadIcon />
+                    </IconButton>
+                  </>
+                )}
+              </>
+            )}
+          </Box>
+        </Box>
+        <CardContent
+          sx={{
+            flexGrow: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 0,
+            p: isMobile ? 1 : 2,
+          }}
+          data-id-ref="data-table-table-card-body"
+        >
+          {loading ? (
+            <Box sx={{ textAlign: 'center' }} data-id-ref="data-table-loading-container">
+              <CircularProgress sx={{ mb: 3 }} data-id-ref="data-table-loading-spinner" />
+              <Typography color="text.secondary" data-id-ref="data-table-loading-text">
+                {t('loadingTable')}
+              </Typography>
+            </Box>
+          ) : historyData.length === 0 ? (
+            <Box sx={{ textAlign: 'center' }} data-id-ref="data-table-no-data-container">
+              <InboxIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 3 }} data-id-ref="data-table-no-data-icon" />
+              <Typography color="text.secondary" data-id-ref="data-table-no-data-text">
+                {t('noData')}
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ width: '100%', height: '100%', minHeight: isMobile ? '300px' : '400px' }}>
+              <AGGridWrapper
+                ref={gridRef as React.Ref<AGGridApi>}
+                columnDefs={columnDefs}
+                rowData={rowData}
+                theme="quartz"
+                height="100%"
+                width="100%"
+                onGridReady={onGridReadyInternal}
+                gridOptions={{
+                  enableRtl: language === 'fa',
+                  pagination: true,
+                  paginationPageSize: isMobile ? 20 : 50,
+                  paginationAutoPageSize: false,
+                  suppressMenuHide: true,
+                  enableCellTextSelection: true,
+                  animateRows: true,
+                  cellSelection: true, // v32.2+ replaces enableRangeSelection
+                  rowHeight: 50,
+                  headerHeight: 50,
+                  sideBar: false,
+                  statusBar: {
+                    statusPanels: [
+                      { statusPanel: 'agTotalRowCountComponent', align: 'left' },
+                      { statusPanel: 'agFilteredRowCountComponent' },
+                      { statusPanel: 'agAggregationComponent' }
+                    ]
+                  },
+                  // Explicitly disable checkbox selection for columns in this table
+                  // and use single row selection without checkboxes so the selection
+                  // column (checkbox column) does not appear.
+                  rowSelection: {
+                    mode: 'singleRow',
+                    checkboxes: false,
+                  },
+
+                  defaultColDef: {
+                    resizable: true,
+                    sortable: true,
+                    filter: true,
+                    flex: 1,
+                    minWidth: 120,
+                  },
+                  
+                }}
+                data-id-ref="data-table-grid"
+              />
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 
