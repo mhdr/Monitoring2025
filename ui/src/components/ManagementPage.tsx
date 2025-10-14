@@ -13,8 +13,8 @@ const ManagementPage: React.FC = () => {
   const { t } = useLanguage();
 
   return (
-    <Container maxWidth="xl" data-id-ref="management-page-container" sx={{ py: 4 }}>
-      <Card data-id-ref="management-page-card">
+    <Container maxWidth={false} data-id-ref="management-page-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
+      <Card data-id-ref="management-page-card" sx={{ height: '100%' }}>
         <CardHeader
           data-id-ref="management-page-card-header"
           title={

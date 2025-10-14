@@ -13,8 +13,8 @@ const PlotsPage: React.FC = () => {
   const { t } = useLanguage();
 
   return (
-    <Container maxWidth="xl" data-id-ref="plots-page-container" sx={{ py: 4 }}>
-      <Card data-id-ref="plots-page-card">
+    <Container maxWidth={false} data-id-ref="plots-page-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
+      <Card data-id-ref="plots-page-card" sx={{ height: '100%' }}>
         <CardHeader
           data-id-ref="plots-page-card-header"
           title={

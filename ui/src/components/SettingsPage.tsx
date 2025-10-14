@@ -26,8 +26,8 @@ const SettingsPage = (): React.ReactElement => {
   const { t } = useTranslation();
 
   return (
-    <Box data-id-ref="settings-page-root" sx={{ py: 3 }}>
-      <Container maxWidth="xl" data-id-ref="settings-page-container">
+    <Box data-id-ref="settings-page-root" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
+      <Container maxWidth={false} data-id-ref="settings-page-container">
         <Box data-id-ref="settings-page-header" sx={{ mb: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
             <SettingsIcon color="primary" data-id-ref="settings-page-title-icon" />

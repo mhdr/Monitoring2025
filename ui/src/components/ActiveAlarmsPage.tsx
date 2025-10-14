@@ -10,9 +10,12 @@ const ActiveAlarmsPage: React.FC = () => {
       maxWidth={false}
       sx={{
         height: '100%',
+        width: '100%',
         display: 'flex',
         flexDirection: 'column',
-        py: 3,
+        py: '24px',
+        px: 0,
+        mx: 0,
       }}
       data-id-ref="active-alarms-page-container"
     >

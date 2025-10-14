@@ -184,8 +184,11 @@ const ProfilePage: React.FC = () => {
     <Container 
       maxWidth={false} 
       sx={{ 
-        padding: { xs: '1rem 0.5rem', sm: '1.5rem 1rem', md: '2rem 1rem' },
-        minHeight: 'calc(100vh - 200px)'
+        height: '100%',
+        width: '100%',
+        py: '24px',
+        px: 0,
+        mx: 0
       }} 
       data-id-ref="profile-page-container"
     >
