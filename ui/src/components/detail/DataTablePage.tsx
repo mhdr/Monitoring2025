@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Box,
@@ -30,7 +30,9 @@ import { useAppSelector } from '../../hooks/useRedux';
 import { useLazyGetHistoryQuery } from '../../services/rtkApi';
 import type { HistoryRequestDto, HistoricalDataPoint, Item } from '../../types/api';
 import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
-import { AGGridWrapper } from '../AGGridWrapper';
+
+// Lazy load AG Grid to reduce initial bundle size (1.4MB chunk split)
+const AGGridWrapper = lazy(() => import('../AGGridWrapper').then(module => ({ default: module.AGGridWrapper })));
 import { useAGGrid } from '../../hooks/useAGGrid';
 import type { AGGridApi, AGGridColumnApi } from '../../types/agGrid';
 import { useRef, useCallback } from 'react';
@@ -540,52 +542,67 @@ const DataTablePage: React.FC = () => {
             </Box>
           ) : (
             <Box sx={{ width: '100%', height: '100%', minHeight: isMobile ? '300px' : '400px' }}>
-              <AGGridWrapper
-                ref={gridRef as React.Ref<AGGridApi>}
-                columnDefs={columnDefs}
-                rowData={rowData}
-                theme="quartz"
-                height="100%"
-                width="100%"
-                onGridReady={onGridReadyInternal}
-                gridOptions={{
-                  enableRtl: language === 'fa',
-                  pagination: true,
-                  paginationPageSize: isMobile ? 20 : 50,
-                  paginationAutoPageSize: false,
-                  suppressMenuHide: true,
-                  enableCellTextSelection: true,
-                  animateRows: true,
-                  cellSelection: true, // v32.2+ replaces enableRangeSelection
-                  rowHeight: 50,
-                  headerHeight: 50,
-                  sideBar: false,
-                  statusBar: {
-                    statusPanels: [
-                      { statusPanel: 'agTotalRowCountComponent', align: 'left' },
-                      { statusPanel: 'agFilteredRowCountComponent' },
-                      { statusPanel: 'agAggregationComponent' }
-                    ]
-                  },
-                  // Explicitly disable checkbox selection for columns in this table
-                  // and use single row selection without checkboxes so the selection
-                  // column (checkbox column) does not appear.
-                  rowSelection: {
-                    mode: 'singleRow',
-                    checkboxes: false,
-                  },
+              <Suspense fallback={
+                <Box>
+                  <Skeleton variant="rectangular" height={50} sx={{ mb: 1 }} animation="wave" />
+                  {Array.from({ length: isMobile ? 5 : 10 }).map((_, index) => (
+                    <Skeleton 
+                      key={index} 
+                      variant="rectangular" 
+                      height={50} 
+                      sx={{ mb: 1 }} 
+                      animation="wave"
+                    />
+                  ))}
+                </Box>
+              }>
+                <AGGridWrapper
+                  ref={gridRef as React.Ref<AGGridApi>}
+                  columnDefs={columnDefs}
+                  rowData={rowData}
+                  theme="quartz"
+                  height="100%"
+                  width="100%"
+                  onGridReady={onGridReadyInternal}
+                  gridOptions={{
+                    enableRtl: language === 'fa',
+                    pagination: true,
+                    paginationPageSize: isMobile ? 20 : 50,
+                    paginationAutoPageSize: false,
+                    suppressMenuHide: true,
+                    enableCellTextSelection: true,
+                    animateRows: true,
+                    cellSelection: true, // v32.2+ replaces enableRangeSelection
+                    rowHeight: 50,
+                    headerHeight: 50,
+                    sideBar: false,
+                    statusBar: {
+                      statusPanels: [
+                        { statusPanel: 'agTotalRowCountComponent', align: 'left' },
+                        { statusPanel: 'agFilteredRowCountComponent' },
+                        { statusPanel: 'agAggregationComponent' }
+                      ]
+                    },
+                    // Explicitly disable checkbox selection for columns in this table
+                    // and use single row selection without checkboxes so the selection
+                    // column (checkbox column) does not appear.
+                    rowSelection: {
+                      mode: 'singleRow',
+                      checkboxes: false,
+                    },
 
-                  defaultColDef: {
-                    resizable: true,
-                    sortable: true,
-                    filter: true,
-                    flex: 1,
-                    minWidth: 120,
-                  },
-                  
-                }}
-                data-id-ref="data-table-grid"
-              />
+                    defaultColDef: {
+                      resizable: true,
+                      sortable: true,
+                      filter: true,
+                      flex: 1,
+                      minWidth: 120,
+                    },
+                    
+                  }}
+                  data-id-ref="data-table-grid"
+                />
+              </Suspense>
             </Box>
           )}
         </CardContent>

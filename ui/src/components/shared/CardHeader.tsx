@@ -2,7 +2,7 @@
  * CardHeader Component
  * 
  * Reusable header component for cards across the application.
- * Provides consistent styling with title, optional subtitle, and optional action buttons.
+ * Provides consistent styling with title, optional subtitle, optional icon, and optional action buttons.
  * Supports both light and dark themes via MUI theme provider.
  */
 
@@ -14,6 +14,8 @@ export interface CardHeaderProps {
   title: string;
   /** Optional subtitle or description */
   subtitle?: string;
+  /** Optional icon to display before the title */
+  icon?: React.ReactNode;
   /** Optional action buttons or components to display on the right */
   action?: React.ReactNode;
   /** Additional CSS classes */
@@ -29,12 +31,14 @@ export interface CardHeaderProps {
  * <CardHeader 
  *   title="Data Table" 
  *   subtitle="Historical data"
+ *   icon={<TableChartIcon />}
  *   action={<Button>Export</Button>}
  * />
  */
 export const CardHeader: React.FC<CardHeaderProps> = ({
   title,
   subtitle,
+  icon,
   action,
   className = '',
   dataIdRef,
@@ -58,24 +62,39 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
       className={className}
       data-id-ref={dataIdRef}
     >
-      <Box sx={{ flex: 1 }}>
-        <Typography 
-          variant="h6" 
-          component="h4"
-          data-id-ref={dataIdRef ? `${dataIdRef}-title` : undefined}
-        >
-          {title}
-        </Typography>
-        {subtitle && (
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-            sx={{ mt: 0.5 }}
-            data-id-ref={dataIdRef ? `${dataIdRef}-subtitle` : undefined}
+      <Box sx={{ display: 'flex', alignItems: subtitle ? 'flex-start' : 'center', gap: 1.5, flex: 1 }}>
+        {icon && (
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              color: 'primary.main',
+              mt: subtitle ? 0.25 : 0 // Slight top margin when subtitle present to align with title
+            }}
+            data-id-ref={dataIdRef ? `${dataIdRef}-icon` : undefined}
           >
-            {subtitle}
-          </Typography>
+            {icon}
+          </Box>
         )}
+        <Box sx={{ flex: 1 }}>
+          <Typography 
+            variant="h6" 
+            component="h4"
+            data-id-ref={dataIdRef ? `${dataIdRef}-title` : undefined}
+          >
+            {title}
+          </Typography>
+          {subtitle && (
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ mt: 0.5 }}
+              data-id-ref={dataIdRef ? `${dataIdRef}-subtitle` : undefined}
+            >
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
       </Box>
       {action && (
         <Box 

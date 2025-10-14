@@ -5,6 +5,7 @@ import { PersistGate } from 'redux-persist/integration/react'
 import './index.css'
 import './iransansx-features.css'
 import './i18n/config' // Initialize i18next
+import './utils/echartsConfig' // Configure ECharts with tree-shaking (must be before any chart usage)
 import { LanguageProvider } from './contexts/LanguageContext'
 import { MuiThemeProvider } from './contexts/MuiThemeProvider'
 import { AuthProvider } from './contexts/AuthContext'
