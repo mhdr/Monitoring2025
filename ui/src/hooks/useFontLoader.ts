@@ -73,10 +73,10 @@ export const useFontLoader = () => {
         const fontsModule = await import('../styles/fonts.css?url');
         link.href = fontsModule.default;
 
-        // Insert after Bootstrap CSS but before custom styles
-        const bootstrapLink = document.querySelector('link[data-bootstrap]');
-        if (bootstrapLink && bootstrapLink.nextSibling) {
-          document.head.insertBefore(link, bootstrapLink.nextSibling);
+        // Insert at beginning of head (before other stylesheets for proper font loading)
+        const firstLink = document.querySelector('link[rel="stylesheet"]');
+        if (firstLink) {
+          document.head.insertBefore(link, firstLink);
         } else {
           // Fallback: insert at the beginning of head
           document.head.insertBefore(link, document.head.firstChild);

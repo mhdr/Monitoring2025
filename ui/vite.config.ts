@@ -25,12 +25,12 @@ export default defineConfig({
     // PWA plugin - service worker, manifest, and offline support
     VitePWA({
       registerType: 'prompt', // User consent before updating
-      includeAssets: ['fonts/woff2/IRANSansXV.woff2', 'fonts/woff/IRANSansXV.woff', 'bootstrap-icons/fonts/*.woff*'],
+      includeAssets: ['fonts/woff2/IRANSansXV.woff2', 'fonts/woff/IRANSansXV.woff', 'bootstrap-icons/fonts/*.woff*'], // Bootstrap Icons font only, not Bootstrap CSS
       manifest: {
         name: 'Monitoring System 2025',
         short_name: 'Monitoring',
         description: 'Real-time monitoring and alarm management system',
-        theme_color: '#0d6efd', // Bootstrap primary color
+        theme_color: '#1976d2', // MUI primary color (blue)
         background_color: '#ffffff',
         display: 'standalone',
         scope: '/',
@@ -90,12 +90,12 @@ export default defineConfig({
         // AG Grid enterprise bundles are ~5MB uncompressed; adjust cautiously to avoid bloating precache.
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10 MiB cap for selected large vendor assets
         runtimeCaching: [
-          // Cache Bootstrap CSS variants (RTL/LTR) - CacheFirst with long expiration
+          // Cache MUI theme CSS - CacheFirst with long expiration
           {
-            urlPattern: /.*\/assets\/css\/bootstrap-(rtl|ltr)-.*\.css$/,
+            urlPattern: /.*\/assets\/css\/mui-.*\.css$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'bootstrap-css-cache',
+              cacheName: 'mui-css-cache',
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days

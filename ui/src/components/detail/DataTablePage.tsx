@@ -8,10 +8,10 @@ import {
   Button,
   ButtonGroup,
   Alert,
-  CircularProgress,
   Chip,
   IconButton,
   Collapse,
+  Skeleton,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -514,11 +514,22 @@ const DataTablePage: React.FC = () => {
           data-id-ref="data-table-table-card-body"
         >
           {loading ? (
-            <Box sx={{ textAlign: 'center' }} data-id-ref="data-table-loading-container">
-              <CircularProgress sx={{ mb: 3 }} data-id-ref="data-table-loading-spinner" />
-              <Typography color="text.secondary" data-id-ref="data-table-loading-text">
-                {t('loadingTable')}
-              </Typography>
+            <Box sx={{ width: '100%', height: '100%' }} data-id-ref="data-table-loading-container">
+              {/* Table Header Skeleton */}
+              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                <Skeleton variant="rectangular" height={40} sx={{ flex: 1 }} />
+                <Skeleton variant="rectangular" height={40} sx={{ flex: 1 }} />
+              </Box>
+              {/* Table Rows Skeleton */}
+              {[...Array(isMobile ? 5 : 10)].map((_, index) => (
+                <Skeleton 
+                  key={index} 
+                  variant="rectangular" 
+                  height={50} 
+                  sx={{ mb: 1 }} 
+                  animation="wave"
+                />
+              ))}
             </Box>
           ) : historyData.length === 0 ? (
             <Box sx={{ textAlign: 'center' }} data-id-ref="data-table-no-data-container">

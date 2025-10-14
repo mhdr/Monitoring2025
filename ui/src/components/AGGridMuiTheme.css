@@ -1,0 +1,117 @@
+/**
+ * AG Grid MUI Theme Integration
+ * 
+ * Custom CSS variables to make AG Grid match Material-UI theme colors.
+ * Supports both light and dark modes automatically via MUI theme.
+ * 
+ * Usage: Import this file in AGGridWrapper.tsx
+ */
+
+/* AG Grid MUI Theme Variables - Light Mode */
+.ag-theme-quartz,
+.ag-theme-alpine,
+.ag-theme-balham,
+.ag-theme-material {
+  /* Primary colors from MUI */
+  --ag-foreground-color: rgb(var(--mui-palette-text-primary));
+  --ag-background-color: rgb(var(--mui-palette-background-paper));
+  --ag-header-background-color: rgb(var(--mui-palette-background-default));
+  --ag-odd-row-background-color: rgb(var(--mui-palette-background-paper));
+  --ag-header-foreground-color: rgb(var(--mui-palette-text-primary));
+  
+  /* Borders */
+  --ag-border-color: rgb(var(--mui-palette-divider));
+  
+  /* Selected rows */
+  --ag-row-hover-color: rgba(var(--mui-palette-primary-main), 0.08);
+  --ag-selected-row-background-color: rgba(var(--mui-palette-primary-main), 0.12);
+  
+  /* Focus/Active states */
+  --ag-range-selection-border-color: rgb(var(--mui-palette-primary-main));
+  --ag-input-focus-border-color: rgb(var(--mui-palette-primary-main));
+  
+  /* Font */
+  --ag-font-family: inherit;
+  --ag-font-size: 14px;
+  
+  /* Spacing */
+  --ag-grid-size: 4px;
+  --ag-cell-horizontal-padding: 12px;
+  
+  /* Icons */
+  --ag-icon-font-color: rgb(var(--mui-palette-text-secondary));
+}
+
+/* Dark Mode Overrides */
+[data-mui-color-scheme="dark"] .ag-theme-quartz,
+[data-mui-color-scheme="dark"] .ag-theme-alpine,
+[data-mui-color-scheme="dark"] .ag-theme-balham,
+[data-mui-color-scheme="dark"] .ag-theme-material {
+  /* Dark mode specific colors */
+  --ag-background-color: rgb(18, 18, 18);
+  --ag-header-background-color: rgb(30, 30, 30);
+  --ag-odd-row-background-color: rgb(18, 18, 18);
+}
+
+/* RTL Support */
+.ag-grid-rtl.ag-theme-quartz,
+.ag-grid-rtl.ag-theme-alpine,
+.ag-grid-rtl.ag-theme-balham,
+.ag-grid-rtl.ag-theme-material {
+  direction: rtl;
+  text-align: right;
+}
+
+.ag-grid-rtl .ag-header-cell-label {
+  flex-direction: row-reverse;
+}
+
+.ag-grid-rtl .ag-cell {
+  text-align: right;
+}
+
+/* Custom scrollbar matching MUI */
+.ag-theme-quartz .ag-body-viewport::-webkit-scrollbar,
+.ag-theme-alpine .ag-body-viewport::-webkit-scrollbar,
+.ag-theme-balham .ag-body-viewport::-webkit-scrollbar,
+.ag-theme-material .ag-body-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.ag-theme-quartz .ag-body-viewport::-webkit-scrollbar-track,
+.ag-theme-alpine .ag-body-viewport::-webkit-scrollbar-track,
+.ag-theme-balham .ag-body-viewport::-webkit-scrollbar-track,
+.ag-theme-material .ag-body-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ag-theme-quartz .ag-body-viewport::-webkit-scrollbar-thumb,
+.ag-theme-alpine .ag-body-viewport::-webkit-scrollbar-thumb,
+.ag-theme-balham .ag-body-viewport::-webkit-scrollbar-thumb,
+.ag-theme-material .ag-body-viewport::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+[data-mui-color-scheme="dark"] .ag-theme-quartz .ag-body-viewport::-webkit-scrollbar-thumb,
+[data-mui-color-scheme="dark"] .ag-theme-alpine .ag-body-viewport::-webkit-scrollbar-thumb,
+[data-mui-color-scheme="dark"] .ag-theme-balham .ag-body-viewport::-webkit-scrollbar-thumb,
+[data-mui-color-scheme="dark"] .ag-theme-material .ag-body-viewport::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Hover state */
+.ag-theme-quartz .ag-body-viewport::-webkit-scrollbar-thumb:hover,
+.ag-theme-alpine .ag-body-viewport::-webkit-scrollbar-thumb:hover,
+.ag-theme-balham .ag-body-viewport::-webkit-scrollbar-thumb:hover,
+.ag-theme-material .ag-body-viewport::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+[data-mui-color-scheme="dark"] .ag-theme-quartz .ag-body-viewport::-webkit-scrollbar-thumb:hover,
+[data-mui-color-scheme="dark"] .ag-theme-alpine .ag-body-viewport::-webkit-scrollbar-thumb:hover,
+[data-mui-color-scheme="dark"] .ag-theme-balham .ag-body-viewport::-webkit-scrollbar-thumb:hover,
+[data-mui-color-scheme="dark"] .ag-theme-material .ag-body-viewport::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
