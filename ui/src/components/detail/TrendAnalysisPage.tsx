@@ -383,7 +383,12 @@ const TrendAnalysisPage: React.FC = () => {
 
   return (
     <div
-      className={`container-fluid h-100 d-flex flex-column ${isMobile ? 'py-1' : 'py-3 py-md-4'}`}
+      className={`h-100 d-flex flex-column ${isMobile ? 'py-1' : 'py-3 py-md-4'}`}
+      style={{ 
+        padding: isMobile ? '0.5rem' : '1.5rem 2rem',
+        maxWidth: '100%',
+        margin: '0 auto',
+      }}
       data-id-ref="trend-analysis-page-container"
     >
       {/* Error Alert */}

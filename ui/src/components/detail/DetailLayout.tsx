@@ -1,11 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Box } from '@mui/material';
+import { Box, useTheme, useMediaQuery } from '@mui/material';
 import ResponsiveNavbar from '../ResponsiveNavbar';
 import DetailSidebar from './DetailSidebar';
 
 const DetailLayout: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+  
+  // Initialize sidebar state based on screen size
+  // Desktop (lg+): open by default, Mobile: closed by default
+  const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
+
+  // Update sidebar state when screen size changes
+  useEffect(() => {
+    setSidebarOpen(isDesktop);
+  }, [isDesktop]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
