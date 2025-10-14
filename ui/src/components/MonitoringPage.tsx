@@ -228,8 +228,8 @@ const MonitoringPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="xl" data-id-ref="monitoring-page-root-container" sx={{ py: 4 }}>
-      <Card data-id-ref="monitoring-page-main-card">
+    <Container maxWidth={false} data-id-ref="monitoring-page-root-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
+      <Card data-id-ref="monitoring-page-main-card" sx={{ height: '100%' }}>
         <CardHeader 
           data-id-ref="monitoring-page-header"
           title={
