@@ -4,8 +4,6 @@ import { Box, useTheme, useMediaQuery } from '@mui/material';
 import ResponsiveNavbar from './ResponsiveNavbar';
 import Sidebar from './Sidebar';
 
-const SIDEBAR_WIDTH = 280;
-
 const DashboardLayout: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
@@ -44,17 +42,6 @@ const DashboardLayout: React.FC = () => {
           flexDirection: 'column',
           width: '100%',
           minHeight: '100vh',
-          transition: theme.transitions.create(['margin-inline-start'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-          }),
-          ...(sidebarOpen && !isMobile && {
-            transition: theme.transitions.create(['margin-inline-start'], {
-              easing: theme.transitions.easing.easeOut,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-            marginInlineStart: `${SIDEBAR_WIDTH}px`,
-          }),
         }}
         data-id-ref="dashboard-layout-main-content-area"
       >
