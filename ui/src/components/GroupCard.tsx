@@ -101,9 +101,9 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
           
           <Stack
             direction="row"
-            spacing={1}
             flexWrap="wrap"
             justifyContent="center"
+            sx={{ gap: 1 }}
             data-id-ref="group-card-badges-row"
           >
             {subgroupCount > 0 && (
