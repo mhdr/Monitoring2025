@@ -12,6 +12,8 @@ import { store, persistor } from './store'
 import { initializeAuth } from './store/slices/authSlice'
 import { initializeLanguage } from './store/slices/languageSlice'
 import { initializeMuiTheme } from './store/slices/muiThemeSlice'
+import { initAutoCleanup } from './utils/monitoringStorage'
+import { initBackgroundRefresh } from './services/backgroundRefreshService'
 import App from './App.tsx'
 
 // Initialize Redux state from storage synchronously for auth/language/theme
@@ -19,6 +21,16 @@ import App from './App.tsx'
 store.dispatch(initializeAuth());
 store.dispatch(initializeLanguage());
 store.dispatch(initializeMuiTheme());
+
+// Initialize automatic cleanup for expired data (TTL)
+initAutoCleanup();
+
+// Initialize background refresh service (checks data freshness)
+initBackgroundRefresh({
+  enabled: true,
+  refreshInterval: 5 * 60 * 1000, // Check every 5 minutes
+  dataStaleThreshold: 30 * 60 * 1000, // Refresh if data older than 30 minutes
+});
 
 // Defer non-critical imports to after initial render
 // This improves Time to Interactive (TTI) by reducing initial bundle size

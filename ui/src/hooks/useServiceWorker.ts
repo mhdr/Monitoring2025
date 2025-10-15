@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from './useTranslation';
+import { initCacheCoordination } from '../services/cacheCoordinationService';
 
 /**
  * Service Worker Registration Hook
  * 
  * Manages service worker registration, updates, and offline status.
  * Provides user notifications for updates and offline mode.
+ * Integrates cache coordination with localStorage TTL system.
  * 
  * @returns {Object} Service worker state and control functions
  */
@@ -24,6 +26,12 @@ export const useServiceWorker = () => {
   } = useRegisterSW({
     onRegistered(registration: ServiceWorkerRegistration | undefined) {
       console.log('[SW] Service worker registered successfully');
+      
+      // Initialize cache coordination service
+      // Pass null since we don't have direct access to Workbox instance
+      // The service will use navigator.serviceWorker directly
+      initCacheCoordination(null);
+      console.log('[SW] Cache coordination initialized');
       
       // Check for updates periodically (every hour)
       if (registration) {

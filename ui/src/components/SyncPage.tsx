@@ -194,6 +194,13 @@ const SyncPage: React.FC = () => {
       redirectInitiatedRef.current = true;
       setIsRedirecting(true);
       
+      // Invalidate Service Worker API cache after successful sync
+      import('../services/cacheCoordinationService').then(({ invalidateApiCache }) => {
+        invalidateApiCache().catch((error) => {
+          console.warn('[Sync] Failed to invalidate cache:', error);
+        });
+      });
+      
       // Clear any existing timer (in case of multiple effect runs)
       if (redirectTimerRef.current) {
         clearTimeout(redirectTimerRef.current);

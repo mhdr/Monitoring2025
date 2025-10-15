@@ -83,11 +83,18 @@ const loadMonitoringDataFromStorage = () => {
 };
 
 /**
- * Save data sync status to localStorage
+ * Save data sync status to localStorage and update metadata
  */
 export const saveSyncStatusToStorage = (isSynced: boolean): void => {
   try {
     localStorage.setItem(SYNC_STATUS_STORAGE_KEY, isSynced.toString());
+    
+    // Update metadata with last sync timestamp
+    if (isSynced) {
+      import('../../utils/monitoringStorage').then(({ updateMetadata }) => {
+        updateMetadata({ lastSync: Date.now() });
+      });
+    }
   } catch (error) {
     console.warn('Failed to save sync status to localStorage:', error);
   }

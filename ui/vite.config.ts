@@ -86,9 +86,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        // Exclude only stats files from precache - let runtime caching handle large chunks
-        // This ensures all critical chunks are available for new tabs immediately
-        globIgnores: ['**/stats.html'],
+        // Exclude stats files and SW message handler from precache
+        globIgnores: ['**/stats.html', '**/sw-message-handler.js'],
+        // Import custom message handler for cache invalidation
+        importScripts: ['sw-message-handler.js'],
         // Increase maximum file size to accommodate larger vendor chunks
         // AG Grid (~1.3MB) and ECharts (~820KB) can now be precached if needed
         // This significantly improves new tab load performance since chunks are already in cache
@@ -170,16 +171,17 @@ export default defineConfig({
               }
             }
           },
-          // Cache API calls - NetworkFirst with fallback to cache
+          // Cache API calls - StaleWhileRevalidate for better performance
+          // Serves cached data immediately while fetching fresh data in background
+          // This works well with TTL system and cache invalidation
           {
             urlPattern: /^https:\/\/localhost:7136\/api\/.*/,
-            handler: 'NetworkFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'api-cache',
-              networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 5 // 5 minutes
+                maxAgeSeconds: 60 * 30 // 30 minutes (matches localStorage TTL threshold)
               },
               cacheableResponse: {
                 statuses: [0, 200]
