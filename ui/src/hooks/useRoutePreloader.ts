@@ -54,6 +54,29 @@ export const useRoutePreloader = () => {
     ], 1500);
   }, []);
 
+  /**
+   * Preload all detail tab pages when user is on any item-detail page
+   * This eliminates loading animations when switching between tabs
+   */
+  const preloadAllDetailTabs = useCallback(() => {
+    // Preload AG Grid and ECharts (heavy dependencies used by detail pages)
+    preloadRoutesDelayed([
+      { name: 'AGGridWrapper', loader: () => import('../components/AGGridWrapper') },
+    ], 500);
+
+    // Preload all detail tab components
+    preloadRoutesDelayed([
+      { name: 'TrendAnalysisPage', loader: () => import('../components/detail/TrendAnalysisPage') },
+      { name: 'DataTablePage', loader: () => import('../components/detail/DataTablePage') },
+      { name: 'LiveMonitoringDetailPage', loader: () => import('../components/detail/LiveMonitoringDetailPage') },
+      { name: 'ActiveAlarmsDetailPage', loader: () => import('../components/detail/ActiveAlarmsDetailPage') },
+      { name: 'AlarmLogDetailPage', loader: () => import('../components/detail/AlarmLogDetailPage') },
+      { name: 'AlarmCriteriaPage', loader: () => import('../components/detail/AlarmCriteriaPage') },
+      { name: 'AuditTrailDetailPage', loader: () => import('../components/detail/AuditTrailDetailPage') },
+      { name: 'ManagementDetailPage', loader: () => import('../components/detail/ManagementDetailPage') },
+    ], 1000);
+  }, []);
+
   // Preload routes based on current location
   useEffect(() => {
     if (location.pathname === '/login') {
@@ -69,13 +92,17 @@ export const useRoutePreloader = () => {
       } else if (location.pathname.includes('alarm')) {
         preloadAlarmRoutes();
       }
+    } else if (location.pathname.startsWith('/item-detail')) {
+      // User is on any item-detail page - preload all detail tabs
+      preloadAllDetailTabs();
     }
-  }, [location.pathname, preloadDashboardRoutes, preloadDetailRoutes, preloadMonitoringRoutes, preloadAlarmRoutes]);
+  }, [location.pathname, preloadDashboardRoutes, preloadDetailRoutes, preloadMonitoringRoutes, preloadAlarmRoutes, preloadAllDetailTabs]);
 
   return {
     preloadDashboardRoutes,
     preloadDetailRoutes,
     preloadMonitoringRoutes,
     preloadAlarmRoutes,
+    preloadAllDetailTabs,
   };
 };
