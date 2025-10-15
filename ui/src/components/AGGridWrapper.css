@@ -296,6 +296,29 @@
   font-family: 'IRANSansX', 'Tahoma', 'Arial', sans-serif;
 }
 
+/* Fix header cell label alignment in RTL */
+.ag-grid-rtl .ag-header-cell-label {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+/* Fix header cell content alignment */
+.ag-grid-rtl .ag-header-cell-comp-wrapper {
+  justify-content: flex-end;
+}
+
+/* Fix header label container alignment - this is the key fix */
+.ag-grid-rtl .ag-cell-label-container {
+  justify-content: flex-end !important;
+}
+
+/* Ensure sort icons appear on the left side in RTL */
+.ag-grid-rtl .ag-header-cell-label .ag-header-icon {
+  order: -1;
+  margin-right: 0;
+  margin-left: 4px;
+}
+
 .ag-grid-rtl .ag-paging-panel {
   font-family: 'IRANSansX', 'Tahoma', 'Arial', sans-serif;
 }

@@ -15,7 +15,7 @@ i18n
   .init({
     // Default language (Persian as specified in requirements)
     fallbackLng: 'fa',
-    lng: 'fa', // Default to Persian
+    // lng removed - let LanguageDetector handle it from localStorage or default to fallbackLng
     
     // Debug mode for development
     debug: import.meta.env.DEV,

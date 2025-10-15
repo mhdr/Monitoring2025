@@ -36,21 +36,23 @@ const languageSlice = createSlice({
     /**
      * Initialize language from storage
      * Called on app startup
-     * Note: Language is now persisted via redux-persist with IndexedDB
+     * Note: Language detection priority:
+     * 1. i18next's localStorage detection (most recent user choice)
+     * 2. Redux persisted state from IndexedDB
+     * 3. Default fallback to 'fa'
      */
     initializeLanguage: (state) => {
-      // Language is now restored by redux-persist from IndexedDB
-      // This reducer is kept for compatibility but state.currentLanguage
-      // will already be restored by the time this is called
-      const language = state.currentLanguage || 'fa';
+      // Use i18next's detected language as the source of truth
+      // i18next already handles localStorage detection via LanguageDetector
+      const detectedLanguage = (i18n.language || state.currentLanguage || 'fa') as Language;
       
-      // Change i18next language
-      i18n.changeLanguage(language);
+      // Sync Redux state with detected language
+      state.currentLanguage = detectedLanguage;
       
       // Update document properties
-      document.documentElement.dir = language === 'fa' ? 'rtl' : 'ltr';
-      document.documentElement.lang = language;
-      document.body.className = language === 'fa' ? 'rtl' : 'ltr';
+      document.documentElement.dir = detectedLanguage === 'fa' ? 'rtl' : 'ltr';
+      document.documentElement.lang = detectedLanguage;
+      document.body.className = detectedLanguage === 'fa' ? 'rtl' : 'ltr';
     },
   },
 });
