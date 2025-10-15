@@ -13,35 +13,35 @@ import LazyErrorBoundary from './components/LazyErrorBoundary';
 import ServiceWorkerPrompt from './components/ServiceWorkerPrompt';
 import './App.css';
 
-// Lazy load page components
-const SyncPage = lazy(() => import('./components/SyncPage'));
+// Lazy load page components with chunk names for better debugging
+const SyncPage = lazy(() => import(/* webpackChunkName: "sync-page" */ './components/SyncPage'));
 
-// Lazy load layout components
-const DashboardLayout = lazy(() => import('./components/DashboardLayout'));
-const DetailLayout = lazy(() => import('./components/detail/DetailLayout'));
+// Lazy load layout components - these are critical and should be loaded early
+const DashboardLayout = lazy(() => import(/* webpackChunkName: "dashboard-layout" */ './components/DashboardLayout'));
+const DetailLayout = lazy(() => import(/* webpackChunkName: "detail-layout" */ './components/detail/DetailLayout'));
 
-// Lazy load dashboard page components
-const Dashboard = lazy(() => import('./components/Dashboard'));
-const MonitoringPage = lazy(() => import('./components/MonitoringPage'));
-const PlotsPage = lazy(() => import('./components/PlotsPage'));
-const ActiveAlarmsPage = lazy(() => import('./components/ActiveAlarmsPage'));
-const AlarmLogPage = lazy(() => import('./components/AlarmLogPage'));
-const AuditTrailPage = lazy(() => import('./components/AuditTrailPage'));
-const DisabledAlarmsPage = lazy(() => import('./components/DisabledAlarmsPage'));
-const SchedulerPage = lazy(() => import('./components/SchedulerPage'));
-const ManagementPage = lazy(() => import('./components/ManagementPage'));
-const SettingsPage = lazy(() => import('./components/SettingsPage'));
-const ProfilePage = lazy(() => import('./components/ProfilePage'));
+// Lazy load dashboard page components - frequently accessed, load on demand
+const Dashboard = lazy(() => import(/* webpackChunkName: "dashboard" */ './components/Dashboard'));
+const MonitoringPage = lazy(() => import(/* webpackChunkName: "monitoring" */ './components/MonitoringPage'));
+const PlotsPage = lazy(() => import(/* webpackChunkName: "plots" */ './components/PlotsPage'));
+const ActiveAlarmsPage = lazy(() => import(/* webpackChunkName: "active-alarms" */ './components/ActiveAlarmsPage'));
+const AlarmLogPage = lazy(() => import(/* webpackChunkName: "alarm-log" */ './components/AlarmLogPage'));
+const AuditTrailPage = lazy(() => import(/* webpackChunkName: "audit-trail" */ './components/AuditTrailPage'));
+const DisabledAlarmsPage = lazy(() => import(/* webpackChunkName: "disabled-alarms" */ './components/DisabledAlarmsPage'));
+const SchedulerPage = lazy(() => import(/* webpackChunkName: "scheduler" */ './components/SchedulerPage'));
+const ManagementPage = lazy(() => import(/* webpackChunkName: "management" */ './components/ManagementPage'));
+const SettingsPage = lazy(() => import(/* webpackChunkName: "settings" */ './components/SettingsPage'));
+const ProfilePage = lazy(() => import(/* webpackChunkName: "profile" */ './components/ProfilePage'));
 
-// Lazy load detail page components
-const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
-const DataTablePage = lazy(() => import('./components/detail/DataTablePage'));
-const LiveMonitoringDetailPage = lazy(() => import('./components/detail/LiveMonitoringDetailPage'));
-const ActiveAlarmsDetailPage = lazy(() => import('./components/detail/ActiveAlarmsDetailPage'));
-const AlarmLogDetailPage = lazy(() => import('./components/detail/AlarmLogDetailPage'));
-const AlarmCriteriaPage = lazy(() => import('./components/detail/AlarmCriteriaPage'));
-const AuditTrailDetailPage = lazy(() => import('./components/detail/AuditTrailDetailPage'));
-const ManagementDetailPage = lazy(() => import('./components/detail/ManagementDetailPage'));
+// Lazy load detail page components - accessed less frequently, lower priority
+const TrendAnalysisPage = lazy(() => import(/* webpackChunkName: "trend-analysis" */ './components/detail/TrendAnalysisPage'));
+const DataTablePage = lazy(() => import(/* webpackChunkName: "data-table" */ './components/detail/DataTablePage'));
+const LiveMonitoringDetailPage = lazy(() => import(/* webpackChunkName: "live-monitoring-detail" */ './components/detail/LiveMonitoringDetailPage'));
+const ActiveAlarmsDetailPage = lazy(() => import(/* webpackChunkName: "active-alarms-detail" */ './components/detail/ActiveAlarmsDetailPage'));
+const AlarmLogDetailPage = lazy(() => import(/* webpackChunkName: "alarm-log-detail" */ './components/detail/AlarmLogDetailPage'));
+const AlarmCriteriaPage = lazy(() => import(/* webpackChunkName: "alarm-criteria" */ './components/detail/AlarmCriteriaPage'));
+const AuditTrailDetailPage = lazy(() => import(/* webpackChunkName: "audit-trail-detail" */ './components/detail/AuditTrailDetailPage'));
+const ManagementDetailPage = lazy(() => import(/* webpackChunkName: "management-detail" */ './components/detail/ManagementDetailPage'));
 
 /**
  * AppRoutes Component

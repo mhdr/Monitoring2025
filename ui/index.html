@@ -6,6 +6,12 @@
   <link rel="icon" href="/icons/eye.svg" type="image/svg+xml" sizes="any" />
   <link rel="apple-touch-icon" href="/icons/eye.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Resource hints for faster loading -->
+    <!-- Preconnect to backend API to establish connection early -->
+    <link rel="preconnect" href="https://localhost:7136" crossorigin>
+    <link rel="dns-prefetch" href="https://localhost:7136">
+    
     <!-- Persian fonts loaded dynamically via useFontLoader hook when needed -->
     <link rel="stylesheet" href="/lib/jalalidatepicker/jalalidatepicker.min.css">
     

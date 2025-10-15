@@ -242,22 +242,79 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Manual chunk splitting for better caching
-        manualChunks: {
-          // Vendor chunks - separate large dependencies
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'redux-vendor': ['@reduxjs/toolkit', 'react-redux'],
-          'i18n-vendor': ['i18next', 'react-i18next'],
+        manualChunks: (id) => {
+          // Critical vendor chunks - loaded early
+          if (id.includes('node_modules')) {
+            // React core - always needed first
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-core';
+            }
+            
+            // React Router - needed for routing
+            if (id.includes('react-router')) {
+              return 'react-router';
+            }
+            
+            // Redux - state management
+            if (id.includes('@reduxjs/toolkit') || id.includes('react-redux') || id.includes('redux')) {
+              return 'redux';
+            }
+            
+            // MUI Core - Material-UI core components
+            if (id.includes('@mui/material') || id.includes('@mui/system')) {
+              return 'mui-core';
+            }
+            
+            // MUI Icons - separate to allow lazy loading
+            if (id.includes('@mui/icons-material')) {
+              return 'mui-icons';
+            }
+            
+            // MUI RTL and Emotion - styling
+            if (id.includes('@emotion') || id.includes('stylis') || id.includes('@mui/stylis')) {
+              return 'mui-styling';
+            }
+            
+            // i18n - internationalization
+            if (id.includes('i18next') || id.includes('react-i18next')) {
+              return 'i18n';
+            }
+            
+            // AG Grid Enterprise - LARGE (5MB+), only load when needed
+            if (id.includes('ag-grid-enterprise') || id.includes('ag-grid-community')) {
+              return 'ag-grid';
+            }
+            
+            // AG Grid React wrapper - small, bundle with AG Grid
+            if (id.includes('ag-grid-react')) {
+              return 'ag-grid';
+            }
+            
+            // ECharts - LARGE (~1MB), only for charts
+            if (id.includes('echarts') || id.includes('echarts-for-react')) {
+              return 'echarts';
+            }
+            
+            // gRPC/Connect - real-time streaming
+            if (id.includes('@connectrpc') || id.includes('@bufbuild')) {
+              return 'grpc';
+            }
+            
+            // Date libraries - Jalali calendar
+            if (id.includes('jalaali') || id.includes('jalalidatepicker')) {
+              return 'date-utils';
+            }
+            
+            // Other vendor dependencies
+            return 'vendor';
+          }
           
           // Layout components - used across multiple routes
-          'layout-common': [
-            './src/components/Sidebar.tsx',
-            './src/components/ResponsiveNavbar.tsx',
-            './src/components/LanguageSwitcher.tsx',
-          ],
-          
-          // ECharts - large charting library used only in TrendAnalysisPage
-          // Isolate it so it's only loaded when needed
-          'echarts-vendor': ['echarts', 'echarts-for-react'],
+          if (id.includes('/src/components/DashboardLayout') || 
+              id.includes('/src/components/Sidebar') || 
+              id.includes('/src/components/ResponsiveNavbar')) {
+            return 'layout';
+          }
         },
         // Asset file naming with content hash for long-term caching
         assetFileNames: (assetInfo) => {
@@ -286,10 +343,22 @@ export default defineConfig({
       },
     },
     // Chunk size warning limit
-    // Set to 1100 KB to accommodate ECharts vendor chunk (~1050 KB)
-    // This is acceptable since it's only loaded when TrendAnalysisPage is accessed
+    // Set to 1100 KB to accommodate ECharts and AG Grid vendor chunks
+    // These are acceptable since they're only loaded when their pages are accessed
     chunkSizeWarningLimit: 1100,
-    // Source maps for production debugging (optional, can be disabled)
+    // Minification configuration for better compression
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.log in production
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug'], // Remove specific console methods
+      },
+      format: {
+        comments: false, // Remove all comments
+      },
+    },
+    // Source maps for production debugging (disabled for performance)
     sourcemap: false,
     // CSS code splitting configuration
     cssCodeSplit: true,
@@ -297,6 +366,10 @@ export default defineConfig({
     reportCompressedSize: true,
     // Asset size limits for warnings
     assetsInlineLimit: 4096, // Inline assets smaller than 4KB
+    // Target modern browsers for smaller bundle size
+    target: 'es2020',
+    // CSS minification
+    cssMinify: true
   },
   // Performance monitoring and optimization hints
   optimizeDeps: {
@@ -309,6 +382,19 @@ export default defineConfig({
       'react-redux',
       'i18next',
       'react-i18next',
+      '@mui/material',
+      '@mui/icons-material',
     ],
+    // Exclude large dependencies that should be loaded on-demand
+    exclude: [
+      'ag-grid-enterprise',
+      'ag-grid-community',
+      'echarts',
+    ],
+  },
+  // Experimental features for better performance
+  esbuild: {
+    // Drop console statements in production (handled by terser)
+    legalComments: 'none',
   },
 })

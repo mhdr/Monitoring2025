@@ -47,9 +47,17 @@ i18n
     
     // React specific options
     react: {
-      // Wait for translations to be loaded before rendering
-      useSuspense: true,
+      // Don't wait for translations to be loaded - render immediately with loading state
+      // This prevents blocking the initial render and improves Time to Interactive
+      useSuspense: false,
     },
+    
+    // Load options
+    load: 'currentOnly', // Only load the current language, not all fallbacks
+    preload: ['fa'], // Preload only default language
+    
+    // Partition translations into smaller chunks (if using multiple namespaces)
+    partialBundledLanguages: true,
   });
 
 export default i18n;

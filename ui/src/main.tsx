@@ -5,7 +5,6 @@ import { PersistGate } from 'redux-persist/integration/react'
 import './index.css'
 import './iransansx-features.css'
 import './i18n/config' // Initialize i18next
-import './utils/echartsConfig' // Configure ECharts with tree-shaking (must be before any chart usage)
 import { LanguageProvider } from './contexts/LanguageContext'
 import { MuiThemeProvider } from './contexts/MuiThemeProvider'
 import { AuthProvider } from './contexts/AuthContext'
@@ -15,10 +14,18 @@ import { initializeLanguage } from './store/slices/languageSlice'
 import { initializeMuiTheme } from './store/slices/muiThemeSlice'
 import App from './App.tsx'
 
-// Initialize Redux state from storage
+// Initialize Redux state from storage synchronously for auth/language/theme
+// These are critical for initial render
 store.dispatch(initializeAuth());
 store.dispatch(initializeLanguage());
 store.dispatch(initializeMuiTheme());
+
+// Defer non-critical imports to after initial render
+// This improves Time to Interactive (TTI) by reducing initial bundle size
+setTimeout(() => {
+  // ECharts configuration - only needed when charts are rendered
+  import('./utils/echartsConfig');
+}, 0);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
