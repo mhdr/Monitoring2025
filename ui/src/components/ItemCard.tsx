@@ -1,16 +1,17 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  Typography,
+  IconButton,
+  Box,
+  Stack,
+  Divider,
+  Tooltip,
+  Fade,
+} from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
-
-// Extend window type for Bootstrap 5
-declare global {
-  interface Window {
-    bootstrap?: {
-  Tooltip?: new (element: HTMLElement) => unknown;
-    };
-  }
-}
 import { useLanguage } from '../hooks/useLanguage';
-import './ItemCard.css';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
 
 interface ItemCardProps {
@@ -23,13 +24,7 @@ interface ItemCardProps {
 
 const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, time }) => {
   const { t } = useLanguage();
-  const openBtnRef = useRef<HTMLButtonElement>(null);
-  // Initialize Bootstrap tooltip on mount
-  useEffect(() => {
-    if (openBtnRef.current && window.bootstrap && window.bootstrap.Tooltip) {
-      new window.bootstrap.Tooltip(openBtnRef.current);
-    }
-  }, []);
+  const [elevation, setElevation] = useState<number>(1);
 
   const handleOpenNewTab = () => {
     // Open a new tab with the item detail page
@@ -48,37 +43,186 @@ const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, t
   };
 
   return (
-    <div className="item-card" data-id-ref="item-card-root-container">
-      <div className="item-card-header" data-id-ref="item-card-header">
-        <h6 className="item-card-title" data-id-ref="item-card-title">{name}</h6>
-        <button 
-          className="item-card-open-btn" 
-          data-id-ref="item-card-open-new-tab-button"
-          aria-label={t('openInNewTab')}
-          type="button"
-          onClick={handleOpenNewTab}
-          data-bs-toggle="tooltip"
-          title={t('openInNewTab')}
-          ref={openBtnRef}
+    <Fade in timeout={300}>
+      <Card
+        elevation={elevation}
+        onMouseEnter={() => setElevation(6)}
+        onMouseLeave={() => setElevation(1)}
+        sx={{
+          height: '100%',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+          },
+        }}
+        data-id-ref="item-card-root-container"
+      >
+        <CardContent
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            padding: 2,
+            '&:last-child': {
+              paddingBottom: 2,
+            },
+          }}
         >
-          <OpenInNew data-id-ref="item-card-open-icon" />
-        </button>
-      </div>
-      <div className="item-card-body" data-id-ref="item-card-body">
-        <div className="item-card-row" data-id-ref="item-card-row-point-number">
-          <span className="item-card-label" data-id-ref="item-card-label-point-number">{t('pointNumber')}:</span>
-          <span className="item-card-value" data-id-ref="item-card-value-point-number">{pointNumber}</span>
-        </div>
-        <div className="item-card-row" data-id-ref="item-card-row-value">
-          <span className="item-card-label" data-id-ref="item-card-label-value">{t('value')}:</span>
-          <span className="item-card-value" data-id-ref="item-card-value-value">{value}</span>
-        </div>
-        <div className="item-card-row" data-id-ref="item-card-row-time">
-          <span className="item-card-label" data-id-ref="item-card-label-time">{t('time')}:</span>
-          <span className="item-card-value" data-id-ref="item-card-value-time">{time}</span>
-        </div>
-      </div>
-    </div>
+          {/* Header */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 1,
+              marginBottom: 1.5,
+            }}
+            data-id-ref="item-card-header"
+          >
+            <Typography
+              variant="h6"
+              component="h6"
+              sx={{
+                fontWeight: 600,
+                wordBreak: 'break-word',
+                lineHeight: 1.4,
+                flex: 1,
+                fontSize: '1rem',
+              }}
+              data-id-ref="item-card-title"
+            >
+              {name}
+            </Typography>
+            <Tooltip title={t('openInNewTab')} arrow placement="top">
+              <IconButton
+                onClick={handleOpenNewTab}
+                aria-label={t('openInNewTab')}
+                size="small"
+                sx={{
+                  color: 'text.secondary',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    color: 'primary.main',
+                    transform: 'scale(1.1)',
+                  },
+                }}
+                data-id-ref="item-card-open-new-tab-button"
+              >
+                <OpenInNew fontSize="small" data-id-ref="item-card-open-icon" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+
+          <Divider sx={{ marginBottom: 1.5 }} />
+
+          {/* Body */}
+          <Stack
+            spacing={1}
+            sx={{ flex: 1 }}
+            data-id-ref="item-card-body"
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 1,
+              }}
+              data-id-ref="item-card-row-point-number"
+            >
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  color: 'text.primary',
+                }}
+                data-id-ref="item-card-label-point-number"
+              >
+                {t('pointNumber')}:
+              </Typography>
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{
+                  color: 'text.secondary',
+                  wordBreak: 'break-word',
+                }}
+                data-id-ref="item-card-value-point-number"
+              >
+                {pointNumber}
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 1,
+              }}
+              data-id-ref="item-card-row-value"
+            >
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  color: 'text.primary',
+                }}
+                data-id-ref="item-card-label-value"
+              >
+                {t('value')}:
+              </Typography>
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{
+                  color: 'text.secondary',
+                  wordBreak: 'break-word',
+                }}
+                data-id-ref="item-card-value-value"
+              >
+                {value}
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 1,
+              }}
+              data-id-ref="item-card-row-time"
+            >
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  color: 'text.primary',
+                }}
+                data-id-ref="item-card-label-time"
+              >
+                {t('time')}:
+              </Typography>
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{
+                  color: 'text.secondary',
+                  wordBreak: 'break-word',
+                }}
+                data-id-ref="item-card-value-time"
+              >
+                {time}
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Fade>
   );
 };
 

@@ -365,7 +365,18 @@ const MonitoringPage: React.FC = () => {
                 />
               </Box>
               
-              <Box className="groups-grid" data-id-ref="monitoring-page-folder-grid">
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: 'repeat(auto-fill, minmax(140px, 1fr))',
+                    sm: 'repeat(auto-fill, minmax(180px, 1fr))',
+                  },
+                  gap: { xs: 2, sm: 3 },
+                  marginTop: 2,
+                }}
+                data-id-ref="monitoring-page-folder-grid"
+              >
                 {childGroups.map((group: Group) => {
                   const subgroupCount = allGroups.filter((g: Group) => g.parentId === group.id).length;
                   const itemCount = allItems.filter((item) => item.groupId === group.id).length;
@@ -403,7 +414,18 @@ const MonitoringPage: React.FC = () => {
                 />
               </Box>
               
-              <Box className="items-grid" data-id-ref="monitoring-page-items-grid">
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, minmax(280px, 1fr))',
+                  },
+                  gap: 2,
+                  marginTop: 2,
+                }}
+                data-id-ref="monitoring-page-items-grid"
+              >
                 {currentFolderItems.map((item: typeof currentFolderItems[0]) => {
                   const itemValue = getItemValue(item.id);
                   return (
