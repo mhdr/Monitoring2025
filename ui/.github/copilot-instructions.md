@@ -163,6 +163,164 @@ MUI provides comprehensive component library:
 - **Feedback**: `Alert`, `Snackbar`, `Dialog`, `Backdrop`, `CircularProgress`
 - **Navigation**: `AppBar`, `Drawer`, `Tabs`, `Menu`, `Breadcrumbs`
 
+### MUI Icons (MANDATORY: Use for ALL icons)
+⚠️ **CRITICAL: Always use Material Icons from @mui/icons-material package**
+⚠️ **NEVER use custom SVG icons or other icon libraries** unless explicitly required
+
+**Package**: `@mui/icons-material`
+**Import Pattern**: `import { IconName } from '@mui/icons-material';`
+
+#### Available Icon Variants
+MUI Icons come in 5 variants (themes):
+- **Filled** (default): `import { Home } from '@mui/icons-material';`
+- **Outlined**: `import { HomeOutlined } from '@mui/icons-material';`
+- **Rounded**: `import { HomeRounded } from '@mui/icons-material';`
+- **TwoTone**: `import { HomeTwoTone } from '@mui/icons-material';`
+- **Sharp**: `import { HomeSharp } from '@mui/icons-material';`
+
+#### Common Icons by Category
+
+**Navigation & Actions:**
+- `Menu`, `MenuOpen`, `Close`, `ArrowBack`, `ArrowForward`
+- `Home`, `Dashboard`, `Settings`, `Search`, `Refresh`
+- `ExpandMore`, `ExpandLess`, `ChevronLeft`, `ChevronRight`
+- `MoreVert`, `MoreHoriz`, `FilterList`, `Sort`
+
+**User & Authentication:**
+- `Person`, `AccountCircle`, `Group`, `Login`, `Logout`
+- `Lock`, `LockOpen`, `Visibility`, `VisibilityOff`
+- `PersonAdd`, `PersonRemove`, `Badge`, `ContactMail`
+
+**Status & Feedback:**
+- `CheckCircle`, `Cancel`, `Error`, `Warning`, `Info`
+- `Done`, `Clear`, `HelpOutline`, `Notifications`, `NotificationsActive`
+- `Sync`, `CloudDone`, `CloudOff`, `CheckCircleOutline`
+
+**Data & Content:**
+- `Edit`, `Delete`, `Add`, `Remove`, `Save`, `ContentCopy`
+- `Download`, `Upload`, `Share`, `Print`, `Folder`, `FolderOpen`
+- `Description`, `Article`, `AttachFile`, `InsertDriveFile`
+
+**Media & Communication:**
+- `PlayArrow`, `Pause`, `Stop`, `VolumeUp`, `VolumeOff`
+- `Call`, `Email`, `Message`, `Chat`, `Send`
+- `Image`, `PhotoCamera`, `Videocam`, `Mic`
+
+**Date & Time:**
+- `CalendarToday`, `Event`, `Schedule`, `AccessTime`, `DateRange`
+- `Today`, `Update`, `History`, `Timer`, `Alarm`
+
+**Data Visualization:**
+- `BarChart`, `PieChart`, `ShowChart`, `Timeline`, `TrendingUp`, `TrendingDown`
+- `Assessment`, `Equalizer`, `MultilineChart`, `BubbleChart`
+
+**Connectivity & System:**
+- `Wifi`, `WifiOff`, `SignalWifi4Bar`, `Cloud`, `CloudQueue`
+- `Computer`, `Storage`, `Memory`, `Router`, `Dns`, `Power`, `PowerOff`
+
+#### Usage Patterns
+
+**Basic Icon:**
+```typescript
+import { Home } from '@mui/icons-material';
+
+<Home />
+```
+
+**Icon with Color (use theme colors):**
+```typescript
+import { Error } from '@mui/icons-material';
+
+<Error color="error" />        // Uses theme.palette.error.main
+<Error color="primary" />       // Uses theme.palette.primary.main
+<Error color="secondary" />     // Uses theme.palette.secondary.main
+<Error color="inherit" />       // Inherits parent color
+<Error color="action" />        // Uses theme.palette.action.active
+<Error color="disabled" />      // Uses theme.palette.action.disabled
+```
+
+**Icon with Custom Size:**
+```typescript
+<Home fontSize="small" />       // 20px
+<Home fontSize="medium" />      // 24px (default)
+<Home fontSize="large" />       // 35px
+<Home fontSize="inherit" />     // Inherits from parent
+
+// Custom size via sx prop
+<Home sx={{ fontSize: 40 }} />
+```
+
+**Icon Button:**
+```typescript
+import { Delete } from '@mui/icons-material';
+import { IconButton } from '@mui/material';
+
+<IconButton 
+  aria-label="delete"
+  onClick={handleDelete}
+  color="error"
+  data-id-ref="delete-button"
+>
+  <Delete />
+</IconButton>
+```
+
+**Icon with Text:**
+```typescript
+import { Add } from '@mui/icons-material';
+import { Button } from '@mui/material';
+
+<Button 
+  startIcon={<Add />}
+  variant="contained"
+  data-id-ref="add-button"
+>
+  {t('common.buttons.add')}
+</Button>
+```
+
+**RTL Support for Directional Icons:**
+```typescript
+import { ArrowForward } from '@mui/icons-material';
+import { useTheme } from '@mui/material';
+
+const theme = useTheme();
+const isRTL = theme.direction === 'rtl';
+
+// Auto-flip in RTL
+<ArrowForward sx={{ transform: isRTL ? 'scaleX(-1)' : 'none' }} />
+```
+
+**Icon in List Item:**
+```typescript
+import { Inbox, Mail } from '@mui/icons-material';
+import { ListItem, ListItemIcon, ListItemText } from '@mui/material';
+
+<ListItem data-id-ref="inbox-item">
+  <ListItemIcon>
+    <Inbox />
+  </ListItemIcon>
+  <ListItemText primary={t('common.inbox')} />
+</ListItem>
+```
+
+#### Critical Rules for Icons
+1. **ALWAYS use @mui/icons-material** - consistent design system
+2. **Use theme colors** - `color="primary"`, `color="error"`, etc.
+3. **Include aria-label** - for accessibility when icon is standalone
+4. **Consider RTL** - flip directional icons (arrows, chevrons) in RTL mode
+5. **Use semantic icons** - choose icons that match their purpose
+6. **Consistent variant** - stick to one variant (Outlined/Filled) per project
+7. **Add data-id-ref** - for testing and debugging
+8. **Size appropriately** - use fontSize prop, not hardcoded pixel values
+
+#### Icon Search
+Find icons at: https://mui.com/material-ui/material-icons/
+- Search by name or category
+- Preview all variants
+- Copy import statement
+- Check accessibility guidelines
+
 ### Critical Rules
 1. **NEVER hardcode colors** - always use theme palette values
 2. **Use `sx` prop** - for component-level styling with theme access
