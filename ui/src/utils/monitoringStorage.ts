@@ -1,12 +1,16 @@
 /**
- * Helper functions for managing monitoring data in sessionStorage
- * Stores groups, items, and alarms data for session persistence
+ * Helper functions for managing monitoring data in localStorage
+ * Stores groups, items, and alarms data for persistence across tabs and sessions
+ * 
+ * Note: Using localStorage instead of sessionStorage to support:
+ * - Opening items in new tabs (each tab can access the same data)
+ * - Persistence across browser sessions (better UX, no re-sync after restart)
  */
 
 import type { Group, Item, AlarmDto } from '../types/api';
 import type { GroupsResponseDto, ItemsResponseDto, AlarmsResponseDto } from '../types/api';
 
-// Session storage keys for monitoring data
+// localStorage keys for monitoring data
 const MONITORING_GROUPS_KEY = 'monitoring_groups';
 const MONITORING_ITEMS_KEY = 'monitoring_items';
 const MONITORING_ALARMS_KEY = 'monitoring_alarms';
@@ -50,41 +54,41 @@ const safeParseJSON = <T>(data: string | null): T | null => {
 };
 
 /**
- * Helper function to safely stringify and store data in sessionStorage
+ * Helper function to safely stringify and store data in localStorage
  */
 const safeSetItem = (key: string, data: unknown): void => {
   try {
     const jsonData = JSON.stringify(data);
-    sessionStorage.setItem(key, jsonData);
-    console.info(`[MonitoringStorage] Stored ${key} in sessionStorage:`, {
+    localStorage.setItem(key, jsonData);
+    console.info(`[MonitoringStorage] Stored ${key} in localStorage:`, {
       key,
       dataLength: Array.isArray(data) ? data.length : 'N/A',
       storageSize: jsonData.length,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.warn(`Failed to store ${key} in sessionStorage:`, error);
+    console.warn(`Failed to store ${key} in localStorage:`, error);
   }
 };
 
 /**
- * Helper function to safely remove item from sessionStorage
+ * Helper function to safely remove item from localStorage
  */
 const safeRemoveItem = (key: string): void => {
   try {
-    sessionStorage.removeItem(key);
+    localStorage.removeItem(key);
   } catch (error) {
-    console.warn(`Failed to remove ${key} from sessionStorage:`, error);
+    console.warn(`Failed to remove ${key} from localStorage:`, error);
   }
 };
 
 /**
- * Helper function to safely get item from sessionStorage
+ * Helper function to safely get item from localStorage
  */
 const safeGetItem = (key: string): string | null => {
   try {
-    const data = sessionStorage.getItem(key);
-    console.info(`[MonitoringStorage] Retrieved ${key} from sessionStorage:`, {
+    const data = localStorage.getItem(key);
+    console.info(`[MonitoringStorage] Retrieved ${key} from localStorage:`, {
       key,
       hasData: !!data,
       dataLength: data?.length || 0,
@@ -92,7 +96,7 @@ const safeGetItem = (key: string): string | null => {
     });
     return data;
   } catch (error) {
-    console.warn(`Failed to get ${key} from sessionStorage:`, error);
+    console.warn(`Failed to get ${key} from localStorage:`, error);
     return null;
   }
 };

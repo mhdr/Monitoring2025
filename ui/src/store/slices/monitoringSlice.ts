@@ -20,25 +20,26 @@ export const StreamStatus = {
 export type StreamStatus = typeof StreamStatus[keyof typeof StreamStatus];
 
 /**
- * Session storage key for data sync status
+ * localStorage key for data sync status
+ * Using localStorage instead of sessionStorage to support data sharing across tabs
  */
 const SYNC_STATUS_STORAGE_KEY = 'monitoring_data_synced';
 
 /**
- * Load data sync status from session storage
+ * Load data sync status from localStorage
  */
 const loadSyncStatusFromStorage = (): boolean => {
   try {
-    const stored = sessionStorage.getItem(SYNC_STATUS_STORAGE_KEY);
+    const stored = localStorage.getItem(SYNC_STATUS_STORAGE_KEY);
     const isSynced = stored === 'true';
-    console.info('[MonitoringSlice] Loading sync status from storage:', {
+    console.info('[MonitoringSlice] Loading sync status from localStorage:', {
       storedValue: stored,
       isSynced,
       timestamp: new Date().toISOString()
     });
     return isSynced;
   } catch (error) {
-    console.warn('Failed to read sync status from sessionStorage:', error);
+    console.warn('Failed to read sync status from localStorage:', error);
     return false;
   }
 };
@@ -67,7 +68,7 @@ const loadMonitoringDataFromStorage = () => {
   const storedItems = monitoringStorageHelpers.getStoredItems() || [];
   const storedAlarms = monitoringStorageHelpers.getStoredAlarms() || [];
 
-  console.info('[MonitoringSlice] Restoring data from sessionStorage:', {
+  console.info('[MonitoringSlice] Restoring data from localStorage:', {
     groups: storedGroups.length,
     items: storedItems.length,
     alarms: storedAlarms.length,
@@ -82,31 +83,31 @@ const loadMonitoringDataFromStorage = () => {
 };
 
 /**
- * Save data sync status to session storage
+ * Save data sync status to localStorage
  */
 export const saveSyncStatusToStorage = (isSynced: boolean): void => {
   try {
-    sessionStorage.setItem(SYNC_STATUS_STORAGE_KEY, isSynced.toString());
+    localStorage.setItem(SYNC_STATUS_STORAGE_KEY, isSynced.toString());
   } catch (error) {
-    console.warn('Failed to save sync status to sessionStorage:', error);
+    console.warn('Failed to save sync status to localStorage:', error);
   }
 };
 
 /**
- * Clear data sync status from session storage
+ * Clear data sync status from localStorage
  */
 export const clearSyncStatusFromStorage = (): void => {
   try {
-    console.warn('[MonitoringSlice] Clearing sync status and all monitoring data from sessionStorage:', {
+    console.warn('[MonitoringSlice] Clearing sync status and all monitoring data from localStorage:', {
       timestamp: new Date().toISOString(),
       stackTrace: new Error().stack
     });
     
-    sessionStorage.removeItem(SYNC_STATUS_STORAGE_KEY);
-    // Also clear all monitoring data from sessionStorage
+    localStorage.removeItem(SYNC_STATUS_STORAGE_KEY);
+    // Also clear all monitoring data from localStorage
     monitoringStorageHelpers.clearAllMonitoringData();
   } catch (error) {
-    console.warn('Failed to clear sync status from sessionStorage:', error);
+    console.warn('Failed to clear sync status from localStorage:', error);
   }
 };
 
