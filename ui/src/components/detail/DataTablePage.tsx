@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Box,
@@ -31,8 +31,8 @@ import { useLazyGetHistoryQuery } from '../../services/rtkApi';
 import type { HistoryRequestDto, HistoricalDataPoint, Item } from '../../types/api';
 import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
 
-// Lazy load AG Grid to reduce initial bundle size (1.4MB chunk split)
-const AGGridWrapper = lazy(() => import('../AGGridWrapper').then(module => ({ default: module.AGGridWrapper })));
+// Use LazyAGGrid component for optimized AG Grid loading
+import LazyAGGrid from '../LazyAGGrid';
 import { useAGGrid } from '../../hooks/useAGGrid';
 import type { AGGridApi, AGGridColumnApi } from '../../types/agGrid';
 import { useRef, useCallback } from 'react';
@@ -538,19 +538,7 @@ const DataTablePage: React.FC = () => {
             </Box>
           ) : (
             <Box sx={{ width: '100%', height: '100%', minHeight: isMobile ? '300px' : '400px' }}>
-              <Suspense fallback={
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: '300px',
-                  }}
-                >
-                  <CircularProgress size={60} />
-                </Box>
-              }>
-                <AGGridWrapper
+              <LazyAGGrid
                   ref={gridRef as React.Ref<AGGridApi>}
                   columnDefs={columnDefs}
                   rowData={rowData}
@@ -596,7 +584,6 @@ const DataTablePage: React.FC = () => {
                   }}
                   data-id-ref="data-table-grid"
                 />
-              </Suspense>
             </Box>
           )}
         </CardContent>

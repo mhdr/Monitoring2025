@@ -86,10 +86,57 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        // Increase maximum precache file size to allow large AG Grid Enterprise bundles (default is 2 * 1024 * 1024)
-        // AG Grid enterprise bundles are ~5MB uncompressed; adjust cautiously to avoid bloating precache.
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10 MiB cap for selected large vendor assets
+        // Exclude large lazy-loaded chunks and stats files from precache
+        // AG Grid (~1.3MB) and ECharts (~820KB) will be cached on-demand via runtime caching
+        globIgnores: ['**/ag-grid-*.js', '**/echarts-*.js', '**/stats.html'],
+        // Increase maximum file size for vendor chunks
+        maximumFileSizeToCacheInBytes: 500 * 1024, // 500 KB - reasonable for critical chunks
         runtimeCaching: [
+          // Cache critical vendor chunks - CacheFirst strategy
+          {
+            urlPattern: /.*\/assets\/(react-core|mui-core|redux|i18n|grpc|layout|mui-styling|react-router|vendor|date-utils)-.*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'vendor-chunks-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Cache lazy-loaded large chunks on-demand - CacheFirst
+          {
+            urlPattern: /.*\/assets\/(ag-grid|echarts)-.*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'large-chunks-cache',
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Cache page chunks - CacheFirst
+          {
+            urlPattern: /.*\/assets\/(dashboard|monitoring|active-alarms|alarm-log|trend-analysis|data-table|settings|profile|sync)-.*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'page-chunks-cache',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
           // Cache MUI theme CSS - CacheFirst with long expiration
           {
             urlPattern: /.*\/assets\/css\/mui-.*\.css$/,
