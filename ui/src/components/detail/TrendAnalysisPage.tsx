@@ -107,8 +107,13 @@ const TrendAnalysisPage: React.FC = () => {
     const startDateStr = new Date(startDate * 1000).toLocaleString(locale, dateOptions);
     const endDateStr = new Date(endDate * 1000).toLocaleString(locale, dateOptions);
 
-    // Use existing translation keys 'from' and 'to'
-    return `${t('from')}: ${startDateStr} ${t('to')}: ${endDateStr}`;
+    // Format differently for Persian (no colons) vs English (with colons)
+    // Persian: "از ... تا ..." vs English: "From: ... To: ..."
+    if (language === 'fa') {
+      return `${t('from')} ${startDateStr} ${t('to')} ${endDateStr}`;
+    } else {
+      return `${t('from')}: ${startDateStr} ${t('to')}: ${endDateStr}`;
+    }
   }, [getDateRange, language, t]);
 
   // Get item name based on language
