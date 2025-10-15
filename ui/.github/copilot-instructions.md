@@ -477,41 +477,11 @@ This project uses IndexedDB via `src/utils/authStorage.ts` for secure token stor
 - TypeScript-safe interfaces
 
 **Creating New IndexedDB Stores:**
-```typescript
-// Example: User preferences store
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-
-interface PreferencesDB extends DBSchema {
-  preferences: {
-    key: string;
-    value: {
-      theme: 'light' | 'dark';
-      language: 'en' | 'fa';
-      updatedAt: number;
-    };
-  };
-}
-
-const getDB = async (): Promise<IDBPDatabase<PreferencesDB>> => {
-  return openDB<PreferencesDB>('app-preferences', 1, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains('preferences')) {
-        db.createObjectStore('preferences');
-      }
-    },
-  });
-};
-
-export const savePreference = async (key: string, value: any) => {
-  const db = await getDB();
-  await db.put('preferences', { ...value, updatedAt: Date.now() }, key);
-};
-
-export const getPreference = async (key: string) => {
-  const db = await getDB();
-  return db.get('preferences', key);
-};
-```
+- Use `idb` library for Promise-based API
+- Define TypeScript schema using `DBSchema` interface
+- Implement version migrations in `upgrade` callback
+- Handle opening database, putting data, and getting data
+- Include error handling and TypeScript-safe interfaces
 
 ### Best Practices
 1. **Use `idb` library**: Provides Promise-based API wrapper around native IndexedDB
