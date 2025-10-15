@@ -116,8 +116,8 @@ const ProfilePage: React.FC = () => {
         
         // Log out the user after successful password change
         // User needs to log in again with the new password
-        setTimeout(() => {
-          logout();
+        setTimeout(async () => {
+          await logout();
         }, 2000); // Give user 2 seconds to see the success message
       } else {
         setErrorMessage(t('profilePage.messages.changePasswordError'));

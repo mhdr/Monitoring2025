@@ -4,6 +4,7 @@ import { getItem, setItem, removeItem } from './indexedDbStorage';
 /**
  * Helper functions for managing authentication data in browser storage
  * Uses IndexedDB for persistent storage with rolling 7-day expiration
+ * Maintains in-memory cache for synchronous access (required by RTK Query prepareHeaders)
  */
 
 // Constants
@@ -13,17 +14,41 @@ const AUTH_USER_KEY = 'auth_user';
 const AUTH_EXPIRATION_KEY = 'auth_expiration';
 const REMEMBER_ME_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
+// In-memory cache for synchronous access (needed by RTK Query prepareHeaders)
+// This is kept in sync with IndexedDB
+let tokenCache: string | null = null;
+let refreshTokenCache: string | null = null;
+let userCache: User | null = null;
+
 export const authStorageHelpers = {
+  /**
+   * Get token synchronously from cache (for RTK Query prepareHeaders)
+   * Use this ONLY in synchronous contexts like prepareHeaders
+   */
+  getStoredTokenSync: (): string | null => {
+    return tokenCache;
+  },
+
+  /**
+   * Get token asynchronously from IndexedDB (updates cache)
+   * Use this for most cases
+   */
   getStoredToken: async (): Promise<string | null> => {
-    return await getItem<string>(AUTH_TOKEN_KEY);
+    const token = await getItem<string>(AUTH_TOKEN_KEY);
+    tokenCache = token;
+    return token;
   },
 
   getStoredRefreshToken: async (): Promise<string | null> => {
-    return await getItem<string>(AUTH_REFRESH_TOKEN_KEY);
+    const refreshToken = await getItem<string>(AUTH_REFRESH_TOKEN_KEY);
+    refreshTokenCache = refreshToken;
+    return refreshToken;
   },
 
   getStoredUser: async (): Promise<User | null> => {
-    return await getItem<User>(AUTH_USER_KEY);
+    const user = await getItem<User>(AUTH_USER_KEY);
+    userCache = user;
+    return user;
   },
 
   /**
@@ -51,6 +76,13 @@ export const authStorageHelpers = {
   },
 
   setStoredAuth: async (token: string, user: User, refreshToken?: string): Promise<void> => {
+    // Update cache immediately for sync access
+    tokenCache = token;
+    userCache = user;
+    if (refreshToken) {
+      refreshTokenCache = refreshToken;
+    }
+    
     // Persistent storage in IndexedDB with 7-day rolling expiration
     const expiration = Date.now() + REMEMBER_ME_DURATION;
     await setItem(AUTH_TOKEN_KEY, token);
@@ -62,6 +94,11 @@ export const authStorageHelpers = {
   },
 
   clearStoredAuth: async (): Promise<void> => {
+    // Clear cache immediately
+    tokenCache = null;
+    refreshTokenCache = null;
+    userCache = null;
+    
     // Clear all auth data from IndexedDB
     await removeItem(AUTH_TOKEN_KEY);
     await removeItem(AUTH_REFRESH_TOKEN_KEY);

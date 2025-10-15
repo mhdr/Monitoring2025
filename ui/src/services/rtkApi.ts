@@ -115,11 +115,15 @@ const baseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
   timeout: 10000,
   prepareHeaders: (headers) => {
-    const token = authStorageHelpers.getStoredToken();
+    // Use sync version to get token from in-memory cache
+    // prepareHeaders cannot be async, so we rely on the cache being populated
+    const token = authStorageHelpers.getStoredTokenSync();
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
-      // Extend expiration on each API call (user activity)
-      authStorageHelpers.extendAuthExpiration();
+      // Extend expiration on each API call (user activity) - fire and forget
+      authStorageHelpers.extendAuthExpiration().catch((error) => {
+        console.error('Failed to extend auth expiration:', error);
+      });
     }
     return headers;
   },

@@ -32,17 +32,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Initialize auth state on mount from storage
   useEffect(() => {
-    // Read stored auth synchronously; keep isLoading true during this read
-    try {
-      const authState = authStorageHelpers.getCurrentAuth();
-      setUser(authState.user);
-      setToken(authState.token);
-      // refreshToken is stored but not kept in React state - it's only used by RTK Query
-      setIsAuthenticated(Boolean(authState.token && authState.user));
-    } finally {
-      // Ensure loading flag is cleared after initialization
-      setIsLoading(false);
-    }
+    // Read stored auth asynchronously from IndexedDB
+    // This also populates the in-memory cache for sync access
+    (async () => {
+      try {
+        const authState = await authStorageHelpers.getCurrentAuth();
+        setUser(authState.user);
+        setToken(authState.token);
+        // refreshToken is stored but not kept in React state - it's only used by RTK Query
+        setIsAuthenticated(Boolean(authState.token && authState.user));
+      } catch (error) {
+        console.error('Failed to initialize auth from IndexedDB:', error);
+        // On error, assume not authenticated
+        setUser(null);
+        setToken(null);
+        setIsAuthenticated(false);
+      } finally {
+        // Ensure loading flag is cleared after initialization
+        setIsLoading(false);
+      }
+    })();
   }, []);
 
   // Initialize BroadcastChannel for cross-tab auth synchronization
@@ -57,22 +66,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Another tab logged in - update local auth state
           console.debug('Received LOGIN broadcast from another tab');
           // Get current auth state to see if we already have user info
-          const currentAuth = authStorageHelpers.getCurrentAuth();
-          if (currentAuth.user) {
-            // User info already in storage, just update tokens
-            authStorageHelpers.setStoredAuth(
-              message.payload.accessToken,
-              currentAuth.user,
-              message.payload.refreshToken
-            );
-            setToken(message.payload.accessToken);
-            setIsAuthenticated(true);
-          } else {
-            // No user info yet - will be updated when we fetch it
-            // For now, just update state to trigger a re-fetch
-            setToken(message.payload.accessToken);
-            setIsAuthenticated(true);
-          }
+          (async () => {
+            try {
+              const currentAuth = await authStorageHelpers.getCurrentAuth();
+              if (currentAuth.user) {
+                // User info already in storage, just update tokens
+                await authStorageHelpers.setStoredAuth(
+                  message.payload.accessToken,
+                  currentAuth.user,
+                  message.payload.refreshToken
+                );
+                setToken(message.payload.accessToken);
+                setUser(currentAuth.user);
+                setIsAuthenticated(true);
+              } else {
+                // No user info yet - will be updated when we fetch it
+                // For now, just update state to trigger a re-fetch
+                setToken(message.payload.accessToken);
+                setIsAuthenticated(true);
+              }
+            } catch (error) {
+              console.error('Failed to handle LOGIN broadcast:', error);
+            }
+          })();
           break;
         }
 
@@ -82,22 +98,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);
           setToken(null);
           setIsAuthenticated(false);
-          authStorageHelpers.clearStoredAuth();
+          authStorageHelpers.clearStoredAuth().catch((error) => {
+            console.error('Failed to clear auth storage on LOGOUT broadcast:', error);
+          });
           break;
         }
 
         case 'TOKEN_REFRESHED': {
           // Another tab refreshed tokens - update local tokens
           console.debug('Received TOKEN_REFRESHED broadcast from another tab');
-          const currentAuth = authStorageHelpers.getCurrentAuth();
-          if (currentAuth.user) {
-            authStorageHelpers.setStoredAuth(
-              message.payload.accessToken,
-              currentAuth.user,
-              message.payload.refreshToken
-            );
-            setToken(message.payload.accessToken);
-          }
+          (async () => {
+            try {
+              const currentAuth = await authStorageHelpers.getCurrentAuth();
+              if (currentAuth.user) {
+                await authStorageHelpers.setStoredAuth(
+                  message.payload.accessToken,
+                  currentAuth.user,
+                  message.payload.refreshToken
+                );
+                setToken(message.payload.accessToken);
+              }
+            } catch (error) {
+              console.error('Failed to handle TOKEN_REFRESHED broadcast:', error);
+            }
+          })();
           break;
         }
 
@@ -114,12 +138,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.debug('Received AUTH_CHECK_RESPONSE:', message.payload.isAuthenticated);
           if (message.payload.isAuthenticated && !isAuthenticated) {
             // Another tab is authenticated, but we're not - sync state
-            const authState = authStorageHelpers.getCurrentAuth();
-            if (authState.token && authState.user) {
-              setUser(authState.user);
-              setToken(authState.token);
-              setIsAuthenticated(true);
-            }
+            (async () => {
+              try {
+                const authState = await authStorageHelpers.getCurrentAuth();
+                if (authState.token && authState.user) {
+                  setUser(authState.user);
+                  setToken(authState.token);
+                  setIsAuthenticated(true);
+                }
+              } catch (error) {
+                console.error('Failed to handle AUTH_CHECK_RESPONSE:', error);
+              }
+            })();
           }
           break;
         }
@@ -141,11 +171,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!isAuthenticated) return;
 
     // Extend immediately on mount if authenticated
-    authStorageHelpers.extendAuthExpiration();
+    authStorageHelpers.extendAuthExpiration().catch((error) => {
+      console.error('Failed to extend auth expiration on mount:', error);
+    });
 
     // Set up interval to extend expiration periodically
     const interval = setInterval(() => {
-      authStorageHelpers.extendAuthExpiration();
+      authStorageHelpers.extendAuthExpiration().catch((error) => {
+        console.error('Failed to extend auth expiration:', error);
+      });
     }, 5 * 60 * 1000); // Every 5 minutes
 
     return () => clearInterval(interval);
@@ -166,7 +200,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Broadcast login event to all other tabs
       // Get the refresh token from storage (it was stored by the login mutation)
-      const authState = authStorageHelpers.getCurrentAuth();
+      const authState = await authStorageHelpers.getCurrentAuth();
       if (authState.refreshToken) {
         broadcastLogin(result.accessToken, authState.refreshToken);
       }
@@ -178,13 +212,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [loginMutation]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
     setIsLoading(false);
     // Clear from storage (including refresh token)
-    authStorageHelpers.clearStoredAuth();
+    await authStorageHelpers.clearStoredAuth();
     // Broadcast logout event to all other tabs
     broadcastLogout();
   }, []);
