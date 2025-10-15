@@ -12,13 +12,24 @@
     <!-- Critical CSS inlined for faster First Contentful Paint -->
     <style>
       /* Critical above-the-fold styles - No Bootstrap CSS variables, using MUI theme */
-      body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background-color:#f8f9fa;color:#212529}#root{min-height:100vh;display:flex;flex-direction:column}.loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}.loading-screen-spinner{width:3rem;height:3rem;border:.25rem solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading-screen-text{margin-top:1.5rem;color:#fff;font-size:1.125rem;font-weight:500}.dashboard-container:not(.dashboard-ready){opacity:0}.dashboard-container.dashboard-ready{opacity:1;transition:opacity .3s ease-in}
+      body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background-color:#f8f9fa;color:#212529}#root{min-height:100vh;display:flex;flex-direction:column}.loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;background-color:#f5f5f5;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}.loading-screen-content{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08)}.loading-screen-spinner{width:3.5rem;height:3.5rem;border:.3rem solid #e0e0e0;border-top-color:#1976d2;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading-screen-text{margin-top:1.5rem;color:#424242;font-size:1rem;font-weight:500;text-align:center;line-height:1.5}.loading-screen-logo{width:48px;height:48px;margin-bottom:1rem;background:linear-gradient(135deg,#1976d2 0%,#42a5f5 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;font-weight:600;box-shadow:0 2px 8px rgba(25,118,210,0.3)}.dashboard-container:not(.dashboard-ready){opacity:0}.dashboard-container.dashboard-ready{opacity:1;transition:opacity .3s ease-in}@media(prefers-color-scheme:dark){.loading-screen{background-color:#1a1a1a}.loading-screen-content{background:#2c2c2c;box-shadow:0 4px 24px rgba(0,0,0,0.3)}.loading-screen-spinner{border-color:#424242;border-top-color:#42a5f5}.loading-screen-text{color:#e0e0e0}}@media(max-width:600px){.loading-screen-content{padding:1.5rem;border-radius:12px}.loading-screen-spinner{width:3rem;height:3rem}.loading-screen-text{font-size:0.9rem}.loading-screen-logo{width:40px;height:40px;font-size:1.25rem}}
     </style>
     
     <title>Monitoring System | سیستم مانیتورینگ</title>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Initial loading screen - shown before React loads, auto-removed by React render -->
+    <div id="root">
+      <div class="loading-screen" data-id-ref="initial-loading-screen">
+        <div class="loading-screen-content" data-id-ref="initial-loading-content">
+          <div class="loading-screen-logo" data-id-ref="initial-loading-logo">👁</div>
+          <div class="loading-screen-spinner" data-id-ref="initial-loading-spinner"></div>
+          <div class="loading-screen-text" data-id-ref="initial-loading-text">
+            Loading...<br>در حال بارگذاری...
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

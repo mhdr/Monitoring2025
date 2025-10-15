@@ -1,51 +1,15 @@
-.loading-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--bs-body-bg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  transition: opacity 0.3s ease-in-out;
-}
+/**
+ * LoadingScreen CSS
+ * 
+ * This file is kept for backward compatibility but is no longer used.
+ * The LoadingScreen component now uses MUI's sx prop for styling.
+ * 
+ * See LoadingScreen.tsx for the current implementation.
+ */
 
+/* Fade-out animation for transitioning */
 .loading-screen.fade-out {
   opacity: 0;
   pointer-events: none;
-}
-
-.loading-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.loading-message {
-  color: var(--bs-body-color);
-  font-size: 1rem;
-  text-align: center;
-  margin: 0;
-}
-
-/* Spinner customization */
-.loading-screen .spinner-border {
-  width: 3rem;
-  height: 3rem;
-  border-width: 0.3em;
-}
-
-/* Responsive adjustments */
-@media (max-width: 576px) {
-  .loading-screen .spinner-border {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-
-  .loading-message {
-    font-size: 0.9rem;
-  }
+  transition: opacity 0.3s ease-in-out;
 }
