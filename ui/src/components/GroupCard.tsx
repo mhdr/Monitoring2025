@@ -65,7 +65,6 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
         >
           <Box
             sx={{
-              color: 'warning.main',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -75,7 +74,9 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
             <Folder
               sx={{
                 fontSize: '3.5rem',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                color: 'warning.main',
+                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease-in-out',
+                willChange: 'transform, color',
                 '.MuiCardActionArea-root:hover &': {
                   transform: 'scale(1.15) rotate(-5deg)',
                   color: 'primary.main',
