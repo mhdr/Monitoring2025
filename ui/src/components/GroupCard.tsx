@@ -75,11 +75,10 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
               sx={{
                 fontSize: '3.5rem',
                 color: 'warning.main',
-                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease-in-out',
-                willChange: 'transform, color',
+                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                willChange: 'transform',
                 '.MuiCardActionArea-root:hover &': {
                   transform: 'scale(1.15) rotate(-5deg)',
-                  color: 'primary.main',
                 },
               }}
               data-id-ref="group-card-folder-icon"
