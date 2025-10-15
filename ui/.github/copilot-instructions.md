@@ -431,7 +431,116 @@ Must test on these standard resolutions:
 - [ ] Authentication required for protected routes
 - [ ] CSRF tokens used where applicable
 
-## 🐛 Error Handling
+## � Data Persistence
+
+### Critical Data Storage Rules
+⚠️ **MANDATORY: Use IndexedDB for ALL client-side data persistence**
+
+**DO NOT use `localStorage` or `sessionStorage`** - they have significant limitations and security concerns.
+
+### Why IndexedDB?
+1. **Larger Storage Capacity**: IndexedDB can store GBs of data vs. localStorage's 5-10MB limit
+2. **Asynchronous Operations**: Non-blocking API prevents UI freezes with large datasets
+3. **Structured Data**: Store complex objects, arrays, and binary data natively (no JSON.stringify/parse overhead)
+4. **Transactional Integrity**: ACID-compliant transactions ensure data consistency
+5. **Indexing & Querying**: Fast lookups via indexes, range queries, and cursors
+6. **Better Performance**: Optimized for large-scale data operations
+7. **Typed Arrays Support**: Efficient binary data storage (blobs, files, ArrayBuffers)
+8. **Web Worker Compatible**: Can be accessed from service workers and web workers
+
+### When to Use IndexedDB
+✅ **MANDATORY for:**
+- Authentication tokens (JWT, refresh tokens) - see `src/utils/authStorage.ts`
+- User preferences and settings (theme, language, UI state)
+- Offline data caching (API responses, user data)
+- Draft data (unsaved forms, work-in-progress content)
+- Application state persistence across sessions
+- Large datasets (monitoring data, logs, historical records)
+- Binary data (files, images, blobs)
+
+### localStorage/sessionStorage Limitations
+❌ **DO NOT use for:**
+- Sensitive data (tokens, credentials) - synchronous, not secure
+- Large datasets (>5MB) - quota exceeded errors
+- Complex objects - requires JSON serialization overhead
+- Binary data - inefficient base64 encoding required
+- Concurrent access - no transaction support, race conditions possible
+- Service worker access - not available in worker context
+
+### Implementation Patterns
+
+**Existing Implementation:**
+This project uses IndexedDB via `src/utils/authStorage.ts` for secure token storage with:
+- Automatic expiration handling (7-day rolling window)
+- Transactional operations for data consistency
+- Error handling and fallback mechanisms
+- TypeScript-safe interfaces
+
+**Creating New IndexedDB Stores:**
+```typescript
+// Example: User preferences store
+import { openDB, DBSchema, IDBPDatabase } from 'idb';
+
+interface PreferencesDB extends DBSchema {
+  preferences: {
+    key: string;
+    value: {
+      theme: 'light' | 'dark';
+      language: 'en' | 'fa';
+      updatedAt: number;
+    };
+  };
+}
+
+const getDB = async (): Promise<IDBPDatabase<PreferencesDB>> => {
+  return openDB<PreferencesDB>('app-preferences', 1, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains('preferences')) {
+        db.createObjectStore('preferences');
+      }
+    },
+  });
+};
+
+export const savePreference = async (key: string, value: any) => {
+  const db = await getDB();
+  await db.put('preferences', { ...value, updatedAt: Date.now() }, key);
+};
+
+export const getPreference = async (key: string) => {
+  const db = await getDB();
+  return db.get('preferences', key);
+};
+```
+
+### Best Practices
+1. **Use `idb` library**: Provides Promise-based API wrapper around native IndexedDB
+2. **Define TypeScript schemas**: Use `DBSchema` interface for type safety
+3. **Version migrations**: Handle schema changes in `upgrade` callback
+4. **Error handling**: Wrap operations in try/catch, provide fallbacks
+5. **Cleanup old data**: Implement TTL or periodic cleanup for expired data
+6. **Indexing strategy**: Create indexes for frequently queried fields
+7. **Transaction scope**: Keep transactions short, commit frequently
+8. **Security**: Encrypt sensitive data before storing (use Web Crypto API)
+9. **Testing**: Test quota exceeded scenarios, corrupted data recovery
+10. **Service Worker**: Use for offline-first patterns and background sync
+
+### Migration from localStorage/sessionStorage
+If you find existing code using localStorage/sessionStorage:
+1. Create IndexedDB store with appropriate schema
+2. Migrate existing data to IndexedDB
+3. Update all read/write operations to use IndexedDB API
+4. Remove localStorage/sessionStorage calls
+5. Test thoroughly including offline scenarios
+
+### Performance Considerations
+- **Batch operations**: Use transactions to group multiple operations
+- **Lazy loading**: Open database connection only when needed
+- **Cursor iteration**: For large result sets, use cursors instead of getAll()
+- **Index optimization**: Create compound indexes for multi-field queries
+- **Blob storage**: Store large binary data directly, avoid base64 encoding
+
+## �🐛 Error Handling
 
 ### Error Handling Requirements
 ⚠️ **MANDATORY: Comprehensive error handling**
