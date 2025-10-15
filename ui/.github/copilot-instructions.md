@@ -27,9 +27,9 @@ This is a production-grade enterprise monitoring dashboard with:
 
 ### Key Requirements
 - Use `useTranslation()` hook and `t()` function for all user-facing text
-- Support dynamic translations with variables: `t('messages.welcome', { name: userName })`
-- Support pluralization: `t('items.count', { count })`
-- Translation keys use hierarchical dot notation (e.g., `pages.dashboard.title`, `common.buttons.save`)
+- Support dynamic translations with variables using object parameter
+- Support pluralization using count parameter
+- Translation keys use hierarchical dot notation
 
 ### RTL Considerations
 - **MUI Theme**: Automatically flips layouts when `direction: 'rtl'` is set in theme
@@ -87,11 +87,11 @@ This is a production-grade enterprise monitoring dashboard with:
 - **Store**: `src/store/` - Redux store and slices
 
 ### Naming Conventions
-- **Components**: PascalCase (e.g., `UserCard.tsx`, `DashboardLayout.tsx`)
-- **Hooks**: camelCase with `use` prefix (e.g., `useAuth.ts`, `useTranslation.ts`)
-- **Types**: PascalCase (e.g., `UserProfile`, `ApiResponse`)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `API_BASE_URL`, `MAX_RETRIES`)
-- **CSS Classes**: kebab-case (e.g., `user-card`, `dashboard-header`)
+- **Components**: PascalCase
+- **Hooks**: camelCase with `use` prefix
+- **Types**: PascalCase
+- **Constants**: UPPER_SNAKE_CASE
+- **CSS Classes**: kebab-case
 
 ## AG Grid
 ⚠️ ENTERPRISE v34.2.0 - ALL modules must be registered
@@ -219,90 +219,12 @@ MUI Icons come in 5 variants (themes):
 - `Computer`, `Storage`, `Memory`, `Router`, `Dns`, `Power`, `PowerOff`
 
 #### Usage Patterns
-
-**Basic Icon:**
-```typescript
-import { Home } from '@mui/icons-material';
-
-<Home />
-```
-
-**Icon with Color (use theme colors):**
-```typescript
-import { Error } from '@mui/icons-material';
-
-<Error color="error" />        // Uses theme.palette.error.main
-<Error color="primary" />       // Uses theme.palette.primary.main
-<Error color="secondary" />     // Uses theme.palette.secondary.main
-<Error color="inherit" />       // Inherits parent color
-<Error color="action" />        // Uses theme.palette.action.active
-<Error color="disabled" />      // Uses theme.palette.action.disabled
-```
-
-**Icon with Custom Size:**
-```typescript
-<Home fontSize="small" />       // 20px
-<Home fontSize="medium" />      // 24px (default)
-<Home fontSize="large" />       // 35px
-<Home fontSize="inherit" />     // Inherits from parent
-
-// Custom size via sx prop
-<Home sx={{ fontSize: 40 }} />
-```
-
-**Icon Button:**
-```typescript
-import { Delete } from '@mui/icons-material';
-import { IconButton } from '@mui/material';
-
-<IconButton 
-  aria-label="delete"
-  onClick={handleDelete}
-  color="error"
-  data-id-ref="delete-button"
->
-  <Delete />
-</IconButton>
-```
-
-**Icon with Text:**
-```typescript
-import { Add } from '@mui/icons-material';
-import { Button } from '@mui/material';
-
-<Button 
-  startIcon={<Add />}
-  variant="contained"
-  data-id-ref="add-button"
->
-  {t('common.buttons.add')}
-</Button>
-```
-
-**RTL Support for Directional Icons:**
-```typescript
-import { ArrowForward } from '@mui/icons-material';
-import { useTheme } from '@mui/material';
-
-const theme = useTheme();
-const isRTL = theme.direction === 'rtl';
-
-// Auto-flip in RTL
-<ArrowForward sx={{ transform: isRTL ? 'scaleX(-1)' : 'none' }} />
-```
-
-**Icon in List Item:**
-```typescript
-import { Inbox, Mail } from '@mui/icons-material';
-import { ListItem, ListItemIcon, ListItemText } from '@mui/material';
-
-<ListItem data-id-ref="inbox-item">
-  <ListItemIcon>
-    <Inbox />
-  </ListItemIcon>
-  <ListItemText primary={t('common.inbox')} />
-</ListItem>
-```
+- **Color Props**: Use `color="primary"`, `color="error"`, `color="inherit"`, `color="action"`, `color="disabled"`
+- **Size Props**: Use `fontSize="small"` (20px), `fontSize="medium"` (24px default), `fontSize="large"` (35px), `fontSize="inherit"`, or custom size via `sx={{ fontSize: 40 }}`
+- **Icon Buttons**: Wrap icon in `IconButton` component with `aria-label`, `onClick`, `color`, and `data-id-ref`
+- **Icons with Text**: Use `startIcon` or `endIcon` props on Button components
+- **RTL Support**: Transform directional icons with `sx={{ transform: isRTL ? 'scaleX(-1)' : 'none' }}`
+- **List Items**: Place icons in `ListItemIcon` component within `ListItem`
 
 #### Critical Rules for Icons
 1. **ALWAYS use @mui/icons-material** - consistent design system
@@ -378,8 +300,8 @@ Must test on these standard resolutions:
 - **414x896** - iPhone XR/11
 
 ### Key Patterns
-- Use MUI Grid system with responsive props: `<Grid xs={12} md={6} lg={4}>`
-- Use `sx` prop with breakpoints: `sx={{ display: { xs: 'none', md: 'block' } }}`
+- Use MUI Grid system with responsive props
+- Use `sx` prop with breakpoints for responsive styling
 - Use MUI `Typography` with responsive variants
 - Use `useMediaQuery` hook for programmatic breakpoint detection
 - Always include `data-id-ref` attributes on all elements
@@ -639,10 +561,10 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 ⚠️ **MANDATORY: Test complete user workflows** including bilingual scenarios
 
 **Key Testing Scenarios:**
-1. **Authentication Flow**: Navigate to login, take snapshot, fill form with UIDs, click submit, wait for Dashboard
-2. **Bilingual Testing**: Click language switcher, take full-page screenshots for RTL verification, test form inputs in both languages
+1. **Authentication Flow**: Navigate to login, take snapshot, fill form with UIDs, click submit, wait for redirect
+2. **Bilingual Testing**: Click language switcher, take screenshots for RTL verification, test form inputs in both languages
 3. **Real-Time Monitoring**: Navigate to monitoring page, use `evaluate_script` to test gRPC streaming connection state
-4. **Complex Interactions**: Test drag-and-drop with element UIDs, test keyboard navigation using KeyboardEvent simulation
+4. **Complex Interactions**: Test drag-and-drop with element UIDs, test keyboard navigation
 
 #### 🎨 Live Styling and Layout Inspection
 
@@ -651,8 +573,8 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 
 **Key Testing Procedures:**
 1. **Theme System**: Test light and dark modes, use `evaluate_script` to inspect MUI theme values, take screenshots
-2. **Responsive Layout**: Test breakpoints (375×667, 768×1024, 1366×768, 1920×1080) using `resize_page`, check for horizontal scroll and overflow
-3. **RTL Layout**: Switch to Persian using `evaluate_script`, verify MUI RTL handling (direction: 'rtl' in theme), check for hardcoded left/right positioning
+2. **Responsive Layout**: Test breakpoints using `resize_page`, check for horizontal scroll and overflow
+3. **RTL Layout**: Switch to Persian, verify MUI RTL handling, check for hardcoded left/right positioning
 4. **MUI Theme Values**: Use `evaluate_script` to inspect theme palette values and verify correct application
 
 #### ⚡ Performance Audits and Optimization
@@ -661,11 +583,11 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 ⚠️ **MANDATORY: Test Core Web Vitals** and streaming performance
 
 **Key Performance Tests:**
-1. **Core Web Vitals**: Use `performance_start_trace`, navigate/interact, then `performance_stop_trace` and `performance_analyze_insight` for LCP breakdown
-2. **Network Testing**: Loop through network conditions (Fast/Slow 3G/4G) using `emulate_network`, measure load times, reset to "No emulation"
-3. **CPU Testing**: Use `emulate_cpu` with throttlingRate 4, run heavy operations via `evaluate_script`, measure processing time and memory
-4. **gRPC Streaming**: Use `evaluate_script` to monitor streaming metrics over 30 seconds (messages received, latency, errors)
-5. **Memory Leaks**: Use `evaluate_script` to sample memory every 5 seconds for 2 minutes, analyze trend for memory increases
+1. **Core Web Vitals**: Use `performance_start_trace`, navigate/interact, then `performance_stop_trace` and `performance_analyze_insight`
+2. **Network Testing**: Use `emulate_network` with different conditions, measure load times, reset to "No emulation"
+3. **CPU Testing**: Use `emulate_cpu` with throttling rate, run heavy operations via `evaluate_script`, measure processing time
+4. **gRPC Streaming**: Use `evaluate_script` to monitor streaming metrics (messages received, latency, errors)
+5. **Memory Leaks**: Use `evaluate_script` to sample memory over time, analyze trend for memory increases
 
 #### 🔄 DevTools MCP Best Practices
 
