@@ -47,11 +47,12 @@ const TrendAnalysisPage: React.FC = () => {
   const itemsLoading = useAppSelector((state) => state.monitoring.itemsLoading);
 
   // RTK Query lazy hook for fetching history
-  const [fetchHistory, { data: historyResponse, isLoading: loading, isError }] = useLazyGetHistoryQuery();
+  const [fetchHistory, { data: historyResponse, isError }] = useLazyGetHistoryQuery();
   
   // State management
   const [error, setError] = useState<string | null>(null);
   const [historyData, setHistoryData] = useState<HistoricalDataPoint[]>([]);
+  const [loading, setLoading] = useState<boolean>(false); // Local loading state for better control
   const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>('last24Hours');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
@@ -148,6 +149,7 @@ const TrendAnalysisPage: React.FC = () => {
     }
 
     setError(null);
+    setLoading(true);
 
     try {
       const { startDate, endDate } = getDateRange;
@@ -155,6 +157,7 @@ const TrendAnalysisPage: React.FC = () => {
       // Validate date range
       if (startDate >= endDate) {
         setError(t('startDateAfterEnd'));
+        setLoading(false);
         return;
       }
 
@@ -165,19 +168,24 @@ const TrendAnalysisPage: React.FC = () => {
       };
 
       // Trigger RTK Query to fetch history
-      await fetchHistory(request).unwrap();
+      const result = await fetchHistory(request).unwrap();
+      
+      // Update history data and stop loading
+      setHistoryData(result.values || []);
+      setLoading(false);
     } catch (err) {
       console.error('Error fetching history data:', err);
       setError(t('errorLoadingData'));
+      setLoading(false);
     }
   };
   
-  // Update historyData when RTK Query response changes
+  // Update historyData when RTK Query response changes (for cache hits)
   useEffect(() => {
-    if (historyResponse) {
+    if (historyResponse && !loading) {
       setHistoryData(historyResponse.values || []);
     }
-  }, [historyResponse]);
+  }, [historyResponse, loading]);
   
   // Set error when RTK Query has an error
   useEffect(() => {
