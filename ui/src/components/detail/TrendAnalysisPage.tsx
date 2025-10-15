@@ -223,7 +223,8 @@ const TrendAnalysisPage: React.FC = () => {
     return {
       title: isMobile ? undefined : {
         text: composedChartTitle,
-        left: isRTL ? 'right' : 'left',
+        // Center the title for both RTL and LTR
+        left: 'center',
         textStyle: {
           fontSize: 16,
           // Use IRANSans variable font in Persian mode
