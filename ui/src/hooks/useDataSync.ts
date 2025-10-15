@@ -294,7 +294,7 @@ export function useDataSync(): UseDataSyncResult {
       if (allSuccess) {
         dispatch(setDataSynced(true));
         
-        // Additional safeguard: verify data is actually stored in localStorage
+        // Additional safeguard: verify data is stored in localStorage
         const storedGroups = monitoringStorageHelpers.getStoredGroups();
         const storedItems = monitoringStorageHelpers.getStoredItems();
         
@@ -368,7 +368,7 @@ export function useDataSync(): UseDataSyncResult {
       if (allSuccess) {
         dispatch(setDataSynced(true));
         
-        // Additional safeguard: verify data is actually stored in sessionStorage
+        // Additional safeguard: verify data is stored in localStorage
         const storedGroups = monitoringStorageHelpers.getStoredGroups();
         const storedItems = monitoringStorageHelpers.getStoredItems();
         

@@ -10,8 +10,6 @@ import {
   AlertTitle,
   Typography,
   CircularProgress,
-  Checkbox,
-  FormControlLabel,
   IconButton,
 } from '@mui/material';
 import { Warehouse as WarehouseIcon, Close as CloseIcon } from '@mui/icons-material';
@@ -39,8 +37,7 @@ const LoginPage: React.FC = () => {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  // Initialize rememberMe as true to match the default checked state of the checkbox
-  const [formData, setFormData] = useState({ username: '', password: '', rememberMe: true });
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const [errors, setErrors] = useState<FormErrors>({});
   // Local API error 
   const [apiError, setApiError] = useState<string>('');
@@ -103,7 +100,6 @@ const LoginPage: React.FC = () => {
       await login({
         userName: formData.username.trim(),
         password: formData.password,
-        rememberMe: formData.rememberMe,
       });
 
       // If we reach this point, login was successful
@@ -236,24 +232,10 @@ const LoginPage: React.FC = () => {
                 disabled={isLoading}
                 autoComplete="current-password"
                 placeholder={t('password')}
-                sx={{ mb: 3 }}
+                sx={{ mb: 4 }}
                 inputProps={{
                   'data-id-ref': 'login-password-field',
                 }}
-              />
-
-              <FormControlLabel
-                data-id-ref="login-remember-checkbox"
-                control={
-                  <Checkbox
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                  />
-                }
-                label={t('rememberMe')}
-                sx={{ mb: 3 }}
               />
 
               <Button

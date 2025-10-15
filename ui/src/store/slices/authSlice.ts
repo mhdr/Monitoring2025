@@ -65,8 +65,7 @@ const authSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
         // Update storage
         if (state.token) {
-          const isRemembered = Boolean(localStorage.getItem('auth_token'));
-          authStorageHelpers.setStoredAuth(state.token, state.user, isRemembered);
+          authStorageHelpers.setStoredAuth(state.token, state.user);
         }
       }
     },

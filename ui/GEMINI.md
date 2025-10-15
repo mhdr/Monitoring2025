@@ -249,7 +249,7 @@ Must test on these standard resolutions:
 ⚠️ Refresh Token Rotation (OAuth 2.0) - auto-handled by RTK Query
 - Files: `src/services/rtkApi.ts`, `src/utils/authStorage.ts`, `src/contexts/AuthContext.tsx`
 - Mutex: Prevents concurrent refresh (`async-mutex`)
-- Storage: localStorage (persistent) or sessionStorage (session)
+- Storage: localStorage with 7-day rolling expiration
 - Flow: Login → 401 → Auto-refresh → New tokens → Retry
 
 ⚠️ Never manually refresh - `baseQueryWithAuth` handles it

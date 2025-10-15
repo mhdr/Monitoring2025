@@ -227,7 +227,7 @@ export const monitoringStorageHelpers: MonitoringStorageHelpers = {
   },
 
   /**
-   * Clear stored groups data from sessionStorage
+   * Clear stored groups data from localStorage
    */
   clearStoredGroups: (): void => {
     safeRemoveItem(MONITORING_GROUPS_KEY);
@@ -248,7 +248,7 @@ export const monitoringStorageHelpers: MonitoringStorageHelpers = {
   },
 
   /**
-   * Clear stored items data from sessionStorage
+   * Clear stored items data from localStorage
    */
   clearStoredItems: (): void => {
     safeRemoveItem(MONITORING_ITEMS_KEY);
@@ -269,14 +269,14 @@ export const monitoringStorageHelpers: MonitoringStorageHelpers = {
   },
 
   /**
-   * Clear stored alarms data from sessionStorage
+   * Clear stored alarms data from localStorage
    */
   clearStoredAlarms: (): void => {
     safeRemoveItem(MONITORING_ALARMS_KEY);
   },
 
   /**
-   * Clear all stored monitoring data from sessionStorage
+   * Clear all stored monitoring data from localStorage
    */
   clearAllMonitoringData: (): void => {
     safeRemoveItem(MONITORING_GROUPS_KEY);

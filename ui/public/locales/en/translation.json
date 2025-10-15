@@ -35,7 +35,6 @@
   "loginSubtitle": "Please enter your credentials",
   "username": "Username",
   "password": "Password",
-  "rememberMe": "Remember me",
   "loginButton": "Login",
   "loginError": "Login Error",
   "loginSuccess": "Successfully logged in",

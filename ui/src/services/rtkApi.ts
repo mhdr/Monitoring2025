@@ -180,14 +180,10 @@ const baseQueryWithAuth: BaseQueryFn<
               const refreshData = refreshResult.data as LoginResponse;
               
               if (refreshData.success && refreshData.accessToken) {
-                // Determine if remember me is active
-                const isRemembered = !!localStorage.getItem('auth_token');
-                
                 // Store new tokens (rotation: old refresh token is now invalid)
                 authStorageHelpers.setStoredAuth(
                   refreshData.accessToken,
                   refreshData.user,
-                  isRemembered,
                   refreshData.refreshToken
                 );
 
@@ -254,15 +250,14 @@ export const api = createApi({
         method: 'POST',
         body: credentials,
       }),
-      transformResponse: (response: LoginResponse, _meta, arg) => {
+      transformResponse: (response: LoginResponse) => {
         // Check if login was successful
         if (response.success) {
-          // Store tokens and user data based on rememberMe preference
+          // Store tokens and user data in localStorage
           // This includes the refresh token for token rotation
           authStorageHelpers.setStoredAuth(
             response.accessToken,
             response.user,
-            arg.rememberMe || false,
             response.refreshToken
           );
         }
@@ -314,12 +309,10 @@ export const api = createApi({
         // Update stored tokens with rotation
         const currentUser = authStorageHelpers.getStoredUser();
         if (currentUser && response.success) {
-          const isRemembered = !!localStorage.getItem('auth_token');
           // Store new access token AND new refresh token (rotation)
           authStorageHelpers.setStoredAuth(
             response.accessToken,
             response.user,
-            isRemembered,
             response.refreshToken
           );
         }
@@ -360,7 +353,7 @@ export const api = createApi({
         body: params,
       }),
       transformResponse: (response: GroupsResponseDto) => {
-        // Store groups data in sessionStorage when fetched
+        // Store groups data in localStorage when fetched
         return storeMonitoringResponseData.storeGroupsResponse(response);
       },
       providesTags: (result) =>
@@ -385,7 +378,7 @@ export const api = createApi({
         body: params,
       }),
       transformResponse: (response: ItemsResponseDto) => {
-        // Store items data in sessionStorage when fetched
+        // Store items data in localStorage when fetched
         return storeMonitoringResponseData.storeItemsResponse(response);
       },
       providesTags: (result) =>
@@ -581,7 +574,7 @@ export const api = createApi({
         body: params,
       }),
       transformResponse: (response: AlarmsResponseDto) => {
-        // Store alarms data in sessionStorage when fetched
+        // Store alarms data in localStorage when fetched
         return storeMonitoringResponseData.storeAlarmsResponse(response);
       },
       providesTags: ['Items'],

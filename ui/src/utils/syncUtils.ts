@@ -44,7 +44,7 @@ export function isDataSyncNeeded(monitoringState: {
   }
   
   // If we have both groups and items data, assume it's still valid
-  // (this provides fallback for cases where sessionStorage might be cleared)
+  // (this provides fallback for cases where localStorage might be cleared)
   if (groups.length > 0 && items.length > 0) {
     return false;
   }

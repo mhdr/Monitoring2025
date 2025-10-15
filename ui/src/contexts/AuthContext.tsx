@@ -63,7 +63,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             authStorageHelpers.setStoredAuth(
               message.payload.accessToken,
               currentAuth.user,
-              true, // rememberMe - use default
               message.payload.refreshToken
             );
             setToken(message.payload.accessToken);
@@ -95,7 +94,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             authStorageHelpers.setStoredAuth(
               message.payload.accessToken,
               currentAuth.user,
-              true, // rememberMe - use default
               message.payload.refreshToken
             );
             setToken(message.payload.accessToken);

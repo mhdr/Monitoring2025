@@ -10,7 +10,6 @@ import {
   REGISTER,
 } from 'redux-persist';
 import storage from 'redux-persist/lib/storage'; // defaults to localStorage
-import sessionStorage from 'redux-persist/lib/storage/session'; // sessionStorage
 
 import authReducer from './slices/authSlice';
 import languageReducer from './slices/languageSlice';
@@ -20,7 +19,7 @@ import { api } from '../services/rtkApi';
 
 /**
  * Persistence configuration for language
- * Language preference is always stored in localStorage
+ * Language preference is stored in localStorage
  */
 const languagePersistConfig = {
   key: 'language',
@@ -40,12 +39,12 @@ const muiThemePersistConfig = {
 
 /**
  * Persistence configuration for auth
- * Note: Auth is handled by authStorage utility for more control over localStorage vs sessionStorage
- * We don't persist auth in Redux to avoid conflicts with the existing storage mechanism
+ * Note: Auth is handled by authStorage utility
+ * We use minimal persistence in Redux to avoid conflicts with the storage utility
  */
 const authPersistConfig = {
   key: 'auth',
-  storage: sessionStorage, // Use sessionStorage to avoid conflicts
+  storage, // localStorage
   blacklist: ['isLoading', 'error'], // Don't persist loading and error states
 };
 

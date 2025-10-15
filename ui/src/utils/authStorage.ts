@@ -2,8 +2,7 @@ import type { User } from '../types/auth';
 
 /**
  * Helper functions for managing authentication data in browser storage
- * Supports both localStorage (persistent) and sessionStorage (session-only)
- * Implements rolling 7-day expiration for remember-me functionality
+ * Uses localStorage for persistent storage with rolling 7-day expiration
  */
 
 // Constants
@@ -15,26 +14,24 @@ const REMEMBER_ME_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 export const authStorageHelpers = {
   getStoredToken: (): string | null => {
-    return localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY);
+    return localStorage.getItem(AUTH_TOKEN_KEY);
   },
 
   getStoredRefreshToken: (): string | null => {
-    return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY) || sessionStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+    return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
   },
 
   getStoredUser: (): User | null => {
-    const userData = localStorage.getItem(AUTH_USER_KEY) || sessionStorage.getItem(AUTH_USER_KEY);
+    const userData = localStorage.getItem(AUTH_USER_KEY);
     return userData ? JSON.parse(userData) : null;
   },
 
   /**
    * Check if the stored authentication has expired
-   * Only applies to localStorage (remember-me) tokens
    */
   isAuthExpired: (): boolean => {
     const expirationStr = localStorage.getItem(AUTH_EXPIRATION_KEY);
     if (!expirationStr) {
-      // No expiration means either sessionStorage or no auth
       return false;
     }
     
@@ -45,54 +42,32 @@ export const authStorageHelpers = {
 
   /**
    * Extend the authentication expiration by 7 days from now
-   * Only applies to localStorage (remember-me) tokens
    */
   extendAuthExpiration: (): void => {
-    const hasRememberMeToken = !!localStorage.getItem(AUTH_TOKEN_KEY);
-    if (hasRememberMeToken) {
+    const hasToken = !!localStorage.getItem(AUTH_TOKEN_KEY);
+    if (hasToken) {
       const newExpiration = Date.now() + REMEMBER_ME_DURATION;
       localStorage.setItem(AUTH_EXPIRATION_KEY, newExpiration.toString());
     }
   },
 
-  setStoredAuth: (token: string, user: User, rememberMe: boolean = true, refreshToken?: string): void => {
-    if (rememberMe) {
-      // Persistent storage - survives browser restart with 7-day rolling expiration
-      const expiration = Date.now() + REMEMBER_ME_DURATION;
-      localStorage.setItem(AUTH_TOKEN_KEY, token);
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-      localStorage.setItem(AUTH_EXPIRATION_KEY, expiration.toString());
-      if (refreshToken) {
-        localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
-      }
-      // Clear any existing session storage
-      sessionStorage.removeItem(AUTH_TOKEN_KEY);
-      sessionStorage.removeItem(AUTH_USER_KEY);
-      sessionStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
-    } else {
-      // Session storage - cleared when browser/tab is closed
-      sessionStorage.setItem(AUTH_TOKEN_KEY, token);
-      sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-      if (refreshToken) {
-        sessionStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
-      }
-      // Clear any existing persistent storage
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      localStorage.removeItem(AUTH_USER_KEY);
-      localStorage.removeItem(AUTH_EXPIRATION_KEY);
-      localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+  setStoredAuth: (token: string, user: User, refreshToken?: string): void => {
+    // Persistent storage in localStorage with 7-day rolling expiration
+    const expiration = Date.now() + REMEMBER_ME_DURATION;
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    localStorage.setItem(AUTH_EXPIRATION_KEY, expiration.toString());
+    if (refreshToken) {
+      localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
     }
   },
 
   clearStoredAuth: (): void => {
-    // Clear both localStorage and sessionStorage to ensure complete logout
+    // Clear all auth data from localStorage
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(AUTH_EXPIRATION_KEY);
-    sessionStorage.removeItem(AUTH_TOKEN_KEY);
-    sessionStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
-    sessionStorage.removeItem(AUTH_USER_KEY);
   },
 
   getCurrentAuth: () => {

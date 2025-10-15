@@ -21,7 +21,7 @@ export type StreamStatus = typeof StreamStatus[keyof typeof StreamStatus];
 
 /**
  * localStorage key for data sync status
- * Using localStorage instead of sessionStorage to support data sharing across tabs
+ * Using localStorage to support data sharing across tabs
  */
 const SYNC_STATUS_STORAGE_KEY = 'monitoring_data_synced';
 
@@ -45,7 +45,7 @@ const loadSyncStatusFromStorage = (): boolean => {
 };
 
 /**
- * Load monitoring data from session storage if sync is complete
+ * Load monitoring data from localStorage if sync is complete
  */
 const loadMonitoringDataFromStorage = () => {
   const isSynced = loadSyncStatusFromStorage();
@@ -178,7 +178,7 @@ export interface MonitoringState {
  * Initial state
  */
 const initialState: MonitoringState = (() => {
-  // Load data from sessionStorage if sync is complete
+  // Load data from localStorage if sync is complete
   const restoredData = loadMonitoringDataFromStorage();
   const isSynced = loadSyncStatusFromStorage();
   
@@ -361,10 +361,10 @@ const monitoringSlice = createSlice({
         (state, action) => {
           state.groupsLoading = false;
           state.groups = action.payload.groups || [];
-          // Ensure data is stored in sessionStorage (redundant safeguard)
+          // Ensure data is stored in localStorage (redundant safeguard)
           if (action.payload.groups && action.payload.groups.length > 0) {
             monitoringStorageHelpers.setStoredGroups(action.payload.groups);
-            console.info('[MonitoringSlice] Groups data updated in Redux and sessionStorage:', {
+            console.info('[MonitoringSlice] Groups data updated in Redux and localStorage:', {
               count: action.payload.groups.length,
               timestamp: new Date().toISOString()
             });
@@ -396,10 +396,10 @@ const monitoringSlice = createSlice({
         (state, action) => {
           state.itemsLoading = false;
           state.items = action.payload.items || [];
-          // Ensure data is stored in sessionStorage (redundant safeguard)
+          // Ensure data is stored in localStorage (redundant safeguard)
           if (action.payload.items && action.payload.items.length > 0) {
             monitoringStorageHelpers.setStoredItems(action.payload.items);
-            console.info('[MonitoringSlice] Items data updated in Redux and sessionStorage:', {
+            console.info('[MonitoringSlice] Items data updated in Redux and localStorage:', {
               count: action.payload.items.length,
               timestamp: new Date().toISOString()
             });
@@ -431,10 +431,10 @@ const monitoringSlice = createSlice({
         (state, action) => {
           state.alarmsLoading = false;
           state.alarms = action.payload.data || [];
-          // Ensure data is stored in sessionStorage (redundant safeguard)
+          // Ensure data is stored in localStorage (redundant safeguard)
           if (action.payload.data && action.payload.data.length > 0) {
             monitoringStorageHelpers.setStoredAlarms(action.payload.data);
-            console.info('[MonitoringSlice] Alarms data updated in Redux and sessionStorage:', {
+            console.info('[MonitoringSlice] Alarms data updated in Redux and localStorage:', {
               count: action.payload.data.length,
               timestamp: new Date().toISOString()
             });

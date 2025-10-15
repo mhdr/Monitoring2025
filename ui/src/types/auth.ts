@@ -13,7 +13,6 @@ export interface User {
 export interface LoginRequest {
   userName: string;
   password: string;
-  rememberMe?: boolean;
 }
 
 export interface LoginResponse {
