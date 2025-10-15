@@ -29,7 +29,7 @@ export function useMuiTheme(): UseMuiThemeReturn {
   const changeTheme = useCallback(
     (themePreset: MuiThemePreset) => {
       dispatch(setMuiTheme(themePreset));
-      localStorage.setItem('muiTheme', themePreset);
+      // Theme is now persisted via redux-persist with IndexedDB
     },
     [dispatch]
   );

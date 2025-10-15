@@ -25,10 +25,12 @@ const muiThemeSlice = createSlice({
       state.currentTheme = action.payload;
     },
     initializeMuiTheme: (state) => {
-      // Load from localStorage if available
-      const stored = localStorage.getItem('muiTheme');
-      if (stored) {
-        state.currentTheme = stored as MuiThemePreset;
+      // Theme is now persisted via redux-persist with IndexedDB
+      // This reducer is kept for compatibility but state.currentTheme
+      // will already be restored by the time this is called
+      // No need to manually load from storage
+      if (!state.currentTheme) {
+        state.currentTheme = getDefaultMuiTheme();
       }
     },
   },

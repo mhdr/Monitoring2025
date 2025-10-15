@@ -329,7 +329,7 @@ Must test on these standard resolutions:
 ⚠️ Refresh Token Rotation (OAuth 2.0) - auto-handled by RTK Query
 - Files: `src/services/rtkApi.ts`, `src/utils/authStorage.ts`, `src/contexts/AuthContext.tsx`
 - Mutex: Prevents concurrent refresh (`async-mutex`)
-- Storage: localStorage with 7-day rolling expiration
+- Storage: IndexedDB with 7-day rolling expiration
 - Flow: Login → 401 → Auto-refresh → New tokens → Retry
 
 ⚠️ Never manually refresh - `baseQueryWithAuth` handles it
@@ -424,7 +424,7 @@ Must test on these standard resolutions:
 - Always validate user input on both client and server
 
 ### Security Checklist
-- [ ] No sensitive data in localStorage without encryption
+- [ ] No sensitive data in IndexedDB without encryption
 - [ ] No API keys or secrets in frontend code
 - [ ] All forms validate input client-side AND server-side
 - [ ] HTTPS enforced for all API calls

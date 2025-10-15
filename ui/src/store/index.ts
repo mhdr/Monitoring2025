@@ -9,7 +9,7 @@ import {
   PURGE,
   REGISTER,
 } from 'redux-persist';
-import storage from 'redux-persist/lib/storage'; // defaults to localStorage
+import indexedDBReduxStorage from '../utils/indexedDbReduxStorage';
 
 import authReducer from './slices/authSlice';
 import languageReducer from './slices/languageSlice';
@@ -19,21 +19,21 @@ import { api } from '../services/rtkApi';
 
 /**
  * Persistence configuration for language
- * Language preference is stored in localStorage
+ * Language preference is stored in IndexedDB
  */
 const languagePersistConfig = {
   key: 'language',
-  storage, // localStorage
+  storage: indexedDBReduxStorage,
   whitelist: ['currentLanguage'], // Only persist language selection
 };
 
 /**
  * Persistence configuration for MUI theme
- * Theme preference is stored in localStorage
+ * Theme preference is stored in IndexedDB
  */
 const muiThemePersistConfig = {
   key: 'muiTheme',
-  storage, // localStorage
+  storage: indexedDBReduxStorage,
   whitelist: ['currentTheme'], // Only persist theme selection
 };
 
@@ -44,7 +44,7 @@ const muiThemePersistConfig = {
  */
 const authPersistConfig = {
   key: 'auth',
-  storage, // localStorage
+  storage: indexedDBReduxStorage,
   blacklist: ['isLoading', 'error'], // Don't persist loading and error states
 };
 

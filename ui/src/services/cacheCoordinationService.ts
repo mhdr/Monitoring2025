@@ -1,20 +1,21 @@
 /**
  * Cache Coordination Service
  * 
- * Coordinates between localStorage TTL system and Service Worker runtime caching.
+ * Coordinates between IndexedDB TTL system and Service Worker runtime caching.
  * 
  * Key Responsibilities:
- * - Listens for localStorage changes and invalidates Service Worker caches
+ * - Listens for IndexedDB changes via BroadcastChannel and invalidates Service Worker caches
  * - Sends messages to Service Worker to clear API caches when data updates
- * - Prevents stale data in Service Worker cache when localStorage data is refreshed
+ * - Prevents stale data in Service Worker cache when IndexedDB data is refreshed
  * 
  * Integration:
- * - Works with monitoringStorage.ts (TTL system)
+ * - Works with monitoringStorage.ts (TTL system) and indexedDbStorage.ts (BroadcastChannel)
  * - Communicates with Service Worker via postMessage
  * - Triggered by background refresh and manual sync operations
  */
 
 import type { Workbox } from 'workbox-window';
+import { onStorageChange } from '../utils/indexedDbStorage';
 
 /**
  * Storage keys that require cache invalidation when updated
@@ -52,7 +53,7 @@ class CacheCoordinationService {
   private static instance: CacheCoordinationService | null = null;
   private workbox: Workbox | null = null;
   private isInitialized = false;
-  private storageListener: ((event: StorageEvent) => void) | null = null;
+  private storageChangeCleanup: (() => void) | null = null;
 
   private constructor() {
     // Private constructor for singleton pattern
@@ -86,29 +87,24 @@ class CacheCoordinationService {
   }
 
   /**
-   * Setup storage event listener for cross-tab cache invalidation
+   * Setup IndexedDB change listener for cross-tab cache invalidation
+   * Uses BroadcastChannel for synchronization across tabs
    */
   private setupStorageListener(): void {
-    // Listen for storage events from other tabs
-    this.storageListener = (event: StorageEvent) => {
-      // Ignore events from same tab (event.key is null for clear() operations)
-      if (!event.key || event.storageArea !== localStorage) {
-        return;
-      }
-
+    // Listen for IndexedDB changes from other tabs via BroadcastChannel
+    this.storageChangeCleanup = onStorageChange((key, action) => {
       // Check if the updated key is a monitoring data key
-      const isMonitoringKey = MONITORING_STORAGE_KEYS.some(key => 
-        event.key?.startsWith(key)
+      const isMonitoringKey = MONITORING_STORAGE_KEYS.some(monitoringKey => 
+        key.startsWith(monitoringKey)
       );
 
       if (isMonitoringKey) {
-        console.log(`[CacheCoordination] Storage updated: ${event.key}, invalidating caches`);
+        console.log(`[CacheCoordination] IndexedDB ${action}: ${key}, invalidating caches`);
         this.invalidateApiCache();
       }
-    };
+    });
 
-    window.addEventListener('storage', this.storageListener);
-    console.log('[CacheCoordination] Storage listener registered');
+    console.log('[CacheCoordination] IndexedDB change listener registered via BroadcastChannel');
   }
 
   /**
@@ -195,9 +191,9 @@ class CacheCoordinationService {
    * Cleanup and remove listeners
    */
   destroy(): void {
-    if (this.storageListener) {
-      window.removeEventListener('storage', this.storageListener);
-      this.storageListener = null;
+    if (this.storageChangeCleanup) {
+      this.storageChangeCleanup();
+      this.storageChangeCleanup = null;
     }
 
     this.workbox = null;

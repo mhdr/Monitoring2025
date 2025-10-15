@@ -1,8 +1,9 @@
 import type { User } from '../types/auth';
+import { getItem, setItem, removeItem } from './indexedDbStorage';
 
 /**
  * Helper functions for managing authentication data in browser storage
- * Uses localStorage for persistent storage with rolling 7-day expiration
+ * Uses IndexedDB for persistent storage with rolling 7-day expiration
  */
 
 // Constants
@@ -13,29 +14,27 @@ const AUTH_EXPIRATION_KEY = 'auth_expiration';
 const REMEMBER_ME_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 export const authStorageHelpers = {
-  getStoredToken: (): string | null => {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
+  getStoredToken: async (): Promise<string | null> => {
+    return await getItem<string>(AUTH_TOKEN_KEY);
   },
 
-  getStoredRefreshToken: (): string | null => {
-    return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+  getStoredRefreshToken: async (): Promise<string | null> => {
+    return await getItem<string>(AUTH_REFRESH_TOKEN_KEY);
   },
 
-  getStoredUser: (): User | null => {
-    const userData = localStorage.getItem(AUTH_USER_KEY);
-    return userData ? JSON.parse(userData) : null;
+  getStoredUser: async (): Promise<User | null> => {
+    return await getItem<User>(AUTH_USER_KEY);
   },
 
   /**
    * Check if the stored authentication has expired
    */
-  isAuthExpired: (): boolean => {
-    const expirationStr = localStorage.getItem(AUTH_EXPIRATION_KEY);
-    if (!expirationStr) {
+  isAuthExpired: async (): Promise<boolean> => {
+    const expiration = await getItem<number>(AUTH_EXPIRATION_KEY);
+    if (!expiration) {
       return false;
     }
     
-    const expiration = parseInt(expirationStr, 10);
     const now = Date.now();
     return now > expiration;
   },
@@ -43,38 +42,38 @@ export const authStorageHelpers = {
   /**
    * Extend the authentication expiration by 7 days from now
    */
-  extendAuthExpiration: (): void => {
-    const hasToken = !!localStorage.getItem(AUTH_TOKEN_KEY);
+  extendAuthExpiration: async (): Promise<void> => {
+    const hasToken = !!(await getItem<string>(AUTH_TOKEN_KEY));
     if (hasToken) {
       const newExpiration = Date.now() + REMEMBER_ME_DURATION;
-      localStorage.setItem(AUTH_EXPIRATION_KEY, newExpiration.toString());
+      await setItem(AUTH_EXPIRATION_KEY, newExpiration);
     }
   },
 
-  setStoredAuth: (token: string, user: User, refreshToken?: string): void => {
-    // Persistent storage in localStorage with 7-day rolling expiration
+  setStoredAuth: async (token: string, user: User, refreshToken?: string): Promise<void> => {
+    // Persistent storage in IndexedDB with 7-day rolling expiration
     const expiration = Date.now() + REMEMBER_ME_DURATION;
-    localStorage.setItem(AUTH_TOKEN_KEY, token);
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-    localStorage.setItem(AUTH_EXPIRATION_KEY, expiration.toString());
+    await setItem(AUTH_TOKEN_KEY, token);
+    await setItem(AUTH_USER_KEY, user);
+    await setItem(AUTH_EXPIRATION_KEY, expiration);
     if (refreshToken) {
-      localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
+      await setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
     }
   },
 
-  clearStoredAuth: (): void => {
-    // Clear all auth data from localStorage
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_USER_KEY);
-    localStorage.removeItem(AUTH_EXPIRATION_KEY);
+  clearStoredAuth: async (): Promise<void> => {
+    // Clear all auth data from IndexedDB
+    await removeItem(AUTH_TOKEN_KEY);
+    await removeItem(AUTH_REFRESH_TOKEN_KEY);
+    await removeItem(AUTH_USER_KEY);
+    await removeItem(AUTH_EXPIRATION_KEY);
   },
 
-  getCurrentAuth: () => {
+  getCurrentAuth: async () => {
     // Check if auth is expired first
-    if (authStorageHelpers.isAuthExpired()) {
+    if (await authStorageHelpers.isAuthExpired()) {
       // Clear expired auth
-      authStorageHelpers.clearStoredAuth();
+      await authStorageHelpers.clearStoredAuth();
       return {
         token: null,
         refreshToken: null,
@@ -83,12 +82,12 @@ export const authStorageHelpers = {
     }
 
     // If valid, extend expiration (rolling window)
-    authStorageHelpers.extendAuthExpiration();
+    await authStorageHelpers.extendAuthExpiration();
 
     return {
-      token: authStorageHelpers.getStoredToken(),
-      refreshToken: authStorageHelpers.getStoredRefreshToken(),
-      user: authStorageHelpers.getStoredUser(),
+      token: await authStorageHelpers.getStoredToken(),
+      refreshToken: await authStorageHelpers.getStoredRefreshToken(),
+      user: await authStorageHelpers.getStoredUser(),
     };
   },
 };

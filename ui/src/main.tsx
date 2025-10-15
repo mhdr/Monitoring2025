@@ -12,18 +12,31 @@ import { store, persistor } from './store'
 import { initializeAuth } from './store/slices/authSlice'
 import { initializeLanguage } from './store/slices/languageSlice'
 import { initializeMuiTheme } from './store/slices/muiThemeSlice'
+import { initializeMonitoringFromStorage } from './store/slices/monitoringSlice'
 import { initAutoCleanup } from './utils/monitoringStorage'
+import { initIndexedDB } from './utils/indexedDbStorage'
 import { initBackgroundRefresh } from './services/backgroundRefreshService'
 import App from './App.tsx'
 
-// Initialize Redux state from storage synchronously for auth/language/theme
+// Initialize IndexedDB storage first (async, but starts immediately)
+// This sets up the database, BroadcastChannel, and cleanup schedule
+initIndexedDB().catch((error) => {
+  console.error('Failed to initialize IndexedDB:', error);
+});
+
+// Initialize Redux state from storage for auth/language/theme
 // These are critical for initial render
 store.dispatch(initializeAuth());
 store.dispatch(initializeLanguage());
 store.dispatch(initializeMuiTheme());
 
+// Initialize monitoring data from IndexedDB (async)
+store.dispatch(initializeMonitoringFromStorage());
+
 // Initialize automatic cleanup for expired data (TTL)
-initAutoCleanup();
+initAutoCleanup().catch((error) => {
+  console.error('Failed to initialize auto-cleanup:', error);
+});
 
 // Initialize background refresh service (checks data freshness)
 initBackgroundRefresh({

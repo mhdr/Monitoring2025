@@ -1,23 +1,26 @@
 /**
- * Helper functions for managing monitoring data in localStorage with TTL support
+ * Helper functions for managing monitoring data in IndexedDB with TTL support
  * Stores groups, items, and alarms data for persistence across tabs and sessions
  * 
  * Features:
  * - TTL (Time To Live) for automatic data expiration
  * - Automatic cleanup of expired data
- * - Cross-tab support via localStorage
+ * - Cross-tab support via BroadcastChannel
  * - Persistence across browser sessions
  * - Storage quota monitoring
+ * - Better storage limits (50MB+ vs localStorage's 5-10MB)
  * 
- * Note: Using localStorage instead of sessionStorage to support:
+ * Note: Using IndexedDB to support:
  * - Opening items in new tabs (each tab can access the same data)
  * - Persistence across browser sessions (better UX, no re-sync after restart)
+ * - Larger storage capacity for complex monitoring data
  */
 
 import type { Group, Item, AlarmDto } from '../types/api';
 import type { GroupsResponseDto, ItemsResponseDto, AlarmsResponseDto } from '../types/api';
+import { getItem, setItem, removeItem, getStorageEstimate } from './indexedDbStorage';
 
-// localStorage keys for monitoring data
+// IndexedDB keys for monitoring data
 const MONITORING_GROUPS_KEY = 'monitoring_groups';
 const MONITORING_ITEMS_KEY = 'monitoring_items';
 const MONITORING_ALARMS_KEY = 'monitoring_alarms';
@@ -34,17 +37,7 @@ export const TTL_CONFIG = {
 } as const;
 
 /**
- * Data with TTL metadata
- */
-interface TimestampedData<T> {
-  data: T;
-  timestamp: number;
-  ttl: number;
-  expiresAt: number;
-}
-
-/**
- * Metadata stored in localStorage
+ * Metadata stored in IndexedDB
  */
 interface StorageMetadata {
   lastSync: number;
@@ -57,154 +50,78 @@ interface StorageMetadata {
  */
 export interface MonitoringStorageHelpers {
   // Groups data
-  getStoredGroups: () => Group[] | null;
-  setStoredGroups: (groups: Group[]) => void;
-  clearStoredGroups: () => void;
+  getStoredGroups: () => Promise<Group[] | null>;
+  setStoredGroups: (groups: Group[]) => Promise<void>;
+  clearStoredGroups: () => Promise<void>;
   
   // Items data
-  getStoredItems: () => Item[] | null;
-  setStoredItems: (items: Item[]) => void;
-  clearStoredItems: () => void;
+  getStoredItems: () => Promise<Item[] | null>;
+  setStoredItems: (items: Item[]) => Promise<void>;
+  clearStoredItems: () => Promise<void>;
   
   // Alarms data
-  getStoredAlarms: () => AlarmDto[] | null;
-  setStoredAlarms: (alarms: AlarmDto[]) => void;
-  clearStoredAlarms: () => void;
+  getStoredAlarms: () => Promise<AlarmDto[] | null>;
+  setStoredAlarms: (alarms: AlarmDto[]) => Promise<void>;
+  clearStoredAlarms: () => Promise<void>;
   
   // Utility functions
-  clearAllMonitoringData: () => void;
-  hasStoredData: () => boolean;
+  clearAllMonitoringData: () => Promise<void>;
+  hasStoredData: () => Promise<boolean>;
 }
 
 /**
- * Helper function to safely parse JSON from localStorage
+ * Helper function to safely get item from IndexedDB
  */
-const safeParseJSON = <T>(data: string | null): T | null => {
-  if (!data) return null;
-  
+const safeGetItem = async <T>(key: string): Promise<T | null> => {
   try {
-    return JSON.parse(data) as T;
-  } catch (error) {
-    console.warn('Failed to parse stored monitoring data:', error);
-    return null;
-  }
-};
-
-/**
- * Wrap data with TTL metadata
- */
-const wrapWithTTL = <T>(data: T, ttl: number): TimestampedData<T> => {
-  const timestamp = Date.now();
-  return {
-    data,
-    timestamp,
-    ttl,
-    expiresAt: timestamp + ttl,
-  };
-};
-
-/**
- * Check if data has expired
- */
-const isExpired = (timestampedData: TimestampedData<unknown>): boolean => {
-  return Date.now() > timestampedData.expiresAt;
-};
-
-/**
- * Unwrap data and check expiration
- */
-const unwrapWithTTL = <T>(wrapped: TimestampedData<T> | null): T | null => {
-  if (!wrapped) return null;
-  
-  if (isExpired(wrapped)) {
-    console.info('[MonitoringStorage] Data expired, returning null');
-    return null;
-  }
-  
-  const remainingTime = wrapped.expiresAt - Date.now();
-  const remainingMinutes = Math.round(remainingTime / 1000 / 60);
-  console.info(`[MonitoringStorage] Data valid, expires in ${remainingMinutes} minutes`);
-  
-  return wrapped.data;
-};
-
-/**
- * Helper function to safely stringify and store data in localStorage with TTL
- */
-const safeSetItem = (key: string, data: unknown, ttl: number = TTL_CONFIG.DEFAULT): void => {
-  try {
-    const wrappedData = wrapWithTTL(data, ttl);
-    const jsonData = JSON.stringify(wrappedData);
-    localStorage.setItem(key, jsonData);
-    console.info(`[MonitoringStorage] Stored ${key} in localStorage:`, {
-      key,
-      dataLength: Array.isArray(data) ? data.length : 'N/A',
-      storageSize: jsonData.length,
-      ttl: `${ttl / 1000 / 60} minutes`,
-      expiresAt: new Date(wrappedData.expiresAt).toISOString(),
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.warn(`Failed to store ${key} in localStorage:`, error);
+    const data = await getItem<T>(key);
     
-    // If quota exceeded, try cleanup and retry once
-    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      console.warn('[MonitoringStorage] Storage quota exceeded, cleaning up expired data...');
-      cleanupExpiredData();
-      try {
-        const wrappedData = wrapWithTTL(data, ttl);
-        const jsonData = JSON.stringify(wrappedData);
-        localStorage.setItem(key, jsonData);
-        console.info(`[MonitoringStorage] Retry successful after cleanup`);
-      } catch (retryError) {
-        console.error(`[MonitoringStorage] Retry failed:`, retryError);
-      }
-    }
-  }
-};
-
-/**
- * Helper function to safely remove item from localStorage
- */
-const safeRemoveItem = (key: string): void => {
-  try {
-    localStorage.removeItem(key);
-  } catch (error) {
-    console.warn(`Failed to remove ${key} from localStorage:`, error);
-  }
-};
-
-/**
- * Helper function to safely get item from localStorage and check TTL
- */
-const safeGetItem = <T>(key: string): T | null => {
-  try {
-    const data = localStorage.getItem(key);
     if (!data) {
       console.info(`[MonitoringStorage] No data found for ${key}`);
       return null;
     }
     
-    const wrappedData = safeParseJSON<TimestampedData<T>>(data);
-    const unwrappedData = unwrapWithTTL(wrappedData);
-    
-    // If data expired, remove it
-    if (wrappedData && !unwrappedData) {
-      console.info(`[MonitoringStorage] Removing expired ${key}`);
-      localStorage.removeItem(key);
-    }
-    
-    console.info(`[MonitoringStorage] Retrieved ${key} from localStorage:`, {
+    console.info(`[MonitoringStorage] Retrieved ${key} from IndexedDB:`, {
       key,
-      hasData: !!unwrappedData,
-      dataLength: Array.isArray(unwrappedData) ? unwrappedData.length : 'N/A',
+      hasData: !!data,
+      dataLength: Array.isArray(data) ? data.length : 'N/A',
       timestamp: new Date().toISOString()
     });
     
-    return unwrappedData;
+    return data;
   } catch (error) {
-    console.warn(`Failed to get ${key} from localStorage:`, error);
+    console.warn(`Failed to get ${key} from IndexedDB:`, error);
     return null;
+  }
+};
+
+/**
+ * Helper function to safely set item in IndexedDB with TTL
+ */
+const safeSetItem = async (key: string, data: unknown, ttl: number = TTL_CONFIG.DEFAULT): Promise<void> => {
+  try {
+    await setItem(key, data, ttl);
+    console.info(`[MonitoringStorage] Stored ${key} in IndexedDB:`, {
+      key,
+      dataLength: Array.isArray(data) ? data.length : 'N/A',
+      ttl: `${ttl / 1000 / 60} minutes`,
+      expiresAt: new Date(Date.now() + ttl).toISOString(),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.warn(`Failed to store ${key} in IndexedDB:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Helper function to safely remove item from IndexedDB
+ */
+const safeRemoveItem = async (key: string): Promise<void> => {
+  try {
+    await removeItem(key);
+  } catch (error) {
+    console.warn(`Failed to remove ${key} from IndexedDB:`, error);
   }
 };
 
@@ -213,125 +130,114 @@ const safeGetItem = <T>(key: string): T | null => {
  */
 export const monitoringStorageHelpers: MonitoringStorageHelpers = {
   /**
-   * Get stored groups data from localStorage (with TTL check)
+   * Get stored groups data from IndexedDB (with TTL check)
    */
-  getStoredGroups: (): Group[] | null => {
-    return safeGetItem<Group[]>(MONITORING_GROUPS_KEY);
+  getStoredGroups: async (): Promise<Group[] | null> => {
+    return await safeGetItem<Group[]>(MONITORING_GROUPS_KEY);
   },
 
   /**
-   * Store groups data in localStorage (with TTL)
+   * Store groups data in IndexedDB (with TTL)
    */
-  setStoredGroups: (groups: Group[]): void => {
-    safeSetItem(MONITORING_GROUPS_KEY, groups, TTL_CONFIG.GROUPS);
+  setStoredGroups: async (groups: Group[]): Promise<void> => {
+    await safeSetItem(MONITORING_GROUPS_KEY, groups, TTL_CONFIG.GROUPS);
   },
 
   /**
-   * Clear stored groups data from localStorage
+   * Clear stored groups data from IndexedDB
    */
-  clearStoredGroups: (): void => {
-    safeRemoveItem(MONITORING_GROUPS_KEY);
+  clearStoredGroups: async (): Promise<void> => {
+    await safeRemoveItem(MONITORING_GROUPS_KEY);
   },
 
   /**
-   * Get stored items data from localStorage (with TTL check)
+   * Get stored items data from IndexedDB (with TTL check)
    */
-  getStoredItems: (): Item[] | null => {
-    return safeGetItem<Item[]>(MONITORING_ITEMS_KEY);
+  getStoredItems: async (): Promise<Item[] | null> => {
+    return await safeGetItem<Item[]>(MONITORING_ITEMS_KEY);
   },
 
   /**
-   * Store items data in localStorage (with TTL)
+   * Store items data in IndexedDB (with TTL)
    */
-  setStoredItems: (items: Item[]): void => {
-    safeSetItem(MONITORING_ITEMS_KEY, items, TTL_CONFIG.ITEMS);
+  setStoredItems: async (items: Item[]): Promise<void> => {
+    await safeSetItem(MONITORING_ITEMS_KEY, items, TTL_CONFIG.ITEMS);
   },
 
   /**
-   * Clear stored items data from localStorage
+   * Clear stored items data from IndexedDB
    */
-  clearStoredItems: (): void => {
-    safeRemoveItem(MONITORING_ITEMS_KEY);
+  clearStoredItems: async (): Promise<void> => {
+    await safeRemoveItem(MONITORING_ITEMS_KEY);
   },
 
   /**
-   * Get stored alarms data from localStorage (with TTL check)
+   * Get stored alarms data from IndexedDB (with TTL check)
    */
-  getStoredAlarms: (): AlarmDto[] | null => {
-    return safeGetItem<AlarmDto[]>(MONITORING_ALARMS_KEY);
+  getStoredAlarms: async (): Promise<AlarmDto[] | null> => {
+    return await safeGetItem<AlarmDto[]>(MONITORING_ALARMS_KEY);
   },
 
   /**
-   * Store alarms data in localStorage (with TTL)
+   * Store alarms data in IndexedDB (with TTL)
    */
-  setStoredAlarms: (alarms: AlarmDto[]): void => {
-    safeSetItem(MONITORING_ALARMS_KEY, alarms, TTL_CONFIG.ALARMS);
+  setStoredAlarms: async (alarms: AlarmDto[]): Promise<void> => {
+    await safeSetItem(MONITORING_ALARMS_KEY, alarms, TTL_CONFIG.ALARMS);
   },
 
   /**
-   * Clear stored alarms data from localStorage
+   * Clear stored alarms data from IndexedDB
    */
-  clearStoredAlarms: (): void => {
-    safeRemoveItem(MONITORING_ALARMS_KEY);
+  clearStoredAlarms: async (): Promise<void> => {
+    await safeRemoveItem(MONITORING_ALARMS_KEY);
   },
 
   /**
-   * Clear all stored monitoring data from localStorage
+   * Clear all stored monitoring data from IndexedDB
    */
-  clearAllMonitoringData: (): void => {
-    safeRemoveItem(MONITORING_GROUPS_KEY);
-    safeRemoveItem(MONITORING_ITEMS_KEY);
-    safeRemoveItem(MONITORING_ALARMS_KEY);
+  clearAllMonitoringData: async (): Promise<void> => {
+    await safeRemoveItem(MONITORING_GROUPS_KEY);
+    await safeRemoveItem(MONITORING_ITEMS_KEY);
+    await safeRemoveItem(MONITORING_ALARMS_KEY);
   },
 
   /**
-   * Check if any monitoring data is stored in localStorage
+   * Check if any monitoring data is stored in IndexedDB
    */
-  hasStoredData: (): boolean => {
-    return !!(
-      safeGetItem<Group[]>(MONITORING_GROUPS_KEY) ||
-      safeGetItem<Item[]>(MONITORING_ITEMS_KEY) ||
-      safeGetItem<AlarmDto[]>(MONITORING_ALARMS_KEY)
-    );
+  hasStoredData: async (): Promise<boolean> => {
+    const groups = await safeGetItem<Group[]>(MONITORING_GROUPS_KEY);
+    const items = await safeGetItem<Item[]>(MONITORING_ITEMS_KEY);
+    const alarms = await safeGetItem<AlarmDto[]>(MONITORING_ALARMS_KEY);
+    return !!(groups || items || alarms);
   },
 };
 
 /**
- * Clean up expired data from localStorage
+ * Clean up expired data from IndexedDB
+ * Note: IndexedDB utility already handles TTL expiration on get,
+ * but this provides explicit cleanup
  */
-export const cleanupExpiredData = (): void => {
-  const keys = [MONITORING_GROUPS_KEY, MONITORING_ITEMS_KEY, MONITORING_ALARMS_KEY];
-  let cleanedCount = 0;
-  
-  keys.forEach((key) => {
-    try {
-      const data = localStorage.getItem(key);
-      if (data) {
-        const wrappedData = safeParseJSON<TimestampedData<unknown>>(data);
-        if (wrappedData && isExpired(wrappedData)) {
-          localStorage.removeItem(key);
-          cleanedCount++;
-          console.info(`[MonitoringStorage] Cleaned up expired ${key}`);
-        }
-      }
-    } catch (error) {
-      console.warn(`[MonitoringStorage] Error cleaning up ${key}:`, error);
+export const cleanupExpiredData = async (): Promise<void> => {
+  try {
+    // IndexedDB cleanupExpired function handles this automatically
+    const { cleanupExpired: cleanupIndexedDB } = await import('./indexedDbStorage');
+    const cleanedCount = await cleanupIndexedDB();
+    
+    if (cleanedCount > 0) {
+      await updateMetadata({ lastCleanup: Date.now() });
+      console.info(`[MonitoringStorage] Cleanup completed: removed ${cleanedCount} expired items`);
     }
-  });
-  
-  if (cleanedCount > 0) {
-    updateMetadata({ lastCleanup: Date.now() });
-    console.info(`[MonitoringStorage] Cleanup completed: removed ${cleanedCount} expired items`);
+  } catch (error) {
+    console.warn('[MonitoringStorage] Error during cleanup:', error);
   }
 };
 
 /**
  * Get storage metadata
  */
-export const getMetadata = (): StorageMetadata | null => {
+export const getMetadata = async (): Promise<StorageMetadata | null> => {
   try {
-    const data = localStorage.getItem(MONITORING_METADATA_KEY);
-    return data ? safeParseJSON<StorageMetadata>(data) : null;
+    return await getItem<StorageMetadata>(MONITORING_METADATA_KEY);
   } catch (error) {
     console.warn('[MonitoringStorage] Error getting metadata:', error);
     return null;
@@ -341,16 +247,16 @@ export const getMetadata = (): StorageMetadata | null => {
 /**
  * Update storage metadata
  */
-export const updateMetadata = (updates: Partial<StorageMetadata>): void => {
+export const updateMetadata = async (updates: Partial<StorageMetadata>): Promise<void> => {
   try {
-    const current = getMetadata() || {
+    const current = (await getMetadata()) || {
       lastSync: 0,
       lastCleanup: 0,
       version: '1.0.0',
     };
     
     const updated = { ...current, ...updates };
-    localStorage.setItem(MONITORING_METADATA_KEY, JSON.stringify(updated));
+    await setItem(MONITORING_METADATA_KEY, updated);
     console.info('[MonitoringStorage] Updated metadata:', updated);
   } catch (error) {
     console.warn('[MonitoringStorage] Error updating metadata:', error);
@@ -360,20 +266,14 @@ export const updateMetadata = (updates: Partial<StorageMetadata>): void => {
 /**
  * Get storage size estimate
  */
-export const getStorageSize = (): { used: number; available: number; percentage: number } => {
+export const getStorageSize = async (): Promise<{ used: number; available: number; percentage: number }> => {
   try {
-    let used = 0;
-    for (const key in localStorage) {
-      if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
-        used += localStorage[key].length + key.length;
-      }
-    }
-    
-    // Most browsers allow 5-10MB for localStorage
-    const available = 10 * 1024 * 1024; // 10MB estimate
-    const percentage = (used / available) * 100;
-    
-    return { used, available, percentage };
+    const estimate = await getStorageEstimate();
+    return {
+      used: estimate.usage,
+      available: estimate.quota,
+      percentage: estimate.percentage,
+    };
   } catch (error) {
     console.warn('[MonitoringStorage] Error calculating storage size:', error);
     return { used: 0, available: 0, percentage: 0 };
@@ -382,14 +282,17 @@ export const getStorageSize = (): { used: number; available: number; percentage:
 
 /**
  * Initialize automatic cleanup (call once on app start)
+ * Note: IndexedDB utility also runs its own cleanup
  */
-export const initAutoCleanup = (): void => {
+export const initAutoCleanup = async (): Promise<void> => {
   // Run initial cleanup
-  cleanupExpiredData();
+  await cleanupExpiredData();
   
   // Schedule periodic cleanup (every hour)
   setInterval(() => {
-    cleanupExpiredData();
+    cleanupExpiredData().catch((error) => 
+      console.error('[MonitoringStorage] Auto-cleanup failed:', error)
+    );
   }, 60 * 60 * 1000);
   
   console.info('[MonitoringStorage] Auto-cleanup initialized (runs every hour)');
@@ -411,7 +314,10 @@ export const storeMonitoringResponseData = {
     });
     
     if (response.groups) {
-      monitoringStorageHelpers.setStoredGroups(response.groups);
+      // Store asynchronously without blocking
+      monitoringStorageHelpers.setStoredGroups(response.groups).catch((error) => 
+        console.error('[MonitoringStorage] Failed to store groups:', error)
+      );
     }
     return response;
   },
@@ -427,7 +333,10 @@ export const storeMonitoringResponseData = {
     });
     
     if (response.items) {
-      monitoringStorageHelpers.setStoredItems(response.items);
+      // Store asynchronously without blocking
+      monitoringStorageHelpers.setStoredItems(response.items).catch((error) => 
+        console.error('[MonitoringStorage] Failed to store items:', error)
+      );
     }
     return response;
   },
@@ -443,7 +352,10 @@ export const storeMonitoringResponseData = {
     });
     
     if (response.data) {
-      monitoringStorageHelpers.setStoredAlarms(response.data);
+      // Store asynchronously without blocking
+      monitoringStorageHelpers.setStoredAlarms(response.data).catch((error) => 
+        console.error('[MonitoringStorage] Failed to store alarms:', error)
+      );
     }
     return response;
   },

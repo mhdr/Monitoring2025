@@ -34,14 +34,15 @@ const languageSlice = createSlice({
     },
 
     /**
-     * Initialize language from localStorage
+     * Initialize language from storage
      * Called on app startup
+     * Note: Language is now persisted via redux-persist with IndexedDB
      */
     initializeLanguage: (state) => {
-      const savedLanguage = localStorage.getItem('i18nextLng') as Language;
-      const language = savedLanguage || 'fa';
-      
-      state.currentLanguage = language;
+      // Language is now restored by redux-persist from IndexedDB
+      // This reducer is kept for compatibility but state.currentLanguage
+      // will already be restored by the time this is called
+      const language = state.currentLanguage || 'fa';
       
       // Change i18next language
       i18n.changeLanguage(language);

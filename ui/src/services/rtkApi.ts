@@ -154,10 +154,10 @@ const baseQueryWithAuth: BaseQueryFn<
         const release = await refreshMutex.acquire();
         
         try {
-          // Get current auth state
-          const currentToken = authStorageHelpers.getStoredToken();
-          const currentRefreshToken = authStorageHelpers.getStoredRefreshToken();
-          const currentUser = authStorageHelpers.getStoredUser();
+          // Get current auth state (async from IndexedDB)
+          const currentToken = await authStorageHelpers.getStoredToken();
+          const currentRefreshToken = await authStorageHelpers.getStoredRefreshToken();
+          const currentUser = await authStorageHelpers.getStoredUser();
 
           // Only attempt refresh if we have both tokens
           if (currentToken && currentRefreshToken && currentUser) {
@@ -180,8 +180,8 @@ const baseQueryWithAuth: BaseQueryFn<
               const refreshData = refreshResult.data as LoginResponse;
               
               if (refreshData.success && refreshData.accessToken) {
-                // Store new tokens (rotation: old refresh token is now invalid)
-                authStorageHelpers.setStoredAuth(
+                // Store new tokens (rotation: old refresh token is now invalid) - async
+                await authStorageHelpers.setStoredAuth(
                   refreshData.accessToken,
                   refreshData.user,
                   refreshData.refreshToken
@@ -195,8 +195,8 @@ const baseQueryWithAuth: BaseQueryFn<
                 // Retry the original request with new token
                 result = await baseQuery(args, api, extraOptions);
               } else {
-                // Refresh returned unsuccessful response
-                authStorageHelpers.clearStoredAuth();
+                // Refresh returned unsuccessful response - clear async
+                await authStorageHelpers.clearStoredAuth();
               }
             } else {
               // Refresh failed - clear auth and redirect
@@ -250,12 +250,12 @@ export const api = createApi({
         method: 'POST',
         body: credentials,
       }),
-      transformResponse: (response: LoginResponse) => {
+      transformResponse: async (response: LoginResponse) => {
         // Check if login was successful
         if (response.success) {
-          // Store tokens and user data in localStorage
+          // Store tokens and user data in IndexedDB (async)
           // This includes the refresh token for token rotation
-          authStorageHelpers.setStoredAuth(
+          await authStorageHelpers.setStoredAuth(
             response.accessToken,
             response.user,
             response.refreshToken
@@ -305,12 +305,12 @@ export const api = createApi({
         method: 'POST',
         body: tokens,
       }),
-      transformResponse: (response: LoginResponse) => {
-        // Update stored tokens with rotation
-        const currentUser = authStorageHelpers.getStoredUser();
+      transformResponse: async (response: LoginResponse) => {
+        // Update stored tokens with rotation (async from IndexedDB)
+        const currentUser = await authStorageHelpers.getStoredUser();
         if (currentUser && response.success) {
           // Store new access token AND new refresh token (rotation)
-          authStorageHelpers.setStoredAuth(
+          await authStorageHelpers.setStoredAuth(
             response.accessToken,
             response.user,
             response.refreshToken
@@ -353,7 +353,7 @@ export const api = createApi({
         body: params,
       }),
       transformResponse: (response: GroupsResponseDto) => {
-        // Store groups data in localStorage when fetched
+        // Store groups data in IndexedDB when fetched
         return storeMonitoringResponseData.storeGroupsResponse(response);
       },
       providesTags: (result) =>
@@ -378,7 +378,7 @@ export const api = createApi({
         body: params,
       }),
       transformResponse: (response: ItemsResponseDto) => {
-        // Store items data in localStorage when fetched
+        // Store items data in IndexedDB when fetched
         return storeMonitoringResponseData.storeItemsResponse(response);
       },
       providesTags: (result) =>
@@ -574,7 +574,7 @@ export const api = createApi({
         body: params,
       }),
       transformResponse: (response: AlarmsResponseDto) => {
-        // Store alarms data in localStorage when fetched
+        // Store alarms data in IndexedDB when fetched
         return storeMonitoringResponseData.storeAlarmsResponse(response);
       },
       providesTags: ['Items'],
