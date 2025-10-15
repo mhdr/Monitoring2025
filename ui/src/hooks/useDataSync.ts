@@ -37,7 +37,7 @@ export interface UseDataSyncResult {
   /** Current sync state */
   syncState: SyncState;
   /** Start synchronization process */
-  startSync: () => Promise<boolean>;
+  startSync: (options?: { forceRefresh?: boolean }) => Promise<boolean>;
   /** Reset sync state */
   resetSync: () => void;
   /** Retry failed operations */
@@ -131,7 +131,7 @@ export function useDataSync(): UseDataSyncResult {
   /**
    * Sync groups data
    */
-  const syncGroups = useCallback(async (): Promise<boolean> => {
+  const syncGroups = useCallback(async (forceRefresh: boolean = false): Promise<boolean> => {
     updateGroupsProgress({ progress: 0, status: 'loading', error: undefined });
 
     try {
@@ -140,7 +140,7 @@ export function useDataSync(): UseDataSyncResult {
       
       // RTK Query initiate() returns a QueryActionCreatorResult
       // We need to await it directly without unwrap()
-      const result = await dispatch(fetchGroups());
+      const result = await dispatch(fetchGroups({ forceRefresh }));
       
       // Check if the result has an error
       if ('error' in result) {
@@ -163,7 +163,7 @@ export function useDataSync(): UseDataSyncResult {
   /**
    * Sync items data
    */
-  const syncItems = useCallback(async (): Promise<boolean> => {
+  const syncItems = useCallback(async (forceRefresh: boolean = false): Promise<boolean> => {
     updateItemsProgress({ progress: 0, status: 'loading', error: undefined });
 
     try {
@@ -172,7 +172,7 @@ export function useDataSync(): UseDataSyncResult {
       
       // RTK Query initiate() returns a QueryActionCreatorResult
       // We need to await it directly without unwrap()
-      const result = await dispatch(fetchItems({ showOrphans: false }));
+      const result = await dispatch(fetchItems({ showOrphans: false, forceRefresh }));
       
       // Check if the result has an error
       if ('error' in result) {
@@ -195,7 +195,7 @@ export function useDataSync(): UseDataSyncResult {
   /**
    * Sync alarms data
    */
-  const syncAlarms = useCallback(async (itemIds: string[]): Promise<boolean> => {
+  const syncAlarms = useCallback(async (itemIds: string[], forceRefresh: boolean = false): Promise<boolean> => {
     updateAlarmsProgress({ progress: 0, status: 'loading', error: undefined });
 
     try {
@@ -203,7 +203,7 @@ export function useDataSync(): UseDataSyncResult {
       updateAlarmsProgress({ progress: 25 });
       
       // Fetch alarms for the provided item IDs
-      const result = await dispatch(fetchAlarms({ itemIds }));
+      const result = await dispatch(fetchAlarms({ itemIds, forceRefresh }));
       
       // Check if the result has an error
       if ('error' in result) {
@@ -226,7 +226,9 @@ export function useDataSync(): UseDataSyncResult {
   /**
    * Start the complete synchronization process
    */
-  const startSync = useCallback(async (): Promise<boolean> => {
+  const startSync = useCallback(async (options: { forceRefresh?: boolean } = {}): Promise<boolean> => {
+    const { forceRefresh = false } = options;
+    
     // Prevent concurrent sync operations
     if (isSyncingRef.current) {
       return false;
@@ -248,8 +250,8 @@ export function useDataSync(): UseDataSyncResult {
 
       // Execute groups and items sync in parallel first
       const [groupsSuccess, itemsSuccess] = await Promise.all([
-        syncGroups(),
-        syncItems()
+        syncGroups(forceRefresh),
+        syncItems(forceRefresh)
       ]);
 
       // After items are synced, get the item IDs and sync alarms
@@ -265,9 +267,10 @@ export function useDataSync(): UseDataSyncResult {
         console.info('[useDataSync] Extracted item IDs for alarm sync:', {
           itemCount: itemIds.length,
           sampleIds: itemIds.slice(0, 5),
+          forceRefresh,
           timestamp: new Date().toISOString()
         });
-        alarmsSuccess = await syncAlarms(itemIds);
+        alarmsSuccess = await syncAlarms(itemIds, forceRefresh);
       } else {
         // If items sync failed, mark alarms as failed too
         updateAlarmsProgress({ 
@@ -291,7 +294,7 @@ export function useDataSync(): UseDataSyncResult {
       if (allSuccess) {
         dispatch(setDataSynced(true));
         
-        // Additional safeguard: verify data is actually stored in sessionStorage
+        // Additional safeguard: verify data is actually stored in localStorage
         const storedGroups = monitoringStorageHelpers.getStoredGroups();
         const storedItems = monitoringStorageHelpers.getStoredItems();
         
@@ -301,6 +304,7 @@ export function useDataSync(): UseDataSyncResult {
             items: storedItems?.length || 0
           },
           syncStatusSet: true,
+          forceRefresh,
           timestamp: new Date().toISOString()
         });
       }

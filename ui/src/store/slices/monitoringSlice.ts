@@ -102,8 +102,26 @@ export const saveSyncStatusToStorage = (isSynced: boolean): void => {
 
 /**
  * Clear data sync status from localStorage
+ * NOTE: This only clears the sync flag, not the actual monitoring data
+ * Use clearAllMonitoringDataFromStorage() to clear both flag and data
  */
 export const clearSyncStatusFromStorage = (): void => {
+  try {
+    console.info('[MonitoringSlice] Clearing sync status flag from localStorage:', {
+      timestamp: new Date().toISOString()
+    });
+    
+    localStorage.removeItem(SYNC_STATUS_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear sync status from localStorage:', error);
+  }
+};
+
+/**
+ * Clear data sync status AND all monitoring data from localStorage
+ * Use this for logout or when you need to completely reset monitoring state
+ */
+export const clearAllMonitoringDataFromStorage = (): void => {
   try {
     console.warn('[MonitoringSlice] Clearing sync status and all monitoring data from localStorage:', {
       timestamp: new Date().toISOString(),
@@ -111,10 +129,9 @@ export const clearSyncStatusFromStorage = (): void => {
     });
     
     localStorage.removeItem(SYNC_STATUS_STORAGE_KEY);
-    // Also clear all monitoring data from localStorage
     monitoringStorageHelpers.clearAllMonitoringData();
   } catch (error) {
-    console.warn('Failed to clear sync status from localStorage:', error);
+    console.warn('Failed to clear monitoring data from localStorage:', error);
   }
 };
 
@@ -231,11 +248,24 @@ const monitoringSlice = createSlice({
     },
     
     /**
-     * Clear data sync status (when logging out)
+     * Clear data sync status flag only (for force sync)
+     * This will trigger a fresh sync without losing existing data
      */
     clearDataSyncStatus: (state) => {
       state.isDataSynced = false;
       clearSyncStatusFromStorage();
+    },
+    
+    /**
+     * Clear data sync status AND all monitoring data (for logout)
+     * This completely resets the monitoring state
+     */
+    clearAllMonitoringData: (state) => {
+      state.isDataSynced = false;
+      state.groups = [];
+      state.items = [];
+      state.alarms = [];
+      clearAllMonitoringDataFromStorage();
     },
     
     /**
@@ -251,8 +281,8 @@ const monitoringSlice = createSlice({
      * Reset monitoring state to initial
      */
     resetMonitoring: () => {
-      // Clear sync status from storage when resetting
-      clearSyncStatusFromStorage();
+      // Clear all data from storage when resetting
+      clearAllMonitoringDataFromStorage();
       return initialState;
     },
     
@@ -292,12 +322,15 @@ const monitoringSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Handle auth logout - clear sync status when user logs out
+    // Handle auth logout - clear ALL monitoring data when user logs out
     // NOTE: addCase must be called before addMatcher in Redux Toolkit
     builder.addCase(authLogout, (state) => {
-      // Clear sync status from storage and state when user logs out
-      clearSyncStatusFromStorage();
+      // Clear sync status AND all monitoring data when user logs out
+      clearAllMonitoringDataFromStorage();
       state.isDataSynced = false;
+      state.groups = [];
+      state.items = [];
+      state.alarms = [];
     });
 
     // Handle auth login success - clear sync status to allow fresh data sync for new session
@@ -455,6 +488,7 @@ export const {
   setCurrentFolderId,
   setDataSynced,
   clearDataSyncStatus,
+  clearAllMonitoringData,
   clearErrors, 
   resetMonitoring,
   updateActiveAlarms,
@@ -474,16 +508,16 @@ export default monitoringSlice.reducer;
  */
 import type { AppDispatch } from '../index';
 
-export const fetchGroups = () => (dispatch: AppDispatch) => {
-  return dispatch(api.endpoints.getGroups.initiate());
+export const fetchGroups = ({ forceRefresh = false }: { forceRefresh?: boolean } = {}) => (dispatch: AppDispatch) => {
+  return dispatch(api.endpoints.getGroups.initiate(undefined, { forceRefetch: forceRefresh }));
 };
 
-export const fetchItems = ({ showOrphans = false }: { showOrphans?: boolean }) => (dispatch: AppDispatch) => {
-  return dispatch(api.endpoints.getItems.initiate({ showOrphans }));
+export const fetchItems = ({ showOrphans = false, forceRefresh = false }: { showOrphans?: boolean; forceRefresh?: boolean }) => (dispatch: AppDispatch) => {
+  return dispatch(api.endpoints.getItems.initiate({ showOrphans }, { forceRefetch: forceRefresh }));
 };
 
-export const fetchAlarms = ({ itemIds }: { itemIds?: string[] } = {}) => (dispatch: AppDispatch) => {
-  return dispatch(api.endpoints.getAlarms.initiate({ itemIds: itemIds || null }));
+export const fetchAlarms = ({ itemIds, forceRefresh = false }: { itemIds?: string[]; forceRefresh?: boolean } = {}) => (dispatch: AppDispatch) => {
+  return dispatch(api.endpoints.getAlarms.initiate({ itemIds: itemIds || null }, { forceRefetch: forceRefresh }));
 };
 
 export const fetchValues = ({ itemIds }: { itemIds?: string[] }) => (dispatch: AppDispatch) => {

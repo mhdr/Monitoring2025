@@ -2,6 +2,12 @@
  * SyncPage Component
  * Displays data synchronization progress with individual progress bars for groups and items
  * Redirects to intended destination after successful sync or provides retry options on failure
+ * 
+ * Force Sync Behavior (force=true URL parameter):
+ * - Clears the sync status flag (marks data as not synced)
+ * - Forces RTK Query to bypass cache and fetch fresh data from API
+ * - SAFELY overwrites existing data (old data remains until new data is successfully fetched)
+ * - If sync fails, old data is still available in localStorage
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -175,15 +181,20 @@ const SyncPage: React.FC = () => {
 
   /**
    * Start sync process on component mount
-   * If this is a forced sync, clear the existing sync status first
+   * If this is a forced sync, clear the sync status flag and force refresh from API
    */
   useEffect(() => {
     if (isForceSync) {
-      // Clear the existing sync status to force a fresh sync
+      // Clear the sync status flag (but NOT the data) to force a fresh sync
+      // Data will be safely overwritten by the fresh sync results
       dispatch(clearDataSyncStatus());
+      // Start sync with forceRefresh to bypass RTK Query cache
+      startSync({ forceRefresh: true });
+    } else {
+      // Normal sync (may use cached data if available)
+      startSync();
     }
-    startSync();
-  }, [startSync, isForceSync, dispatch]);
+  }, [isForceSync, dispatch, startSync]);
 
   /**
    * Handle successful sync completion
