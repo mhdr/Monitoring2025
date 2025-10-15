@@ -97,6 +97,7 @@ import type {
   SettingsVersionResponseDto
 } from '../types/api';
 import { authStorageHelpers } from '../utils/authStorage';
+import { broadcastTokenRefresh } from '../utils/authBroadcast';
 import { storeMonitoringResponseData } from '../utils/monitoringStorage';
 import { Mutex } from 'async-mutex';
 
@@ -189,6 +190,11 @@ const baseQueryWithAuth: BaseQueryFn<
                   isRemembered,
                   refreshData.refreshToken
                 );
+
+                // Broadcast token refresh to all other tabs
+                if (refreshData.refreshToken) {
+                  broadcastTokenRefresh(refreshData.accessToken, refreshData.refreshToken);
+                }
 
                 // Retry the original request with new token
                 result = await baseQuery(args, api, extraOptions);

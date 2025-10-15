@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
+import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
 
 interface ItemCardProps {
@@ -24,15 +25,18 @@ interface ItemCardProps {
 
 const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, time }) => {
   const { t } = useLanguage();
+  const prefetchUrl = useUrlPrefetch();
   const [elevation, setElevation] = useState<number>(1);
+
+  // Memoize the detail URL to avoid recalculating on every render
+  const detailUrl = useMemo(
+    () => buildDetailTabUrl('trend-analysis', { itemId }),
+    [itemId]
+  );
 
   const handleOpenNewTab = () => {
     // Open a new tab with the item detail page
     try {
-      const detailUrl = buildDetailTabUrl('trend-analysis', {
-        itemId,
-      });
-      
       // Open in new tab
       window.open(detailUrl, '_blank');
     } catch (e) {
@@ -40,6 +44,12 @@ const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, t
       // keep silent to avoid breaking UI; log warning in dev
       console.warn('Could not open new tab', e);
     }
+  };
+
+  const handlePrefetch = () => {
+    // Start prefetching the detail page when user hovers
+    // This loads resources BEFORE the click, significantly improving perceived performance
+    prefetchUrl(detailUrl);
   };
 
   return (
@@ -96,6 +106,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, t
             <Tooltip title={t('openInNewTab')} arrow placement="top">
               <IconButton
                 onClick={handleOpenNewTab}
+                onMouseEnter={handlePrefetch}
                 aria-label={t('openInNewTab')}
                 size="small"
                 sx={{

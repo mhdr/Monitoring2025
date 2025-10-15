@@ -86,35 +86,23 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        // Exclude large lazy-loaded chunks and stats files from precache
-        // AG Grid (~1.3MB) and ECharts (~820KB) will be cached on-demand via runtime caching
-        globIgnores: ['**/ag-grid-*.js', '**/echarts-*.js', '**/stats.html'],
-        // Increase maximum file size for vendor chunks
-        maximumFileSizeToCacheInBytes: 500 * 1024, // 500 KB - reasonable for critical chunks
+        // Exclude only stats files from precache - let runtime caching handle large chunks
+        // This ensures all critical chunks are available for new tabs immediately
+        globIgnores: ['**/stats.html'],
+        // Increase maximum file size to accommodate larger vendor chunks
+        // AG Grid (~1.3MB) and ECharts (~820KB) can now be precached if needed
+        // This significantly improves new tab load performance since chunks are already in cache
+        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024, // 2 MB - allows precaching of large chunks
         runtimeCaching: [
-          // Cache critical vendor chunks - CacheFirst strategy
+          // Cache ALL JavaScript chunks - CacheFirst strategy with long expiration
+          // This ensures any chunk loaded in one tab is immediately available in new tabs
           {
-            urlPattern: /.*\/assets\/(react-core|mui-core|redux|i18n|grpc|layout|mui-styling|react-router|vendor|date-utils)-.*\.js$/,
+            urlPattern: /.*\/assets\/.*\.js$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'vendor-chunks-cache',
+              cacheName: 'js-chunks-cache',
               expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          // Cache lazy-loaded large chunks on-demand - CacheFirst
-          {
-            urlPattern: /.*\/assets\/(ag-grid|echarts)-.*\.js$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'large-chunks-cache',
-              expiration: {
-                maxEntries: 5,
+                maxEntries: 100, // Increased to accommodate all possible chunks
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               },
               cacheableResponse: {
@@ -198,30 +186,15 @@ export default defineConfig({
               }
             }
           },
-          // Cache other CSS files
+          // Cache ALL CSS files - CacheFirst with long expiration
           {
             urlPattern: /.*\.css$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'css-cache',
               expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          // Cache JS chunks
-          {
-            urlPattern: /.*\.js$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'js-cache',
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+                maxEntries: 50, // Increased for all CSS chunks
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               },
               cacheableResponse: {
                 statuses: [0, 200]
