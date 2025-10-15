@@ -10,9 +10,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
 import LazyErrorBoundary from './components/LazyErrorBoundary';
-import DashboardSkeleton from './components/DashboardSkeleton';
-import MonitoringPageSkeleton from './components/MonitoringPageSkeleton';
-import GenericPageSkeleton from './components/GenericPageSkeleton';
 import ServiceWorkerPrompt from './components/ServiceWorkerPrompt';
 import './App.css';
 
@@ -80,14 +77,14 @@ const AppRoutes = () => {
         }>
           <Route index element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen skeleton={<DashboardSkeleton />} variant="skeleton" />}>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <Dashboard />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="monitoring" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen skeleton={<MonitoringPageSkeleton />} variant="skeleton" />}>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <MonitoringPage />
               </Suspense>
             </LazyErrorBoundary>
@@ -101,14 +98,14 @@ const AppRoutes = () => {
           } />
           <Route path="active-alarms" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen skeleton={<GenericPageSkeleton />} variant="skeleton" />}>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ActiveAlarmsPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="alarm-log" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen skeleton={<GenericPageSkeleton />} variant="skeleton" />}>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <AlarmLogPage />
               </Suspense>
             </LazyErrorBoundary>
@@ -143,14 +140,14 @@ const AppRoutes = () => {
           } />
           <Route path="settings" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen skeleton={<GenericPageSkeleton />} variant="skeleton" />}>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <SettingsPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="profile" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen skeleton={<GenericPageSkeleton />} variant="skeleton" />}>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ProfilePage />
               </Suspense>
             </LazyErrorBoundary>

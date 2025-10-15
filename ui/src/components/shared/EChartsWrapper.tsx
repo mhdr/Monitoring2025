@@ -6,7 +6,7 @@
  * 
  * Features:
  * - Automatic MUI theme color integration (light/dark modes)
- * - Built-in loading skeleton
+ * - Built-in loading spinner
  * - RTL support for Persian language
  * - Responsive sizing
  * - Error handling with retry functionality
@@ -16,7 +16,7 @@
 import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
-import { Box, Skeleton, Typography, Button, useTheme } from '@mui/material';
+import { Box, CircularProgress, Typography, Button, useTheme } from '@mui/material';
 import { Inbox as InboxIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 
@@ -157,8 +157,16 @@ export const EChartsWrapper: React.FC<EChartsWrapperProps> = ({
     }
     
     return (
-      <Box sx={containerStyle} data-id-ref={dataIdRef ? `${dataIdRef}-loading` : undefined}>
-        <Skeleton variant="rectangular" width="100%" height="100%" animation="wave" />
+      <Box
+        sx={{
+          ...containerStyle,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        data-id-ref={dataIdRef ? `${dataIdRef}-loading` : undefined}
+      >
+        <CircularProgress size={60} />
       </Box>
     );
   }

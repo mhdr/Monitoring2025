@@ -11,7 +11,7 @@ import {
   Chip,
   IconButton,
   Collapse,
-  Skeleton,
+  CircularProgress,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -516,22 +516,18 @@ const DataTablePage: React.FC = () => {
           data-id-ref="data-table-table-card-body"
         >
           {loading ? (
-            <Box sx={{ width: '100%', height: '100%' }} data-id-ref="data-table-loading-container">
-              {/* Table Header Skeleton */}
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                <Skeleton variant="rectangular" height={40} sx={{ flex: 1 }} />
-                <Skeleton variant="rectangular" height={40} sx={{ flex: 1 }} />
-              </Box>
-              {/* Table Rows Skeleton */}
-              {[...Array(isMobile ? 5 : 10)].map((_, index) => (
-                <Skeleton 
-                  key={index} 
-                  variant="rectangular" 
-                  height={50} 
-                  sx={{ mb: 1 }} 
-                  animation="wave"
-                />
-              ))}
+            <Box
+              sx={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '300px',
+              }}
+              data-id-ref="data-table-loading-container"
+            >
+              <CircularProgress size={60} />
             </Box>
           ) : historyData.length === 0 ? (
             <Box sx={{ textAlign: 'center' }} data-id-ref="data-table-no-data-container">
@@ -543,17 +539,15 @@ const DataTablePage: React.FC = () => {
           ) : (
             <Box sx={{ width: '100%', height: '100%', minHeight: isMobile ? '300px' : '400px' }}>
               <Suspense fallback={
-                <Box>
-                  <Skeleton variant="rectangular" height={50} sx={{ mb: 1 }} animation="wave" />
-                  {Array.from({ length: isMobile ? 5 : 10 }).map((_, index) => (
-                    <Skeleton 
-                      key={index} 
-                      variant="rectangular" 
-                      height={50} 
-                      sx={{ mb: 1 }} 
-                      animation="wave"
-                    />
-                  ))}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '300px',
+                  }}
+                >
+                  <CircularProgress size={60} />
                 </Box>
               }>
                 <AGGridWrapper
