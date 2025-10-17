@@ -3,6 +3,7 @@ import type { AuthContextType, LoginRequest, ApiError, User } from '../types/aut
 import { useLoginMutation } from '../services/rtkApi';
 import { authStorageHelpers } from '../utils/authStorage';
 import { getBackgroundRefreshService } from '../services/backgroundRefreshService';
+import { createLogger } from '../utils/logger';
 import {
   initAuthBroadcast,
   subscribeToAuthBroadcast,
@@ -11,6 +12,8 @@ import {
   closeAuthBroadcast,
   respondAuthStatus,
 } from '../utils/authBroadcast';
+
+const logger = createLogger('AuthContext');
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -44,13 +47,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsAuthenticated(Boolean(authState.token && authState.user));
         
         // Log for debugging
-        console.log('[AuthContext] Auth initialized:', { 
+        logger.log('Auth initialized:', { 
           hasToken: !!authState.token, 
           hasUser: !!authState.user,
           isAuthenticated: Boolean(authState.token && authState.user)
         });
       } catch (error) {
-        console.error('Failed to initialize auth from IndexedDB:', error);
+        logger.error('Failed to initialize auth from IndexedDB:', error);
         // On error, assume not authenticated
         setUser(null);
         setToken(null);
@@ -72,7 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       switch (message.type) {
         case 'LOGIN': {
           // Another tab logged in - update local auth state
-          console.debug('Received LOGIN broadcast from another tab');
+          logger.debug('Received LOGIN broadcast from another tab');
           // Get current auth state to see if we already have user info
           (async () => {
             try {
@@ -94,7 +97,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setIsAuthenticated(true);
               }
             } catch (error) {
-              console.error('Failed to handle LOGIN broadcast:', error);
+              logger.error('Failed to handle LOGIN broadcast:', error);
             }
           })();
           break;
@@ -102,19 +105,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         case 'LOGOUT': {
           // Another tab logged out - logout this tab as well
-          console.debug('Received LOGOUT broadcast from another tab');
+          logger.debug('Received LOGOUT broadcast from another tab');
           setUser(null);
           setToken(null);
           setIsAuthenticated(false);
           authStorageHelpers.clearStoredAuth().catch((error) => {
-            console.error('Failed to clear auth storage on LOGOUT broadcast:', error);
+            logger.error('Failed to clear auth storage on LOGOUT broadcast:', error);
           });
           break;
         }
 
         case 'TOKEN_REFRESHED': {
           // Another tab refreshed tokens - update local tokens
-          console.debug('Received TOKEN_REFRESHED broadcast from another tab');
+          logger.debug('Received TOKEN_REFRESHED broadcast from another tab');
           (async () => {
             try {
               const currentAuth = await authStorageHelpers.getCurrentAuth();
@@ -127,7 +130,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setToken(message.payload.accessToken);
               }
             } catch (error) {
-              console.error('Failed to handle TOKEN_REFRESHED broadcast:', error);
+              logger.error('Failed to handle TOKEN_REFRESHED broadcast:', error);
             }
           })();
           break;
@@ -135,7 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         case 'AUTH_CHECK_REQUEST': {
           // Another tab is asking if we're authenticated - respond
-          console.debug('Received AUTH_CHECK_REQUEST - responding with current auth state');
+          logger.debug('Received AUTH_CHECK_REQUEST - responding with current auth state');
           respondAuthStatus(isAuthenticated);
           break;
         }
@@ -143,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         case 'AUTH_CHECK_RESPONSE': {
           // Another tab responded with their auth status
           // This is useful for new tabs to quickly determine if they should be authenticated
-          console.debug('Received AUTH_CHECK_RESPONSE:', message.payload.isAuthenticated);
+          logger.debug('Received AUTH_CHECK_RESPONSE:', message.payload.isAuthenticated);
           if (message.payload.isAuthenticated && !isAuthenticated) {
             // Another tab is authenticated, but we're not - sync state
             (async () => {
@@ -155,7 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   setIsAuthenticated(true);
                 }
               } catch (error) {
-                console.error('Failed to handle AUTH_CHECK_RESPONSE:', error);
+                logger.error('Failed to handle AUTH_CHECK_RESPONSE:', error);
               }
             })();
           }
@@ -163,7 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         default:
-          console.warn('Unknown auth broadcast message type:', message);
+          logger.warn('Unknown auth broadcast message type:', message);
       }
     });
 
@@ -180,13 +183,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Extend immediately on mount if authenticated
     authStorageHelpers.extendAuthExpiration().catch((error) => {
-      console.error('Failed to extend auth expiration on mount:', error);
+      logger.error('Failed to extend auth expiration on mount:', error);
     });
 
     // Set up interval to extend expiration periodically
     const interval = setInterval(() => {
       authStorageHelpers.extendAuthExpiration().catch((error) => {
-        console.error('Failed to extend auth expiration:', error);
+        logger.error('Failed to extend auth expiration:', error);
       });
     }, 5 * 60 * 1000); // Every 5 minutes
 
@@ -197,7 +200,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Only start background refresh when user is authenticated AND loading is complete
     if (isAuthenticated && !isLoading) {
-      console.log('[AuthContext] Starting background refresh service');
+      logger.log('Starting background refresh service');
       const refreshService = getBackgroundRefreshService();
       refreshService.updateConfig({
         enabled: true,
@@ -207,7 +210,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       refreshService.start();
     } else {
       // Stop background refresh when not authenticated
-      console.log('[AuthContext] Stopping background refresh service');
+      logger.log('Stopping background refresh service');
       const refreshService = getBackgroundRefreshService();
       refreshService.stop();
     }

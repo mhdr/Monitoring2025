@@ -12,6 +12,13 @@
 import { store } from '../store';
 import { fetchGroups, fetchItems, fetchAlarms } from '../store/slices/monitoringSlice';
 import { getMetadata, updateMetadata } from '../utils/monitoringStorage';
+import { createLogger } from '../utils/logger';
+
+// ========================================
+// Logger
+// ========================================
+
+const logger = createLogger('BackgroundRefresh');
 
 // ========================================
 // Types and Interfaces
@@ -77,11 +84,11 @@ export class BackgroundRefreshService {
       this.isPageVisible = !document.hidden;
 
       if (this.isPageVisible) {
-        console.log('[BackgroundRefresh] Page visible, resuming checks...');
+        logger.log('Page visible, resuming checks...');
         // When page becomes visible, check immediately if data needs refresh
         this.checkAndRefresh();
       } else {
-        console.log('[BackgroundRefresh] Page hidden, pausing checks...');
+        logger.log('Page hidden, pausing checks...');
       }
     });
   }
@@ -91,16 +98,16 @@ export class BackgroundRefreshService {
    */
   start(): void {
     if (!this.config.enabled) {
-      console.log('[BackgroundRefresh] Service is disabled');
+      logger.log('Service is disabled');
       return;
     }
 
     if (this.refreshTimer !== null) {
-      console.log('[BackgroundRefresh] Service already running');
+      logger.log('Service already running');
       return;
     }
 
-    console.log(`[BackgroundRefresh] Starting service (check every ${this.config.refreshInterval / 1000 / 60} minutes)`);
+    logger.log(`Starting service (check every ${this.config.refreshInterval / 1000 / 60} minutes)`);
 
     // Run initial check
     this.checkAndRefresh();
@@ -120,7 +127,7 @@ export class BackgroundRefreshService {
     if (this.refreshTimer !== null) {
       clearInterval(this.refreshTimer);
       this.refreshTimer = null;
-      console.log('[BackgroundRefresh] Service stopped');
+      logger.log('Service stopped');
     }
   }
 
@@ -129,14 +136,14 @@ export class BackgroundRefreshService {
    */
   private async checkAndRefresh(): Promise<void> {
     if (this.status.isRefreshing) {
-      console.log('[BackgroundRefresh] Refresh already in progress, skipping...');
+      logger.log('Refresh already in progress, skipping...');
       return;
     }
 
     // Check if user is authenticated before attempting refresh
     const authState = store.getState().auth;
     if (!authState.isAuthenticated || !authState.user) {
-      console.log('[BackgroundRefresh] User not authenticated, skipping refresh');
+      logger.log('User not authenticated, skipping refresh');
       return;
     }
 
@@ -146,13 +153,13 @@ export class BackgroundRefreshService {
       const needsRefresh = await this.needsRefresh();
 
       if (needsRefresh) {
-        console.log('[BackgroundRefresh] Data is stale, refreshing in background...');
+        logger.log('Data is stale, refreshing in background...');
         await this.refresh();
       } else {
-        console.log('[BackgroundRefresh] Data is fresh, no refresh needed');
+        logger.log('Data is fresh, no refresh needed');
       }
     } catch (error) {
-      console.error('[BackgroundRefresh] Check failed:', error);
+      logger.error('Check failed:', error);
       this.status.errors.push(String(error));
       // Keep only last 10 errors
       if (this.status.errors.length > 10) {
@@ -174,7 +181,7 @@ export class BackgroundRefreshService {
     const lastSyncTimestamp = metadata?.lastSync || 0;
 
     if (!lastSyncTimestamp) {
-      console.log('[BackgroundRefresh] No previous sync timestamp found');
+      logger.log('No previous sync timestamp found');
       return true; // No previous sync, needs refresh
     }
 
@@ -182,7 +189,7 @@ export class BackgroundRefreshService {
     const isStale = dataAge > this.config.dataStaleThreshold;
 
     if (isStale) {
-      console.log(`[BackgroundRefresh] Data is stale (age: ${Math.round(dataAge / 1000 / 60)} minutes, threshold: ${this.config.dataStaleThreshold / 1000 / 60} minutes)`);
+      logger.log(`Data is stale (age: ${Math.round(dataAge / 1000 / 60)} minutes, threshold: ${this.config.dataStaleThreshold / 1000 / 60} minutes)`);
     }
 
     return isStale;
@@ -195,7 +202,7 @@ export class BackgroundRefreshService {
     this.status.isRefreshing = true;
 
     try {
-      console.log('[BackgroundRefresh] Starting background data refresh...');
+      logger.log('Starting background data refresh...');
 
       // Fetch all monitoring data in parallel
       const results = await Promise.allSettled([
@@ -209,19 +216,19 @@ export class BackgroundRefreshService {
       results.forEach((result, index) => {
         const dataType = ['groups', 'items', 'alarms'][index];
         if (result.status === 'rejected') {
-          console.error(`[BackgroundRefresh] Failed to fetch ${dataType}:`, result.reason);
+          logger.error(`Failed to fetch ${dataType}:`, result.reason);
           failures.push(dataType);
         } else {
-          console.log(`[BackgroundRefresh] Successfully refreshed ${dataType}`);
+          logger.log(`Successfully refreshed ${dataType}`);
         }
       });
 
       // If any fetch failed, log but don't throw
       if (failures.length > 0) {
-        console.warn(`[BackgroundRefresh] Some data failed to refresh: ${failures.join(', ')}`);
+        logger.warn(`Some data failed to refresh: ${failures.join(', ')}`);
         this.status.errors.push(`Failed to refresh: ${failures.join(', ')}`);
       } else {
-        console.log('[BackgroundRefresh] All data refreshed successfully');
+        logger.log('All data refreshed successfully');
         this.status.lastRefresh = Date.now();
         // Update metadata
         updateMetadata({ lastSync: Date.now() });
@@ -230,12 +237,12 @@ export class BackgroundRefreshService {
         // Dynamically import to avoid circular dependencies
         import('../services/cacheCoordinationService').then(({ invalidateApiCache }) => {
           invalidateApiCache().catch((error) => {
-            console.warn('[BackgroundRefresh] Failed to invalidate cache:', error);
+            logger.warn('Failed to invalidate cache:', error);
           });
         });
       }
     } catch (error) {
-      console.error('[BackgroundRefresh] Refresh failed:', error);
+      logger.error('Refresh failed:', error);
       this.status.errors.push(String(error));
 
       // Retry logic
@@ -250,18 +257,18 @@ export class BackgroundRefreshService {
    */
   private async retryRefresh(): Promise<void> {
     for (let attempt = 1; attempt <= this.config.retryAttempts; attempt++) {
-      console.log(`[BackgroundRefresh] Retry attempt ${attempt}/${this.config.retryAttempts}...`);
+      logger.log(`Retry attempt ${attempt}/${this.config.retryAttempts}...`);
 
       await new Promise((resolve) => setTimeout(resolve, this.config.retryDelay * attempt)); // Exponential backoff
 
       try {
         await this.refresh();
-        console.log(`[BackgroundRefresh] Retry ${attempt} succeeded`);
+        logger.log(`Retry ${attempt} succeeded`);
         return; // Success, exit retry loop
       } catch (error) {
-        console.error(`[BackgroundRefresh] Retry ${attempt} failed:`, error);
+        logger.error(`Retry ${attempt} failed:`, error);
         if (attempt === this.config.retryAttempts) {
-          console.error('[BackgroundRefresh] All retry attempts exhausted');
+          logger.error('All retry attempts exhausted');
         }
       }
     }
@@ -271,7 +278,7 @@ export class BackgroundRefreshService {
    * Force immediate refresh (manual trigger)
    */
   async forceRefresh(): Promise<void> {
-    console.log('[BackgroundRefresh] Force refresh requested');
+    logger.log('Force refresh requested');
     await this.refresh();
   }
 
@@ -287,7 +294,7 @@ export class BackgroundRefreshService {
    */
   updateConfig(config: Partial<BackgroundRefreshConfig>): void {
     this.config = { ...this.config, ...config };
-    console.log('[BackgroundRefresh] Configuration updated:', this.config);
+    logger.log('Configuration updated:', this.config);
 
     // Restart if enabled changed
     if ('enabled' in config) {

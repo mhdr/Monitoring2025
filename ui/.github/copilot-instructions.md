@@ -62,6 +62,53 @@ This is a production-grade enterprise monitoring dashboard with:
 ⚠️ **USE MUI sx prop or styled components** - Avoid inline styles when possible
 ⚠️ **USE MUI theme colors** - Access via theme palette (theme.palette.primary.main, etc.)
 ⚠️ **MANDATORY: Element identification** - ALL elements created by AI must have `data-id-ref` attribute
+⚠️ **MANDATORY: Use logger utility** - NEVER use `console.*` directly, always use logger
+
+### Logging (Development-Only)
+⚠️ **CRITICAL: Always use logger utility instead of console.***
+⚠️ **Production builds suppress all logs** - keeps console clean for users
+⚠️ **Development mode shows all logs** - full debugging capabilities
+
+**Implementation:**
+- **Logger Utility**: `src/utils/logger.ts`
+
+**Usage:**
+```typescript
+// ❌ NEVER do this - appears in production
+console.log('[MyComponent] Debug message');
+console.error('[MyComponent] Error:', error);
+
+// ✅ ALWAYS do this - development only
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('MyComponent');
+
+logger.log('Debug message');       // [MyComponent] Debug message
+logger.error('Error:', error);      // [MyComponent] Error: [error object]
+```
+
+**Available Methods:**
+- `logger.log()` - General debug information
+- `logger.info()` - Informational messages
+- `logger.warn()` - Warnings that don't break functionality
+- `logger.error()` - Errors that need attention
+- `logger.debug()` - Detailed debug information
+- `logger.table()` - Display data in table format
+- `logger.group()` / `logger.groupEnd()` - Grouped logs
+- `logger.time()` / `logger.timeEnd()` - Performance timing
+
+**Key Benefits:**
+- 🚀 Zero overhead in production (no-op functions)
+- 📦 Smaller bundle size (dead code elimination)
+- 🔒 No information leakage in production
+- 🐛 Full debugging in development
+- 🏷️ Automatic module prefixes for organization
+
+**Migration Pattern:**
+1. Import logger: `import { createLogger } from '../utils/logger';`
+2. Create module logger: `const logger = createLogger('ModuleName');`
+3. Replace all `console.*` calls with `logger.*`
+4. Remove `[ModuleName]` prefixes from messages (added automatically)
 
 ### Component Requirements
 - Always define TypeScript interfaces for component props
@@ -823,7 +870,7 @@ Protos/           # Protocol buffer definitions
 - [ ] **Hooks**: Custom hooks follow `use*` naming convention
 - [ ] **Naming**: Consistent naming conventions followed
 - [ ] **Comments**: Complex logic has explanatory comments
-- [ ] **No Console Logs**: Remove debug `console.log` statements
+- [ ] **No Console Logs**: Use logger utility, not `console.*` directly
 - [ ] **Imports**: Organized and no unused imports
 
 ### Internationalization
@@ -929,6 +976,7 @@ Protos/           # Protocol buffer definitions
 - Use functional components with hooks
 - Use TypeScript with strict types
 - Use translation system for all text
+- Use logger utility for ALL logging (never `console.*`)
 - Use MUI MCP Server to verify component usage and APIs
 - Use MUI theme palette values for ALL colors
 - Use MUI components first before custom implementations
@@ -946,6 +994,7 @@ Protos/           # Protocol buffer definitions
 - Don't use class components
 - Don't use `any` type
 - Don't hardcode text strings
+- Don't use `console.*` directly - use logger utility instead
 - Don't assume MUI APIs from memory - verify with MUI MCP
 - Don't hardcode colors (hex, rgb, color names) - ONLY use MUI theme palette
 - Don't create custom color variables outside of MUI theme
@@ -958,5 +1007,5 @@ Protos/           # Protocol buffer definitions
 - Don't skip RTL testing
 - Don't skip responsive testing
 - Don't skip theme compatibility testing
-- Don't log sensitive data
+- Don't log sensitive data (passwords, tokens, etc.)
 - Don't use outdated Protobuf patterns (v1)
