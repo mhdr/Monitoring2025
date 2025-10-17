@@ -218,5 +218,23 @@
     "errors": {
       "synchronizationFailed": "Some data failed to synchronize"
     }
+  },
+  "activeAlarmsPage": {
+    "title": "Active Alarms",
+    "noActiveAlarms": "No active alarms",
+    "noActiveAlarmsDescription": "There are currently no active alarms in the system.",
+    "loadingAlarms": "Loading active alarms...",
+    "errorLoadingAlarms": "Error loading active alarms",
+    "retryLoading": "Retry",
+    "alarmId": "Alarm ID",
+    "itemId": "Item ID",
+    "triggeredAt": "Triggered At",
+    "alarmCount": "Active Alarms",
+    "refreshing": "Refreshing...",
+    "lastUpdated": "Last updated",
+    "streamConnected": "Live updates active",
+    "streamDisconnected": "Live updates disconnected",
+    "streamConnecting": "Connecting to live updates...",
+    "streamError": "Live update connection error"
   }
 }

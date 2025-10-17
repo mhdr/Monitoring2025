@@ -218,5 +218,23 @@
     "errors": {
       "synchronizationFailed": "برخی داده‌ها در همگام‌سازی ناموفق بودند"
     }
+  },
+  "activeAlarmsPage": {
+    "title": "هشدارهای فعال",
+    "noActiveAlarms": "هشدار فعالی وجود ندارد",
+    "noActiveAlarmsDescription": "در حال حاضر هیچ هشدار فعالی در سیستم وجود ندارد.",
+    "loadingAlarms": "در حال بارگذاری هشدارها...",
+    "errorLoadingAlarms": "خطا در بارگذاری هشدارها",
+    "retryLoading": "تلاش مجدد",
+    "alarmId": "شناسه هشدار",
+    "itemId": "شناسه پوینت",
+    "triggeredAt": "زمان فعال‌سازی",
+    "alarmCount": "هشدارهای فعال",
+    "refreshing": "در حال به‌روزرسانی...",
+    "lastUpdated": "آخرین به‌روزرسانی",
+    "streamConnected": "به‌روزرسانی زنده فعال است",
+    "streamDisconnected": "به‌روزرسانی زنده قطع شد",
+    "streamConnecting": "در حال اتصال به به‌روزرسانی زنده...",
+    "streamError": "خطا در اتصال به‌روزرسانی زنده"
   }
 }
