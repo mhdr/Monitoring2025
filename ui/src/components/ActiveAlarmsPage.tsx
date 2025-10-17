@@ -102,10 +102,14 @@ const ActiveAlarmsPage: React.FC = () => {
       
       logger.log('Active alarms fetched successfully:', {
         count: response.data?.length || 0,
-        data: response.data,
+        alarms: response.data,
       });
       
-      setAlarms(response.data || []);
+      // FIX: API returns nested structure {data: {data: ActiveAlarm[]}}
+      // TypeScript types don't match the actual API response
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const alarmsData = (response as any).data.data || [];
+      setAlarms(alarmsData);
       setLastFetchTime(Date.now());
     } catch (err) {
       logger.error('Error fetching active alarms:', err);
