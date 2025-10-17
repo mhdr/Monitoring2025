@@ -443,7 +443,7 @@ const ActiveAlarmsPage: React.FC = () => {
                   <Chip
                     icon={<WarningIcon />}
                     label={`${alarms.length} ${t('activeAlarmsPage.alarmCount')}`}
-                    color="warning"
+                    color="error"
                     data-id-ref="active-alarms-count-chip"
                   />
                 </Box>
