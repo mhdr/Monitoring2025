@@ -279,6 +279,10 @@ const TrendAnalysisPage: React.FC = () => {
           fontFamily: language === 'fa' ? 'iransansxv, iransansx, Tahoma, Arial, sans-serif' : undefined,
         },
       },
+      // Hide legend for single-series charts - toggle button not useful
+      legend: {
+        show: false,
+      },
       series: [
         {
           name: t('value'),
