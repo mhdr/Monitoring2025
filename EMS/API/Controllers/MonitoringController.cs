@@ -156,8 +156,12 @@ public class MonitoringController : ControllerBase
     /// <summary>
     /// Get monitoring items accessible to the current user
     /// </summary>
-    /// <param name="request">Items request parameters</param>
-    /// <returns>List of monitoring items the user has access to</returns>
+    /// <param name="request">Items request parameters including ShowOrphans flag to control orphaned items visibility</param>
+    /// <returns>List of monitoring items the user has access to based on their group permissions</returns>
+    /// <remarks>
+    /// User identity is extracted from JWT token. The ShowOrphans parameter determines whether
+    /// items not assigned to any group should be included in the response.
+    /// </remarks>
     /// <response code="200">Returns the list of accessible monitoring items</response>
     /// <response code="401">If user is not authenticated</response>
     /// <response code="500">If an internal error occurs</response>
@@ -363,8 +367,12 @@ public class MonitoringController : ControllerBase
     /// <summary>
     /// Get all monitoring items with admin privileges (bypasses user permissions)
     /// </summary>
-    /// <param name="request">Items request parameters including ShowOrphans flag</param>
-    /// <returns>List of all monitoring items in the system</returns>
+    /// <param name="request">Items request parameters including ShowOrphans flag to control orphaned items visibility</param>
+    /// <returns>List of all monitoring items in the system regardless of user permissions</returns>
+    /// <remarks>
+    /// This endpoint bypasses user group permissions and returns all items in the system.
+    /// The ShowOrphans parameter determines whether items not assigned to any group should be included.
+    /// </remarks>
     /// <response code="200">Returns the complete list of monitoring items</response>
     /// <response code="400">If there's a validation error with the request</response>
     /// <response code="500">If an internal error occurs</response>
