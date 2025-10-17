@@ -17,6 +17,9 @@ import {
   setActiveAlarmsStreamError,
   StreamStatus 
 } from '../store/slices/monitoringSlice';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('GlobalActiveAlarmsStream');
 
 /**
  * Hook return type for manual control
