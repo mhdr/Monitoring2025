@@ -64,6 +64,10 @@ export function createMuiTheme(themePreset: MuiThemePreset, direction: 'ltr' | '
         '"Segoe UI Emoji"',
         '"Segoe UI Symbol"',
       ].join(','),
+      // Enable Persian digits for RTL mode using IRANSansX font feature
+      ...(direction === 'rtl' && {
+        fontFeatureSettings: '"ss02"',
+      }),
       // Responsive font sizes
       h1: {
         fontSize: '2.5rem',
@@ -112,6 +116,9 @@ export function createMuiTheme(themePreset: MuiThemePreset, direction: 'ltr' | '
           root: {
             textTransform: 'none', // Don't uppercase button text
             borderRadius: 8,
+            ...(direction === 'rtl' && {
+              fontFeatureSettings: '"ss02"',
+            }),
           },
         },
       },
@@ -128,6 +135,34 @@ export function createMuiTheme(themePreset: MuiThemePreset, direction: 'ltr' | '
             '& .MuiOutlinedInput-root': {
               borderRadius: 8,
             },
+            ...(direction === 'rtl' && {
+              '& input, & textarea': {
+                fontFeatureSettings: '"ss02"',
+              },
+            }),
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            ...(direction === 'rtl' && {
+              fontFeatureSettings: '"ss02"',
+            }),
+          },
+          label: {
+            ...(direction === 'rtl' && {
+              fontFeatureSettings: '"ss02"',
+            }),
+          },
+        },
+      },
+      MuiTypography: {
+        styleOverrides: {
+          root: {
+            ...(direction === 'rtl' && {
+              fontFeatureSettings: '"ss02"',
+            }),
           },
         },
       },
