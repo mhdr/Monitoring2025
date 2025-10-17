@@ -251,6 +251,25 @@
     "historyChartTitle": "{{itemName}}",
     "highLimit": "حد بالا",
     "lowLimit": "حد پایین",
-    "range": "محدوده"
+    "range": "محدوده",
+    "priority": "اولویت",
+    "condition": "شرط",
+    "delay": "تأخیر",
+    "threshold": "آستانه",
+    "externalAlarm": "هشدار خارجی",
+    "priorityWarning": "اخطار",
+    "priorityAlarm": "هشدار",
+    "conditionEqual": "مساوی",
+    "conditionNotEqual": "نامساوی",
+    "conditionHigher": "بیشتر",
+    "conditionLower": "کمتر",
+    "conditionBetween": "در محدوده",
+    "delaySeconds": "{{seconds}} ثانیه",
+    "noDelay": "بدون تأخیر",
+    "thresholdValue": "{{value}}",
+    "thresholdRange": "{{min}} تا {{max}}",
+    "externalAlarmEnabled": "هشدار خارجی متصل",
+    "externalAlarmDisabled": "بدون هشدار خارجی",
+    "alarmDetails": "جزئیات هشدار"
   }
 }

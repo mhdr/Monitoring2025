@@ -41,6 +41,9 @@ import {
   TrendingFlat as TrendingFlatIcon,
   Timeline as TimelineIcon,
   Close as CloseIcon,
+  NotificationsActive as NotificationsActiveIcon,
+  NotificationsOff as NotificationsOffIcon,
+  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
@@ -524,6 +527,76 @@ const ActiveAlarmsPage: React.FC = () => {
   }, []);
 
   /**
+   * Format alarm priority (AlarmPriority: 1 = Warning, 2 = Alarm)
+   */
+  const formatAlarmPriority = useCallback((priority: AlarmDto['alarmPriority']): string => {
+    if (priority === 1) {
+      return t('activeAlarmsPage.priorityWarning');
+    } else if (priority === 2) {
+      return t('activeAlarmsPage.priorityAlarm');
+    }
+    return '-';
+  }, [t]);
+
+  /**
+   * Get color for alarm priority chip
+   */
+  const getPriorityColor = useCallback((priority: AlarmDto['alarmPriority']): 'warning' | 'error' | 'default' => {
+    if (priority === 1) return 'warning';
+    if (priority === 2) return 'error';
+    return 'default';
+  }, []);
+
+  /**
+   * Format compare type (CompareType: 1 = Equal, 2 = NotEqual, 3 = Higher, 4 = Lower, 5 = Between)
+   */
+  const formatCompareType = useCallback((compareType: AlarmDto['compareType']): string => {
+    switch (compareType) {
+      case 1:
+        return t('activeAlarmsPage.conditionEqual');
+      case 2:
+        return t('activeAlarmsPage.conditionNotEqual');
+      case 3:
+        return t('activeAlarmsPage.conditionHigher');
+      case 4:
+        return t('activeAlarmsPage.conditionLower');
+      case 5:
+        return t('activeAlarmsPage.conditionBetween');
+      default:
+        return '-';
+    }
+  }, [t]);
+
+  /**
+   * Format alarm delay in seconds
+   */
+  const formatAlarmDelay = useCallback((delay: number | undefined): string => {
+    if (delay === undefined || delay === null || delay === 0) {
+      return t('activeAlarmsPage.noDelay');
+    }
+    return t('activeAlarmsPage.delaySeconds', { seconds: delay });
+  }, [t]);
+
+  /**
+   * Format threshold value(s) based on compare type
+   */
+  const formatThreshold = useCallback((alarm: AlarmDto | undefined): string => {
+    if (!alarm) return '-';
+    
+    const value1 = alarm.value1;
+    const value2 = alarm.value2;
+    
+    // CompareType: 5 = Between (needs both values), others need only value1
+    if (alarm.compareType === 5 && value1 && value2) {
+      return t('activeAlarmsPage.thresholdRange', { min: value1, max: value2 });
+    } else if (value1) {
+      return t('activeAlarmsPage.thresholdValue', { value: value1 });
+    }
+    
+    return '-';
+  }, [t]);
+
+  /**
    * Setup automatic refresh of instantaneous values every 5 seconds
    */
   useEffect(() => {
@@ -912,6 +985,31 @@ const ActiveAlarmsPage: React.FC = () => {
                             {t('activeAlarmsPage.alarmMessage')}
                           </Typography>
                         </TableCell>
+                        <TableCell data-id-ref="active-alarms-table-header-priority">
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {t('activeAlarmsPage.priority')}
+                          </Typography>
+                        </TableCell>
+                        <TableCell data-id-ref="active-alarms-table-header-condition">
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {t('activeAlarmsPage.condition')}
+                          </Typography>
+                        </TableCell>
+                        <TableCell data-id-ref="active-alarms-table-header-threshold">
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {t('activeAlarmsPage.threshold')}
+                          </Typography>
+                        </TableCell>
+                        <TableCell data-id-ref="active-alarms-table-header-delay">
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {t('activeAlarmsPage.delay')}
+                          </Typography>
+                        </TableCell>
+                        <TableCell data-id-ref="active-alarms-table-header-external-alarm">
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {t('activeAlarmsPage.externalAlarm')}
+                          </Typography>
+                        </TableCell>
                         <TableCell data-id-ref="active-alarms-table-header-triggered-at">
                           <Typography variant="subtitle2" fontWeight="bold">
                             {t('activeAlarmsPage.triggeredAt')}
@@ -935,32 +1033,97 @@ const ActiveAlarmsPage: React.FC = () => {
                         const item = storedItems.find(i => i.id === alarm.itemId);
                         const itemValue = alarm.itemId ? getItemValue(alarm.itemId) : null;
                         
+                        // Get alarm details from storedAlarms
+                        const alarmDto = storedAlarms.find(a => a.id === alarm.alarmId);
+                        
                         return (
                           <React.Fragment key={alarm.id || `alarm-${index}`}>
                             <TableRow
                               hover
                               data-id-ref={`active-alarm-row-${index}`}
                             >
+                              {/* Item Name */}
                               <TableCell data-id-ref={`active-alarm-item-name-${index}`}>
                                 <Typography variant="body2">
                                   {itemName}
                                 </Typography>
                               </TableCell>
-                            <TableCell data-id-ref={`active-alarm-message-${index}`}>
-                              <Typography variant="body2">
-                                {alarmMessage}
-                              </Typography>
-                            </TableCell>
-                            <TableCell data-id-ref={`active-alarm-time-${index}`}>
-                              <Typography variant="body2">{formatTimestamp(alarm.time)}</Typography>
-                            </TableCell>
-                          </TableRow>
+                              
+                              {/* Alarm Message */}
+                              <TableCell data-id-ref={`active-alarm-message-${index}`}>
+                                <Typography variant="body2">
+                                  {alarmMessage}
+                                </Typography>
+                              </TableCell>
+                              
+                              {/* Priority */}
+                              <TableCell data-id-ref={`active-alarm-priority-${index}`}>
+                                <Chip
+                                  label={formatAlarmPriority(alarmDto?.alarmPriority)}
+                                  color={getPriorityColor(alarmDto?.alarmPriority)}
+                                  size="small"
+                                  sx={{ minWidth: 80 }}
+                                />
+                              </TableCell>
+                              
+                              {/* Condition (Compare Type) */}
+                              <TableCell data-id-ref={`active-alarm-condition-${index}`}>
+                                <Typography variant="body2">
+                                  {formatCompareType(alarmDto?.compareType)}
+                                </Typography>
+                              </TableCell>
+                              
+                              {/* Threshold */}
+                              <TableCell data-id-ref={`active-alarm-threshold-${index}`}>
+                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                  {formatThreshold(alarmDto)}
+                                </Typography>
+                              </TableCell>
+                              
+                              {/* Delay */}
+                              <TableCell data-id-ref={`active-alarm-delay-${index}`}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  {alarmDto?.alarmDelay && alarmDto.alarmDelay > 0 && (
+                                    <AccessTimeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                  )}
+                                  <Typography variant="body2">
+                                    {formatAlarmDelay(alarmDto?.alarmDelay)}
+                                  </Typography>
+                                </Box>
+                              </TableCell>
+                              
+                              {/* External Alarm */}
+                              <TableCell data-id-ref={`active-alarm-external-${index}`} align="center">
+                                <Tooltip 
+                                  title={alarmDto?.hasExternalAlarm 
+                                    ? t('activeAlarmsPage.externalAlarmEnabled') 
+                                    : t('activeAlarmsPage.externalAlarmDisabled')
+                                  }
+                                  arrow
+                                >
+                                  {alarmDto?.hasExternalAlarm ? (
+                                    <NotificationsActiveIcon 
+                                      sx={{ fontSize: 20, color: 'warning.main' }} 
+                                    />
+                                  ) : (
+                                    <NotificationsOffIcon 
+                                      sx={{ fontSize: 20, color: 'text.disabled' }} 
+                                    />
+                                  )}
+                                </Tooltip>
+                              </TableCell>
+                              
+                              {/* Triggered At */}
+                              <TableCell data-id-ref={`active-alarm-time-${index}`}>
+                                <Typography variant="body2">{formatTimestamp(alarm.time)}</Typography>
+                              </TableCell>
+                            </TableRow>
                           
                           {/* Instantaneous Values Row */}
                           {item && itemValue && (
                             <TableRow data-id-ref={`active-alarm-values-row-${index}`}>
                               <TableCell 
-                                colSpan={3} 
+                                colSpan={8}
                                 sx={{ 
                                   bgcolor: 'action.hover',
                                   borderBottom: index < alarms.length - 1 ? 1 : 0,

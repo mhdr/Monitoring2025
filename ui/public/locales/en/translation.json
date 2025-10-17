@@ -251,6 +251,25 @@
     "historyChartTitle": "{{itemName}}",
     "highLimit": "High Limit",
     "lowLimit": "Low Limit",
-    "range": "Range"
+    "range": "Range",
+    "priority": "Priority",
+    "condition": "Condition",
+    "delay": "Delay",
+    "threshold": "Threshold",
+    "externalAlarm": "External Alarm",
+    "priorityWarning": "Warning",
+    "priorityAlarm": "Alarm",
+    "conditionEqual": "Equal",
+    "conditionNotEqual": "Not Equal",
+    "conditionHigher": "Higher",
+    "conditionLower": "Lower",
+    "conditionBetween": "Between",
+    "delaySeconds": "{{seconds}}s",
+    "noDelay": "No delay",
+    "thresholdValue": "{{value}}",
+    "thresholdRange": "{{min}} - {{max}}",
+    "externalAlarmEnabled": "External alarm connected",
+    "externalAlarmDisabled": "No external alarm",
+    "alarmDetails": "Alarm Details"
   }
 }
