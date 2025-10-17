@@ -884,6 +884,207 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
+    /// Get SignalR hub metadata and connection information
+    /// </summary>
+    /// <returns>Complete SignalR hub documentation including methods, parameters, authentication, and connection examples</returns>
+    /// <remarks>
+    /// This endpoint provides comprehensive documentation for the MonitoringHub SignalR hub.
+    /// Use this to understand:
+    /// - How to connect to the hub
+    /// - Available server methods (callable from client)
+    /// - Available client methods (invoked by server)
+    /// - Authentication requirements
+    /// - Connection examples for JavaScript, C#, and Python
+    /// 
+    /// This is particularly useful for:
+    /// - Frontend developers integrating SignalR
+    /// - API consumers who need real-time updates
+    /// - Automated documentation generation tools
+    /// </remarks>
+    /// <response code="200">Returns complete SignalR hub metadata</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpGet("SignalRHubInfo")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(SignalRHubInfoResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public IActionResult GetSignalRHubInfo()
+    {
+        try
+        {
+            _logger.LogInformation("SignalR hub info requested");
+
+            var hubInfo = new SignalRHubInfoResponseDto
+            {
+                Success = true,
+                Data = new SignalRHubData
+                {
+                    HubName = "MonitoringHub",
+                    HubEndpoint = "/monitoringhub",
+                    ConnectionUrl = "https://localhost:7136/monitoringhub",
+                    Authentication = "JWT Bearer token required - provide via Authorization header or accessTokenFactory option",
+                    SupportedTransports = new List<string> { "WebSockets", "ServerSentEvents", "LongPolling" },
+                    
+                    ServerMethods = new List<SignalRMethodInfo>
+                    {
+                        new SignalRMethodInfo
+                        {
+                            Name = "SubscribeToActiveAlarms",
+                            Description = "Subscribe to receive real-time active alarms count updates. This is optional - server broadcasts to all connected clients automatically.",
+                            Parameters = new List<SignalRParameterInfo>(),
+                            Returns = "Task"
+                        }
+                    },
+                    
+                    ClientMethods = new List<SignalRMethodInfo>
+                    {
+                        new SignalRMethodInfo
+                        {
+                            Name = "ReceiveActiveAlarmsUpdate",
+                            Description = "Receives active alarm count updates from the server when alarms change state. Called automatically by the server's background worker.",
+                            Parameters = new List<SignalRParameterInfo>
+                            {
+                                new SignalRParameterInfo
+                                {
+                                    Name = "activeAlarmsCount",
+                                    Type = "int",
+                                    Description = "Current count of active alarms in the system"
+                                }
+                            },
+                            Returns = "void"
+                        }
+                    },
+                    
+                    ConnectionExamples = new SignalRConnectionExamples
+                    {
+                        JavaScript = @"// Install: npm install @microsoft/signalr
+import * as signalR from '@microsoft/signalr';
+
+// Create connection with JWT token
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl('https://localhost:7136/monitoringhub', {
+        accessTokenFactory: () => localStorage.getItem('jwt_token')
+    })
+    .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+    .configureLogging(signalR.LogLevel.Information)
+    .build();
+
+// Register client method to receive updates
+connection.on('ReceiveActiveAlarmsUpdate', (activeAlarmsCount) => {
+    console.log(`Active alarms: ${activeAlarmsCount}`);
+    document.getElementById('alarmCount').textContent = activeAlarmsCount;
+});
+
+// Handle connection events
+connection.onclose((error) => {
+    console.error('Connection closed:', error);
+});
+
+connection.onreconnecting((error) => {
+    console.warn('Reconnecting...', error);
+});
+
+connection.onreconnected((connectionId) => {
+    console.log('Reconnected:', connectionId);
+});
+
+// Start connection
+await connection.start();
+console.log('SignalR Connected');
+
+// Optional: Explicitly subscribe
+await connection.invoke('SubscribeToActiveAlarms');",
+                        
+                        CSharp = @"// Install: Microsoft.AspNetCore.SignalR.Client
+using Microsoft.AspNetCore.SignalR.Client;
+
+// Create connection with JWT token
+var connection = new HubConnectionBuilder()
+    .WithUrl(""https://localhost:7136/monitoringhub"", options =>
+    {
+        options.AccessTokenProvider = () => Task.FromResult(jwtToken);
+    })
+    .WithAutomaticReconnect()
+    .Build();
+
+// Register client method to receive updates
+connection.On<int>(""ReceiveActiveAlarmsUpdate"", (activeAlarmsCount) =>
+{
+    Console.WriteLine($""Active alarms: {activeAlarmsCount}"");
+});
+
+// Handle connection events
+connection.Closed += async (error) =>
+{
+    Console.WriteLine($""Connection closed: {error?.Message}"");
+};
+
+connection.Reconnecting += (error) =>
+{
+    Console.WriteLine(""Reconnecting..."");
+    return Task.CompletedTask;
+};
+
+connection.Reconnected += (connectionId) =>
+{
+    Console.WriteLine($""Reconnected: {connectionId}"");
+    return Task.CompletedTask;
+};
+
+// Start connection
+await connection.StartAsync();
+Console.WriteLine(""SignalR Connected"");
+
+// Optional: Explicitly subscribe
+await connection.InvokeAsync(""SubscribeToActiveAlarms"");",
+                        
+                        Python = @"# Install: pip install signalrcore
+from signalrcore.hub_connection_builder import HubConnectionBuilder
+
+# JWT token provider
+def get_token():
+    return your_jwt_token
+
+# Create connection with JWT token
+hub_connection = HubConnectionBuilder() \
+    .with_url(""https://localhost:7136/monitoringhub"",
+              options={
+                  ""access_token_factory"": get_token,
+                  ""verify_ssl"": False  # Only for development
+              }) \
+    .with_automatic_reconnect({
+        ""type"": ""interval"",
+        ""intervals"": [0, 2, 5, 10, 30]
+    }) \
+    .build()
+
+# Register client method to receive updates
+hub_connection.on(""ReceiveActiveAlarmsUpdate"", lambda activeAlarmsCount: 
+    print(f""Active alarms: {activeAlarmsCount}""))
+
+# Handle connection events
+hub_connection.on_open(lambda: print(""Connection opened""))
+hub_connection.on_close(lambda: print(""Connection closed""))
+hub_connection.on_error(lambda error: print(f""Error: {error}""))
+
+# Start connection
+hub_connection.start()
+
+# Optional: Explicitly subscribe
+hub_connection.send(""SubscribeToActiveAlarms"", [])"
+                    }
+                }
+            };
+
+            return Ok(hubInfo);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving SignalR hub info");
+            return StatusCode(500, new { success = false, message = "Internal server error" });
+        }
+    }
+
+    /// <summary>
     /// Get historical alarm data for specified monitoring items within a date range
     /// </summary>
     /// <param name="request">Alarm history request containing start date, end date, and optional item IDs</param>

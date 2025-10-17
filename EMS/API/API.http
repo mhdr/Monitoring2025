@@ -546,3 +546,53 @@ Content-Type: application/json
 }
 
 ###
+
+### ========================================
+### SignalR Hub Documentation
+### ========================================
+
+### Get SignalR Hub Information - HTTPS (No Auth Required)
+# Returns complete SignalR hub documentation including:
+# - Hub name and endpoint URL
+# - Server methods (callable from client)
+# - Client methods (invoked by server)
+# - Authentication requirements
+# - Connection examples for JavaScript, C#, and Python
+GET {{API_HostAddress}}/api/monitoring/SignalRHubInfo
+
+###
+
+### Get SignalR Hub Information - With detailed response
+GET {{API_HostAddress}}/api/monitoring/SignalRHubInfo
+Accept: application/json
+
+###
+
+# SignalR Hub Connection Information:
+# 
+# Hub URL: https://localhost:7136/monitoringhub
+# Authentication: JWT Bearer token required
+# 
+# Server Methods (callable from client):
+# - SubscribeToActiveAlarms() - Subscribe to receive real-time active alarm updates
+# 
+# Client Methods (invoked by server):
+# - ReceiveActiveAlarmsUpdate(int activeAlarmsCount) - Receives active alarm count updates
+# 
+# JavaScript Connection Example:
+# import * as signalR from '@microsoft/signalr';
+# const connection = new signalR.HubConnectionBuilder()
+#     .withUrl('https://localhost:7136/monitoringhub', {
+#         accessTokenFactory: () => localStorage.getItem('jwt_token')
+#     })
+#     .withAutomaticReconnect()
+#     .build();
+# 
+# connection.on('ReceiveActiveAlarmsUpdate', (count) => {
+#     console.log(`Active alarms: ${count}`);
+# });
+# 
+# await connection.start();
+# await connection.invoke('SubscribeToActiveAlarms');
+
+###

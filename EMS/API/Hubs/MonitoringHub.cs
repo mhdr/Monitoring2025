@@ -7,8 +7,115 @@ namespace API.Hubs;
 
 /// <summary>
 /// SignalR hub for real-time monitoring updates.
-/// Provides real-time notifications to connected clients about active alarms.
+/// Provides real-time notifications to connected clients about active alarms and system changes.
 /// </summary>
+/// <remarks>
+/// <para><strong>Connection Information:</strong></para>
+/// <list type="bullet">
+/// <item>Hub URL: https://localhost:7136/monitoringhub</item>
+/// <item>Authentication: JWT Bearer token required</item>
+/// <item>Transport: WebSockets (preferred), Server-Sent Events (fallback), Long Polling (fallback)</item>
+/// </list>
+/// 
+/// <para><strong>Server Methods (callable from client):</strong></para>
+/// <list type="bullet">
+/// <item>
+/// <term>SubscribeToActiveAlarms()</term>
+/// <description>Subscribe to receive real-time active alarm count updates. This is optional as server broadcasts to all connected clients automatically.</description>
+/// </item>
+/// </list>
+/// 
+/// <para><strong>Client Methods (invoked by server):</strong></para>
+/// <list type="bullet">
+/// <item>
+/// <term>ReceiveActiveAlarmsUpdate(int activeAlarmsCount)</term>
+/// <description>Receives active alarm count updates from the server when alarms change state. Called automatically by the server's background worker.</description>
+/// </item>
+/// </list>
+/// 
+/// <para><strong>Connection Lifecycle:</strong></para>
+/// <list type="number">
+/// <item>Client establishes connection with JWT token</item>
+/// <item>OnConnectedAsync is called - connection is tracked</item>
+/// <item>Client can optionally call SubscribeToActiveAlarms() for explicit subscription</item>
+/// <item>Server automatically broadcasts ReceiveActiveAlarmsUpdate when alarms change</item>
+/// <item>OnDisconnectedAsync is called when client disconnects - connection is removed from tracking</item>
+/// </list>
+/// 
+/// <para><strong>JavaScript Client Example:</strong></para>
+/// <code>
+/// // Import SignalR
+/// import * as signalR from "@microsoft/signalr";
+/// 
+/// // Create connection with JWT token
+/// const connection = new signalR.HubConnectionBuilder()
+///     .withUrl("https://localhost:7136/monitoringhub", {
+///         accessTokenFactory: () => localStorage.getItem("jwt_token")
+///     })
+///     .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+///     .configureLogging(signalR.LogLevel.Information)
+///     .build();
+/// 
+/// // Register client method to receive updates from server
+/// connection.on("ReceiveActiveAlarmsUpdate", (activeAlarmsCount) => {
+///     console.log(`Active alarms: ${activeAlarmsCount}`);
+///     document.getElementById("alarmCount").textContent = activeAlarmsCount;
+/// });
+/// 
+/// // Start connection
+/// await connection.start();
+/// console.log("SignalR Connected");
+/// 
+/// // Optional: Explicitly subscribe to active alarms
+/// await connection.invoke("SubscribeToActiveAlarms");
+/// </code>
+/// 
+/// <para><strong>C# Client Example:</strong></para>
+/// <code>
+/// using Microsoft.AspNetCore.SignalR.Client;
+/// 
+/// // Create connection with JWT token
+/// var connection = new HubConnectionBuilder()
+///     .WithUrl("https://localhost:7136/monitoringhub", options =>
+///     {
+///         options.AccessTokenProvider = () => Task.FromResult(jwtToken);
+///     })
+///     .WithAutomaticReconnect()
+///     .Build();
+/// 
+/// // Register client method to receive updates from server
+/// connection.On&lt;int&gt;("ReceiveActiveAlarmsUpdate", (activeAlarmsCount) =>
+/// {
+///     Console.WriteLine($"Active alarms: {activeAlarmsCount}");
+/// });
+/// 
+/// // Start connection
+/// await connection.StartAsync();
+/// Console.WriteLine("SignalR Connected");
+/// 
+/// // Optional: Explicitly subscribe to active alarms
+/// await connection.InvokeAsync("SubscribeToActiveAlarms");
+/// </code>
+/// 
+/// <para><strong>Error Handling:</strong></para>
+/// <code>
+/// connection.onclose((error) => {
+///     if (error) {
+///         console.error("Connection closed with error:", error);
+///     } else {
+///         console.log("Connection closed");
+///     }
+/// });
+/// 
+/// connection.onreconnecting((error) => {
+///     console.warn("Connection lost, reconnecting...", error);
+/// });
+/// 
+/// connection.onreconnected((connectionId) => {
+///     console.log("Reconnected successfully:", connectionId);
+/// });
+/// </code>
+/// </remarks>
 [Authorize]
 public class MonitoringHub : Hub
 {
@@ -81,8 +188,22 @@ public class MonitoringHub : Hub
 
     /// <summary>
     /// Client method to subscribe to active alarms updates.
-    /// This is optional - the server will broadcast to all connected clients.
     /// </summary>
+    /// <remarks>
+    /// This method is optional - the server automatically broadcasts active alarm updates to all connected clients
+    /// through the ReceiveActiveAlarmsUpdate client method. Calling this method provides an explicit subscription
+    /// mechanism and confirms the connection is working.
+    /// 
+    /// <para><strong>Usage:</strong></para>
+    /// <code>
+    /// // JavaScript
+    /// await connection.invoke("SubscribeToActiveAlarms");
+    /// 
+    /// // C#
+    /// await connection.InvokeAsync("SubscribeToActiveAlarms");
+    /// </code>
+    /// </remarks>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task SubscribeToActiveAlarms()
     {
         var userId = Context.User?.Identity?.Name ?? "Unknown";
