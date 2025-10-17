@@ -247,6 +247,8 @@
     "trendStable": "پایدار",
     "viewHistory": "مشاهده تاریخچه",
     "historyComingSoon": "مشاهده تاریخچه (به زودی)",
+    "historyModalTitle": "تاریخچه مقادیر - {{itemName}}",
+    "historyChartTitle": "{{itemName}}",
     "highLimit": "حد بالا",
     "lowLimit": "حد پایین",
     "range": "محدوده"

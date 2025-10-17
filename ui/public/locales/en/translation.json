@@ -247,6 +247,8 @@
     "trendStable": "Stable",
     "viewHistory": "View history",
     "historyComingSoon": "View history (Coming soon)",
+    "historyModalTitle": "Value History - {{itemName}}",
+    "historyChartTitle": "{{itemName}}",
     "highLimit": "High Limit",
     "lowLimit": "Low Limit",
     "range": "Range"

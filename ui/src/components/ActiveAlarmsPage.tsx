@@ -24,6 +24,10 @@ import {
   Tooltip,
   Fade,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -36,7 +40,10 @@ import {
   TrendingDown as TrendingDownIcon,
   TrendingFlat as TrendingFlatIcon,
   Timeline as TimelineIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
+import ReactECharts from 'echarts-for-react';
+import type { EChartsOption } from 'echarts';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTranslation } from '../hooks/useTranslation';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -45,6 +52,7 @@ import { getValues } from '../services/monitoringApi';
 import type { ActiveAlarm, Item, AlarmDto, MultiValue } from '../types/api';
 import { createLogger } from '../utils/logger';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
+import { useTheme } from '@mui/material/styles';
 
 const logger = createLogger('ActiveAlarmsPage');
 
@@ -54,6 +62,7 @@ const ActiveAlarmsPage: React.FC = () => {
   const { state } = useMonitoring();
   const streamData = state.activeAlarms;
   const isRTL = language === 'fa';
+  const theme = useTheme();
   
   const [alarms, setAlarms] = useState<ActiveAlarm[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -70,6 +79,14 @@ const ActiveAlarmsPage: React.FC = () => {
   const [changedValues, setChangedValues] = useState<Set<string>>(new Set());
   const [valuesRefreshing, setValuesRefreshing] = useState<boolean>(false);
   const [valueHistory, setValueHistory] = useState<Map<string, Array<{value: number; time: number}>>>(new Map());
+  
+  // State for history modal
+  const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<{
+    item: Item;
+    alarm: ActiveAlarm;
+    history: Array<{value: number; time: number}>;
+  } | null>(null);
   
   // Ref for value refresh interval
   const valuesIntervalRef = useRef<number | null>(null);
@@ -544,6 +561,146 @@ const ActiveAlarmsPage: React.FC = () => {
   }, [alarms, fetchInstantaneousValues]);
 
   /**
+   * Handle history icon click
+   */
+  const handleHistoryClick = (alarm: ActiveAlarm) => {
+    const item = storedItems.find(i => i.id === alarm.itemId);
+    const history = valueHistory.get(alarm.itemId || '');
+    
+    if (item && history && history.length > 1) {
+      logger.log(`Opening history modal for item: ${item.name}`, { historyLength: history.length });
+      setSelectedHistoryItem({ item, alarm, history });
+      setHistoryModalOpen(true);
+    } else {
+      logger.warn('Cannot open history: insufficient data', { 
+        hasItem: !!item, 
+        historyLength: history?.length || 0 
+      });
+    }
+  };
+
+  /**
+   * Get chart options for history modal
+   */
+  const getHistoryChartOptions = (): EChartsOption => {
+    if (!selectedHistoryItem) return {};
+
+    const { item, history } = selectedHistoryItem;
+    
+    // Prepare data
+    const times = history.map(h => new Date(h.time).toLocaleTimeString(language === 'fa' ? 'fa-IR' : 'en-US'));
+    const values = history.map(h => h.value);
+    
+    // Get unit suffix
+    const unitSuffix = item.unit ? ` (${item.unit})` : '';
+    
+    return {
+      title: {
+        text: t('activeAlarmsPage.historyChartTitle', { itemName: item.name }),
+        left: isRTL ? 'right' : 'left',
+        textStyle: {
+          color: theme.palette.text.primary,
+        },
+      },
+      tooltip: {
+        trigger: 'axis',
+        formatter: (params: unknown) => {
+          const p = params as Array<{ name: string; value: number; seriesName: string }>;
+          if (p && p[0]) {
+            const formattedValue = formatItemValue(item, String(p[0].value));
+            return `${p[0].name}<br/>${p[0].seriesName}: ${formattedValue}`;
+          }
+          return '';
+        },
+      },
+      grid: {
+        left: isRTL ? '15%' : '10%',
+        right: isRTL ? '10%' : '15%',
+        bottom: '15%',
+        top: '15%',
+      },
+      xAxis: {
+        type: 'category',
+        data: times,
+        name: t('time'),
+        nameLocation: 'middle',
+        nameGap: 30,
+        nameTextStyle: {
+          color: theme.palette.text.secondary,
+        },
+        axisLabel: {
+          color: theme.palette.text.secondary,
+          rotate: 45,
+        },
+        axisLine: {
+          lineStyle: {
+            color: theme.palette.divider,
+          },
+        },
+      },
+      yAxis: {
+        type: 'value',
+        name: `${t('value')}${unitSuffix}`,
+        nameTextStyle: {
+          color: theme.palette.text.secondary,
+        },
+        axisLabel: {
+          color: theme.palette.text.secondary,
+          formatter: (value: number) => formatItemValue(item, String(value)),
+        },
+        axisLine: {
+          lineStyle: {
+            color: theme.palette.divider,
+          },
+        },
+        splitLine: {
+          lineStyle: {
+            color: theme.palette.divider,
+            type: 'dashed',
+          },
+        },
+      },
+      series: [
+        {
+          name: t('value'),
+          type: 'line',
+          data: values,
+          smooth: true,
+          lineStyle: {
+            color: theme.palette.primary.main,
+            width: 2,
+          },
+          itemStyle: {
+            color: theme.palette.primary.main,
+          },
+          areaStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                {
+                  offset: 0,
+                  color: theme.palette.primary.main + '40', // 25% opacity
+                },
+                {
+                  offset: 1,
+                  color: theme.palette.primary.main + '10', // 6% opacity
+                },
+              ],
+            },
+          },
+          emphasis: {
+            focus: 'series',
+          },
+        },
+      ],
+    };
+  };
+
+  /**
    * Render stream status indicator
    */
   const renderStreamStatus = () => {
@@ -877,10 +1034,11 @@ const ActiveAlarmsPage: React.FC = () => {
                                           })()}
                                           {/* History chart icon */}
                                           {valueHistory.get(alarm.itemId || '')?.length && valueHistory.get(alarm.itemId || '')!.length > 1 && (
-                                            <Tooltip title={t('activeAlarmsPage.historyComingSoon')} arrow>
+                                            <Tooltip title={t('activeAlarmsPage.viewHistory')} arrow>
                                               <IconButton 
                                                 size="small" 
                                                 sx={{ p: 0, ml: 0.5 }}
+                                                onClick={() => handleHistoryClick(alarm)}
                                                 data-id-ref={`value-history-icon-${index}`}
                                               >
                                                 <TimelineIcon sx={{ fontSize: 14, color: 'info.main' }} />
@@ -955,6 +1113,60 @@ const ActiveAlarmsPage: React.FC = () => {
           </CardContent>
         </Card>
       </Box>
+
+      {/* History Modal */}
+      <Dialog
+        open={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        data-id-ref="value-history-modal"
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+          data-id-ref="value-history-modal-title"
+        >
+          {selectedHistoryItem && t('activeAlarmsPage.historyModalTitle', { 
+            itemName: selectedHistoryItem.item.name 
+          })}
+          <IconButton
+            edge="end"
+            color="inherit"
+            onClick={() => setHistoryModalOpen(false)}
+            aria-label="close"
+            data-id-ref="value-history-modal-close-button"
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers data-id-ref="value-history-modal-content">
+          {selectedHistoryItem && (
+            <Box sx={{ height: 400, width: '100%' }} data-id-ref="value-history-chart-container">
+              <ReactECharts
+                option={getHistoryChartOptions()}
+                style={{ height: '100%', width: '100%' }}
+                opts={{ renderer: 'svg' }}
+                notMerge={true}
+                lazyUpdate={true}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions data-id-ref="value-history-modal-actions">
+          <Button
+            onClick={() => setHistoryModalOpen(false)}
+            color="primary"
+            variant="contained"
+            data-id-ref="value-history-modal-close-action"
+          >
+            {t('common.buttons.close')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
