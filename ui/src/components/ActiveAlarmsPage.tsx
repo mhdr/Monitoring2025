@@ -65,6 +65,7 @@ const ActiveAlarmsPage: React.FC = () => {
   
   // State for instantaneous values
   const [itemValues, setItemValues] = useState<MultiValue[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [previousValues, setPreviousValues] = useState<Map<string, string>>(new Map());
   const [changedValues, setChangedValues] = useState<Set<string>>(new Set());
   const [valuesRefreshing, setValuesRefreshing] = useState<boolean>(false);
@@ -192,48 +193,55 @@ const ActiveAlarmsPage: React.FC = () => {
       
       const newValues = response.values || [];
       
-      // Track which values changed
-      const changed = new Set<string>();
-      const prevVals = new Map<string, string>();
-      
-      newValues.forEach(val => {
-        if (val.itemId && val.value !== null) {
-          const prevValue = previousValues.get(val.itemId);
-          if (prevValue !== undefined && prevValue !== val.value) {
-            changed.add(val.itemId);
-          }
-          prevVals.set(val.itemId, val.value);
-        }
-      });
-      
-      // Update previous values
-      setPreviousValues(prevVals);
-      setChangedValues(changed);
-      
-      // Clear changed indicators after 2 seconds
-      if (changed.size > 0) {
-        setTimeout(() => {
-          setChangedValues(new Set());
-        }, 2000);
-      }
-      
-      // Update value history (keep last 20 values per item)
-      const newHistory = new Map(valueHistory);
-      newValues.forEach(val => {
-        if (val.itemId && val.value !== null) {
-          const numValue = parseFloat(val.value);
-          if (!isNaN(numValue)) {
-            const history = newHistory.get(val.itemId) || [];
-            history.push({ value: numValue, time: val.time });
-            // Keep only last 20 values
-            if (history.length > 20) {
-              history.shift();
+      // Update previous values and track changes using functional update
+      setPreviousValues(prevVals => {
+        const changed = new Set<string>();
+        const nextVals = new Map<string, string>();
+        
+        newValues.forEach(val => {
+          if (val.itemId && val.value !== null) {
+            const prevValue = prevVals.get(val.itemId);
+            if (prevValue !== undefined && prevValue !== val.value) {
+              changed.add(val.itemId);
             }
-            newHistory.set(val.itemId, history);
+            nextVals.set(val.itemId, val.value);
           }
+        });
+        
+        // Update changed values
+        setChangedValues(changed);
+        
+        // Clear changed indicators after 2 seconds
+        if (changed.size > 0) {
+          setTimeout(() => {
+            setChangedValues(new Set());
+          }, 2000);
         }
+        
+        return nextVals;
       });
-      setValueHistory(newHistory);
+      
+      // Update value history using functional update (keep last 20 values per item)
+      setValueHistory(prevHistory => {
+        const nextHistory = new Map(prevHistory);
+        
+        newValues.forEach(val => {
+          if (val.itemId && val.value !== null) {
+            const numValue = parseFloat(val.value);
+            if (!isNaN(numValue)) {
+              const history = nextHistory.get(val.itemId) || [];
+              history.push({ value: numValue, time: val.time });
+              // Keep only last 20 values
+              if (history.length > 20) {
+                history.shift();
+              }
+              nextHistory.set(val.itemId, history);
+            }
+          }
+        });
+        
+        return nextHistory;
+      });
       
       setItemValues(newValues);
     } catch (err) {
@@ -243,7 +251,7 @@ const ActiveAlarmsPage: React.FC = () => {
     } finally {
       setValuesRefreshing(false);
     }
-  }, [previousValues, valueHistory]);
+  }, []); // Empty dependency array - we use functional updates to access current state
 
   /**
    * Fetch active alarms from API
@@ -322,11 +330,17 @@ const ActiveAlarmsPage: React.FC = () => {
   }, [t, fetchInstantaneousValues]);
 
   /**
-   * Initial fetch on mount
+   * Initial fetch on mount - with mount/unmount tracking
    */
   useEffect(() => {
+    logger.log('⭐⭐⭐ ActiveAlarmsPage MOUNTED ⭐⭐⭐');
     fetchActiveAlarms(false);
-  }, [fetchActiveAlarms]);
+    
+    return () => {
+      logger.log('❌❌❌ ActiveAlarmsPage UNMOUNTING ❌❌❌');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only on mount
 
   /**
    * Re-fetch when SignalR stream reports alarm count change
@@ -347,7 +361,8 @@ const ActiveAlarmsPage: React.FC = () => {
       });
       fetchActiveAlarms(true);
     }
-  }, [streamData.lastUpdate, streamData.alarmCount, lastFetchTime, loading, refreshing, fetchActiveAlarms]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streamData.lastUpdate, streamData.alarmCount]); // CRITICAL: Don't depend on lastFetchTime - it changes when we fetch, causing infinite loop
 
   /**
    * Manual refresh handler
@@ -430,21 +445,21 @@ const ActiveAlarmsPage: React.FC = () => {
   /**
    * Get trend indicator for value change
    */
-  const getValueTrend = useCallback((itemId: string, currentValue: string | null): 'up' | 'down' | 'stable' => {
+  const getValueTrend = useCallback((itemId: string, currentValue: string | null, history: Map<string, Array<{value: number; time: number}>>): 'up' | 'down' | 'stable' => {
     if (!currentValue) return 'stable';
     
-    const history = valueHistory.get(itemId);
-    if (!history || history.length < 2) return 'stable';
+    const itemHistory = history.get(itemId);
+    if (!itemHistory || itemHistory.length < 2) return 'stable';
     
     const currentNum = parseFloat(currentValue);
     if (isNaN(currentNum)) return 'stable';
     
-    const prevNum = history[history.length - 2].value;
+    const prevNum = itemHistory[itemHistory.length - 2].value;
     
     if (currentNum > prevNum) return 'up';
     if (currentNum < prevNum) return 'down';
     return 'stable';
-  }, [valueHistory]);
+  }, []);
 
   /**
    * Calculate threshold percentage for alarm visualization
@@ -838,7 +853,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                           </Typography>
                                           {/* Trend indicator */}
                                           {(() => {
-                                            const trend = getValueTrend(alarm.itemId || '', itemValue.value);
+                                            const trend = getValueTrend(alarm.itemId || '', itemValue.value, valueHistory);
                                             if (trend === 'up') {
                                               return (
                                                 <Tooltip title={t('activeAlarmsPage.trendIncreasing')} arrow>
