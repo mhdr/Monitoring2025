@@ -2,7 +2,6 @@ import React, { createContext, useState, useEffect, useCallback, type ReactNode 
 import type { AuthContextType, LoginRequest, ApiError, User } from '../types/auth';
 import { login as apiLogin } from '../services/api';
 import { authStorageHelpers } from '../utils/authStorage';
-import { getBackgroundRefreshService } from '../services/backgroundRefreshService';
 import { createLogger } from '../utils/logger';
 import {
   initAuthBroadcast,
@@ -148,26 +147,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      logger.log('Starting background refresh service');
-      const refreshService = getBackgroundRefreshService();
-      refreshService.updateConfig({
-        enabled: true,
-        refreshInterval: 5 * 60 * 1000,
-        dataStaleThreshold: 30 * 60 * 1000,
-      });
-      refreshService.start();
-    } else {
-      logger.log('Stopping background refresh service');
-      const refreshService = getBackgroundRefreshService();
-      refreshService.stop();
-    }
-    return () => {
-      const refreshService = getBackgroundRefreshService();
-      refreshService.stop();
-    };
-  }, [isAuthenticated, isLoading]);
+  // Background refresh functionality has been moved to MonitoringContext
+  // This service was disabled and is no longer needed here
 
   const login = useCallback(async (credentials: LoginRequest): Promise<void> => {
     try {

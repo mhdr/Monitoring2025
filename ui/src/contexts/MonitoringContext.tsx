@@ -34,6 +34,15 @@ export const StreamStatus = {
 export type StreamStatus = typeof StreamStatus[keyof typeof StreamStatus];
 
 /**
+ * Background refresh configuration
+ */
+export interface BackgroundRefreshConfig {
+  enabled: boolean;
+  refreshInterval: number; // milliseconds
+  dataStaleThreshold: number; // milliseconds
+}
+
+/**
  * Monitoring state interface
  */
 export interface MonitoringState {
@@ -70,6 +79,11 @@ export interface MonitoringState {
     streamStatus: StreamStatus;
     streamError: string | null;
   };
+  
+  // Background refresh
+  backgroundRefresh: BackgroundRefreshConfig & {
+    lastRefreshTime: number | null;
+  };
 }
 
 /**
@@ -101,6 +115,13 @@ const initialState: MonitoringState = {
     streamStatus: StreamStatus.IDLE,
     streamError: null,
   },
+  
+  backgroundRefresh: {
+    enabled: true,
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+    dataStaleThreshold: 30 * 60 * 1000, // 30 minutes
+    lastRefreshTime: null,
+  },
 };
 
 /**
@@ -129,7 +150,9 @@ type MonitoringAction =
   | { type: 'UPDATE_ACTIVE_ALARMS'; payload: { alarmCount: number; timestamp: number } }
   | { type: 'SET_ACTIVE_ALARMS_STREAM_STATUS'; payload: StreamStatus }
   | { type: 'SET_ACTIVE_ALARMS_STREAM_ERROR'; payload: string }
-  | { type: 'RESET_ACTIVE_ALARMS_STREAM' };
+  | { type: 'RESET_ACTIVE_ALARMS_STREAM' }
+  | { type: 'UPDATE_BACKGROUND_REFRESH_CONFIG'; payload: Partial<BackgroundRefreshConfig> }
+  | { type: 'SET_LAST_REFRESH_TIME'; payload: number };
 
 /**
  * Reducer function
@@ -296,6 +319,24 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
         activeAlarms: initialState.activeAlarms,
       };
 
+    case 'UPDATE_BACKGROUND_REFRESH_CONFIG':
+      return {
+        ...state,
+        backgroundRefresh: {
+          ...state.backgroundRefresh,
+          ...action.payload,
+        },
+      };
+
+    case 'SET_LAST_REFRESH_TIME':
+      return {
+        ...state,
+        backgroundRefresh: {
+          ...state.backgroundRefresh,
+          lastRefreshTime: action.payload,
+        },
+      };
+
     default:
       return state;
   }
@@ -333,6 +374,10 @@ export interface MonitoringContextValue {
   setActiveAlarmsStreamStatus: (status: StreamStatus) => void;
   setActiveAlarmsStreamError: (error: string) => void;
   resetActiveAlarmsStream: () => void;
+  
+  // Background refresh actions
+  updateBackgroundRefreshConfig: (config: Partial<BackgroundRefreshConfig>) => void;
+  forceRefresh: () => Promise<void>;
 }
 
 /**
@@ -521,6 +566,110 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
     dispatch({ type: 'RESET_ACTIVE_ALARMS_STREAM' });
   }, []);
 
+  // Background refresh actions
+  const updateBackgroundRefreshConfig = useCallback((config: Partial<BackgroundRefreshConfig>) => {
+    dispatch({ type: 'UPDATE_BACKGROUND_REFRESH_CONFIG', payload: config });
+  }, []);
+
+  const forceRefresh = useCallback(async () => {
+    logger.log('Force refresh requested');
+    try {
+      // Fetch all data in parallel
+      await Promise.all([
+        fetchGroups(),
+        fetchItems(),
+        fetchAlarms(),
+      ]);
+      // Update last refresh time
+      dispatch({ type: 'SET_LAST_REFRESH_TIME', payload: Date.now() });
+      logger.log('Force refresh completed successfully');
+    } catch (error) {
+      logger.error('Force refresh failed:', error);
+      throw error;
+    }
+  }, [fetchGroups, fetchItems, fetchAlarms]);
+
+  // Background refresh with Page Visibility API support
+  useEffect(() => {
+    const config = state.backgroundRefresh;
+    
+    if (!config.enabled || !state.isDataSynced) {
+      logger.log('Background refresh disabled or data not synced');
+      return;
+    }
+
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let isPageVisible = !document.hidden;
+
+    const checkAndRefresh = async () => {
+      // Only refresh if page is visible
+      if (!isPageVisible) {
+        logger.log('Page hidden, skipping background refresh');
+        return;
+      }
+
+      const now = Date.now();
+      const lastRefresh = state.backgroundRefresh.lastRefreshTime || 0;
+      const timeSinceLastRefresh = now - lastRefresh;
+
+      // Check if data is stale
+      if (timeSinceLastRefresh >= config.dataStaleThreshold) {
+        logger.log('Data is stale, refreshing in background', {
+          timeSinceLastRefresh,
+          threshold: config.dataStaleThreshold,
+        });
+
+        try {
+          // Silent refresh without showing loading states to user
+          await Promise.all([
+            getGroups().then(res => dispatch({ type: 'GROUPS_SUCCESS', payload: res.groups || [] })),
+            getItems().then(res => dispatch({ type: 'ITEMS_SUCCESS', payload: res.items || [] })),
+            getAlarms().then(res => dispatch({ type: 'ALARMS_SUCCESS', payload: res.data || [] })),
+          ]);
+          
+          dispatch({ type: 'SET_LAST_REFRESH_TIME', payload: Date.now() });
+          logger.log('Background refresh completed successfully');
+        } catch (error) {
+          logger.error('Background refresh failed:', error);
+          // Don't show error to user - it's a background operation
+        }
+      } else {
+        logger.log('Data is fresh, no refresh needed', {
+          timeSinceLastRefresh,
+          threshold: config.dataStaleThreshold,
+        });
+      }
+    };
+
+    // Handle visibility change
+    const handleVisibilityChange = () => {
+      isPageVisible = !document.hidden;
+      logger.log('Page visibility changed:', { isPageVisible });
+      
+      // When page becomes visible, check if refresh needed
+      if (isPageVisible) {
+        checkAndRefresh();
+      }
+    };
+
+    // Set up periodic checks
+    intervalId = setInterval(checkAndRefresh, config.refreshInterval);
+    
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Initial check
+    checkAndRefresh();
+
+    // Cleanup
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [state.backgroundRefresh, state.isDataSynced]);
+
   // Context value
   const value = useMemo<MonitoringContextValue>(
     () => ({
@@ -539,6 +688,8 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       setActiveAlarmsStreamStatus,
       setActiveAlarmsStreamError,
       resetActiveAlarmsStream,
+      updateBackgroundRefreshConfig,
+      forceRefresh,
     }),
     [
       state,
@@ -556,6 +707,8 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       setActiveAlarmsStreamStatus,
       setActiveAlarmsStreamError,
       resetActiveAlarmsStream,
+      updateBackgroundRefreshConfig,
+      forceRefresh,
     ]
   );
 
