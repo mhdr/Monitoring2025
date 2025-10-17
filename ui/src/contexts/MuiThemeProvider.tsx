@@ -3,7 +3,7 @@
  * Integrates MUI theming with language context for RTL support
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useCallback, createContext } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
@@ -11,9 +11,25 @@ import { prefixer } from 'stylis';
 import rtlPlugin from '@mui/stylis-plugin-rtl';
 import CssBaseline from '@mui/material/CssBaseline';
 import { useLanguage } from '../hooks/useLanguage';
-import { useAppSelector } from '../hooks/useRedux';
-import { selectCurrentMuiTheme } from '../store/slices/muiThemeSlice';
 import { createMuiTheme } from '../utils/muiThemeUtils';
+import { getDefaultMuiTheme } from '../types/muiThemes';
+import type { MuiThemePreset } from '../types/muiThemes';
+import { getItem, setItem } from '../utils/indexedDbStorage';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('MuiThemeProvider');
+
+const THEME_STORAGE_KEY = 'muiTheme_currentTheme';
+
+/**
+ * MUI Theme Context
+ */
+interface MuiThemeContextType {
+  currentTheme: MuiThemePreset;
+  setTheme: (theme: MuiThemePreset) => Promise<void>;
+}
+
+export const MuiThemeContext = createContext<MuiThemeContextType | undefined>(undefined);
 
 /**
  * Create RTL cache for Persian language
@@ -41,7 +57,36 @@ interface MuiThemeProviderProps {
  */
 export function MuiThemeProvider({ children }: MuiThemeProviderProps): React.ReactElement {
   const { language } = useLanguage();
-  const currentTheme = useAppSelector(selectCurrentMuiTheme);
+  const [currentTheme, setCurrentTheme] = useState<MuiThemePreset>(getDefaultMuiTheme());
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Initialize theme from IndexedDB
+  useEffect(() => {
+    (async () => {
+      try {
+        const storedTheme = await getItem<MuiThemePreset>(THEME_STORAGE_KEY);
+        if (storedTheme) {
+          setCurrentTheme(storedTheme);
+          logger.log('Theme loaded from IndexedDB:', storedTheme);
+        }
+      } catch (error) {
+        logger.error('Failed to load theme from IndexedDB:', error);
+      } finally {
+        setIsInitialized(true);
+      }
+    })();
+  }, []);
+
+  // Function to update theme and persist to IndexedDB
+  const setTheme = useCallback(async (theme: MuiThemePreset) => {
+    setCurrentTheme(theme);
+    try {
+      await setItem(THEME_STORAGE_KEY, theme);
+      logger.log('Theme saved to IndexedDB:', theme);
+    } catch (error) {
+      logger.error('Failed to save theme to IndexedDB:', error);
+    }
+  }, []);
 
   // Determine if RTL based on language
   const isRTL = language === 'fa';
@@ -55,12 +100,25 @@ export function MuiThemeProvider({ children }: MuiThemeProviderProps): React.Rea
   // Select appropriate cache based on direction
   const cache = isRTL ? cacheRtl : cacheLtr;
 
+  // Context value
+  const contextValue = useMemo(
+    () => ({ currentTheme, setTheme }),
+    [currentTheme, setTheme]
+  );
+
+  // Don't render until theme is initialized
+  if (!isInitialized) {
+    return null as unknown as React.ReactElement;
+  }
+
   return (
-    <CacheProvider value={cache}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </ThemeProvider>
-    </CacheProvider>
+    <MuiThemeContext.Provider value={contextValue}>
+      <CacheProvider value={cache}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          {children}
+        </ThemeProvider>
+      </CacheProvider>
+    </MuiThemeContext.Provider>
   );
 }

@@ -6,8 +6,10 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from './useRedux';
-import { fetchGroups, fetchItems } from '../store/slices/monitoringSlice';
+import { useMonitoring } from './useMonitoring';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('GlobalDataInitialization');
 
 /**
  * Hook return type for manual control
@@ -36,21 +38,22 @@ export interface UseGlobalDataInitializationResult {
  *   
  *   // Data automatically loads when authenticated
  *   // Access data anywhere in the app with:
- *   // const { groups, items } = useSelector(state => state.monitoring);
+ *   // const { state: { groups, items } } = useMonitoring();
  * }
  * ```
  */
 export function useGlobalDataInitialization(
   isAuthenticated: boolean
 ): UseGlobalDataInitializationResult {
-  const dispatch = useAppDispatch();
+  const { 
+    state: { groups, items, groupsLoading, itemsLoading, isDataSynced },
+    fetchGroups,
+    fetchItems
+  } = useMonitoring();
   
   // Track whether we've attempted to load data for this auth session
   const hasInitializedRef = useRef<boolean>(false);
   const isLoadingRef = useRef<boolean>(false);
-  
-  // Get current state from store
-  const { groups, items, groupsLoading, itemsLoading, isDataSynced } = useAppSelector((state) => state.monitoring);
 
   /**
    * Fetches groups and items data
@@ -63,11 +66,10 @@ export function useGlobalDataInitialization(
 
     // If data is already synced and we have data in state, skip fetching
     if (isDataSynced && (groups.length > 0 || items.length > 0)) {
-      logger.info('[useGlobalDataInitialization] Data already synced, skipping fetch:', {
+      logger.log('Data already synced, skipping fetch:', {
         groupsCount: groups.length,
         itemsCount: items.length,
         isDataSynced,
-        timestamp: new Date().toISOString()
       });
       hasInitializedRef.current = true;
       return;
@@ -76,10 +78,10 @@ export function useGlobalDataInitialization(
     isLoadingRef.current = true;
 
     try {
-      // Dispatch both requests concurrently
+      // Fetch both concurrently
       await Promise.all([
-        dispatch(fetchGroups()),
-        dispatch(fetchItems({ showOrphans: false }))
+        fetchGroups(),
+        fetchItems()
       ]);
       
       hasInitializedRef.current = true;
@@ -88,7 +90,7 @@ export function useGlobalDataInitialization(
     } finally {
       isLoadingRef.current = false;
     }
-  }, [isAuthenticated, dispatch, isDataSynced, groups.length, items.length]);
+  }, [isAuthenticated, isDataSynced, groups.length, items.length, fetchGroups, fetchItems]);
 
   /**
    * Manually refresh data
@@ -110,7 +112,7 @@ export function useGlobalDataInitialization(
 
   // Determine if we consider the data "initialized"
   // Data is initialized if:
-  // 1. Data is synced and we have data in state (loaded from localStorage), OR
+  // 1. Data is synced and we have data in state (loaded from IndexedDB), OR
   // 2. We've tried to load data and fetching is complete
   const isInitialized = 
     (isDataSynced && (groups.length > 0 || items.length > 0)) ||

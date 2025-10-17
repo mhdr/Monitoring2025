@@ -14,16 +14,14 @@ const AUTH_USER_KEY = 'auth_user';
 const AUTH_EXPIRATION_KEY = 'auth_expiration';
 const REMEMBER_ME_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-// In-memory cache for synchronous access (needed by RTK Query prepareHeaders)
+// In-memory cache for synchronous access (needed by API interceptors)
 // This is kept in sync with IndexedDB
 let tokenCache: string | null = null;
-let refreshTokenCache: string | null = null;
-let userCache: User | null = null;
 
 export const authStorageHelpers = {
   /**
-   * Get token synchronously from cache (for RTK Query prepareHeaders)
-   * Use this ONLY in synchronous contexts like prepareHeaders
+   * Get token synchronously from cache (for API interceptors)
+   * Use this ONLY in synchronous contexts like request interceptors
    */
   getStoredTokenSync: (): string | null => {
     return tokenCache;
@@ -40,15 +38,11 @@ export const authStorageHelpers = {
   },
 
   getStoredRefreshToken: async (): Promise<string | null> => {
-    const refreshToken = await getItem<string>(AUTH_REFRESH_TOKEN_KEY);
-    refreshTokenCache = refreshToken;
-    return refreshToken;
+    return await getItem<string>(AUTH_REFRESH_TOKEN_KEY);
   },
 
   getStoredUser: async (): Promise<User | null> => {
-    const user = await getItem<User>(AUTH_USER_KEY);
-    userCache = user;
-    return user;
+    return await getItem<User>(AUTH_USER_KEY);
   },
 
   /**
@@ -78,10 +72,6 @@ export const authStorageHelpers = {
   setStoredAuth: async (token: string, user: User, refreshToken?: string): Promise<void> => {
     // Update cache immediately for sync access
     tokenCache = token;
-    userCache = user;
-    if (refreshToken) {
-      refreshTokenCache = refreshToken;
-    }
     
     // Persistent storage in IndexedDB with 7-day rolling expiration
     const expiration = Date.now() + REMEMBER_ME_DURATION;
@@ -96,8 +86,6 @@ export const authStorageHelpers = {
   clearStoredAuth: async (): Promise<void> => {
     // Clear cache immediately
     tokenCache = null;
-    refreshTokenCache = null;
-    userCache = null;
     
     // Clear all auth data from IndexedDB
     await removeItem(AUTH_TOKEN_KEY);

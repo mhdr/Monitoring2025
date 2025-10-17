@@ -2,18 +2,17 @@
  * Custom hook for MUI theme management
  */
 
-import { useCallback } from 'react';
+import { useContext, useCallback } from 'react';
 import { useTheme } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
-import { useAppDispatch, useAppSelector } from './useRedux';
-import { setMuiTheme, selectCurrentMuiTheme } from '../store/slices/muiThemeSlice';
+import { MuiThemeContext } from '../contexts/MuiThemeProvider';
 import type { MuiThemePreset } from '../types/muiThemes';
 import { getMuiThemeConfig, getMuiThemesByCategory } from '../types/muiThemes';
 
 interface UseMuiThemeReturn {
   theme: Theme;
   currentThemePreset: MuiThemePreset;
-  changeTheme: (themePreset: MuiThemePreset) => void;
+  changeTheme: (themePreset: MuiThemePreset) => Promise<void>;
   getThemeConfig: typeof getMuiThemeConfig;
   getThemesByCategory: typeof getMuiThemesByCategory;
 }
@@ -23,20 +22,24 @@ interface UseMuiThemeReturn {
  */
 export function useMuiTheme(): UseMuiThemeReturn {
   const theme = useTheme();
-  const dispatch = useAppDispatch();
-  const currentThemePreset = useAppSelector(selectCurrentMuiTheme);
+  const themeContext = useContext(MuiThemeContext);
+
+  if (!themeContext) {
+    throw new Error('useMuiTheme must be used within MuiThemeProvider');
+  }
+
+  const { currentTheme, setTheme } = themeContext;
 
   const changeTheme = useCallback(
-    (themePreset: MuiThemePreset) => {
-      dispatch(setMuiTheme(themePreset));
-      // Theme is now persisted via redux-persist with IndexedDB
+    async (themePreset: MuiThemePreset) => {
+      await setTheme(themePreset);
     },
-    [dispatch]
+    [setTheme]
   );
 
   return {
     theme,
-    currentThemePreset,
+    currentThemePreset: currentTheme,
     changeTheme,
     getThemeConfig: getMuiThemeConfig,
     getThemesByCategory: getMuiThemesByCategory,

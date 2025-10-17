@@ -37,8 +37,7 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useDataSync } from '../hooks/useDataSync';
-import { useAppDispatch } from '../hooks/useRedux';
-import { clearDataSyncStatus } from '../store/slices/monitoringSlice';
+import { useMonitoring } from '../hooks/useMonitoring';
 import { createLogger } from '../utils/logger';
 import type { SyncProgress } from '../hooks/useDataSync';
 import './SyncPage.css';
@@ -165,7 +164,7 @@ const SyncPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { syncState, startSync, retryFailed } = useDataSync();
-  const dispatch = useAppDispatch();
+  const { clearDataSyncStatus } = useMonitoring();
   
   // Get the intended redirect URL from query params, default to dashboard
   const redirectTo = searchParams.get('redirect') || '/dashboard';
@@ -190,14 +189,14 @@ const SyncPage: React.FC = () => {
     if (isForceSync) {
       // Clear the sync status flag (but NOT the data) to force a fresh sync
       // Data will be safely overwritten by the fresh sync results
-      dispatch(clearDataSyncStatus());
-      // Start sync with forceRefresh to bypass RTK Query cache
+      clearDataSyncStatus();
+      // Start sync with forceRefresh to bypass API cache
       startSync({ forceRefresh: true });
     } else {
       // Normal sync (may use cached data if available)
       startSync();
     }
-  }, [isForceSync, dispatch, startSync]);
+  }, [isForceSync, clearDataSyncStatus, startSync]);
 
   /**
    * Handle successful sync completion

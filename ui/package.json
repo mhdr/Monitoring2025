@@ -29,10 +29,10 @@
     "@mui/icons-material": "^6.3.0",
     "@mui/material": "^6.3.0",
     "@mui/stylis-plugin-rtl": "^7.3.3",
-    "@reduxjs/toolkit": "^2.9.0",
     "ag-grid-enterprise": "^34.2.0",
     "ag-grid-react": "^34.2.0",
     "async-mutex": "^0.5.0",
+    "axios": "^1.12.2",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
     "i18next": "^23.15.1",
@@ -42,9 +42,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-i18next": "^15.0.2",
-    "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.3",
-    "redux-persist": "^6.0.0",
     "stylis": "^4.3.4"
   },
   "devDependencies": {

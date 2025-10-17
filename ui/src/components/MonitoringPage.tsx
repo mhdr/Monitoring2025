@@ -19,9 +19,7 @@ import {
   Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
-import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
-import { setCurrentFolderId } from '../store/slices/monitoringSlice';
-import { useGetValuesQuery } from '../services/rtkApi';
+import { useMonitoring } from '../hooks/useMonitoring';
 import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
 import ItemCard from './ItemCard';
@@ -29,15 +27,20 @@ import ItemCard from './ItemCard';
 const MonitoringPage: React.FC = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  const { 
+    state: monitoringState,
+    setCurrentFolderId,
+    fetchValues
+  } = useMonitoring();
   const [searchParams] = useSearchParams();
   const currentFolderId = searchParams.get('folderId');
   
   // State to manage visible loading indicator with minimum display time
   const [showRefreshIndicator, setShowRefreshIndicator] = useState(false);
   const loadingTimeoutRef = useRef<number | null>(null);
+  const pollingIntervalRef = useRef<number | null>(null);
   
-  // Get data from Redux store
+  // Get data from monitoring context
   const {
     groups: allGroups,
     groupsLoading: isLoading,
@@ -45,12 +48,14 @@ const MonitoringPage: React.FC = () => {
     items: allItems,
     itemsLoading: isLoadingItems,
     itemsError,
-  } = useAppSelector((state) => state.monitoring);
+    values: itemValues,
+    valuesLoading: isRefreshing
+  } = monitoringState;
 
-  // Update current folder ID in Redux when URL parameter changes
+  // Update current folder ID when URL parameter changes
   useEffect(() => {
-    dispatch(setCurrentFolderId(currentFolderId));
-  }, [currentFolderId, dispatch]);
+    setCurrentFolderId(currentFolderId);
+  }, [currentFolderId, setCurrentFolderId]);
 
   // Get current folder and its children
   const { currentFolder, childGroups, breadcrumbs } = useMemo(() => {
@@ -105,34 +110,33 @@ const MonitoringPage: React.FC = () => {
     return currentFolderItems.map((item) => item.id);
   }, [currentFolderItems]);
 
-  // RTK Query: Poll values every 5 seconds for items in current folder
-  // Skip polling if there are no items in the current folder
-  const { 
-    data: valuesResponse, 
-    isLoading: isRefreshing,
-    isFetching: isValuesFetching 
-  } = useGetValuesQuery(
-    { itemIds: currentFolderItemIds.length > 0 ? currentFolderItemIds : null },
-    {
-      // Poll every 5 seconds (5000ms)
-      pollingInterval: 5000,
-      // Skip query if there are no items in current folder
-      skip: currentFolderItemIds.length === 0,
-      // Refetch on focus to ensure fresh data when user returns
-      refetchOnFocus: true,
-      // Refetch when component mounts
-      refetchOnMountOrArgChange: true,
+  // Poll values every 5 seconds for items in current folder
+  useEffect(() => {
+    // Skip polling if there are no items in the current folder
+    if (currentFolderItemIds.length === 0) {
+      return;
     }
-  );
 
-  // Extract values from RTK Query response
-  const itemValues = useMemo(() => {
-    return valuesResponse?.values || [];
-  }, [valuesResponse]);
+    // Fetch values immediately
+    fetchValues(currentFolderItemIds);
+
+    // Set up polling interval (every 5 seconds)
+    pollingIntervalRef.current = window.setInterval(() => {
+      fetchValues(currentFolderItemIds);
+    }, 5000);
+
+    // Cleanup on unmount or when item IDs change
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [currentFolderItemIds, fetchValues]);
 
   // Manage refresh indicator visibility with minimum display time
   useEffect(() => {
-    if (isRefreshing || isValuesFetching) {
+    if (isRefreshing) {
       // Show indicator immediately when loading starts
       setShowRefreshIndicator(true);
       
@@ -155,7 +159,7 @@ const MonitoringPage: React.FC = () => {
         clearTimeout(loadingTimeoutRef.current);
       }
     };
-  }, [isRefreshing, isValuesFetching, showRefreshIndicator]);
+  }, [isRefreshing, showRefreshIndicator]);
 
   // Helper function to get display name based on language
   const getDisplayName = (group: Group) => {

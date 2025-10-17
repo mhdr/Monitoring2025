@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useAppSelector } from '../hooks/useRedux';
+import { useMonitoring } from '../hooks/useMonitoring';
 import { Container, Box, CircularProgress, Typography } from '@mui/material';
 import { useLanguage } from '../hooks/useLanguage';
 import { isDataSyncNeeded, buildSyncUrl, pathRequiresSync } from '../utils/syncUtils';
@@ -14,7 +14,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
-  const monitoringState = useAppSelector((state) => state.monitoring);
+  const { state: monitoringState } = useMonitoring();
 
   if (isLoading) {
     return (

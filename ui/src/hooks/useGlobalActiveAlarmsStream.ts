@@ -1,7 +1,7 @@
 /**
  * useGlobalActiveAlarmsStream Hook
  * Manages a global gRPC subscription to active alarms that persists across the app
- * Automatically updates Redux store with real-time alarm count data
+ * Automatically updates MonitoringContext with real-time alarm count data
  * Should be mounted once at the app level for authenticated users
  */
 
@@ -10,13 +10,8 @@ import { create } from '@bufbuild/protobuf';
 import { ConnectError } from '@connectrpc/connect';
 import { monitoringClient } from '../services/grpcClient';
 import { ActiveAlarmsRequestSchema } from '../gen/monitoring_pb';
-import { useAppDispatch } from './useRedux';
-import { 
-  updateActiveAlarms, 
-  setActiveAlarmsStreamStatus, 
-  setActiveAlarmsStreamError,
-  StreamStatus 
-} from '../store/slices/monitoringSlice';
+import { useMonitoring } from './useMonitoring';
+import { StreamStatus } from '../contexts/MonitoringContext';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('GlobalActiveAlarmsStream');
@@ -59,7 +54,11 @@ export function useGlobalActiveAlarmsStream(
   isAuthLoading: boolean,
   clientId: string = 'web-client-global'
 ): UseGlobalActiveAlarmsStreamResult {
-  const dispatch = useAppDispatch();
+  const { 
+    updateActiveAlarms,
+    setActiveAlarmsStreamStatus,
+    setActiveAlarmsStreamError
+  } = useMonitoring();
   
   // Use ref to store the abort controller for cleanup
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -106,7 +105,7 @@ export function useGlobalActiveAlarmsStream(
     }
 
     isConnectingRef.current = true;
-    dispatch(setActiveAlarmsStreamStatus(StreamStatus.CONNECTING));
+    setActiveAlarmsStreamStatus(StreamStatus.CONNECTING);
 
     // Create new abort controller for this connection
     const abortController = new AbortController();
@@ -124,7 +123,7 @@ export function useGlobalActiveAlarmsStream(
         { signal: abortController.signal }
       );
 
-      dispatch(setActiveAlarmsStreamStatus(StreamStatus.CONNECTED));
+      setActiveAlarmsStreamStatus(StreamStatus.CONNECTED);
       isConnectingRef.current = false;
 
       // Iterate over the async stream
@@ -134,16 +133,13 @@ export function useGlobalActiveAlarmsStream(
           break;
         }
 
-        // Update Redux store with the new data
-        dispatch(updateActiveAlarms({
-          alarmCount: update.alarmCount,
-          timestamp: Number(update.timestamp),
-        }));
+        // Update MonitoringContext with the new data
+        updateActiveAlarms(update.alarmCount, Number(update.timestamp));
       }
 
       // Stream ended normally
       if (!abortController.signal.aborted) {
-        dispatch(setActiveAlarmsStreamStatus(StreamStatus.DISCONNECTED));
+        setActiveAlarmsStreamStatus(StreamStatus.DISCONNECTED);
         // Auto-reconnect after stream ends (server might have closed connection)
         if (isAuthenticated && !isAuthLoading) {
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -165,7 +161,7 @@ export function useGlobalActiveAlarmsStream(
           errorMessage = `Connection Error: ${err.message}`;
         }
 
-        dispatch(setActiveAlarmsStreamError(errorMessage));
+        setActiveAlarmsStreamError(errorMessage);
         logger.error('Global active alarms stream error:', err);
 
         // Auto-reconnect on error with exponential backoff
@@ -176,7 +172,7 @@ export function useGlobalActiveAlarmsStream(
         }
       }
     }
-  }, [isAuthenticated, isAuthLoading, clientId, dispatch]);
+  }, [isAuthenticated, isAuthLoading, clientId, updateActiveAlarms, setActiveAlarmsStreamStatus, setActiveAlarmsStreamError]);
 
   /**
    * Disconnects the current stream
@@ -194,8 +190,8 @@ export function useGlobalActiveAlarmsStream(
     }
     
     isConnectingRef.current = false;
-    dispatch(setActiveAlarmsStreamStatus(StreamStatus.DISCONNECTED));
-  }, [dispatch]);
+    setActiveAlarmsStreamStatus(StreamStatus.DISCONNECTED);
+  }, [setActiveAlarmsStreamStatus]);
 
   /**
    * Manually reconnect the stream

@@ -26,8 +26,8 @@ import {
   Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
-import { useAppSelector } from '../../hooks/useRedux';
-import { useLazyGetHistoryQuery } from '../../services/rtkApi';
+import { useMonitoring } from '../../hooks/useMonitoring';
+import { getHistory } from '../../services/api';
 import { createLogger } from '../../utils/logger';
 
 const logger = createLogger('DataTablePage');
@@ -51,14 +51,10 @@ const DataTablePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const itemId = searchParams.get('itemId');
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { state: monitoringState } = useMonitoring();
 
-  // Get item from Redux store
-  const item = useAppSelector((state) => 
-    state.monitoring.items.find((item) => item.id === itemId)
-  );
-
-  // RTK Query lazy hook for fetching history
-  const [fetchHistory, { data: historyResponse, isError }] = useLazyGetHistoryQuery();
+  // Get item from monitoring context
+  const item = monitoringState.items.find((item: Item) => item.id === itemId);
   
   // State management
   const [error, setError] = useState<string | null>(null);
@@ -146,11 +142,12 @@ const DataTablePage: React.FC = () => {
         endDate,
       };
 
-      // Trigger RTK Query to fetch history
-      const result = await fetchHistory(request).unwrap();
+      // Fetch history from API
+      const result = await getHistory(request);
       
       // Update history data and stop loading
       setHistoryData(result.values || []);
+      setError(null); // Clear any previous errors
       setLoading(false);
     } catch (err) {
       logger.error('Error fetching history data:', err);
@@ -158,20 +155,6 @@ const DataTablePage: React.FC = () => {
       setLoading(false);
     }
   };
-  
-  // Update historyData when RTK Query response changes (for cache hits)
-  useEffect(() => {
-    if (historyResponse && !loading) {
-      setHistoryData(historyResponse.values || []);
-    }
-  }, [historyResponse, loading]);
-  
-  // Set error when RTK Query has an error
-  useEffect(() => {
-    if (isError) {
-      setError(t('errorLoadingData'));
-    }
-  }, [isError, t]);
 
   // Fetch data on mount and when preset changes (not when custom dates change)
   useEffect(() => {

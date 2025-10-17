@@ -27,7 +27,7 @@ import {
   Settings as ManagementIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
-import { useActiveAlarms } from '../hooks/useRedux';
+import { useMonitoring } from '../hooks/useMonitoring';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -47,7 +47,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const { alarmCount, streamStatus } = useActiveAlarms();
+  const { state: monitoringState } = useMonitoring();
+  const { alarmCount, streamStatus } = monitoringState.activeAlarms;
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
   const menuItems: MenuItem[] = [

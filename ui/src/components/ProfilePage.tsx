@@ -16,7 +16,7 @@ import { AccountCircle, Lock } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../hooks/useLanguage';
-import { useChangePasswordMutation } from '../services/rtkApi';
+import { changePassword } from '../services/api';
 import { createLogger } from '../utils/logger';
 import './ProfilePage.css';
 
@@ -39,9 +39,6 @@ const ProfilePage: React.FC = () => {
   const { user, logout } = useAuth();
   const { language } = useLanguage();
   
-  // RTK Query mutation hook
-  const [changePassword, { isLoading: isSubmitting }] = useChangePasswordMutation();
-  
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
     currentPassword: '',
     newPassword: '',
@@ -51,6 +48,7 @@ const ProfilePage: React.FC = () => {
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const validatePasswordForm = (): boolean => {
     const newErrors: ValidationErrors = {};
@@ -101,11 +99,12 @@ const ProfilePage: React.FC = () => {
     }
     
     try {
-      // Call the RTK Query mutation
+      setIsSubmitting(true);
+      // Call the API directly
       const response = await changePassword({
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
-      }).unwrap();
+      });
       
       if (response.isSuccessful) {
         setSuccessMessage(t('profilePage.messages.changePasswordSuccess'));
@@ -127,6 +126,7 @@ const ProfilePage: React.FC = () => {
       }
     } catch (error: unknown) {
       logger.error('Change password error:', error);
+      setIsSubmitting(false);
       
       // Handle specific error cases
       const apiError = error as { status?: number; message?: string };
@@ -137,6 +137,8 @@ const ProfilePage: React.FC = () => {
       } else {
         setErrorMessage(apiError.message || t('profilePage.messages.changePasswordError'));
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

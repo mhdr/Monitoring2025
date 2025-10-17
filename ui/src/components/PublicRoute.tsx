@@ -1,14 +1,14 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useAppSelector } from '../hooks/useRedux';
+import { useMonitoring } from '../hooks/useMonitoring';
 import { isDataSyncNeeded, buildSyncUrl, getIntendedDestination } from '../utils/syncUtils';
 import LoginPage from './LoginPage';
 
 const PublicRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-  const monitoringState = useAppSelector((state) => state.monitoring);
+  const { state: monitoringState } = useMonitoring();
 
   if (isLoading) {
     return <LoginPage data-id-ref="public-route-login-page-loading" />;

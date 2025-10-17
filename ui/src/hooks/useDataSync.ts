@@ -5,9 +5,11 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { useAppDispatch, useAppSelector } from './useRedux';
-import { fetchGroups, fetchItems, fetchAlarms, setDataSynced } from '../store/slices/monitoringSlice';
+import { useMonitoring } from './useMonitoring';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('DataSync');
 
 export interface SyncProgress {
   /** Progress percentage (0-100) */
@@ -74,8 +76,14 @@ export interface UseDataSyncResult {
  * ```
  */
 export function useDataSync(): UseDataSyncResult {
-  const dispatch = useAppDispatch();
-  const items = useAppSelector(state => state.monitoring.items);
+  const { 
+    state: { items },
+    fetchGroups,
+    fetchItems,
+    fetchAlarms,
+    setDataSynced
+  } = useMonitoring();
+  
   const isSyncingRef = useRef<boolean>(false);
   
   // Keep a ref to the latest items for use in async functions
@@ -131,21 +139,15 @@ export function useDataSync(): UseDataSyncResult {
   /**
    * Sync groups data
    */
-  const syncGroups = useCallback(async (forceRefresh: boolean = false): Promise<boolean> => {
+  const syncGroups = useCallback(async (_forceRefresh: boolean = false): Promise<boolean> => {
     updateGroupsProgress({ progress: 0, status: 'loading', error: undefined });
 
     try {
       // Simulate progress updates
       updateGroupsProgress({ progress: 25 });
       
-      // RTK Query initiate() returns a QueryActionCreatorResult
-      // We need to await it directly without unwrap()
-      const result = await dispatch(fetchGroups({ forceRefresh }));
-      
-      // Check if the result has an error
-      if ('error' in result) {
-        throw new Error('Failed to fetch groups');
-      }
+      // Fetch groups using MonitoringContext
+      await fetchGroups();
       
       updateGroupsProgress({ progress: 100, status: 'success' });
       return true;
@@ -158,26 +160,20 @@ export function useDataSync(): UseDataSyncResult {
       });
       return false;
     }
-  }, [dispatch, updateGroupsProgress]);
+  }, [fetchGroups, updateGroupsProgress]);
 
   /**
    * Sync items data
    */
-  const syncItems = useCallback(async (forceRefresh: boolean = false): Promise<boolean> => {
+  const syncItems = useCallback(async (_forceRefresh: boolean = false): Promise<boolean> => {
     updateItemsProgress({ progress: 0, status: 'loading', error: undefined });
 
     try {
       // Simulate progress updates
       updateItemsProgress({ progress: 25 });
       
-      // RTK Query initiate() returns a QueryActionCreatorResult
-      // We need to await it directly without unwrap()
-      const result = await dispatch(fetchItems({ showOrphans: false, forceRefresh }));
-      
-      // Check if the result has an error
-      if ('error' in result) {
-        throw new Error('Failed to fetch items');
-      }
+      // Fetch items using MonitoringContext
+      await fetchItems();
       
       updateItemsProgress({ progress: 100, status: 'success' });
       return true;
@@ -190,25 +186,20 @@ export function useDataSync(): UseDataSyncResult {
       });
       return false;
     }
-  }, [dispatch, updateItemsProgress]);
+  }, [fetchItems, updateItemsProgress]);
 
   /**
    * Sync alarms data
    */
-  const syncAlarms = useCallback(async (itemIds: string[], forceRefresh: boolean = false): Promise<boolean> => {
+  const syncAlarms = useCallback(async (_itemIds: string[] = [], _forceRefresh: boolean = false): Promise<boolean> => {
     updateAlarmsProgress({ progress: 0, status: 'loading', error: undefined });
 
     try {
       // Simulate progress updates
       updateAlarmsProgress({ progress: 25 });
       
-      // Fetch alarms for the provided item IDs
-      const result = await dispatch(fetchAlarms({ itemIds, forceRefresh }));
-      
-      // Check if the result has an error
-      if ('error' in result) {
-        throw new Error('Failed to fetch alarms');
-      }
+      // Fetch alarms using MonitoringContext
+      await fetchAlarms();
       
       updateAlarmsProgress({ progress: 100, status: 'success' });
       return true;
@@ -221,7 +212,7 @@ export function useDataSync(): UseDataSyncResult {
       });
       return false;
     }
-  }, [dispatch, updateAlarmsProgress]);
+  }, [fetchAlarms, updateAlarmsProgress]);
 
   /**
    * Start the complete synchronization process
@@ -290,22 +281,21 @@ export function useDataSync(): UseDataSyncResult {
         hasErrors,
       }));
 
-      // Set the sync flag in Redux store if all operations succeeded
+      // Set the sync flag in MonitoringContext if all operations succeeded
       if (allSuccess) {
-        dispatch(setDataSynced(true));
+        setDataSynced(true);
         
-        // Additional safeguard: verify data is stored in localStorage
-        const storedGroups = monitoringStorageHelpers.getStoredGroups();
-        const storedItems = monitoringStorageHelpers.getStoredItems();
+        // Additional safeguard: verify data is stored in IndexedDB
+        const storedGroups = await monitoringStorageHelpers.getStoredGroups();
+        const storedItems = await monitoringStorageHelpers.getStoredItems();
         
-        logger.info('[useDataSync] Sync completed successfully. Verification:', {
+        logger.log('Sync completed successfully. Verification:', {
           syncedDataCounts: {
             groups: storedGroups?.length || 0,
             items: storedItems?.length || 0
           },
           syncStatusSet: true,
           forceRefresh,
-          timestamp: new Date().toISOString()
         });
       }
 
@@ -318,7 +308,7 @@ export function useDataSync(): UseDataSyncResult {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [syncGroups, syncItems, syncAlarms, updateOverallStatus, updateAlarmsProgress, dispatch]);
+  }, [syncGroups, syncItems, syncAlarms, updateOverallStatus, updateAlarmsProgress, setDataSynced]);
 
   /**
    * Retry failed sync operations
@@ -364,21 +354,20 @@ export function useDataSync(): UseDataSyncResult {
         hasErrors: !allSuccess,
       }));
 
-      // Set the sync flag in Redux store if all retry operations succeeded
+      // Set the sync flag in MonitoringContext if all retry operations succeeded
       if (allSuccess) {
-        dispatch(setDataSynced(true));
+        setDataSynced(true);
         
-        // Additional safeguard: verify data is stored in localStorage
-        const storedGroups = monitoringStorageHelpers.getStoredGroups();
-        const storedItems = monitoringStorageHelpers.getStoredItems();
+        // Additional safeguard: verify data is stored in IndexedDB
+        const storedGroups = await monitoringStorageHelpers.getStoredGroups();
+        const storedItems = await monitoringStorageHelpers.getStoredItems();
         
-        logger.info('[useDataSync] Retry completed successfully. Verification:', {
+        logger.log('Retry completed successfully. Verification:', {
           syncedDataCounts: {
             groups: storedGroups?.length || 0,
             items: storedItems?.length || 0
           },
           syncStatusSet: true,
-          timestamp: new Date().toISOString()
         });
       }
 
@@ -390,7 +379,7 @@ export function useDataSync(): UseDataSyncResult {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [syncState.groups.status, syncState.items.status, syncState.alarms.status, syncGroups, syncItems, syncAlarms, updateOverallStatus, dispatch]);
+  }, [syncState.groups.status, syncState.items.status, syncState.alarms.status, syncGroups, syncItems, syncAlarms, updateOverallStatus, setDataSynced]);
 
   /**
    * Reset sync state to initial values
