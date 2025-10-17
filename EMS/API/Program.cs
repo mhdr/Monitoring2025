@@ -246,9 +246,6 @@ builder.Services.AddSwaggerGen(c =>
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
 
-    // Add SignalR hub documentation generation
-    c.AddSignalRSwaggerGen();
-
     // Configure Swagger to use JWT Bearer token
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
