@@ -1,5 +1,6 @@
 import apiClient, { handleApiError } from './apiClient';
-import { storeMonitoringResponseData } from '../utils/monitoringStorage';
+import { storeMonitoringResponseData, getStoredItemIds } from '../utils/monitoringStorage';
+import { createLogger } from '../utils/logger';
 import type {
   GroupsResponseDto,
   ItemsRequestDto,
@@ -37,6 +38,8 @@ import type {
   AddValueRequestDto,
   WriteOrAddValueRequestDto,
 } from '../types/api';
+
+const logger = createLogger('MonitoringAPI');
 
 /**
  * Monitoring API services
@@ -109,14 +112,28 @@ export const getItemsAsAdmin = async (params: ItemsRequestDto = { showOrphans: f
 
 /**
  * Get current values for monitoring items
+ * Automatically extracts itemIds from stored items in IndexedDB if not provided
  */
 export const getValues = async (params?: ValuesRequestDto): Promise<ValuesResponseDto> => {
   try {
-    // If params is undefined or itemIds is null/undefined, send empty object (get all values)
+    // Build request body
     const body: ValuesRequestDto = {};
+    
+    // If itemIds are explicitly provided, use them
     if (params?.itemIds && params.itemIds.length > 0) {
       body.itemIds = params.itemIds;
+      logger.log('Using provided itemIds for getValues', { count: params.itemIds.length });
+    } else {
+      // Otherwise, extract itemIds from stored items in IndexedDB using utility method
+      const itemIds = await getStoredItemIds();
+      if (itemIds && itemIds.length > 0) {
+        body.itemIds = itemIds;
+        logger.log('Using itemIds from utility for getValues', { count: itemIds.length });
+      } else {
+        logger.warn('No stored items found in IndexedDB for getValues, sending request without itemIds');
+      }
     }
+    
     const response = await apiClient.post<ValuesResponseDto>('/api/Monitoring/Values', body);
     return response.data;
   } catch (error) {
@@ -214,32 +231,64 @@ export const movePoint = async (data: MovePointRequestDto): Promise<EditPointRes
 
 /**
  * Get configured alarms for specified monitoring items
+ * Automatically extracts itemIds from stored items in IndexedDB if not provided
  */
 export const getAlarms = async (params?: AlarmsRequestDto): Promise<AlarmsResponseDto> => {
   try {
-    // If params is undefined or itemIds is null/undefined, send empty object (get all alarms)
+    // Build request body
     const body: AlarmsRequestDto = {};
+    
+    // If itemIds are explicitly provided, use them
     if (params?.itemIds && params.itemIds.length > 0) {
       body.itemIds = params.itemIds;
+      logger.log('Using provided itemIds for getAlarms', { count: params.itemIds.length });
+    } else {
+      // Otherwise, extract itemIds from stored items in IndexedDB using utility method
+      const itemIds = await getStoredItemIds();
+      if (itemIds && itemIds.length > 0) {
+        body.itemIds = itemIds;
+        logger.log('Using itemIds from utility for getAlarms', { count: itemIds.length });
+      } else {
+        logger.warn('No stored items found in IndexedDB, sending request without itemIds');
+      }
+      // If no stored items, send empty object (backend will return alarms based on user permissions)
     }
+    
     const response = await apiClient.post<AlarmsResponseDto>('/api/Monitoring/Alarms', body);
+    logger.log('Alarms fetched successfully', { alarmsCount: response.data.data?.length || 0 });
+    
     // Store alarms data in IndexedDB when fetched
     return storeMonitoringResponseData.storeAlarmsResponse(response.data);
   } catch (error) {
+    logger.error('Failed to fetch alarms', error);
     handleApiError(error);
   }
 };
 
 /**
  * Get currently active alarms
+ * Automatically extracts itemIds from stored items in IndexedDB if not provided
  */
 export const getActiveAlarms = async (params?: ActiveAlarmsRequestDto): Promise<ActiveAlarmsResponseDto> => {
   try {
-    // If params is undefined or itemIds is null/undefined, send empty object (get all active alarms)
+    // Build request body
     const body: ActiveAlarmsRequestDto = {};
+    
+    // If itemIds are explicitly provided, use them
     if (params?.itemIds && params.itemIds.length > 0) {
       body.itemIds = params.itemIds;
+      logger.log('Using provided itemIds for getActiveAlarms', { count: params.itemIds.length });
+    } else {
+      // Otherwise, extract itemIds from stored items in IndexedDB using utility method
+      const itemIds = await getStoredItemIds();
+      if (itemIds && itemIds.length > 0) {
+        body.itemIds = itemIds;
+        logger.log('Using itemIds from utility for getActiveAlarms', { count: itemIds.length });
+      } else {
+        logger.warn('No stored items found in IndexedDB for getActiveAlarms, sending request without itemIds');
+      }
     }
+    
     const response = await apiClient.post<ActiveAlarmsResponseDto>('/api/Monitoring/ActiveAlarms', body);
     return response.data;
   } catch (error) {

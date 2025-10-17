@@ -302,6 +302,42 @@ export const initAutoCleanup = async (): Promise<void> => {
 };
 
 /**
+ * Extract itemIds from stored items in IndexedDB
+ * Returns array of item IDs that the user has access to
+ * 
+ * @returns Promise<string[] | null> - Array of item IDs, or null if no items stored
+ * 
+ * @example
+ * // Get all accessible itemIds
+ * const itemIds = await getStoredItemIds();
+ * if (itemIds) {
+ *   // Use itemIds for API calls
+ *   const alarms = await getAlarms({ itemIds });
+ * }
+ */
+export const getStoredItemIds = async (): Promise<string[] | null> => {
+  try {
+    const storedItems = await monitoringStorageHelpers.getStoredItems();
+    
+    if (!storedItems || storedItems.length === 0) {
+      logger.info('No stored items found in IndexedDB');
+      return null;
+    }
+    
+    const itemIds = storedItems.map(item => item.id);
+    logger.log('Extracted itemIds from IndexedDB:', { 
+      count: itemIds.length,
+      itemIds 
+    });
+    
+    return itemIds;
+  } catch (error) {
+    logger.error('Failed to extract itemIds from IndexedDB:', error);
+    return null;
+  }
+};
+
+/**
  * Helper function to store response data from RTK Query endpoints
  * Used in transformResponse functions to automatically persist data
  */
