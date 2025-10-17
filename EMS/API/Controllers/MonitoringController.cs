@@ -60,7 +60,6 @@ public class MonitoringController : ControllerBase
     /// <summary>
     /// Get groups accessible to the current user
     /// </summary>
-    /// <param name="request">Groups request parameters</param>
     /// <returns>List of groups the user has access to</returns>
     /// <response code="200">Returns the list of accessible groups</response>
     /// <response code="401">If user is not authenticated</response>
@@ -69,7 +68,7 @@ public class MonitoringController : ControllerBase
     [ProducesResponseType(typeof(GroupsResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Groups([FromBody] GroupsRequestDto request)
+    public async Task<IActionResult> Groups()
     {
         try
         {

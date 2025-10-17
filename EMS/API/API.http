@@ -335,42 +335,12 @@ POST {{API_HostAddress}}/api/monitoring/Groups
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
 
-{
-  "userId": null
-}
-
 ###
 
 ### Get groups accessible to current user - HTTPS
 POST {{API_HostAddress}}/api/monitoring/Groups
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}
-
-{
-  "userId": null
-}
-
-###
-
-### Get groups for specific user (Admin only) - HTTP
-POST {{API_HostAddress}}/api/monitoring/Groups
-Content-Type: application/json
-Authorization: Bearer {{authTokenHTTP}}
-
-{
-  "userId": "01ca06c6-bac7-4488-9337-172ef636153b"
-}
-
-###
-
-### Get groups for specific user (Admin only) - HTTPS
-POST {{API_HostAddress}}/api/monitoring/Groups
-Content-Type: application/json
-Authorization: Bearer {{authTokenHTTPS}}
-
-{
-  "userId": "01ca06c6-bac7-4488-9337-172ef636153b"
-}
 
 ###
 
