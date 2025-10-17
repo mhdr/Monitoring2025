@@ -1,5 +1,5 @@
 import apiClient, { handleApiError } from './apiClient';
-import { storeMonitoringResponseData, getStoredItemIds, getStoredGroupIds, getStoredAlarmIds } from '../utils/monitoringStorage';
+import { storeMonitoringResponseData, getStoredItemIds } from '../utils/monitoringStorage';
 import { createLogger } from '../utils/logger';
 import type {
   GroupsResponseDto,

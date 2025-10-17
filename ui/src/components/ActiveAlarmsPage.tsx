@@ -213,33 +213,26 @@ const ActiveAlarmsPage: React.FC = () => {
       
       const newValues = response.values || [];
       
-      // Update previous values and track changes using functional update
-      setPreviousValues(prevVals => {
-        const changed = new Set<string>();
-        const nextVals = new Map<string, string>();
-        
-        newValues.forEach(val => {
-          if (val.itemId && val.value !== null) {
-            const prevValue = prevVals.get(val.itemId);
-            if (prevValue !== undefined && prevValue !== val.value) {
-              changed.add(val.itemId);
-            }
-            nextVals.set(val.itemId, val.value);
+      // Track value changes by comparing with current itemValues
+      const changed = new Set<string>();
+      
+      newValues.forEach(val => {
+        if (val.itemId && val.value !== null) {
+          const currentVal = itemValues.find(v => v.itemId === val.itemId);
+          if (currentVal && currentVal.value !== val.value) {
+            changed.add(val.itemId);
           }
-        });
-        
-        // Update changed values
-        setChangedValues(changed);
-        
-        // Clear changed indicators after 2 seconds
-        if (changed.size > 0) {
-          setTimeout(() => {
-            setChangedValues(new Set());
-          }, 2000);
         }
-        
-        return nextVals;
       });
+      
+      setChangedValues(changed);
+      
+      // Clear changed indicators after 2 seconds
+      if (changed.size > 0) {
+        setTimeout(() => {
+          setChangedValues(new Set());
+        }, 2000);
+      }
       
       // Update value history using functional update (keep last 20 values per item)
       setValueHistory(prevHistory => {
@@ -271,7 +264,7 @@ const ActiveAlarmsPage: React.FC = () => {
     } finally {
       setValuesRefreshing(false);
     }
-  }, []); // Empty dependency array - we use functional updates to access current state
+  }, [itemValues]); // Include itemValues for change detection
 
   /**
    * Fetch active alarms from API
