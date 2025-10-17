@@ -1,5 +1,5 @@
 # Monitoring2025 UI - Copilot Instructions
-**Enterprise React + TypeScript + Redux Toolkit + Material-UI (MUI)**  
+**Enterprise React + TypeScript + Axios + Material-UI (MUI)**  
 **Bilingual (fa/en) • RTL/LTR Support • Real-time Monitoring • .NET Core API**
 
 ---
@@ -13,9 +13,9 @@
 **State Management:**
 ```
 Local component state? → useState/useReducer
-Shared across 2-3 components? → Context API (AuthContext, LanguageContext)
-Complex app state + API calls? → Redux Toolkit + RTK Query
-Real-time streaming data? → gRPC/Connect-RPC + Redux slice
+Shared across 2-3 components? → Context API (AuthContext, LanguageContext, MonitoringContext)
+Complex app state? → Context API with useReducer
+Real-time streaming data? → gRPC/Connect-RPC + Context API
 ```
 
 **Styling Approach:**
@@ -29,10 +29,11 @@ RTL-specific? → sx prop with theme.direction check
 
 **Data Fetching:**
 ```
-REST API? → RTK Query (src/services/rtkApi.ts)
+REST API? → Axios (src/services/apiClient.ts)
 Real-time streams? → gRPC/Connect-RPC (src/services/grpcClient.ts)
-Auth-protected? → RTK Query with baseQueryWithAuth
-File uploads? → FormData with RTK Query mutation
+Auth-protected? → Axios interceptors with automatic token refresh
+File uploads? → FormData with Axios
+Cached data? → IndexedDB for offline/persistent storage
 ```
 
 **Component Patterns:**
@@ -72,7 +73,7 @@ Form? → Controlled components + validation
 | `any` type | `unknown` + type guard | Type safety |
 | Hardcoded text | `t('key')` | i18n |
 | Class components | Functional + hooks | Modern React |
-| Direct state mutation | Redux Toolkit immer | State integrity |
+| Direct state mutation | Immutable updates | State integrity |
 | Inline styles | MUI `sx` prop | Theme access |
 
 ---
@@ -126,7 +127,7 @@ This is a production-grade enterprise monitoring dashboard with:
 ### Core Technologies
 - **React 18**: Functional components only, hooks-based
 - **TypeScript 5**: Strict mode, no `any` type allowed
-- **Redux Toolkit**: State management with RTK Query for API calls
+- **Axios**: HTTP client for REST API calls with interceptors
 - **Material-UI (MUI) v6**: Component library with responsive grid system (xs/sm/md/lg/xl)
 - **Vite**: Build tool and dev server (port 5173)
 
@@ -270,7 +271,7 @@ fetch('/api/data').then(() => {
 #### Key React 18 Benefits for This Project
 1. **Streaming SSR**: Future-ready for server components
 2. **Concurrent rendering**: Better performance for gRPC streams
-3. **Automatic batching**: Fewer re-renders in RTK Query updates
+3. **Automatic batching**: Fewer re-renders in async state updates
 4. **Suspense**: Cleaner loading states
 5. **Transitions**: Smooth language/theme switching
 
@@ -349,8 +350,8 @@ const [user, setUser] = useState<User | null>(null);
 - **Hooks**: `src/hooks/` - Custom React hooks
 - **Utils**: `src/utils/` - Helper functions
 - **Styles**: `src/styles/` - Global CSS files
-- **Services**: `src/services/` - API clients (RTK Query, gRPC)
-- **Store**: `src/store/` - Redux store and slices
+- **Services**: `src/services/` - API clients (Axios, gRPC)
+- **Contexts**: `src/contexts/` - React Context providers for state management
 
 ### Naming Conventions
 - **Components**: PascalCase
@@ -588,17 +589,17 @@ Must test on these standard resolutions:
 - Swagger: `https://localhost:7136/swagger/v1/swagger.json`
 - Auth: JWT + refresh token rotation
 - Test: `test` / `Password@12345`
-- Client: `src/services/rtkApi.ts` (RTK Query)
+- Client: `src/services/apiClient.ts` (Axios)
 - DTOs: Define in `src/types/api.ts`, match backend DTOs exactly
 
 ## Auth
-⚠️ Refresh Token Rotation (OAuth 2.0) - auto-handled by RTK Query
-- Files: `src/services/rtkApi.ts`, `src/utils/authStorage.ts`, `src/contexts/AuthContext.tsx`
+⚠️ Refresh Token Rotation (OAuth 2.0) - auto-handled by Axios interceptors
+- Files: `src/services/apiClient.ts`, `src/utils/authStorage.ts`, `src/contexts/AuthContext.tsx`
 - Mutex: Prevents concurrent refresh (`async-mutex`)
 - Storage: IndexedDB with 7-day rolling expiration
 - Flow: Login → 401 → Auto-refresh → New tokens → Retry
 
-⚠️ Never manually refresh - `baseQueryWithAuth` handles it
+⚠️ Never manually refresh - Axios interceptors handle it automatically
 
 ## gRPC / Connect-RPC
 ⚠️ MANDATORY: Use Connect-RPC for real-time streaming data
@@ -643,7 +644,7 @@ Must test on these standard resolutions:
 - **Cleanup**: Always abort streams on unmount
 
 ### Integration Patterns
-- **Redux**: Store stream state in slices
+- **Context API**: Store stream state in Context
 - **React**: Custom hooks for stream lifecycle
 - **Auth**: Automatic JWT refresh in transport
 - **i18n**: Translate error messages and connection states
@@ -909,36 +910,36 @@ import { LoadingScreen } from './components/LoadingScreen';
 - Show contact support option for critical errors
 - Never expose stack traces to users
 
-### RTK Query Error Handling
+### Axios Error Handling
 
 ```typescript
-// ✅ Proper mutation error handling
-const [updateUser, { isLoading, error }] = useUpdateUserMutation();
-
+// ✅ Proper API call error handling with Axios
 const handleSubmit = async (data: UserFormData) => {
   try {
-    // unwrap() throws on error
-    const result = await updateUser(data).unwrap();
-    logger.log('User updated successfully:', result);
+    const result = await apiClient.put('/api/users', data);
+    logger.log('User updated successfully:', result.data);
     
     // Show success message
     showNotification(t('messages.success.userUpdated'));
   } catch (err) {
     logger.error('Failed to update user:', err);
     
-    // Check if RTK Query error
-    if ('status' in err) {
-      const error = err as { status: number; data?: any };
+    // Check if Axios error
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
       
-      if (error.status === 400) {
+      if (status === 400) {
         // Validation error
         showNotification(t('errors.validation.invalid'), 'error');
-      } else if (error.status === 401) {
-        // Auth error (should be auto-handled by baseQueryWithAuth)
+      } else if (status === 401) {
+        // Auth error (should be auto-handled by Axios interceptors)
         showNotification(t('errors.auth.unauthorized'), 'error');
-      } else if (error.status === 500) {
+      } else if (status === 500) {
         // Server error
         showNotification(t('errors.server.internal'), 'error');
+      } else {
+        // Other HTTP error
+        showNotification(t('errors.api.failed'), 'error');
       }
     } else {
       // Network or other error
@@ -947,24 +948,41 @@ const handleSubmit = async (data: UserFormData) => {
   }
 };
 
-// ✅ Display error in UI
+// ✅ Display error in UI with loading state
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
+
+const loadData = async () => {
+  setLoading(true);
+  setError(null);
+  try {
+    const response = await apiClient.get('/api/data');
+    setData(response.data);
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      setError(err.response?.data?.message || t('errors.api.failed'));
+    } else {
+      setError(t('errors.network.failed'));
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
 {error && (
   <Alert severity="error">
-    {t('status' in error 
-      ? 'errors.api.failed' 
-      : 'errors.network.failed'
-    )}
+    {error}
   </Alert>
 )}
 ```
 
-**RTK Query Error Types:**
+**Axios Error Types:**
 - **400 Bad Request**: Validation errors
-- **401 Unauthorized**: Auth token expired (auto-handled)
+- **401 Unauthorized**: Auth token expired (auto-handled by interceptors)
 - **403 Forbidden**: Insufficient permissions
 - **404 Not Found**: Resource doesn't exist
 - **500 Internal Server Error**: Server-side error
-- **Network Error**: No response from server
+- **Network Error**: No response from server (err.response is undefined)
 
 ### gRPC Stream Error Handling
 
@@ -1225,7 +1243,7 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 **Key Debugging Steps:**
 1. **Console Monitoring**: Use `list_console_messages` to check for errors, warnings, network failures
 2. **Network Debugging**: Use `list_network_requests` with resourceTypes filter to monitor API calls
-3. **Live JavaScript**: Use `evaluate_script` to inspect Redux state, auth tokens, theme, language settings
+3. **Live JavaScript**: Use `evaluate_script` to inspect Context state, auth tokens, theme, language settings
 4. **State Inspection**: Take snapshot first, then use `evaluate_script` with element UID to inspect React component props/state
 
 #### 👤 User Behavior Simulation
@@ -1398,8 +1416,7 @@ src/
 ├── gen/          # Generated gRPC/Protobuf files
 ├── hooks/        # Custom hooks
 ├── i18n/         # i18n config
-├── services/     # API (rtkApi.ts, grpcClient.ts)
-├── store/        # Redux + slices
+├── services/     # API (apiClient.ts, grpcClient.ts)
 ├── styles/       # Global styles
 ├── types/        # TypeScript types
 └── utils/        # Helpers
@@ -1435,19 +1452,19 @@ Protos/           # Protocol buffer definitions
 - [ ] **Responsive**: Mobile, tablet, desktop all tested
 - [ ] **RTL Styling**: No broken layouts in RTL mode
 
-### Redux & State Management
-- [ ] **Existing Patterns**: Follow existing Redux patterns
-- [ ] **RTK Query**: Use for all API calls
-- [ ] **Selectors**: Use typed selectors from hooks
-- [ ] **No Direct Mutation**: Use Redux Toolkit's immer
-- [ ] **State Minimal**: Keep only necessary data in Redux
+### State Management
+- [ ] **Context API**: Use Context for shared state across components
+- [ ] **Local State**: Use useState/useReducer for component-level state
+- [ ] **No Direct Mutation**: Use immutable update patterns
+- [ ] **State Minimal**: Keep only necessary data in state
+- [ ] **IndexedDB**: Use for persistent client-side storage
 
 ### API & Backend Integration
 - [ ] **HTTPS Only**: All API calls use `https://localhost:7136`
-- [ ] **Error Handling**: API errors handled gracefully
+- [ ] **Error Handling**: API errors handled gracefully with Axios error checks
 - [ ] **Loading States**: Loading indicators for async operations
 - [ ] **Auth States**: Protected routes require authentication
-- [ ] **Refresh Token**: Automatic refresh handled by RTK Query
+- [ ] **Refresh Token**: Automatic refresh handled by Axios interceptors
 
 ### gRPC & Real-time Streaming
 - [ ] **Stream Lifecycle**: Proper connection, disconnect, error handling
@@ -1539,27 +1556,33 @@ Protos/           # Protocol buffer definitions
 <Box sx={{ marginInlineStart: 2 }}>
 ```
 
-### RTK Query Issues
+### Axios API Issues
 
-**Problem**: Mutation not triggering re-render
+**Problem**: API call not triggering UI update
 ```typescript
-// ❌ Don't - not handling promise
-onClick={() => updateUser(data)}
+// ❌ Don't - not updating state after API call
+onClick={() => apiClient.get('/api/data')}
 
-// ✅ Do - properly handle async
+// ✅ Do - properly handle async and update state
 onClick={async () => {
   try {
-    await updateUser(data).unwrap();
+    setLoading(true);
+    const response = await apiClient.get('/api/data');
+    setData(response.data);
   } catch (err) {
     // Handle error
+    setError(err);
+  } finally {
+    setLoading(false);
   }
 }}
 ```
 
 **Problem**: Token refresh loop
-- Check `authStorage.ts` - ensure refresh mutex working
+- Check `apiClient.ts` - ensure refresh mutex working
 - Verify refresh endpoint returns new tokens
 - Check browser console for 401 loops
+- Ensure Axios interceptors are properly configured
 
 ### gRPC Stream Issues
 
@@ -1653,6 +1676,9 @@ const options = useMemo(() => getChartOptions(), [deps]);
 - Use MUI MCP Server to verify component usage and APIs
 - Use MUI theme palette values for ALL colors
 - Use MUI components first before custom implementations
+- Use Axios for all REST API calls
+- Use IndexedDB for client-side data persistence
+- Use Context API for shared state management
 - Use lazy loading for routes
 - Use memoization for performance
 - Use error boundaries
@@ -1675,7 +1701,7 @@ const options = useMemo(() => getChartOptions(), [deps]);
 - Don't use alternate ports
 - Don't skip error handling
 - Don't forget loading states
-- Don't mutate Redux state directly
+- Don't use localStorage/sessionStorage - use IndexedDB instead
 - Don't forget to clean up streams/subscriptions
 - Don't skip RTL testing
 - Don't skip responsive testing
