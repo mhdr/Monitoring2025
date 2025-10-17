@@ -77,8 +77,6 @@ const ActiveAlarmsPage: React.FC = () => {
   
   // State for instantaneous values
   const [itemValues, setItemValues] = useState<MultiValue[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [previousValues, setPreviousValues] = useState<Map<string, string>>(new Map());
   const [changedValues, setChangedValues] = useState<Set<string>>(new Set());
   const [valuesRefreshing, setValuesRefreshing] = useState<boolean>(false);
   const [valueHistory, setValueHistory] = useState<Map<string, Array<{value: number; time: number}>>>(new Map());
@@ -526,17 +524,21 @@ const ActiveAlarmsPage: React.FC = () => {
     const value1 = alarm.value1 ? parseFloat(alarm.value1) : null;
     const value2 = alarm.value2 ? parseFloat(alarm.value2) : null;
     
+    // Get unit name based on language
+    const unit = isRTL ? item.unitFa : item.unit;
+    const unitText = unit ? ` ${unit}` : '';
+    
     // CompareType: 3 = GreaterThan (High alarm), 4 = LessThan (Low alarm), 5 = InRange
     if (alarm.compareType === 3 && value1 !== null) {
       // High alarm - show how close to limit
       const percentage = Math.min(100, Math.max(0, (numValue / value1) * 100));
       const color = percentage >= 100 ? 'error' : percentage >= 90 ? 'warning' : 'success';
-      return { percentage, color, labelKey: 'activeAlarmsPage.highLimit', labelValue: value1 };
+      return { percentage, color, labelKey: 'activeAlarmsPage.highLimit', labelValue: `${value1}${unitText}` };
     } else if (alarm.compareType === 4 && value1 !== null) {
       // Low alarm - show how far from limit
       const percentage = Math.min(100, Math.max(0, (numValue / value1) * 100));
       const color = percentage <= 0 ? 'error' : percentage <= 10 ? 'warning' : 'success';
-      return { percentage, color, labelKey: 'activeAlarmsPage.lowLimit', labelValue: value1 };
+      return { percentage, color, labelKey: 'activeAlarmsPage.lowLimit', labelValue: `${value1}${unitText}` };
     } else if (alarm.compareType === 5 && value1 !== null && value2 !== null) {
       // InRange alarm - show position in range
       const range = Math.abs(value2 - value1);
@@ -544,11 +546,11 @@ const ActiveAlarmsPage: React.FC = () => {
       const max = Math.max(value1, value2);
       const percentage = range > 0 ? ((numValue - min) / range) * 100 : 50;
       const color = numValue < min || numValue > max ? 'error' : 'success';
-      return { percentage, color, labelKey: 'activeAlarmsPage.range', labelValue: `${min} - ${max}` };
+      return { percentage, color, labelKey: 'activeAlarmsPage.range', labelValue: `${min} - ${max}${unitText}` };
     }
     
     return null;
-  }, []);
+  }, [isRTL]);
 
   /**
    * Format alarm priority (AlarmPriority: 1 = Warning, 2 = Alarm)
