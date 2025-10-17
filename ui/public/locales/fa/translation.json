@@ -228,6 +228,8 @@
     "retryLoading": "تلاش مجدد",
     "alarmId": "شناسه هشدار",
     "itemId": "شناسه پوینت",
+    "alarmMessage": "پیام هشدار",
+    "itemName": "نام پوینت",
     "triggeredAt": "زمان فعال‌سازی",
     "alarmCount": "هشدارهای فعال",
     "refreshing": "در حال به‌روزرسانی...",

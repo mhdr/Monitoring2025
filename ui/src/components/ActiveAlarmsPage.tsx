@@ -33,7 +33,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useTranslation } from '../hooks/useTranslation';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { getActiveAlarms } from '../services/monitoringApi';
-import type { ActiveAlarm } from '../types/api';
+import type { ActiveAlarm, Item, AlarmDto } from '../types/api';
 import { createLogger } from '../utils/logger';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 
@@ -51,6 +51,90 @@ const ActiveAlarmsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
+  const [storedItems, setStoredItems] = useState<Item[]>([]);
+  const [storedAlarms, setStoredAlarms] = useState<AlarmDto[]>([]);
+
+  /**
+   * Create lookup maps for items and alarms
+   * Maps ID -> Name/Message for quick lookup
+   */
+  const itemsMap = useMemo(() => {
+    const map = new Map<string, string>();
+    storedItems.forEach(item => {
+      // Use name in current language (nameFa for Persian, name for English)
+      const displayName = isRTL && item.nameFa ? item.nameFa : item.name;
+      map.set(item.id, displayName);
+    });
+    logger.log('Created items lookup map:', { size: map.size });
+    return map;
+  }, [storedItems, isRTL]);
+
+  const alarmsMap = useMemo(() => {
+    const map = new Map<string, string>();
+    storedAlarms.forEach(alarm => {
+      if (alarm.id) {
+        // Use alarm message as display name, or show alarm type as fallback
+        const displayMessage = alarm.message || `${alarm.alarmType || 'Unknown'} Alarm`;
+        map.set(alarm.id, displayMessage);
+      }
+    });
+    logger.log('Created alarms lookup map:', { size: map.size });
+    return map;
+  }, [storedAlarms]);
+
+  /**
+   * Load items and alarms from IndexedDB on mount
+   */
+  useEffect(() => {
+    const loadStoredData = async () => {
+      try {
+        logger.log('Loading stored items and alarms from IndexedDB...');
+        
+        const [items, alarms] = await Promise.all([
+          monitoringStorageHelpers.getStoredItems(),
+          monitoringStorageHelpers.getStoredAlarms(),
+        ]);
+        
+        if (items && Array.isArray(items)) {
+          setStoredItems(items);
+          logger.log('Loaded items from IndexedDB:', { count: items.length });
+        } else {
+          logger.warn('No valid items array found in IndexedDB');
+          setStoredItems([]);
+        }
+        
+        // FIX: IndexedDB stores the full response object with {data: AlarmDto[]}
+        // We need to extract the data array
+        let alarmsArray: AlarmDto[] = [];
+        if (alarms) {
+          if (Array.isArray(alarms)) {
+            // Direct array
+            alarmsArray = alarms;
+          } else if (typeof alarms === 'object' && 'data' in alarms) {
+            // Wrapped in response object
+            const alarmsResponse = alarms as { data: AlarmDto[] };
+            if (Array.isArray(alarmsResponse.data)) {
+              alarmsArray = alarmsResponse.data;
+            }
+          }
+        }
+        
+        if (alarmsArray.length > 0) {
+          setStoredAlarms(alarmsArray);
+          logger.log('Loaded alarms from IndexedDB:', { count: alarmsArray.length });
+        } else {
+          logger.warn('No alarms found in IndexedDB');
+          setStoredAlarms([]);
+        }
+      } catch (err) {
+        logger.error('Failed to load stored data from IndexedDB:', err);
+        setStoredItems([]);
+        setStoredAlarms([]);
+      }
+    };
+    
+    loadStoredData();
+  }, []);
 
   /**
    * Fetch active alarms from API
@@ -367,14 +451,14 @@ const ActiveAlarmsPage: React.FC = () => {
                   <Table size="small" data-id-ref="active-alarms-table">
                     <TableHead data-id-ref="active-alarms-table-head">
                       <TableRow>
-                        <TableCell data-id-ref="active-alarms-table-header-alarm-id">
+                        <TableCell data-id-ref="active-alarms-table-header-item-name">
                           <Typography variant="subtitle2" fontWeight="bold">
-                            {t('activeAlarmsPage.alarmId')}
+                            {t('activeAlarmsPage.itemName')}
                           </Typography>
                         </TableCell>
-                        <TableCell data-id-ref="active-alarms-table-header-item-id">
+                        <TableCell data-id-ref="active-alarms-table-header-alarm-message">
                           <Typography variant="subtitle2" fontWeight="bold">
-                            {t('activeAlarmsPage.itemId')}
+                            {t('activeAlarmsPage.alarmMessage')}
                           </Typography>
                         </TableCell>
                         <TableCell data-id-ref="active-alarms-table-header-triggered-at">
@@ -385,27 +469,39 @@ const ActiveAlarmsPage: React.FC = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody data-id-ref="active-alarms-table-body">
-                      {alarms.map((alarm, index) => (
-                        <TableRow
-                          key={alarm.id || `alarm-${index}`}
-                          hover
-                          data-id-ref={`active-alarm-row-${index}`}
-                        >
-                          <TableCell data-id-ref={`active-alarm-id-${index}`}>
-                            <Typography variant="body2" fontFamily="monospace">
-                              {alarm.alarmId || '-'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell data-id-ref={`active-alarm-item-id-${index}`}>
-                            <Typography variant="body2" fontFamily="monospace">
-                              {alarm.itemId || '-'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell data-id-ref={`active-alarm-time-${index}`}>
-                            <Typography variant="body2">{formatTimestamp(alarm.time)}</Typography>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {alarms.map((alarm, index) => {
+                        // Lookup alarm message from alarmsMap
+                        const alarmMessage = alarm.alarmId 
+                          ? (alarmsMap.get(alarm.alarmId) || alarm.alarmId)
+                          : '-';
+                        
+                        // Lookup item name from itemsMap
+                        const itemName = alarm.itemId 
+                          ? (itemsMap.get(alarm.itemId) || alarm.itemId)
+                          : '-';
+                        
+                        return (
+                          <TableRow
+                            key={alarm.id || `alarm-${index}`}
+                            hover
+                            data-id-ref={`active-alarm-row-${index}`}
+                          >
+                            <TableCell data-id-ref={`active-alarm-item-name-${index}`}>
+                              <Typography variant="body2">
+                                {itemName}
+                              </Typography>
+                            </TableCell>
+                            <TableCell data-id-ref={`active-alarm-message-${index}`}>
+                              <Typography variant="body2">
+                                {alarmMessage}
+                              </Typography>
+                            </TableCell>
+                            <TableCell data-id-ref={`active-alarm-time-${index}`}>
+                              <Typography variant="body2">{formatTimestamp(alarm.time)}</Typography>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>

@@ -228,6 +228,8 @@
     "retryLoading": "Retry",
     "alarmId": "Alarm ID",
     "itemId": "Item ID",
+    "alarmMessage": "Alarm Message",
+    "itemName": "Item Name",
     "triggeredAt": "Triggered At",
     "alarmCount": "Active Alarms",
     "refreshing": "Refreshing...",
