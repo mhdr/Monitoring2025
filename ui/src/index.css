@@ -117,3 +117,44 @@ body.rtl input[data-id-ref="trend-analysis-end-date-time"] {
     font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif !important;
   }
 }
+
+/* Fix alignment for date picker containers in trend analysis */
+[data-id-ref="trend-analysis-start-date-container"],
+[data-id-ref="trend-analysis-end-date-container"] {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Allow flex item to shrink below content size */
+}
+
+[data-id-ref="trend-analysis-start-date-container"] .row,
+[data-id-ref="trend-analysis-end-date-container"] .row {
+  margin: 0; /* Remove Bootstrap row negative margins */
+  display: flex;
+  align-items: flex-end; /* Align input fields at the bottom */
+  gap: 0.5rem; /* Use gap instead of Bootstrap gutters for better control */
+}
+
+[data-id-ref="trend-analysis-start-date-container"] .row > div,
+[data-id-ref="trend-analysis-end-date-container"] .row > div {
+  padding: 0; /* Remove Bootstrap column padding */
+  flex: 1; /* Equal width for date and time columns */
+  min-width: 0; /* Allow flex item to shrink */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure labels have consistent spacing */
+[data-id-ref="trend-analysis-start-date-container"] .form-label,
+[data-id-ref="trend-analysis-end-date-container"] .form-label {
+  margin-bottom: 0.25rem !important;
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+
+/* Ensure inputs have consistent height and alignment */
+[data-id-ref="trend-analysis-start-date-container"] .form-control,
+[data-id-ref="trend-analysis-end-date-container"] .form-control {
+  height: 2.25rem; /* Consistent height for all inputs */
+  display: block;
+  width: 100%;
+}
