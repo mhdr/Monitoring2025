@@ -42,6 +42,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(authState.token);
         // refreshToken is stored but not kept in React state - it's only used by RTK Query
         setIsAuthenticated(Boolean(authState.token && authState.user));
+        
+        // Log for debugging
+        console.log('[AuthContext] Auth initialized:', { 
+          hasToken: !!authState.token, 
+          hasUser: !!authState.user,
+          isAuthenticated: Boolean(authState.token && authState.user)
+        });
       } catch (error) {
         console.error('Failed to initialize auth from IndexedDB:', error);
         // On error, assume not authenticated

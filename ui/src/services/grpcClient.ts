@@ -22,7 +22,9 @@ const transport = createGrpcWebTransport({
   baseUrl: GRPC_BASE_URL,
   // Add credentials and authentication headers
   fetch: (input, init) => {
-    const token = authStorageHelpers.getStoredToken();
+    // Use synchronous token access from cache (populated by AuthContext)
+    // This is necessary because fetch interceptor must be synchronous
+    const token = authStorageHelpers.getStoredTokenSync();
     const headers = new Headers(init?.headers);
     
     // Add JWT Bearer token if available

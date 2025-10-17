@@ -72,6 +72,8 @@ export function useGlobalActiveAlarmsStream(
       console.log('[GlobalActiveAlarmsStream] Not connecting - auth not ready:', { isAuthenticated, isAuthLoading });
       return;
     }
+    
+    console.log('[GlobalActiveAlarmsStream] Connecting...');
 
     // Prevent multiple simultaneous connection attempts
     if (isConnectingRef.current) {
