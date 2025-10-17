@@ -241,6 +241,14 @@
     "noItemsAvailable": "هیچ پوینتی در دسترس نیست. لطفاً ابتدا داده‌ها را همگام‌سازی کنید.",
     "instantaneousDataTitle": "مقادیر لحظه‌ای",
     "loadingValues": "در حال بارگذاری مقادیر لحظه‌ای...",
-    "noValuesAvailable": "مقدار لحظه‌ای در دسترس نیست"
+    "noValuesAvailable": "مقدار لحظه‌ای در دسترس نیست",
+    "trendIncreasing": "در حال افزایش",
+    "trendDecreasing": "در حال کاهش",
+    "trendStable": "پایدار",
+    "viewHistory": "مشاهده تاریخچه",
+    "historyComingSoon": "مشاهده تاریخچه (به زودی)",
+    "highLimit": "حد بالا",
+    "lowLimit": "حد پایین",
+    "range": "محدوده"
   }
 }

@@ -241,6 +241,14 @@
     "noItemsAvailable": "No items available. Please synchronize data first.",
     "instantaneousDataTitle": "Instantaneous Values",
     "loadingValues": "Loading instantaneous values...",
-    "noValuesAvailable": "No instantaneous values available"
+    "noValuesAvailable": "No instantaneous values available",
+    "trendIncreasing": "Increasing",
+    "trendDecreasing": "Decreasing",
+    "trendStable": "Stable",
+    "viewHistory": "View history",
+    "historyComingSoon": "View history (Coming soon)",
+    "highLimit": "High Limit",
+    "lowLimit": "Low Limit",
+    "range": "Range"
   }
 }

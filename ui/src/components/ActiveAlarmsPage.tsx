@@ -20,6 +20,10 @@ import {
   TableRow,
   Stack,
   Divider,
+  LinearProgress,
+  Tooltip,
+  Fade,
+  IconButton,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -28,6 +32,10 @@ import {
   Warning as WarningIcon,
   SignalCellularAlt as SignalIcon,
   SignalCellularConnectedNoInternet0Bar as DisconnectedIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  TrendingFlat as TrendingFlatIcon,
+  Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTranslation } from '../hooks/useTranslation';
@@ -57,6 +65,10 @@ const ActiveAlarmsPage: React.FC = () => {
   
   // State for instantaneous values
   const [itemValues, setItemValues] = useState<MultiValue[]>([]);
+  const [previousValues, setPreviousValues] = useState<Map<string, string>>(new Map());
+  const [changedValues, setChangedValues] = useState<Set<string>>(new Set());
+  const [valuesRefreshing, setValuesRefreshing] = useState<boolean>(false);
+  const [valueHistory, setValueHistory] = useState<Map<string, Array<{value: number; time: number}>>>(new Map());
   
   // Ref for value refresh interval
   const valuesIntervalRef = useRef<number | null>(null);
@@ -146,9 +158,13 @@ const ActiveAlarmsPage: React.FC = () => {
   /**
    * Fetch instantaneous values for items with active alarms
    */
-  const fetchInstantaneousValues = useCallback(async (activeAlarms: ActiveAlarm[]) => {
+  const fetchInstantaneousValues = useCallback(async (activeAlarms: ActiveAlarm[], isAutoRefresh = false) => {
     try {
-      logger.log('Fetching instantaneous values for alarmed items...');
+      if (isAutoRefresh) {
+        setValuesRefreshing(true);
+      }
+      
+      logger.log('Fetching instantaneous values for alarmed items...', { isAutoRefresh });
       
       // Extract unique itemIds from alarms
       const itemIds = Array.from(new Set(
@@ -160,6 +176,7 @@ const ActiveAlarmsPage: React.FC = () => {
       if (itemIds.length === 0) {
         logger.warn('No valid itemIds found in alarms');
         setItemValues([]);
+        setValuesRefreshing(false);
         return;
       }
       
@@ -173,13 +190,60 @@ const ActiveAlarmsPage: React.FC = () => {
         values: response.values,
       });
       
-      setItemValues(response.values || []);
+      const newValues = response.values || [];
+      
+      // Track which values changed
+      const changed = new Set<string>();
+      const prevVals = new Map<string, string>();
+      
+      newValues.forEach(val => {
+        if (val.itemId && val.value !== null) {
+          const prevValue = previousValues.get(val.itemId);
+          if (prevValue !== undefined && prevValue !== val.value) {
+            changed.add(val.itemId);
+          }
+          prevVals.set(val.itemId, val.value);
+        }
+      });
+      
+      // Update previous values
+      setPreviousValues(prevVals);
+      setChangedValues(changed);
+      
+      // Clear changed indicators after 2 seconds
+      if (changed.size > 0) {
+        setTimeout(() => {
+          setChangedValues(new Set());
+        }, 2000);
+      }
+      
+      // Update value history (keep last 20 values per item)
+      const newHistory = new Map(valueHistory);
+      newValues.forEach(val => {
+        if (val.itemId && val.value !== null) {
+          const numValue = parseFloat(val.value);
+          if (!isNaN(numValue)) {
+            const history = newHistory.get(val.itemId) || [];
+            history.push({ value: numValue, time: val.time });
+            // Keep only last 20 values
+            if (history.length > 20) {
+              history.shift();
+            }
+            newHistory.set(val.itemId, history);
+          }
+        }
+      });
+      setValueHistory(newHistory);
+      
+      setItemValues(newValues);
     } catch (err) {
       logger.error('Error fetching instantaneous values:', err);
       // Don't set error state - values are optional, alarms table is more important
       setItemValues([]);
+    } finally {
+      setValuesRefreshing(false);
     }
-  }, []);
+  }, [previousValues, valueHistory]);
 
   /**
    * Fetch active alarms from API
@@ -364,6 +428,68 @@ const ActiveAlarmsPage: React.FC = () => {
   }, [t, isRTL]);
 
   /**
+   * Get trend indicator for value change
+   */
+  const getValueTrend = useCallback((itemId: string, currentValue: string | null): 'up' | 'down' | 'stable' => {
+    if (!currentValue) return 'stable';
+    
+    const history = valueHistory.get(itemId);
+    if (!history || history.length < 2) return 'stable';
+    
+    const currentNum = parseFloat(currentValue);
+    if (isNaN(currentNum)) return 'stable';
+    
+    const prevNum = history[history.length - 2].value;
+    
+    if (currentNum > prevNum) return 'up';
+    if (currentNum < prevNum) return 'down';
+    return 'stable';
+  }, [valueHistory]);
+
+  /**
+   * Calculate threshold percentage for alarm visualization
+   * Returns percentage (0-100) indicating how close value is to threshold
+   */
+  const getThresholdPercentage = useCallback((
+    item: Item,
+    alarm: AlarmDto | undefined,
+    currentValue: string | null
+  ): { percentage: number; color: string; labelKey: string; labelValue: string | number } | null => {
+    if (!alarm || !currentValue || item.itemType === 1 || item.itemType === 2) {
+      return null; // Digital items don't have thresholds
+    }
+    
+    const numValue = parseFloat(currentValue);
+    if (isNaN(numValue)) return null;
+    
+    const value1 = alarm.value1 ? parseFloat(alarm.value1) : null;
+    const value2 = alarm.value2 ? parseFloat(alarm.value2) : null;
+    
+    // CompareType: 3 = GreaterThan (High alarm), 4 = LessThan (Low alarm), 5 = InRange
+    if (alarm.compareType === 3 && value1 !== null) {
+      // High alarm - show how close to limit
+      const percentage = Math.min(100, Math.max(0, (numValue / value1) * 100));
+      const color = percentage >= 100 ? 'error' : percentage >= 90 ? 'warning' : 'success';
+      return { percentage, color, labelKey: 'activeAlarmsPage.highLimit', labelValue: value1 };
+    } else if (alarm.compareType === 4 && value1 !== null) {
+      // Low alarm - show how far from limit
+      const percentage = Math.min(100, Math.max(0, (numValue / value1) * 100));
+      const color = percentage <= 0 ? 'error' : percentage <= 10 ? 'warning' : 'success';
+      return { percentage, color, labelKey: 'activeAlarmsPage.lowLimit', labelValue: value1 };
+    } else if (alarm.compareType === 5 && value1 !== null && value2 !== null) {
+      // InRange alarm - show position in range
+      const range = Math.abs(value2 - value1);
+      const min = Math.min(value1, value2);
+      const max = Math.max(value1, value2);
+      const percentage = range > 0 ? ((numValue - min) / range) * 100 : 50;
+      const color = numValue < min || numValue > max ? 'error' : 'success';
+      return { percentage, color, labelKey: 'activeAlarmsPage.range', labelValue: `${min} - ${max}` };
+    }
+    
+    return null;
+  }, []);
+
+  /**
    * Setup automatic refresh of instantaneous values every 5 seconds
    */
   useEffect(() => {
@@ -380,7 +506,7 @@ const ActiveAlarmsPage: React.FC = () => {
       valuesIntervalRef.current = window.setInterval(() => {
         if (alarms.length > 0) {
           logger.log('Auto-refreshing instantaneous values...');
-          fetchInstantaneousValues(alarms);
+          fetchInstantaneousValues(alarms, true); // Pass true for auto-refresh
         }
       }, 5000); // 5 seconds
       
@@ -653,34 +779,39 @@ const ActiveAlarmsPage: React.FC = () => {
                                     py: 1, 
                                     px: 1,
                                     display: 'flex',
-                                    flexWrap: 'wrap',
-                                    gap: 2,
-                                    alignItems: 'center',
+                                    flexDirection: 'column',
+                                    gap: 1,
                                   }}
                                   data-id-ref={`active-alarm-values-container-${index}`}
                                 >
-                                  <Typography 
-                                    variant="caption" 
-                                    sx={{ 
-                                      fontWeight: 600, 
-                                      color: 'text.secondary',
-                                      minWidth: '120px',
-                                    }}
-                                    data-id-ref={`active-alarm-values-label-${index}`}
-                                  >
-                                    {t('activeAlarmsPage.instantaneousDataTitle')}:
-                                  </Typography>
+                                  {/* Header with loading indicator */}
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography 
+                                      variant="caption" 
+                                      sx={{ 
+                                        fontWeight: 600, 
+                                        color: 'text.secondary',
+                                      }}
+                                      data-id-ref={`active-alarm-values-label-${index}`}
+                                    >
+                                      {t('activeAlarmsPage.instantaneousDataTitle')}:
+                                    </Typography>
+                                    {valuesRefreshing && (
+                                      <CircularProgress size={12} thickness={4} />
+                                    )}
+                                  </Box>
                                   
+                                  {/* Values with trend indicators */}
                                   <Box 
                                     sx={{ 
                                       display: 'flex', 
                                       flexWrap: 'wrap', 
                                       gap: 2,
-                                      flex: 1,
+                                      alignItems: 'center',
                                     }}
                                     data-id-ref={`active-alarm-values-details-${index}`}
                                   >
-                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                                       <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
                                         {t('pointNumber')}:
                                       </Typography>
@@ -689,22 +820,63 @@ const ActiveAlarmsPage: React.FC = () => {
                                       </Typography>
                                     </Box>
                                     
-                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                                       <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
                                         {t('value')}:
                                       </Typography>
-                                      <Typography 
-                                        variant="caption" 
-                                        sx={{ 
-                                          color: 'primary.main', 
-                                          fontWeight: 600,
-                                        }}
-                                      >
-                                        {formatItemValue(item, itemValue.value)}
-                                      </Typography>
+                                      <Fade in={true} timeout={changedValues.has(alarm.itemId || '') ? 500 : 0}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                          <Typography 
+                                            variant="caption" 
+                                            sx={{ 
+                                              color: changedValues.has(alarm.itemId || '') ? 'warning.main' : 'primary.main',
+                                              fontWeight: 600,
+                                              transition: 'color 0.3s ease-in-out',
+                                            }}
+                                          >
+                                            {formatItemValue(item, itemValue.value)}
+                                          </Typography>
+                                          {/* Trend indicator */}
+                                          {(() => {
+                                            const trend = getValueTrend(alarm.itemId || '', itemValue.value);
+                                            if (trend === 'up') {
+                                              return (
+                                                <Tooltip title={t('activeAlarmsPage.trendIncreasing')} arrow>
+                                                  <TrendingUpIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                                                </Tooltip>
+                                              );
+                                            } else if (trend === 'down') {
+                                              return (
+                                                <Tooltip title={t('activeAlarmsPage.trendDecreasing')} arrow>
+                                                  <TrendingDownIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                                                </Tooltip>
+                                              );
+                                            } else if (valueHistory.get(alarm.itemId || '')?.length && valueHistory.get(alarm.itemId || '')!.length >= 2) {
+                                              return (
+                                                <Tooltip title={t('activeAlarmsPage.trendStable')} arrow>
+                                                  <TrendingFlatIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                                                </Tooltip>
+                                              );
+                                            }
+                                            return null;
+                                          })()}
+                                          {/* History chart icon */}
+                                          {valueHistory.get(alarm.itemId || '')?.length && valueHistory.get(alarm.itemId || '')!.length > 1 && (
+                                            <Tooltip title={t('activeAlarmsPage.historyComingSoon')} arrow>
+                                              <IconButton 
+                                                size="small" 
+                                                sx={{ p: 0, ml: 0.5 }}
+                                                data-id-ref={`value-history-icon-${index}`}
+                                              >
+                                                <TimelineIcon sx={{ fontSize: 14, color: 'info.main' }} />
+                                              </IconButton>
+                                            </Tooltip>
+                                          )}
+                                        </Box>
+                                      </Fade>
                                     </Box>
                                     
-                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                                       <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
                                         {t('time')}:
                                       </Typography>
@@ -713,6 +885,46 @@ const ActiveAlarmsPage: React.FC = () => {
                                       </Typography>
                                     </Box>
                                   </Box>
+                                  
+                                  {/* Threshold visualization */}
+                                  {(() => {
+                                    const alarmDto = storedAlarms.find(a => a.id === alarm.alarmId);
+                                    const thresholdInfo = getThresholdPercentage(item, alarmDto, itemValue.value);
+                                    
+                                    if (thresholdInfo) {
+                                      const label = `${t(thresholdInfo.labelKey)}: ${thresholdInfo.labelValue}`;
+                                      return (
+                                        <Box sx={{ mt: 0.5 }}>
+                                          <Tooltip title={label} arrow placement="top">
+                                            <Box>
+                                              <LinearProgress 
+                                                variant="determinate" 
+                                                value={thresholdInfo.percentage}
+                                                color={thresholdInfo.color as 'success' | 'warning' | 'error'}
+                                                sx={{ 
+                                                  height: 6, 
+                                                  borderRadius: 1,
+                                                  bgcolor: 'action.selected',
+                                                }}
+                                              />
+                                              <Typography 
+                                                variant="caption" 
+                                                sx={{ 
+                                                  fontSize: '0.65rem', 
+                                                  color: 'text.disabled',
+                                                  mt: 0.5,
+                                                  display: 'block',
+                                                }}
+                                              >
+                                                {label}
+                                              </Typography>
+                                            </Box>
+                                          </Tooltip>
+                                        </Box>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                 </Box>
                               </TableCell>
                             </TableRow>
