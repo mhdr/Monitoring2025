@@ -34,6 +34,7 @@ export interface UseGlobalActiveAlarmsStreamResult {
  * to maintain a persistent connection to the active alarms stream
  * 
  * @param isAuthenticated - Whether the user is authenticated (stream only runs when true)
+ * @param isAuthLoading - Whether authentication is still loading (prevents premature connection)
  * @param clientId - Unique client identifier for the stream (default: 'web-client-global')
  * @returns Control functions for manual reconnection/disconnection
  * 
@@ -41,10 +42,10 @@ export interface UseGlobalActiveAlarmsStreamResult {
  * ```tsx
  * // In App component or AuthContext
  * function App() {
- *   const { isAuthenticated } = useAuth();
- *   const { reconnect } = useGlobalActiveAlarmsStream(isAuthenticated);
+ *   const { isAuthenticated, isLoading } = useAuth();
+ *   const { reconnect } = useGlobalActiveAlarmsStream(isAuthenticated, isLoading);
  *   
- *   // Stream automatically starts when authenticated
+ *   // Stream automatically starts when authenticated and auth loading is complete
  *   // Access data anywhere in the app with:
  *   // const { alarmCount, lastUpdate } = useSelector(state => state.monitoring.activeAlarms);
  * }
@@ -52,6 +53,7 @@ export interface UseGlobalActiveAlarmsStreamResult {
  */
 export function useGlobalActiveAlarmsStream(
   isAuthenticated: boolean,
+  isAuthLoading: boolean,
   clientId: string = 'web-client-global'
 ): UseGlobalActiveAlarmsStreamResult {
   const dispatch = useAppDispatch();
@@ -65,8 +67,9 @@ export function useGlobalActiveAlarmsStream(
    * Establishes the gRPC streaming connection
    */
   const connect = useCallback(async () => {
-    // Only connect if authenticated
-    if (!isAuthenticated) {
+    // Only connect if authenticated AND auth loading is complete
+    if (!isAuthenticated || isAuthLoading) {
+      console.log('[GlobalActiveAlarmsStream] Not connecting - auth not ready:', { isAuthenticated, isAuthLoading });
       return;
     }
 
@@ -126,7 +129,7 @@ export function useGlobalActiveAlarmsStream(
       if (!abortController.signal.aborted) {
         dispatch(setActiveAlarmsStreamStatus(StreamStatus.DISCONNECTED));
         // Auto-reconnect after stream ends (server might have closed connection)
-        if (isAuthenticated) {
+        if (isAuthenticated && !isAuthLoading) {
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, 5000); // Retry after 5 seconds
@@ -150,14 +153,14 @@ export function useGlobalActiveAlarmsStream(
         console.error('Global active alarms stream error:', err);
 
         // Auto-reconnect on error with exponential backoff
-        if (isAuthenticated) {
+        if (isAuthenticated && !isAuthLoading) {
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, 10000); // Retry after 10 seconds on error
         }
       }
     }
-  }, [isAuthenticated, clientId, dispatch]);
+  }, [isAuthenticated, isAuthLoading, clientId, dispatch]);
 
   /**
    * Disconnects the current stream
@@ -188,11 +191,13 @@ export function useGlobalActiveAlarmsStream(
     }, 100); // Small delay to ensure clean disconnect
   }, [connect, disconnect]);
 
-  // Auto-connect when authenticated, auto-disconnect when not authenticated
+  // Auto-connect when authenticated and auth loading is complete, auto-disconnect when not authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !isAuthLoading) {
+      console.log('[GlobalActiveAlarmsStream] Auto-connecting (authenticated and auth loading complete)');
       connect();
     } else {
+      console.log('[GlobalActiveAlarmsStream] Auto-disconnecting:', { isAuthenticated, isAuthLoading });
       disconnect();
     }
 
@@ -200,7 +205,7 @@ export function useGlobalActiveAlarmsStream(
     return () => {
       disconnect();
     };
-  }, [isAuthenticated, connect, disconnect]);
+  }, [isAuthenticated, isAuthLoading, connect, disconnect]);
 
   return {
     reconnect,

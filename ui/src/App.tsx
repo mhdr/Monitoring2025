@@ -235,14 +235,14 @@ const AppRoutes = () => {
 function App() {
   const { isLoadingLanguage } = useLanguage();
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   
   // Dynamically load Persian fonts only when needed (Persian language active)
   useFontLoader();
   
-  // Global active alarms subscription - runs automatically when authenticated
+  // Global active alarms subscription - runs automatically when authenticated and auth loading is complete
   // Updates Redux store with real-time alarm count data accessible from anywhere
-  useGlobalActiveAlarmsStream(isAuthenticated);
+  useGlobalActiveAlarmsStream(isAuthenticated, isAuthLoading);
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {

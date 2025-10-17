@@ -133,10 +133,17 @@ export class BackgroundRefreshService {
       return;
     }
 
+    // Check if user is authenticated before attempting refresh
+    const authState = store.getState().auth;
+    if (!authState.isAuthenticated || !authState.user) {
+      console.log('[BackgroundRefresh] User not authenticated, skipping refresh');
+      return;
+    }
+
     this.status.lastCheck = Date.now();
 
     try {
-      const needsRefresh = this.needsRefresh();
+      const needsRefresh = await this.needsRefresh();
 
       if (needsRefresh) {
         console.log('[BackgroundRefresh] Data is stale, refreshing in background...');
@@ -159,11 +166,11 @@ export class BackgroundRefreshService {
   /**
    * Check if data needs refresh
    */
-  private needsRefresh(): boolean {
+  private async needsRefresh(): Promise<boolean> {
     const now = Date.now();
 
     // Get last sync timestamp from metadata
-    const metadata = getMetadata();
+    const metadata = await getMetadata();
     const lastSyncTimestamp = metadata?.lastSync || 0;
 
     if (!lastSyncTimestamp) {

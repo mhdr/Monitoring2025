@@ -15,7 +15,6 @@ import { initializeMuiTheme } from './store/slices/muiThemeSlice'
 import { initializeMonitoringFromStorage } from './store/slices/monitoringSlice'
 import { initAutoCleanup } from './utils/monitoringStorage'
 import { initIndexedDB } from './utils/indexedDbStorage'
-import { initBackgroundRefresh } from './services/backgroundRefreshService'
 import App from './App.tsx'
 
 // Initialize IndexedDB storage first and wait for it to complete
@@ -40,12 +39,8 @@ import App from './App.tsx'
       console.error('Failed to initialize auto-cleanup:', error);
     });
     
-    // Initialize background refresh service (checks data freshness)
-    initBackgroundRefresh({
-      enabled: true,
-      refreshInterval: 5 * 60 * 1000, // Check every 5 minutes
-      dataStaleThreshold: 30 * 60 * 1000, // Refresh if data older than 30 minutes
-    });
+    // NOTE: Background refresh service is now started in AuthContext
+    // after authentication is confirmed to prevent 401 errors on startup
     
     // Defer non-critical imports to after initial render
     // This improves Time to Interactive (TTI) by reducing initial bundle size
