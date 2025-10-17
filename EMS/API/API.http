@@ -551,6 +551,23 @@ Content-Type: application/json
 ### SignalR Hub Documentation
 ### ========================================
 
+### View SignalR Hubs in Swagger UI
+# SignalR hubs are now documented in Swagger UI with full method signatures
+# 
+# To view SignalR hub documentation:
+# 1. Start the API: dotnet run
+# 2. Navigate to: https://localhost:7136/swagger
+# 3. Look for the "SignalR - Monitoring Hub" tag
+# 4. Expand to see hub methods with parameters and descriptions
+# 
+# Note: SignalR hubs use WebSocket connections, not HTTP requests,
+# so you cannot invoke them directly from Swagger UI. Use the Swagger
+# documentation to understand the API, then connect via SignalR client.
+#
+# For implementation details, see: SIGNALR-SWAGGER-IMPLEMENTATION.md
+
+###
+
 ### Get SignalR Hub Information - HTTPS (No Auth Required)
 # Returns complete SignalR hub documentation including:
 # - Hub name and endpoint URL
