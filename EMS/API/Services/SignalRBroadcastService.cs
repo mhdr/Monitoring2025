@@ -2,6 +2,8 @@ using API.Hubs;
 using API.Models.Dto;
 using Core.Models;
 using DB.User.Data;
+using DB.User.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +25,7 @@ public class SignalRBroadcastService
     /// <param name="hubContext">SignalR hub context for MonitoringHub</param>
     /// <param name="logger">Logger instance for structured logging</param>
     /// <param name="connectionTracker">Connection tracking service for getting online users</param>
-    /// <param name="serviceProvider">Service provider for creating scoped database contexts</param>
+    /// <param name="serviceProvider">Service provider for creating scoped database contexts and UserManager</param>
     public SignalRBroadcastService(
         IHubContext<MonitoringHub> hubContext,
         ILogger<SignalRBroadcastService> logger,
@@ -38,7 +40,8 @@ public class SignalRBroadcastService
 
     /// <summary>
     /// Broadcasts active alarms update to connected SignalR clients with permission-based filtering.
-    /// Each user receives only the count of alarms they have access to based on ItemPermissions.
+    /// Admin users (username = "admin") receive all alarm counts.
+    /// Non-admin users receive only the count of alarms they have access to based on ItemPermissions.
     /// </summary>
     /// <param name="activeAlarms">List of all active alarms</param>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -75,9 +78,10 @@ public class SignalRBroadcastService
                 "{Operation}: Broadcasting active alarms to {UserCount} online users. Total alarms: {TotalAlarmCount}",
                 operation, onlineUserIds.Count, activeAlarms.Count);
 
-            // Create a scoped database context for querying permissions
+            // Create a scoped service provider to access UserManager and DbContext
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
             var usersNotified = 0;
 
@@ -92,15 +96,42 @@ public class SignalRBroadcastService
                         continue;
                     }
 
-                    // Get user's item permissions
-                    var userPermissions = await context.ItemPermissions
-                        .Where(p => p.UserId == userId)
-                        .Select(p => p.ItemId)
-                        .ToListAsync(cancellationToken);
+                    // Get the user to check if they are admin
+                    var user = await userManager.FindByIdAsync(userIdString);
+                    
+                    if (user == null)
+                    {
+                        _logger.LogWarning("{Operation}: User not found: {UserId}", operation, userIdString);
+                        continue;
+                    }
 
-                    // Filter active alarms to only those the user has permission to see
-                    var userAlarmCount = activeAlarms
-                        .Count(alarm => userPermissions.Contains(alarm.ItemId));
+                    int userAlarmCount;
+
+                    // Admin users get access to all alarms
+                    if (user.UserName?.ToLower() == "admin")
+                    {
+                        userAlarmCount = activeAlarms.Count;
+                        
+                        _logger.LogDebug(
+                            "{Operation}: Admin user {UserId} ({UserName}) - showing all {AlarmCount} alarms",
+                            operation, userIdString, user.UserName, userAlarmCount);
+                    }
+                    else
+                    {
+                        // Non-admin users: filter by ItemPermissions
+                        var userPermissions = await context.ItemPermissions
+                            .Where(p => p.UserId == userId)
+                            .Select(p => p.ItemId)
+                            .ToListAsync(cancellationToken);
+
+                        // Filter active alarms to only those the user has permission to see
+                        userAlarmCount = activeAlarms
+                            .Count(alarm => userPermissions.Contains(alarm.ItemId));
+
+                        _logger.LogDebug(
+                            "{Operation}: User {UserId} ({UserName}) has {PermissionCount} item permissions, showing {AlarmCount} alarms",
+                            operation, userIdString, user.UserName, userPermissions.Count, userAlarmCount);
+                    }
 
                     // Get all connections for this user
                     var connectionIds = _connectionTracker.GetUserConnections(userIdString);
