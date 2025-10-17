@@ -628,10 +628,22 @@ public class MonitoringController : ControllerBase
     /// Get configured alarms for specified monitoring items
     /// </summary>
     /// <param name="request">Alarms request containing list of item IDs to retrieve alarms for</param>
-    /// <returns>List of configured alarms for the specified items</returns>
+    /// <returns>List of configured alarms for the specified items including English and Farsi messages</returns>
+    /// <remarks>
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/alarms
+    ///     {
+    ///        "itemIds": ["550e8400-e29b-41d4-a716-446655440001"]
+    ///     }
+    ///     
+    /// Sample response includes both Message (English) and MessageFa (Farsi) properties for alarm messages.
+    /// Leave itemIds empty or null to retrieve all alarms in the system.
+    /// </remarks>
     /// <response code="200">Returns the configured alarms for monitoring items</response>
     /// <response code="401">If user is not authenticated</response>
     /// <response code="400">If there's a validation error with the request</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("Alarms")]
     [ProducesResponseType(typeof(AlarmsResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -697,6 +709,7 @@ public class MonitoringController : ControllerBase
                     IsDisabled = a.IsDisabled,
                     AlarmDelay = a.AlarmDelay,
                     Message = a.Message,
+                    MessageFa = a.MessageFa,
                     Value1 = a.Value1,
                     Value2 = a.Value2,
                     Timeout = a.Timeout,

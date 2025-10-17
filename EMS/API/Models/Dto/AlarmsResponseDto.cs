@@ -18,6 +18,7 @@ namespace API.Models.Dto;
 ///       "isDisabled": false,
 ///       "alarmDelay": 30,
 ///       "message": "Temperature too high",
+///       "messageFa": "دمای بیش از حد بالا",
 ///       "value1": "75.5",
 ///       "value2": "85.0",
 ///       "timeout": 3600,
