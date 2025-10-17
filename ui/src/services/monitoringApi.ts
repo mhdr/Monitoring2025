@@ -1,5 +1,5 @@
 import apiClient, { handleApiError } from './apiClient';
-import { storeMonitoringResponseData, getStoredItemIds } from '../utils/monitoringStorage';
+import { storeMonitoringResponseData, getStoredItemIds, getStoredGroupIds, getStoredAlarmIds } from '../utils/monitoringStorage';
 import { createLogger } from '../utils/logger';
 import type {
   GroupsResponseDto,
@@ -298,10 +298,32 @@ export const getActiveAlarms = async (params?: ActiveAlarmsRequestDto): Promise<
 
 /**
  * Get historical alarm data
+ * Automatically extracts itemIds from stored items in IndexedDB if not provided
  */
 export const getAlarmHistory = async (params: AlarmHistoryRequestDto): Promise<AlarmHistoryResponseDto> => {
   try {
-    const response = await apiClient.post<AlarmHistoryResponseDto>('/api/Monitoring/HistoryAlarms', params);
+    // Build request body with required date fields
+    const body: AlarmHistoryRequestDto = {
+      startDate: params.startDate,
+      endDate: params.endDate,
+    };
+    
+    // If itemIds are explicitly provided, use them
+    if (params.itemIds && params.itemIds.length > 0) {
+      body.itemIds = params.itemIds;
+      logger.log('Using provided itemIds for getAlarmHistory', { count: params.itemIds.length });
+    } else {
+      // Otherwise, extract itemIds from stored items in IndexedDB using utility method
+      const itemIds = await getStoredItemIds();
+      if (itemIds && itemIds.length > 0) {
+        body.itemIds = itemIds;
+        logger.log('Using itemIds from utility for getAlarmHistory', { count: itemIds.length });
+      } else {
+        logger.warn('No stored items found in IndexedDB for getAlarmHistory, sending request without itemIds');
+      }
+    }
+    
+    const response = await apiClient.post<AlarmHistoryResponseDto>('/api/Monitoring/HistoryAlarms', body);
     return response.data;
   } catch (error) {
     handleApiError(error);

@@ -338,6 +338,87 @@ export const getStoredItemIds = async (): Promise<string[] | null> => {
 };
 
 /**
+ * Extract groupIds from stored groups in IndexedDB
+ * Returns array of group IDs that the user has access to
+ * 
+ * @returns Promise<string[] | null> - Array of group IDs, or null if no groups stored
+ * 
+ * @example
+ * // Get all accessible groupIds
+ * const groupIds = await getStoredGroupIds();
+ * if (groupIds) {
+ *   // Use groupIds for filtering or API calls
+ *   console.log(`User has access to ${groupIds.length} groups`);
+ * }
+ */
+export const getStoredGroupIds = async (): Promise<string[] | null> => {
+  try {
+    const storedGroups = await monitoringStorageHelpers.getStoredGroups();
+    
+    if (!storedGroups || storedGroups.length === 0) {
+      logger.info('No stored groups found in IndexedDB');
+      return null;
+    }
+    
+    const groupIds = storedGroups.map(group => group.id);
+    logger.log('Extracted groupIds from IndexedDB:', { 
+      count: groupIds.length,
+      groupIds 
+    });
+    
+    return groupIds;
+  } catch (error) {
+    logger.error('Failed to extract groupIds from IndexedDB:', error);
+    return null;
+  }
+};
+
+/**
+ * Extract alarmIds from stored alarms in IndexedDB
+ * Returns array of alarm IDs that the user has access to
+ * 
+ * @returns Promise<string[] | null> - Array of alarm IDs, or null if no alarms stored
+ * 
+ * @example
+ * // Get all accessible alarmIds
+ * const alarmIds = await getStoredAlarmIds();
+ * if (alarmIds) {
+ *   // Use alarmIds for filtering or operations
+ *   console.log(`Found ${alarmIds.length} configured alarms`);
+ * }
+ */
+export const getStoredAlarmIds = async (): Promise<string[] | null> => {
+  try {
+    const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
+    
+    if (!storedAlarms || storedAlarms.length === 0) {
+      logger.info('No stored alarms found in IndexedDB');
+      return null;
+    }
+    
+    // Filter out alarms without IDs and map to string array
+    const alarmIds = storedAlarms
+      .filter(alarm => alarm.id != null)
+      .map(alarm => alarm.id as string);
+    
+    if (alarmIds.length === 0) {
+      logger.warn('Stored alarms found but none have valid IDs');
+      return null;
+    }
+    
+    logger.log('Extracted alarmIds from IndexedDB:', { 
+      count: alarmIds.length,
+      alarmIds 
+    });
+    
+    return alarmIds;
+  } catch (error) {
+    logger.error('Failed to extract alarmIds from IndexedDB:', error);
+    return null;
+  }
+};
+
+/**
  * Helper function to store response data from RTK Query endpoints
  * Used in transformResponse functions to automatically persist data
  */
