@@ -35,6 +35,7 @@ import { useMonitoring } from '../hooks/useMonitoring';
 import { getActiveAlarms } from '../services/monitoringApi';
 import type { ActiveAlarm } from '../types/api';
 import { createLogger } from '../utils/logger';
+import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 
 const logger = createLogger('ActiveAlarmsPage');
 
@@ -66,8 +67,38 @@ const ActiveAlarmsPage: React.FC = () => {
       
       setError(null);
       
-      // Call API to get all active alarms (empty itemIds = get all)
-      const response = await getActiveAlarms({});
+      // Get items from IndexedDB to extract itemIds
+      logger.log('Retrieving items from IndexedDB...');
+      const storedItems = await monitoringStorageHelpers.getStoredItems();
+      
+      if (!storedItems || storedItems.length === 0) {
+        logger.warn('No items found in IndexedDB, cannot fetch active alarms');
+        setError(t('activeAlarmsPage.noItemsAvailable'));
+        setAlarms([]);
+        setLastFetchTime(Date.now());
+        return;
+      }
+      
+      // Extract itemIds from stored items (using 'id' property)
+      const itemIds = storedItems
+        .map(item => item.id)
+        .filter((id): id is string => id !== null && id !== undefined);
+      
+      logger.log('Extracted itemIds from stored items:', {
+        totalItems: storedItems.length,
+        itemIdsCount: itemIds.length,
+      });
+      
+      if (itemIds.length === 0) {
+        logger.warn('No valid itemIds found in stored items');
+        setError(t('activeAlarmsPage.noItemsAvailable'));
+        setAlarms([]);
+        setLastFetchTime(Date.now());
+        return;
+      }
+      
+      // Call API with itemIds parameter
+      const response = await getActiveAlarms({ itemIds });
       
       logger.log('Active alarms fetched successfully:', {
         count: response.data?.length || 0,

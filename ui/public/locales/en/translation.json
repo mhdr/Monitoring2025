@@ -235,6 +235,7 @@
     "streamConnected": "Live updates active",
     "streamDisconnected": "Live updates disconnected",
     "streamConnecting": "Connecting to live updates...",
-    "streamError": "Live update connection error"
+    "streamError": "Live update connection error",
+    "noItemsAvailable": "No items available. Please synchronize data first."
   }
 }
