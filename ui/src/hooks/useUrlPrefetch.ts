@@ -53,12 +53,12 @@ export const useUrlPrefetch = () => {
       // However, keeping it doesn't hurt and ensures the cache entry persists
       link.onload = () => {
         // Prefetch successful - resources are now in browser cache
-        console.debug(`Prefetched: ${url}`);
+        logger.debug(`Prefetched: ${url}`);
       };
       
       link.onerror = () => {
         // Prefetch failed - remove from tracking so it can be retried
-        console.warn(`Failed to prefetch: ${url}`);
+        logger.warn(`Failed to prefetch: ${url}`);
         prefetchedUrls.current.delete(url);
       };
     } catch (error) {

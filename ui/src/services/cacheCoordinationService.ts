@@ -16,6 +16,9 @@
 
 import type { Workbox } from 'workbox-window';
 import { onStorageChange } from '../utils/indexedDbStorage';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('CacheCoordination');
 
 /**
  * Storage keys that require cache invalidation when updated
@@ -99,7 +102,7 @@ class CacheCoordinationService {
       );
 
       if (isMonitoringKey) {
-        console.log(`[CacheCoordination] IndexedDB ${action}: ${key}, invalidating caches`);
+        logger.log(`IndexedDB ${action}: ${key}, invalidating caches`);
         this.invalidateApiCache();
       }
     });

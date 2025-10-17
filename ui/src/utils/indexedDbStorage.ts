@@ -138,7 +138,7 @@ export const getItem = async <T>(key: string): Promise<T | null> => {
 
         // Check TTL expiration
         if (storedData.expiresAt && Date.now() > storedData.expiresAt) {
-          console.info(`[IndexedDB] Data expired for key: ${key}, removing...`);
+          logger.info(`Data expired for key: ${key}, removing...`);
           // Remove expired data asynchronously
           removeItem(key).catch((error) =>
             logger.warn('Failed to remove expired item:', error)
@@ -314,7 +314,7 @@ export const cleanupExpired = async (): Promise<number> => {
           if (storedData.expiresAt && now > storedData.expiresAt) {
             cursor.delete();
             cleanedCount++;
-            console.info(`[IndexedDB] Cleaned up expired key: ${cursor.key}`);
+            logger.info(`Cleaned up expired key: ${cursor.key}`);
           }
 
           cursor.continue();
@@ -331,7 +331,7 @@ export const cleanupExpired = async (): Promise<number> => {
       transaction.oncomplete = () => {
         db.close();
         if (cleanedCount > 0) {
-          console.info(`[IndexedDB] Cleanup completed: removed ${cleanedCount} expired items`);
+          logger.info(`Cleanup completed: removed ${cleanedCount} expired items`);
         }
       };
     });

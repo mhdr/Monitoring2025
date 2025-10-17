@@ -30,7 +30,7 @@ const indexedDBReduxStorage: ReduxPersistStorage = {
       const value = await getItem<string>(fullKey);
       return value;
     } catch (error) {
-      console.error(`[Redux-IndexedDB] Error getting item ${key}:`, error);
+      logger.error(`Error getting item ${key}:`, error);
       return null;
     }
   },
@@ -41,7 +41,7 @@ const indexedDBReduxStorage: ReduxPersistStorage = {
       // Don't use TTL for Redux persist data - it should be permanent
       await setItem(fullKey, value);
     } catch (error) {
-      console.error(`[Redux-IndexedDB] Error setting item ${key}:`, error);
+      logger.error(`Error setting item ${key}:`, error);
       throw error;
     }
   },
@@ -51,7 +51,7 @@ const indexedDBReduxStorage: ReduxPersistStorage = {
       const fullKey = `${REDUX_PREFIX}${key}`;
       await removeItem(fullKey);
     } catch (error) {
-      console.error(`[Redux-IndexedDB] Error removing item ${key}:`, error);
+      logger.error(`Error removing item ${key}:`, error);
       throw error;
     }
   },

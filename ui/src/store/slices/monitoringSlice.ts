@@ -44,7 +44,7 @@ const loadSyncStatusFromStorage = async (): Promise<boolean> => {
     });
     return isSynced;
   } catch (error) {
-    console.warn('Failed to read sync status from IndexedDB:', error);
+    logger.warn('Failed to read sync status from IndexedDB:', error);
     return false;
   }
 };
@@ -101,7 +101,7 @@ export const saveSyncStatusToStorage = async (isSynced: boolean): Promise<void> 
       });
     }
   } catch (error) {
-    console.warn('Failed to save sync status to IndexedDB:', error);
+    logger.warn('Failed to save sync status to IndexedDB:', error);
   }
 };
 
@@ -118,7 +118,7 @@ export const clearSyncStatusFromStorage = async (): Promise<void> => {
     
     await removeItem(SYNC_STATUS_STORAGE_KEY);
   } catch (error) {
-    console.warn('Failed to clear sync status from IndexedDB:', error);
+    logger.warn('Failed to clear sync status from IndexedDB:', error);
   }
 };
 
@@ -136,7 +136,7 @@ export const clearAllMonitoringDataFromStorage = async (): Promise<void> => {
     await removeItem(SYNC_STATUS_STORAGE_KEY);
     await monitoringStorageHelpers.clearAllMonitoringData();
   } catch (error) {
-    console.warn('Failed to clear monitoring data from IndexedDB:', error);
+    logger.warn('Failed to clear monitoring data from IndexedDB:', error);
   }
 };
 
