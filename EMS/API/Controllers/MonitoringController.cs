@@ -637,7 +637,6 @@ public class MonitoringController : ControllerBase
     ///        "itemIds": ["550e8400-e29b-41d4-a716-446655440001"]
     ///     }
     ///     
-    /// Sample response includes both Message (English) and MessageFa (Farsi) properties for alarm messages.
     /// Leave itemIds empty or null to retrieve all alarms in the system.
     /// </remarks>
     /// <response code="200">Returns the configured alarms for monitoring items</response>

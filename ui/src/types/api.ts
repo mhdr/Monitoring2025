@@ -375,6 +375,7 @@ export interface AlarmDto {
   isDisabled?: boolean;
   alarmDelay?: number; // int32
   message?: string | null;
+  messageFa?: string | null; // Farsi/Persian message
   value1?: string | null;
   value2?: string | null;
   timeout?: number | null; // int32

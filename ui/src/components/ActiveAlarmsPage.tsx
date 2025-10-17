@@ -110,14 +110,16 @@ const ActiveAlarmsPage: React.FC = () => {
     const map = new Map<string, string>();
     storedAlarms.forEach(alarm => {
       if (alarm.id) {
-        // Use alarm message as display name, or show alarm type as fallback
-        const displayMessage = alarm.message || `${alarm.alarmType || 'Unknown'} Alarm`;
+        // Use Farsi message if language is Persian and Farsi message is available, otherwise use English message
+        const displayMessage = (isRTL && alarm.messageFa) 
+          ? alarm.messageFa 
+          : (alarm.message || `${alarm.alarmType || 'Unknown'} Alarm`);
         map.set(alarm.id, displayMessage);
       }
     });
     logger.log('Created alarms lookup map:', { size: map.size });
     return map;
-  }, [storedAlarms]);
+  }, [storedAlarms, isRTL]);
 
   /**
    * Load items and alarms from IndexedDB on mount
