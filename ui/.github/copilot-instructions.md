@@ -142,11 +142,17 @@ This is a production-grade enterprise monitoring dashboard with:
 
 ### Logging (Development-Only)
 ⚠️ **CRITICAL: Always use logger utility instead of console.***
+⚠️ **CRITICAL: Use logger EXTENSIVELY for debugging - logs are FREE in production (zero overhead)**
 ⚠️ **Production builds suppress all logs** - keeps console clean for users
 ⚠️ **Development mode shows all logs** - full debugging capabilities
 
+**Philosophy: Log Everything Important**
+Since logger calls are completely stripped from production builds, you should be **generous with logging** during development. There is NO performance penalty in production - the logger code is fully eliminated by tree-shaking.
+
 **Implementation:**
 - **Logger Utility**: `src/utils/logger.ts`
+- **Zero Runtime Cost**: All logger calls become no-ops in production builds
+- **No Bundle Impact**: Dead code elimination removes all logger code from production
 
 **Usage:**
 ```typescript
@@ -173,18 +179,239 @@ logger.error('Error:', error);      // [MyComponent] Error: [error object]
 - `logger.group()` / `logger.groupEnd()` - Grouped logs
 - `logger.time()` / `logger.timeEnd()` - Performance timing
 
+**When to Log (Use Extensively!):**
+
+**1. Component Lifecycle & State Changes:**
+```typescript
+// ✅ Log component initialization
+useEffect(() => {
+  logger.log('Component mounted', { props, initialState });
+}, []);
+
+// ✅ Log state updates
+const handleUpdate = (newValue: string) => {
+  logger.log('Updating state', { oldValue: value, newValue });
+  setValue(newValue);
+};
+
+// ✅ Log cleanup
+useEffect(() => {
+  return () => {
+    logger.log('Component unmounting, cleaning up resources');
+  };
+}, []);
+```
+
+**2. API Calls & Data Fetching:**
+```typescript
+// ✅ Log before API call
+logger.log('Fetching user data', { userId });
+
+try {
+  const response = await apiClient.get(`/users/${userId}`);
+  // ✅ Log success with relevant data
+  logger.log('User data fetched successfully', { 
+    userId, 
+    userName: response.data.name,
+    timestamp: Date.now() 
+  });
+  return response.data;
+} catch (error) {
+  // ✅ Log errors with context
+  logger.error('Failed to fetch user data', { userId, error });
+  throw error;
+}
+```
+
+**3. User Interactions & Events:**
+```typescript
+// ✅ Log button clicks with context
+const handleSubmit = () => {
+  logger.log('Submit button clicked', { formData, isValid });
+  // ... submit logic
+};
+
+// ✅ Log navigation
+const handleNavigation = (path: string) => {
+  logger.log('Navigating to', { from: location.pathname, to: path });
+  navigate(path);
+};
+
+// ✅ Log form changes
+const handleInputChange = (field: string, value: unknown) => {
+  logger.debug('Form field changed', { field, value, formState });
+  // ... update logic
+};
+```
+
+**4. Context Operations & Store Updates:**
+```typescript
+// ✅ Log reducer actions
+function monitoringReducer(state: State, action: Action): State {
+  logger.log('Reducer action dispatched', { 
+    type: action.type, 
+    payload: action.payload,
+    currentState: state 
+  });
+  
+  switch (action.type) {
+    case 'GROUPS_SUCCESS':
+      logger.log('Groups loaded successfully', { count: action.payload.length });
+      return { ...state, groups: action.payload };
+    // ...
+  }
+}
+
+// ✅ Log context value changes
+useEffect(() => {
+  logger.log('Context value updated', { 
+    isAuthenticated, 
+    userName, 
+    permissions 
+  });
+}, [isAuthenticated, userName, permissions]);
+```
+
+**5. Complex Logic & Calculations:**
+```typescript
+// ✅ Log decision points
+const calculateDiscount = (price: number, userType: string) => {
+  logger.log('Calculating discount', { price, userType });
+  
+  if (userType === 'premium') {
+    logger.log('Premium user, applying 20% discount');
+    return price * 0.8;
+  } else if (price > 100) {
+    logger.log('Large order, applying 10% discount');
+    return price * 0.9;
+  }
+  
+  logger.log('No discount applied');
+  return price;
+};
+
+// ✅ Log loop iterations for debugging
+items.forEach((item, index) => {
+  logger.debug('Processing item', { index, itemId: item.id, itemName: item.name });
+  // ... process item
+});
+```
+
+**6. Async Operations & Timing:**
+```typescript
+// ✅ Log async operation flow
+const syncData = async () => {
+  logger.time('Data sync operation');
+  logger.log('Starting data sync');
+  
+  try {
+    logger.log('Fetching groups...');
+    await fetchGroups();
+    logger.log('Groups fetched');
+    
+    logger.log('Fetching items...');
+    await fetchItems();
+    logger.log('Items fetched');
+    
+    logger.log('Data sync completed successfully');
+  } catch (error) {
+    logger.error('Data sync failed', { error });
+  } finally {
+    logger.timeEnd('Data sync operation');
+  }
+};
+```
+
+**7. Conditional Logic & Edge Cases:**
+```typescript
+// ✅ Log branches taken
+if (!user) {
+  logger.warn('No user found, redirecting to login');
+  navigate('/login');
+  return;
+}
+
+if (user.role === 'admin') {
+  logger.log('Admin user detected, loading admin panel');
+  loadAdminPanel();
+} else {
+  logger.log('Regular user, loading standard view');
+  loadStandardView();
+}
+```
+
+**8. Error Handling & Recovery:**
+```typescript
+// ✅ Log error recovery attempts
+try {
+  await riskyOperation();
+} catch (error) {
+  logger.error('Operation failed, attempting recovery', { error });
+  
+  try {
+    await fallbackOperation();
+    logger.log('Recovery successful');
+  } catch (fallbackError) {
+    logger.error('Recovery failed', { originalError: error, fallbackError });
+    throw fallbackError;
+  }
+}
+```
+
+**9. Performance Monitoring:**
+```typescript
+// ✅ Log performance metrics
+logger.time('Heavy calculation');
+const result = performHeavyCalculation(data);
+logger.timeEnd('Heavy calculation');
+logger.log('Calculation result', { inputSize: data.length, resultSize: result.length });
+
+// ✅ Log render counts for optimization
+const renderCount = useRef(0);
+useEffect(() => {
+  renderCount.current += 1;
+  logger.debug('Component rendered', { count: renderCount.current });
+});
+```
+
+**10. Data Transformations:**
+```typescript
+// ✅ Log before/after transformations
+logger.log('Transforming API response', { rawData });
+const transformed = rawData.map(item => ({
+  id: item.id,
+  name: item.displayName,
+}));
+logger.log('Data transformed', { 
+  originalCount: rawData.length, 
+  transformedCount: transformed.length 
+});
+```
+
 **Key Benefits:**
-- 🚀 Zero overhead in production (no-op functions)
-- 📦 Smaller bundle size (dead code elimination)
-- 🔒 No information leakage in production
-- 🐛 Full debugging in development
-- 🏷️ Automatic module prefixes for organization
+- 🚀 **Zero overhead in production** (no-op functions, tree-shaken out)
+- 📦 **Smaller bundle size** (dead code elimination removes all logger code)
+- 🔒 **No information leakage** in production
+- 🐛 **Full debugging in development** without performance concerns
+- 🏷️ **Automatic module prefixes** for organization
+- 💰 **FREE logging** - no performance cost, so log generously!
+
+**Best Practices:**
+1. **Log liberally** - Since logs are removed in production, don't hold back
+2. **Include context** - Log relevant variables, state, and parameters
+3. **Use appropriate levels** - log/info for flow, debug for details, warn/error for problems
+4. **Log entry/exit points** - Track function calls and returns
+5. **Log timing** - Use time/timeEnd for performance analysis
+6. **Log data shapes** - Log array lengths, object keys, data types
+7. **Group related logs** - Use group/groupEnd for related operations
+8. **Table for arrays** - Use logger.table() for array/object visualization
 
 **Migration Pattern:**
 1. Import logger: `import { createLogger } from '../utils/logger';`
 2. Create module logger: `const logger = createLogger('ModuleName');`
 3. Replace all `console.*` calls with `logger.*`
 4. Remove `[ModuleName]` prefixes from messages (added automatically)
+5. **Add MORE logging** where it helps understand code flow
 
 ### Component Requirements
 - Always define TypeScript interfaces for component props
