@@ -93,6 +93,12 @@ public class AlarmsResponseDto
         /// </summary>
         /// <example>Temperature too high</example>
         public string? Message { get; set; }
+        
+        /// <summary>
+        /// Custom message to display when alarm triggers in Farsi
+        /// </summary>
+        /// <example>Temperature too high</example>
+        public string? MessageFa { get; set; }
 
         /// <summary>
         /// First comparison value (threshold, setpoint, etc.)
