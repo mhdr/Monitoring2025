@@ -62,7 +62,7 @@ const logger = createLogger('ActiveAlarmsPage');
 const ActiveAlarmsPage: React.FC = () => {
   const { language } = useLanguage();
   const { t } = useTranslation();
-  const { state } = useMonitoring();
+  const { state, updateActiveAlarms } = useMonitoring();
   const streamData = state.activeAlarms;
   const isRTL = language === 'fa';
   const theme = useTheme();
@@ -277,6 +277,18 @@ const ActiveAlarmsPage: React.FC = () => {
 
   /**
    * Fetch active alarms from API
+   * 
+   * IMPORTANT: Alarm Count Synchronization
+   * This function fetches the authoritative alarm count from the REST API and updates
+   * the MonitoringContext with the actual count. This ensures the sidebar badge count
+   * (which initially comes from SignalR) converges to match the actual filtered alarms
+   * for this user.
+   * 
+   * Why this is needed:
+   * - SignalR broadcasts alarm count changes immediately (fast, but may not match user's view)
+   * - REST API returns permission-filtered results (accurate, but slightly delayed)
+   * - Brief mismatches are expected (eventual consistency)
+   * - After API fetch, we update context with authoritative count
    */
   const fetchActiveAlarms = useCallback(async (isRefresh = false) => {
     try {
@@ -323,17 +335,22 @@ const ActiveAlarmsPage: React.FC = () => {
       // Call API with itemIds parameter
       const response = await getActiveAlarms({ itemIds });
       
-      logger.log('Active alarms fetched successfully:', {
-        count: response.data?.length || 0,
-        alarms: response.data,
-      });
-      
       // FIX: API returns nested structure {data: {data: ActiveAlarm[]}}
       // TypeScript types don't match the actual API response
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const alarmsData = (response as any).data.data || [];
+      
+      logger.log('Active alarms fetched successfully:', {
+        count: alarmsData.length,
+        alarms: alarmsData,
+      });
+      
       setAlarms(alarmsData);
       setLastFetchTime(Date.now());
+      
+      // Update the context's alarm count with the authoritative count from API
+      // This ensures the sidebar badge matches the actual filtered alarms for this user
+      updateActiveAlarms(alarmsData.length, Date.now());
       
       // Fetch instantaneous values for alarmed items
       if (alarmsData.length > 0) {
@@ -349,7 +366,7 @@ const ActiveAlarmsPage: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [t, fetchInstantaneousValues]);
+  }, [t, fetchInstantaneousValues, updateActiveAlarms]);
 
   /**
    * Initial fetch on mount - with mount/unmount tracking
@@ -367,6 +384,13 @@ const ActiveAlarmsPage: React.FC = () => {
   /**
    * Re-fetch when SignalR stream reports alarm count change
    * Only refetch if alarm count changed and we're not already loading
+   * 
+   * NOTE: Eventual Consistency Behavior
+   * - SignalR provides immediate alarm count updates (responsive UI)
+   * - REST API provides authoritative alarm count (accurate, permission-filtered)
+   * - Brief mismatches between sidebar badge and page count are expected
+   * - After API fetch completes, we update the context with authoritative count
+   * - This ensures both displays converge to the same value
    */
   useEffect(() => {
     if (
