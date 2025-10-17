@@ -578,23 +578,27 @@ const ActiveAlarmsPage: React.FC = () => {
   }, [t]);
 
   /**
-   * Format threshold value(s) based on compare type
+   * Format threshold value(s) based on compare type, with unit when available
    */
-  const formatThreshold = useCallback((alarm: AlarmDto | undefined): string => {
+  const formatThreshold = useCallback((alarm: AlarmDto | undefined, item: Item | undefined): string => {
     if (!alarm) return '-';
     
     const value1 = alarm.value1;
     const value2 = alarm.value2;
     
+    // Get unit name based on language
+    const unit = item ? (isRTL ? item.unitFa : item.unit) : '';
+    const unitText = unit ? ` ${unit}` : '';
+    
     // CompareType: 5 = Between (needs both values), others need only value1
     if (alarm.compareType === 5 && value1 && value2) {
-      return t('activeAlarmsPage.thresholdRange', { min: value1, max: value2 });
+      return t('activeAlarmsPage.thresholdRange', { min: value1, max: value2 }) + unitText;
     } else if (value1) {
-      return t('activeAlarmsPage.thresholdValue', { value: value1 });
+      return t('activeAlarmsPage.thresholdValue', { value: value1 }) + unitText;
     }
     
     return '-';
-  }, [t]);
+  }, [t, isRTL]);
 
   /**
    * Setup automatic refresh of instantaneous values every 5 seconds
@@ -1075,8 +1079,13 @@ const ActiveAlarmsPage: React.FC = () => {
                               
                               {/* Threshold */}
                               <TableCell data-id-ref={`active-alarm-threshold-${index}`}>
-                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                                  {formatThreshold(alarmDto)}
+                                <Typography 
+                                  variant="body2" 
+                                  sx={{ 
+                                    fontFamily: isRTL ? 'IRANSansX, sans-serif' : 'monospace',
+                                  }}
+                                >
+                                  {formatThreshold(alarmDto, item)}
                                 </Typography>
                               </TableCell>
                               
@@ -1086,7 +1095,12 @@ const ActiveAlarmsPage: React.FC = () => {
                                   {alarmDto?.alarmDelay && alarmDto.alarmDelay > 0 && (
                                     <AccessTimeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
                                   )}
-                                  <Typography variant="body2">
+                                  <Typography 
+                                    variant="body2"
+                                    sx={{ 
+                                      fontFamily: isRTL ? 'IRANSansX, sans-serif' : undefined,
+                                    }}
+                                  >
                                     {formatAlarmDelay(alarmDto?.alarmDelay)}
                                   </Typography>
                                 </Box>
@@ -1115,7 +1129,14 @@ const ActiveAlarmsPage: React.FC = () => {
                               
                               {/* Triggered At */}
                               <TableCell data-id-ref={`active-alarm-time-${index}`}>
-                                <Typography variant="body2">{formatTimestamp(alarm.time)}</Typography>
+                                <Typography 
+                                  variant="body2"
+                                  sx={{ 
+                                    fontFamily: isRTL ? 'IRANSansX, sans-serif' : undefined,
+                                  }}
+                                >
+                                  {formatTimestamp(alarm.time)}
+                                </Typography>
                               </TableCell>
                             </TableRow>
                           
@@ -1172,7 +1193,13 @@ const ActiveAlarmsPage: React.FC = () => {
                                       <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
                                         {t('pointNumber')}:
                                       </Typography>
-                                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                      <Typography 
+                                        variant="caption" 
+                                        sx={{ 
+                                          color: 'text.secondary',
+                                          fontFamily: isRTL ? 'IRANSansX, sans-serif' : undefined,
+                                        }}
+                                      >
                                         {item.pointNumber}
                                       </Typography>
                                     </Box>
@@ -1189,6 +1216,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                               color: changedValues.has(alarm.itemId || '') ? 'warning.main' : 'primary.main',
                                               fontWeight: 600,
                                               transition: 'color 0.3s ease-in-out',
+                                              fontFamily: isRTL ? 'IRANSansX, sans-serif' : undefined,
                                             }}
                                           >
                                             {formatItemValue(item, itemValue.value)}
@@ -1238,7 +1266,13 @@ const ActiveAlarmsPage: React.FC = () => {
                                       <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
                                         {t('time')}:
                                       </Typography>
-                                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                      <Typography 
+                                        variant="caption" 
+                                        sx={{ 
+                                          color: 'text.secondary',
+                                          fontFamily: isRTL ? 'IRANSansX, sans-serif' : undefined,
+                                        }}
+                                      >
                                         {formatTimestamp(itemValue.time)}
                                       </Typography>
                                     </Box>
