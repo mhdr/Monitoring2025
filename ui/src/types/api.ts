@@ -143,8 +143,13 @@ export interface Group {
   parentId?: string | null;
 }
 
+/**
+ * Request DTO for retrieving monitoring groups
+ * No parameters - returns groups accessible to the current user
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GroupsRequestDto {
-  userId?: string | null;
+  // Empty - endpoint returns groups accessible to current user based on JWT token
 }
 
 export interface GroupsResponseDto {

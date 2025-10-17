@@ -1,7 +1,6 @@
 import apiClient, { handleApiError } from './apiClient';
 import { storeMonitoringResponseData } from '../utils/monitoringStorage';
 import type {
-  GroupsRequestDto,
   GroupsResponseDto,
   ItemsRequestDto,
   ItemsResponseDto,
@@ -45,10 +44,11 @@ import type {
 
 /**
  * Get monitoring groups accessible to the current user
+ * No parameters required - returns groups based on JWT token permissions
  */
-export const getGroups = async (params: GroupsRequestDto = {}): Promise<GroupsResponseDto> => {
+export const getGroups = async (): Promise<GroupsResponseDto> => {
   try {
-    const response = await apiClient.post<GroupsResponseDto>('/api/Monitoring/Groups', params);
+    const response = await apiClient.post<GroupsResponseDto>('/api/Monitoring/Groups', {});
     // Store groups data in IndexedDB when fetched
     return storeMonitoringResponseData.storeGroupsResponse(response.data);
   } catch (error) {
