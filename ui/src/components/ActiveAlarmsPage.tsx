@@ -591,16 +591,35 @@ const ActiveAlarmsPage: React.FC = () => {
     const times = history.map(h => new Date(h.time).toLocaleTimeString(language === 'fa' ? 'fa-IR' : 'en-US'));
     const values = history.map(h => h.value);
     
-    // Get unit suffix
-    const unitSuffix = item.unit ? ` (${item.unit})` : '';
+    // Get item name in current language
+    const itemName = isRTL && item.nameFa ? item.nameFa : item.name;
+    
+    // Get unit suffix in current language
+    const unit = isRTL && item.unitFa ? item.unitFa : item.unit;
+    const unitSuffix = unit ? ` (${unit})` : '';
+    
+    // Set font family for Persian language
+    const fontFamily = isRTL ? 'IRANSansX, sans-serif' : undefined;
+    
+    // Construct title text - ensure it's a valid string
+    const chartTitle = String(itemName || '');
+    
+    // Debug logging
+    logger.log('Chart options prepared:', {
+      itemName,
+      chartTitle,
+      isRTL,
+      hasNameFa: !!item.nameFa,
+      nameFa: item.nameFa,
+      name: item.name,
+      fontFamily,
+      itemObject: item,
+    });
     
     return {
+      // Remove title since it's already shown in dialog title
       title: {
-        text: t('activeAlarmsPage.historyChartTitle', { itemName: item.name }),
-        left: isRTL ? 'right' : 'left',
-        textStyle: {
-          color: theme.palette.text.primary,
-        },
+        show: false,
       },
       tooltip: {
         trigger: 'axis',
@@ -612,12 +631,15 @@ const ActiveAlarmsPage: React.FC = () => {
           }
           return '';
         },
+        textStyle: {
+          fontFamily,
+        },
       },
       grid: {
         left: isRTL ? '15%' : '10%',
         right: isRTL ? '10%' : '15%',
         bottom: '15%',
-        top: '15%',
+        top: '10%',
       },
       xAxis: {
         type: 'category',
@@ -627,10 +649,12 @@ const ActiveAlarmsPage: React.FC = () => {
         nameGap: 30,
         nameTextStyle: {
           color: theme.palette.text.secondary,
+          fontFamily,
         },
         axisLabel: {
           color: theme.palette.text.secondary,
           rotate: 45,
+          fontFamily,
         },
         axisLine: {
           lineStyle: {
@@ -643,10 +667,12 @@ const ActiveAlarmsPage: React.FC = () => {
         name: `${t('value')}${unitSuffix}`,
         nameTextStyle: {
           color: theme.palette.text.secondary,
+          fontFamily,
         },
         axisLabel: {
           color: theme.palette.text.secondary,
           formatter: (value: number) => formatItemValue(item, String(value)),
+          fontFamily,
         },
         axisLine: {
           lineStyle: {
@@ -1131,7 +1157,9 @@ const ActiveAlarmsPage: React.FC = () => {
           data-id-ref="value-history-modal-title"
         >
           {selectedHistoryItem && t('activeAlarmsPage.historyModalTitle', { 
-            itemName: selectedHistoryItem.item.name 
+            itemName: isRTL && selectedHistoryItem.item.nameFa 
+              ? selectedHistoryItem.item.nameFa 
+              : selectedHistoryItem.item.name 
           })}
           <IconButton
             edge="end"
@@ -1149,9 +1177,9 @@ const ActiveAlarmsPage: React.FC = () => {
               <ReactECharts
                 option={getHistoryChartOptions()}
                 style={{ height: '100%', width: '100%' }}
-                opts={{ renderer: 'svg' }}
+                opts={{ renderer: 'svg', locale: isRTL ? 'FA' : 'EN' }}
                 notMerge={true}
-                lazyUpdate={true}
+                lazyUpdate={false}
               />
             </Box>
           )}
