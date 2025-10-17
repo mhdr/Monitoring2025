@@ -467,3 +467,67 @@ Authorization: Bearer {{authTokenHTTPS}}
 }
 
 ###
+
+### Get Active Alarms (all items) - HTTP
+POST {{API_HostAddress}}/api/monitoring/activealarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemIds": []
+}
+
+###
+
+### Get Active Alarms (all items) - HTTPS
+POST {{API_HostAddress}}/api/monitoring/activealarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "itemIds": []
+}
+
+###
+
+### Get Active Alarms (specific items) - HTTP
+POST {{API_HostAddress}}/api/monitoring/activealarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemIds": ["3fa85f64-5717-4562-b3fc-2c963f66afa6", "4fa85f64-5717-4562-b3fc-2c963f66afa7"]
+}
+
+###
+
+### Get Active Alarms (specific items) - HTTPS
+POST {{API_HostAddress}}/api/monitoring/activealarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "itemIds": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+}
+
+###
+
+### Get Active Alarms (null itemIds - should retrieve all) - HTTP
+POST {{API_HostAddress}}/api/monitoring/activealarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+}
+
+###
+
+### Get Active Alarms (unauthorized - should return 401)
+POST {{API_HostAddress}}/api/monitoring/activealarms
+Content-Type: application/json
+
+{
+  "itemIds": []
+}
+
+###

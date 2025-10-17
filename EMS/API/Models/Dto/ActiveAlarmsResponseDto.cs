@@ -1,19 +1,14 @@
 namespace API.Models.Dto;
 
 /// <summary>
-/// Response DTO containing active alarms information
+/// Response model containing active alarms information
 /// </summary>
 public class ActiveAlarmsResponseDto
 {
     /// <summary>
     /// List of currently active alarms
     /// </summary>
-    public List<ActiveAlarm> Data { get; set; }
-
-    public ActiveAlarmsResponseDto()
-    {
-        Data = new();
-    }
+    public List<ActiveAlarm> Data { get; set; } = new();
 
     /// <summary>
     /// Represents an active alarm in the system
@@ -23,21 +18,25 @@ public class ActiveAlarmsResponseDto
         /// <summary>
         /// Unique identifier for this active alarm instance
         /// </summary>
-        public string Id { get; set; }
+        /// <example>1fa85f64-5717-4562-b3fc-2c963f66afa6</example>
+        public string Id { get; set; } = string.Empty;
 
         /// <summary>
         /// ID of the alarm configuration that triggered
         /// </summary>
-        public string AlarmId { get; set; }
+        /// <example>2fa85f64-5717-4562-b3fc-2c963f66afa6</example>
+        public string AlarmId { get; set; } = string.Empty;
 
         /// <summary>
         /// ID of the monitoring item that triggered the alarm
         /// </summary>
-        public string ItemId { get; set; }
+        /// <example>3fa85f64-5717-4562-b3fc-2c963f66afa6</example>
+        public string ItemId { get; set; } = string.Empty;
 
         /// <summary>
-        /// Unix timestamp when the alarm was triggered
+        /// Unix timestamp (epoch seconds) when the alarm was triggered
         /// </summary>
+        /// <example>1729180800</example>
         public long Time { get; set; }
 
         /// <summary>

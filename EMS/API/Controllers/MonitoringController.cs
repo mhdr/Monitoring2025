@@ -719,15 +719,27 @@ public class MonitoringController : ControllerBase
     /// <summary>
     /// Get currently active alarms for specified monitoring items
     /// </summary>
-    /// <param name="request">Active alarms request containing list of item IDs</param>
-    /// <returns>List of currently active alarms</returns>
+    /// <param name="request">Active alarms request containing optional list of item IDs to filter</param>
+    /// <returns>List of currently active alarms with alarm configuration and timing information</returns>
+    /// <remarks>
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/activealarms
+    ///     {
+    ///        "itemIds": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+    ///     }
+    ///     
+    /// Leave itemIds empty or null to retrieve all active alarms in the system.
+    /// </remarks>
     /// <response code="200">Returns the currently active alarms</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <response code="400">Validation error - invalid request format</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("ActiveAlarms")]
     [ProducesResponseType(typeof(ActiveAlarmsResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ActiveAlarms([FromBody] ActiveAlarmsRequestDto request)
     {
         try
@@ -736,12 +748,40 @@ public class MonitoringController : ControllerBase
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("Unauthorized access attempt to ActiveAlarms endpoint (no user id)");
+                return Unauthorized(new { success = false, message = "Unauthorized access" });
             }
 
-            // var userGuid = Guid.Parse(userId);
+            // Validate model state
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
 
-            var alarms = await Core.Alarms.ActiveAlarms(request.ItemIds);
+                _logger.LogWarning("Validation failed for ActiveAlarms request by user {UserId}: {Errors}", 
+                    userId, string.Join("; ", errors));
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Validation failed",
+                    errors = errors
+                });
+            }
+
+            _logger.LogInformation("Fetching active alarms for user {UserId} (items: {ItemCount})", 
+                userId, request?.ItemIds?.Count ?? 0);
+
+            // Ensure request is not null
+            if (request == null)
+            {
+                _logger.LogWarning("Null request received for ActiveAlarms endpoint by user {UserId}", userId);
+                return BadRequest(new { success = false, message = "Request body is required" });
+            }
+
+            var alarms = await Core.Alarms.ActiveAlarms(request.ItemIds ?? new List<string>());
 
             var response = new ActiveAlarmsResponseDto();
 
@@ -756,14 +796,30 @@ public class MonitoringController : ControllerBase
                 });
             }
 
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-        }
+            _logger.LogInformation("Successfully retrieved {AlarmCount} active alarms for user {UserId}", 
+                response.Data.Count, userId);
 
-        return BadRequest(ModelState);
+            return Ok(new { success = true, data = response, message = "Active alarms retrieved successfully" });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Validation error in ActiveAlarms endpoint for user {UserId}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized access in ActiveAlarms endpoint for user {UserId}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in ActiveAlarms endpoint for user {UserId}: {Message}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier), ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { success = false, message = "Internal server error" });
+        }
     }
 
     /// <summary>
