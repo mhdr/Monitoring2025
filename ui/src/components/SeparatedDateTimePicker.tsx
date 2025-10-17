@@ -46,6 +46,7 @@ const SeparatedDateTimePicker: React.FC<SeparatedDateTimePickerProps> = ({
 }) => {
   const { language } = useLanguage();
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const pickerContainerRef = useRef<HTMLElement | null>(null);
   
   // Internal state for date and time parts
   const [dateValue, setDateValue] = useState<string>('');
@@ -196,6 +197,36 @@ const SeparatedDateTimePicker: React.FC<SeparatedDateTimePickerProps> = ({
     });
   }, [language]);
 
+  // Handle click outside to close Jalali picker
+  useEffect(() => {
+    if (language !== 'fa') return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      
+      // Only handle if picker is open
+      if (!pickerContainerRef.current) return;
+      
+      // Check if click is outside the date input and picker container
+      if (
+        dateInputRef.current &&
+        !dateInputRef.current.contains(target) &&
+        !pickerContainerRef.current.contains(target)
+      ) {
+        logger.log('Click outside detected, hiding Jalali picker');
+        window.jalaliDatepicker?.hide();
+        pickerContainerRef.current = null;
+      }
+    };
+
+    // Add event listener to capture clicks
+    document.addEventListener('mousedown', handleClickOutside, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+    };
+  }, [language]);
+
   // Handle date change in Persian mode (from JalaliDatePicker)
   const handleJalaliDateChange = useCallback(() => {
     if (!dateInputRef.current) return;
@@ -210,6 +241,10 @@ const SeparatedDateTimePicker: React.FC<SeparatedDateTimePickerProps> = ({
         onChange(newIsoDateTime);
       }
     }
+
+    // Clear picker reference after selection
+    pickerContainerRef.current = null;
+    logger.log('Date selected, picker reference cleared');
   }, [jalaliDateToIso, timeValue, combineDateAndTime, onChange]);
 
   // Handle date change in English mode
@@ -258,6 +293,16 @@ const SeparatedDateTimePicker: React.FC<SeparatedDateTimePickerProps> = ({
       initDate: dateInputRef.current.value || undefined,
       onChange: handleJalaliDateChange,
     });
+
+    // Get reference to the picker container for click-outside detection
+    // Note: JalaliDatePicker uses custom element <jdp-container>, not div.jdp-container
+    setTimeout(() => {
+      const pickerContainer = document.querySelector('jdp-container') as HTMLElement;
+      if (pickerContainer) {
+        pickerContainerRef.current = pickerContainer;
+        logger.log('Picker opened, container reference saved');
+      }
+    }, 50);
   }, [handleJalaliDateChange]);
 
   if (language === 'fa') {
