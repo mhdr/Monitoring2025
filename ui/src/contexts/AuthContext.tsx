@@ -81,8 +81,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);
           setToken(null);
           setIsAuthenticated(false);
-          authStorageHelpers.clearStoredAuth().catch((error) => {
-            logger.error('Failed to clear auth storage on LOGOUT broadcast:', error);
+          authStorageHelpers.clearAllData().catch((error) => {
+            logger.error('Failed to clear all data on LOGOUT broadcast:', error);
           });
           break;
         case 'TOKEN_REFRESHED':
@@ -173,7 +173,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     setIsAuthenticated(false);
     setIsLoading(false);
-    await authStorageHelpers.clearStoredAuth();
+    await authStorageHelpers.clearAllData();
     broadcastLogout();
   }, []);
 

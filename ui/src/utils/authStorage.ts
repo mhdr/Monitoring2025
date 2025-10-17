@@ -1,5 +1,5 @@
 import type { User } from '../types/auth';
-import { getItem, setItem, removeItem } from './indexedDbStorage';
+import { getItem, setItem, removeItem, clear } from './indexedDbStorage';
 
 /**
  * Helper functions for managing authentication data in browser storage
@@ -92,6 +92,18 @@ export const authStorageHelpers = {
     await removeItem(AUTH_REFRESH_TOKEN_KEY);
     await removeItem(AUTH_USER_KEY);
     await removeItem(AUTH_EXPIRATION_KEY);
+  },
+
+  /**
+   * Clear ALL IndexedDB data (auth + monitoring data)
+   * Use this on logout to ensure complete cleanup
+   */
+  clearAllData: async (): Promise<void> => {
+    // Clear cache immediately
+    tokenCache = null;
+    
+    // Clear entire IndexedDB storage (all auth and monitoring data)
+    await clear();
   },
 
   getCurrentAuth: async () => {
