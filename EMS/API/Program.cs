@@ -216,7 +216,10 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 // Add SignalR services
 builder.Services.AddSignalR();
 
-// Add SignalR Broadcast Service
+// Add SignalR connection tracking service (must be singleton to maintain state across hub connections)
+builder.Services.AddSingleton<API.Services.ConnectionTrackingService>();
+
+// Add SignalR Broadcast Service (singleton for consistent broadcasting)
 builder.Services.AddSingleton<API.Services.SignalRBroadcastService>();
 
 builder.Services.AddSwaggerGen(c =>

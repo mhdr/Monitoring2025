@@ -46,9 +46,9 @@ public class ActiveAlarmsBackgroundWorker : BackgroundService, IDisposable
 
                     if (alarms != null)
                     {
-                        _logger.LogInformation("Active alarms changed. Broadcasting count={count}", alarms.Count);
-                        // Broadcast to all connected SignalR clients using the broadcast service
-                        await _signalRBroadcastService.BroadcastActiveAlarmsUpdateAsync(alarms.Count, stoppingToken);
+                        _logger.LogInformation("Active alarms changed. Broadcasting to online users. Total alarms: {count}", alarms.Count);
+                        // Broadcast full alarm list to SignalR clients - service will filter per-user based on permissions
+                        await _signalRBroadcastService.BroadcastActiveAlarmsUpdateAsync(alarms, stoppingToken);
                     }
 
                     await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);

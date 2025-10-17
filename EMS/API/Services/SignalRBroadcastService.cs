@@ -1,70 +1,146 @@
 using API.Hubs;
 using API.Models.Dto;
+using Core.Models;
+using DB.User.Data;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Services;
 
 /// <summary>
-/// Service for broadcasting real-time updates to SignalR clients
+/// Service for broadcasting real-time updates to SignalR clients with permission-based filtering
 /// </summary>
 public class SignalRBroadcastService
 {
     private readonly IHubContext<MonitoringHub> _hubContext;
     private readonly ILogger<SignalRBroadcastService> _logger;
+    private readonly ConnectionTrackingService _connectionTracker;
+    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// Initializes a new instance of the SignalRBroadcastService
     /// </summary>
     /// <param name="hubContext">SignalR hub context for MonitoringHub</param>
     /// <param name="logger">Logger instance for structured logging</param>
+    /// <param name="connectionTracker">Connection tracking service for getting online users</param>
+    /// <param name="serviceProvider">Service provider for creating scoped database contexts</param>
     public SignalRBroadcastService(
         IHubContext<MonitoringHub> hubContext,
-        ILogger<SignalRBroadcastService> logger)
+        ILogger<SignalRBroadcastService> logger,
+        ConnectionTrackingService connectionTracker,
+        IServiceProvider serviceProvider)
     {
         _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _connectionTracker = connectionTracker ?? throw new ArgumentNullException(nameof(connectionTracker));
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
     /// <summary>
-    /// Broadcasts active alarms update to all connected SignalR clients
+    /// Broadcasts active alarms update to connected SignalR clients with permission-based filtering.
+    /// Each user receives only the count of alarms they have access to based on ItemPermissions.
     /// </summary>
-    /// <param name="request">Request containing alarm count and timestamp</param>
+    /// <param name="activeAlarms">List of all active alarms</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Response indicating success and number of clients notified</returns>
-    /// <exception cref="ArgumentNullException">Thrown when request is null</exception>
+    /// <returns>Response indicating success and number of users notified</returns>
+    /// <exception cref="ArgumentNullException">Thrown when activeAlarms is null</exception>
     public async Task<BroadcastActiveAlarmsResponseDto> BroadcastActiveAlarmsUpdateAsync(
-        BroadcastActiveAlarmsRequestDto request,
+        List<ActiveAlarm> activeAlarms,
         CancellationToken cancellationToken = default)
     {
         const string operation = nameof(BroadcastActiveAlarmsUpdateAsync);
 
-        if (request == null)
+        if (activeAlarms == null)
         {
-            throw new ArgumentNullException(nameof(request));
+            throw new ArgumentNullException(nameof(activeAlarms));
         }
 
         try
         {
-            _logger.LogInformation(
-                "{Operation}: Broadcasting active alarms update. AlarmCount: {AlarmCount}, Timestamp: {Timestamp}",
-                operation, request.AlarmCount, request.Timestamp);
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var onlineUserIds = _connectionTracker.GetOnlineUserIds();
 
-            // Broadcast to all connected clients
-            await _hubContext.Clients.All.SendAsync(
-                "ReceiveActiveAlarmsUpdate",
-                new
+            if (onlineUserIds.Count == 0)
+            {
+                _logger.LogDebug("{Operation}: No online users to broadcast to", operation);
+                return new BroadcastActiveAlarmsResponseDto
                 {
-                    alarmCount = request.AlarmCount,
-                    timestamp = request.Timestamp
-                },
-                cancellationToken);
+                    Success = true,
+                    ClientCount = 0,
+                    ErrorMessage = null
+                };
+            }
 
-            _logger.LogDebug("{Operation}: Successfully broadcasted active alarms update", operation);
+            _logger.LogInformation(
+                "{Operation}: Broadcasting active alarms to {UserCount} online users. Total alarms: {TotalAlarmCount}",
+                operation, onlineUserIds.Count, activeAlarms.Count);
+
+            // Create a scoped database context for querying permissions
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var usersNotified = 0;
+
+            // Broadcast to each online user with their personalized alarm count
+            foreach (var userIdString in onlineUserIds)
+            {
+                try
+                {
+                    if (!Guid.TryParse(userIdString, out var userId))
+                    {
+                        _logger.LogWarning("{Operation}: Invalid UserId format: {UserId}", operation, userIdString);
+                        continue;
+                    }
+
+                    // Get user's item permissions
+                    var userPermissions = await context.ItemPermissions
+                        .Where(p => p.UserId == userId)
+                        .Select(p => p.ItemId)
+                        .ToListAsync(cancellationToken);
+
+                    // Filter active alarms to only those the user has permission to see
+                    var userAlarmCount = activeAlarms
+                        .Count(alarm => userPermissions.Contains(alarm.ItemId));
+
+                    // Get all connections for this user
+                    var connectionIds = _connectionTracker.GetUserConnections(userIdString);
+
+                    // Send personalized alarm count to each of the user's connections
+                    foreach (var connectionId in connectionIds)
+                    {
+                        await _hubContext.Clients.Client(connectionId).SendAsync(
+                            "ReceiveActiveAlarmsUpdate",
+                            new
+                            {
+                                alarmCount = userAlarmCount,
+                                timestamp = timestamp
+                            },
+                            cancellationToken);
+                    }
+
+                    usersNotified++;
+
+                    _logger.LogDebug(
+                        "{Operation}: Sent {AlarmCount} alarms to user {UserId} ({ConnectionCount} connections)",
+                        operation, userAlarmCount, userIdString, connectionIds.Count);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, 
+                        "{Operation}: Error broadcasting to user {UserId}",
+                        operation, userIdString);
+                    // Continue broadcasting to other users even if one fails
+                }
+            }
+
+            _logger.LogInformation(
+                "{Operation}: Successfully broadcasted to {UsersNotified}/{TotalUsers} users",
+                operation, usersNotified, onlineUserIds.Count);
 
             return new BroadcastActiveAlarmsResponseDto
             {
                 Success = true,
-                ClientCount = 0, // SignalR doesn't provide connected client count easily
+                ClientCount = usersNotified,
                 ErrorMessage = null
             };
         }
@@ -90,24 +166,5 @@ public class SignalRBroadcastService
                 ErrorMessage = ex.Message
             };
         }
-    }
-
-    /// <summary>
-    /// Broadcasts active alarms update to all connected SignalR clients (simplified version)
-    /// </summary>
-    /// <param name="alarmCount">Number of active alarms</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Response indicating success and number of clients notified</returns>
-    public async Task<BroadcastActiveAlarmsResponseDto> BroadcastActiveAlarmsUpdateAsync(
-        int alarmCount,
-        CancellationToken cancellationToken = default)
-    {
-        var request = new BroadcastActiveAlarmsRequestDto
-        {
-            AlarmCount = alarmCount,
-            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-        };
-
-        return await BroadcastActiveAlarmsUpdateAsync(request, cancellationToken);
     }
 }
