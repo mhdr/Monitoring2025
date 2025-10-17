@@ -238,6 +238,9 @@
     "streamDisconnected": "Live updates disconnected",
     "streamConnecting": "Connecting to live updates...",
     "streamError": "Live update connection error",
-    "noItemsAvailable": "No items available. Please synchronize data first."
+    "noItemsAvailable": "No items available. Please synchronize data first.",
+    "instantaneousDataTitle": "Instantaneous Values",
+    "loadingValues": "Loading instantaneous values...",
+    "noValuesAvailable": "No instantaneous values available"
   }
 }

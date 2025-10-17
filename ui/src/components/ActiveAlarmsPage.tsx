@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Box,
   Container,
@@ -33,7 +33,8 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useTranslation } from '../hooks/useTranslation';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { getActiveAlarms } from '../services/monitoringApi';
-import type { ActiveAlarm, Item, AlarmDto } from '../types/api';
+import { getValues } from '../services/monitoringApi';
+import type { ActiveAlarm, Item, AlarmDto, MultiValue } from '../types/api';
 import { createLogger } from '../utils/logger';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 
@@ -53,6 +54,12 @@ const ActiveAlarmsPage: React.FC = () => {
   const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
   const [storedItems, setStoredItems] = useState<Item[]>([]);
   const [storedAlarms, setStoredAlarms] = useState<AlarmDto[]>([]);
+  
+  // State for instantaneous values
+  const [itemValues, setItemValues] = useState<MultiValue[]>([]);
+  
+  // Ref for value refresh interval
+  const valuesIntervalRef = useRef<number | null>(null);
 
   /**
    * Create lookup maps for items and alarms
@@ -137,6 +144,44 @@ const ActiveAlarmsPage: React.FC = () => {
   }, []);
 
   /**
+   * Fetch instantaneous values for items with active alarms
+   */
+  const fetchInstantaneousValues = useCallback(async (activeAlarms: ActiveAlarm[]) => {
+    try {
+      logger.log('Fetching instantaneous values for alarmed items...');
+      
+      // Extract unique itemIds from alarms
+      const itemIds = Array.from(new Set(
+        activeAlarms
+          .map(alarm => alarm.itemId)
+          .filter((id): id is string => id !== null && id !== undefined)
+      ));
+      
+      if (itemIds.length === 0) {
+        logger.warn('No valid itemIds found in alarms');
+        setItemValues([]);
+        return;
+      }
+      
+      logger.log('Fetching values for itemIds:', { count: itemIds.length, itemIds });
+      
+      // Call API with itemIds
+      const response = await getValues({ itemIds });
+      
+      logger.log('Instantaneous values fetched successfully:', {
+        count: response.values?.length || 0,
+        values: response.values,
+      });
+      
+      setItemValues(response.values || []);
+    } catch (err) {
+      logger.error('Error fetching instantaneous values:', err);
+      // Don't set error state - values are optional, alarms table is more important
+      setItemValues([]);
+    }
+  }, []);
+
+  /**
    * Fetch active alarms from API
    */
   const fetchActiveAlarms = useCallback(async (isRefresh = false) => {
@@ -195,6 +240,14 @@ const ActiveAlarmsPage: React.FC = () => {
       const alarmsData = (response as any).data.data || [];
       setAlarms(alarmsData);
       setLastFetchTime(Date.now());
+      
+      // Fetch instantaneous values for alarmed items
+      if (alarmsData.length > 0) {
+        fetchInstantaneousValues(alarmsData);
+      } else {
+        // Clear values if no alarms
+        setItemValues([]);
+      }
     } catch (err) {
       logger.error('Error fetching active alarms:', err);
       setError(t('activeAlarmsPage.errorLoadingAlarms'));
@@ -202,7 +255,7 @@ const ActiveAlarmsPage: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [t]);
+  }, [t, fetchInstantaneousValues]);
 
   /**
    * Initial fetch on mount
@@ -271,6 +324,83 @@ const ActiveAlarmsPage: React.FC = () => {
       second: '2-digit',
     });
   }, [lastFetchTime, isRTL]);
+
+  /**
+   * Helper function to get value for an item
+   */
+  const getItemValue = useCallback((itemId: string) => {
+    return itemValues.find((v) => v.itemId === itemId);
+  }, [itemValues]);
+
+  /**
+   * Helper function to format value based on item type
+   */
+  const formatItemValue = useCallback((item: Item, value: string | null) => {
+    if (value === null || value === undefined) {
+      return t('noValue');
+    }
+
+    // For digital items (type 1 or 2), show on/off text
+    if (item.itemType === 1 || item.itemType === 2) {
+      const boolValue = value === 'true' || value === '1';
+      
+      // Use Farsi text if language is Persian and Farsi text is available
+      if (boolValue) {
+        return (isRTL && item.onTextFa) ? item.onTextFa : (item.onText || t('on'));
+      } else {
+        return (isRTL && item.offTextFa) ? item.offTextFa : (item.offText || t('off'));
+      }
+    }
+
+    // For analog items (type 3 or 4), show value with unit
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      // Use Farsi unit if language is Persian and Farsi unit is available
+      const unit = (isRTL && item.unitFa) ? item.unitFa : (item.unit || '');
+      return unit ? `${numValue} ${unit}` : numValue.toString();
+    }
+
+    return value;
+  }, [t, isRTL]);
+
+  /**
+   * Setup automatic refresh of instantaneous values every 5 seconds
+   */
+  useEffect(() => {
+    // Only start interval if we have alarms
+    if (alarms.length > 0) {
+      logger.log('Starting automatic value refresh interval (5 seconds)');
+      
+      // Clear any existing interval
+      if (valuesIntervalRef.current) {
+        window.clearInterval(valuesIntervalRef.current);
+      }
+      
+      // Set up new interval
+      valuesIntervalRef.current = window.setInterval(() => {
+        if (alarms.length > 0) {
+          logger.log('Auto-refreshing instantaneous values...');
+          fetchInstantaneousValues(alarms);
+        }
+      }, 5000); // 5 seconds
+      
+      // Cleanup on unmount or when alarms change
+      return () => {
+        if (valuesIntervalRef.current) {
+          logger.log('Clearing value refresh interval');
+          window.clearInterval(valuesIntervalRef.current);
+          valuesIntervalRef.current = null;
+        }
+      };
+    } else {
+      // Clear interval if no alarms
+      if (valuesIntervalRef.current) {
+        logger.log('Clearing value refresh interval (no alarms)');
+        window.clearInterval(valuesIntervalRef.current);
+        valuesIntervalRef.current = null;
+      }
+    }
+  }, [alarms, fetchInstantaneousValues]);
 
   /**
    * Render stream status indicator
@@ -438,7 +568,7 @@ const ActiveAlarmsPage: React.FC = () => {
 
             {/* Alarms Table */}
             {!loading && !error && alarms.length > 0 && (
-              <Box sx={{ flexGrow: 1 }} data-id-ref="active-alarms-table-container">
+              <Box sx={{ flexGrow: 1 }} data-id-ref="active-alarms-content-container">
                 <Box sx={{ mb: 2 }}>
                   <Chip
                     icon={<WarningIcon />}
@@ -447,6 +577,7 @@ const ActiveAlarmsPage: React.FC = () => {
                     data-id-ref="active-alarms-count-chip"
                   />
                 </Box>
+
                 <TableContainer component={Paper} variant="outlined" data-id-ref="active-alarms-table-wrapper">
                   <Table size="small" data-id-ref="active-alarms-table">
                     <TableHead data-id-ref="active-alarms-table-head">
@@ -480,17 +611,21 @@ const ActiveAlarmsPage: React.FC = () => {
                           ? (itemsMap.get(alarm.itemId) || alarm.itemId)
                           : '-';
                         
+                        // Get corresponding item details and value
+                        const item = storedItems.find(i => i.id === alarm.itemId);
+                        const itemValue = alarm.itemId ? getItemValue(alarm.itemId) : null;
+                        
                         return (
-                          <TableRow
-                            key={alarm.id || `alarm-${index}`}
-                            hover
-                            data-id-ref={`active-alarm-row-${index}`}
-                          >
-                            <TableCell data-id-ref={`active-alarm-item-name-${index}`}>
-                              <Typography variant="body2">
-                                {itemName}
-                              </Typography>
-                            </TableCell>
+                          <React.Fragment key={alarm.id || `alarm-${index}`}>
+                            <TableRow
+                              hover
+                              data-id-ref={`active-alarm-row-${index}`}
+                            >
+                              <TableCell data-id-ref={`active-alarm-item-name-${index}`}>
+                                <Typography variant="body2">
+                                  {itemName}
+                                </Typography>
+                              </TableCell>
                             <TableCell data-id-ref={`active-alarm-message-${index}`}>
                               <Typography variant="body2">
                                 {alarmMessage}
@@ -500,6 +635,89 @@ const ActiveAlarmsPage: React.FC = () => {
                               <Typography variant="body2">{formatTimestamp(alarm.time)}</Typography>
                             </TableCell>
                           </TableRow>
+                          
+                          {/* Instantaneous Values Row */}
+                          {item && itemValue && (
+                            <TableRow data-id-ref={`active-alarm-values-row-${index}`}>
+                              <TableCell 
+                                colSpan={3} 
+                                sx={{ 
+                                  bgcolor: 'action.hover',
+                                  borderBottom: index < alarms.length - 1 ? 1 : 0,
+                                  borderColor: 'divider',
+                                }}
+                                data-id-ref={`active-alarm-values-cell-${index}`}
+                              >
+                                <Box 
+                                  sx={{ 
+                                    py: 1, 
+                                    px: 1,
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: 2,
+                                    alignItems: 'center',
+                                  }}
+                                  data-id-ref={`active-alarm-values-container-${index}`}
+                                >
+                                  <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                      fontWeight: 600, 
+                                      color: 'text.secondary',
+                                      minWidth: '120px',
+                                    }}
+                                    data-id-ref={`active-alarm-values-label-${index}`}
+                                  >
+                                    {t('activeAlarmsPage.instantaneousDataTitle')}:
+                                  </Typography>
+                                  
+                                  <Box 
+                                    sx={{ 
+                                      display: 'flex', 
+                                      flexWrap: 'wrap', 
+                                      gap: 2,
+                                      flex: 1,
+                                    }}
+                                    data-id-ref={`active-alarm-values-details-${index}`}
+                                  >
+                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                        {t('pointNumber')}:
+                                      </Typography>
+                                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        {item.pointNumber}
+                                      </Typography>
+                                    </Box>
+                                    
+                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                        {t('value')}:
+                                      </Typography>
+                                      <Typography 
+                                        variant="caption" 
+                                        sx={{ 
+                                          color: 'primary.main', 
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        {formatItemValue(item, itemValue.value)}
+                                      </Typography>
+                                    </Box>
+                                    
+                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                        {t('time')}:
+                                      </Typography>
+                                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        {formatTimestamp(itemValue.time)}
+                                      </Typography>
+                                    </Box>
+                                  </Box>
+                                </Box>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
                         );
                       })}
                     </TableBody>
