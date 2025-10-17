@@ -1,8 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
-using API.Hubs;
+using API.Services;
 using Core.Models;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -14,7 +13,7 @@ namespace API.Workers;
 /// </summary>
 public class ActiveAlarmsBackgroundWorker : BackgroundService, IDisposable
 {
-    private readonly IHubContext<MonitoringHub> _hubContext;
+    private readonly SignalRBroadcastService _signalRBroadcastService;
     private readonly ILogger<ActiveAlarmsBackgroundWorker> _logger;
     private List<ActiveAlarm>? _activeAlarms;
     private bool _disposed;
@@ -22,11 +21,11 @@ public class ActiveAlarmsBackgroundWorker : BackgroundService, IDisposable
     /// <summary>
     /// Create a new ActiveAlarmsBackgroundWorker.
     /// </summary>
-    /// <param name="hubContext">SignalR hub context used to broadcast messages to connected clients.</param>
+    /// <param name="signalRBroadcastService">SignalR broadcast service used to broadcast messages to connected clients.</param>
     /// <param name="logger">Logger instance for structured logging.</param>
-    public ActiveAlarmsBackgroundWorker(IHubContext<MonitoringHub> hubContext, ILogger<ActiveAlarmsBackgroundWorker> logger)
+    public ActiveAlarmsBackgroundWorker(SignalRBroadcastService signalRBroadcastService, ILogger<ActiveAlarmsBackgroundWorker> logger)
     {
-        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
+        _signalRBroadcastService = signalRBroadcastService ?? throw new ArgumentNullException(nameof(signalRBroadcastService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -48,15 +47,8 @@ public class ActiveAlarmsBackgroundWorker : BackgroundService, IDisposable
                     if (alarms != null)
                     {
                         _logger.LogInformation("Active alarms changed. Broadcasting count={count}", alarms.Count);
-                        // Broadcast to all connected SignalR clients
-                        await _hubContext.Clients.All.SendAsync(
-                            "ReceiveActiveAlarmsUpdate", 
-                            new 
-                            { 
-                                alarmCount = alarms.Count, 
-                                timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() 
-                            }, 
-                            stoppingToken);
+                        // Broadcast to all connected SignalR clients using the broadcast service
+                        await _signalRBroadcastService.BroadcastActiveAlarmsUpdateAsync(alarms.Count, stoppingToken);
                     }
 
                     await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);

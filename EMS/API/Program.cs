@@ -216,6 +216,9 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 // Add SignalR services
 builder.Services.AddSignalR();
 
+// Add SignalR Broadcast Service
+builder.Services.AddSingleton<API.Services.SignalRBroadcastService>();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo

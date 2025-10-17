@@ -27,12 +27,28 @@ Successfully migrated from gRPC to SignalR for real-time active alarms notificat
 
 #### Workers/ActiveAlarmsBackgroundWorker.cs
 **Before:** Used `GrpcBroadcastService` to broadcast via gRPC streaming
-**After:** Uses `IHubContext<MonitoringHub>` to broadcast via SignalR
+**After:** Uses `SignalRBroadcastService` to broadcast via SignalR
 
 **Key Changes:**
-- Replaced `GrpcBroadcastService` injection with `IHubContext<MonitoringHub>`
-- Changed broadcast method to: `_hubContext.Clients.All.SendAsync("ReceiveActiveAlarmsUpdate", payload)`
-- Payload format: `{ alarmCount: number, timestamp: number }`
+- Replaced `GrpcBroadcastService` injection with `SignalRBroadcastService`
+- Changed broadcast method to: `await _signalRBroadcastService.BroadcastActiveAlarmsUpdateAsync(alarmCount, cancellationToken)`
+- Broadcast service encapsulates SignalR hub context and provides reusable method
+
+#### Services/SignalRBroadcastService.cs (New)
+**Purpose:** Centralized service for broadcasting SignalR updates with proper DTOs
+
+**Features:**
+- Encapsulates `IHubContext<MonitoringHub>` for reusability
+- Uses structured DTOs (`BroadcastActiveAlarmsRequestDto`, `BroadcastActiveAlarmsResponseDto`)
+- Provides two overloads: full DTO version and simplified version
+- Includes comprehensive error handling and logging
+- Returns response indicating success/failure
+- Can be injected and used from any part of the application
+
+#### Models/Dto/ActiveAlarmsUpdateDto.cs (New)
+**DTOs Created:**
+- `BroadcastActiveAlarmsRequestDto`: Request with alarm count and timestamp
+- `BroadcastActiveAlarmsResponseDto`: Response with success status and client count
 
 #### Program.cs
 **Configuration Changes:**
@@ -44,6 +60,7 @@ Successfully migrated from gRPC to SignalR for real-time active alarms notificat
 
 2. **Added SignalR:**
    - `builder.Services.AddSignalR()`
+   - `builder.Services.AddSingleton<SignalRBroadcastService>()`
    - `app.MapHub<MonitoringHub>("/hubs/monitoring")`
 
 3. **JWT Configuration Enhancement:**
@@ -153,6 +170,124 @@ function App() {
       <div>Active Alarms: {alarmCount}</div>
     </div>
   );
+}
+```
+
+## Using SignalRBroadcastService in Your Code
+
+The `SignalRBroadcastService` is registered as a singleton and can be injected into any service, controller, or background worker.
+
+### Example 1: From a Controller
+
+```csharp
+using API.Models.Dto;
+using API.Services;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/[controller]")]
+public class AdminController : ControllerBase
+{
+    private readonly SignalRBroadcastService _broadcastService;
+
+    public AdminController(SignalRBroadcastService broadcastService)
+    {
+        _broadcastService = broadcastService;
+    }
+
+    [HttpPost("trigger-alarm-update")]
+    public async Task<IActionResult> TriggerAlarmUpdate([FromBody] int alarmCount)
+    {
+        var response = await _broadcastService.BroadcastActiveAlarmsUpdateAsync(
+            alarmCount, 
+            HttpContext.RequestAborted);
+
+        if (response.Success)
+        {
+            return Ok(new { success = true, message = "Update broadcasted successfully" });
+        }
+
+        return StatusCode(500, new { success = false, message = response.ErrorMessage });
+    }
+}
+```
+
+### Example 2: From a Service
+
+```csharp
+using API.Models.Dto;
+using API.Services;
+
+public class AlarmProcessingService
+{
+    private readonly SignalRBroadcastService _broadcastService;
+    private readonly ILogger<AlarmProcessingService> _logger;
+
+    public AlarmProcessingService(
+        SignalRBroadcastService broadcastService,
+        ILogger<AlarmProcessingService> logger)
+    {
+        _broadcastService = broadcastService;
+        _logger = logger;
+    }
+
+    public async Task ProcessAlarmChangedAsync(int newAlarmCount)
+    {
+        try
+        {
+            // Using the detailed DTO approach
+            var request = new BroadcastActiveAlarmsRequestDto
+            {
+                AlarmCount = newAlarmCount,
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+            };
+
+            var response = await _broadcastService.BroadcastActiveAlarmsUpdateAsync(request);
+            
+            if (response.Success)
+            {
+                _logger.LogInformation("Successfully broadcasted alarm update: {Count}", newAlarmCount);
+            }
+            else
+            {
+                _logger.LogError("Failed to broadcast alarm update: {Error}", response.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error broadcasting alarm update");
+        }
+    }
+}
+```
+
+### Example 3: From a Background Worker
+
+```csharp
+public class MyCustomWorker : BackgroundService
+{
+    private readonly SignalRBroadcastService _broadcastService;
+
+    public MyCustomWorker(SignalRBroadcastService broadcastService)
+    {
+        _broadcastService = broadcastService;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            // Your logic here
+            int alarmCount = GetCurrentAlarmCount();
+
+            // Simple broadcast (timestamp auto-generated)
+            await _broadcastService.BroadcastActiveAlarmsUpdateAsync(
+                alarmCount, 
+                stoppingToken);
+
+            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+        }
+    }
 }
 ```
 
