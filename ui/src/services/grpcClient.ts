@@ -8,6 +8,9 @@ import { createClient } from '@connectrpc/connect';
 import { createGrpcWebTransport } from '@connectrpc/connect-web';
 import { MonitoringService } from '../gen/monitoring_pb';
 import { authStorageHelpers } from '../utils/authStorage';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('gRPCClient');
 
 // Base URL for the gRPC server - matches the backend API
 // The .NET server must be configured with gRPC-web middleware
@@ -30,6 +33,11 @@ const transport = createGrpcWebTransport({
     // Add JWT Bearer token if available
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
+      const url = typeof input === 'string' ? input : (input instanceof Request ? input.url : input.toString());
+      logger.log('gRPC request with token:', { url, hasToken: true });
+    } else {
+      const url = typeof input === 'string' ? input : (input instanceof Request ? input.url : input.toString());
+      logger.warn('gRPC request WITHOUT token - auth may not be initialized yet!', { url });
     }
     
     return fetch(input, { 

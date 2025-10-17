@@ -131,7 +131,9 @@
     "buttons": {
       "close": "بستن",
       "later": "بعداً"
-    }
+    },
+    "retry": "تلاش مجدد",
+    "error": "خطا"
   },
   "settings": {
     "pageTitle": "تنظیمات",

@@ -76,7 +76,18 @@ export function useGlobalActiveAlarmsStream(
       return;
     }
     
-    logger.log('[GlobalActiveAlarmsStream] Connecting...');
+    // CRITICAL: Ensure token cache is populated before attempting gRPC connection
+    // The grpcClient uses synchronous token access, so we need to ensure the cache is ready
+    const { authStorageHelpers } = await import('../utils/authStorage');
+    const token = await authStorageHelpers.getStoredToken();
+    if (!token) {
+      logger.warn('[GlobalActiveAlarmsStream] Token not available yet - deferring connection');
+      // Retry after a short delay to allow auth initialization to complete
+      setTimeout(() => connect(), 500);
+      return;
+    }
+    
+    logger.log('[GlobalActiveAlarmsStream] Connecting with valid token...');
 
     // Prevent multiple simultaneous connection attempts
     if (isConnectingRef.current) {

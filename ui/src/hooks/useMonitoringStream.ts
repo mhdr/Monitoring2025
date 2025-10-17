@@ -9,6 +9,9 @@ import { create } from '@bufbuild/protobuf';
 import { ConnectError } from '@connectrpc/connect';
 import { monitoringClient } from '../services/grpcClient';
 import { ActiveAlarmsRequestSchema } from '../gen/monitoring_pb';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('MonitoringStream');
 
 /**
  * Connection states for the gRPC stream
@@ -78,6 +81,17 @@ export function useMonitoringStream(
   const connect = useCallback(async () => {
     // Prevent multiple simultaneous connection attempts
     if (isConnectingRef.current) {
+      return;
+    }
+
+    // CRITICAL: Ensure token cache is populated before attempting gRPC connection
+    // The grpcClient uses synchronous token access, so we need to ensure the cache is ready
+    const { authStorageHelpers } = await import('../utils/authStorage');
+    const token = await authStorageHelpers.getStoredToken();
+    if (!token) {
+      logger.warn('Token not available - cannot establish monitoring stream');
+      setStatus(StreamStatus.ERROR);
+      setError('Authentication token not available');
       return;
     }
 

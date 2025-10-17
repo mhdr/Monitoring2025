@@ -131,7 +131,9 @@
     "buttons": {
       "close": "Close",
       "later": "Later"
-    }
+    },
+    "retry": "Retry",
+    "error": "Error"
   },
   "settings": {
     "pageTitle": "Settings",

@@ -29,12 +29,14 @@ const authSlice = createSlice({
     /**
      * Initialize auth state from storage
      * Called on app startup
+     * NOTE: This doesn't properly await getCurrentAuth() because Redux reducers must be synchronous.
+     * The actual auth initialization happens in AuthContext which properly awaits.
+     * This Redux state is kept for compatibility with existing code but AuthContext is the source of truth.
      */
     initializeAuth: (state) => {
-      const authState = authStorageHelpers.getCurrentAuth();
-      state.user = authState.user;
-      state.token = authState.token;
-      state.isAuthenticated = Boolean(authState.token && authState.user);
+      // getCurrentAuth is async but we can't await in a reducer
+      // AuthContext handles the actual async initialization
+      // This just sets initial loading state
       state.isLoading = false;
     },
 
