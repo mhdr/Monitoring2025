@@ -6,7 +6,7 @@
 - ASP.NET Core 9.0 Web API
 - PostgreSQL with Entity Framework Core
 - JWT Authentication (ASP.NET Core Identity)
-- gRPC for real-time updates
+- SignalR for real-time updates
 - MassTransit for message queuing (RabbitMQ transport)
 - Background Workers for scheduled tasks
 
@@ -14,7 +14,7 @@
 - Repository pattern with Core library
 - DTO-based request/response models
 - Structured logging with context
-- Real-time notifications via gRPC server streaming
+- Real-time notifications via SignalR hub
 - Background service workers
 - Domain-Driven Design (DDD) with separate projects for DB, Contracts, and Core
 
@@ -245,34 +245,87 @@ builder.Services.AddHostedService<MyBackgroundWorker>();
 
 ---
 
-### gRPC Real-Time Updates
+### SignalR Real-Time Updates
 
-**Service Definition (monitoring.proto):**
-```protobuf
-service MonitoringService {
-  rpc StreamActiveAlarms(ActiveAlarmsRequest) returns (stream ActiveAlarmsUpdate);
-}
+**Hub Configuration:**
+```csharp
+// Hub is located at /monitoringhub endpoint
+// Requires JWT Bearer token authentication
+// Supports WebSockets, Server-Sent Events, and Long Polling transports
 ```
 
 **Broadcasting from Services/Workers:**
 ```csharp
-private readonly GrpcBroadcastService _grpcBroadcastService;
+private readonly IHubContext<MonitoringHub> _hubContext;
 
-// Broadcast active alarms to all clients
-await _grpcBroadcastService.BroadcastActiveAlarmsAsync(alarmCount, cancellationToken);
+public MyService(IHubContext<MonitoringHub> hubContext)
+{
+    _hubContext = hubContext;
+}
+
+// Broadcast to all connected clients
+await _hubContext.Clients.All.SendAsync("ReceiveActiveAlarmsUpdate", alarmCount, cancellationToken);
+
+// Broadcast to specific user
+await _hubContext.Clients.User(userId).SendAsync("ReceiveActiveAlarmsUpdate", alarmCount, cancellationToken);
+
+// Broadcast to specific connection
+await _hubContext.Clients.Client(connectionId).SendAsync("ReceiveActiveAlarmsUpdate", alarmCount, cancellationToken);
+```
+
+**Client Connection (JavaScript/TypeScript):**
+```javascript
+import * as signalR from "@microsoft/signalr";
+
+// Create connection with JWT token
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("https://localhost:7136/monitoringhub", {
+        accessTokenFactory: () => localStorage.getItem("jwt_token")
+    })
+    .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+    .configureLogging(signalR.LogLevel.Information)
+    .build();
+
+// Register client method to receive updates from server
+connection.on("ReceiveActiveAlarmsUpdate", (activeAlarmsCount) => {
+    console.log(`Active alarms: ${activeAlarmsCount}`);
+});
+
+// Start connection
+await connection.start();
+
+// Optional: Call server method
+await connection.invoke("SubscribeToActiveAlarms");
 ```
 
 **Client Connection (C#):**
 ```csharp
-var channel = GrpcChannel.ForAddress("https://localhost:7136");
-var client = new MonitoringService.MonitoringServiceClient(channel);
+using Microsoft.AspNetCore.SignalR.Client;
 
-using var call = client.StreamActiveAlarms(new ActiveAlarmsRequest());
-await foreach (var update in call.ResponseStream.ReadAllAsync())
+var connection = new HubConnectionBuilder()
+    .WithUrl("https://localhost:7136/monitoringhub", options =>
+    {
+        options.AccessTokenProvider = () => Task.FromResult(jwtToken);
+    })
+    .WithAutomaticReconnect()
+    .Build();
+
+// Register client method to receive updates from server
+connection.On<int>("ReceiveActiveAlarmsUpdate", (activeAlarmsCount) =>
 {
-    Console.WriteLine($"Active alarms: {update.ActiveAlarmsCount}");
-}
+    Console.WriteLine($"Active alarms: {activeAlarmsCount}");
+});
+
+await connection.StartAsync();
 ```
+
+**⚠️ IMPORTANT: SignalR Method Changes**
+When adding or modifying SignalR hub methods, you MUST update:
+1. The hub class (`Hubs/MonitoringHub.cs`) with XML documentation
+2. The `/api/Monitoring/SignalRHubInfo` endpoint (`Controllers/MonitoringController.cs`) - update the `ServerMethods` and `ClientMethods` lists to reflect current hub implementation
+3. The `SignalRHubInfoResponseDto` if new data structures are needed
+
+This ensures API consumers always have accurate, up-to-date SignalR integration documentation.
 
 ---
 
@@ -523,10 +576,12 @@ When implementing new features, verify:
 - [ ] Error cases validated (400, 401, 403, 404, 500)
 - [ ] Authorization tested (with/without token, different roles)
 - [ ] Input validation tested (missing fields, invalid formats, edge cases)
-- [ ] gRPC streaming verified (if applicable)
+- [ ] SignalR hub methods verified (if applicable)
+- [ ] Real-time updates tested with connected clients (if applicable)
 - [ ] Background worker behavior verified (if applicable)
 - [ ] Database operations verified (create, read, update, delete)
 - [ ] Concurrent request handling tested (if stateful)
+- [ ] `/api/Monitoring/SignalRHubInfo` endpoint updated (if SignalR methods changed)
 
 ---
 
@@ -643,15 +698,14 @@ if (string.IsNullOrEmpty(userId))
 - Controllers: `Controllers/`
 - DTOs: `Models/Dto/`
 - Background Workers: `Workers/`
-- gRPC Services: `Services/Grpc/`
-- Proto Files: `Protos/`
+- SignalR Hub: `Hubs/`
 - Services: `Services/`
 - Configuration: `appsettings.json`, `appsettings.Development.json`
 
 **Key URLs:**
 - API Base: `https://localhost:7136`
 - Swagger UI: `https://localhost:7136/swagger`
-- gRPC Endpoint: `https://localhost:7136` (MonitoringService)
+- SignalR Hub: `https://localhost:7136/monitoringhub`
 
 **Database:**
 - Connection: PostgreSQL on localhost
@@ -719,10 +773,12 @@ if (string.IsNullOrEmpty(userId))
 - Verify CORS policy is applied correctly
 - Check if request includes credentials/headers
 
-**Issue: gRPC streaming not working**
-- Solution: Verify gRPC is configured in `Program.cs`
-- Check proto files are compiled correctly
-- Ensure client is using correct endpoint URL
+**Issue: SignalR connection fails**
+- Solution: Verify SignalR is configured in `Program.cs`
+- Check JWT token is being provided correctly
+- Ensure client is using correct hub URL (`/monitoringhub`)
+- Check browser console for connection errors
+- Verify WebSocket support or fallback transports are enabled
 
 **Issue: Background worker not executing**
 - Solution: Verify worker is registered with `AddHostedService<T>()`
@@ -786,7 +842,7 @@ The active alarms worker was not disposing database contexts properly
 ### Official Documentation
 - [ASP.NET Core Documentation](https://docs.microsoft.com/aspnet/core)
 - [Entity Framework Core](https://docs.microsoft.com/ef/core)
-- [gRPC in .NET](https://docs.microsoft.com/aspnet/core/grpc)
+- [SignalR in .NET](https://docs.microsoft.com/aspnet/core/signalr)
 - [MassTransit Documentation](https://masstransit.io/documentation)
 
 ### Best Practices
