@@ -317,11 +317,6 @@ export default defineConfig({
               return 'echarts';
             }
             
-            // gRPC/Connect - real-time streaming
-            if (id.includes('@connectrpc') || id.includes('@bufbuild')) {
-              return 'grpc';
-            }
-            
             // Date libraries - Jalali calendar
             if (id.includes('jalaali') || id.includes('jalalidatepicker')) {
               return 'date-utils';

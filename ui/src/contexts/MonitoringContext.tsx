@@ -21,7 +21,7 @@ const logger = createLogger('MonitoringContext');
 const SYNC_STATUS_STORAGE_KEY = 'monitoring_data_synced';
 
 /**
- * Stream connection status for gRPC active alarms
+ * Stream connection status for real-time active alarms (SignalR)
  */
 export const StreamStatus = {
   IDLE: 'idle',

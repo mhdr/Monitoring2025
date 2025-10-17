@@ -20,19 +20,25 @@ import {
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
-import { useMonitoringStream, StreamStatus } from '../hooks/useMonitoringStream';
+import { useMonitoring } from '../hooks/useMonitoring';
+import { StreamStatus } from '../contexts/MonitoringContext';
+import { signalRManager } from '../services/signalrClient';
 
 const Dashboard: React.FC = () => {
   const { t } = useLanguage();
+  const { state } = useMonitoring();
   
-  // Connect to gRPC streaming service for real-time active alarms count
-  const { 
-    alarmCount, 
-    lastUpdate, 
-    status, 
-    error, 
-    reconnect 
-  } = useMonitoringStream('dashboard-client');
+  // Get real-time active alarms data from SignalR stream
+  const { alarmCount, lastUpdate, streamStatus: status, streamError: error } = state.activeAlarms;
+  
+  // Reconnect function for SignalR
+  const reconnect = async () => {
+    try {
+      await signalRManager.reconnect();
+    } catch (err) {
+      console.error('Failed to reconnect SignalR:', err);
+    }
+  };
 
   return (
     <Container maxWidth="xl" data-id-ref="dashboard-main-container" sx={{ py: 4 }}>
@@ -46,28 +52,28 @@ const Dashboard: React.FC = () => {
           }
         />
         <CardContent data-id-ref="dashboard-body">
-          {/* gRPC Connection Status Alert */}
+          {/* SignalR Connection Status Alert */}
           {status === StreamStatus.ERROR && (
             <Alert 
               severity="error" 
-              data-id-ref="dashboard-grpc-error-alert"
+              data-id-ref="dashboard-signalr-error-alert"
               sx={{ mb: 3 }}
               action={
                 <Button
                   color="inherit"
                   size="small"
                   onClick={reconnect}
-                  data-id-ref="dashboard-grpc-reconnect-button"
+                  data-id-ref="dashboard-signalr-reconnect-button"
                   startIcon={<RefreshIcon />}
                 >
                   {t('common.retry')}
                 </Button>
               }
             >
-              <AlertTitle data-id-ref="dashboard-grpc-error-heading">
+              <AlertTitle data-id-ref="dashboard-signalr-error-heading">
                 {t('common.error')}
               </AlertTitle>
-              <Typography variant="body2" data-id-ref="dashboard-grpc-error-text">
+              <Typography variant="body2" data-id-ref="dashboard-signalr-error-text">
                 {error}
               </Typography>
             </Alert>
@@ -76,7 +82,7 @@ const Dashboard: React.FC = () => {
           {status === StreamStatus.CONNECTING && (
             <Alert 
               severity="info" 
-              data-id-ref="dashboard-grpc-connecting-alert"
+              data-id-ref="dashboard-signalr-connecting-alert"
               sx={{ mb: 3 }}
               icon={<CircularProgress size={20} />}
             >
@@ -217,9 +223,9 @@ const Dashboard: React.FC = () => {
                   }
                 />
                 <CardContent data-id-ref="dashboard-system-status-body">
-                  <Box sx={{ mb: 3 }} data-id-ref="dashboard-grpc-connection-status">
+                  <Box sx={{ mb: 3 }} data-id-ref="dashboard-signalr-connection-status">
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Typography variant="body2">gRPC Connection:</Typography>
+                      <Typography variant="body2">SignalR Connection:</Typography>
                       <Chip 
                         color={
                           status === StreamStatus.CONNECTED ? 'success' :
@@ -227,7 +233,7 @@ const Dashboard: React.FC = () => {
                           status === StreamStatus.ERROR ? 'error' :
                           'default'
                         }
-                        data-id-ref="dashboard-grpc-status-badge"
+                        data-id-ref="dashboard-signalr-status-badge"
                         icon={
                           status === StreamStatus.CONNECTED ? <CheckCircleIcon /> :
                           status === StreamStatus.CONNECTING ? <CircularProgress size={16} /> :

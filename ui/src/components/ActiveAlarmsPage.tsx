@@ -93,7 +93,7 @@ const ActiveAlarmsPage: React.FC = () => {
   }, [fetchActiveAlarms]);
 
   /**
-   * Re-fetch when gRPC stream reports alarm count change
+   * Re-fetch when SignalR stream reports alarm count change
    * Only refetch if alarm count changed and we're not already loading
    */
   useEffect(() => {

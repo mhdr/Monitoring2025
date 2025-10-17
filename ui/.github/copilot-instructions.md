@@ -15,7 +15,7 @@
 Local component state? → useState/useReducer
 Shared across 2-3 components? → Context API (AuthContext, LanguageContext, MonitoringContext)
 Complex app state? → Context API with useReducer
-Real-time streaming data? → gRPC/Connect-RPC + Context API
+Real-time streaming data? → SignalR + Context API
 ```
 
 **Styling Approach:**
@@ -30,7 +30,7 @@ RTL-specific? → sx prop with theme.direction check
 **Data Fetching:**
 ```
 REST API? → Axios (src/services/apiClient.ts)
-Real-time streams? → gRPC/Connect-RPC (src/services/grpcClient.ts)
+Real-time streams? → SignalR (TODO: implement src/services/signalrClient.ts)
 Auth-protected? → Axios interceptors with automatic token refresh
 File uploads? → FormData with Axios
 Cached data? → IndexedDB for offline/persistent storage
@@ -80,7 +80,7 @@ Form? → Controlled components + validation
 
 ## 🎯 Project Overview
 This is a production-grade enterprise monitoring dashboard with:
-- **Real-time streaming** via gRPC/Connect-RPC
+- **Real-time streaming** via SignalR
 - **Bilingual support** (Persian/English) with full RTL/LTR layouts
 - **Advanced data grids** using AG Grid Enterprise
 - **Secure authentication** with JWT + refresh token rotation
@@ -128,6 +128,7 @@ This is a production-grade enterprise monitoring dashboard with:
 - **React 18**: Functional components only, hooks-based
 - **TypeScript 5**: Strict mode, no `any` type allowed
 - **Axios**: HTTP client for REST API calls with interceptors
+- **SignalR**: Real-time communication for active alarms streaming
 - **Material-UI (MUI) v6**: Component library with responsive grid system (xs/sm/md/lg/xl)
 - **Vite**: Build tool and dev server (port 5173)
 
@@ -497,7 +498,7 @@ fetch('/api/data').then(() => {
 
 #### Key React 18 Benefits for This Project
 1. **Streaming SSR**: Future-ready for server components
-2. **Concurrent rendering**: Better performance for gRPC streams
+2. **Concurrent rendering**: Better performance for real-time streams
 3. **Automatic batching**: Fewer re-renders in async state updates
 4. **Suspense**: Cleaner loading states
 5. **Transitions**: Smooth language/theme switching
@@ -577,7 +578,7 @@ const [user, setUser] = useState<User | null>(null);
 - **Hooks**: `src/hooks/` - Custom React hooks
 - **Utils**: `src/utils/` - Helper functions
 - **Styles**: `src/styles/` - Global CSS files
-- **Services**: `src/services/` - API clients (Axios, gRPC)
+- **Services**: `src/services/` - API clients (Axios, SignalR)
 - **Contexts**: `src/contexts/` - React Context providers for state management
 
 ### Naming Conventions
@@ -828,54 +829,49 @@ Must test on these standard resolutions:
 
 ⚠️ Never manually refresh - Axios interceptors handle it automatically
 
-## gRPC / Connect-RPC
-⚠️ MANDATORY: Use Connect-RPC for real-time streaming data
-- **Stack**: Connect-ES + gRPC-web, Buf CLI, @bufbuild/protobuf v2.9.0
-- **Client**: `src/services/grpcClient.ts` (gRPC-web transport)
-- **Hooks**: `src/hooks/useMonitoringStream.ts` (streaming lifecycle)
-- **Protobuf**: `Protos/monitoring.proto` → `src/gen/monitoring_pb.ts`
-- **Backend**: .NET Core gRPC server, same HTTPS port (7136)
+## SignalR Real-Time Communication
+⚠️ MANDATORY: Use SignalR for real-time streaming data
+- **Backend Hub**: `MonitoringHub` at `/hubs/monitoring` endpoint
+- **Message Method**: `ReceiveActiveAlarmsUpdate` receives `{ alarmCount: number, timestamp: number }`
+- **Authentication**: JWT Bearer tokens via Authorization header
+- **Backend**: .NET Core SignalR server, same HTTPS port (7136)
+- **Context**: State managed in `MonitoringContext` with `activeAlarms` property
 
-### Client Configuration
-⚠️ Always use `createGrpcWebTransport` for browser clients
-- Transport: `createGrpcWebTransport({ baseUrl: 'https://localhost:7136' })`
-- Auth: JWT Bearer tokens via fetch interceptor
-- Client: `createClient(MonitoringService, transport)`
-
-### Server Streaming
-⚠️ Use `for await...of` for async stream iteration
-- Pattern: `for await (const update of client.streamMethod(request)) { }`
-- Lifecycle: Connection, streaming, error handling, cleanup
-- Hook: `useMonitoringStream(clientId, autoConnect)`
-- Abort: `AbortController` for graceful disconnection
-
-### Code Generation
-⚠️ Use Buf CLI + protoc-gen-es for TypeScript generation
-- **Buf Config**: `buf.yaml` (modules), `buf.gen.yaml` (generation)
-- **Command**: `npm run grpc:generate` (buf generate)
-- **Output**: `src/gen/` (TypeScript schemas + services)
-- **Version**: protoc-gen-es v2.9.0, target=ts, import_extension=none
+### Connection Lifecycle
+⚠️ SignalR connection states match existing StreamStatus enum
+- **States**: IDLE, CONNECTING, CONNECTED, ERROR, DISCONNECTED
+- **Auto-connect**: Connect when user is authenticated
+- **Auto-disconnect**: Disconnect on logout or component unmount
+- **Reconnection**: Automatic reconnection with exponential backoff
 
 ### Message Handling
-⚠️ Use schema-based creation with @bufbuild/protobuf v2
-- **Create**: `create(MessageSchema, data)` (not new Message())
-- **Types**: Generated TypeScript interfaces (strict typing)
-- **Serialization**: `toBinary()`, `toJson()` standalone functions
-- **Validation**: TypeScript compiler enforces message contracts
+⚠️ Subscribe to `ReceiveActiveAlarmsUpdate` for real-time updates
+- **Message Format**: `{ alarmCount: number, timestamp: number }`
+- **Update Pattern**: Updates pushed from server to all connected clients
+- **Permission-based**: Server filters alarm count by user's ItemPermissions
+- **State Update**: Call `updateActiveAlarms(alarmCount, timestamp)` from MonitoringContext
 
 ### Error Handling
-⚠️ Handle ConnectError and connection states
-- **Types**: `ConnectError` from `@connectrpc/connect`
-- **States**: IDLE, CONNECTING, CONNECTED, ERROR, DISCONNECTED
-- **Retries**: Exponential backoff, manual reconnection
-- **Cleanup**: Always abort streams on unmount
+⚠️ Handle SignalR connection errors and reconnection
+- **Connection Errors**: Set `streamStatus` to ERROR, store error message
+- **Disconnections**: Attempt automatic reconnection with backoff
+- **Retries**: Exponential backoff (1s, 2s, 4s, 8s, max 30s)
+- **Cleanup**: Always stop connection on unmount
 
 ### Integration Patterns
-- **Context API**: Store stream state in Context
-- **React**: Custom hooks for stream lifecycle
-- **Auth**: Automatic JWT refresh in transport
+- **Context API**: Store connection state in MonitoringContext
+- **React**: Custom hooks for connection lifecycle (TODO: implement useSignalR hook)
+- **Auth**: Include JWT token in connection options
 - **i18n**: Translate error messages and connection states
-- **RTL**: Consider RTL layouts for streaming indicators
+- **RTL**: Consider RTL layouts for connection status indicators
+
+### TODO: SignalR Implementation
+The following needs to be implemented:
+1. Install `@microsoft/signalr` package
+2. Create `src/services/signalrClient.ts` for connection management
+3. Create `src/hooks/useSignalR.ts` hook for component integration
+4. Update `MonitoringContext` to manage SignalR connection
+5. Update `Dashboard` component to use SignalR connection state
 
 ## ⚡ Performance Guidelines
 
@@ -1211,83 +1207,72 @@ const loadData = async () => {
 - **500 Internal Server Error**: Server-side error
 - **Network Error**: No response from server (err.response is undefined)
 
-### gRPC Stream Error Handling
+### SignalR Stream Error Handling
 
 ```typescript
-// ✅ Proper stream error handling
-const useMonitoringStream = (clientId: string) => {
+// ✅ Proper SignalR connection error handling
+const useSignalRConnection = () => {
   const [connectionState, setConnectionState] = useState<ConnectionState>('IDLE');
   const [error, setError] = useState<string | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
 
   const connect = useCallback(async () => {
     setConnectionState('CONNECTING');
     setError(null);
     
-    abortControllerRef.current = new AbortController();
-    
     try {
-      const stream = client.streamUpdates(
-        create(StreamRequestSchema, { clientId }),
-        { signal: abortControllerRef.current.signal }
-      );
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl('https://localhost:7136/hubs/monitoring', {
+          accessTokenFactory: () => getAccessToken() || ''
+        })
+        .withAutomaticReconnect()
+        .build();
       
+      connectionRef.current = connection;
+      
+      // Subscribe to messages
+      connection.on('ReceiveActiveAlarmsUpdate', (data) => {
+        updateActiveAlarms(data.alarmCount, data.timestamp);
+      });
+      
+      await connection.start();
       setConnectionState('CONNECTED');
+      logger.log('SignalR connected successfully');
       
-      for await (const update of stream) {
-        // Process update
-        processUpdate(update);
-      }
-      
-      // Stream ended normally
-      setConnectionState('DISCONNECTED');
     } catch (err) {
-      logger.error('Stream error:', err);
+      logger.error('SignalR connection error:', err);
+      setError(t('errors.signalr.connectionFailed'));
+      setConnectionState('ERROR');
       
-      if (err instanceof ConnectError) {
-        if (err.code === Code.Unavailable) {
-          // Server unavailable - retry
-          setError(t('errors.grpc.serverUnavailable'));
-          setConnectionState('ERROR');
-          
-          // Exponential backoff retry
-          setTimeout(() => connect(), 5000);
-        } else if (err.code === Code.Unauthenticated) {
-          // Auth error
-          setError(t('errors.grpc.unauthenticated'));
-          setConnectionState('ERROR');
-        } else {
-          setError(t('errors.grpc.unknown'));
-          setConnectionState('ERROR');
-        }
-      } else if (err.name === 'AbortError') {
-        // Normal cancellation
-        setConnectionState('DISCONNECTED');
-      } else {
-        setError(t('errors.network.failed'));
-        setConnectionState('ERROR');
-      }
+      // Exponential backoff retry
+      setTimeout(() => connect(), 5000);
     }
-  }, [clientId]);
+  }, []);
+
+  const disconnect = useCallback(async () => {
+    if (connectionRef.current) {
+      await connectionRef.current.stop();
+      setConnectionState('DISCONNECTED');
+    }
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      abortControllerRef.current?.abort();
+      disconnect();
     };
-  }, []);
+  }, [disconnect]);
 
-  return { connectionState, error, connect };
+  return { connectionState, error, connect, disconnect };
 };
 ```
 
-**gRPC Error Codes:**
-- **Code.Unavailable**: Server down or network issue → Retry
-- **Code.Unauthenticated**: Invalid auth token → Redirect to login
-- **Code.PermissionDenied**: Insufficient permissions → Show error
-- **Code.DeadlineExceeded**: Request timeout → Retry
-- **Code.Internal**: Server error → Show error
-- **Code.Cancelled**: Client cancelled → Normal behavior
+**SignalR Error Scenarios:**
+- **Connection Failed**: Network issue or server down → Retry with exponential backoff
+- **Unauthorized**: Invalid JWT token → Redirect to login
+- **Disconnected**: Connection lost → Automatic reconnection
+- **Message Error**: Invalid message format → Log and continue
+- **Hub Method Error**: Server-side error → Show user notification
 
 ### Form Validation Error Handling
 
@@ -1481,7 +1466,7 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 **Key Testing Scenarios:**
 1. **Authentication Flow**: Navigate to login, take snapshot, fill form with UIDs, click submit, wait for redirect
 2. **Bilingual Testing**: Click language switcher, take screenshots for RTL verification, test form inputs in both languages
-3. **Real-Time Monitoring**: Navigate to monitoring page, use `evaluate_script` to test gRPC streaming connection state
+3. **Real-Time Monitoring**: Navigate to monitoring page, use `evaluate_script` to test SignalR streaming connection state
 4. **Complex Interactions**: Test drag-and-drop with element UIDs, test keyboard navigation
 
 #### 🎨 Live Styling and Layout Inspection
@@ -1504,7 +1489,7 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 1. **Core Web Vitals**: Use `performance_start_trace`, navigate/interact, then `performance_stop_trace` and `performance_analyze_insight`
 2. **Network Testing**: Use `emulate_network` with different conditions, measure load times, reset to "No emulation"
 3. **CPU Testing**: Use `emulate_cpu` with throttling rate, run heavy operations via `evaluate_script`, measure processing time
-4. **gRPC Streaming**: Use `evaluate_script` to monitor streaming metrics (messages received, latency, errors)
+4. **SignalR Streaming**: Use `evaluate_script` to monitor streaming metrics (messages received, latency, errors)
 5. **Memory Leaks**: Use `evaluate_script` to sample memory over time, analyze trend for memory increases
 
 #### 🔄 DevTools MCP Best Practices
@@ -1639,17 +1624,15 @@ When using MUI MCP for theme documentation:
 ```
 src/
 ├── components/   # React components
-├── contexts/     # Auth, Language
-├── gen/          # Generated gRPC/Protobuf files
+├── contexts/     # Auth, Language, Monitoring
 ├── hooks/        # Custom hooks
 ├── i18n/         # i18n config
-├── services/     # API (apiClient.ts, grpcClient.ts)
+├── services/     # API clients (apiClient.ts, signalrClient.ts TODO)
 ├── styles/       # Global styles
 ├── types/        # TypeScript types
 └── utils/        # Helpers
 
 public/locales/   # fa/, en/
-Protos/           # Protocol buffer definitions
 ```
 
 ## ✅ Pre-Commit Checklist
@@ -1693,12 +1676,13 @@ Protos/           # Protocol buffer definitions
 - [ ] **Auth States**: Protected routes require authentication
 - [ ] **Refresh Token**: Automatic refresh handled by Axios interceptors
 
-### gRPC & Real-time Streaming
-- [ ] **Stream Lifecycle**: Proper connection, disconnect, error handling
-- [ ] **AbortController**: Cleanup on component unmount
-- [ ] **Schema-based**: Use `create()` for Protobuf messages (v2 pattern)
-- [ ] **Error States**: ConnectError handled appropriately
+### SignalR & Real-time Streaming
+- [ ] **Connection Lifecycle**: Proper connection, disconnect, error handling
+- [ ] **Cleanup**: Stop connection on component unmount
+- [ ] **Message Handling**: Subscribe to `ReceiveActiveAlarmsUpdate`
+- [ ] **Error States**: Connection errors handled appropriately
 - [ ] **Connection UI**: Show connection status to user
+- [ ] **Reconnection**: Automatic reconnection with exponential backoff
 
 ### MUI Components & Theming
 - [ ] **MUI MCP Verified**: Checked official MUI docs for component usage
@@ -1811,11 +1795,11 @@ onClick={async () => {
 - Check browser console for 401 loops
 - Ensure Axios interceptors are properly configured
 
-### gRPC Stream Issues
+### SignalR Stream Issues
 
 **Problem**: Stream not connecting
-- Verify backend gRPC server running on port 7136
-- Check CORS settings allow gRPC-web
+- Verify backend SignalR server running on port 7136
+- Check CORS settings allow SignalR connections
 - Verify SSL certificates trusted
 - Check browser console for connection errors
 
@@ -1830,9 +1814,9 @@ useEffect(() => {
 useEffect(() => {
   connect();
   return () => {
-    abortController.abort();
+    disconnect();
   };
-}, []);
+}, [disconnect]);
 ```
 
 ### i18n Issues

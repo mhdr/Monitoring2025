@@ -5,7 +5,7 @@ import { useLanguage } from './hooks/useLanguage';
 import { useTranslation } from './hooks/useTranslation';
 import { useRoutePreloader } from './hooks/useRoutePreloader';
 import { useAuth } from './hooks/useAuth';
-import { useGlobalActiveAlarmsStream } from './hooks/useGlobalActiveAlarmsStream';
+import { useSignalR } from './hooks/useSignalR';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -240,9 +240,9 @@ function App() {
   // Dynamically load Persian fonts only when needed (Persian language active)
   useFontLoader();
   
-  // Global active alarms subscription - runs automatically when authenticated and auth loading is complete
-  // Updates Redux store with real-time alarm count data accessible from anywhere
-  useGlobalActiveAlarmsStream(isAuthenticated, isAuthLoading);
+  // SignalR real-time connection for active alarms
+  // Automatically connects when authenticated, disconnects on logout
+  useSignalR(isAuthenticated, isAuthLoading);
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {

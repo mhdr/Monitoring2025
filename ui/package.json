@@ -5,7 +5,6 @@
   "type": "module",
   "description": "سیستم مانیتورینگ انبار - رابط کاربری فارسی",
   "scripts": {
-    "postinstall": "npm run grpc:generate",
     "predev": "node scripts/check-ssl.cjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -13,19 +12,15 @@
     "preview": "vite preview",
     "setup-ssl": "chmod +x trust-dev-certs.sh && ./trust-dev-certs.sh",
     "trust-certs:win": "powershell -ExecutionPolicy Bypass -File .\\trust-dev-certs.ps1",
-    "trust-certs:unix": "chmod +x trust-dev-certs.sh && ./trust-dev-certs.sh",
-    "grpc:generate": "buf generate",
-    "grpc:lint": "buf lint"
+    "trust-certs:unix": "chmod +x trust-dev-certs.sh && ./trust-dev-certs.sh"
   },
   "dependencies": {
     "@ag-grid-community/locale": "^34.2.0",
-    "@bufbuild/protobuf": "^2.9.0",
-    "@connectrpc/connect": "^2.1.0",
-    "@connectrpc/connect-web": "^2.1.0",
     "@emotion/cache": "^11.13.5",
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
     "@majidh1/jalalidatepicker": "^0.9.12",
+    "@microsoft/signalr": "^9.0.6",
     "@mui/icons-material": "^6.3.0",
     "@mui/material": "^6.3.0",
     "@mui/stylis-plugin-rtl": "^7.3.3",
@@ -46,8 +41,6 @@
     "stylis": "^4.3.4"
   },
   "devDependencies": {
-    "@bufbuild/buf": "^1.57.2",
-    "@bufbuild/protoc-gen-es": "^2.9.0",
     "@eslint/js": "^9.36.0",
     "@types/jalaali-js": "^1.2.0",
     "@types/node": "^24.6.0",
