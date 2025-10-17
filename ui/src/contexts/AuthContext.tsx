@@ -12,6 +12,8 @@ import {
   closeAuthBroadcast,
   respondAuthStatus,
 } from '../utils/authBroadcast';
+import { useAppDispatch } from '../hooks/useRedux';
+import { setAuthState, logout as logoutAction } from '../store/slices/authSlice';
 
 const logger = createLogger('AuthContext');
 
@@ -22,6 +24,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const dispatch = useAppDispatch();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -38,6 +41,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Read stored auth asynchronously from IndexedDB
     // This also populates the in-memory cache for sync access
+    // NOTE: main.tsx already calls initializeAuth thunk which loads auth data
+    // This is a secondary check to sync AuthContext with Redux state
     (async () => {
       try {
         const authState = await authStorageHelpers.getCurrentAuth();
@@ -46,8 +51,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // refreshToken is stored but not kept in React state - it's only used by RTK Query
         setIsAuthenticated(Boolean(authState.token && authState.user));
         
+        // Sync Redux state with AuthContext
+        if (authState.token && authState.user) {
+          dispatch(setAuthState({ token: authState.token, user: authState.user }));
+        }
+        
         // Log for debugging
-        logger.log('Auth initialized:', { 
+        logger.log('AuthContext initialized:', { 
           hasToken: !!authState.token, 
           hasUser: !!authState.user,
           isAuthenticated: Boolean(authState.token && authState.user)
@@ -63,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsLoading(false);
       }
     })();
-  }, []);
+  }, [dispatch]);
 
   // Initialize BroadcastChannel for cross-tab auth synchronization
   useEffect(() => {
@@ -235,6 +245,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAuthenticated(true);
       setIsLoading(false);
       
+      // Sync Redux state
+      dispatch(setAuthState({ token: result.accessToken, user: result.user }));
+      
       // Broadcast login event to all other tabs
       // Get the refresh token from storage (it was stored by the login mutation)
       const authState = await authStorageHelpers.getCurrentAuth();
@@ -247,7 +260,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Re-throw the error to let the calling component handle it
       throw error as ApiError;
     }
-  }, [loginMutation]);
+  }, [loginMutation, dispatch]);
 
   const logout = useCallback(async () => {
     setUser(null);
@@ -256,9 +269,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(false);
     // Clear from storage (including refresh token)
     await authStorageHelpers.clearStoredAuth();
+    // Sync Redux state
+    dispatch(logoutAction());
     // Broadcast logout event to all other tabs
     broadcastLogout();
-  }, []);
+  }, [dispatch]);
 
   const value: AuthContextType = {
     user,

@@ -28,9 +28,12 @@ const logger = createLogger('Main');
     // This sets up the database, BroadcastChannel, and cleanup schedule
     await initIndexedDB();
     
-    // Initialize Redux state from storage for auth/language/theme
-    // These are critical for initial render
-    store.dispatch(initializeAuth());
+    // CRITICAL: Wait for auth initialization to complete
+    // This populates the token cache which is required for gRPC client
+    // Must complete BEFORE rendering to prevent 401 errors in streaming connections
+    await store.dispatch(initializeAuth()).unwrap();
+    
+    // Initialize language and theme from storage (can be async)
     store.dispatch(initializeLanguage());
     store.dispatch(initializeMuiTheme());
     
