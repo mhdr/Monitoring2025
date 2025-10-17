@@ -2,6 +2,81 @@
 **Enterprise React + TypeScript + Redux Toolkit + Material-UI (MUI)**  
 **Bilingual (fa/en) • RTL/LTR Support • Real-time Monitoring • .NET Core API**
 
+---
+
+## 📋 Quick Reference
+
+### Critical Decision Trees
+
+#### When to Use Which Pattern?
+
+**State Management:**
+```
+Local component state? → useState/useReducer
+Shared across 2-3 components? → Context API (AuthContext, LanguageContext)
+Complex app state + API calls? → Redux Toolkit + RTK Query
+Real-time streaming data? → gRPC/Connect-RPC + Redux slice
+```
+
+**Styling Approach:**
+```
+Simple styles? → MUI sx prop with theme values
+Component variants? → MUI styled() with theme
+Global styles? → GlobalStyles component
+Dynamic runtime styles? → sx prop with conditional logic
+RTL-specific? → sx prop with theme.direction check
+```
+
+**Data Fetching:**
+```
+REST API? → RTK Query (src/services/rtkApi.ts)
+Real-time streams? → gRPC/Connect-RPC (src/services/grpcClient.ts)
+Auth-protected? → RTK Query with baseQueryWithAuth
+File uploads? → FormData with RTK Query mutation
+```
+
+**Component Patterns:**
+```
+Simple UI? → Functional component with hooks
+Needs error handling? → Wrap with LazyErrorBoundary + Suspense
+Heavy computation? → useMemo for results
+Event handlers? → useCallback to prevent re-renders
+Route component? → React.lazy() + Suspense wrapper
+Form? → Controlled components + validation
+```
+
+### Must-Follow Rules
+
+| Rule | Why | Example |
+|------|-----|---------|
+| ⚠️ Use `t()` for all text | i18n support | `t('pages.dashboard.title')` |
+| ⚠️ Use logger, not console | Prod cleanup | `logger.log('message')` |
+| ⚠️ Use theme palette | Theme consistency | `theme.palette.primary.main` |
+| ⚠️ No `any` type | Type safety | `unknown` with type guards |
+| ⚠️ Add `data-id-ref` | Testing/debugging | `data-id-ref="login-submit-button"` |
+| ⚠️ Lazy load routes | Performance | `React.lazy(() => import('./Page'))` |
+| ⚠️ Use MUI components | Design system | `<Button>` before custom buttons |
+| ⚠️ IndexedDB for storage | Performance/security | Never localStorage |
+| ⚠️ Test both languages | i18n verification | fa and en |
+| ⚠️ Test all breakpoints | Responsive design | xs, sm, md, lg, xl |
+
+### Common Pitfalls
+
+| ❌ Don't | ✅ Do | Why |
+|---------|-------|-----|
+| `console.log()` | `logger.log()` | Prod cleanup |
+| `color: '#1976d2'` | `color: theme.palette.primary.main` | Theme support |
+| `marginLeft: 16` | `marginInlineStart: 2` (theme.spacing) | RTL support |
+| `<div onClick>` | `<Button onClick>` | Accessibility |
+| `localStorage` | IndexedDB via `authStorage` | Performance |
+| `any` type | `unknown` + type guard | Type safety |
+| Hardcoded text | `t('key')` | i18n |
+| Class components | Functional + hooks | Modern React |
+| Direct state mutation | Redux Toolkit immer | State integrity |
+| Inline styles | MUI `sx` prop | Theme access |
+
+---
+
 ## 🎯 Project Overview
 This is a production-grade enterprise monitoring dashboard with:
 - **Real-time streaming** via gRPC/Connect-RPC
@@ -123,6 +198,150 @@ logger.error('Error:', error);      // [MyComponent] Error: [error object]
 - Use `React.lazy()` for route components
 - Wrap with `Suspense` and provide fallback component
 - Import `LoadingScreen` component for fallbacks
+
+### React 18 Patterns & Best Practices
+
+#### Concurrent Features
+⚠️ **USE React 18 concurrent features for better UX**
+
+**Suspense for Data Fetching:**
+```typescript
+// ✅ Wrap lazy-loaded components with Suspense
+<Suspense fallback={<LoadingScreen />}>
+  <LazyComponent />
+</Suspense>
+```
+
+**useTransition for Non-Urgent Updates:**
+```typescript
+import { useTransition } from 'react';
+
+const [isPending, startTransition] = useTransition();
+
+// Mark low-priority updates
+startTransition(() => {
+  setSearchResults(newResults);
+});
+```
+
+**useDeferredValue for Expensive Renders:**
+```typescript
+import { useDeferredValue } from 'react';
+
+const deferredQuery = useDeferredValue(searchQuery);
+// Use deferredQuery for expensive operations
+```
+
+#### Error Boundaries (Class Component Exception)
+⚠️ **MANDATORY: Wrap all route components with error boundaries**
+
+```typescript
+import { LazyErrorBoundary } from './components/LazyErrorBoundary';
+
+<LazyErrorBoundary>
+  <Suspense fallback={<LoadingScreen />}>
+    <YourComponent />
+  </Suspense>
+</LazyErrorBoundary>
+```
+
+**Error Boundary Pattern:**
+- Catch errors in component tree
+- Display fallback UI
+- Log errors for debugging
+- Provide recovery mechanism
+- Never leave users with blank screen
+
+#### Automatic Batching
+React 18 automatically batches state updates in:
+- Event handlers (React 17 behavior)
+- Promises, setTimeout, native event handlers (NEW in React 18)
+
+```typescript
+// All updates batched automatically in React 18
+fetch('/api/data').then(() => {
+  setData(newData);
+  setLoading(false);
+  setError(null);
+  // Only one re-render
+});
+```
+
+#### Key React 18 Benefits for This Project
+1. **Streaming SSR**: Future-ready for server components
+2. **Concurrent rendering**: Better performance for gRPC streams
+3. **Automatic batching**: Fewer re-renders in RTK Query updates
+4. **Suspense**: Cleaner loading states
+5. **Transitions**: Smooth language/theme switching
+
+### TypeScript 5 Features & Patterns
+
+#### Const Type Parameters (TypeScript 5.0+)
+```typescript
+// ✅ Preserve literal types
+function createConfig<const T>(config: T) {
+  return config;
+}
+
+const config = createConfig({ mode: 'light' } as const);
+// config.mode is 'light', not string
+```
+
+#### Satisfies Operator (TypeScript 4.9+)
+```typescript
+// ✅ Type checking without widening
+const theme = {
+  primary: '#1976d2',
+  secondary: '#dc004e',
+} satisfies Record<string, string>;
+
+// theme.primary is '#1976d2', not string
+```
+
+#### Template Literal Types for Translation Keys
+```typescript
+// ✅ Type-safe translation keys
+type TranslationKey = `pages.${string}.${string}` | `common.${string}`;
+
+function t(key: TranslationKey): string {
+  // Type-safe translation access
+}
+```
+
+#### Strict Null Checks
+⚠️ **MANDATORY: Handle null/undefined explicitly**
+
+```typescript
+// ❌ Don't
+const user = getUser();
+user.name; // Might be null
+
+// ✅ Do
+const user = getUser();
+if (user) {
+  user.name;
+}
+
+// Or use optional chaining
+const name = user?.name;
+
+// Or use nullish coalescing
+const name = user?.name ?? 'Guest';
+```
+
+#### Type Inference Best Practices
+```typescript
+// ✅ Let TypeScript infer when possible
+const [count, setCount] = useState(0); // inferred as number
+
+// ✅ Explicit types for complex cases
+interface User {
+  id: number;
+  name: string;
+}
+
+const [user, setUser] = useState<User | null>(null);
+```
 
 ### File Organization
 - **Components**: `src/components/` - React components
@@ -478,6 +697,111 @@ Must test on these standard resolutions:
 - [ ] Authentication required for protected routes
 - [ ] CSRF tokens used where applicable
 
+## ♿ Accessibility Guidelines
+
+### WCAG 2.1 AA Compliance
+⚠️ **MANDATORY: Follow WCAG 2.1 Level AA standards**
+
+#### Semantic HTML
+```typescript
+// ❌ Don't use generic divs for interactive elements
+<div onClick={handleClick}>Click me</div>
+
+// ✅ Use semantic HTML elements
+<button onClick={handleClick}>Click me</button>
+```
+
+#### ARIA Labels and Roles
+```typescript
+// ✅ Add aria-label for icon-only buttons
+<IconButton aria-label="close dialog" onClick={handleClose}>
+  <CloseIcon />
+</IconButton>
+
+// ✅ Use aria-describedby for error messages
+<TextField
+  error={hasError}
+  helperText={errorMessage}
+  inputProps={{
+    'aria-describedby': 'error-message',
+  }}
+/>
+```
+
+#### Keyboard Navigation
+- All interactive elements must be keyboard accessible
+- Tab order must be logical (top to bottom, left to right / right to left for RTL)
+- Focus indicators must be visible
+- Escape key should close modals/dropdowns
+- Enter/Space should activate buttons
+
+#### Color Contrast
+- **Normal text**: Minimum 4.5:1 contrast ratio
+- **Large text** (18pt+ or 14pt+ bold): Minimum 3:1 contrast ratio
+- **UI components**: Minimum 3:1 contrast ratio
+- **Disabled elements**: No minimum requirement
+
+**MUI Theme Palette ensures WCAG compliance:**
+```typescript
+// ✅ MUI theme colors have proper contrast
+<Button color="primary">{t('common.buttons.submit')}</Button>
+<Alert severity="error">{errorMessage}</Alert>
+```
+
+#### Focus Management
+```typescript
+// ✅ Move focus to dialog when opened
+useEffect(() => {
+  if (open && dialogRef.current) {
+    dialogRef.current.focus();
+  }
+}, [open]);
+
+// ✅ Return focus to trigger element when closed
+const buttonRef = useRef<HTMLButtonElement>(null);
+
+const handleClose = () => {
+  setOpen(false);
+  buttonRef.current?.focus();
+};
+```
+
+#### Screen Reader Support
+- Use `role` attributes for custom components
+- Provide `aria-live` regions for dynamic content
+- Use `aria-busy` for loading states
+- Announce route changes for SPAs
+
+```typescript
+// ✅ Live region for status updates
+<div role="status" aria-live="polite" aria-atomic="true">
+  {statusMessage}
+</div>
+
+// ✅ Loading state announcement
+<div aria-busy={isLoading} aria-label={t('common.loading')}>
+  {content}
+</div>
+```
+
+#### Accessibility Testing Checklist
+- [ ] All images have alt text
+- [ ] Forms have proper labels
+- [ ] Buttons have descriptive text or aria-label
+- [ ] Color is not the only indicator of state
+- [ ] Keyboard navigation works throughout
+- [ ] Screen reader announces content correctly
+- [ ] Focus indicators are visible
+- [ ] Skip links provided for navigation
+- [ ] Headings are hierarchical (h1 → h2 → h3)
+- [ ] ARIA roles used correctly
+
+### RTL Accessibility Considerations
+- Tab order reverses in RTL mode (right to left)
+- Ensure focus indicators work in both directions
+- Test with screen readers in RTL mode (NVDA, JAWS with Arabic/Persian)
+- Verify keyboard shortcuts don't conflict with RTL conventions
+
 ## � Data Persistence
 
 ### Critical Data Storage Rules
@@ -557,27 +881,250 @@ If you find existing code using localStorage/sessionStorage:
 - **Index optimization**: Create compound indexes for multi-field queries
 - **Blob storage**: Store large binary data directly, avoid base64 encoding
 
-## �🐛 Error Handling
+## 🐛 Error Handling
 
 ### Error Handling Requirements
 ⚠️ **MANDATORY: Comprehensive error handling**
 
+### Error Boundary Pattern
+⚠️ **CRITICAL: All route components must be wrapped with error boundaries**
+
+```typescript
+import { LazyErrorBoundary } from './components/LazyErrorBoundary';
+import { Suspense } from 'react';
+import { LoadingScreen } from './components/LoadingScreen';
+
+// ✅ Proper error boundary usage
+<LazyErrorBoundary>
+  <Suspense fallback={<LoadingScreen />}>
+    <YourRouteComponent />
+  </Suspense>
+</LazyErrorBoundary>
+```
+
+**Error Boundary Best Practices:**
+- Display user-friendly error messages (translated)
+- Log errors for debugging (use logger utility)
+- Provide recovery actions (reload, go back)
+- Show contact support option for critical errors
+- Never expose stack traces to users
+
 ### RTK Query Error Handling
-- Use `unwrap()` on mutations to handle errors in try/catch blocks
-- Check for `'status' in err` to identify RTK Query errors
-- Display error state in UI using error property from mutation hook
-- Always translate error messages using `t()` function
+
+```typescript
+// ✅ Proper mutation error handling
+const [updateUser, { isLoading, error }] = useUpdateUserMutation();
+
+const handleSubmit = async (data: UserFormData) => {
+  try {
+    // unwrap() throws on error
+    const result = await updateUser(data).unwrap();
+    logger.log('User updated successfully:', result);
+    
+    // Show success message
+    showNotification(t('messages.success.userUpdated'));
+  } catch (err) {
+    logger.error('Failed to update user:', err);
+    
+    // Check if RTK Query error
+    if ('status' in err) {
+      const error = err as { status: number; data?: any };
+      
+      if (error.status === 400) {
+        // Validation error
+        showNotification(t('errors.validation.invalid'), 'error');
+      } else if (error.status === 401) {
+        // Auth error (should be auto-handled by baseQueryWithAuth)
+        showNotification(t('errors.auth.unauthorized'), 'error');
+      } else if (error.status === 500) {
+        // Server error
+        showNotification(t('errors.server.internal'), 'error');
+      }
+    } else {
+      // Network or other error
+      showNotification(t('errors.network.failed'), 'error');
+    }
+  }
+};
+
+// ✅ Display error in UI
+{error && (
+  <Alert severity="error">
+    {t('status' in error 
+      ? 'errors.api.failed' 
+      : 'errors.network.failed'
+    )}
+  </Alert>
+)}
+```
+
+**RTK Query Error Types:**
+- **400 Bad Request**: Validation errors
+- **401 Unauthorized**: Auth token expired (auto-handled)
+- **403 Forbidden**: Insufficient permissions
+- **404 Not Found**: Resource doesn't exist
+- **500 Internal Server Error**: Server-side error
+- **Network Error**: No response from server
 
 ### gRPC Stream Error Handling
-- Use try/catch around `for await...of` stream iteration
-- Check `error instanceof ConnectError` for gRPC-specific errors
-- Implement retry logic for transient failures (Code.Unavailable)
-- Always update connection state on errors
+
+```typescript
+// ✅ Proper stream error handling
+const useMonitoringStream = (clientId: string) => {
+  const [connectionState, setConnectionState] = useState<ConnectionState>('IDLE');
+  const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const connect = useCallback(async () => {
+    setConnectionState('CONNECTING');
+    setError(null);
+    
+    abortControllerRef.current = new AbortController();
+    
+    try {
+      const stream = client.streamUpdates(
+        create(StreamRequestSchema, { clientId }),
+        { signal: abortControllerRef.current.signal }
+      );
+      
+      setConnectionState('CONNECTED');
+      
+      for await (const update of stream) {
+        // Process update
+        processUpdate(update);
+      }
+      
+      // Stream ended normally
+      setConnectionState('DISCONNECTED');
+    } catch (err) {
+      logger.error('Stream error:', err);
+      
+      if (err instanceof ConnectError) {
+        if (err.code === Code.Unavailable) {
+          // Server unavailable - retry
+          setError(t('errors.grpc.serverUnavailable'));
+          setConnectionState('ERROR');
+          
+          // Exponential backoff retry
+          setTimeout(() => connect(), 5000);
+        } else if (err.code === Code.Unauthenticated) {
+          // Auth error
+          setError(t('errors.grpc.unauthenticated'));
+          setConnectionState('ERROR');
+        } else {
+          setError(t('errors.grpc.unknown'));
+          setConnectionState('ERROR');
+        }
+      } else if (err.name === 'AbortError') {
+        // Normal cancellation
+        setConnectionState('DISCONNECTED');
+      } else {
+        setError(t('errors.network.failed'));
+        setConnectionState('ERROR');
+      }
+    }
+  }, [clientId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
+  return { connectionState, error, connect };
+};
+```
+
+**gRPC Error Codes:**
+- **Code.Unavailable**: Server down or network issue → Retry
+- **Code.Unauthenticated**: Invalid auth token → Redirect to login
+- **Code.PermissionDenied**: Insufficient permissions → Show error
+- **Code.DeadlineExceeded**: Request timeout → Retry
+- **Code.Internal**: Server error → Show error
+- **Code.Cancelled**: Client cancelled → Normal behavior
+
+### Form Validation Error Handling
+
+```typescript
+// ✅ Proper form error handling
+const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+const validateForm = (data: FormData): boolean => {
+  const errors: Record<string, string> = {};
+  
+  if (!data.email) {
+    errors.email = t('validation.required', { field: t('fields.email') });
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    errors.email = t('validation.email.invalid');
+  }
+  
+  if (!data.password || data.password.length < 8) {
+    errors.password = t('validation.password.minLength', { min: 8 });
+  }
+  
+  setFormErrors(errors);
+  return Object.keys(errors).length === 0;
+};
+
+// Display errors
+<TextField
+  error={!!formErrors.email}
+  helperText={formErrors.email}
+  inputProps={{
+    'aria-invalid': !!formErrors.email,
+    'aria-describedby': formErrors.email ? 'email-error' : undefined,
+  }}
+/>
+```
+
+### Error Notification Patterns
+
+```typescript
+// ✅ Centralized error notification
+const showErrorNotification = (error: unknown, fallbackKey = 'errors.unknown') => {
+  let message: string;
+  
+  if (error instanceof Error) {
+    message = error.message;
+  } else if (typeof error === 'string') {
+    message = error;
+  } else if ('status' in error) {
+    message = t(`errors.http.${error.status}`, { defaultValue: t(fallbackKey) });
+  } else {
+    message = t(fallbackKey);
+  }
+  
+  // Use MUI Snackbar or Alert
+  enqueueSnackbar(message, { variant: 'error' });
+};
+```
+
+### Error Logging Best Practices
+
+```typescript
+// ✅ Structured error logging
+logger.error('Operation failed:', {
+  operation: 'updateUser',
+  userId: user.id,
+  error: err,
+  timestamp: new Date().toISOString(),
+  userAgent: navigator.userAgent,
+});
+
+// ❌ Don't log sensitive data
+logger.error('Auth failed:', {
+  password: 'secret123', // NEVER log passwords
+  token: 'jwt...', // NEVER log tokens
+});
+```
 
 ### Global Error Boundary
 - Wrap all route components with `LazyErrorBoundary`
 - Use `Suspense` with `LoadingScreen` fallback
 - Provide user-friendly error messages
+- Log errors for debugging
+- Offer recovery actions
 
 ## 🧪 Testing Guidelines
 
@@ -969,6 +1516,132 @@ Protos/           # Protocol buffer definitions
 - [ ] **Code Comments**: Complex logic documented
 - [ ] **README**: Updated if new setup steps required
 - [ ] **Types Exported**: Public types exported from index files
+
+## 🔧 Common Troubleshooting
+
+### MUI Theme Issues
+
+**Problem**: Colors not updating when theme changes
+```typescript
+// ❌ Don't - hardcoded color persists
+<Box sx={{ color: '#1976d2' }}>
+
+// ✅ Do - use theme palette
+<Box sx={{ color: 'primary.main' }}>
+```
+
+**Problem**: RTL layout not working
+```typescript
+// ❌ Don't - hardcoded direction
+<Box sx={{ marginLeft: 2 }}>
+
+// ✅ Do - use logical properties
+<Box sx={{ marginInlineStart: 2 }}>
+```
+
+### RTK Query Issues
+
+**Problem**: Mutation not triggering re-render
+```typescript
+// ❌ Don't - not handling promise
+onClick={() => updateUser(data)}
+
+// ✅ Do - properly handle async
+onClick={async () => {
+  try {
+    await updateUser(data).unwrap();
+  } catch (err) {
+    // Handle error
+  }
+}}
+```
+
+**Problem**: Token refresh loop
+- Check `authStorage.ts` - ensure refresh mutex working
+- Verify refresh endpoint returns new tokens
+- Check browser console for 401 loops
+
+### gRPC Stream Issues
+
+**Problem**: Stream not connecting
+- Verify backend gRPC server running on port 7136
+- Check CORS settings allow gRPC-web
+- Verify SSL certificates trusted
+- Check browser console for connection errors
+
+**Problem**: Stream memory leak
+```typescript
+// ❌ Don't - forgetting cleanup
+useEffect(() => {
+  connect();
+}, []);
+
+// ✅ Do - always cleanup
+useEffect(() => {
+  connect();
+  return () => {
+    abortController.abort();
+  };
+}, []);
+```
+
+### i18n Issues
+
+**Problem**: Translations not showing
+- Verify translation key exists in both `fa` and `en` files
+- Check browser console for missing key warnings
+- Ensure `useTranslation()` hook used correctly
+
+**Problem**: RTL not applying
+- Check `LanguageContext` - verify direction set
+- Ensure MUI theme receives `direction: 'rtl'`
+- Clear browser cache if styles cached
+
+### Build/Bundling Issues
+
+**Problem**: Build fails with type errors
+- Run `npm run type-check` to isolate issues
+- Check `tsconfig.json` strict mode settings
+- Verify all imports have proper types
+
+**Problem**: Bundle size too large
+- Check `npm run build -- --report` for large chunks
+- Verify lazy loading for route components
+- Check for duplicate dependencies in bundle
+
+### Performance Issues
+
+**Problem**: Slow re-renders
+```typescript
+// ❌ Don't - recreating functions
+const handleClick = () => { /* ... */ };
+
+// ✅ Do - memoize callbacks
+const handleClick = useCallback(() => {
+  /* ... */
+}, [deps]);
+```
+
+**Problem**: Slow chart rendering
+```typescript
+// ❌ Don't - recalculating options every render
+const options = getChartOptions();
+
+// ✅ Do - memoize expensive calculations
+const options = useMemo(() => getChartOptions(), [deps]);
+```
+
+### AG Grid Issues
+
+**Problem**: Grid not displaying
+- Verify all required modules registered
+- Check license key valid
+- Ensure grid container has height
+
+**Problem**: Persian locale not working
+- Verify `LocaleModule` registered
+- Check `AG_GRID_LOCALE_IR` imported
+- Ensure `localeText` prop passed to grid
 
 ## 🎨 Best Practices Summary
 
