@@ -637,24 +637,18 @@ const ActiveAlarmsPage: React.FC = () => {
       },
       grid: {
         left: isRTL ? '15%' : '10%',
-        right: isRTL ? '10%' : '15%',
+        right: isRTL ? '10%' : '5%',
         bottom: '15%',
         top: '10%',
       },
       xAxis: {
         type: 'category',
         data: times,
-        name: t('time'),
-        nameLocation: 'middle',
-        nameGap: 30,
-        nameTextStyle: {
-          color: theme.palette.text.secondary,
-          fontFamily,
-        },
         axisLabel: {
           color: theme.palette.text.secondary,
           rotate: 45,
           fontFamily,
+          interval: Math.floor((times.length - 1) / 2), // Show approximately 3 labels
         },
         axisLine: {
           lineStyle: {
