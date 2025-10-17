@@ -5,6 +5,10 @@
  * Implements intelligent prefetching based on user navigation patterns.
  */
 
+import { createLogger } from './logger';
+
+const logger = createLogger('RoutePreloader');
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PreloadableComponent = () => Promise<any>;
 
@@ -27,7 +31,7 @@ export const preloadRoute = (routeName: string, componentLoader: PreloadableComp
 
   // Trigger the dynamic import
   componentLoader().catch((error) => {
-    console.error(`Failed to preload route: ${routeName}`, error);
+    logger.error(`Failed to preload route: ${routeName}`, error);
     // Remove from cache so it can be retried
     preloadedRoutes.delete(routeName);
   });

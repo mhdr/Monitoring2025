@@ -15,7 +15,10 @@ import { initializeMuiTheme } from './store/slices/muiThemeSlice'
 import { initializeMonitoringFromStorage } from './store/slices/monitoringSlice'
 import { initAutoCleanup } from './utils/monitoringStorage'
 import { initIndexedDB } from './utils/indexedDbStorage'
+import { createLogger } from './utils/logger'
 import App from './App.tsx'
+
+const logger = createLogger('Main');
 
 // Initialize IndexedDB storage first and wait for it to complete
 // This is critical - the app needs IndexedDB ready before rendering
@@ -36,7 +39,7 @@ import App from './App.tsx'
     
     // Initialize automatic cleanup for expired data (TTL)
     await initAutoCleanup().catch((error) => {
-      console.error('Failed to initialize auto-cleanup:', error);
+      logger.error('Failed to initialize auto-cleanup:', error);
     });
     
     // NOTE: Background refresh service is now started in AuthContext
@@ -66,7 +69,7 @@ import App from './App.tsx'
       </StrictMode>,
     );
   } catch (error) {
-    console.error('CRITICAL: Failed to initialize application:', error);
+    logger.error('CRITICAL: Failed to initialize application:', error);
     // Render error state
     document.getElementById('root')!.innerHTML = `
       <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">

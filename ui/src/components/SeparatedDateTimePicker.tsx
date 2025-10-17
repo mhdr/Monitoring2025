@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import jalaali from 'jalaali-js';
 import { useLanguage } from '../hooks/useLanguage';
+import { createLogger } from '../utils/logger';
 
+const logger = createLogger('SeparatedDateTimePicker');
 // Declare global jalaliDatepicker
 declare global {
   interface Window {
@@ -66,7 +68,7 @@ const SeparatedDateTimePicker: React.FC<SeparatedDateTimePickerProps> = ({
       const { jy, jm, jd } = jalaali.toJalaali(gy, gm, gd);
       return `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`;
     } catch (error) {
-      console.error('Error converting ISO date to Jalali:', error);
+      logger.error('Error converting ISO date to Jalali:', error);
       return '';
     }
   }, []);
@@ -91,7 +93,7 @@ const SeparatedDateTimePicker: React.FC<SeparatedDateTimePickerProps> = ({
       const dd = String(gd).padStart(2, '0');
       return `${yyyy}-${mm}-${dd}`;
     } catch (error) {
-      console.error('Error converting Jalali date to ISO:', error);
+      logger.error('Error converting Jalali date to ISO:', error);
       return '';
     }
   }, []);
@@ -190,7 +192,7 @@ const SeparatedDateTimePicker: React.FC<SeparatedDateTimePickerProps> = ({
     };
 
     loadScript().catch((error) => {
-      console.error('Error loading JalaliDatePicker:', error);
+      logger.error('Error loading JalaliDatePicker:', error);
     });
   }, [language]);
 
@@ -243,7 +245,7 @@ const SeparatedDateTimePicker: React.FC<SeparatedDateTimePickerProps> = ({
     e.preventDefault();
     
     if (!window.jalaliDatepicker || !dateInputRef.current) {
-      console.warn('JalaliDatePicker not loaded yet');
+      logger.warn('JalaliDatePicker not loaded yet');
       return;
     }
 
@@ -347,3 +349,4 @@ const SeparatedDateTimePicker: React.FC<SeparatedDateTimePickerProps> = ({
 };
 
 export default SeparatedDateTimePicker;
+

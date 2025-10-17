@@ -4,6 +4,9 @@
  */
 
 import { getItem, setItem, removeItem } from './indexedDbStorage';
+import { createLogger } from './logger';
+
+const logger = createLogger('Redux-IndexedDB');
 
 /**
  * Redux Persist storage interface

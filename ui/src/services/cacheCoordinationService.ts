@@ -75,7 +75,7 @@ class CacheCoordinationService {
    */
   initialize(workbox: Workbox | null): void {
     if (this.isInitialized) {
-      console.warn('[CacheCoordination] Already initialized');
+      logger.warn('Already initialized');
       return;
     }
 
@@ -83,7 +83,7 @@ class CacheCoordinationService {
     this.setupStorageListener();
     this.isInitialized = true;
     
-    console.log('[CacheCoordination] Service initialized');
+    logger.log('Service initialized');
   }
 
   /**
@@ -104,7 +104,7 @@ class CacheCoordinationService {
       }
     });
 
-    console.log('[CacheCoordination] IndexedDB change listener registered via BroadcastChannel');
+    logger.log('IndexedDB change listener registered via BroadcastChannel');
   }
 
   /**
@@ -113,7 +113,7 @@ class CacheCoordinationService {
    */
   async invalidateApiCache(endpoints: string[] = [...API_ENDPOINTS_TO_CLEAR]): Promise<void> {
     if (!this.workbox) {
-      console.warn('[CacheCoordination] Workbox not available, skipping cache invalidation');
+      logger.warn('Workbox not available, skipping cache invalidation');
       return;
     }
 
@@ -126,9 +126,9 @@ class CacheCoordinationService {
       };
 
       await this.sendMessageToSW(message);
-      console.log('[CacheCoordination] API cache invalidation requested');
+      logger.log('API cache invalidation requested');
     } catch (error) {
-      console.error('[CacheCoordination] Failed to invalidate API cache:', error);
+      logger.error('Failed to invalidate API cache:', error);
     }
   }
 
@@ -143,7 +143,7 @@ class CacheCoordinationService {
     // Get active service worker
     const registration = await navigator.serviceWorker?.getRegistration();
     if (!registration?.active) {
-      console.warn('[CacheCoordination] No active service worker');
+      logger.warn('No active service worker');
       return;
     }
 
@@ -181,9 +181,9 @@ class CacheCoordinationService {
         runtimeCaches.map(cacheName => caches.delete(cacheName))
       );
 
-      console.log('[CacheCoordination] All runtime caches cleared');
+      logger.log('All runtime caches cleared');
     } catch (error) {
-      console.error('[CacheCoordination] Failed to clear runtime caches:', error);
+      logger.error('Failed to clear runtime caches:', error);
     }
   }
 
@@ -199,7 +199,7 @@ class CacheCoordinationService {
     this.workbox = null;
     this.isInitialized = false;
     
-    console.log('[CacheCoordination] Service destroyed');
+    logger.log('Service destroyed');
   }
 }
 
@@ -228,3 +228,4 @@ export async function invalidateApiCache(): Promise<void> {
 export async function clearAllRuntimeCaches(): Promise<void> {
   await cacheCoordinationService.clearAllRuntimeCaches();
 }
+

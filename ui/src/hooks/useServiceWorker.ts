@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from './useTranslation';
 import { initCacheCoordination } from '../services/cacheCoordinationService';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('ServiceWorker');
 
 /**
  * Service Worker Registration Hook
@@ -25,25 +28,25 @@ export const useServiceWorker = () => {
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(registration: ServiceWorkerRegistration | undefined) {
-      console.log('[SW] Service worker registered successfully');
+      logger.log('Service worker registered successfully');
       
       // Initialize cache coordination service
       // Pass null since we don't have direct access to Workbox instance
       // The service will use navigator.serviceWorker directly
       initCacheCoordination(null);
-      console.log('[SW] Cache coordination initialized');
+      logger.log('Cache coordination initialized');
       
       // Check for updates periodically (every hour)
       if (registration) {
         const intervalMS = 60 * 60 * 1000; // 1 hour
         setInterval(() => {
-          console.log('[SW] Checking for updates...');
+          logger.log('Checking for updates...');
           registration.update();
         }, intervalMS);
       }
     },
     onRegisteredSW(swUrl: string, registration: ServiceWorkerRegistration | undefined) {
-      console.log('[SW] Service worker registered at:', swUrl);
+      logger.log('Service worker registered at:', swUrl);
       
       // Robust periodic update check with offline handling
       if (registration) {
@@ -55,11 +58,11 @@ export const useServiceWorker = () => {
           }
 
           if (('connection' in navigator) && !navigator.onLine) {
-            console.log('[SW] Browser is offline, skipping update check');
+            logger.log('Browser is offline, skipping update check');
             return;
           }
 
-          console.log('[SW] Checking for service worker updates...');
+          logger.log('Checking for service worker updates...');
           try {
             const resp = await fetch(swUrl, {
               cache: 'no-store',
@@ -71,25 +74,25 @@ export const useServiceWorker = () => {
 
             if (resp?.status === 200) {
               await registration.update();
-              console.log('[SW] Update check completed');
+              logger.log('Update check completed');
             }
           } catch (error) {
-            console.error('[SW] Update check failed:', error);
+            logger.error('Update check failed:', error);
           }
         }, intervalMS);
       }
     },
     onRegisterError(error: Error) {
-      console.error('[SW] Service worker registration failed:', error);
+      logger.error('Service worker registration failed:', error);
     },
     onNeedRefresh() {
-      console.log('[SW] New content available, please refresh');
+      logger.log('New content available, please refresh');
       setNeedRefresh(true);
       setNeedRefreshFlag(true);
       setUpdateAvailable(true);
     },
     onOfflineReady() {
-      console.log('[SW] App is ready to work offline');
+      logger.log('App is ready to work offline');
       setOfflineReady(true);
       setOfflineReadyFlag(true);
     },
@@ -98,11 +101,11 @@ export const useServiceWorker = () => {
   // Monitor online/offline status
   useEffect(() => {
     const handleOnline = () => {
-      console.log('[SW] Browser is online');
+      logger.log('Browser is online');
     };
 
     const handleOffline = () => {
-      console.log('[SW] Browser is offline');
+      logger.log('Browser is offline');
     };
 
     window.addEventListener('online', handleOnline);
@@ -118,7 +121,7 @@ export const useServiceWorker = () => {
    * Update the service worker and reload the page
    */
   const updateServiceWorkerAndReload = async () => {
-    console.log('[SW] Updating service worker...');
+    logger.log('Updating service worker...');
     await updateServiceWorker(true); // true = reload page after update
   };
 

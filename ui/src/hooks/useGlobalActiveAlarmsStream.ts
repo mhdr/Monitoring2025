@@ -69,11 +69,11 @@ export function useGlobalActiveAlarmsStream(
   const connect = useCallback(async () => {
     // Only connect if authenticated AND auth loading is complete
     if (!isAuthenticated || isAuthLoading) {
-      console.log('[GlobalActiveAlarmsStream] Not connecting - auth not ready:', { isAuthenticated, isAuthLoading });
+      logger.log('[GlobalActiveAlarmsStream] Not connecting - auth not ready:', { isAuthenticated, isAuthLoading });
       return;
     }
     
-    console.log('[GlobalActiveAlarmsStream] Connecting...');
+    logger.log('[GlobalActiveAlarmsStream] Connecting...');
 
     // Prevent multiple simultaneous connection attempts
     if (isConnectingRef.current) {
@@ -152,7 +152,7 @@ export function useGlobalActiveAlarmsStream(
         }
 
         dispatch(setActiveAlarmsStreamError(errorMessage));
-        console.error('Global active alarms stream error:', err);
+        logger.error('Global active alarms stream error:', err);
 
         // Auto-reconnect on error with exponential backoff
         if (isAuthenticated && !isAuthLoading) {
@@ -196,10 +196,10 @@ export function useGlobalActiveAlarmsStream(
   // Auto-connect when authenticated and auth loading is complete, auto-disconnect when not authenticated
   useEffect(() => {
     if (isAuthenticated && !isAuthLoading) {
-      console.log('[GlobalActiveAlarmsStream] Auto-connecting (authenticated and auth loading complete)');
+      logger.log('[GlobalActiveAlarmsStream] Auto-connecting (authenticated and auth loading complete)');
       connect();
     } else {
-      console.log('[GlobalActiveAlarmsStream] Auto-disconnecting:', { isAuthenticated, isAuthLoading });
+      logger.log('[GlobalActiveAlarmsStream] Auto-disconnecting:', { isAuthenticated, isAuthLoading });
       disconnect();
     }
 
@@ -214,3 +214,4 @@ export function useGlobalActiveAlarmsStream(
     disconnect,
   };
 }
+

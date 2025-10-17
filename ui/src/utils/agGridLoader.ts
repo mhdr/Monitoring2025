@@ -4,6 +4,10 @@
  * This improves initial bundle size and performance
  */
 
+import { createLogger } from './logger';
+
+const logger = createLogger('AGGridLoader');
+
 // Extend Window interface for AG Grid
 declare global {
   interface Window {
@@ -131,7 +135,7 @@ export async function loadAGGrid(): Promise<AGGridLibrary> {
 export function preloadAGGrid(): void {
   // Start loading but don't wait for it
   loadAGGrid().catch(error => {
-    console.error('Failed to preload AG Grid:', error);
+    logger.error('Failed to preload AG Grid:', error);
   });
 }
 
@@ -148,7 +152,7 @@ export function isAGGridLoaded(): boolean {
  * This function is kept for backward compatibility but does nothing
  */
 export async function loadAGGridTheme(theme: 'alpine' | 'balham' | 'material' | 'quartz'): Promise<void> {
-  console.warn(
+  logger.warn(
     `[AGGrid] loadAGGridTheme is deprecated. Since v33, themes are passed via the 'theme' grid option.`,
     `Use: <AGGridWrapper theme="${theme}" /> instead.`
   );
@@ -161,7 +165,7 @@ export async function loadAGGridTheme(theme: 'alpine' | 'balham' | 'material' | 
  * This function is kept for backward compatibility but does nothing
  */
 export function unloadAGGridTheme(theme: 'alpine' | 'balham' | 'material' | 'quartz'): void {
-  console.warn(
+  logger.warn(
     `[AGGrid] unloadAGGridTheme("${theme}") is deprecated. Since v33, themes are managed by the Theming API.`,
     `Theme switching is automatic when you change the 'theme' prop.`
   );

@@ -28,6 +28,9 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import { useAppSelector } from '../../hooks/useRedux';
 import { useLazyGetHistoryQuery } from '../../services/rtkApi';
+import { createLogger } from '../../utils/logger';
+
+const logger = createLogger('DataTablePage');
 import type { HistoryRequestDto, HistoricalDataPoint, Item } from '../../types/api';
 import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
 
@@ -150,7 +153,7 @@ const DataTablePage: React.FC = () => {
       setHistoryData(result.values || []);
       setLoading(false);
     } catch (err) {
-      console.error('Error fetching history data:', err);
+      logger.error('Error fetching history data:', err);
       setError(t('errorLoadingData'));
       setLoading(false);
     }

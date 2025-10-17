@@ -9,6 +9,10 @@
  * - Structured storage for complex data types
  */
 
+import { createLogger } from './logger';
+
+const logger = createLogger('IndexedDB');
+
 /**
  * Data with TTL metadata
  */
@@ -39,9 +43,9 @@ const initBroadcastChannel = (): void => {
   if (typeof BroadcastChannel !== 'undefined' && !broadcastChannel) {
     try {
       broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
-      console.info('[IndexedDB] BroadcastChannel initialized for cross-tab sync');
+      logger.info('BroadcastChannel initialized for cross-tab sync');
     } catch (error) {
-      console.warn('[IndexedDB] BroadcastChannel not available:', error);
+      logger.warn('BroadcastChannel not available:', error);
     }
   }
 };
@@ -54,7 +58,7 @@ const broadcastChange = (key: string, action: 'set' | 'remove' | 'clear'): void 
     try {
       broadcastChannel.postMessage({ key, action, timestamp: Date.now() });
     } catch (error) {
-      console.warn('[IndexedDB] Failed to broadcast change:', error);
+      logger.warn('Failed to broadcast change:', error);
     }
   }
 };
@@ -107,7 +111,7 @@ const openDB = (): Promise<IDBDatabase> => {
       // Create object store if it doesn't exist
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME);
-        console.info('[IndexedDB] Object store created:', STORE_NAME);
+        logger.info('Object store created:', STORE_NAME);
       }
     };
   });
@@ -137,7 +141,7 @@ export const getItem = async <T>(key: string): Promise<T | null> => {
           console.info(`[IndexedDB] Data expired for key: ${key}, removing...`);
           // Remove expired data asynchronously
           removeItem(key).catch((error) =>
-            console.warn('[IndexedDB] Failed to remove expired item:', error)
+            logger.warn('Failed to remove expired item:', error)
           );
           resolve(null);
           return;
@@ -155,7 +159,7 @@ export const getItem = async <T>(key: string): Promise<T | null> => {
       };
     });
   } catch (error) {
-    console.error('[IndexedDB] Error in getItem:', error);
+    logger.error('Error in getItem:', error);
     return null;
   }
 };
@@ -193,7 +197,7 @@ export const setItem = async <T>(key: string, value: T, ttl?: number): Promise<v
       };
     });
   } catch (error) {
-    console.error('[IndexedDB] Error in setItem:', error);
+    logger.error('Error in setItem:', error);
     throw error;
   }
 };
@@ -223,7 +227,7 @@ export const removeItem = async (key: string): Promise<void> => {
       };
     });
   } catch (error) {
-    console.error('[IndexedDB] Error in removeItem:', error);
+    logger.error('Error in removeItem:', error);
     throw error;
   }
 };
@@ -253,7 +257,7 @@ export const clear = async (): Promise<void> => {
       };
     });
   } catch (error) {
-    console.error('[IndexedDB] Error in clear:', error);
+    logger.error('Error in clear:', error);
     throw error;
   }
 };
@@ -282,7 +286,7 @@ export const getAllKeys = async (): Promise<string[]> => {
       };
     });
   } catch (error) {
-    console.error('[IndexedDB] Error in getAllKeys:', error);
+    logger.error('Error in getAllKeys:', error);
     return [];
   }
 };
@@ -332,7 +336,7 @@ export const cleanupExpired = async (): Promise<number> => {
       };
     });
   } catch (error) {
-    console.error('[IndexedDB] Error in cleanupExpired:', error);
+    logger.error('Error in cleanupExpired:', error);
     return 0;
   }
 };
@@ -357,7 +361,7 @@ export const getStorageEstimate = async (): Promise<{
 
     return { usage: 0, quota: 0, percentage: 0 };
   } catch (error) {
-    console.warn('[IndexedDB] Failed to get storage estimate:', error);
+    logger.warn('Failed to get storage estimate:', error);
     return { usage: 0, quota: 0, percentage: 0 };
   }
 };
@@ -380,21 +384,21 @@ export const initIndexedDB = async (): Promise<void> => {
     // Schedule periodic cleanup (every hour)
     setInterval(() => {
       cleanupExpired().catch((error) => 
-        console.error('[IndexedDB] Auto-cleanup failed:', error)
+        logger.error('Auto-cleanup failed:', error)
       );
     }, 60 * 60 * 1000);
     
-    console.info('[IndexedDB] Storage initialized successfully');
+    logger.info('Storage initialized successfully');
     
     // Log storage estimate
     const estimate = await getStorageEstimate();
-    console.info('[IndexedDB] Storage estimate:', {
+    logger.info('Storage estimate:', {
       usage: `${(estimate.usage / 1024 / 1024).toFixed(2)} MB`,
       quota: `${(estimate.quota / 1024 / 1024).toFixed(2)} MB`,
       percentage: `${estimate.percentage.toFixed(2)}%`,
     });
   } catch (error) {
-    console.error('[IndexedDB] Failed to initialize storage:', error);
+    logger.error('Failed to initialize storage:', error);
     throw error;
   }
 };

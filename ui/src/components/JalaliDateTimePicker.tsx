@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import jalaali from 'jalaali-js';
 import { useLanguage } from '../hooks/useLanguage';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('JalaliDateTimePicker');
 
 // Declare global jalaliDatepicker
 declare global {
@@ -59,7 +62,7 @@ const JalaliDateTimePicker: React.FC<JalaliDateTimePickerProps> = ({
       const jalaliDate = `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`;
       return timePart ? `${jalaliDate} ${timePart}` : jalaliDate;
     } catch (error) {
-      console.error('Error converting ISO to Jalali:', error);
+      logger.error('Error converting ISO to Jalali:', error);
       return '';
     }
   }, []);
@@ -91,7 +94,7 @@ const JalaliDateTimePicker: React.FC<JalaliDateTimePickerProps> = ({
 
       return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
     } catch (error) {
-      console.error('Error converting Jalali to ISO:', error);
+      logger.error('Error converting Jalali to ISO:', error);
       return '';
     }
   }, []);
@@ -135,7 +138,7 @@ const JalaliDateTimePicker: React.FC<JalaliDateTimePickerProps> = ({
     };
 
     loadScript().catch((error) => {
-      console.error('Error loading JalaliDatePicker:', error);
+      logger.error('Error loading JalaliDatePicker:', error);
     });
   }, [language]);
 
@@ -157,7 +160,7 @@ const JalaliDateTimePicker: React.FC<JalaliDateTimePickerProps> = ({
     e.preventDefault();
     
     if (!window.jalaliDatepicker || !inputRef.current) {
-      console.warn('JalaliDatePicker not loaded yet');
+      logger.warn('JalaliDatePicker not loaded yet');
       return;
     }
 

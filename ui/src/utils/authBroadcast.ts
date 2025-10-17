@@ -15,6 +15,10 @@
  * Browser Support: Modern browsers (Chrome 54+, Firefox 38+, Safari 15.4+)
  */
 
+import { createLogger } from './logger';
+
+const logger = createLogger('AuthBroadcast');
+
 export type AuthBroadcastMessage =
   | { type: 'LOGIN'; payload: { accessToken: string; refreshToken: string } }
   | { type: 'LOGOUT' }
@@ -32,7 +36,7 @@ let authChannel: BroadcastChannel | null = null;
 export const initAuthBroadcast = (): BroadcastChannel | null => {
   // Check if BroadcastChannel is supported
   if (typeof BroadcastChannel === 'undefined') {
-    console.warn('BroadcastChannel API is not supported in this browser');
+    logger.warn('BroadcastChannel API is not supported in this browser');
     return null;
   }
 
@@ -43,10 +47,10 @@ export const initAuthBroadcast = (): BroadcastChannel | null => {
 
   try {
     authChannel = new BroadcastChannel('auth-channel');
-    console.debug('Auth BroadcastChannel initialized');
+    logger.debug('Auth BroadcastChannel initialized');
     return authChannel;
   } catch (error) {
-    console.error('Failed to initialize Auth BroadcastChannel:', error);
+    logger.error('Failed to initialize Auth BroadcastChannel:', error);
     return null;
   }
 };
@@ -64,9 +68,9 @@ export const broadcastLogin = (accessToken: string, refreshToken: string): void 
       payload: { accessToken, refreshToken },
     };
     channel.postMessage(message);
-    console.debug('Broadcasted LOGIN event');
+    logger.debug('Broadcasted LOGIN event');
   } catch (error) {
-    console.error('Failed to broadcast LOGIN event:', error);
+    logger.error('Failed to broadcast LOGIN event:', error);
   }
 };
 
@@ -80,9 +84,9 @@ export const broadcastLogout = (): void => {
   try {
     const message: AuthBroadcastMessage = { type: 'LOGOUT' };
     channel.postMessage(message);
-    console.debug('Broadcasted LOGOUT event');
+    logger.debug('Broadcasted LOGOUT event');
   } catch (error) {
-    console.error('Failed to broadcast LOGOUT event:', error);
+    logger.error('Failed to broadcast LOGOUT event:', error);
   }
 };
 
@@ -99,9 +103,9 @@ export const broadcastTokenRefresh = (accessToken: string, refreshToken: string)
       payload: { accessToken, refreshToken },
     };
     channel.postMessage(message);
-    console.debug('Broadcasted TOKEN_REFRESHED event');
+    logger.debug('Broadcasted TOKEN_REFRESHED event');
   } catch (error) {
-    console.error('Failed to broadcast TOKEN_REFRESHED event:', error);
+    logger.error('Failed to broadcast TOKEN_REFRESHED event:', error);
   }
 };
 
@@ -116,9 +120,9 @@ export const requestAuthStatus = (): void => {
   try {
     const message: AuthBroadcastMessage = { type: 'AUTH_CHECK_REQUEST' };
     channel.postMessage(message);
-    console.debug('Broadcasted AUTH_CHECK_REQUEST');
+    logger.debug('Broadcasted AUTH_CHECK_REQUEST');
   } catch (error) {
-    console.error('Failed to broadcast AUTH_CHECK_REQUEST:', error);
+    logger.error('Failed to broadcast AUTH_CHECK_REQUEST:', error);
   }
 };
 
@@ -135,9 +139,9 @@ export const respondAuthStatus = (isAuthenticated: boolean): void => {
       payload: { isAuthenticated },
     };
     channel.postMessage(message);
-    console.debug('Broadcasted AUTH_CHECK_RESPONSE:', isAuthenticated);
+    logger.debug('Broadcasted AUTH_CHECK_RESPONSE:', isAuthenticated);
   } catch (error) {
-    console.error('Failed to broadcast AUTH_CHECK_RESPONSE:', error);
+    logger.error('Failed to broadcast AUTH_CHECK_RESPONSE:', error);
   }
 };
 
@@ -158,7 +162,7 @@ export const subscribeToAuthBroadcast = (
     try {
       callback(event.data);
     } catch (error) {
-      console.error('Error handling auth broadcast message:', error);
+      logger.error('Error handling auth broadcast message:', error);
     }
   };
 
@@ -178,6 +182,6 @@ export const closeAuthBroadcast = (): void => {
   if (authChannel) {
     authChannel.close();
     authChannel = null;
-    console.debug('Auth BroadcastChannel closed');
+    logger.debug('Auth BroadcastChannel closed');
   }
 };

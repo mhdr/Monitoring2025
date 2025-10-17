@@ -63,7 +63,7 @@ export function useGlobalDataInitialization(
 
     // If data is already synced and we have data in state, skip fetching
     if (isDataSynced && (groups.length > 0 || items.length > 0)) {
-      console.info('[useGlobalDataInitialization] Data already synced, skipping fetch:', {
+      logger.info('[useGlobalDataInitialization] Data already synced, skipping fetch:', {
         groupsCount: groups.length,
         itemsCount: items.length,
         isDataSynced,
@@ -84,7 +84,7 @@ export function useGlobalDataInitialization(
       
       hasInitializedRef.current = true;
     } catch (error) {
-      console.error('Failed to load global monitoring data:', error);
+      logger.error('Failed to load global monitoring data:', error);
     } finally {
       isLoadingRef.current = false;
     }

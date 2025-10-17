@@ -3,6 +3,10 @@
  * Defines theme presets and configuration for Material-UI theming
  */
 
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('MuiThemes');
+
 export type MuiThemeMode = 'light' | 'dark';
 
 export type MuiThemePreset =
@@ -186,7 +190,7 @@ export const MUI_THEME_PRESETS: MuiThemeConfig[] = [
 export function getMuiThemeConfig(themeId: MuiThemePreset): MuiThemeConfig {
   const theme = MUI_THEME_PRESETS.find((t) => t.id === themeId);
   if (!theme) {
-    console.warn(`Theme ${themeId} not found, falling back to default`);
+    logger.warn(`Theme ${themeId} not found, falling back to default`);
     return MUI_THEME_PRESETS[0];
   }
   return theme;

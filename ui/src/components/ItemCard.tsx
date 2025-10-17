@@ -14,6 +14,9 @@ import { OpenInNew } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('ItemCard');
 
 interface ItemCardProps {
   itemId: string;
@@ -42,7 +45,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, t
     } catch (e) {
       // no-op - window may be undefined in some test environments
       // keep silent to avoid breaking UI; log warning in dev
-      console.warn('Could not open new tab', e);
+      logger.warn('Could not open new tab', e);
     }
   };
 

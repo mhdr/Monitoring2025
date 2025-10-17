@@ -27,7 +27,7 @@ import {
 } from '@mui/material';
 import { 
   CheckCircle as CheckCircleIcon, 
-  Cancel as CancelIcon, 
+  Cancel as CancelIcon,
   Circle as CircleIcon,
   Refresh as RefreshIcon,
   SkipNext as SkipNextIcon,
@@ -39,8 +39,11 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useDataSync } from '../hooks/useDataSync';
 import { useAppDispatch } from '../hooks/useRedux';
 import { clearDataSyncStatus } from '../store/slices/monitoringSlice';
+import { createLogger } from '../utils/logger';
 import type { SyncProgress } from '../hooks/useDataSync';
 import './SyncPage.css';
+
+const logger = createLogger('SyncPage');
 
 /**
  * Individual progress bar component for sync operations
@@ -208,7 +211,7 @@ const SyncPage: React.FC = () => {
       // Invalidate Service Worker API cache after successful sync
       import('../services/cacheCoordinationService').then(({ invalidateApiCache }) => {
         invalidateApiCache().catch((error) => {
-          console.warn('[Sync] Failed to invalidate cache:', error);
+          logger.warn('[Sync] Failed to invalidate cache:', error);
         });
       });
       

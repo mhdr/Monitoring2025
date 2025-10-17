@@ -140,7 +140,7 @@ export function useMonitoringStream(
           setError('Unknown error occurred');
         }
 
-        console.error('Monitoring stream error:', err);
+        logger.error('Monitoring stream error:', err);
       }
     }
   }, [clientId]);
@@ -188,3 +188,4 @@ export function useMonitoringStream(
     disconnect,
   };
 }
+

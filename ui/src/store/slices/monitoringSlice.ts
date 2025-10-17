@@ -1,4 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { createLogger } from '../../utils/logger';
+
+const logger = createLogger('MonitoringSlice');
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Group, Item, MultiValue, AlarmDto } from '../../types/api';
 import type { ApiError } from '../../types/auth';
@@ -34,7 +37,7 @@ const loadSyncStatusFromStorage = async (): Promise<boolean> => {
   try {
     const stored = await getItem<boolean>(SYNC_STATUS_STORAGE_KEY);
     const isSynced = stored === true;
-    console.info('[MonitoringSlice] Loading sync status from IndexedDB:', {
+    logger.info('Loading sync status from IndexedDB:', {
       storedValue: stored,
       isSynced,
       timestamp: new Date().toISOString()
@@ -52,13 +55,13 @@ const loadSyncStatusFromStorage = async (): Promise<boolean> => {
 const loadMonitoringDataFromStorage = async () => {
   const isSynced = await loadSyncStatusFromStorage();
   
-  console.info('[MonitoringSlice] Loading monitoring data from storage:', {
+  logger.info('Loading monitoring data from storage:', {
     isSynced,
     timestamp: new Date().toISOString()
   });
   
   if (!isSynced) {
-    console.info('[MonitoringSlice] Data not synced, starting with empty state');
+    logger.info('Data not synced, starting with empty state');
     return {
       groups: [],
       items: [],
@@ -70,7 +73,7 @@ const loadMonitoringDataFromStorage = async () => {
   const storedItems = (await monitoringStorageHelpers.getStoredItems()) || [];
   const storedAlarms = (await monitoringStorageHelpers.getStoredAlarms()) || [];
 
-  console.info('[MonitoringSlice] Restoring data from IndexedDB:', {
+  logger.info('Restoring data from IndexedDB:', {
     groups: storedGroups.length,
     items: storedItems.length,
     alarms: storedAlarms.length,
@@ -109,7 +112,7 @@ export const saveSyncStatusToStorage = async (isSynced: boolean): Promise<void> 
  */
 export const clearSyncStatusFromStorage = async (): Promise<void> => {
   try {
-    console.info('[MonitoringSlice] Clearing sync status flag from IndexedDB:', {
+    logger.info('Clearing sync status flag from IndexedDB:', {
       timestamp: new Date().toISOString()
     });
     
@@ -125,7 +128,7 @@ export const clearSyncStatusFromStorage = async (): Promise<void> => {
  */
 export const clearAllMonitoringDataFromStorage = async (): Promise<void> => {
   try {
-    console.warn('[MonitoringSlice] Clearing sync status and all monitoring data from IndexedDB:', {
+    logger.warn('Clearing sync status and all monitoring data from IndexedDB:', {
       timestamp: new Date().toISOString(),
       stackTrace: new Error().stack
     });
@@ -234,7 +237,7 @@ const monitoringSlice = createSlice({
       state.items = action.payload.items;
       state.alarms = action.payload.alarms;
       state.isDataSynced = action.payload.isDataSynced;
-      console.info('[MonitoringSlice] State initialized from IndexedDB:', {
+      logger.info('State initialized from IndexedDB:', {
         groups: state.groups.length,
         items: state.items.length,
         alarms: state.alarms.length,
@@ -257,9 +260,9 @@ const monitoringSlice = createSlice({
       state.isDataSynced = action.payload;
       // Save asynchronously without blocking
       saveSyncStatusToStorage(action.payload).catch((error) =>
-        console.error('[MonitoringSlice] Failed to save sync status:', error)
+        logger.error('Failed to save sync status:', error)
       );
-      console.info('[MonitoringSlice] Data sync status updated:', {
+      logger.info('Data sync status updated:', {
         isDataSynced: action.payload,
         timestamp: new Date().toISOString(),
         currentDataCounts: {
@@ -278,7 +281,7 @@ const monitoringSlice = createSlice({
       state.isDataSynced = false;
       // Clear asynchronously without blocking
       clearSyncStatusFromStorage().catch((error) =>
-        console.error('[MonitoringSlice] Failed to clear sync status:', error)
+        logger.error('Failed to clear sync status:', error)
       );
     },
     
@@ -293,7 +296,7 @@ const monitoringSlice = createSlice({
       state.alarms = [];
       // Clear asynchronously without blocking
       clearAllMonitoringDataFromStorage().catch((error) =>
-        console.error('[MonitoringSlice] Failed to clear monitoring data:', error)
+        logger.error('Failed to clear monitoring data:', error)
       );
     },
     
@@ -312,7 +315,7 @@ const monitoringSlice = createSlice({
     resetMonitoring: () => {
       // Clear all data from storage when resetting (async, non-blocking)
       clearAllMonitoringDataFromStorage().catch((error) =>
-        console.error('[MonitoringSlice] Failed to clear monitoring data:', error)
+        logger.error('Failed to clear monitoring data:', error)
       );
       return initialState;
     },
@@ -370,7 +373,7 @@ const monitoringSlice = createSlice({
       (state) => {
         // Clear sync status from storage and state when user logs in
         // This ensures fresh data sync for the new authenticated session
-        console.info('[MonitoringSlice] Login detected, clearing sync status for fresh session:', {
+        logger.info('Login detected, clearing sync status for fresh session:', {
           timestamp: new Date().toISOString()
         });
         clearSyncStatusFromStorage();
@@ -396,9 +399,9 @@ const monitoringSlice = createSlice({
           if (action.payload.groups && action.payload.groups.length > 0) {
             // Store asynchronously without blocking
             monitoringStorageHelpers.setStoredGroups(action.payload.groups).catch((error) =>
-              console.error('[MonitoringSlice] Failed to store groups:', error)
+              logger.error('Failed to store groups:', error)
             );
-            console.info('[MonitoringSlice] Groups data updated in Redux and IndexedDB:', {
+            logger.info('Groups data updated in Redux and IndexedDB:', {
               count: action.payload.groups.length,
               timestamp: new Date().toISOString()
             });
@@ -434,9 +437,9 @@ const monitoringSlice = createSlice({
           if (action.payload.items && action.payload.items.length > 0) {
             // Store asynchronously without blocking
             monitoringStorageHelpers.setStoredItems(action.payload.items).catch((error) =>
-              console.error('[MonitoringSlice] Failed to store items:', error)
+              logger.error('Failed to store items:', error)
             );
-            console.info('[MonitoringSlice] Items data updated in Redux and IndexedDB:', {
+            logger.info('Items data updated in Redux and IndexedDB:', {
               count: action.payload.items.length,
               timestamp: new Date().toISOString()
             });
@@ -472,9 +475,9 @@ const monitoringSlice = createSlice({
           if (action.payload.data && action.payload.data.length > 0) {
             // Store asynchronously without blocking
             monitoringStorageHelpers.setStoredAlarms(action.payload.data).catch((error) =>
-              console.error('[MonitoringSlice] Failed to store alarms:', error)
+              logger.error('Failed to store alarms:', error)
             );
-            console.info('[MonitoringSlice] Alarms data updated in Redux and IndexedDB:', {
+            logger.info('Alarms data updated in Redux and IndexedDB:', {
               count: action.payload.data.length,
               timestamp: new Date().toISOString()
             });
@@ -561,7 +564,7 @@ export const initializeMonitoringFromStorage = () => async (dispatch: AppDispatc
       isDataSynced: isSynced,
     }));
   } catch (error) {
-    console.error('[MonitoringSlice] Failed to initialize from storage:', error);
+    logger.error('Failed to initialize from storage:', error);
   }
 };
 
@@ -584,3 +587,4 @@ export const fetchAlarms = ({ itemIds, forceRefresh = false }: { itemIds?: strin
 export const fetchValues = ({ itemIds }: { itemIds?: string[] }) => (dispatch: AppDispatch) => {
   return dispatch(api.endpoints.getValues.initiate({ itemIds: itemIds || null }));
 };
+

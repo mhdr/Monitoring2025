@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
 import type { ReactNode } from 'react';
 import { Warning, Refresh, Replay } from '@mui/icons-material';
+import { createLogger } from '../utils/logger';
 import './LazyErrorBoundary.css';
+
+const logger = createLogger('LazyErrorBoundary');
 
 interface LazyErrorBoundaryProps {
   children: ReactNode;
@@ -41,7 +44,7 @@ class LazyErrorBoundary extends Component<LazyErrorBoundaryProps, LazyErrorBound
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log error details for debugging
-    console.error('LazyErrorBoundary caught an error:', error, errorInfo);
+    logger.error('LazyErrorBoundary caught an error:', error, errorInfo);
     
     this.setState({
       error,

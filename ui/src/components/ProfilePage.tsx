@@ -17,7 +17,10 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../hooks/useLanguage';
 import { useChangePasswordMutation } from '../services/rtkApi';
+import { createLogger } from '../utils/logger';
 import './ProfilePage.css';
+
+const logger = createLogger('ProfilePage');
 
 interface PasswordForm {
   currentPassword: string;
@@ -123,7 +126,7 @@ const ProfilePage: React.FC = () => {
         setErrorMessage(t('profilePage.messages.changePasswordError'));
       }
     } catch (error: unknown) {
-      console.error('Change password error:', error);
+      logger.error('Change password error:', error);
       
       // Handle specific error cases
       const apiError = error as { status?: number; message?: string };

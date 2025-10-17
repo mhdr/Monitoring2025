@@ -6,6 +6,9 @@
 
 import { useRef, useCallback, useState } from 'react';
 import type { AGGridApi, AGGridRowData } from '../types/agGrid';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('useAGGrid');
 
 interface UseAGGridOptions {
   // Options for future extensibility
@@ -170,5 +173,5 @@ export const useAGGrid = (_options: UseAGGridOptions = {}): UseAGGridReturn => {
  * @deprecated AG Grid modules are now registered at application startup
  */
 export const useAGGridPreload = () => {
-  console.warn('[useAGGridPreload] This hook is deprecated. AG Grid modules are now registered at application startup.');
+  logger.warn('This hook is deprecated. AG Grid modules are now registered at application startup.');
 };

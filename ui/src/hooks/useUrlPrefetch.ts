@@ -1,4 +1,7 @@
 import { useCallback, useRef } from 'react';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('useUrlPrefetch');
 
 /**
  * Hook for prefetching URLs on hover to improve navigation performance
@@ -59,9 +62,10 @@ export const useUrlPrefetch = () => {
         prefetchedUrls.current.delete(url);
       };
     } catch (error) {
-      console.error('Failed to create prefetch link:', error);
+      logger.error('Failed to create prefetch link:', error);
     }
   }, []);
 
   return prefetchUrl;
 };
+

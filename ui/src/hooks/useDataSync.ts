@@ -264,7 +264,7 @@ export function useDataSync(): UseDataSyncResult {
         // Get fresh items from ref (always has latest state)
         const freshItems = itemsRef.current;
         const itemIds = freshItems.map(item => item.id);
-        console.info('[useDataSync] Extracted item IDs for alarm sync:', {
+        logger.info('[useDataSync] Extracted item IDs for alarm sync:', {
           itemCount: itemIds.length,
           sampleIds: itemIds.slice(0, 5),
           forceRefresh,
@@ -298,7 +298,7 @@ export function useDataSync(): UseDataSyncResult {
         const storedGroups = monitoringStorageHelpers.getStoredGroups();
         const storedItems = monitoringStorageHelpers.getStoredItems();
         
-        console.info('[useDataSync] Sync completed successfully. Verification:', {
+        logger.info('[useDataSync] Sync completed successfully. Verification:', {
           syncedDataCounts: {
             groups: storedGroups?.length || 0,
             items: storedItems?.length || 0
@@ -311,7 +311,7 @@ export function useDataSync(): UseDataSyncResult {
 
       return allSuccess;
     } catch (error) {
-      console.error('Sync process failed:', error);
+      logger.error('Sync process failed:', error);
       updateOverallStatus('error');
       setSyncState(prev => ({ ...prev, hasErrors: true }));
       return false;
@@ -372,7 +372,7 @@ export function useDataSync(): UseDataSyncResult {
         const storedGroups = monitoringStorageHelpers.getStoredGroups();
         const storedItems = monitoringStorageHelpers.getStoredItems();
         
-        console.info('[useDataSync] Retry completed successfully. Verification:', {
+        logger.info('[useDataSync] Retry completed successfully. Verification:', {
           syncedDataCounts: {
             groups: storedGroups?.length || 0,
             items: storedItems?.length || 0
@@ -384,7 +384,7 @@ export function useDataSync(): UseDataSyncResult {
 
       return allSuccess;
     } catch (error) {
-      console.error('Retry sync failed:', error);
+      logger.error('Retry sync failed:', error);
       updateOverallStatus('error');
       return false;
     } finally {

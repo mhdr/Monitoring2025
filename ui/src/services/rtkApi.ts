@@ -1,4 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('rtkApi');
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { 
   LoginRequest, 
@@ -122,7 +125,7 @@ const baseQuery = fetchBaseQuery({
       headers.set('Authorization', `Bearer ${token}`);
       // Extend expiration on each API call (user activity) - fire and forget
       authStorageHelpers.extendAuthExpiration().catch((error) => {
-        console.error('Failed to extend auth expiration:', error);
+        logger.error('Failed to extend auth expiration:', error);
       });
     }
     return headers;
@@ -1168,3 +1171,4 @@ export const {
 
 // Export API endpoints for manual usage if needed
 export const { endpoints } = api;
+
