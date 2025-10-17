@@ -1107,7 +1107,7 @@ const ActiveAlarmsPage: React.FC = () => {
                               </TableCell>
                               
                               {/* External Alarm */}
-                              <TableCell data-id-ref={`active-alarm-external-${index}`} align="center">
+                              <TableCell data-id-ref={`active-alarm-external-${index}`}>
                                 <Tooltip 
                                   title={alarmDto?.hasExternalAlarm 
                                     ? t('activeAlarmsPage.externalAlarmEnabled') 
