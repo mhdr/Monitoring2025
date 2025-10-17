@@ -405,11 +405,19 @@ export const api = createApi({
      * Note: Use pollingInterval option in components to enable auto-refresh
      */
     getValues: builder.query<ValuesResponseDto, ValuesRequestDto | void>({
-      query: (params = { itemIds: null }) => ({
-        url: '/api/Monitoring/Values',
-        method: 'POST',
-        body: params,
-      }),
+      query: (params) => {
+        // If params is undefined or itemIds is null/undefined, send empty object (get all values)
+        // Backend expects empty body or { itemIds: [] } for all values, not { itemIds: null }
+        const body: ValuesRequestDto = {};
+        if (params?.itemIds && params.itemIds.length > 0) {
+          body.itemIds = params.itemIds;
+        }
+        return {
+          url: '/api/Monitoring/Values',
+          method: 'POST',
+          body,
+        };
+      },
       providesTags: ['Values'],
       // Don't cache values - they should be fresh
       keepUnusedDataFor: 0,
@@ -575,11 +583,19 @@ export const api = createApi({
      * Get configured alarms for specified monitoring items
      */
     getAlarms: builder.query<AlarmsResponseDto, AlarmsRequestDto | void>({
-      query: (params = { itemIds: null }) => ({
-        url: '/api/Monitoring/Alarms',
-        method: 'POST',
-        body: params,
-      }),
+      query: (params) => {
+        // If params is undefined or itemIds is null/undefined, send empty object (get all alarms)
+        // Backend expects empty body or { itemIds: [] } for all alarms, not { itemIds: null }
+        const body: AlarmsRequestDto = {};
+        if (params?.itemIds && params.itemIds.length > 0) {
+          body.itemIds = params.itemIds;
+        }
+        return {
+          url: '/api/Monitoring/Alarms',
+          method: 'POST',
+          body,
+        };
+      },
       transformResponse: (response: AlarmsResponseDto) => {
         // Store alarms data in IndexedDB when fetched
         return storeMonitoringResponseData.storeAlarmsResponse(response);
@@ -592,11 +608,19 @@ export const api = createApi({
      * Get currently active alarms
      */
     getActiveAlarms: builder.query<ActiveAlarmsResponseDto, ActiveAlarmsRequestDto | void>({
-      query: (params = { itemIds: null }) => ({
-        url: '/api/Monitoring/ActiveAlarms',
-        method: 'POST',
-        body: params,
-      }),
+      query: (params) => {
+        // If params is undefined or itemIds is null/undefined, send empty object (get all active alarms)
+        // Backend expects empty body or { itemIds: [] } for all alarms, not { itemIds: null }
+        const body: ActiveAlarmsRequestDto = {};
+        if (params?.itemIds && params.itemIds.length > 0) {
+          body.itemIds = params.itemIds;
+        }
+        return {
+          url: '/api/Monitoring/ActiveAlarms',
+          method: 'POST',
+          body,
+        };
+      },
       providesTags: ['Values'],
       keepUnusedDataFor: 0,
     }),
