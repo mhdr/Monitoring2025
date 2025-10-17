@@ -113,13 +113,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins.ToArray())
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials()
-              .WithExposedHeaders(
-                  "Grpc-Status",
-                  "Grpc-Message",
-                  "Grpc-Encoding",
-                  "Grpc-Accept-Encoding"
-              );
+              .AllowCredentials();
     });
 });
 
@@ -185,7 +179,6 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero // Remove delay of token when expire
     };
 
-    // Handle JWT events
     options.Events = new JwtBearerEvents
     {
         OnAuthenticationFailed = context =>
@@ -197,6 +190,19 @@ builder.Services.AddAuthentication(options =>
         {
             // Console.WriteLine("Token validated successfully");
             return Task.CompletedTask;
+        },
+        OnMessageReceived = context =>
+        {
+            // Support JWT token from query string for SignalR connections
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            
+            return Task.CompletedTask;
         }
     };
 });
@@ -207,11 +213,8 @@ builder.Services.AddAuthorization();
 // Add JWT Token Service
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
-// Add gRPC services
-builder.Services.AddGrpc();
-
-// Add gRPC broadcast service as singleton to maintain state across requests
-builder.Services.AddSingleton<API.Services.Grpc.GrpcBroadcastService>();
+// Add SignalR services
+builder.Services.AddSignalR();
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -311,9 +314,6 @@ if (app.Environment.IsDevelopment())
 // Enable CORS
 app.UseCors("ReactClientPolicy");
 
-// Enable gRPC-Web for browser clients
-app.UseGrpcWeb();
-
 // Use HTTPS redirection - this will redirect HTTP requests to HTTPS
 // Can be disabled in development by setting Development:DisableHttpsRedirection to true
 var disableHttpsRedirection = builder.Configuration.GetValue<bool>("Development:DisableHttpsRedirection", false);
@@ -334,10 +334,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Map gRPC services
-app.MapGrpcService<API.Services.Grpc.MonitoringGrpcService>().EnableGrpcWeb();
+// Map SignalR hub endpoints
+app.MapHub<API.Hubs.MonitoringHub>("/hubs/monitoring");
 
-Console.WriteLine("[gRPC] MonitoringGrpcService mapped and ready with gRPC-Web support");
+Console.WriteLine("[SignalR] MonitoringHub mapped to /hubs/monitoring and ready for real-time updates");
 
 // Ensure database is created and migrated
 using (var scope = app.Services.CreateScope())
