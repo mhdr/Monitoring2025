@@ -820,6 +820,13 @@ Must test on these standard resolutions:
 - Client: `src/services/apiClient.ts` (Axios)
 - DTOs: Define in `src/types/api.ts`, match backend DTOs exactly
 
+⚠️ **CRITICAL: All API and SignalR DTOs are documented in Swagger JSON**
+- **Swagger URL**: `https://localhost:7136/swagger/v1/swagger.json`
+- **DTO Location**: `components.schemas` section in Swagger JSON
+- **SignalR Hub Info**: GET `/api/Monitoring/SignalRHubInfo` endpoint provides complete SignalR documentation
+- **SignalR DTOs**: Look for `SignalRHubInfoResponseDto`, `SignalRHubData`, `SignalRMethodInfo`, `SignalRParameterInfo`, `SignalRConnectionExamples`
+- **Always verify DTOs**: Check Swagger before implementing to ensure exact match with backend
+
 ## Auth
 ⚠️ Refresh Token Rotation (OAuth 2.0) - auto-handled by Axios interceptors
 - Files: `src/services/apiClient.ts`, `src/utils/authStorage.ts`, `src/contexts/AuthContext.tsx`
@@ -832,10 +839,12 @@ Must test on these standard resolutions:
 ## SignalR Real-Time Communication
 ⚠️ MANDATORY: Use SignalR for real-time streaming data
 - **Backend Hub**: `MonitoringHub` at `/hubs/monitoring` endpoint
+- **Hub Documentation**: GET `/api/Monitoring/SignalRHubInfo` returns complete hub metadata (methods, parameters, connection examples)
 - **Message Method**: `ReceiveActiveAlarmsUpdate` receives `{ alarmCount: number, timestamp: number }`
 - **Authentication**: JWT Bearer tokens via Authorization header
 - **Backend**: .NET Core SignalR server, same HTTPS port (7136)
 - **Context**: State managed in `MonitoringContext` with `activeAlarms` property
+- **Swagger Documentation**: All SignalR DTOs and methods documented in `https://localhost:7136/swagger/v1/swagger.json`
 
 ### Connection Lifecycle
 ⚠️ SignalR connection states match existing StreamStatus enum
