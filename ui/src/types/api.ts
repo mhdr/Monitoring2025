@@ -157,47 +157,86 @@ export interface GroupsResponseDto {
 }
 
 // Monitoring Items types
+
+/**
+ * Represents a monitoring item (sensor, actuator, etc.)
+ */
 export interface Item {
+  /** Unique identifier for the item */
   id: string;
+  /** Group ID that this item belongs to */
   groupId?: string | null;
+  /** Type of monitoring item (digital/analog, input/output) */
   itemType: ItemType;
+  /** Display name of the item */
   name: string;
+  /** Display name of the item in Farsi */
   nameFa?: string | null;
+  /** Hardware point number for communication */
   pointNumber: number;
+  /** Whether to apply scaling to raw values */
   shouldScale: ShouldScaleType;
+  /** Minimum raw value from the hardware */
   normMin: number;
+  /** Maximum raw value from the hardware */
   normMax: number;
+  /** Minimum scaled engineering value */
   scaleMin: number;
+  /** Maximum scaled engineering value */
   scaleMax: number;
+  /** Interval in seconds for saving current values */
   saveInterval: number;
+  /** Interval in seconds for saving historical values */
   saveHistoricalInterval: number;
+  /** Method for calculating values from samples */
   calculationMethod: ValueCalculationMethod;
+  /** Number of samples used for calculation */
   numberOfSamples: number;
+  /** Text to display when boolean value is true */
   onText?: string | null;
+  /** Text to display when boolean value is true in Farsi */
   onTextFa?: string | null;
+  /** Text to display when boolean value is false */
   offText?: string | null;
+  /** Text to display when boolean value is false in Farsi */
   offTextFa?: string | null;
+  /** Engineering unit for the value (°C, bar, etc.) */
   unit?: string | null;
+  /** Engineering unit for the value in Farsi */
   unitFa?: string | null;
+  /** Whether the item is disabled from data collection */
   isDisabled?: boolean | null;
+  /** Interface type for communication */
   interfaceType: InterfaceType;
+  /** Whether the current user can edit this item */
   isEditable: boolean;
 }
 
-export type ItemType = 1 | 2 | 3 | 4; // 1: DigitalInput, 2: DigitalOutput, 3: AnalogInput, 4: AnalogOutput
+/** ItemType: 1 = DigitalInput, 2 = DigitalOutput, 3 = AnalogInput, 4 = AnalogOutput */
+export type ItemType = 1 | 2 | 3 | 4;
 
-export type ShouldScaleType = 1 | 2; // 1: NoScale, 2: Scale
+/** ShouldScaleType: 1 = NoScale, 2 = Scale */
+export type ShouldScaleType = 1 | 2;
 
-export type ValueCalculationMethod = 0 | 1; // 0: Instantaneous, 1: Average
+/** ValueCalculationMethod: 0 = Instantaneous, 1 = Average */
+export type ValueCalculationMethod = 0 | 1;
 
-export type InterfaceType = 0 | 1 | 2; // 0: None, 1: Controller, 2: MessageBus
+/** InterfaceType: 0 = None, 1 = Controller, 2 = MessageBus */
+export type InterfaceType = 0 | 1 | 2;
 
+/**
+ * Request DTO for retrieving monitoring items
+ */
 export interface ItemsRequestDto {
-  userId?: string | null;
+  /** Whether to include orphaned items that are not assigned to any group */
   showOrphans?: boolean;
 }
 
+/**
+ * Response DTO containing monitoring items accessible to the user
+ */
 export interface ItemsResponseDto {
+  /** List of monitoring items */
   items: Item[];
 }
 

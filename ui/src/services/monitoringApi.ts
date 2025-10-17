@@ -58,6 +58,18 @@ export const getGroups = async (): Promise<GroupsResponseDto> => {
 
 /**
  * Get monitoring items accessible to the current user
+ * 
+ * @param params - Request parameters
+ * @param params.showOrphans - Whether to include orphaned items not assigned to any group
+ * @returns Promise<ItemsResponseDto> - List of accessible monitoring items
+ * 
+ * @example
+ * // Get items for current user (no orphans)
+ * const items = await getItems({ showOrphans: false });
+ * 
+ * @example
+ * // Get items including orphans
+ * const itemsWithOrphans = await getItems({ showOrphans: true });
  */
 export const getItems = async (params: ItemsRequestDto = { showOrphans: false }): Promise<ItemsResponseDto> => {
   try {
@@ -70,7 +82,21 @@ export const getItems = async (params: ItemsRequestDto = { showOrphans: false })
 };
 
 /**
- * Get monitoring items as admin (bypasses user permissions)
+ * Get all monitoring items with admin privileges (bypasses user permissions)
+ * 
+ * @param params - Request parameters
+ * @param params.showOrphans - Whether to include orphaned items not assigned to any group
+ * @returns Promise<ItemsResponseDto> - Complete list of monitoring items
+ * 
+ * @example
+ * // Admin: Get all items in the system
+ * const allItems = await getItemsAsAdmin({ showOrphans: true });
+ * 
+ * @example
+ * // Admin: Get all items without orphans
+ * const items = await getItemsAsAdmin({ showOrphans: false });
+ * 
+ * @throws {AxiosError} - Returns 400 if validation error, 401 if unauthorized
  */
 export const getItemsAsAdmin = async (params: ItemsRequestDto = { showOrphans: false }): Promise<ItemsResponseDto> => {
   try {
