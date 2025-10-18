@@ -9,6 +9,14 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ValueHistoryChart');
 
+/**
+ * Convert English digits (0-9) to Persian digits (۰-۹)
+ */
+const toPersianDigits = (str: string): string => {
+  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  return str.replace(/\d/g, (digit) => persianDigits[parseInt(digit)]);
+};
+
 interface ValueHistoryChartProps {
   /** Array of historical value data points */
   history: Array<{ value: number; time: number }>;
@@ -81,10 +89,13 @@ const ValueHistoryChart: React.FC<ValueHistoryChartProps> = ({
     if (!isNaN(numValue)) {
       // Use Farsi unit if language is Persian and Farsi unit is available
       const unit = (isRTL && item.unitFa) ? item.unitFa : (item.unit || '');
-      return unit ? `${numValue} ${unit}` : numValue.toString();
+      const formattedValue = unit ? `${numValue} ${unit}` : numValue.toString();
+      
+      // Convert to Persian digits if in RTL mode
+      return isRTL ? toPersianDigits(formattedValue) : formattedValue;
     }
 
-    return value;
+    return isRTL ? toPersianDigits(value) : value;
   }, [t, isRTL, item]);
 
   /**
@@ -96,7 +107,7 @@ const ValueHistoryChart: React.FC<ValueHistoryChartProps> = ({
     // Prepare data - convert Unix timestamp (seconds) to milliseconds and format full date/time
     const times = history.map(h => {
       const date = new Date(h.time * 1000); // Convert Unix timestamp to milliseconds
-      return date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US', {
+      const formattedDate = date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -105,6 +116,8 @@ const ValueHistoryChart: React.FC<ValueHistoryChartProps> = ({
         minute: '2-digit',
         second: '2-digit',
       });
+      // Convert to Persian digits if in RTL mode
+      return isRTL ? toPersianDigits(formattedDate) : formattedDate;
     });
     const values = history.map(h => h.value);
     
@@ -112,8 +125,8 @@ const ValueHistoryChart: React.FC<ValueHistoryChartProps> = ({
     const unit = isRTL && item.unitFa ? item.unitFa : item.unit;
     const unitSuffix = unit ? ` (${unit})` : '';
     
-    // Set font family for Persian language
-    const fontFamily = isRTL ? 'IRANSansX, sans-serif' : undefined;
+    // Set font family for Persian language - IRANSansX converts digits to Persian
+    const fontFamily = isRTL ? 'IRANSansX, sans-serif' : 'inherit';
 
     return {
       // Title is shown in dialog, not in chart
@@ -126,12 +139,13 @@ const ValueHistoryChart: React.FC<ValueHistoryChartProps> = ({
           const p = params as Array<{ name: string; value: number; seriesName: string }>;
           if (p && p[0]) {
             const formattedValue = formatItemValue(String(p[0].value));
-            return `${p[0].name}<br/>${p[0].seriesName}: ${formattedValue}`;
+            return `${p[0].seriesName}: ${formattedValue}<br/>${p[0].name}`;
           }
           return '';
         },
         textStyle: {
           fontFamily,
+          fontSize: 12,
         },
       },
       grid: {
@@ -146,6 +160,7 @@ const ValueHistoryChart: React.FC<ValueHistoryChartProps> = ({
         data: times,
         axisLabel: {
           show: false, // Hide x-axis labels for cleaner appearance
+          fontFamily,
         },
         axisLine: {
           lineStyle: {
