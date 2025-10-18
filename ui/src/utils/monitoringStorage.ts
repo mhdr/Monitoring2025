@@ -28,6 +28,7 @@ const MONITORING_GROUPS_KEY = 'monitoring_groups';
 const MONITORING_ITEMS_KEY = 'monitoring_items';
 const MONITORING_ALARMS_KEY = 'monitoring_alarms';
 const MONITORING_METADATA_KEY = 'monitoring_metadata';
+const NOTIFICATION_PREFERENCES_KEY = 'notification_preferences';
 
 /**
  * TTL configuration (in milliseconds)
@@ -46,6 +47,14 @@ interface StorageMetadata {
   lastSync: number;
   lastCleanup: number;
   version: string;
+}
+
+/**
+ * Notification preferences interface
+ */
+export interface NotificationPreferences {
+  enabled: boolean;
+  lastUpdated: number;
 }
 
 /**
@@ -479,4 +488,158 @@ export const storeMonitoringResponseData = {
     }
     return response;
   },
+};
+
+/**
+ * Get notification preferences from IndexedDB
+ * Returns default preferences if none exist
+ * 
+ * @returns Promise<NotificationPreferences> - Notification preferences with enabled status and timestamp
+ * 
+ * @example
+ * const prefs = await getNotificationPreferences();
+ * if (prefs.enabled) {
+ *   // Show notifications
+ * }
+ */
+export const getNotificationPreferences = async (): Promise<NotificationPreferences> => {
+  try {
+    const preferences = await safeGetItem<NotificationPreferences>(NOTIFICATION_PREFERENCES_KEY);
+    
+    if (preferences) {
+      logger.log('Retrieved notification preferences from IndexedDB:', preferences);
+      return preferences;
+    }
+    
+    // Return default preferences if none exist
+    const defaultPreferences: NotificationPreferences = {
+      enabled: false,
+      lastUpdated: Date.now(),
+    };
+    
+    logger.log('No notification preferences found, returning defaults:', defaultPreferences);
+    return defaultPreferences;
+  } catch (error) {
+    logger.error('Failed to get notification preferences:', error);
+    
+    // Return safe defaults on error
+    return {
+      enabled: false,
+      lastUpdated: Date.now(),
+    };
+  }
+};
+
+/**
+ * Save notification preferences to IndexedDB
+ * 
+ * @param preferences - Notification preferences to save
+ * 
+ * @example
+ * await saveNotificationPreferences({ enabled: true, lastUpdated: Date.now() });
+ */
+export const saveNotificationPreferences = async (preferences: NotificationPreferences): Promise<void> => {
+  try {
+    // Update timestamp
+    const updatedPreferences: NotificationPreferences = {
+      ...preferences,
+      lastUpdated: Date.now(),
+    };
+    
+    // Use 7 day TTL for notification preferences (same as other user settings)
+    await safeSetItem(NOTIFICATION_PREFERENCES_KEY, updatedPreferences, 7 * 24 * 60 * 60 * 1000);
+    logger.log('Saved notification preferences to IndexedDB:', updatedPreferences);
+  } catch (error) {
+    logger.error('Failed to save notification preferences:', error);
+    throw error;
+  }
+};
+
+/**
+ * Check if notifications are enabled by user preference
+ * This checks the stored preference value
+ * 
+ * @returns Promise<boolean> - True if user has enabled notifications
+ * 
+ * @example
+ * const userEnabled = await areNotificationsEnabledByUser();
+ * const browserPermission = Notification.permission === 'granted';
+ * if (userEnabled && browserPermission) {
+ *   // Show notification
+ * }
+ */
+export const areNotificationsEnabledByUser = async (): Promise<boolean> => {
+  try {
+    const preferences = await getNotificationPreferences();
+    const enabled = preferences.enabled;
+    
+    logger.log('Notification enabled status:', { 
+      userPreference: enabled, 
+      browserPermission: typeof Notification !== 'undefined' ? Notification.permission : 'unsupported' 
+    });
+    
+    return enabled;
+  } catch (error) {
+    logger.error('Failed to check notification enabled status:', error);
+    return false;
+  }
+};
+
+/**
+ * Enable notifications (save preference)
+ * 
+ * @example
+ * await enableNotifications();
+ */
+export const enableNotifications = async (): Promise<void> => {
+  try {
+    await saveNotificationPreferences({ enabled: true, lastUpdated: Date.now() });
+    logger.log('Notifications enabled');
+  } catch (error) {
+    logger.error('Failed to enable notifications:', error);
+    throw error;
+  }
+};
+
+/**
+ * Disable notifications (save preference)
+ * 
+ * @example
+ * await disableNotifications();
+ */
+export const disableNotifications = async (): Promise<void> => {
+  try {
+    await saveNotificationPreferences({ enabled: false, lastUpdated: Date.now() });
+    logger.log('Notifications disabled');
+  } catch (error) {
+    logger.error('Failed to disable notifications:', error);
+    throw error;
+  }
+};
+
+/**
+ * Toggle notifications on/off
+ * 
+ * @returns Promise<boolean> - New enabled state after toggle
+ * 
+ * @example
+ * const newState = await toggleNotifications();
+ * console.log(`Notifications are now ${newState ? 'enabled' : 'disabled'}`);
+ */
+export const toggleNotifications = async (): Promise<boolean> => {
+  try {
+    const preferences = await getNotificationPreferences();
+    const newEnabledState = !preferences.enabled;
+    
+    await saveNotificationPreferences({ 
+      enabled: newEnabledState, 
+      lastUpdated: Date.now() 
+    });
+    
+    logger.log('Toggled notifications:', { from: preferences.enabled, to: newEnabledState });
+    return newEnabledState;
+  } catch (error) {
+    logger.error('Failed to toggle notifications:', error);
+    throw error;
+  }
 };

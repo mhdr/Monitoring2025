@@ -27,7 +27,7 @@ import {
   getNotificationPreferences,
   saveNotificationPreferences,
   type NotificationPreferences,
-} from '../utils/notificationStorage';
+} from '../utils/monitoringStorage';
 import {
   isNotificationSupported,
   getNotificationPermission,

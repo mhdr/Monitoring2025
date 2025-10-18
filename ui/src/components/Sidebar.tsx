@@ -36,7 +36,7 @@ import {
   showAlarmNotification, 
   formatAlarmNotificationMessage 
 } from '../utils/notifications';
-import { areNotificationsEnabledByUser } from '../utils/notificationStorage';
+import { areNotificationsEnabledByUser } from '../utils/monitoringStorage';
 
 interface SidebarProps {
   isOpen: boolean;
