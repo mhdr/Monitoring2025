@@ -46,7 +46,7 @@ const SettingsPage = (): React.ReactElement => {
 
         <Grid container spacing={3} data-id-ref="settings-page-content-row">
           {/* Language Settings */}
-          <Grid item xs={12} data-id-ref="settings-page-language-col">
+          <Grid size={12} data-id-ref="settings-page-language-col">
             <Card elevation={2} data-id-ref="settings-page-language-card">
               <CardContent data-id-ref="settings-page-language-card-body">
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -75,7 +75,7 @@ const SettingsPage = (): React.ReactElement => {
           </Grid>
 
           {/* Theme Settings */}
-          <Grid item xs={12} data-id-ref="settings-page-theme-col">
+          <Grid size={12} data-id-ref="settings-page-theme-col">
             <Card elevation={2} data-id-ref="settings-page-theme-card">
               <CardContent data-id-ref="settings-page-theme-card-body">
                 <MuiThemeSwitcher />
@@ -99,7 +99,7 @@ const LanguageOptions = (): React.ReactElement => {
 
   return (
     <Grid container spacing={2} data-id-ref="settings-language-options-grid">
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <Button
           fullWidth
           variant={language === 'fa' ? 'contained' : 'outlined'}
@@ -145,7 +145,7 @@ const LanguageOptions = (): React.ReactElement => {
           </Box>
         </Button>
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <Button
           fullWidth
           variant={language === 'en' ? 'contained' : 'outlined'}

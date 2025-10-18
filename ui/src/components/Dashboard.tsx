@@ -1,7 +1,7 @@
 import React from 'react';
+import Grid from '@mui/material/Grid';
 import {
   Container,
-  Grid,
   Card,
   CardHeader,
   CardContent,
@@ -91,7 +91,7 @@ const Dashboard: React.FC = () => {
           )}
 
           <Grid container spacing={3} data-id-ref="dashboard-stats-row" sx={{ mb: 4 }}>
-            <Grid item xs={12} md={3} data-id-ref="dashboard-total-alarms-col">
+            <Grid size={{ xs: 12, md: 3 }} data-id-ref="dashboard-total-alarms-col">
               <Card 
                 data-id-ref="dashboard-total-alarms-card"
                 sx={{ 
@@ -110,7 +110,7 @@ const Dashboard: React.FC = () => {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} md={3} data-id-ref="dashboard-active-alarms-col">
+            <Grid size={{ xs: 12, md: 3 }} data-id-ref="dashboard-active-alarms-col">
               <Card 
                 data-id-ref="dashboard-active-alarms-card"
                 sx={{ 
@@ -155,7 +155,7 @@ const Dashboard: React.FC = () => {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} md={3} data-id-ref="dashboard-warning-alarms-col">
+            <Grid size={{ xs: 12, md: 3 }} data-id-ref="dashboard-warning-alarms-col">
               <Card 
                 data-id-ref="dashboard-warning-alarms-card"
                 sx={{ 
@@ -174,7 +174,7 @@ const Dashboard: React.FC = () => {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} md={3} data-id-ref="dashboard-sensors-col">
+            <Grid size={{ xs: 12, md: 3 }} data-id-ref="dashboard-sensors-col">
               <Card 
                 data-id-ref="dashboard-sensors-card"
                 sx={{ 
@@ -195,7 +195,7 @@ const Dashboard: React.FC = () => {
             </Grid>
           </Grid>
           <Grid container spacing={3} data-id-ref="dashboard-activity-status-row">
-            <Grid item xs={12} md={8} data-id-ref="dashboard-recent-activity-col">
+            <Grid size={{ xs: 12, md: 8 }} data-id-ref="dashboard-recent-activity-col">
               <Card data-id-ref="dashboard-recent-activity-card">
                 <CardHeader 
                   data-id-ref="dashboard-recent-activity-header"
@@ -212,7 +212,7 @@ const Dashboard: React.FC = () => {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} md={4} data-id-ref="dashboard-system-status-col">
+            <Grid size={{ xs: 12, md: 4 }} data-id-ref="dashboard-system-status-col">
               <Card data-id-ref="dashboard-system-status-card">
                 <CardHeader 
                   data-id-ref="dashboard-system-status-header"
