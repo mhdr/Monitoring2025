@@ -26,8 +26,9 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { getAlarmHistory } from '../services/monitoringApi';
 import { createLogger } from '../utils/logger';
-import type { AlarmHistoryRequestDto, AlarmHistory } from '../types/api';
+import type { AlarmHistoryRequestDto, AlarmHistory, Item, AlarmDto } from '../types/api';
 import SeparatedDateTimePicker from './SeparatedDateTimePicker';
+import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 
 // Use LazyAGGrid component for optimized AG Grid loading
 import LazyAGGrid from './LazyAGGrid';
@@ -53,6 +54,10 @@ const AlarmLogPage: React.FC = () => {
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [dateRangeCollapsed, setDateRangeCollapsed] = useState<boolean>(isMobile);
+  
+  // IndexedDB data for enrichment
+  const [itemsMap, setItemsMap] = useState<Map<string, Item>>(new Map());
+  const [alarmsMap, setAlarmsMap] = useState<Map<string, AlarmDto>>(new Map());
 
   // AG Grid integration
   const { exportToCsv, exportToExcel, handleGridReady } = useAGGrid();
@@ -63,6 +68,92 @@ const AlarmLogPage: React.FC = () => {
     columnApiRef.current = colApi;
     handleGridReady(api, colApi);
   }, [handleGridReady]);
+
+  // Helper function to format condition string based on alarm and item data
+  const formatCondition = useCallback((alarm: AlarmDto | undefined, item: Item | undefined): string => {
+    if (!alarm || !item) {
+      return '';
+    }
+
+    const compareType = alarm.compareType;
+    const value1 = alarm.value1 || '';
+    const value2 = alarm.value2 || '';
+    const unit = language === 'fa' ? (item.unitFa || item.unit || '') : (item.unit || '');
+
+    // CompareType: 1 = Equal, 2 = NotEqual, 3 = Higher, 4 = Lower, 5 = Between
+    switch (compareType) {
+      case 1: // Equal
+        return `${t('activeAlarmsPage.conditionEqual')} ${value1} ${unit}`;
+      case 2: // NotEqual
+        return `${t('activeAlarmsPage.conditionNotEqual')} ${value1} ${unit}`;
+      case 3: // Higher
+        return `${t('activeAlarmsPage.conditionHigher')} ${value1} ${unit}`;
+      case 4: // Lower
+        return `${t('activeAlarmsPage.conditionLower')} ${value1} ${unit}`;
+      case 5: // Between
+        return `${t('activeAlarmsPage.conditionBetween')} ${value1} ${t('and')} ${value2} ${unit}`;
+      default:
+        return '';
+    }
+  }, [language, t]);
+
+  // Load items and alarms from IndexedDB on component mount
+  useEffect(() => {
+    const loadIndexedDBData = async () => {
+      try {
+        logger.log('Loading items and alarms from IndexedDB');
+        
+        const [items, alarms] = await Promise.all([
+          monitoringStorageHelpers.getStoredItems(),
+          monitoringStorageHelpers.getStoredAlarms(),
+        ]);
+
+        if (items) {
+          const itemsMapData = new Map<string, Item>();
+          items.forEach(item => {
+            if (item.id) {
+              itemsMapData.set(item.id, item);
+            }
+          });
+          setItemsMap(itemsMapData);
+          logger.log('Items loaded from IndexedDB', { count: itemsMapData.size });
+        }
+
+        if (alarms) {
+          logger.log('Alarms data received from IndexedDB', { 
+            isArray: Array.isArray(alarms), 
+            count: Array.isArray(alarms) ? alarms.length : 'N/A',
+            hasDataProperty: 'data' in alarms,
+            sample: Array.isArray(alarms) && alarms.length > 0 ? alarms[0] : null
+          });
+          
+          // Handle both array and object with data property
+          const alarmsArray = Array.isArray(alarms) 
+            ? alarms 
+            : (alarms as { data?: AlarmDto[] })?.data;
+          
+          if (Array.isArray(alarmsArray)) {
+            const alarmsMapData = new Map<string, AlarmDto>();
+            alarmsArray.forEach((alarm: AlarmDto) => {
+              if (alarm.id) {
+                alarmsMapData.set(alarm.id, alarm);
+              }
+            });
+            setAlarmsMap(alarmsMapData);
+            logger.log('Alarms loaded from IndexedDB', { count: alarmsMapData.size });
+          } else {
+            logger.warn('Alarms data is not in expected format', { type: typeof alarmsArray });
+          }
+        } else {
+          logger.warn('No alarms found in IndexedDB');
+        }
+      } catch (err) {
+        logger.error('Error loading data from IndexedDB:', err);
+      }
+    };
+
+    loadIndexedDBData();
+  }, []);
 
   // Calculate Unix timestamps based on date range
   const getDateRange = useMemo(() => {
@@ -147,13 +238,22 @@ const AlarmLogPage: React.FC = () => {
   const columnDefs = useMemo<AGGridColumnDef[]>(() => {
     return [
       {
-        field: 'timeFormatted',
-        headerName: t('time'),
+        field: 'itemName',
+        headerName: t('activeAlarmsPage.itemName'),
         flex: 2,
         sortable: true,
         filter: 'agTextColumnFilter',
         resizable: true,
-        sort: 'desc', // Default sort by time descending (newest first)
+      },
+      {
+        field: 'alarmLog',
+        headerName: t('alarmMessage'),
+        flex: 3,
+        sortable: true,
+        filter: 'agTextColumnFilter',
+        resizable: true,
+        wrapText: true,
+        autoHeight: true,
       },
       {
         field: 'isActive',
@@ -175,30 +275,21 @@ const AlarmLogPage: React.FC = () => {
         },
       },
       {
-        field: 'alarmLog',
-        headerName: t('alarmMessage'),
-        flex: 3,
-        sortable: true,
-        filter: 'agTextColumnFilter',
-        resizable: true,
-        wrapText: true,
-        autoHeight: true,
-      },
-      {
-        field: 'itemId',
-        headerName: t('itemId'),
+        field: 'condition',
+        headerName: t('activeAlarmsPage.condition'),
         flex: 2,
         sortable: true,
         filter: 'agTextColumnFilter',
         resizable: true,
       },
       {
-        field: 'alarmId',
-        headerName: t('alarmId'),
+        field: 'timeFormatted',
+        headerName: t('time'),
         flex: 2,
         sortable: true,
         filter: 'agTextColumnFilter',
         resizable: true,
+        sort: 'desc', // Default sort by time descending (newest first)
       },
     ];
   }, [t]);
@@ -229,17 +320,31 @@ const AlarmLogPage: React.FC = () => {
         }
       }
 
+      // Get item and alarm from IndexedDB maps
+      const item = alarm.itemId ? itemsMap.get(alarm.itemId) : undefined;
+      const alarmConfig = alarm.alarmId ? alarmsMap.get(alarm.alarmId) : undefined;
+
+      // Get item name based on language
+      const itemName = item 
+        ? (language === 'fa' ? (item.nameFa || item.name) : item.name)
+        : alarm.itemId || '';
+
+      // Format condition string
+      const condition = formatCondition(alarmConfig, item);
+
       return {
         id: alarm.id || `alarm-${index}`,
         alarmId: alarm.alarmId || '',
         itemId: alarm.itemId || '',
+        itemName,
+        condition,
         time: alarm.time,
         timeFormatted,
         isActive: alarm.isActive,
         alarmLog: alarmMessage,
       };
     });
-  }, [alarmHistoryData, language]);
+  }, [alarmHistoryData, language, itemsMap, alarmsMap, formatCondition]);
 
   return (
     <Box 
