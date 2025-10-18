@@ -39,10 +39,10 @@ Cached data? → IndexedDB for offline/persistent storage
 **Component Patterns:**
 ```
 Simple UI? → Functional component with hooks
-Needs error handling? → Wrap with LazyErrorBoundary + Suspense
+Needs error handling? → Wrap with LazyErrorBoundary
 Heavy computation? → useMemo for results
 Event handlers? → useCallback to prevent re-renders
-Route component? → React.lazy() + Suspense wrapper
+Route component? → Direct import (no lazy loading for internal networks)
 Form? → Controlled components + validation
 ```
 
@@ -67,7 +67,6 @@ User flow testing? → Chrome DevTools MCP (click, fill, drag interactions)
 | ⚠️ Use theme palette | Theme consistency | `theme.palette.primary.main` |
 | ⚠️ No `any` type | Type safety | `unknown` with type guards |
 | ⚠️ Add `data-id-ref` | Testing/debugging | `data-id-ref="login-submit-button"` |
-| ⚠️ Lazy load routes | Performance | `React.lazy(() => import('./Page'))` |
 | ⚠️ Use MUI components | Design system | `<Button>` before custom buttons |
 | ⚠️ IndexedDB for storage | Performance/security | Never localStorage |
 | ⚠️ Test both languages | i18n verification | fa and en |
@@ -434,24 +433,17 @@ logger.log('Data transformed', {
 - Use MUI theme system for colors (theme.palette.primary.main, theme.palette.background.paper, etc.)
 - Use proper event handler typing
 
-### Code Splitting & Lazy Loading
-⚠️ **MANDATORY: Lazy load all page components** to optimize bundle size
-- Use `React.lazy()` for route components
-- Wrap with `Suspense` and provide fallback component
-- Import `LoadingScreen` component for fallbacks
+### Component Loading Strategy
+⚠️ **NO LAZY LOADING: This app runs on internal networks**
+- All components use direct imports for optimal performance
+- No code splitting or lazy loading needed
+- Error boundaries still required for all routes
+- `LazyAGGrid` component exists for backward compatibility but uses direct import
 
 ### React 18 Patterns & Best Practices
 
 #### Concurrent Features
 ⚠️ **USE React 18 concurrent features for better UX**
-
-**Suspense for Data Fetching:**
-```typescript
-// ✅ Wrap lazy-loaded components with Suspense
-<Suspense fallback={<LoadingScreen />}>
-  <LazyComponent />
-</Suspense>
-```
 
 **useTransition for Non-Urgent Updates:**
 ```typescript
@@ -480,9 +472,7 @@ const deferredQuery = useDeferredValue(searchQuery);
 import { LazyErrorBoundary } from './components/LazyErrorBoundary';
 
 <LazyErrorBoundary>
-  <Suspense fallback={<LoadingScreen />}>
-    <YourComponent />
-  </Suspense>
+  <YourComponent />
 </LazyErrorBoundary>
 ```
 
@@ -512,8 +502,7 @@ fetch('/api/data').then(() => {
 1. **Streaming SSR**: Future-ready for server components
 2. **Concurrent rendering**: Better performance for real-time streams
 3. **Automatic batching**: Fewer re-renders in async state updates
-4. **Suspense**: Cleaner loading states
-5. **Transitions**: Smooth language/theme switching
+4. **Transitions**: Smooth language/theme switching
 
 ### TypeScript 5 Features & Patterns
 
@@ -783,7 +772,6 @@ Find icons at: https://mui.com/material-ui/material-icons/
 - Use `useMemo` to prevent unnecessary option recalculations
 - Use SVG renderer for better performance with many data points
 - Debounce window resize events for responsive charts
-- Lazy load chart components to reduce initial bundle size
 
 ## 📱 Responsive Design
 
@@ -899,16 +887,15 @@ The following needs to be implemented:
 ### Optimization Requirements
 ⚠️ **MANDATORY: Follow these performance best practices**
 
-1. **Code Splitting**: Lazy load all route components
+1. **Direct Imports**: All components use direct imports (no lazy loading for internal networks)
 2. **Memoization**: Use `useMemo` and `useCallback` for expensive operations
 3. **Virtualization**: Use windowing for large lists (AG Grid handles this)
-4. **Image Optimization**: Use appropriate formats and lazy loading
-5. **Bundle Size**: Keep individual chunks under 500KB
+4. **Image Optimization**: Use appropriate formats and lazy loading for images
+5. **Bundle Analysis**: Monitor bundle size with `npm run build -- --report`
 
 ### Performance Patterns
 - Use `useMemo` to memoize expensive computations
 - Use `useCallback` to memoize event handlers and callbacks
-- Use conditional rendering with `Suspense` for heavy components
 - Avoid recreating functions on every render - use `useCallback` or define outside component
 
 ### Performance Monitoring
@@ -1955,7 +1942,7 @@ public/locales/   # fa/, en/
 - [ ] **Performance**: `useMemo` used for chart options
 
 ### Performance
-- [ ] **Lazy Loading**: Route components lazy loaded
+- [ ] **Direct Imports**: All components use direct imports (no lazy loading for internal networks)
 - [ ] **Memoization**: `useMemo`/`useCallback` for expensive operations
 - [ ] **Bundle Size**: No large dependencies imported unnecessarily
 - [ ] **Images**: Optimized and lazy loaded where appropriate
@@ -2088,8 +2075,8 @@ useEffect(() => {
 
 **Problem**: Bundle size too large
 - Check `npm run build -- --report` for large chunks
-- Verify lazy loading for route components
 - Check for duplicate dependencies in bundle
+- Verify no large libraries imported unnecessarily
 
 ### Performance Issues
 
@@ -2139,7 +2126,7 @@ const options = useMemo(() => getChartOptions(), [deps]);
 - Use Axios for all REST API calls
 - Use IndexedDB for client-side data persistence
 - Use Context API for shared state management
-- Use lazy loading for routes
+- Use direct imports (no lazy loading for internal networks)
 - Use memoization for performance
 - Use error boundaries
 - Use DTOs for API communication

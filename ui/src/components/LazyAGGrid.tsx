@@ -1,27 +1,20 @@
 /**
- * Lazy AG Grid Component
- * Dynamically imports AG Grid only when needed
- * This reduces initial bundle size by ~5MB
+ * AG Grid Component (formerly lazy-loaded, now direct import for internal networks)
+ * Re-exports AGGridWrapper directly without lazy loading
+ * This file exists for backward compatibility with existing imports
  */
 
-import { lazy, Suspense, forwardRef } from 'react';
+import { forwardRef } from 'react';
 import type { ComponentType } from 'react';
-import LoadingScreen from './LoadingScreen';
+import AGGridWrapper from './AGGridWrapper';
 import type { AGGridWrapperProps, AGGridApi } from '../types/agGrid';
 
-// Lazy load the AG Grid wrapper
-const AGGridWrapperLazy = lazy(() => import('./AGGridWrapper'));
-
 /**
- * Lazy AG Grid Wrapper with loading fallback and ref forwarding
- * Use this component instead of direct AGGridWrapper import for better performance
+ * AG Grid Wrapper with ref forwarding
+ * Direct import without lazy loading for optimal performance on internal networks
  */
 export const LazyAGGrid = forwardRef<AGGridApi, AGGridWrapperProps>((props, ref) => {
-  return (
-    <Suspense fallback={<LoadingScreen message="Loading grid..." />}>
-      <AGGridWrapperLazy ref={ref as React.Ref<AGGridApi>} {...props} />
-    </Suspense>
-  );
+  return <AGGridWrapper ref={ref as React.Ref<AGGridApi>} {...props} />;
 });
 
 LazyAGGrid.displayName = 'LazyAGGrid';
