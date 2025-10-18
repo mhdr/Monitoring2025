@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -14,6 +14,9 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
+  keyframes,
+  Tooltip,
+  CircularProgress,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -42,14 +45,45 @@ interface MenuItem {
 
 const SIDEBAR_WIDTH = 280;
 
+// Pulse animation for badge when alarm count changes
+const pulseAnimation = keyframes`
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(211, 47, 47, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0);
+  }
+`;
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   const { t } = useLanguage();
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const { state: monitoringState } = useMonitoring();
-  const { alarmCount, streamStatus } = monitoringState.activeAlarms;
+  const { alarmCount, streamStatus, fetchError, isFetching } = monitoringState.activeAlarms;
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  
+  // Track previous alarm count to trigger animation on change
+  const prevAlarmCountRef = useRef<number>(alarmCount);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  
+  // Trigger animation when alarm count changes
+  useEffect(() => {
+    if (prevAlarmCountRef.current !== alarmCount && alarmCount > 0) {
+      setShouldAnimate(true);
+      const timer = setTimeout(() => setShouldAnimate(false), 1000);
+      prevAlarmCountRef.current = alarmCount;
+      return () => clearTimeout(timer);
+    }
+    prevAlarmCountRef.current = alarmCount;
+  }, [alarmCount]);
 
   const menuItems: MenuItem[] = [
     { path: '/dashboard/monitoring', key: 'monitoring', icon: <DashboardIcon /> },
@@ -183,23 +217,59 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
                       transition: 'color 0.2s ease-in-out',
                     }}
                   >
-                    {showBadge ? (
-                      <Badge
-                        badgeContent={alarmCount}
-                        color="error"
-                        max={999}
-                        data-id-ref="sidebar-active-alarms-badge"
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            minWidth: 20,
-                            height: 20,
-                          },
-                        }}
+                    {item.key === 'activeAlarms' ? (
+                      <Tooltip 
+                        title={
+                          fetchError 
+                            ? `${t('common.error')}: ${fetchError}` 
+                            : isFetching 
+                              ? t('loading') 
+                              : ''
+                        }
+                        arrow
+                        placement="right"
+                        data-id-ref="sidebar-active-alarms-tooltip"
                       >
-                        {item.icon}
-                      </Badge>
+                        <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                          {isFetching ? (
+                            <CircularProgress 
+                              size={20} 
+                              thickness={4}
+                              sx={{ 
+                                position: 'absolute', 
+                                top: '50%', 
+                                left: '50%', 
+                                marginTop: '-10px', 
+                                marginLeft: '-10px',
+                                color: active ? 'primary.contrastText' : 'primary.main',
+                              }}
+                              data-id-ref="sidebar-active-alarms-loading"
+                            />
+                          ) : null}
+                          {showBadge ? (
+                            <Badge
+                              badgeContent={alarmCount}
+                              color={fetchError ? 'warning' : 'error'}
+                              max={999}
+                              data-id-ref="sidebar-active-alarms-badge"
+                              sx={{
+                                '& .MuiBadge-badge': {
+                                  fontSize: '0.65rem',
+                                  fontWeight: 700,
+                                  minWidth: 20,
+                                  height: 20,
+                                  animation: shouldAnimate ? `${pulseAnimation} 0.6s ease-in-out` : 'none',
+                                  transition: 'all 0.3s ease-in-out',
+                                },
+                              }}
+                            >
+                              {item.icon}
+                            </Badge>
+                          ) : (
+                            item.icon
+                          )}
+                        </Box>
+                      </Tooltip>
                     ) : (
                       item.icon
                     )}

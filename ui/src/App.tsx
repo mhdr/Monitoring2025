@@ -247,6 +247,7 @@ function App() {
 
   // Fetch active alarm count for sidebar badge
   // Fetches when authenticated and data is synced, refreshes periodically
+  // Includes automatic retry logic with exponential backoff
   useActiveAlarmCount(isAuthenticated, isAuthLoading);
 
   // Show loading screen during language changes

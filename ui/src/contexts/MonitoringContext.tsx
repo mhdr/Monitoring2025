@@ -79,6 +79,8 @@ export interface MonitoringState {
     lastUpdate: number | null;
     streamStatus: StreamStatus;
     streamError: string | null;
+    fetchError: string | null;
+    isFetching: boolean;
   };
   
   // Background refresh
@@ -115,6 +117,8 @@ const initialState: MonitoringState = {
     lastUpdate: null,
     streamStatus: StreamStatus.IDLE,
     streamError: null,
+    fetchError: null,
+    isFetching: false,
   },
   
   backgroundRefresh: {
@@ -152,6 +156,8 @@ type MonitoringAction =
   | { type: 'SET_ACTIVE_ALARMS_STREAM_STATUS'; payload: StreamStatus }
   | { type: 'SET_ACTIVE_ALARMS_STREAM_ERROR'; payload: string }
   | { type: 'RESET_ACTIVE_ALARMS_STREAM' }
+  | { type: 'SET_ACTIVE_ALARMS_FETCHING'; payload: boolean }
+  | { type: 'SET_ACTIVE_ALARMS_FETCH_ERROR'; payload: string | null }
   | { type: 'UPDATE_BACKGROUND_REFRESH_CONFIG'; payload: Partial<BackgroundRefreshConfig> }
   | { type: 'SET_LAST_REFRESH_TIME'; payload: number };
 
@@ -291,6 +297,8 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
           lastUpdate: action.payload.timestamp,
           streamStatus: StreamStatus.CONNECTED,
           streamError: null,
+          fetchError: null,
+          isFetching: false,
         },
       };
 
@@ -318,6 +326,26 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
       return {
         ...state,
         activeAlarms: initialState.activeAlarms,
+      };
+
+    case 'SET_ACTIVE_ALARMS_FETCHING':
+      return {
+        ...state,
+        activeAlarms: {
+          ...state.activeAlarms,
+          isFetching: action.payload,
+          fetchError: action.payload ? null : state.activeAlarms.fetchError, // Clear error when starting new fetch
+        },
+      };
+
+    case 'SET_ACTIVE_ALARMS_FETCH_ERROR':
+      return {
+        ...state,
+        activeAlarms: {
+          ...state.activeAlarms,
+          fetchError: action.payload,
+          isFetching: false,
+        },
       };
 
     case 'UPDATE_BACKGROUND_REFRESH_CONFIG':
@@ -376,6 +404,8 @@ export interface MonitoringContextValue {
   setActiveAlarmsStreamStatus: (status: StreamStatus) => void;
   setActiveAlarmsStreamError: (error: string) => void;
   resetActiveAlarmsStream: () => void;
+  setActiveAlarmsFetching: (isFetching: boolean) => void;
+  setActiveAlarmsFetchError: (error: string | null) => void;
   
   // Background refresh actions
   updateBackgroundRefreshConfig: (config: Partial<BackgroundRefreshConfig>) => void;
@@ -525,6 +555,8 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
 
   // Fetch active alarm count
   const fetchActiveAlarmCount = useCallback(async () => {
+    dispatch({ type: 'SET_ACTIVE_ALARMS_FETCHING', payload: true });
+    
     try {
       logger.log('Fetching active alarm count for sidebar badge...');
       
@@ -562,9 +594,14 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       
       // Update the context's alarm count
       dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: alarmsData.length, timestamp: Date.now() } });
+      dispatch({ type: 'SET_ACTIVE_ALARMS_FETCH_ERROR', payload: null });
     } catch (error) {
       logger.error('Failed to fetch active alarm count:', error);
-      // Don't throw error - this is a non-critical background operation
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch alarm count';
+      dispatch({ type: 'SET_ACTIVE_ALARMS_FETCH_ERROR', payload: errorMessage });
+      dispatch({ type: 'SET_ACTIVE_ALARMS_FETCHING', payload: false });
+      // Throw error so retry logic in useActiveAlarmCount can handle it
+      throw error;
     }
   }, []);
 
@@ -611,6 +648,14 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
 
   const resetActiveAlarmsStream = useCallback(() => {
     dispatch({ type: 'RESET_ACTIVE_ALARMS_STREAM' });
+  }, []);
+
+  const setActiveAlarmsFetching = useCallback((isFetching: boolean) => {
+    dispatch({ type: 'SET_ACTIVE_ALARMS_FETCHING', payload: isFetching });
+  }, []);
+
+  const setActiveAlarmsFetchError = useCallback((error: string | null) => {
+    dispatch({ type: 'SET_ACTIVE_ALARMS_FETCH_ERROR', payload: error });
   }, []);
 
   // Background refresh actions
@@ -736,6 +781,8 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       setActiveAlarmsStreamStatus,
       setActiveAlarmsStreamError,
       resetActiveAlarmsStream,
+      setActiveAlarmsFetching,
+      setActiveAlarmsFetchError,
       updateBackgroundRefreshConfig,
       forceRefresh,
     }),
@@ -756,6 +803,8 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       setActiveAlarmsStreamStatus,
       setActiveAlarmsStreamError,
       resetActiveAlarmsStream,
+      setActiveAlarmsFetching,
+      setActiveAlarmsFetchError,
       updateBackgroundRefreshConfig,
       forceRefresh,
     ]
