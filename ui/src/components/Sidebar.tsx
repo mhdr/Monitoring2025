@@ -206,6 +206,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
                   </ListItemIcon>
                   <ListItemText
                     primary={t(item.key)}
+                    data-id-ref={`sidebar-nav-text-${item.key}`}
                     primaryTypographyProps={{
                       fontWeight: active ? 600 : 500,
                       fontSize: '0.9rem',
