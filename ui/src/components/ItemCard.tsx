@@ -9,12 +9,29 @@ import {
   Divider,
   Tooltip,
   Fade,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from '@mui/material';
-import { OpenInNew } from '@mui/icons-material';
+import { 
+  OpenInNew,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  TrendingFlat as TrendingFlatIcon,
+  Timeline as TimelineIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import ReactECharts from 'echarts-for-react';
+import type { EChartsOption } from 'echarts';
 import { useLanguage } from '../hooks/useLanguage';
+import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
 import { createLogger } from '../utils/logger';
+import type { Item } from '../types/api';
 
 const logger = createLogger('ItemCard');
 
@@ -24,18 +41,48 @@ interface ItemCardProps {
   pointNumber: number;
   value: string;
   time: string;
+  valueHistory?: Array<{value: number; time: number}>;
+  item?: Item;
 }
 
-const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, time }) => {
-  const { t } = useLanguage();
+const ItemCard: React.FC<ItemCardProps> = ({ 
+  itemId, 
+  name, 
+  pointNumber, 
+  value, 
+  time, 
+  valueHistory = [],
+  item 
+}) => {
+  const { language } = useLanguage();
+  const { t } = useTranslation();
+  const theme = useTheme();
   const prefetchUrl = useUrlPrefetch();
   const [elevation, setElevation] = useState<number>(1);
+  const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
+  const isRTL = language === 'fa';
+
+  logger.log('ItemCard render', { itemId, name, historyLength: valueHistory.length });
 
   // Memoize the detail URL to avoid recalculating on every render
   const detailUrl = useMemo(
     () => buildDetailTabUrl('trend-analysis', { itemId }),
     [itemId]
   );
+
+  /**
+   * Get trend indicator for value change
+   */
+  const getValueTrend = useMemo((): 'up' | 'down' | 'stable' => {
+    if (!valueHistory || valueHistory.length < 2) return 'stable';
+    
+    const currentValue = valueHistory[valueHistory.length - 1].value;
+    const prevValue = valueHistory[valueHistory.length - 2].value;
+    
+    if (currentValue > prevValue) return 'up';
+    if (currentValue < prevValue) return 'down';
+    return 'stable';
+  }, [valueHistory]);
 
   const handleOpenNewTab = () => {
     // Open a new tab with the item detail page
@@ -55,21 +102,123 @@ const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, t
     prefetchUrl(detailUrl);
   };
 
-  return (
-    <Fade in timeout={300}>
-      <Card
-        elevation={elevation}
-        onMouseEnter={() => setElevation(6)}
-        onMouseLeave={() => setElevation(1)}
-        sx={{
-          height: '100%',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            transform: 'translateY(-4px)',
+  /**
+   * Handle history icon click
+   */
+  const handleHistoryClick = () => {
+    if (valueHistory && valueHistory.length > 1) {
+      logger.log(`Opening history modal for item: ${name}`, { historyLength: valueHistory.length });
+      setHistoryModalOpen(true);
+    } else {
+      logger.warn('Cannot open history: insufficient data', { 
+        historyLength: valueHistory?.length || 0 
+      });
+    }
+  };
+
+  /**
+   * Get chart options for history modal
+   */
+  const getHistoryChartOptions = (): EChartsOption => {
+    if (!valueHistory || valueHistory.length === 0) return {};
+
+    // Prepare data
+    const times = valueHistory.map(h => new Date(h.time).toLocaleTimeString(language === 'fa' ? 'fa-IR' : 'en-US'));
+    const values = valueHistory.map(h => h.value);
+    
+    // Get unit suffix in current language
+    const unit = item && isRTL && item.unitFa ? item.unitFa : item?.unit;
+    const unitSuffix = unit ? ` (${unit})` : '';
+    
+    // Set font family for Persian language
+    const fontFamily = isRTL ? 'IRANSansX, sans-serif' : undefined;
+
+    return {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          label: {
+            backgroundColor: theme.palette.grey[700],
           },
-        }}
-        data-id-ref="item-card-root-container"
-      >
+        },
+      },
+      grid: {
+        left: isRTL ? '15%' : '10%',
+        right: isRTL ? '10%' : '15%',
+        bottom: '15%',
+        top: '15%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: times,
+        boundaryGap: false,
+        axisLabel: {
+          fontFamily,
+          rotate: 45,
+        },
+        name: t('time'),
+        nameLocation: 'middle',
+        nameGap: 50,
+        nameTextStyle: {
+          fontFamily,
+          fontSize: 12,
+        },
+      },
+      yAxis: {
+        type: 'value',
+        name: `${t('value')}${unitSuffix}`,
+        nameLocation: 'middle',
+        nameGap: 50,
+        nameTextStyle: {
+          fontFamily,
+          fontSize: 12,
+        },
+        axisLabel: {
+          fontFamily,
+        },
+      },
+      series: [
+        {
+          name: name,
+          type: 'line',
+          data: values,
+          smooth: true,
+          areaStyle: {
+            opacity: 0.2,
+          },
+          lineStyle: {
+            color: theme.palette.primary.main,
+            width: 2,
+          },
+          itemStyle: {
+            color: theme.palette.primary.main,
+          },
+        },
+      ],
+      textStyle: {
+        fontFamily,
+      },
+    };
+  };
+
+  return (
+    <>
+      <Fade in timeout={300}>
+        <Card
+          elevation={elevation}
+          onMouseEnter={() => setElevation(6)}
+          onMouseLeave={() => setElevation(1)}
+          sx={{
+            height: '100%',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+            },
+          }}
+          data-id-ref="item-card-root-container"
+        >
         <CardContent
           sx={{
             display: 'flex',
@@ -188,17 +337,68 @@ const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, t
               >
                 {t('value')}:
               </Typography>
-              <Typography
-                variant="body2"
-                component="span"
-                sx={{
-                  color: 'text.secondary',
-                  wordBreak: 'break-word',
-                }}
-                data-id-ref="item-card-value-value"
-              >
-                {value}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  component="span"
+                  sx={{
+                    color: 'text.secondary',
+                    wordBreak: 'break-word',
+                  }}
+                  data-id-ref="item-card-value-value"
+                >
+                  {value}
+                </Typography>
+                {/* Trend indicator */}
+                {valueHistory && valueHistory.length >= 2 && (() => {
+                  const trend = getValueTrend;
+                  if (trend === 'up') {
+                    return (
+                      <Tooltip title={t('activeAlarmsPage.trendIncreasing')} arrow>
+                        <TrendingUpIcon 
+                          sx={{ fontSize: 14, color: 'error.main' }} 
+                          data-id-ref="item-card-trend-up-icon" 
+                        />
+                      </Tooltip>
+                    );
+                  } else if (trend === 'down') {
+                    return (
+                      <Tooltip title={t('activeAlarmsPage.trendDecreasing')} arrow>
+                        <TrendingDownIcon 
+                          sx={{ fontSize: 14, color: 'success.main' }} 
+                          data-id-ref="item-card-trend-down-icon" 
+                        />
+                      </Tooltip>
+                    );
+                  } else if (valueHistory.length >= 2) {
+                    return (
+                      <Tooltip title={t('activeAlarmsPage.trendStable')} arrow>
+                        <TrendingFlatIcon 
+                          sx={{ fontSize: 14, color: 'text.disabled' }} 
+                          data-id-ref="item-card-trend-flat-icon" 
+                        />
+                      </Tooltip>
+                    );
+                  }
+                  return null;
+                })()}
+                {/* History chart icon */}
+                {valueHistory && valueHistory.length > 1 && (
+                  <Tooltip title={t('activeAlarmsPage.viewHistory')} arrow>
+                    <IconButton 
+                      size="small" 
+                      sx={{ p: 0, ml: 0.5 }}
+                      onClick={handleHistoryClick}
+                      data-id-ref="value-history-icon"
+                    >
+                      <TimelineIcon 
+                        sx={{ fontSize: 14, color: 'info.main' }} 
+                        data-id-ref="value-history-timeline-icon" 
+                      />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
             </Box>
 
             <Box
@@ -237,6 +437,76 @@ const ItemCard: React.FC<ItemCardProps> = ({ itemId, name, pointNumber, value, t
         </CardContent>
       </Card>
     </Fade>
+    
+    {/* Value History Modal */}
+    <Dialog
+      open={historyModalOpen}
+      onClose={() => setHistoryModalOpen(false)}
+      maxWidth="md"
+      fullWidth
+      data-id-ref="item-card-history-modal"
+    >
+      <DialogTitle 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          pb: 1,
+        }}
+        data-id-ref="item-card-history-modal-title"
+      >
+        <Typography variant="h6" component="span" data-id-ref="item-card-history-modal-title-text">
+          {t('activeAlarmsPage.historyModalTitle', { itemName: name })}
+        </Typography>
+        <IconButton
+          edge="end"
+          color="inherit"
+          onClick={() => setHistoryModalOpen(false)}
+          aria-label={t('cancel')}
+          size="small"
+          data-id-ref="item-card-history-modal-close-button"
+        >
+          <CloseIcon data-id-ref="item-card-history-modal-close-icon" />
+        </IconButton>
+      </DialogTitle>
+      <Divider />
+      <DialogContent sx={{ pt: 2 }} data-id-ref="item-card-history-modal-content">
+        <Box 
+          sx={{ 
+            width: '100%', 
+            height: 400,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          data-id-ref="item-card-history-chart-container"
+        >
+          {valueHistory && valueHistory.length > 1 ? (
+            <ReactECharts
+              option={getHistoryChartOptions()}
+              style={{ width: '100%', height: '100%' }}
+              opts={{ renderer: 'svg' }}
+              data-id-ref="item-card-history-chart"
+            />
+          ) : (
+            <Typography color="text.secondary" data-id-ref="item-card-history-no-data">
+              {t('activeAlarmsPage.noHistoryData')}
+            </Typography>
+          )}
+        </Box>
+      </DialogContent>
+      <Divider />
+      <DialogActions sx={{ p: 2 }} data-id-ref="item-card-history-modal-actions">
+        <Button 
+          onClick={() => setHistoryModalOpen(false)}
+          variant="contained"
+          data-id-ref="item-card-history-modal-close-action-button"
+        >
+          {t('cancel')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  </>
   );
 };
 

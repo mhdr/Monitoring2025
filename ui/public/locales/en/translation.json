@@ -246,6 +246,7 @@
     "trendDecreasing": "Decreasing",
     "trendStable": "Stable",
     "viewHistory": "View history",
+    "noHistoryData": "No historical data available",
     "historyComingSoon": "View history (Coming soon)",
     "historyModalTitle": "Value History - {{itemName}}",
     "historyChartTitle": "{{itemName}}",

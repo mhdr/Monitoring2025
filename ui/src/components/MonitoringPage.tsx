@@ -40,6 +40,9 @@ const MonitoringPage: React.FC = () => {
   const loadingTimeoutRef = useRef<number | null>(null);
   const pollingIntervalRef = useRef<number | null>(null);
   
+  // State for value history tracking
+  const [valueHistory, setValueHistory] = useState<Map<string, Array<{value: number; time: number}>>>(new Map());
+  
   // Get data from monitoring context
   const {
     groups: allGroups,
@@ -160,6 +163,48 @@ const MonitoringPage: React.FC = () => {
       }
     };
   }, [isRefreshing, showRefreshIndicator]);
+
+  // Track value history for trend indicators
+  useEffect(() => {
+    if (!itemValues || itemValues.length === 0) {
+      return;
+    }
+
+    setValueHistory((prevHistory) => {
+      const newHistory = new Map(prevHistory);
+      
+      itemValues.forEach((itemValue) => {
+        const itemId = itemValue.itemId;
+        const value = itemValue.value;
+        const time = itemValue.time;
+        
+        // Parse value as number (skip if not a number)
+        const numValue = parseFloat(value || '');
+        if (isNaN(numValue)) return;
+        
+        // Get existing history for this item
+        const existingHistory = newHistory.get(itemId) || [];
+        
+        // Check if this value is different from the last recorded value
+        const lastValue = existingHistory.length > 0 ? existingHistory[existingHistory.length - 1] : null;
+        
+        // Only add if value or time changed
+        if (!lastValue || lastValue.value !== numValue || lastValue.time !== time) {
+          const updatedHistory = [
+            ...existingHistory,
+            { value: numValue, time }
+          ];
+          
+          // Keep only last 10 values to prevent memory bloat
+          const trimmedHistory = updatedHistory.slice(-10);
+          
+          newHistory.set(itemId, trimmedHistory);
+        }
+      });
+      
+      return newHistory;
+    });
+  }, [itemValues]);
 
   // Helper function to get display name based on language
   const getDisplayName = (group: Group) => {
@@ -432,6 +477,7 @@ const MonitoringPage: React.FC = () => {
               >
                 {currentFolderItems.map((item: typeof currentFolderItems[0]) => {
                   const itemValue = getItemValue(item.id);
+                  const itemValueHistory = valueHistory.get(item.id);
                   return (
                     <ItemCard
                       key={item.id}
@@ -440,6 +486,8 @@ const MonitoringPage: React.FC = () => {
                       pointNumber={item.pointNumber}
                       value={itemValue ? formatItemValue(item, itemValue.value) : t('loadingValue')}
                       time={itemValue ? formatTimestamp(itemValue.time) : t('loadingValue')}
+                      valueHistory={itemValueHistory}
+                      item={item}
                       data-id-ref={`monitoring-page-item-card-${item.id}`}
                     />
                   );

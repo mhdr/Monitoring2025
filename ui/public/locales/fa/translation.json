@@ -246,6 +246,7 @@
     "trendDecreasing": "در حال کاهش",
     "trendStable": "پایدار",
     "viewHistory": "مشاهده تاریخچه",
+    "noHistoryData": "داده تاریخچه‌ای موجود نیست",
     "historyComingSoon": "مشاهده تاریخچه (به زودی)",
     "historyModalTitle": "تاریخچه مقادیر - {{itemName}}",
     "historyChartTitle": "{{itemName}}",
