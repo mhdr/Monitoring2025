@@ -6,7 +6,7 @@
   "settingsMenu": "Settings",
   "users": "Users",
   "reports": "Reports",
-  "notifications": "Notifications",
+  "notificationsMenu": "Notifications",
   "profile": "Profile",
   "forceSync": "Force Sync",
   "logout": "Logout",
@@ -272,5 +272,28 @@
     "externalAlarmEnabled": "External alarm connected",
     "externalAlarmDisabled": "No external alarm",
     "alarmDetails": "Alarm Details"
+  },
+  "alarms": {
+    "priority": {
+      "high": "High Priority",
+      "low": "Low Priority",
+      "unknown": "Unknown Priority"
+    }
+  },
+  "notifications": {
+    "alarm": {
+      "single": "⚠️ {{priority}} Alarm Active",
+      "multiple": "⚠️ {{count}} {{priority}} Alarms Active",
+      "singleBody": "One alarm is currently active. Click to view details.",
+      "multipleBody": "{{count}} alarms are currently active. Click to view details."
+    },
+    "permission": {
+      "title": "Enable Alarm Notifications",
+      "description": "Allow desktop notifications to stay informed about critical alarms.",
+      "enable": "Enable Notifications",
+      "enabled": "Notifications Enabled",
+      "disabled": "Notifications Disabled",
+      "denied": "Notification permission denied by browser"
+    }
   }
 }

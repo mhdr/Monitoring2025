@@ -6,7 +6,7 @@
   "settingsMenu": "تنظیمات",
   "users": "کاربران",
   "reports": "گزارشات",
-  "notifications": "اعلان‌ها",
+  "notificationsMenu": "اعلان‌ها",
   "profile": "پروفایل",
   "forceSync": "همگام‌سازی اجباری",
   "logout": "خروج",
@@ -272,5 +272,28 @@
     "externalAlarmEnabled": "هشدار خارجی متصل",
     "externalAlarmDisabled": "بدون هشدار خارجی",
     "alarmDetails": "جزئیات هشدار"
+  },
+  "alarms": {
+    "priority": {
+      "high": "اولویت بالا",
+      "low": "اولویت پایین",
+      "unknown": "اولویت نامشخص"
+    }
+  },
+  "notifications": {
+    "alarm": {
+      "single": "⚠️ یک هشدار {{priority}} فعال است",
+      "multiple": "⚠️ {{count}} هشدار {{priority}} فعال است",
+      "singleBody": "یک هشدار در حال حاضر فعال است. برای مشاهده جزئیات کلیک کنید.",
+      "multipleBody": "{{count}} هشدار در حال حاضر فعال است. برای مشاهده جزئیات کلیک کنید."
+    },
+    "permission": {
+      "title": "فعال‌سازی اعلان‌های هشدار",
+      "description": "اجازه دهید اعلان‌های دسکتاپ برای اطلاع از هشدارهای حیاتی نمایش داده شوند.",
+      "enable": "فعال‌سازی اعلان‌ها",
+      "enabled": "اعلان‌ها فعال شد",
+      "disabled": "اعلان‌ها غیرفعال شد",
+      "denied": "اجازه نمایش اعلان توسط مرورگر رد شد"
+    }
   }
 }

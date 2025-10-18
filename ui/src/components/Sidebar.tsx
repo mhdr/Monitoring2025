@@ -31,6 +31,11 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
+import { 
+  areNotificationsEnabled, 
+  showAlarmNotification, 
+  formatAlarmNotificationMessage 
+} from '../utils/notifications';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -61,29 +66,56 @@ const pulseAnimation = keyframes`
   }
 `;
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
+  const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   const { t } = useLanguage();
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const { state: monitoringState } = useMonitoring();
-  const { alarmCount, streamStatus, fetchError, isFetching } = monitoringState.activeAlarms;
+  const { alarmCount, streamStatus, fetchError, isFetching, highestPriority } = monitoringState.activeAlarms;
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   
   // Track previous alarm count to trigger animation on change
   const prevAlarmCountRef = useRef<number>(alarmCount);
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
-  // Trigger animation when alarm count changes
+  // Debounced animation trigger - prevents animation spam from rapid SignalR updates
   useEffect(() => {
     if (prevAlarmCountRef.current !== alarmCount && alarmCount > 0) {
-      setShouldAnimate(true);
-      const timer = setTimeout(() => setShouldAnimate(false), 1000);
+      // Clear any pending animation trigger
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
+      // Debounce animation trigger by 1000ms
+      debounceTimerRef.current = setTimeout(() => {
+        setShouldAnimate(true);
+        const animationTimer = setTimeout(() => setShouldAnimate(false), 1000);
+        return () => clearTimeout(animationTimer);
+      }, 1000);
+      
       prevAlarmCountRef.current = alarmCount;
-      return () => clearTimeout(timer);
+      
+      return () => {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+      };
     }
     prevAlarmCountRef.current = alarmCount;
   }, [alarmCount]);
+
+  // Desktop notification trigger - show notification when alarm count increases
+  useEffect(() => {
+    // Check if alarm count increased (not just changed)
+    const hasNewAlarms = prevAlarmCountRef.current < alarmCount && alarmCount > 0;
+    
+    if (hasNewAlarms && areNotificationsEnabled()) {
+      const notificationOptions = formatAlarmNotificationMessage(alarmCount, highestPriority, t);
+      showAlarmNotification(notificationOptions);
+    }
+  }, [alarmCount, highestPriority, t]);
 
   const menuItems: MenuItem[] = [
     { path: '/dashboard/monitoring', key: 'monitoring', icon: <DashboardIcon /> },
@@ -249,7 +281,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
                           {showBadge ? (
                             <Badge
                               badgeContent={alarmCount}
-                              color={fetchError ? 'warning' : 'error'}
+                              color={
+                                fetchError 
+                                  ? 'warning' 
+                                  : highestPriority === 2 
+                                    ? 'error' 
+                                    : highestPriority === 1 
+                                      ? 'warning' 
+                                      : 'error'
+                              }
                               max={999}
                               data-id-ref="sidebar-active-alarms-badge"
                               sx={{

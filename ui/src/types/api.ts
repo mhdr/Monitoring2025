@@ -446,6 +446,7 @@ export interface ActiveAlarm {
   itemId?: string | null;
   time: number; // int64 - Unix timestamp
   dateTime?: string; // ReadOnly - ISO 8601
+  alarmPriority?: AlarmPriority; // Client-side enrichment from alarm configuration
 }
 
 export interface ActiveAlarmsRequestDto {

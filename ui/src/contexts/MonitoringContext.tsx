@@ -81,6 +81,7 @@ export interface MonitoringState {
     streamError: string | null;
     fetchError: string | null;
     isFetching: boolean;
+    highestPriority: 1 | 2 | null; // 1=Low, 2=High, null=no alarms
   };
   
   // Background refresh
@@ -119,6 +120,7 @@ const initialState: MonitoringState = {
     streamError: null,
     fetchError: null,
     isFetching: false,
+    highestPriority: null,
   },
   
   backgroundRefresh: {
@@ -152,7 +154,7 @@ type MonitoringAction =
   | { type: 'VALUES_LOADING' }
   | { type: 'VALUES_SUCCESS'; payload: MultiValue[] }
   | { type: 'VALUES_ERROR'; payload: ApiError }
-  | { type: 'UPDATE_ACTIVE_ALARMS'; payload: { alarmCount: number; timestamp: number } }
+  | { type: 'UPDATE_ACTIVE_ALARMS'; payload: { alarmCount: number; timestamp: number; highestPriority?: 1 | 2 | null } }
   | { type: 'SET_ACTIVE_ALARMS_STREAM_STATUS'; payload: StreamStatus }
   | { type: 'SET_ACTIVE_ALARMS_STREAM_ERROR'; payload: string }
   | { type: 'RESET_ACTIVE_ALARMS_STREAM' }
@@ -299,6 +301,7 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
           streamError: null,
           fetchError: null,
           isFetching: false,
+          highestPriority: action.payload.highestPriority ?? null,
         },
       };
 
@@ -558,14 +561,14 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
     dispatch({ type: 'SET_ACTIVE_ALARMS_FETCHING', payload: true });
     
     try {
-      logger.log('Fetching active alarm count for sidebar badge...');
+      logger.log('Fetching active alarm count and priorities for sidebar badge...');
       
       // Get items from IndexedDB to extract itemIds
       const storedItems = await monitoringStorageHelpers.getStoredItems();
       
       if (!storedItems || storedItems.length === 0) {
         logger.warn('No items found in IndexedDB, cannot fetch active alarm count');
-        dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: 0, timestamp: Date.now() } });
+        dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: 0, timestamp: Date.now(), highestPriority: null } });
         return;
       }
       
@@ -576,24 +579,69 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       
       if (itemIds.length === 0) {
         logger.warn('No valid itemIds found, setting alarm count to 0');
-        dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: 0, timestamp: Date.now() } });
+        dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: 0, timestamp: Date.now(), highestPriority: null } });
         return;
       }
       
-      // Call API with itemIds parameter
-      const response = await getActiveAlarms({ itemIds });
+      // Fetch active alarms
+      const activeAlarmsResponse = await getActiveAlarms({ itemIds });
       
       // FIX: API returns nested structure {data: {data: ActiveAlarm[]}}
       // TypeScript types don't match the actual API response
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const alarmsData = (response as any).data.data || [];
+      const activeAlarmsData = (activeAlarmsResponse as any).data.data || [];
       
-      logger.log('Active alarm count fetched successfully:', {
-        count: alarmsData.length,
+      if (activeAlarmsData.length === 0) {
+        logger.log('No active alarms found');
+        dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: 0, timestamp: Date.now(), highestPriority: null } });
+        dispatch({ type: 'SET_ACTIVE_ALARMS_FETCH_ERROR', payload: null });
+        return;
+      }
+      
+      // Fetch alarm configurations to get priorities
+      const alarmsConfigResponse = await getAlarms({ itemIds });
+      
+      // FIX: API returns nested structure, similar to active alarms
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const alarmConfigs = (alarmsConfigResponse as any).data || [];
+      
+      // Create a map of alarmId -> priority
+      const alarmPriorityMap = new Map<string, 1 | 2>();
+      if (Array.isArray(alarmConfigs)) {
+        alarmConfigs.forEach((alarm: { id?: string | null; alarmPriority?: 1 | 2 }) => {
+          if (alarm.id && alarm.alarmPriority) {
+            alarmPriorityMap.set(alarm.id, alarm.alarmPriority);
+          }
+        });
+      }
+      
+      // Determine highest priority (2=High is highest, 1=Low)
+      let highestPriority: 1 | 2 | null = null;
+      activeAlarmsData.forEach((activeAlarm: { alarmId?: string | null }) => {
+        if (activeAlarm.alarmId) {
+          const priority = alarmPriorityMap.get(activeAlarm.alarmId);
+          if (priority) {
+            if (highestPriority === null || priority > highestPriority) {
+              highestPriority = priority;
+            }
+          }
+        }
       });
       
-      // Update the context's alarm count
-      dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: alarmsData.length, timestamp: Date.now() } });
+      logger.log('Active alarm count fetched successfully:', {
+        count: activeAlarmsData.length,
+        highestPriority: highestPriority === 2 ? 'High' : highestPriority === 1 ? 'Low' : 'None',
+      });
+      
+      // Update the context's alarm count and priority
+      dispatch({ 
+        type: 'UPDATE_ACTIVE_ALARMS', 
+        payload: { 
+          alarmCount: activeAlarmsData.length, 
+          timestamp: Date.now(),
+          highestPriority,
+        } 
+      });
       dispatch({ type: 'SET_ACTIVE_ALARMS_FETCH_ERROR', payload: null });
     } catch (error) {
       logger.error('Failed to fetch active alarm count:', error);
