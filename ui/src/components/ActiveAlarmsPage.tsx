@@ -937,8 +937,8 @@ const ActiveAlarmsPage: React.FC = () => {
                 }}
                 data-id-ref="active-alarms-loading-state"
               >
-                <CircularProgress size={48} sx={{ mb: 2 }} />
-                <Typography variant="body1" color="text.secondary">
+                <CircularProgress size={48} sx={{ mb: 2 }} data-id-ref="active-alarms-loading-spinner" />
+                <Typography variant="body1" color="text.secondary" data-id-ref="active-alarms-loading-text">
                   {t('activeAlarmsPage.loadingAlarms')}
                 </Typography>
               </Box>
@@ -955,7 +955,7 @@ const ActiveAlarmsPage: React.FC = () => {
                 }
                 data-id-ref="active-alarms-error-alert"
               >
-                <AlertTitle>{t('activeAlarmsPage.errorLoadingAlarms')}</AlertTitle>
+                <AlertTitle data-id-ref="active-alarms-error-title">{t('activeAlarmsPage.errorLoadingAlarms')}</AlertTitle>
                 {error}
               </Alert>
             )}
@@ -972,11 +972,11 @@ const ActiveAlarmsPage: React.FC = () => {
                 }}
                 data-id-ref="active-alarms-empty-state"
               >
-                <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
-                <Typography variant="h6" gutterBottom>
+                <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} data-id-ref="active-alarms-empty-icon" />
+                <Typography variant="h6" gutterBottom data-id-ref="active-alarms-empty-title">
                   {t('activeAlarmsPage.noActiveAlarms')}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" data-id-ref="active-alarms-empty-description">
                   {t('activeAlarmsPage.noActiveAlarmsDescription')}
                 </Typography>
               </Box>
@@ -985,9 +985,9 @@ const ActiveAlarmsPage: React.FC = () => {
             {/* Alarms Table */}
             {!loading && !error && alarms.length > 0 && (
               <Box sx={{ flexGrow: 1 }} data-id-ref="active-alarms-content-container">
-                <Box sx={{ mb: 2 }}>
+                <Box sx={{ mb: 2 }} data-id-ref="active-alarms-count-container">
                   <Chip
-                    icon={<WarningIcon />}
+                    icon={<WarningIcon data-id-ref="active-alarms-count-icon" />}
                     label={`${alarms.length} ${t('activeAlarmsPage.alarmCount')}`}
                     color="error"
                     data-id-ref="active-alarms-count-chip"
@@ -1086,6 +1086,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                   color={getPriorityColor(alarmDto?.alarmPriority)}
                                   size="small"
                                   sx={{ minWidth: 80 }}
+                                  data-id-ref={`active-alarm-priority-chip-${index}`}
                                 />
                               </TableCell>
                               
@@ -1110,15 +1111,16 @@ const ActiveAlarmsPage: React.FC = () => {
                               
                               {/* Delay */}
                               <TableCell data-id-ref={`active-alarm-delay-${index}`}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} data-id-ref={`active-alarm-delay-box-${index}`}>
                                   {alarmDto?.alarmDelay && alarmDto.alarmDelay > 0 && (
-                                    <AccessTimeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                    <AccessTimeIcon sx={{ fontSize: 16, color: 'text.secondary' }} data-id-ref={`active-alarm-delay-icon-${index}`} />
                                   )}
                                   <Typography 
                                     variant="body2"
                                     sx={{ 
                                       fontFamily: isRTL ? 'IRANSansX, sans-serif' : undefined,
                                     }}
+                                    data-id-ref={`active-alarm-delay-text-${index}`}
                                   >
                                     {formatAlarmDelay(alarmDto?.alarmDelay)}
                                   </Typography>
@@ -1137,10 +1139,12 @@ const ActiveAlarmsPage: React.FC = () => {
                                   {alarmDto?.hasExternalAlarm ? (
                                     <NotificationsActiveIcon 
                                       sx={{ fontSize: 20, color: 'warning.main' }} 
+                                      data-id-ref={`active-alarm-external-icon-active-${index}`}
                                     />
                                   ) : (
                                     <NotificationsOffIcon 
                                       sx={{ fontSize: 20, color: 'text.disabled' }} 
+                                      data-id-ref={`active-alarm-external-icon-inactive-${index}`}
                                     />
                                   )}
                                 </Tooltip>
@@ -1182,7 +1186,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                   data-id-ref={`active-alarm-values-container-${index}`}
                                 >
                                   {/* Header with loading indicator */}
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-id-ref={`active-alarm-values-header-${index}`}>
                                     <Typography 
                                       variant="caption" 
                                       sx={{ 
@@ -1194,7 +1198,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                       {t('activeAlarmsPage.instantaneousDataTitle')}:
                                     </Typography>
                                     {valuesRefreshing && (
-                                      <CircularProgress size={12} thickness={4} />
+                                      <CircularProgress size={12} thickness={4} data-id-ref={`active-alarm-values-spinner-${index}`} />
                                     )}
                                   </Box>
                                   
@@ -1208,8 +1212,8 @@ const ActiveAlarmsPage: React.FC = () => {
                                     }}
                                     data-id-ref={`active-alarm-values-details-${index}`}
                                   >
-                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }} data-id-ref={`active-alarm-point-number-box-${index}`}>
+                                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }} data-id-ref={`active-alarm-point-number-label-${index}`}>
                                         {t('pointNumber')}:
                                       </Typography>
                                       <Typography 
@@ -1218,17 +1222,18 @@ const ActiveAlarmsPage: React.FC = () => {
                                           color: 'text.secondary',
                                           fontFamily: isRTL ? 'IRANSansX, sans-serif' : undefined,
                                         }}
+                                        data-id-ref={`active-alarm-point-number-value-${index}`}
                                       >
                                         {item.pointNumber}
                                       </Typography>
                                     </Box>
                                     
-                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }} data-id-ref={`active-alarm-value-box-${index}`}>
+                                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }} data-id-ref={`active-alarm-value-label-${index}`}>
                                         {t('value')}:
                                       </Typography>
                                       <Fade in={true} timeout={changedValues.has(alarm.itemId || '') ? 500 : 0}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} data-id-ref={`active-alarm-value-content-${index}`}>
                                           <Typography 
                                             variant="caption" 
                                             sx={{ 
@@ -1237,6 +1242,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                               transition: 'color 0.3s ease-in-out',
                                               fontFamily: isRTL ? 'IRANSansX, sans-serif' : undefined,
                                             }}
+                                            data-id-ref={`active-alarm-value-text-${index}`}
                                           >
                                             {formatItemValue(item, itemValue.value)}
                                           </Typography>
@@ -1246,19 +1252,19 @@ const ActiveAlarmsPage: React.FC = () => {
                                             if (trend === 'up') {
                                               return (
                                                 <Tooltip title={t('activeAlarmsPage.trendIncreasing')} arrow>
-                                                  <TrendingUpIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                                                  <TrendingUpIcon sx={{ fontSize: 14, color: 'error.main' }} data-id-ref={`active-alarm-trend-up-icon-${index}`} />
                                                 </Tooltip>
                                               );
                                             } else if (trend === 'down') {
                                               return (
                                                 <Tooltip title={t('activeAlarmsPage.trendDecreasing')} arrow>
-                                                  <TrendingDownIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                                                  <TrendingDownIcon sx={{ fontSize: 14, color: 'success.main' }} data-id-ref={`active-alarm-trend-down-icon-${index}`} />
                                                 </Tooltip>
                                               );
                                             } else if (valueHistory.get(alarm.itemId || '')?.length && valueHistory.get(alarm.itemId || '')!.length >= 2) {
                                               return (
                                                 <Tooltip title={t('activeAlarmsPage.trendStable')} arrow>
-                                                  <TrendingFlatIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                                                  <TrendingFlatIcon sx={{ fontSize: 14, color: 'text.disabled' }} data-id-ref={`active-alarm-trend-flat-icon-${index}`} />
                                                 </Tooltip>
                                               );
                                             }
@@ -1273,7 +1279,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                                 onClick={() => handleHistoryClick(alarm)}
                                                 data-id-ref={`value-history-icon-${index}`}
                                               >
-                                                <TimelineIcon sx={{ fontSize: 14, color: 'info.main' }} />
+                                                <TimelineIcon sx={{ fontSize: 14, color: 'info.main' }} data-id-ref={`value-history-timeline-icon-${index}`} />
                                               </IconButton>
                                             </Tooltip>
                                           )}
@@ -1281,8 +1287,8 @@ const ActiveAlarmsPage: React.FC = () => {
                                       </Fade>
                                     </Box>
                                     
-                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }} data-id-ref={`active-alarm-time-box-${index}`}>
+                                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }} data-id-ref={`active-alarm-time-label-${index}`}>
                                         {t('time')}:
                                       </Typography>
                                       <Typography 
@@ -1291,6 +1297,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                           color: 'text.secondary',
                                           fontFamily: isRTL ? 'IRANSansX, sans-serif' : undefined,
                                         }}
+                                        data-id-ref={`active-alarm-time-value-${index}`}
                                       >
                                         {formatTimestamp(itemValue.time)}
                                       </Typography>
@@ -1305,9 +1312,9 @@ const ActiveAlarmsPage: React.FC = () => {
                                     if (thresholdInfo) {
                                       const label = `${t(thresholdInfo.labelKey)}: ${thresholdInfo.labelValue}`;
                                       return (
-                                        <Box sx={{ mt: 0.5 }}>
+                                        <Box sx={{ mt: 0.5 }} data-id-ref={`active-alarm-threshold-viz-${index}`}>
                                           <Tooltip title={label} arrow placement="top">
-                                            <Box>
+                                            <Box data-id-ref={`active-alarm-threshold-viz-content-${index}`}>
                                               <LinearProgress 
                                                 variant="determinate" 
                                                 value={thresholdInfo.percentage}
@@ -1317,6 +1324,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                                   borderRadius: 1,
                                                   bgcolor: 'action.selected',
                                                 }}
+                                                data-id-ref={`active-alarm-threshold-progress-${index}`}
                                               />
                                               <Typography 
                                                 variant="caption" 
@@ -1326,6 +1334,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                                   mt: 0.5,
                                                   display: 'block',
                                                 }}
+                                                data-id-ref={`active-alarm-threshold-label-${index}`}
                                               >
                                                 {label}
                                               </Typography>
@@ -1380,7 +1389,7 @@ const ActiveAlarmsPage: React.FC = () => {
             aria-label="close"
             data-id-ref="value-history-modal-close-button"
           >
-            <CloseIcon />
+            <CloseIcon data-id-ref="value-history-modal-close-icon" />
           </IconButton>
         </DialogTitle>
         <DialogContent dividers data-id-ref="value-history-modal-content">
@@ -1392,6 +1401,7 @@ const ActiveAlarmsPage: React.FC = () => {
                 opts={{ renderer: 'svg', locale: isRTL ? 'FA' : 'EN' }}
                 notMerge={true}
                 lazyUpdate={false}
+                data-id-ref="value-history-chart"
               />
             </Box>
           )}

@@ -1,0 +1,5 @@
+ALL elements created by AI must have `data-id-ref` attribute
+
+NEVER use `console.*` directly, always use logger
+
+Use Chrome DevTools MCP for comprehensive development workflow and debuging
