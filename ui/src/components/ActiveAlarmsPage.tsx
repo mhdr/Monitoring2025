@@ -45,8 +45,6 @@ import {
   NotificationsOff as NotificationsOffIcon,
   AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
-import ReactECharts from 'echarts-for-react';
-import type { EChartsOption } from 'echarts';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTranslation } from '../hooks/useTranslation';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -55,7 +53,7 @@ import { getValues } from '../services/monitoringApi';
 import type { ActiveAlarm, Item, AlarmDto, MultiValue } from '../types/api';
 import { createLogger } from '../utils/logger';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
-import { useTheme } from '@mui/material/styles';
+import ValueHistoryChart from './ValueHistoryChart';
 
 const logger = createLogger('ActiveAlarmsPage');
 
@@ -65,7 +63,6 @@ const ActiveAlarmsPage: React.FC = () => {
   const { state, updateActiveAlarms } = useMonitoring();
   const streamData = state.activeAlarms;
   const isRTL = language === 'fa';
-  const theme = useTheme();
   
   const [alarms, setAlarms] = useState<ActiveAlarm[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -678,156 +675,6 @@ const ActiveAlarmsPage: React.FC = () => {
   };
 
   /**
-   * Get chart options for history modal
-   */
-  const getHistoryChartOptions = (): EChartsOption => {
-    if (!selectedHistoryItem) return {};
-
-    const { item, history } = selectedHistoryItem;
-    
-    // Prepare data - convert Unix timestamp (seconds) to milliseconds and format full date/time
-    const times = history.map(h => {
-      const date = new Date(h.time * 1000); // Convert Unix timestamp to milliseconds
-      return date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-    });
-    const values = history.map(h => h.value);
-    
-    // Get item name in current language
-    const itemName = isRTL && item.nameFa ? item.nameFa : item.name;
-    
-    // Get unit suffix in current language
-    const unit = isRTL && item.unitFa ? item.unitFa : item.unit;
-    const unitSuffix = unit ? ` (${unit})` : '';
-    
-    // Set font family for Persian language
-    const fontFamily = isRTL ? 'IRANSansX, sans-serif' : undefined;
-    
-    // Construct title text - ensure it's a valid string
-    const chartTitle = String(itemName || '');
-    
-    // Debug logging
-    logger.log('Chart options prepared:', {
-      itemName,
-      chartTitle,
-      isRTL,
-      hasNameFa: !!item.nameFa,
-      nameFa: item.nameFa,
-      name: item.name,
-      fontFamily,
-      itemObject: item,
-    });
-    
-    return {
-      // Remove title since it's already shown in dialog title
-      title: {
-        show: false,
-      },
-      tooltip: {
-        trigger: 'axis',
-        formatter: (params: unknown) => {
-          const p = params as Array<{ name: string; value: number; seriesName: string }>;
-          if (p && p[0]) {
-            const formattedValue = formatItemValue(item, String(p[0].value));
-            return `${p[0].name}<br/>${p[0].seriesName}: ${formattedValue}`;
-          }
-          return '';
-        },
-        textStyle: {
-          fontFamily,
-        },
-      },
-      grid: {
-        left: isRTL ? '3%' : '3%',
-        right: isRTL ? '3%' : '3%',
-        bottom: '3%',
-        top: '3%',
-        containLabel: true,
-      },
-      xAxis: {
-        type: 'category',
-        data: times,
-        axisLabel: {
-          show: false, // Hide x-axis labels
-        },
-        axisLine: {
-          lineStyle: {
-            color: theme.palette.divider,
-          },
-        },
-      },
-      yAxis: {
-        type: 'value',
-        name: `${t('value')}${unitSuffix}`,
-        nameTextStyle: {
-          color: theme.palette.text.secondary,
-          fontFamily,
-        },
-        axisLabel: {
-          color: theme.palette.text.secondary,
-          formatter: (value: number) => formatItemValue(item, String(value)),
-          fontFamily,
-        },
-        axisLine: {
-          lineStyle: {
-            color: theme.palette.divider,
-          },
-        },
-        splitLine: {
-          lineStyle: {
-            color: theme.palette.divider,
-            type: 'dashed',
-          },
-        },
-      },
-      series: [
-        {
-          name: t('value'),
-          type: 'line',
-          data: values,
-          smooth: true,
-          lineStyle: {
-            color: theme.palette.primary.main,
-            width: 2,
-          },
-          itemStyle: {
-            color: theme.palette.primary.main,
-          },
-          areaStyle: {
-            color: {
-              type: 'linear',
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [
-                {
-                  offset: 0,
-                  color: theme.palette.primary.main + '40', // 25% opacity
-                },
-                {
-                  offset: 1,
-                  color: theme.palette.primary.main + '10', // 6% opacity
-                },
-              ],
-            },
-          },
-          emphasis: {
-            focus: 'series',
-          },
-        },
-      ],
-    };
-  };
-
-  /**
    * Render stream status indicator
    */
   const renderStreamStatus = () => {
@@ -1404,13 +1251,14 @@ const ActiveAlarmsPage: React.FC = () => {
         <DialogContent dividers data-id-ref="value-history-modal-content">
           {selectedHistoryItem && (
             <Box sx={{ height: 500, width: '100%' }} data-id-ref="value-history-chart-container">
-              <ReactECharts
-                option={getHistoryChartOptions()}
-                style={{ height: '100%', width: '100%' }}
-                opts={{ renderer: 'svg', locale: isRTL ? 'FA' : 'EN' }}
-                notMerge={true}
-                lazyUpdate={false}
-                data-id-ref="value-history-chart"
+              <ValueHistoryChart
+                history={selectedHistoryItem.history}
+                item={selectedHistoryItem.item}
+                itemName={isRTL && selectedHistoryItem.item.nameFa 
+                  ? selectedHistoryItem.item.nameFa 
+                  : selectedHistoryItem.item.name}
+                height="100%"
+                width="100%"
               />
             </Box>
           )}

@@ -23,15 +23,12 @@ import {
   Timeline as TimelineIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
-import ReactECharts from 'echarts-for-react';
-import type { EChartsOption } from 'echarts';
-import { useLanguage } from '../hooks/useLanguage';
 import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
 import { createLogger } from '../utils/logger';
 import type { Item } from '../types/api';
+import ValueHistoryChart from './ValueHistoryChart';
 
 const logger = createLogger('ItemCard');
 
@@ -54,13 +51,10 @@ const ItemCard: React.FC<ItemCardProps> = ({
   valueHistory = [],
   item 
 }) => {
-  const { language } = useLanguage();
   const { t } = useTranslation();
-  const theme = useTheme();
   const prefetchUrl = useUrlPrefetch();
   const [elevation, setElevation] = useState<number>(1);
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
-  const isRTL = language === 'fa';
 
   logger.log('ItemCard render', { itemId, name, historyLength: valueHistory.length });
 
@@ -114,96 +108,6 @@ const ItemCard: React.FC<ItemCardProps> = ({
         historyLength: valueHistory?.length || 0 
       });
     }
-  };
-
-  /**
-   * Get chart options for history modal
-   */
-  const getHistoryChartOptions = (): EChartsOption => {
-    if (!valueHistory || valueHistory.length === 0) return {};
-
-    // Prepare data - convert Unix timestamp (seconds) to milliseconds and format full date/time
-    const times = valueHistory.map(h => {
-      const date = new Date(h.time * 1000); // Convert Unix timestamp to milliseconds
-      return date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-    });
-    const values = valueHistory.map(h => h.value);
-    
-    // Get unit suffix in current language
-    const unit = item && isRTL && item.unitFa ? item.unitFa : item?.unit;
-    const unitSuffix = unit ? ` (${unit})` : '';
-    
-    // Set font family for Persian language
-    const fontFamily = isRTL ? 'IRANSansX, sans-serif' : undefined;
-
-    return {
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'cross',
-          label: {
-            backgroundColor: theme.palette.grey[700],
-          },
-        },
-      },
-      grid: {
-        left: isRTL ? '3%' : '3%',
-        right: isRTL ? '3%' : '3%',
-        bottom: '3%',
-        top: '3%',
-        containLabel: true,
-      },
-      xAxis: {
-        type: 'category',
-        data: times,
-        boundaryGap: false,
-        axisLabel: {
-          show: false, // Hide x-axis labels
-        },
-      },
-      yAxis: {
-        type: 'value',
-        name: `${t('value')}${unitSuffix}`,
-        nameLocation: 'middle',
-        nameGap: 50,
-        nameTextStyle: {
-          fontFamily,
-          fontSize: 12,
-        },
-        axisLabel: {
-          fontFamily,
-        },
-      },
-      series: [
-        {
-          name: name,
-          type: 'line',
-          data: values,
-          smooth: true,
-          areaStyle: {
-            opacity: 0.2,
-          },
-          lineStyle: {
-            color: theme.palette.primary.main,
-            width: 2,
-          },
-          itemStyle: {
-            color: theme.palette.primary.main,
-          },
-        },
-      ],
-      textStyle: {
-        fontFamily,
-      },
-    };
   };
 
   return (
@@ -484,12 +388,13 @@ const ItemCard: React.FC<ItemCardProps> = ({
           }}
           data-id-ref="item-card-history-chart-container"
         >
-          {valueHistory && valueHistory.length > 1 ? (
-            <ReactECharts
-              option={getHistoryChartOptions()}
-              style={{ width: '100%', height: '100%' }}
-              opts={{ renderer: 'svg' }}
-              data-id-ref="item-card-history-chart"
+          {valueHistory && valueHistory.length > 1 && item ? (
+            <ValueHistoryChart
+              history={valueHistory}
+              item={item}
+              itemName={name}
+              height="100%"
+              width="100%"
             />
           ) : (
             <Typography color="text.secondary" data-id-ref="item-card-history-no-data">
