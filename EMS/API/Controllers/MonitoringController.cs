@@ -1087,30 +1087,86 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <summary>
     /// Get historical alarm data for specified monitoring items within a date range
     /// </summary>
-    /// <param name="request">Alarm history request containing start date, end date, and optional item IDs</param>
+    /// <param name="request">Alarm history request containing start date (Unix timestamp), end date (Unix timestamp), and optional item IDs</param>
     /// <returns>Historical alarm events for the specified time period and items</returns>
-    /// <response code="200">Returns the historical alarm data</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <remarks>
+    /// Retrieves historical alarm events within the specified date range. If itemIds is provided,
+    /// only returns alarms for those specific items. Otherwise, returns all alarms in the system.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/historyalarms
+    ///     {
+    ///        "startDate": 1697587200,
+    ///        "endDate": 1697673600,
+    ///        "itemIds": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"]
+    ///     }
+    ///     
+    /// Leave itemIds empty or null to retrieve all alarms in the system for the date range.
+    /// Dates are Unix timestamps (seconds since epoch).
+    /// </remarks>
+    /// <response code="200">Returns the historical alarm data with success status</response>
+    /// <response code="400">Validation error - invalid request format or date range</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("HistoryAlarms")]
     [ProducesResponseType(typeof(AlarmHistoryResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> HistoryAlarms([FromBody] AlarmHistoryRequestDto request)
     {
         try
         {
+            _logger.LogInformation("HistoryAlarms started: User {UserId}", User.Identity?.Name);
+
+            // Validate ModelState first
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                
+                _logger.LogWarning("HistoryAlarms validation failed: {Errors}", string.Join(", ", errors));
+                return BadRequest(new 
+                { 
+                    success = false, 
+                    message = "Validation failed", 
+                    errors = errors 
+                });
+            }
+
+            // Extract and validate user ID
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("HistoryAlarms unauthorized access attempt");
+                return Unauthorized(new { success = false, message = "Invalid or missing authentication token" });
             }
 
-            // var userGuid = Guid.Parse(userId);
+            // Validate date range
+            if (request.StartDate <= 0 || request.EndDate <= 0)
+            {
+                _logger.LogWarning("HistoryAlarms invalid date range: StartDate={StartDate}, EndDate={EndDate}", 
+                    request.StartDate, request.EndDate);
+                return BadRequest(new { success = false, message = "Start date and end date must be positive Unix timestamps" });
+            }
 
+            if (request.StartDate > request.EndDate)
+            {
+                _logger.LogWarning("HistoryAlarms invalid date range: StartDate > EndDate");
+                return BadRequest(new { success = false, message = "Start date must be before or equal to end date" });
+            }
+
+            _logger.LogDebug("Fetching alarm history: StartDate={StartDate}, EndDate={EndDate}, ItemCount={ItemCount}", 
+                request.StartDate, request.EndDate, request.ItemIds?.Count ?? 0);
+
+            // Retrieve alarm history from Core
             var alarms = await Core.Alarms.HistoryAlarms(request.StartDate, request.EndDate, request.ItemIds);
 
+            // Build response
             var response = new AlarmHistoryResponseDto();
 
             foreach (var a in alarms)
@@ -1126,14 +1182,26 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 });
             }
 
+            _logger.LogInformation("HistoryAlarms completed successfully: User {UserId}, AlarmCount={AlarmCount}", 
+                User.Identity?.Name, response.Data.Count);
+
             return Ok(response);
         }
-        catch (Exception e)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogWarning(ex, "HistoryAlarms argument validation failed: {Message}", ex.Message);
+            return BadRequest(new { success = false, message = ex.Message });
         }
-
-        return BadRequest(ModelState);
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "HistoryAlarms unauthorized access: {Message}", ex.Message);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in HistoryAlarms: {Message}", ex.Message);
+            return StatusCode(500, new { success = false, message = "Internal server error" });
+        }
     }
 
     /// <summary>

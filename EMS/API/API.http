@@ -547,6 +547,83 @@ Content-Type: application/json
 
 ###
 
+### Get Alarm History (all items, last 24 hours) - HTTP
+POST {{API_HostAddress}}/api/monitoring/historyalarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "startDate": 1697587200,
+  "endDate": 1697673600,
+  "itemIds": []
+}
+
+###
+
+### Get Alarm History (all items, last 24 hours) - HTTPS
+POST {{API_HostAddress}}/api/monitoring/historyalarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "startDate": 1697587200,
+  "endDate": 1697673600,
+  "itemIds": []
+}
+
+###
+
+### Get Alarm History (specific items) - HTTP
+POST {{API_HostAddress}}/api/monitoring/historyalarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "startDate": 1697587200,
+  "endDate": 1697673600,
+  "itemIds": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"]
+}
+
+###
+
+### Get Alarm History (specific items) - HTTPS
+POST {{API_HostAddress}}/api/monitoring/historyalarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "startDate": 1697587200,
+  "endDate": 1697673600,
+  "itemIds": ["550e8400-e29b-41d4-a716-446655440001"]
+}
+
+###
+
+### Get Alarm History (invalid date range - should return 400)
+POST {{API_HostAddress}}/api/monitoring/historyalarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "startDate": 1697673600,
+  "endDate": 1697587200,
+  "itemIds": []
+}
+
+###
+
+### Get Alarm History (unauthorized - should return 401)
+POST {{API_HostAddress}}/api/monitoring/historyalarms
+Content-Type: application/json
+
+{
+  "startDate": 1697587200,
+  "endDate": 1697673600,
+  "itemIds": []
+}
+
+###
+
 ### ========================================
 ### SignalR Hub Documentation
 ### ========================================
