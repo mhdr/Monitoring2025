@@ -46,12 +46,24 @@ Route component? → React.lazy() + Suspense wrapper
 Form? → Controlled components + validation
 ```
 
+**Testing & Debugging:**
+```
+Manual testing? → Chrome DevTools MCP (navigate, snapshot, interact)
+UI verification? → Chrome DevTools MCP (screenshots, snapshots)
+Layout debugging? → Chrome DevTools MCP (resize, RTL testing)
+Performance testing? → Chrome DevTools MCP (performance traces, network emulation)
+Real-time debugging? → Chrome DevTools MCP (console messages, network requests)
+State inspection? → Chrome DevTools MCP (evaluate_script for React state)
+User flow testing? → Chrome DevTools MCP (click, fill, drag interactions)
+```
+
 ### Must-Follow Rules
 
 | Rule | Why | Example |
 |------|-----|---------|
 | ⚠️ Use `t()` for all text | i18n support | `t('pages.dashboard.title')` |
 | ⚠️ Use logger, not console | Prod cleanup | `logger.log('message')` |
+| ⚠️ Use Chrome DevTools MCP | Testing/debugging | All UI testing via MCP tools |
 | ⚠️ Use theme palette | Theme consistency | `theme.palette.primary.main` |
 | ⚠️ No `any` type | Type safety | `unknown` with type guards |
 | ⚠️ Add `data-id-ref` | Testing/debugging | `data-id-ref="login-submit-button"` |
@@ -1368,6 +1380,7 @@ logger.error('Auth failed:', {
 ## 🧪 Testing Guidelines
 
 ### Testing Requirements
+⚠️ **MANDATORY: Use Chrome DevTools MCP for ALL testing**
 ⚠️ **Test before marking work complete**
 
 ### Test Checklist for Every Feature
@@ -1382,14 +1395,161 @@ logger.error('Auth failed:', {
 - [ ] **Theme Compatibility**: Works with both light and dark modes
 - [ ] **Accessibility**: Keyboard navigation and screen readers
 
-### Manual Testing Process
-1. Test in English (LTR)
-2. Switch to Persian and verify RTL layout
-3. Resize browser through all breakpoints
-4. Switch between light and dark themes
-5. Test error scenarios (network failures, invalid input)
-6. Test with authentication (logged in/out)
-7. Check console for errors or warnings
+### Chrome DevTools MCP Testing Process (MANDATORY)
+⚠️ **ALL testing MUST be performed using Chrome DevTools MCP**
+
+**1. Initial Setup:**
+```typescript
+// List available pages
+await mcp_chromedevtool_list_pages();
+
+// Create new page or select existing
+await mcp_chromedevtool_new_page({ url: 'https://localhost:5173' });
+// OR
+await mcp_chromedevtool_select_page({ pageIdx: 0 });
+```
+
+**2. Bilingual Testing (fa/en):**
+```typescript
+// Navigate to page
+await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173/dashboard' });
+
+// Take snapshot and find language switcher
+const snapshot = await mcp_chromedevtool_take_snapshot();
+
+// Test in English (default)
+await mcp_chromedevtool_take_screenshot({ fullPage: true, filePath: 'test-en.png' });
+
+// Switch to Persian
+await mcp_chromedevtool_click({ uid: 'language-switcher' });
+await mcp_chromedevtool_wait_for({ text: 'فارسی', timeout: 5000 });
+
+// Verify RTL layout
+await mcp_chromedevtool_take_screenshot({ fullPage: true, filePath: 'test-fa-rtl.png' });
+
+// Verify direction using evaluate_script
+const direction = await mcp_chromedevtool_evaluate_script({ 
+  function: '() => document.documentElement.dir' 
+});
+```
+
+**3. Responsive Testing:**
+```typescript
+// Test all breakpoints
+const breakpoints = [
+  { width: 375, height: 667, name: 'xs-mobile' },
+  { width: 768, height: 1024, name: 'sm-tablet' },
+  { width: 900, height: 600, name: 'md-tablet-landscape' },
+  { width: 1366, height: 768, name: 'lg-laptop' },
+  { width: 1920, height: 1080, name: 'xl-desktop' }
+];
+
+for (const bp of breakpoints) {
+  await mcp_chromedevtool_resize_page({ width: bp.width, height: bp.height });
+  await mcp_chromedevtool_take_screenshot({ 
+    fullPage: true, 
+    filePath: `test-${bp.name}.png` 
+  });
+  
+  // Check for horizontal scroll (should not exist)
+  const hasScroll = await mcp_chromedevtool_evaluate_script({ 
+    function: '() => document.documentElement.scrollWidth > window.innerWidth' 
+  });
+  
+  if (hasScroll) {
+    logger.error(`Horizontal scroll detected at ${bp.name}`);
+  }
+}
+```
+
+**4. Theme Testing:**
+```typescript
+// Test light mode
+await mcp_chromedevtool_take_snapshot();
+await mcp_chromedevtool_take_screenshot({ filePath: 'test-light-theme.png' });
+
+// Switch to dark mode
+await mcp_chromedevtool_click({ uid: 'theme-switcher' });
+await new Promise(resolve => setTimeout(resolve, 500)); // Wait for transition
+
+// Verify theme change
+const isDarkMode = await mcp_chromedevtool_evaluate_script({ 
+  function: '() => document.documentElement.getAttribute("data-theme")' 
+});
+
+await mcp_chromedevtool_take_screenshot({ filePath: 'test-dark-theme.png' });
+```
+
+**5. Error State Testing:**
+```typescript
+// Simulate network failure
+await mcp_chromedevtool_emulate_network({ throttlingOption: 'Offline' });
+
+// Attempt action that requires network
+await mcp_chromedevtool_click({ uid: 'refresh-button' });
+
+// Verify error message appears
+await mcp_chromedevtool_wait_for({ text: 'Network error', timeout: 5000 });
+await mcp_chromedevtool_take_screenshot({ filePath: 'test-error-state.png' });
+
+// Check console for error logs
+const messages = await mcp_chromedevtool_list_console_messages();
+
+// Restore network
+await mcp_chromedevtool_emulate_network({ throttlingOption: 'No emulation' });
+```
+
+**6. Performance Testing:**
+```typescript
+// Start performance trace
+await mcp_chromedevtool_performance_start_trace({ reload: true, autoStop: false });
+
+// Perform user interactions
+await mcp_chromedevtool_click({ uid: 'load-data-button' });
+await mcp_chromedevtool_wait_for({ text: 'Data loaded', timeout: 10000 });
+
+// Stop trace and analyze
+await mcp_chromedevtool_performance_stop_trace();
+
+// Get detailed insights
+const insights = await mcp_chromedevtool_performance_analyze_insight({ 
+  insightName: 'LCPBreakdown' 
+});
+```
+
+**7. Console & Network Verification:**
+```typescript
+// Check for console errors/warnings
+const consoleMessages = await mcp_chromedevtool_list_console_messages();
+const errors = consoleMessages.filter(m => m.level === 'error');
+
+if (errors.length > 0) {
+  logger.error('Console errors detected:', errors);
+}
+
+// Verify API calls
+const networkRequests = await mcp_chromedevtool_list_network_requests({ 
+  resourceTypes: ['xhr', 'fetch'] 
+});
+
+// Check for failed requests
+const failedRequests = networkRequests.filter(r => r.status >= 400);
+
+if (failedRequests.length > 0) {
+  logger.error('Failed API requests:', failedRequests);
+}
+```
+
+### Manual Testing Process (DEPRECATED - Use Chrome DevTools MCP)
+⚠️ **The following manual process is DEPRECATED. Use Chrome DevTools MCP instead.**
+
+1. ~~Test in English (LTR)~~ → Use MCP bilingual testing
+2. ~~Switch to Persian and verify RTL layout~~ → Use MCP bilingual testing
+3. ~~Resize browser through all breakpoints~~ → Use MCP responsive testing
+4. ~~Switch between light and dark themes~~ → Use MCP theme testing
+5. ~~Test error scenarios (network failures, invalid input)~~ → Use MCP error state testing
+6. ~~Test with authentication (logged in/out)~~ → Use MCP user flow testing
+7. ~~Check console for errors or warnings~~ → Use MCP console verification
 
 ## 🚀 Development Environment
 
@@ -1422,9 +1582,25 @@ logger.error('Auth failed:', {
 - For modals/dialogs: Include modal name in the identifier
 
 ### Chrome DevTools MCP Integration
-⚠️ **MANDATORY: Use Chrome DevTools MCP for comprehensive development workflow**
+⚠️ **MANDATORY: Use Chrome DevTools MCP for ALL development workflow and debugging**
+
+**CRITICAL RULES:**
+- ⚠️ **ALWAYS use Chrome DevTools MCP** for any UI testing, debugging, or verification
+- ⚠️ **NEVER rely on manual browser testing alone** - automate with MCP tools
+- ⚠️ **MANDATORY for all feature development** - test with MCP before marking complete
+- ⚠️ **REQUIRED for bug diagnosis** - use MCP tools to investigate and verify fixes
+- ⚠️ **ESSENTIAL for performance analysis** - use MCP performance tools for optimization
 
 The Chrome DevTools Model Context Protocol (MCP) server provides powerful browser automation and debugging capabilities essential for modern web development. Use these tools for real-time debugging, user behavior simulation, live styling inspection, and performance optimization.
+
+**Why Chrome DevTools MCP is Mandatory:**
+1. **Automated Testing**: Programmatic interaction with UI eliminates manual testing
+2. **Consistent Results**: Reproducible test scenarios across development sessions
+3. **Comprehensive Coverage**: Test all breakpoints, themes, and languages systematically
+4. **Performance Insights**: Real-time metrics for Core Web Vitals and bottlenecks
+5. **State Inspection**: Deep dive into React context, props, and state at runtime
+6. **Network Monitoring**: Track API calls, SignalR messages, and response times
+7. **Visual Verification**: Screenshots and snapshots for documentation and debugging
 
 #### 🔧 Core MCP Tools Overview
 **Navigation & Setup:**
@@ -1519,6 +1695,65 @@ The Chrome DevTools Model Context Protocol (MCP) server provides powerful browse
 - Use `list_pages` to get all open pages
 - Loop through and `select_page` by index
 - Take screenshots of each page state for comparison
+
+#### 🎯 Mandatory Chrome DevTools MCP Usage Scenarios
+
+**MUST use Chrome DevTools MCP for:**
+
+1. **Feature Development:**
+   - After implementing any new component → Navigate, snapshot, interact to verify
+   - After any UI change → Take screenshots before/after for comparison
+   - After style changes → Test both themes, verify responsiveness with `resize_page`
+   - After form implementation → Fill forms, submit, verify validation with MCP tools
+
+2. **Bug Investigation:**
+   - User reports UI issue → Navigate to page, take snapshot, inspect with `evaluate_script`
+   - Visual regression → Take screenshots of affected areas, compare with expected
+   - JavaScript errors → Use `list_console_messages` to capture error details
+   - Network failures → Use `list_network_requests` to analyze API calls
+
+3. **Testing Workflows:**
+   - Authentication flow → Navigate to login, fill credentials, click submit, verify redirect
+   - Bilingual testing → Switch language, verify RTL, test all text translations
+   - Theme switching → Toggle theme, verify all components update correctly
+   - Responsive design → Test all breakpoints (xs: 375x667, sm: 768x1024, md: 900x600, lg: 1366x768, xl: 1920x1080)
+
+4. **Performance Analysis:**
+   - Page load time → Use `performance_start_trace` on navigation, analyze with `performance_analyze_insight`
+   - Component rendering → Monitor render times with performance traces
+   - Network optimization → Use `emulate_network` to test slow connections
+   - SignalR streaming → Monitor real-time message latency and throughput
+
+5. **State Debugging:**
+   - Context inspection → Use `evaluate_script` to access React context values
+   - Props verification → Inspect component props at runtime
+   - State mutations → Monitor state changes during user interactions
+   - Memory leaks → Sample memory usage over time to detect leaks
+
+**Chrome DevTools MCP Workflow Pattern:**
+```typescript
+// 1. Navigate to page under test
+await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173/dashboard' });
+
+// 2. Take snapshot to get element UIDs
+const snapshot = await mcp_chromedevtool_take_snapshot();
+
+// 3. Interact with elements
+await mcp_chromedevtool_fill({ uid: 'input-username', value: 'test@example.com' });
+await mcp_chromedevtool_click({ uid: 'button-submit' });
+
+// 4. Verify results
+const messages = await mcp_chromedevtool_list_console_messages();
+const screenshot = await mcp_chromedevtool_take_screenshot({ fullPage: true });
+
+// 5. Check network activity
+const requests = await mcp_chromedevtool_list_network_requests({ resourceTypes: ['xhr', 'fetch'] });
+
+// 6. Inspect state
+const result = await mcp_chromedevtool_evaluate_script({ 
+  function: '() => { return window.__REACT_DEVTOOLS_GLOBAL_HOOK__ }' 
+});
+```
 
 ### MUI MCP Server Integration
 ⚠️ **MANDATORY: Use MUI MCP Server for Material-UI documentation and examples**
@@ -1740,13 +1975,17 @@ public/locales/   # fa/, en/
 - [ ] **Color Contrast**: Text readable in all themes
 - [ ] **Focus Indicators**: Visible focus states
 
-### Testing
-- [ ] **Manual Testing**: Feature tested manually
-- [ ] **Both Languages**: Works in fa and en
-- [ ] **All Breakpoints**: Mobile, tablet, desktop tested
-- [ ] **Error Scenarios**: Error states tested
-- [ ] **Browser Console**: No errors or warnings
-- [ ] **DevTools**: Network requests successful
+### Testing (Chrome DevTools MCP MANDATORY)
+- [ ] **Chrome DevTools MCP Used**: ALL testing performed using MCP tools
+- [ ] **Navigation Verified**: Used `navigate_page` and `take_snapshot`
+- [ ] **Both Languages**: Tested with MCP bilingual workflow (fa and en)
+- [ ] **All Breakpoints**: Used `resize_page` for xs, sm, md, lg, xl
+- [ ] **Theme Modes**: Used MCP to test light and dark themes
+- [ ] **Error Scenarios**: Used `emulate_network` for network failures
+- [ ] **Console Clean**: Used `list_console_messages` - no errors/warnings
+- [ ] **Network Verified**: Used `list_network_requests` - all successful
+- [ ] **Screenshots Taken**: Captured visual evidence with `take_screenshot`
+- [ ] **Performance Tested**: Used `performance_start_trace` for critical paths
 
 ### Documentation
 - [ ] **Element IDs**: All elements created by AI have `data-id-ref`
@@ -1893,6 +2132,7 @@ const options = useMemo(() => getChartOptions(), [deps]);
 - Use TypeScript with strict types
 - Use translation system for all text
 - Use logger utility for ALL logging (never `console.*`)
+- Use Chrome DevTools MCP for ALL testing and debugging
 - Use MUI MCP Server to verify component usage and APIs
 - Use MUI theme palette values for ALL colors
 - Use MUI components first before custom implementations
@@ -1904,16 +2144,17 @@ const options = useMemo(() => getChartOptions(), [deps]);
 - Use error boundaries
 - Use DTOs for API communication
 - Use existing patterns and conventions
-- Test in both languages
-- Test RTL layout
-- Test both theme modes (light/dark)
-- Test all breakpoints
+- Test in both languages with Chrome DevTools MCP
+- Test RTL layout with Chrome DevTools MCP
+- Test both theme modes (light/dark) with Chrome DevTools MCP
+- Test all breakpoints with Chrome DevTools MCP
 
 ### DON'T ❌
 - Don't use class components
 - Don't use `any` type
 - Don't hardcode text strings
 - Don't use `console.*` directly - use logger utility instead
+- Don't rely on manual browser testing - use Chrome DevTools MCP
 - Don't assume MUI APIs from memory - verify with MUI MCP
 - Don't hardcode colors (hex, rgb, color names) - ONLY use MUI theme palette
 - Don't create custom color variables outside of MUI theme
@@ -1923,8 +2164,8 @@ const options = useMemo(() => getChartOptions(), [deps]);
 - Don't forget loading states
 - Don't use localStorage/sessionStorage - use IndexedDB instead
 - Don't forget to clean up streams/subscriptions
-- Don't skip RTL testing
-- Don't skip responsive testing
-- Don't skip theme compatibility testing
+- Don't skip RTL testing with Chrome DevTools MCP
+- Don't skip responsive testing with Chrome DevTools MCP
+- Don't skip theme compatibility testing with Chrome DevTools MCP
 - Don't log sensitive data (passwords, tokens, etc.)
 - Don't use outdated Protobuf patterns (v1)
