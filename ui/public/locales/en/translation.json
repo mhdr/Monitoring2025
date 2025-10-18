@@ -154,6 +154,21 @@
         "dark": "Dark Themes",
         "colorful": "Colorful Themes"
       }
+    },
+    "notifications": {
+      "sectionTitle": "Desktop Notifications",
+      "sectionDescription": "Manage desktop notifications for alarm events. Get notified instantly when critical alarms occur.",
+      "enabled": "Notifications Enabled",
+      "disabled": "Notifications Disabled",
+      "enableHint": "Receive desktop notifications for new alarms",
+      "permissionStatus": "Permission Status",
+      "permissionGranted": "Granted",
+      "permissionDenied": "Denied",
+      "permissionDefault": "Not Requested",
+      "requestPermission": "Request Permission",
+      "testNotification": "Send Test Notification",
+      "testSent": "Test notification sent",
+      "unsupported": "Desktop notifications are not supported in your browser"
     }
   },
   "profilePage": {

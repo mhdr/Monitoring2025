@@ -36,6 +36,7 @@ import {
   showAlarmNotification, 
   formatAlarmNotificationMessage 
 } from '../utils/notifications';
+import { areNotificationsEnabledByUser } from '../utils/notificationStorage';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -111,9 +112,19 @@ const pulseAnimation = keyframes`
     // Check if alarm count increased (not just changed)
     const hasNewAlarms = prevAlarmCountRef.current < alarmCount && alarmCount > 0;
     
-    if (hasNewAlarms && areNotificationsEnabled()) {
-      const notificationOptions = formatAlarmNotificationMessage(alarmCount, highestPriority, t);
-      showAlarmNotification(notificationOptions);
+    if (hasNewAlarms) {
+      // Check both browser permission AND user preference
+      const checkAndNotify = async () => {
+        const browserPermission = areNotificationsEnabled();
+        const userEnabled = await areNotificationsEnabledByUser();
+        
+        if (browserPermission && userEnabled) {
+          const notificationOptions = formatAlarmNotificationMessage(alarmCount, highestPriority, t);
+          showAlarmNotification(notificationOptions);
+        }
+      };
+      
+      checkAndNotify();
     }
   }, [alarmCount, highestPriority, t]);
 

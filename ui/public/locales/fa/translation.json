@@ -154,6 +154,21 @@
         "dark": "پوسته‌های تیره",
         "colorful": "پوسته‌های رنگی"
       }
+    },
+    "notifications": {
+      "sectionTitle": "اعلان‌های دسکتاپ",
+      "sectionDescription": "مدیریت اعلان‌های دسکتاپ برای رویدادهای هشدار. در صورت بروز هشدارهای حیاتی، بلافاصله مطلع شوید.",
+      "enabled": "اعلان‌ها فعال است",
+      "disabled": "اعلان‌ها غیرفعال است",
+      "enableHint": "دریافت اعلان‌های دسکتاپ برای هشدارهای جدید",
+      "permissionStatus": "وضعیت مجوز",
+      "permissionGranted": "اعطا شده",
+      "permissionDenied": "رد شده",
+      "permissionDefault": "درخواست نشده",
+      "requestPermission": "درخواست مجوز",
+      "testNotification": "ارسال اعلان آزمایشی",
+      "testSent": "اعلان آزمایشی ارسال شد",
+      "unsupported": "اعلان‌های دسکتاپ در مرورگر شما پشتیبانی نمی‌شود"
     }
   },
   "profilePage": {
