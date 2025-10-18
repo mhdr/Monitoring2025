@@ -685,8 +685,19 @@ const ActiveAlarmsPage: React.FC = () => {
 
     const { item, history } = selectedHistoryItem;
     
-    // Prepare data
-    const times = history.map(h => new Date(h.time).toLocaleTimeString(language === 'fa' ? 'fa-IR' : 'en-US'));
+    // Prepare data - convert Unix timestamp (seconds) to milliseconds and format full date/time
+    const times = history.map(h => {
+      const date = new Date(h.time * 1000); // Convert Unix timestamp to milliseconds
+      return date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    });
     const values = history.map(h => h.value);
     
     // Get item name in current language
@@ -734,19 +745,17 @@ const ActiveAlarmsPage: React.FC = () => {
         },
       },
       grid: {
-        left: isRTL ? '15%' : '10%',
-        right: isRTL ? '10%' : '5%',
-        bottom: '15%',
-        top: '10%',
+        left: isRTL ? '3%' : '3%',
+        right: isRTL ? '3%' : '3%',
+        bottom: '3%',
+        top: '3%',
+        containLabel: true,
       },
       xAxis: {
         type: 'category',
         data: times,
         axisLabel: {
-          color: theme.palette.text.secondary,
-          rotate: 45,
-          fontFamily,
-          interval: Math.floor((times.length - 1) / 2), // Show approximately 3 labels
+          show: false, // Hide x-axis labels
         },
         axisLine: {
           lineStyle: {
@@ -1394,7 +1403,7 @@ const ActiveAlarmsPage: React.FC = () => {
         </DialogTitle>
         <DialogContent dividers data-id-ref="value-history-modal-content">
           {selectedHistoryItem && (
-            <Box sx={{ height: 400, width: '100%' }} data-id-ref="value-history-chart-container">
+            <Box sx={{ height: 500, width: '100%' }} data-id-ref="value-history-chart-container">
               <ReactECharts
                 option={getHistoryChartOptions()}
                 style={{ height: '100%', width: '100%' }}

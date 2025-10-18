@@ -122,8 +122,19 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const getHistoryChartOptions = (): EChartsOption => {
     if (!valueHistory || valueHistory.length === 0) return {};
 
-    // Prepare data
-    const times = valueHistory.map(h => new Date(h.time).toLocaleTimeString(language === 'fa' ? 'fa-IR' : 'en-US'));
+    // Prepare data - convert Unix timestamp (seconds) to milliseconds and format full date/time
+    const times = valueHistory.map(h => {
+      const date = new Date(h.time * 1000); // Convert Unix timestamp to milliseconds
+      return date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    });
     const values = valueHistory.map(h => h.value);
     
     // Get unit suffix in current language
@@ -144,10 +155,10 @@ const ItemCard: React.FC<ItemCardProps> = ({
         },
       },
       grid: {
-        left: isRTL ? '15%' : '10%',
-        right: isRTL ? '10%' : '15%',
-        bottom: '15%',
-        top: '15%',
+        left: isRTL ? '3%' : '3%',
+        right: isRTL ? '3%' : '3%',
+        bottom: '3%',
+        top: '3%',
         containLabel: true,
       },
       xAxis: {
@@ -155,15 +166,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
         data: times,
         boundaryGap: false,
         axisLabel: {
-          fontFamily,
-          rotate: 45,
-        },
-        name: t('time'),
-        nameLocation: 'middle',
-        nameGap: 50,
-        nameTextStyle: {
-          fontFamily,
-          fontSize: 12,
+          show: false, // Hide x-axis labels
         },
       },
       yAxis: {
@@ -470,11 +473,11 @@ const ItemCard: React.FC<ItemCardProps> = ({
         </IconButton>
       </DialogTitle>
       <Divider />
-      <DialogContent sx={{ pt: 2 }} data-id-ref="item-card-history-modal-content">
+      <DialogContent sx={{ pt: 2, pb: 2 }} data-id-ref="item-card-history-modal-content">
         <Box 
           sx={{ 
             width: '100%', 
-            height: 400,
+            height: 500,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
