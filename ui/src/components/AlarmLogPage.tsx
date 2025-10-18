@@ -272,8 +272,6 @@ const AlarmLogPage: React.FC = () => {
         sortable: true,
         filter: 'agTextColumnFilter',
         resizable: true,
-        wrapText: true,
-        autoHeight: true,
       },
       {
         field: 'isActive',
@@ -606,7 +604,41 @@ const AlarmLogPage: React.FC = () => {
               <LazyAGGrid
                 columnDefs={columnDefs}
                 rowData={rowData}
+                theme="quartz"
+                height="100%"
+                width="100%"
                 onGridReady={onGridReadyInternal}
+                gridOptions={{
+                  enableRtl: language === 'fa',
+                  pagination: true,
+                  paginationPageSize: isMobile ? 20 : 50,
+                  paginationAutoPageSize: false,
+                  suppressMenuHide: true,
+                  enableCellTextSelection: true,
+                  animateRows: true,
+                  cellSelection: true,
+                  rowHeight: 50,
+                  headerHeight: 50,
+                  sideBar: false,
+                  statusBar: {
+                    statusPanels: [
+                      { statusPanel: 'agTotalRowCountComponent', align: 'left' },
+                      { statusPanel: 'agFilteredRowCountComponent' },
+                      { statusPanel: 'agAggregationComponent' }
+                    ]
+                  },
+                  rowSelection: {
+                    mode: 'singleRow',
+                    checkboxes: false,
+                  },
+                  defaultColDef: {
+                    resizable: true,
+                    sortable: true,
+                    filter: true,
+                    flex: 1,
+                    minWidth: 120,
+                  },
+                }}
                 data-id-ref="alarm-log-ag-grid"
               />
             </Box>
