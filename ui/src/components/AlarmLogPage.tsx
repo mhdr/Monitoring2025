@@ -228,11 +228,31 @@ const AlarmLogPage: React.FC = () => {
     }
   };
 
-  // Fetch data on mount and when preset changes
+  // Fetch data on mount and when preset changes (not when custom dates change)
   useEffect(() => {
     fetchAlarmHistoryData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPreset]);
+
+  // Convert Unix timestamp to datetime-local format for input
+  const unixToDateTimeLocal = (unix: number): string => {
+    const date = new Date(unix * 1000);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Initialize custom dates when switching to custom preset
+  useEffect(() => {
+    if (selectedPreset === 'custom' && !customStartDate && !customEndDate) {
+      const { startDate, endDate } = getDateRange;
+      setCustomStartDate(unixToDateTimeLocal(startDate));
+      setCustomEndDate(unixToDateTimeLocal(endDate));
+    }
+  }, [selectedPreset, customStartDate, customEndDate, getDateRange]);
 
   // Prepare AG Grid column definitions
   const columnDefs = useMemo<AGGridColumnDef[]>(() => {
@@ -351,133 +371,134 @@ const AlarmLogPage: React.FC = () => {
       data-id-ref="alarm-log-page-container" 
       sx={{ 
         height: '100%', 
-        width: '100%', 
         display: 'flex', 
         flexDirection: 'column',
-        gap: 2,
-        p: 3,
+        p: isMobile ? 1 : 3,
+        maxWidth: '100%',
       }}
     >
       {/* Date Range Selection Card */}
-      <Card data-id-ref="alarm-log-date-range-card" elevation={2}>
-        <CardContent>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: dateRangeCollapsed ? 0 : 2,
-            }}
-          >
-            <Typography variant="h6" data-id-ref="alarm-log-date-range-title">
-              {t('dateRange')}
-            </Typography>
-            {isMobile && (
-              <IconButton
-                onClick={() => setDateRangeCollapsed(!dateRangeCollapsed)}
-                data-id-ref="alarm-log-date-range-collapse-button"
-                aria-label={dateRangeCollapsed ? t('expand') : t('collapse')}
-              >
-                {dateRangeCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-              </IconButton>
-            )}
-          </Box>
+      <Card data-id-ref="alarm-log-date-range-card" sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2,
+            py: 1.5,
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold" data-id-ref="alarm-log-date-range-title">
+            {t('dateRange')}
+          </Typography>
+          {/* Toggle button visible only on mobile */}
+          {isMobile && (
+            <IconButton
+              size="small"
+              onClick={() => setDateRangeCollapsed((s) => !s)}
+              aria-expanded={!dateRangeCollapsed}
+              data-id-ref="alarm-log-date-range-collapse-button"
+            >
+              {dateRangeCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+            </IconButton>
+          )}
+        </Box>
 
-          <Collapse in={!dateRangeCollapsed}>
+        {/* Card body: hidden on mobile when collapsed */}
+        <Collapse in={!isMobile || !dateRangeCollapsed}>
+          <CardContent sx={{ p: isMobile ? 2 : 3 }} data-id-ref="alarm-log-date-range-card-body">
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: isMobile ? 'column' : 'row',
+                flexDirection: { xs: 'column', md: 'row' },
+                alignItems: { xs: 'stretch', md: 'flex-end' },
                 gap: 2,
-                alignItems: isMobile ? 'stretch' : 'center',
               }}
             >
               {/* Preset Buttons */}
               <ButtonGroup
                 variant="outlined"
-                orientation={isMobile ? 'vertical' : 'horizontal'}
+                size="small"
+                sx={{ flexWrap: 'wrap' }}
                 data-id-ref="alarm-log-date-range-preset-buttons"
-                sx={{ flexShrink: 0 }}
               >
                 <Button
-                  onClick={() => setSelectedPreset('last24Hours')}
                   variant={selectedPreset === 'last24Hours' ? 'contained' : 'outlined'}
+                  onClick={() => setSelectedPreset('last24Hours')}
                   data-id-ref="alarm-log-preset-last-24-hours"
                 >
                   {t('last24Hours')}
                 </Button>
                 <Button
-                  onClick={() => setSelectedPreset('last7Days')}
                   variant={selectedPreset === 'last7Days' ? 'contained' : 'outlined'}
+                  onClick={() => setSelectedPreset('last7Days')}
                   data-id-ref="alarm-log-preset-last-7-days"
                 >
                   {t('last7Days')}
                 </Button>
                 <Button
-                  onClick={() => setSelectedPreset('last30Days')}
                   variant={selectedPreset === 'last30Days' ? 'contained' : 'outlined'}
+                  onClick={() => setSelectedPreset('last30Days')}
                   data-id-ref="alarm-log-preset-last-30-days"
                 >
                   {t('last30Days')}
                 </Button>
                 <Button
-                  onClick={() => setSelectedPreset('custom')}
                   variant={selectedPreset === 'custom' ? 'contained' : 'outlined'}
+                  onClick={() => setSelectedPreset('custom')}
                   data-id-ref="alarm-log-preset-custom"
                 >
-                  {t('custom')}
+                  {t('customRange')}
                 </Button>
               </ButtonGroup>
 
               {/* Custom Date Range Picker (only shown when custom is selected) */}
               {selectedPreset === 'custom' && (
-                <Box sx={{ flex: 1, display: 'flex', gap: 2, flexDirection: isMobile ? 'column' : 'row' }}>
+                <>
                   <SeparatedDateTimePicker
                     id="alarm-log-custom-start-date"
                     value={customStartDate}
                     onChange={setCustomStartDate}
                     data-id-ref="alarm-log-custom-start-date"
+                    className=""
                     dateLabel={t('startDate')}
+                    timeLabel={t('startTime')}
                   />
                   <SeparatedDateTimePicker
                     id="alarm-log-custom-end-date"
                     value={customEndDate}
                     onChange={setCustomEndDate}
                     data-id-ref="alarm-log-custom-end-date"
+                    className=""
                     dateLabel={t('endDate')}
+                    timeLabel={t('endTime')}
                   />
-                  <Button
-                    variant="contained"
-                    onClick={fetchAlarmHistoryData}
-                    disabled={!customStartDate || !customEndDate || loading}
-                    data-id-ref="alarm-log-custom-apply-button"
-                    startIcon={<RefreshIcon />}
-                  >
-                    {t('apply')}
-                  </Button>
-                </Box>
+                </>
               )}
 
-              {/* Refresh button for non-custom presets */}
-              {selectedPreset !== 'custom' && (
-                <Button
-                  variant="contained"
-                  onClick={fetchAlarmHistoryData}
-                  disabled={loading}
-                  startIcon={loading ? <CircularProgress size={20} /> : <RefreshIcon />}
-                  data-id-ref="alarm-log-refresh-button"
-                >
-                  {t('refresh')}
-                </Button>
-              )}
+              {/* Refresh Button */}
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={fetchAlarmHistoryData}
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={20} /> : <RefreshIcon />}
+                data-id-ref="alarm-log-refresh-button"
+                sx={{ ml: { md: 'auto' } }}
+              >
+                {t('refresh')}
+              </Button>
             </Box>
-          </Collapse>
-        </CardContent>
+          </CardContent>
+        </Collapse>
       </Card>
 
       {/* Data Grid Card */}
-      <Card data-id-ref="alarm-log-data-grid-card" elevation={2} sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
+      <Card data-id-ref="alarm-log-data-grid-card" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: isMobile ? 2 : 3 }}>
           {/* Toolbar */}
           <Box
             sx={{
