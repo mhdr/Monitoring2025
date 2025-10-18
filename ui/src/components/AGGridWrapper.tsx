@@ -22,7 +22,7 @@ import {
   ClientSideRowModelModule, TextEditorModule, NumberEditorModule,
   DateEditorModule, TextFilterModule, NumberFilterModule, DateFilterModule,
   PaginationModule, CsvExportModule, ValidationModule, LocaleModule,
-  RowSelectionModule, ColumnApiModule
+  RowSelectionModule, ColumnApiModule, RowAutoHeightModule
 } from 'ag-grid-community';
 
 import {
@@ -34,7 +34,7 @@ import {
 ModuleRegistry.registerModules([
   ClientSideRowModelModule, TextEditorModule, NumberEditorModule, DateEditorModule,
   TextFilterModule, NumberFilterModule, DateFilterModule, PaginationModule, CsvExportModule,
-  ValidationModule, LocaleModule, RowSelectionModule, ColumnApiModule,
+  ValidationModule, LocaleModule, RowSelectionModule, ColumnApiModule, RowAutoHeightModule,
   RowGroupingModule, SetFilterModule, MultiFilterModule, ExcelExportModule, ClipboardModule,
   ColumnsToolPanelModule, FiltersToolPanelModule, SideBarModule, StatusBarModule,
   ContextMenuModule, ColumnMenuModule, CellSelectionModule, PivotModule,
