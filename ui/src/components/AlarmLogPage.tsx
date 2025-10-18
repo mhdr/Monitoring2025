@@ -326,9 +326,36 @@ const AlarmLogPage: React.FC = () => {
         hour12: language === 'en',
       });
 
-      // Parse alarmLog JSON to extract the Message field
+      // Get item and alarm from IndexedDB maps
+      const item = alarm.itemId ? itemsMap.get(alarm.itemId) : undefined;
+      const alarmConfig = alarm.alarmId ? alarmsMap.get(alarm.alarmId) : undefined;
+
+      // Get alarm message based on language
+      // Priority: 
+      // 1. AlarmDto messageFa (Persian) / message (English) from alarm configuration
+      // 2. alarmLog JSON Message field (fallback - usually English only)
+      // 
+      // NOTE: If Persian messages are not showing, ensure that alarm configurations
+      // in the database have the messageFa field populated. This can be done through
+      // the Management page when creating or editing alarms.
       let alarmMessage = '';
-      if (alarm.alarmLog) {
+      if (alarmConfig) {
+        // Use messageFa for Persian, message for English
+        alarmMessage = language === 'fa' 
+          ? (alarmConfig.messageFa || alarmConfig.message || '')
+          : (alarmConfig.message || '');
+        
+        // Log when Persian message is missing but we're in Persian mode
+        if (language === 'fa' && !alarmConfig.messageFa && alarmConfig.message) {
+          logger.warn('[AlarmLogPage] Persian message (messageFa) not found for alarm, using English message', {
+            alarmId: alarm.alarmId,
+            englishMessage: alarmConfig.message
+          });
+        }
+      }
+      
+      // Fallback to alarmLog JSON if no message in alarm config
+      if (!alarmMessage && alarm.alarmLog) {
         try {
           const alarmLogData = JSON.parse(alarm.alarmLog);
           alarmMessage = alarmLogData.Message || alarm.alarmLog;
@@ -337,10 +364,6 @@ const AlarmLogPage: React.FC = () => {
           alarmMessage = alarm.alarmLog;
         }
       }
-
-      // Get item and alarm from IndexedDB maps
-      const item = alarm.itemId ? itemsMap.get(alarm.itemId) : undefined;
-      const alarmConfig = alarm.alarmId ? alarmsMap.get(alarm.alarmId) : undefined;
 
       // Get item name based on language
       const itemName = item 
