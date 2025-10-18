@@ -125,8 +125,18 @@ public class SignalRBroadcastService
                             .ToListAsync(cancellationToken);
 
                         // Filter active alarms to only those the user has permission to see
-                        userAlarmCount = activeAlarms
-                            .Count(alarm => userPermissions.Contains(alarm.ItemId));
+
+                        var count = 0;
+
+                        foreach (var alarm in activeAlarms)
+                        {
+                            if (userPermissions.Contains(alarm.ItemId))
+                            {
+                                count++;
+                            }
+                        }
+
+                        userAlarmCount = count;
 
                         _logger.LogDebug(
                             "{Operation}: User {UserId} ({UserName}) has {PermissionCount} item permissions, showing {AlarmCount} alarms",
