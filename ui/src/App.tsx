@@ -6,6 +6,7 @@ import { useTranslation } from './hooks/useTranslation';
 import { useRoutePreloader } from './hooks/useRoutePreloader';
 import { useAuth } from './hooks/useAuth';
 import { useSignalR } from './hooks/useSignalR';
+import { useActiveAlarmCount } from './hooks/useActiveAlarmCount';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -243,6 +244,10 @@ function App() {
   // SignalR real-time connection for active alarms
   // Automatically connects when authenticated, disconnects on logout
   useSignalR(isAuthenticated, isAuthLoading);
+
+  // Fetch active alarm count for sidebar badge
+  // Fetches when authenticated and data is synced, refreshes periodically
+  useActiveAlarmCount(isAuthenticated, isAuthLoading);
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {

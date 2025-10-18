@@ -12,6 +12,7 @@ import {
   getAlarms, 
   getValues 
 } from '../services/api';
+import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 import { getItem, setItem, removeItem } from '../utils/indexedDbStorage';
 import { createLogger } from '../utils/logger';
@@ -354,6 +355,7 @@ export interface MonitoringContextValue {
   fetchItems: () => Promise<void>;
   fetchAlarms: () => Promise<void>;
   fetchValues: (itemIds: string[]) => Promise<void>;
+  fetchActiveAlarmCount: () => Promise<void>;
   
   // Navigation actions
   setCurrentFolderId: (folderId: string | null) => void;
@@ -521,6 +523,51 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
     }
   }, []);
 
+  // Fetch active alarm count
+  const fetchActiveAlarmCount = useCallback(async () => {
+    try {
+      logger.log('Fetching active alarm count for sidebar badge...');
+      
+      // Get items from IndexedDB to extract itemIds
+      const storedItems = await monitoringStorageHelpers.getStoredItems();
+      
+      if (!storedItems || storedItems.length === 0) {
+        logger.warn('No items found in IndexedDB, cannot fetch active alarm count');
+        dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: 0, timestamp: Date.now() } });
+        return;
+      }
+      
+      // Extract itemIds from stored items
+      const itemIds = storedItems
+        .map(item => item.id)
+        .filter((id): id is string => id !== null && id !== undefined);
+      
+      if (itemIds.length === 0) {
+        logger.warn('No valid itemIds found, setting alarm count to 0');
+        dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: 0, timestamp: Date.now() } });
+        return;
+      }
+      
+      // Call API with itemIds parameter
+      const response = await getActiveAlarms({ itemIds });
+      
+      // FIX: API returns nested structure {data: {data: ActiveAlarm[]}}
+      // TypeScript types don't match the actual API response
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const alarmsData = (response as any).data.data || [];
+      
+      logger.log('Active alarm count fetched successfully:', {
+        count: alarmsData.length,
+      });
+      
+      // Update the context's alarm count
+      dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: alarmsData.length, timestamp: Date.now() } });
+    } catch (error) {
+      logger.error('Failed to fetch active alarm count:', error);
+      // Don't throw error - this is a non-critical background operation
+    }
+  }, []);
+
   // Navigation actions
   const setCurrentFolderId = useCallback((folderId: string | null) => {
     dispatch({ type: 'SET_CURRENT_FOLDER_ID', payload: folderId });
@@ -678,6 +725,7 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       fetchItems,
       fetchAlarms,
       fetchValues,
+      fetchActiveAlarmCount,
       setCurrentFolderId,
       setDataSynced,
       clearDataSyncStatus,
@@ -697,6 +745,7 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       fetchItems,
       fetchAlarms,
       fetchValues,
+      fetchActiveAlarmCount,
       setCurrentFolderId,
       setDataSynced,
       clearDataSyncStatus,
