@@ -837,6 +837,303 @@ The active alarms worker was not disposing database contexts properly
 
 ---
 
+## 🔍 Debugging & Troubleshooting Strategies
+
+### Advanced Debugging Techniques
+
+**Enable detailed logging in development:**
+```json
+// appsettings.Development.json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information",
+      "Microsoft.EntityFrameworkCore": "Information",
+      "Microsoft.AspNetCore.SignalR": "Debug",
+      "Microsoft.AspNetCore.Http.Connections": "Debug"
+    }
+  }
+}
+```
+
+**Debug SignalR issues:**
+```csharp
+// Enable detailed SignalR logging
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    options.MaximumReceiveMessageSize = 102400; // 100 KB
+    options.StreamBufferCapacity = 10;
+});
+```
+
+**Debug Entity Framework queries:**
+```csharp
+// Log SQL queries to console
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseNpgsql(connectionString)
+        .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
+        .EnableDetailedErrors(builder.Environment.IsDevelopment())
+        .LogTo(Console.WriteLine, LogLevel.Information);
+});
+```
+
+### Common Issues & Solutions
+
+**Issue: EF Core tracking conflicts**
+```csharp
+// Solution: Detach entity before re-attaching
+_context.Entry(existingEntity).State = EntityState.Detached;
+var updated = await _context.Users.FindAsync(userId);
+```
+
+**Issue: SignalR connection drops**
+```csharp
+// Solution: Configure keep-alive and timeout
+builder.Services.AddSignalR(options =>
+{
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+    options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+});
+```
+
+**Issue: Circular reference in JSON serialization**
+```csharp
+// Solution: Configure JSON options
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
+```
+
+**Issue: Database connection pool exhaustion**
+```csharp
+// Solution: Configure connection pool limits
+"ConnectionStrings": {
+  "DefaultConnection": "Host=localhost;Database=monitoring;Username=user;Password=pass;Pooling=true;Minimum Pool Size=5;Maximum Pool Size=100;Connection Idle Lifetime=300"
+}
+```
+
+---
+
+## 🌐 Deployment & DevOps
+
+### Docker Support
+
+**Dockerfile example:**
+```dockerfile
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+WORKDIR /app
+EXPOSE 7136
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+COPY ["API/API.csproj", "API/"]
+COPY ["Core/Core.csproj", "Core/"]
+COPY ["DB.User/DB.User.csproj", "DB.User/"]
+COPY ["Contracts/Contracts.csproj", "Contracts/"]
+COPY ["Share/Share.csproj", "Share/"]
+RUN dotnet restore "API/API.csproj"
+COPY . .
+WORKDIR "/src/API"
+RUN dotnet build "API.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "API.dll"]
+```
+
+**docker-compose.yml example:**
+```yaml
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: API/Dockerfile
+    ports:
+      - "7136:7136"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=monitoring_users;Username=postgres;Password=postgres
+      - ConnectionStrings__RabbitMQ=amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - monitoring-network
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: monitoring_users
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - monitoring-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - monitoring-network
+
+volumes:
+  postgres-data:
+
+networks:
+  monitoring-network:
+    driver: bridge
+```
+
+### CI/CD Pipeline (GitHub Actions)
+
+**.github/workflows/dotnet.yml:**
+```yaml
+name: .NET CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 9.0.x
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Test
+      run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+    
+    - name: Code Coverage Report
+      uses: codecov/codecov-action@v3
+      with:
+        files: '**/coverage.cobertura.xml'
+        flags: unittests
+        name: codecov-umbrella
+    
+    - name: Publish
+      run: dotnet publish --no-build --configuration Release --output ./publish
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-publish
+        path: ./publish
+```
+
+### Environment Configuration
+
+**Use environment-specific settings:**
+```json
+// appsettings.Production.json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Warning"
+    }
+  },
+  "AllowedHosts": "yourdomain.com",
+  "JwtConfig": {
+    "Issuer": "https://api.yourdomain.com",
+    "Audience": "https://yourdomain.com"
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Use environment variable or Azure Key Vault"
+  }
+}
+```
+
+**Read from environment variables:**
+```csharp
+// In Program.cs
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING")
+    ?? throw new InvalidOperationException("Database connection string not configured");
+```
+
+---
+
+## 📋 Code Review Checklist
+
+### Pre-Commit Checklist
+
+**Code Quality:**
+- [ ] No commented-out code (remove or document why it's needed)
+- [ ] No hardcoded values (use configuration or constants)
+- [ ] No `TODO` comments without tracking ticket reference
+- [ ] No console.WriteLine (use ILogger)
+- [ ] No empty catch blocks
+- [ ] All public members have XML documentation
+- [ ] Method names are descriptive and follow conventions
+- [ ] No magic numbers (use named constants)
+
+**Security:**
+- [ ] No sensitive data in logs or error messages
+- [ ] All user inputs are validated
+- [ ] SQL queries use parameterization
+- [ ] Authentication/authorization applied to protected endpoints
+- [ ] No secrets in code (use configuration/secrets manager)
+- [ ] HTTPS enforced
+- [ ] CORS configured appropriately
+
+**Performance:**
+- [ ] Async/await used correctly (no blocking calls)
+- [ ] Database queries are efficient (no N+1 problems)
+- [ ] Large datasets use pagination or streaming
+- [ ] Proper use of caching where appropriate
+- [ ] Dispose pattern implemented for IDisposable resources
+
+**Testing:**
+- [ ] Unit tests written for new functionality
+- [ ] Integration tests for API endpoints
+- [ ] Edge cases tested
+- [ ] Error scenarios tested
+- [ ] All tests pass locally
+
+**Documentation:**
+- [ ] XML comments on all public members
+- [ ] API.http examples added for new endpoints
+- [ ] README.md updated if needed
+- [ ] Swagger documentation complete
+
+---
+
 ## 🎓 Learning Resources
 
 ### Official Documentation
@@ -844,12 +1141,861 @@ The active alarms worker was not disposing database contexts properly
 - [Entity Framework Core](https://docs.microsoft.com/ef/core)
 - [SignalR in .NET](https://docs.microsoft.com/aspnet/core/signalr)
 - [MassTransit Documentation](https://masstransit.io/documentation)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [RabbitMQ Documentation](https://www.rabbitmq.com/documentation.html)
 
 ### Best Practices
 - [REST API Design Guidelines](https://docs.microsoft.com/azure/architecture/best-practices/api-design)
 - [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
 - [Structured Logging Best Practices](https://stackify.com/structured-logging-best-practices/)
+- [Clean Code Principles](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)
+- [SOLID Principles in C#](https://www.c-sharpcorner.com/UploadFile/damubetha/solid-principles-in-C-Sharp/)
+
+### Advanced Topics
+- [Microservices Architecture](https://docs.microsoft.com/azure/architecture/microservices/)
+- [Event-Driven Architecture](https://docs.microsoft.com/azure/architecture/guide/architecture-styles/event-driven)
+- [Domain-Driven Design](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/)
+- [CQRS Pattern](https://docs.microsoft.com/azure/architecture/patterns/cqrs)
+- [API Gateway Pattern](https://docs.microsoft.com/azure/architecture/microservices/design/gateway)
 
 ---
 
-**Last Updated:** October 2025
+## 🏥 Health Checks & Observability
+
+### Health Check Endpoints
+
+**Implement health checks for production monitoring:**
+
+```csharp
+// In Program.cs - Add health checks
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection"), name: "database")
+    .AddRabbitMQ(builder.Configuration.GetConnectionString("RabbitMQ"), name: "rabbitmq")
+    .AddCheck<SignalRHealthCheck>("signalr");
+
+// After app.UseAuthorization();
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false, // Just check if API is running
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+```
+
+**Custom Health Check Example:**
+```csharp
+public class SignalRHealthCheck : IHealthCheck
+{
+    private readonly IHubContext<MonitoringHub> _hubContext;
+    private readonly ILogger<SignalRHealthCheck> _logger;
+
+    public SignalRHealthCheck(IHubContext<MonitoringHub> hubContext, ILogger<SignalRHealthCheck> logger)
+    {
+        _hubContext = hubContext;
+        _logger = logger;
+    }
+
+    public async Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context, 
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Verify hub context is available
+            if (_hubContext == null)
+            {
+                return HealthCheckResult.Unhealthy("SignalR hub context is null");
+            }
+
+            return HealthCheckResult.Healthy("SignalR hub is operational");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SignalR health check failed");
+            return HealthCheckResult.Unhealthy("SignalR hub check failed", ex);
+        }
+    }
+}
+```
+
+### Structured Logging Best Practices
+
+**Use log scopes for correlation:**
+```csharp
+using (_logger.BeginScope(new Dictionary<string, object>
+{
+    ["UserId"] = userId,
+    ["Operation"] = "AddUser",
+    ["CorrelationId"] = correlationId
+}))
+{
+    _logger.LogInformation("Starting user creation");
+    // operation code
+    _logger.LogInformation("User created successfully");
+}
+```
+
+**Performance Logging:**
+```csharp
+var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+try
+{
+    var result = await PerformOperationAsync();
+    stopwatch.Stop();
+    _logger.LogInformation("Operation completed in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+    
+    if (stopwatch.ElapsedMilliseconds > 1000)
+    {
+        _logger.LogWarning("Slow operation detected: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+    }
+    
+    return result;
+}
+catch (Exception ex)
+{
+    stopwatch.Stop();
+    _logger.LogError(ex, "Operation failed after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+    throw;
+}
+```
+
+---
+
+## 🧪 Testing Strategy
+
+### Unit Testing
+
+**Controller Unit Test Example:**
+```csharp
+public class AuthControllerTests
+{
+    private readonly Mock<ILogger<AuthController>> _loggerMock;
+    private readonly Mock<JwtTokenService> _tokenServiceMock;
+    private readonly Mock<UserManager<AppUser>> _userManagerMock;
+    
+    public AuthControllerTests()
+    {
+        _loggerMock = new Mock<ILogger<AuthController>>();
+        _tokenServiceMock = new Mock<JwtTokenService>();
+        _userManagerMock = MockUserManager();
+    }
+    
+    [Fact]
+    public async Task Login_WithValidCredentials_ReturnsOkWithToken()
+    {
+        // Arrange
+        var controller = new AuthController(_loggerMock.Object, _tokenServiceMock.Object, _userManagerMock.Object);
+        var request = new LoginRequestDto { UserName = "testuser", Password = "Test123!" };
+        
+        _userManagerMock.Setup(x => x.FindByNameAsync(request.UserName))
+            .ReturnsAsync(new AppUser { UserName = request.UserName });
+        _userManagerMock.Setup(x => x.CheckPasswordAsync(It.IsAny<AppUser>(), request.Password))
+            .ReturnsAsync(true);
+        _tokenServiceMock.Setup(x => x.GenerateToken(It.IsAny<AppUser>()))
+            .Returns("fake-jwt-token");
+        
+        // Act
+        var result = await controller.Login(request);
+        
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsAssignableFrom<AuthResponseDto>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Token);
+    }
+    
+    [Fact]
+    public async Task Login_WithInvalidCredentials_ReturnsBadRequest()
+    {
+        // Arrange
+        var controller = new AuthController(_loggerMock.Object, _tokenServiceMock.Object, _userManagerMock.Object);
+        var request = new LoginRequestDto { UserName = "testuser", Password = "WrongPassword" };
+        
+        _userManagerMock.Setup(x => x.FindByNameAsync(request.UserName))
+            .ReturnsAsync(new AppUser { UserName = request.UserName });
+        _userManagerMock.Setup(x => x.CheckPasswordAsync(It.IsAny<AppUser>(), request.Password))
+            .ReturnsAsync(false);
+        
+        // Act
+        var result = await controller.Login(request);
+        
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.NotNull(badRequestResult.Value);
+    }
+    
+    private Mock<UserManager<AppUser>> MockUserManager()
+    {
+        var store = new Mock<IUserStore<AppUser>>();
+        return new Mock<UserManager<AppUser>>(
+            store.Object, null, null, null, null, null, null, null, null);
+    }
+}
+```
+
+### Integration Testing
+
+**API Integration Test Example:**
+```csharp
+public class MonitoringControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly WebApplicationFactory<Program> _factory;
+    private readonly HttpClient _client;
+    
+    public MonitoringControllerIntegrationTests(WebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+        _client = _factory.CreateClient();
+    }
+    
+    [Fact]
+    public async Task GetGroups_WithAuthentication_ReturnsGroups()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        
+        // Act
+        var response = await _client.PostAsync("/api/Monitoring/Groups", new StringContent("{}", Encoding.UTF8, "application/json"));
+        
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonConvert.DeserializeObject<GroupsResponseDto>(content);
+        Assert.NotNull(result);
+        Assert.NotNull(result.Data);
+    }
+    
+    [Fact]
+    public async Task GetGroups_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Act
+        var response = await _client.PostAsync("/api/Monitoring/Groups", new StringContent("{}", Encoding.UTF8, "application/json"));
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+    
+    private async Task<string> GetAuthTokenAsync()
+    {
+        var loginRequest = new LoginRequestDto { UserName = "testuser", Password = "Test123!" };
+        var content = new StringContent(JsonConvert.SerializeObject(loginRequest), Encoding.UTF8, "application/json");
+        var response = await _client.PostAsync("/api/Auth/Login", content);
+        var result = await response.Content.ReadAsStringAsync();
+        var authResponse = JsonConvert.DeserializeObject<AuthResponseDto>(result);
+        return authResponse.Token;
+    }
+}
+```
+
+### SignalR Hub Testing
+
+**Hub Method Test Example:**
+```csharp
+public class MonitoringHubTests
+{
+    private readonly Mock<ILogger<MonitoringHub>> _loggerMock;
+    private readonly Mock<ConnectionTrackingService> _connectionServiceMock;
+    
+    [Fact]
+    public async Task SubscribeToActiveAlarms_LogsSubscription()
+    {
+        // Arrange
+        _loggerMock = new Mock<ILogger<MonitoringHub>>();
+        _connectionServiceMock = new Mock<ConnectionTrackingService>();
+        var hub = new MonitoringHub(_loggerMock.Object, _connectionServiceMock.Object);
+        
+        var mockContext = new Mock<HubCallerContext>();
+        mockContext.Setup(c => c.ConnectionId).Returns("test-connection-id");
+        hub.Context = mockContext.Object;
+        
+        // Act
+        await hub.SubscribeToActiveAlarms();
+        
+        // Assert
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("test-connection-id")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+}
+```
+
+### Background Worker Testing
+
+**Worker Test Example:**
+```csharp
+public class ActiveAlarmsBackgroundWorkerTests
+{
+    [Fact]
+    public async Task ExecuteAsync_BroadcastsActiveAlarmCount()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<ActiveAlarmsBackgroundWorker>>();
+        var hubContextMock = new Mock<IHubContext<MonitoringHub>>();
+        var clientsMock = new Mock<IHubClients>();
+        var clientProxyMock = new Mock<IClientProxy>();
+        
+        hubContextMock.Setup(h => h.Clients).Returns(clientsMock.Object);
+        clientsMock.Setup(c => c.All).Returns(clientProxyMock.Object);
+        
+        var worker = new ActiveAlarmsBackgroundWorker(loggerMock.Object, hubContextMock.Object);
+        var cts = new CancellationTokenSource();
+        
+        // Act
+        var task = worker.StartAsync(cts.Token);
+        await Task.Delay(2000); // Let it run for 2 seconds
+        cts.Cancel();
+        await task;
+        
+        // Assert
+        clientProxyMock.Verify(
+            x => x.SendCoreAsync(
+                "ReceiveActiveAlarmsUpdate",
+                It.IsAny<object[]>(),
+                It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce);
+    }
+}
+```
+
+### Test Naming Convention
+
+Use descriptive test names that follow the pattern:
+```
+MethodName_Scenario_ExpectedResult
+```
+
+Examples:
+- `Login_WithValidCredentials_ReturnsOkWithToken`
+- `GetGroups_WithoutAuthentication_ReturnsUnauthorized`
+- `AddUser_WithDuplicateUsername_ReturnsBadRequest`
+- `SubscribeToActiveAlarms_WithValidConnection_LogsSubscription`
+
+---
+
+## 🔐 Advanced Security Patterns
+
+### Rate Limiting
+
+**Implement rate limiting to prevent abuse:**
+```csharp
+// In Program.cs
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("fixed", options =>
+    {
+        options.PermitLimit = 100;
+        options.Window = TimeSpan.FromMinutes(1);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 0;
+    });
+    
+    options.AddTokenBucketLimiter("token", options =>
+    {
+        options.TokenLimit = 1000;
+        options.ReplenishmentPeriod = TimeSpan.FromMinutes(1);
+        options.TokensPerPeriod = 100;
+        options.AutoReplenishment = true;
+    });
+});
+
+// After app.UseAuthorization();
+app.UseRateLimiter();
+```
+
+**Apply to controllers:**
+```csharp
+[EnableRateLimiting("fixed")]
+[HttpPost("Login")]
+public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+{
+    // implementation
+}
+```
+
+### Input Sanitization
+
+**Sanitize user input to prevent XSS:**
+```csharp
+public static class InputSanitizer
+{
+    public static string SanitizeHtml(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        
+        // Remove HTML tags
+        var sanitized = System.Text.RegularExpressions.Regex.Replace(input, "<.*?>", string.Empty);
+        
+        // Encode special characters
+        sanitized = System.Web.HttpUtility.HtmlEncode(sanitized);
+        
+        return sanitized;
+    }
+    
+    public static string SanitizeFileName(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName)) return fileName;
+        
+        // Remove path traversal attempts
+        fileName = Path.GetFileName(fileName);
+        
+        // Remove invalid characters
+        var invalidChars = Path.GetInvalidFileNameChars();
+        return string.Join("_", fileName.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
+    }
+}
+```
+
+### Secure Configuration Management
+
+**Use Azure Key Vault or User Secrets:**
+```csharp
+// Development - use User Secrets
+// dotnet user-secrets init
+// dotnet user-secrets set "JwtConfig:SecretKey" "your-secret-key"
+
+// Production - use Azure Key Vault
+builder.Configuration.AddAzureKeyVault(
+    new Uri($"https://{keyVaultName}.vault.azure.net/"),
+    new DefaultAzureCredential());
+```
+
+**Validate configuration on startup:**
+```csharp
+public static class ConfigurationValidator
+{
+    public static void ValidateJwtConfig(JwtConfig config)
+    {
+        if (string.IsNullOrEmpty(config.SecretKey))
+            throw new InvalidOperationException("JWT SecretKey is not configured");
+        
+        if (config.SecretKey.Length < 32)
+            throw new InvalidOperationException("JWT SecretKey must be at least 32 characters");
+        
+        if (string.IsNullOrEmpty(config.Issuer))
+            throw new InvalidOperationException("JWT Issuer is not configured");
+        
+        if (string.IsNullOrEmpty(config.Audience))
+            throw new InvalidOperationException("JWT Audience is not configured");
+    }
+}
+```
+
+---
+
+## 🚀 Advanced Performance Patterns
+
+### Response Caching
+
+**Implement response caching for expensive operations:**
+```csharp
+// In Program.cs
+builder.Services.AddResponseCaching();
+builder.Services.AddMemoryCache();
+
+// After app.UseCors();
+app.UseResponseCaching();
+```
+
+**Apply to controllers:**
+```csharp
+[ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
+[HttpGet("SettingsVersion")]
+public async Task<IActionResult> SettingsVersion()
+{
+    // implementation
+}
+```
+
+**Custom caching with IMemoryCache:**
+```csharp
+private readonly IMemoryCache _cache;
+private const string GROUPS_CACHE_KEY = "monitoring_groups_{0}";
+private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
+
+public async Task<List<Group>> GetGroupsAsync(string userId)
+{
+    var cacheKey = string.Format(GROUPS_CACHE_KEY, userId);
+    
+    if (!_cache.TryGetValue(cacheKey, out List<Group> groups))
+    {
+        groups = await _dbContext.Groups
+            .Where(g => g.Users.Any(u => u.Id == userId))
+            .ToListAsync();
+        
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetSlidingExpiration(CacheDuration)
+            .SetAbsoluteExpiration(TimeSpan.FromHours(1))
+            .RegisterPostEvictionCallback((key, value, reason, state) =>
+            {
+                _logger.LogDebug("Cache entry {Key} evicted due to {Reason}", key, reason);
+            });
+        
+        _cache.Set(cacheKey, groups, cacheEntryOptions);
+        _logger.LogDebug("Cached groups for user {UserId}", userId);
+    }
+    
+    return groups;
+}
+
+public void InvalidateGroupsCache(string userId)
+{
+    var cacheKey = string.Format(GROUPS_CACHE_KEY, userId);
+    _cache.Remove(cacheKey);
+    _logger.LogDebug("Invalidated groups cache for user {UserId}", userId);
+}
+```
+
+### Database Query Optimization
+
+**Use compiled queries for frequently executed queries:**
+```csharp
+private static readonly Func<ApplicationDbContext, int, Task<User>> GetUserByIdCompiled =
+    EF.CompileAsyncQuery((ApplicationDbContext context, int userId) =>
+        context.Users
+            .Include(u => u.Groups)
+            .FirstOrDefault(u => u.Id == userId));
+
+public async Task<User> GetUserAsync(int userId)
+{
+    return await GetUserByIdCompiled(_dbContext, userId);
+}
+```
+
+**Use AsNoTracking for read-only queries:**
+```csharp
+public async Task<List<Group>> GetGroupsReadOnlyAsync()
+{
+    return await _dbContext.Groups
+        .AsNoTracking() // Don't track changes
+        .Include(g => g.Items)
+        .ToListAsync();
+}
+```
+
+**Batch operations:**
+```csharp
+public async Task UpdateMultipleItemsAsync(List<Item> items)
+{
+    // Use ExecuteUpdateAsync for bulk updates (EF Core 7+)
+    await _dbContext.Items
+        .Where(i => items.Select(x => x.Id).Contains(i.Id))
+        .ExecuteUpdateAsync(s => s
+            .SetProperty(i => i.UpdatedAt, DateTime.UtcNow)
+            .SetProperty(i => i.IsActive, true));
+}
+```
+
+### Async Stream for Large Datasets
+
+**Use IAsyncEnumerable for streaming large results:**
+```csharp
+/// <summary>
+/// Stream alarm history data to avoid loading entire dataset into memory
+/// </summary>
+[HttpPost("AlarmHistoryStream")]
+public async IAsyncEnumerable<AlarmHistoryDto> GetAlarmHistoryStream(
+    [FromBody] AlarmHistoryRequestDto request,
+    [EnumeratorCancellation] CancellationToken cancellationToken)
+{
+    var query = _dbContext.AlarmHistory
+        .Where(a => a.ItemId == request.ItemId)
+        .Where(a => a.Timestamp >= request.StartDate && a.Timestamp <= request.EndDate)
+        .OrderBy(a => a.Timestamp)
+        .AsAsyncEnumerable();
+    
+    await foreach (var alarm in query.WithCancellation(cancellationToken))
+    {
+        yield return new AlarmHistoryDto
+        {
+            Id = alarm.Id,
+            ItemId = alarm.ItemId,
+            Timestamp = alarm.Timestamp,
+            Value = alarm.Value,
+            AlarmType = alarm.AlarmType
+        };
+    }
+}
+```
+
+---
+
+## 📊 Monitoring & Metrics
+
+### Application Insights Integration
+
+**Add telemetry to track performance:**
+```csharp
+// In Program.cs
+builder.Services.AddApplicationInsightsTelemetry(options =>
+{
+    options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+    options.EnableAdaptiveSampling = true;
+    options.EnableQuickPulseMetricStream = true;
+});
+```
+
+**Track custom metrics:**
+```csharp
+private readonly TelemetryClient _telemetryClient;
+
+public async Task<IActionResult> PerformOperation()
+{
+    using var operation = _telemetryClient.StartOperation<RequestTelemetry>("CustomOperation");
+    try
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var result = await DoWorkAsync();
+        stopwatch.Stop();
+        
+        _telemetryClient.TrackMetric("OperationDuration", stopwatch.ElapsedMilliseconds);
+        _telemetryClient.TrackEvent("OperationCompleted", new Dictionary<string, string>
+        {
+            ["UserId"] = userId,
+            ["Result"] = "Success"
+        });
+        
+        return Ok(result);
+    }
+    catch (Exception ex)
+    {
+        operation.Telemetry.Success = false;
+        _telemetryClient.TrackException(ex);
+        throw;
+    }
+}
+```
+
+### Custom Middleware for Request Logging
+
+**Log all requests with timing:**
+```csharp
+public class RequestLoggingMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger<RequestLoggingMiddleware> _logger;
+
+    public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var correlationId = Guid.NewGuid().ToString();
+        context.Items["CorrelationId"] = correlationId;
+        
+        var stopwatch = Stopwatch.StartNew();
+        
+        try
+        {
+            _logger.LogInformation(
+                "Request started: {Method} {Path} | CorrelationId: {CorrelationId}",
+                context.Request.Method,
+                context.Request.Path,
+                correlationId);
+            
+            await _next(context);
+            
+            stopwatch.Stop();
+            
+            _logger.LogInformation(
+                "Request completed: {Method} {Path} | Status: {StatusCode} | Duration: {ElapsedMs}ms | CorrelationId: {CorrelationId}",
+                context.Request.Method,
+                context.Request.Path,
+                context.Response.StatusCode,
+                stopwatch.ElapsedMilliseconds,
+                correlationId);
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            
+            _logger.LogError(ex,
+                "Request failed: {Method} {Path} | Duration: {ElapsedMs}ms | CorrelationId: {CorrelationId}",
+                context.Request.Method,
+                context.Request.Path,
+                stopwatch.ElapsedMilliseconds,
+                correlationId);
+            
+            throw;
+        }
+    }
+}
+
+// Register in Program.cs after app.UseCors();
+app.UseMiddleware<RequestLoggingMiddleware>();
+```
+
+---
+
+## 🔄 Resilience & Fault Tolerance
+
+### Polly for Retry Logic
+
+**Install Polly:**
+```xml
+<PackageReference Include="Polly" Version="8.0.0" />
+<PackageReference Include="Polly.Extensions.Http" Version="3.0.0" />
+```
+
+**Configure retry policies:**
+```csharp
+// In Program.cs
+builder.Services.AddHttpClient("ExternalApi")
+    .AddPolicyHandler(GetRetryPolicy())
+    .AddPolicyHandler(GetCircuitBreakerPolicy());
+
+static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+{
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+        .WaitAndRetryAsync(
+            retryCount: 3,
+            sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+            onRetry: (outcome, timespan, retryAttempt, context) =>
+            {
+                var logger = context.GetLogger();
+                logger?.LogWarning(
+                    "Retry {RetryAttempt} after {Delay}s due to {Result}",
+                    retryAttempt,
+                    timespan.TotalSeconds,
+                    outcome.Result?.StatusCode);
+            });
+}
+
+static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
+{
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .CircuitBreakerAsync(
+            handledEventsAllowedBeforeBreaking: 5,
+            durationOfBreak: TimeSpan.FromSeconds(30),
+            onBreak: (outcome, breakDelay) =>
+            {
+                Console.WriteLine($"Circuit breaker opened for {breakDelay.TotalSeconds}s");
+            },
+            onReset: () =>
+            {
+                Console.WriteLine("Circuit breaker reset");
+            });
+}
+```
+
+### Database Connection Resilience
+
+**Configure retry on failure:**
+```csharp
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorCodesToAdd: null);
+            npgsqlOptions.CommandTimeout(30);
+        });
+});
+```
+
+---
+
+## 🎯 API Versioning
+
+### Implement API Versioning
+
+**Install package:**
+```xml
+<PackageReference Include="Asp.Versioning.Mvc" Version="8.0.0" />
+<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.0.0" />
+```
+
+**Configure versioning:**
+```csharp
+// In Program.cs
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = ApiVersionReader.Combine(
+        new UrlSegmentApiVersionReader(),
+        new HeaderApiVersionReader("X-Api-Version"));
+}).AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
+```
+
+**Apply versioning to controllers:**
+```csharp
+[ApiVersion("1.0")]
+[ApiVersion("2.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[ApiController]
+public class MonitoringController : ControllerBase
+{
+    [HttpGet("Groups")]
+    [MapToApiVersion("1.0")]
+    public async Task<IActionResult> GetGroupsV1()
+    {
+        // V1 implementation
+    }
+    
+    [HttpGet("Groups")]
+    [MapToApiVersion("2.0")]
+    public async Task<IActionResult> GetGroupsV2()
+    {
+        // V2 implementation with breaking changes
+    }
+}
+```
+
+---
+
+## 📖 Additional Resources
+
+### Code Analysis Tools
+- **SonarQube**: Continuous code quality inspection
+- **ReSharper**: Code analysis and refactoring
+- **StyleCop**: C# style and consistency checker
+- **Security Code Scan**: Security vulnerability analyzer
+
+### Recommended NuGet Packages
+- **FluentValidation**: Advanced model validation
+- **AutoMapper**: Object-to-object mapping
+- **Serilog**: Structured logging framework
+- **Bogus**: Fake data generation for testing
+- **Moq**: Mocking framework for unit tests
+- **xUnit/NUnit**: Testing frameworks
+- **Polly**: Resilience and fault-handling library
+
+### Performance Tools
+- **BenchmarkDotNet**: Benchmarking library
+- **MiniProfiler**: Profiling tool for ASP.NET
+- **Application Insights**: Azure monitoring service
+
+---
+
+**Last Updated:** October 2025 (v2.0 - Enhanced Edition)
