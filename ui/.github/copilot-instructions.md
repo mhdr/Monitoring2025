@@ -1,588 +1,102 @@
 # Monitoring2025 UI - Copilot Instructions
-**Enterprise React + TypeScript + Axios + Material-UI (MUI)**  
-**Bilingual (fa/en) • RTL/LTR Support • Real-time Monitoring • .NET Core API**
-
----
+**Enterprise React 18 + TypeScript 5 + Axios + Material-UI v6 + SignalR**  
+**Bilingual (fa/en) • RTL/LTR • Real-time Monitoring • .NET Core API**
 
 ## 📋 Quick Reference
 
-### Critical Decision Trees
-
-#### When to Use Which Pattern?
-
-**State Management:**
-```
-Local component state? → useState/useReducer
-Shared across 2-3 components? → Context API (AuthContext, LanguageContext, MonitoringContext)
-Complex app state? → Context API with useReducer
-Real-time streaming data? → SignalR + Context API
-```
-
-**Styling Approach:**
-```
-Simple styles? → MUI sx prop with theme values
-Component variants? → MUI styled() with theme
-Global styles? → GlobalStyles component
-Dynamic runtime styles? → sx prop with conditional logic
-RTL-specific? → sx prop with theme.direction check
-```
-
-**Data Fetching:**
-```
-REST API? → Axios (src/services/apiClient.ts)
-Real-time streams? → SignalR (TODO: implement src/services/signalrClient.ts)
-Auth-protected? → Axios interceptors with automatic token refresh
-File uploads? → FormData with Axios
-Cached data? → IndexedDB for offline/persistent storage
-```
-
-**Component Patterns:**
-```
-Simple UI? → Functional component with hooks
-Needs error handling? → Wrap with LazyErrorBoundary
-Heavy computation? → useMemo for results
-Event handlers? → useCallback to prevent re-renders
-Route component? → Direct import (no lazy loading for internal networks)
-Form? → Controlled components + validation
-```
-
-**Testing & Debugging:**
-```
-Manual testing? → Chrome DevTools MCP (navigate, snapshot, interact)
-UI verification? → Chrome DevTools MCP (screenshots, snapshots)
-Layout debugging? → Chrome DevTools MCP (resize, RTL testing)
-Performance testing? → Chrome DevTools MCP (performance traces, network emulation)
-Real-time debugging? → Chrome DevTools MCP (console messages, network requests)
-State inspection? → Chrome DevTools MCP (evaluate_script for React state)
-User flow testing? → Chrome DevTools MCP (click, fill, drag interactions)
-```
+### Decision Trees
+- **State**: Local → useState | Shared → Context API | Real-time → SignalR + Context
+- **Styling**: MUI sx prop → theme values | Variants → styled() | RTL → logical properties
+- **Data**: REST → Axios | Real-time → SignalR | Storage → IndexedDB (NEVER localStorage)
+- **Components**: Functional + hooks | Error handling → LazyErrorBoundary | Performance → useMemo/useCallback
+- **Testing**: Chrome DevTools MCP (mandatory for ALL testing/debugging)
 
 ### Must-Follow Rules
 
-| Rule | Why | Example |
-|------|-----|---------|
-| ⚠️ Use `t()` for all text | i18n support | `t('pages.dashboard.title')` |
-| ⚠️ Use logger, not console | Prod cleanup | `logger.log('message')` |
-| ⚠️ Use Chrome DevTools MCP | Testing/debugging | All UI testing via MCP tools |
-| ⚠️ Use theme palette | Theme consistency | `theme.palette.primary.main` |
-| ⚠️ No `any` type | Type safety | `unknown` with type guards |
-| ⚠️ Add `data-id-ref` | Testing/debugging | `data-id-ref="login-submit-button"` |
-| ⚠️ Use MUI components | Design system | `<Button>` before custom buttons |
-| ⚠️ IndexedDB for storage | Performance/security | Never localStorage |
-| ⚠️ Test both languages | i18n verification | fa and en |
-| ⚠️ Test all breakpoints | Responsive design | xs, sm, md, lg, xl |
+| Rule | Why |
+|------|-----|
+| Use `t()` for all text | i18n support |
+| Use logger, not console | Prod cleanup |
+| Use Chrome DevTools MCP | Testing/debugging |
+| Use theme palette | Theme consistency |
+| No `any` type | Type safety |
+| Add `data-id-ref` | Testing/debugging |
+| Use MUI components | Design system |
+| IndexedDB for storage | Performance/security |
+| Test both languages | i18n verification |
+| Test all breakpoints | Responsive design |
 
 ### Common Pitfalls
 
-| ❌ Don't | ✅ Do | Why |
-|---------|-------|-----|
-| `console.log()` | `logger.log()` | Prod cleanup |
-| `color: '#1976d2'` | `color: theme.palette.primary.main` | Theme support |
-| `marginLeft: 16` | `marginInlineStart: 2` (theme.spacing) | RTL support |
-| `<div onClick>` | `<Button onClick>` | Accessibility |
-| `localStorage` | IndexedDB via `authStorage` | Performance |
-| `any` type | `unknown` + type guard | Type safety |
-| Hardcoded text | `t('key')` | i18n |
-| Class components | Functional + hooks | Modern React |
-| Direct state mutation | Immutable updates | State integrity |
-| Inline styles | MUI `sx` prop | Theme access |
+| ❌ Don't | ✅ Do |
+|---------|-------|
+| `console.log()` | `logger.log()` |
+| Hardcoded colors | `theme.palette.primary.main` |
+| `marginLeft: 16` | `marginInlineStart: 2` |
+| `<div onClick>` | `<Button onClick>` |
+| `localStorage` | IndexedDB |
+| `any` type | `unknown` + type guard |
+| Hardcoded text | `t('key')` |
+| Class components | Functional + hooks |
 
----
+
 
 ## 🎯 Project Overview
-This is a production-grade enterprise monitoring dashboard with:
-- **Real-time streaming** via SignalR
-- **Bilingual support** (Persian/English) with full RTL/LTR layouts
-- **Advanced data grids** using AG Grid Enterprise
-- **Secure authentication** with JWT + refresh token rotation
-- **Theme system** with Material-UI theming (light/dark modes)
-- **Interactive charts** using ECharts with i18n support
+Enterprise monitoring dashboard with real-time SignalR streaming, bilingual support (Persian/English), RTL/LTR layouts, AG Grid Enterprise, JWT auth with refresh token rotation, MUI theming (light/dark), and ECharts with i18n.
 
 ## 🌍 Internationalization (i18n)
 
-### Critical Rules
-⚠️ **NEVER hardcode any user-facing text** - all text must go through translation system
-⚠️ **ALWAYS test both languages** (Persian and English) before considering work complete
-⚠️ **ALWAYS verify RTL layout** for Persian language
-
-### Implementation
-- **Hook**: `useTranslation()` from `src/hooks/useTranslation.ts`
+### Rules
+- **NEVER hardcode user-facing text** - use `useTranslation()` hook and `t()` function
+- **ALWAYS test both languages** (Persian and English)
+- **ALWAYS verify RTL layout** for Persian
 - **Translation Files**: `public/locales/{fa,en}/translation.json`
-- **Key Structure**: Hierarchical dot notation (e.g., `pages.dashboard.title`, `common.buttons.save`)
-- **RTL Support**: MUI automatically handles RTL when `direction: 'rtl'` is set in theme
-- **Font**: IRANSansX for Persian, system fonts for English
+- **Key Structure**: Hierarchical (e.g., `pages.dashboard.title`, `common.buttons.save`)
+- **RTL Support**: MUI auto-handles when `direction: 'rtl'` in theme
+- **Font**: IRANSansX for Persian
 
-### Key Requirements
-- Use `useTranslation()` hook and `t()` function for all user-facing text
-- Support dynamic translations with variables using object parameter
-- Support pluralization using count parameter
-- Translation keys use hierarchical dot notation
-
-### RTL Considerations
-- **MUI Theme**: Automatically flips layouts when `direction: 'rtl'` is set in theme
-- **Text Alignment**: Use `start`/`end` instead of `left`/`right`
-- **Margins/Padding**: Use logical properties (`margin-inline-start` vs `margin-left`)
-- **Icons**: Some icons may need mirroring (arrows, chevrons)
-- **MUI Components**: Built-in RTL support for all components (Grid, Stack, Box, etc.)
-
-### Testing Checklist
-- [ ] All text goes through `t()` function
-- [ ] Translation keys exist in both `fa` and `en` files
-- [ ] RTL layout works correctly in Persian
-- [ ] No text overflow or layout breaks in either language
-- [ ] Form validation messages are translated
-- [ ] Date/time formats respect locale
+### RTL Best Practices
+- Use `start`/`end` instead of `left`/`right` for text alignment
+- Use logical properties: `marginInlineStart` vs `marginLeft`
+- MUI components have built-in RTL support
+- Some icons need mirroring (arrows, chevrons)
 
 ## 🛠️ Technology Stack
 
-### Core Technologies
-- **React 18**: Functional components only, hooks-based
-- **TypeScript 5**: Strict mode, no `any` type allowed
-- **Axios**: HTTP client for REST API calls with interceptors
-- **SignalR**: Real-time communication for active alarms streaming
-- **Material-UI (MUI) v6**: Component library with responsive grid system (xs/sm/md/lg/xl)
-- **Vite**: Build tool and dev server (port 5173)
+### Core
+- **React 18**: Functional components, hooks only
+- **TypeScript 5**: Strict mode, no `any` type
+- **Axios**: HTTP client with interceptors
+- **SignalR**: Real-time alarms streaming
+- **Material-UI v6**: Component library, responsive grid (xs/sm/md/lg/xl)
+- **Vite**: Build tool (port 5173)
 
-### Code Quality Standards
-⚠️ **MANDATORY: TypeScript strict mode** - All code must be fully typed
-⚠️ **NO `any` type** - Use `unknown` with type guards or proper interfaces
-⚠️ **NO class components** - Only functional components with hooks
-⚠️ **USE MUI sx prop or styled components** - Avoid inline styles when possible
-⚠️ **USE MUI theme colors** - Access via theme palette (theme.palette.primary.main, etc.)
-⚠️ **MANDATORY: Element identification** - ALL elements created by AI must have `data-id-ref` attribute
-⚠️ **MANDATORY: Use logger utility** - NEVER use `console.*` directly, always use logger
+### Code Standards
+- **TypeScript strict mode** - fully typed code
+- **NO `any` type** - use `unknown` with type guards
+- **NO class components** - functional + hooks only
+- **MUI sx prop or styled()** - avoid inline styles
+- **MUI theme colors** - access via `theme.palette.*`
+- **Element IDs** - ALL AI-created elements need `data-id-ref`
+- **Logger utility** - NEVER use `console.*` directly
 
 ### Logging (Development-Only)
-⚠️ **CRITICAL: Always use logger utility instead of console.***
-⚠️ **CRITICAL: Use logger EXTENSIVELY for debugging - logs are FREE in production (zero overhead)**
-⚠️ **Production builds suppress all logs** - keeps console clean for users
-⚠️ **Development mode shows all logs** - full debugging capabilities
-
-**Philosophy: Log Everything Important**
-Since logger calls are completely stripped from production builds, you should be **generous with logging** during development. There is NO performance penalty in production - the logger code is fully eliminated by tree-shaking.
-
-**Implementation:**
-- **Logger Utility**: `src/utils/logger.ts`
-- **Zero Runtime Cost**: All logger calls become no-ops in production builds
-- **No Bundle Impact**: Dead code elimination removes all logger code from production
-
-**Usage:**
-```typescript
-// ❌ NEVER do this - appears in production
-console.log('[MyComponent] Debug message');
-console.error('[MyComponent] Error:', error);
-
-// ✅ ALWAYS do this - development only
-import { createLogger } from '../utils/logger';
-
-const logger = createLogger('MyComponent');
-
-logger.log('Debug message');       // [MyComponent] Debug message
-logger.error('Error:', error);      // [MyComponent] Error: [error object]
-```
-
-**Available Methods:**
-- `logger.log()` - General debug information
-- `logger.info()` - Informational messages
-- `logger.warn()` - Warnings that don't break functionality
-- `logger.error()` - Errors that need attention
-- `logger.debug()` - Detailed debug information
-- `logger.table()` - Display data in table format
-- `logger.group()` / `logger.groupEnd()` - Grouped logs
-- `logger.time()` / `logger.timeEnd()` - Performance timing
-
-**When to Log (Use Extensively!):**
-
-**1. Component Lifecycle & State Changes:**
-```typescript
-// ✅ Log component initialization
-useEffect(() => {
-  logger.log('Component mounted', { props, initialState });
-}, []);
-
-// ✅ Log state updates
-const handleUpdate = (newValue: string) => {
-  logger.log('Updating state', { oldValue: value, newValue });
-  setValue(newValue);
-};
-
-// ✅ Log cleanup
-useEffect(() => {
-  return () => {
-    logger.log('Component unmounting, cleaning up resources');
-  };
-}, []);
-```
-
-**2. API Calls & Data Fetching:**
-```typescript
-// ✅ Log before API call
-logger.log('Fetching user data', { userId });
-
-try {
-  const response = await apiClient.get(`/users/${userId}`);
-  // ✅ Log success with relevant data
-  logger.log('User data fetched successfully', { 
-    userId, 
-    userName: response.data.name,
-    timestamp: Date.now() 
-  });
-  return response.data;
-} catch (error) {
-  // ✅ Log errors with context
-  logger.error('Failed to fetch user data', { userId, error });
-  throw error;
-}
-```
-
-**3. User Interactions & Events:**
-```typescript
-// ✅ Log button clicks with context
-const handleSubmit = () => {
-  logger.log('Submit button clicked', { formData, isValid });
-  // ... submit logic
-};
-
-// ✅ Log navigation
-const handleNavigation = (path: string) => {
-  logger.log('Navigating to', { from: location.pathname, to: path });
-  navigate(path);
-};
-
-// ✅ Log form changes
-const handleInputChange = (field: string, value: unknown) => {
-  logger.debug('Form field changed', { field, value, formState });
-  // ... update logic
-};
-```
-
-**4. Context Operations & Store Updates:**
-```typescript
-// ✅ Log reducer actions
-function monitoringReducer(state: State, action: Action): State {
-  logger.log('Reducer action dispatched', { 
-    type: action.type, 
-    payload: action.payload,
-    currentState: state 
-  });
-  
-  switch (action.type) {
-    case 'GROUPS_SUCCESS':
-      logger.log('Groups loaded successfully', { count: action.payload.length });
-      return { ...state, groups: action.payload };
-    // ...
-  }
-}
-
-// ✅ Log context value changes
-useEffect(() => {
-  logger.log('Context value updated', { 
-    isAuthenticated, 
-    userName, 
-    permissions 
-  });
-}, [isAuthenticated, userName, permissions]);
-```
-
-**5. Complex Logic & Calculations:**
-```typescript
-// ✅ Log decision points
-const calculateDiscount = (price: number, userType: string) => {
-  logger.log('Calculating discount', { price, userType });
-  
-  if (userType === 'premium') {
-    logger.log('Premium user, applying 20% discount');
-    return price * 0.8;
-  } else if (price > 100) {
-    logger.log('Large order, applying 10% discount');
-    return price * 0.9;
-  }
-  
-  logger.log('No discount applied');
-  return price;
-};
-
-// ✅ Log loop iterations for debugging
-items.forEach((item, index) => {
-  logger.debug('Processing item', { index, itemId: item.id, itemName: item.name });
-  // ... process item
-});
-```
-
-**6. Async Operations & Timing:**
-```typescript
-// ✅ Log async operation flow
-const syncData = async () => {
-  logger.time('Data sync operation');
-  logger.log('Starting data sync');
-  
-  try {
-    logger.log('Fetching groups...');
-    await fetchGroups();
-    logger.log('Groups fetched');
-    
-    logger.log('Fetching items...');
-    await fetchItems();
-    logger.log('Items fetched');
-    
-    logger.log('Data sync completed successfully');
-  } catch (error) {
-    logger.error('Data sync failed', { error });
-  } finally {
-    logger.timeEnd('Data sync operation');
-  }
-};
-```
-
-**7. Conditional Logic & Edge Cases:**
-```typescript
-// ✅ Log branches taken
-if (!user) {
-  logger.warn('No user found, redirecting to login');
-  navigate('/login');
-  return;
-}
-
-if (user.role === 'admin') {
-  logger.log('Admin user detected, loading admin panel');
-  loadAdminPanel();
-} else {
-  logger.log('Regular user, loading standard view');
-  loadStandardView();
-}
-```
-
-**8. Error Handling & Recovery:**
-```typescript
-// ✅ Log error recovery attempts
-try {
-  await riskyOperation();
-} catch (error) {
-  logger.error('Operation failed, attempting recovery', { error });
-  
-  try {
-    await fallbackOperation();
-    logger.log('Recovery successful');
-  } catch (fallbackError) {
-    logger.error('Recovery failed', { originalError: error, fallbackError });
-    throw fallbackError;
-  }
-}
-```
-
-**9. Performance Monitoring:**
-```typescript
-// ✅ Log performance metrics
-logger.time('Heavy calculation');
-const result = performHeavyCalculation(data);
-logger.timeEnd('Heavy calculation');
-logger.log('Calculation result', { inputSize: data.length, resultSize: result.length });
-
-// ✅ Log render counts for optimization
-const renderCount = useRef(0);
-useEffect(() => {
-  renderCount.current += 1;
-  logger.debug('Component rendered', { count: renderCount.current });
-});
-```
-
-**10. Data Transformations:**
-```typescript
-// ✅ Log before/after transformations
-logger.log('Transforming API response', { rawData });
-const transformed = rawData.map(item => ({
-  id: item.id,
-  name: item.displayName,
-}));
-logger.log('Data transformed', { 
-  originalCount: rawData.length, 
-  transformedCount: transformed.length 
-});
-```
-
-**Key Benefits:**
-- 🚀 **Zero overhead in production** (no-op functions, tree-shaken out)
-- 📦 **Smaller bundle size** (dead code elimination removes all logger code)
-- 🔒 **No information leakage** in production
-- 🐛 **Full debugging in development** without performance concerns
-- 🏷️ **Automatic module prefixes** for organization
-- 💰 **FREE logging** - no performance cost, so log generously!
-
-**Best Practices:**
-1. **Log liberally** - Since logs are removed in production, don't hold back
-2. **Include context** - Log relevant variables, state, and parameters
-3. **Use appropriate levels** - log/info for flow, debug for details, warn/error for problems
-4. **Log entry/exit points** - Track function calls and returns
-5. **Log timing** - Use time/timeEnd for performance analysis
-6. **Log data shapes** - Log array lengths, object keys, data types
-7. **Group related logs** - Use group/groupEnd for related operations
-8. **Table for arrays** - Use logger.table() for array/object visualization
-
-**Migration Pattern:**
-1. Import logger: `import { createLogger } from '../utils/logger';`
-2. Create module logger: `const logger = createLogger('ModuleName');`
-3. Replace all `console.*` calls with `logger.*`
-4. Remove `[ModuleName]` prefixes from messages (added automatically)
-5. **Add MORE logging** where it helps understand code flow
-
-### Component Requirements
-- Always define TypeScript interfaces for component props
-- Use functional components with React.FC type
-- Include `data-id-ref` attribute on all elements
-- Prefer MUI `sx` prop for styling over inline styles
-- Use MUI theme system for colors (theme.palette.primary.main, theme.palette.background.paper, etc.)
-- Use proper event handler typing
-
-### Component Loading Strategy
-⚠️ **NO LAZY LOADING: This app runs on internal networks**
-- All components use direct imports for optimal performance
-- No code splitting or lazy loading needed
-- Error boundaries still required for all routes
-- `LazyAGGrid` component exists for backward compatibility but uses direct import
-
-### React 18 Patterns & Best Practices
-
-#### Concurrent Features
-⚠️ **USE React 18 concurrent features for better UX**
-
-**useTransition for Non-Urgent Updates:**
-```typescript
-import { useTransition } from 'react';
-
-const [isPending, startTransition] = useTransition();
-
-// Mark low-priority updates
-startTransition(() => {
-  setSearchResults(newResults);
-});
-```
-
-**useDeferredValue for Expensive Renders:**
-```typescript
-import { useDeferredValue } from 'react';
-
-const deferredQuery = useDeferredValue(searchQuery);
-// Use deferredQuery for expensive operations
-```
-
-#### Error Boundaries (Class Component Exception)
-⚠️ **MANDATORY: Wrap all route components with error boundaries**
-
-```typescript
-import { LazyErrorBoundary } from './components/LazyErrorBoundary';
-
-<LazyErrorBoundary>
-  <YourComponent />
-</LazyErrorBoundary>
-```
-
-**Error Boundary Pattern:**
-- Catch errors in component tree
-- Display fallback UI
-- Log errors for debugging
-- Provide recovery mechanism
-- Never leave users with blank screen
-
-#### Automatic Batching
-React 18 automatically batches state updates in:
-- Event handlers (React 17 behavior)
-- Promises, setTimeout, native event handlers (NEW in React 18)
-
-```typescript
-// All updates batched automatically in React 18
-fetch('/api/data').then(() => {
-  setData(newData);
-  setLoading(false);
-  setError(null);
-  // Only one re-render
-});
-```
-
-#### Key React 18 Benefits for This Project
-1. **Streaming SSR**: Future-ready for server components
-2. **Concurrent rendering**: Better performance for real-time streams
-3. **Automatic batching**: Fewer re-renders in async state updates
-4. **Transitions**: Smooth language/theme switching
-
-### TypeScript 5 Features & Patterns
-
-#### Const Type Parameters (TypeScript 5.0+)
-```typescript
-// ✅ Preserve literal types
-function createConfig<const T>(config: T) {
-  return config;
-}
-
-const config = createConfig({ mode: 'light' } as const);
-// config.mode is 'light', not string
-```
-
-#### Satisfies Operator (TypeScript 4.9+)
-```typescript
-// ✅ Type checking without widening
-const theme = {
-  primary: '#1976d2',
-  secondary: '#dc004e',
-} satisfies Record<string, string>;
-
-// theme.primary is '#1976d2', not string
-```
-
-#### Template Literal Types for Translation Keys
-```typescript
-// ✅ Type-safe translation keys
-type TranslationKey = `pages.${string}.${string}` | `common.${string}`;
-
-function t(key: TranslationKey): string {
-  // Type-safe translation access
-}
-```
-
-#### Strict Null Checks
-⚠️ **MANDATORY: Handle null/undefined explicitly**
-
-```typescript
-// ❌ Don't
-const user = getUser();
-user.name; // Might be null
-
-// ✅ Do
-const user = getUser();
-if (user) {
-  user.name;
-}
-
-// Or use optional chaining
-const name = user?.name;
-
-// Or use nullish coalescing
-const name = user?.name ?? 'Guest';
-```
-
-#### Type Inference Best Practices
-```typescript
-// ✅ Let TypeScript infer when possible
-const [count, setCount] = useState(0); // inferred as number
-
-// ✅ Explicit types for complex cases
-interface User {
-  id: number;
-  name: string;
-}
-
-const [user, setUser] = useState<User | null>(null);
-```
+**CRITICAL: Always use logger, never console.***
+- **Zero production cost** - all logger calls stripped from builds
+- **Log extensively** - no performance penalty
+- **Implementation**: `src/utils/logger.ts`
+- **Usage**: `const logger = createLogger('ComponentName');`
+- **Methods**: `log`, `info`, `warn`, `error`, `debug`, `table`, `group`, `time`
 
 ### File Organization
-- **Components**: `src/components/` - React components
-- **Types**: `src/types/` - TypeScript interfaces and types
-- **Hooks**: `src/hooks/` - Custom React hooks
-- **Utils**: `src/utils/` - Helper functions
-- **Styles**: `src/styles/` - Global CSS files
-- **Services**: `src/services/` - API clients (Axios, SignalR)
-- **Contexts**: `src/contexts/` - React Context providers for state management
+- `src/components/` - React components
+- `src/types/` - TypeScript interfaces
+- `src/hooks/` - Custom hooks
+- `src/utils/` - Helpers
+- `src/services/` - API clients (Axios, SignalR)
+- `src/contexts/` - React Context providers
 
-### Naming Conventions
+### Naming
 - **Components**: PascalCase
 - **Hooks**: camelCase with `use` prefix
 - **Types**: PascalCase
@@ -590,162 +104,58 @@ const [user, setUser] = useState<User | null>(null);
 - **CSS Classes**: kebab-case
 
 ## AG Grid
-⚠️ ENTERPRISE v34.2.0 - ALL modules must be registered
+⚠️ ENTERPRISE v34.2.0 - ALL modules registered
 - Component: `AGGridWrapper` (`src/components/AGGridWrapper.tsx`)
 - Hook: `useAGGrid` (`src/hooks/useAGGrid.ts`)
-- Types: `src/types/agGrid.ts`
 - Themes: alpine, balham, material, quartz (default)
 - License: `DownloadDevTools_COM_NDEwMjM0NTgwMDAwMA==59158b5225400879a12a96634544f5b6`
-- Locale: `AG_GRID_LOCALE_IR` (`@ag-grid-community/locale`)
-- RTL: `enableRtl: true` for Persian
-
-⚠️ CRITICAL: Register `LocaleModule`, `RowSelectionModule`, `ColumnApiModule` in `ModuleRegistry.registerModules()`
-- Use `AGGridWrapper` component, not vanilla `createGrid()`
-- Enterprise features: Row Grouping, Aggregation, Pivoting, Excel Export, Master-Detail, Advanced Filtering, Server-Side, Tool Panels, Clipboard
+- Locale: `AG_GRID_LOCALE_IR` with `enableRtl: true` for Persian
+- **CRITICAL**: Register `LocaleModule`, `RowSelectionModule`, `ColumnApiModule`
 
 ## 🎨 Theme System (Material-UI)
 
-⚠️ **CRITICAL: The project uses Material-UI theming system**
-⚠️ **NEVER hardcode colors, gradients, or shadows**
-⚠️ **ALWAYS use MUI theme palette and system values**
-
-### How Theming Works
-1. User selects light or dark mode
-2. MUI theme provider applies theme with RTL support for Persian
-3. All MUI components automatically adapt to theme
-4. Custom components use theme values via `sx` prop or `useTheme()` hook
+⚠️ **CRITICAL: NEVER hardcode colors - ALWAYS use MUI theme palette**
 
 ### Files
-- **Theme Provider**: `src/contexts/MuiThemeProvider.tsx` (Theme provider wrapper)
-- **Theme Hook**: `src/hooks/useMuiTheme.ts` (React hook for theme management)
-- **Theme Switcher**: `src/components/MuiThemeSwitcher.tsx` (UI control for theme)
-
-### Available Modes
-- **Light Mode**: Default light theme
-- **Dark Mode**: Dark theme with appropriate contrast
+- **Theme Provider**: `src/contexts/MuiThemeProvider.tsx`
+- **Theme Hook**: `src/hooks/useMuiTheme.ts`
+- **Theme Switcher**: `src/components/MuiThemeSwitcher.tsx`
 
 ### MUI Theme Palette (MANDATORY)
-**Primary Colors**: 
-- `theme.palette.primary.main`, `theme.palette.primary.light`, `theme.palette.primary.dark`
-- `theme.palette.primary.contrastText`
-
-**Secondary Colors**: 
-- `theme.palette.secondary.main`, `theme.palette.secondary.light`, `theme.palette.secondary.dark`
-
-**Status Colors**:
-- `theme.palette.error.main` - Error/danger states
-- `theme.palette.warning.main` - Warning states
-- `theme.palette.info.main` - Informational states
-- `theme.palette.success.main` - Success states
-
-**Background Colors**:
-- `theme.palette.background.default` - Page background
-- `theme.palette.background.paper` - Card/surface background
-
-**Text Colors**:
-- `theme.palette.text.primary` - Primary text
-- `theme.palette.text.secondary` - Secondary/muted text
-- `theme.palette.text.disabled` - Disabled text
-
-**Dividers and Borders**:
-- `theme.palette.divider` - Divider/border color
+**Colors**: `theme.palette.{primary|secondary|error|warning|info|success}.{main|light|dark|contrastText}`
+**Background**: `theme.palette.background.{default|paper}`
+**Text**: `theme.palette.text.{primary|secondary|disabled}`
+**Dividers**: `theme.palette.divider`
 
 ### MUI Components (Use These First)
-MUI provides comprehensive component library:
-- **Layout**: `Box`, `Container`, `Grid`, `Stack`, `Paper`
-- **Buttons**: `Button`, `IconButton`, `Fab`, `ButtonGroup`
-- **Inputs**: `TextField`, `Select`, `Checkbox`, `Radio`, `Switch`
-- **Data Display**: `Typography`, `Card`, `Chip`, `Avatar`, `Badge`
-- **Feedback**: `Alert`, `Snackbar`, `Dialog`, `Backdrop`, `CircularProgress`
-- **Navigation**: `AppBar`, `Drawer`, `Tabs`, `Menu`, `Breadcrumbs`
+**Layout**: Box, Container, Grid, Stack, Paper
+**Buttons**: Button, IconButton, Fab, ButtonGroup
+**Inputs**: TextField, Select, Checkbox, Radio, Switch
+**Data**: Typography, Card, Chip, Avatar, Badge, Table, List
+**Feedback**: Alert, Snackbar, Dialog, Backdrop, CircularProgress
+**Navigation**: AppBar, Drawer, Tabs, Menu, Breadcrumbs
 
 ### MUI Icons (MANDATORY: Use for ALL icons)
-⚠️ **CRITICAL: Always use Material Icons from @mui/icons-material package**
-⚠️ **NEVER use custom SVG icons or other icon libraries** unless explicitly required
+⚠️ **CRITICAL: Always use @mui/icons-material package**
 
 **Package**: `@mui/icons-material`
-**Import Pattern**: `import { IconName } from '@mui/icons-material';`
+**Variants**: Filled (default), Outlined, Rounded, TwoTone, Sharp
 
-#### Available Icon Variants
-MUI Icons come in 5 variants (themes):
-- **Filled** (default): `import { Home } from '@mui/icons-material';`
-- **Outlined**: `import { HomeOutlined } from '@mui/icons-material';`
-- **Rounded**: `import { HomeRounded } from '@mui/icons-material';`
-- **TwoTone**: `import { HomeTwoTone } from '@mui/icons-material';`
-- **Sharp**: `import { HomeSharp } from '@mui/icons-material';`
+**Common Icons**: Menu, Home, Dashboard, Settings, Search, Person, Lock, CheckCircle, Error, Warning, Info, Edit, Delete, Save, Download, Upload, ArrowBack, Close, ExpandMore, Visibility
 
-#### Common Icons by Category
+**Usage**: 
+- Color: `color="primary"`, `color="error"`, `color="inherit"`
+- Size: `fontSize="small"`, `fontSize="medium"`, `fontSize="large"`, or `sx={{ fontSize: 40 }}`
+- RTL: `sx={{ transform: isRTL ? 'scaleX(-1)' : 'none' }}` for directional icons
+- Accessibility: Include `aria-label` for standalone icons
 
-**Navigation & Actions:**
-- `Menu`, `MenuOpen`, `Close`, `ArrowBack`, `ArrowForward`
-- `Home`, `Dashboard`, `Settings`, `Search`, `Refresh`
-- `ExpandMore`, `ExpandLess`, `ChevronLeft`, `ChevronRight`
-- `MoreVert`, `MoreHoriz`, `FilterList`, `Sort`
-
-**User & Authentication:**
-- `Person`, `AccountCircle`, `Group`, `Login`, `Logout`
-- `Lock`, `LockOpen`, `Visibility`, `VisibilityOff`
-- `PersonAdd`, `PersonRemove`, `Badge`, `ContactMail`
-
-**Status & Feedback:**
-- `CheckCircle`, `Cancel`, `Error`, `Warning`, `Info`
-- `Done`, `Clear`, `HelpOutline`, `Notifications`, `NotificationsActive`
-- `Sync`, `CloudDone`, `CloudOff`, `CheckCircleOutline`
-
-**Data & Content:**
-- `Edit`, `Delete`, `Add`, `Remove`, `Save`, `ContentCopy`
-- `Download`, `Upload`, `Share`, `Print`, `Folder`, `FolderOpen`
-- `Description`, `Article`, `AttachFile`, `InsertDriveFile`
-
-**Media & Communication:**
-- `PlayArrow`, `Pause`, `Stop`, `VolumeUp`, `VolumeOff`
-- `Call`, `Email`, `Message`, `Chat`, `Send`
-- `Image`, `PhotoCamera`, `Videocam`, `Mic`
-
-**Date & Time:**
-- `CalendarToday`, `Event`, `Schedule`, `AccessTime`, `DateRange`
-- `Today`, `Update`, `History`, `Timer`, `Alarm`
-
-**Data Visualization:**
-- `BarChart`, `PieChart`, `ShowChart`, `Timeline`, `TrendingUp`, `TrendingDown`
-- `Assessment`, `Equalizer`, `MultilineChart`, `BubbleChart`
-
-**Connectivity & System:**
-- `Wifi`, `WifiOff`, `SignalWifi4Bar`, `Cloud`, `CloudQueue`
-- `Computer`, `Storage`, `Memory`, `Router`, `Dns`, `Power`, `PowerOff`
-
-#### Usage Patterns
-- **Color Props**: Use `color="primary"`, `color="error"`, `color="inherit"`, `color="action"`, `color="disabled"`
-- **Size Props**: Use `fontSize="small"` (20px), `fontSize="medium"` (24px default), `fontSize="large"` (35px), `fontSize="inherit"`, or custom size via `sx={{ fontSize: 40 }}`
-- **Icon Buttons**: Wrap icon in `IconButton` component with `aria-label`, `onClick`, `color`, and `data-id-ref`
-- **Icons with Text**: Use `startIcon` or `endIcon` props on Button components
-- **RTL Support**: Transform directional icons with `sx={{ transform: isRTL ? 'scaleX(-1)' : 'none' }}`
-- **List Items**: Place icons in `ListItemIcon` component within `ListItem`
-
-#### Critical Rules for Icons
-1. **ALWAYS use @mui/icons-material** - consistent design system
-2. **Use theme colors** - `color="primary"`, `color="error"`, etc.
-3. **Include aria-label** - for accessibility when icon is standalone
-4. **Consider RTL** - flip directional icons (arrows, chevrons) in RTL mode
-5. **Use semantic icons** - choose icons that match their purpose
-6. **Consistent variant** - stick to one variant (Outlined/Filled) per project
-7. **Add data-id-ref** - for testing and debugging
-8. **Size appropriately** - use fontSize prop, not hardcoded pixel values
-
-#### Icon Search
-Find icons at: https://mui.com/material-ui/material-icons/
-- Search by name or category
-- Preview all variants
-- Copy import statement
-- Check accessibility guidelines
+**Search**: https://mui.com/material-ui/material-icons/
 
 ### Critical Rules
 1. **NEVER hardcode colors** - always use theme palette values
 2. **Use `sx` prop** - for component-level styling with theme access
-3. **Use `useTheme()` hook** - when you need theme values in JavaScript logic
-4. **Always test both modes** - switch between light/dark themes to verify
-5. **Use MUI components** - leverage built-in components before creating custom ones
-6. **Respect spacing** - use `theme.spacing()` for consistent spacing
+3. **Always test both modes** - switch between light/dark themes to verify
+4. **Use MUI components** - leverage built-in components before creating custom ones
 
 ## 📊 Charts (ECharts)
 
@@ -753,25 +163,15 @@ Find icons at: https://mui.com/material-ui/material-icons/
 - **Library**: ECharts 5.6.0 + echarts-for-react 3.0.2
 - **Component**: `ReactECharts`
 - **Type**: `EChartsOption`
-- **Theme**: Use theme CSS variables for colors
 
 ### Critical Rules
 ⚠️ **MANDATORY: Internationalize all chart text** - titles, axes, legends, tooltips
 ⚠️ **MANDATORY: RTL support** - adjust direction, legend position, tooltip alignment
 ⚠️ **MANDATORY: Responsive sizing** - charts must adapt to container size
-
-### Key Requirements
-- Always define TypeScript interfaces for chart props
 - Use `useTranslation()` and `useLanguage()` hooks
 - Use `useMemo` for chart options to prevent recalculations
-- Adjust layout based on `isRTL` (title, legend, tooltip positions)
 - Use MUI theme colors via `useTheme()` hook
 - Include `data-id-ref` on chart components
-
-### Performance Tips
-- Use `useMemo` to prevent unnecessary option recalculations
-- Use SVG renderer for better performance with many data points
-- Debounce window resize events for responsive charts
 
 ## 📱 Responsive Design
 
@@ -1115,254 +515,38 @@ If you find existing code using localStorage/sessionStorage:
 
 ## 🐛 Error Handling
 
-### Error Handling Requirements
-⚠️ **MANDATORY: Comprehensive error handling**
-
 ### Error Boundary Pattern
 ⚠️ **CRITICAL: All route components must be wrapped with error boundaries**
-
-```typescript
-import { LazyErrorBoundary } from './components/LazyErrorBoundary';
-import { Suspense } from 'react';
-import { LoadingScreen } from './components/LoadingScreen';
-
-// ✅ Proper error boundary usage
-<LazyErrorBoundary>
-  <Suspense fallback={<LoadingScreen />}>
-    <YourRouteComponent />
-  </Suspense>
-</LazyErrorBoundary>
-```
-
-**Error Boundary Best Practices:**
-- Display user-friendly error messages (translated)
-- Log errors for debugging (use logger utility)
+- Use `LazyErrorBoundary` with `Suspense` and `LoadingScreen`
+- Display user-friendly translated error messages
+- Log errors using logger utility
 - Provide recovery actions (reload, go back)
-- Show contact support option for critical errors
 - Never expose stack traces to users
 
 ### Axios Error Handling
+- Check `axios.isAxiosError(err)` to determine error type
+- Handle status codes: 400 (validation), 401 (auth), 403 (forbidden), 404 (not found), 500 (server error)
+- Network errors have `err.response === undefined`
+- Always show translated error messages via `t()`
+- Update UI with loading states and error alerts
 
-```typescript
-// ✅ Proper API call error handling with Axios
-const handleSubmit = async (data: UserFormData) => {
-  try {
-    const result = await apiClient.put('/api/users', data);
-    logger.log('User updated successfully:', result.data);
-    
-    // Show success message
-    showNotification(t('messages.success.userUpdated'));
-  } catch (err) {
-    logger.error('Failed to update user:', err);
-    
-    // Check if Axios error
-    if (axios.isAxiosError(err)) {
-      const status = err.response?.status;
-      
-      if (status === 400) {
-        // Validation error
-        showNotification(t('errors.validation.invalid'), 'error');
-      } else if (status === 401) {
-        // Auth error (should be auto-handled by Axios interceptors)
-        showNotification(t('errors.auth.unauthorized'), 'error');
-      } else if (status === 500) {
-        // Server error
-        showNotification(t('errors.server.internal'), 'error');
-      } else {
-        // Other HTTP error
-        showNotification(t('errors.api.failed'), 'error');
-      }
-    } else {
-      // Network or other error
-      showNotification(t('errors.network.failed'), 'error');
-    }
-  }
-};
+### SignalR Error Handling
+- Handle connection states: IDLE, CONNECTING, CONNECTED, ERROR, DISCONNECTED
+- Implement exponential backoff for reconnection
+- Log connection errors and retry attempts
+- Clean up connections on unmount
 
-// ✅ Display error in UI with loading state
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState<string | null>(null);
+### Form Validation
+- Validate on client AND server
+- Store errors in state: `Record<string, string>`
+- Display errors with `TextField` error/helperText props
+- Use aria attributes for accessibility
 
-const loadData = async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const response = await apiClient.get('/api/data');
-    setData(response.data);
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      setError(err.response?.data?.message || t('errors.api.failed'));
-    } else {
-      setError(t('errors.network.failed'));
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+### Error Logging
+- Use structured logging: `logger.error('Operation failed', { context })`
+- NEVER log sensitive data (passwords, tokens)
+- Include relevant context (userId, operation, timestamp)
 
-{error && (
-  <Alert severity="error">
-    {error}
-  </Alert>
-)}
-```
-
-**Axios Error Types:**
-- **400 Bad Request**: Validation errors
-- **401 Unauthorized**: Auth token expired (auto-handled by interceptors)
-- **403 Forbidden**: Insufficient permissions
-- **404 Not Found**: Resource doesn't exist
-- **500 Internal Server Error**: Server-side error
-- **Network Error**: No response from server (err.response is undefined)
-
-### SignalR Stream Error Handling
-
-```typescript
-// ✅ Proper SignalR connection error handling
-const useSignalRConnection = () => {
-  const [connectionState, setConnectionState] = useState<ConnectionState>('IDLE');
-  const [error, setError] = useState<string | null>(null);
-  const connectionRef = useRef<signalR.HubConnection | null>(null);
-
-  const connect = useCallback(async () => {
-    setConnectionState('CONNECTING');
-    setError(null);
-    
-    try {
-      const connection = new signalR.HubConnectionBuilder()
-        .withUrl('https://localhost:7136/hubs/monitoring', {
-          accessTokenFactory: () => getAccessToken() || ''
-        })
-        .withAutomaticReconnect()
-        .build();
-      
-      connectionRef.current = connection;
-      
-      // Subscribe to messages
-      connection.on('ReceiveActiveAlarmsUpdate', (data) => {
-        updateActiveAlarms(data.alarmCount, data.timestamp);
-      });
-      
-      await connection.start();
-      setConnectionState('CONNECTED');
-      logger.log('SignalR connected successfully');
-      
-    } catch (err) {
-      logger.error('SignalR connection error:', err);
-      setError(t('errors.signalr.connectionFailed'));
-      setConnectionState('ERROR');
-      
-      // Exponential backoff retry
-      setTimeout(() => connect(), 5000);
-    }
-  }, []);
-
-  const disconnect = useCallback(async () => {
-    if (connectionRef.current) {
-      await connectionRef.current.stop();
-      setConnectionState('DISCONNECTED');
-    }
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, [disconnect]);
-
-  return { connectionState, error, connect, disconnect };
-};
-```
-
-**SignalR Error Scenarios:**
-- **Connection Failed**: Network issue or server down → Retry with exponential backoff
-- **Unauthorized**: Invalid JWT token → Redirect to login
-- **Disconnected**: Connection lost → Automatic reconnection
-- **Message Error**: Invalid message format → Log and continue
-- **Hub Method Error**: Server-side error → Show user notification
-
-### Form Validation Error Handling
-
-```typescript
-// ✅ Proper form error handling
-const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-const validateForm = (data: FormData): boolean => {
-  const errors: Record<string, string> = {};
-  
-  if (!data.email) {
-    errors.email = t('validation.required', { field: t('fields.email') });
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-    errors.email = t('validation.email.invalid');
-  }
-  
-  if (!data.password || data.password.length < 8) {
-    errors.password = t('validation.password.minLength', { min: 8 });
-  }
-  
-  setFormErrors(errors);
-  return Object.keys(errors).length === 0;
-};
-
-// Display errors
-<TextField
-  error={!!formErrors.email}
-  helperText={formErrors.email}
-  inputProps={{
-    'aria-invalid': !!formErrors.email,
-    'aria-describedby': formErrors.email ? 'email-error' : undefined,
-  }}
-/>
-```
-
-### Error Notification Patterns
-
-```typescript
-// ✅ Centralized error notification
-const showErrorNotification = (error: unknown, fallbackKey = 'errors.unknown') => {
-  let message: string;
-  
-  if (error instanceof Error) {
-    message = error.message;
-  } else if (typeof error === 'string') {
-    message = error;
-  } else if ('status' in error) {
-    message = t(`errors.http.${error.status}`, { defaultValue: t(fallbackKey) });
-  } else {
-    message = t(fallbackKey);
-  }
-  
-  // Use MUI Snackbar or Alert
-  enqueueSnackbar(message, { variant: 'error' });
-};
-```
-
-### Error Logging Best Practices
-
-```typescript
-// ✅ Structured error logging
-logger.error('Operation failed:', {
-  operation: 'updateUser',
-  userId: user.id,
-  error: err,
-  timestamp: new Date().toISOString(),
-  userAgent: navigator.userAgent,
-});
-
-// ❌ Don't log sensitive data
-logger.error('Auth failed:', {
-  password: 'secret123', // NEVER log passwords
-  token: 'jwt...', // NEVER log tokens
-});
-```
-
-### Global Error Boundary
-- Wrap all route components with `LazyErrorBoundary`
-- Use `Suspense` with `LoadingScreen` fallback
-- Provide user-friendly error messages
-- Log errors for debugging
-- Offer recovery actions
 
 ## 🧪 Testing Guidelines
 
@@ -1385,158 +569,22 @@ logger.error('Auth failed:', {
 ### Chrome DevTools MCP Testing Process (MANDATORY)
 ⚠️ **ALL testing MUST be performed using Chrome DevTools MCP**
 
-**1. Initial Setup:**
-```typescript
-// List available pages
-await mcp_chromedevtool_list_pages();
+**Key Testing Workflows:**
+1. **Initial Setup**: List pages, create/select page with URL
+2. **Bilingual Testing**: Navigate, snapshot, switch language, verify RTL with screenshots
+3. **Responsive Testing**: Resize to all breakpoints (xs, sm, md, lg, xl), check horizontal scroll
+4. **Theme Testing**: Snapshot/screenshot light mode, switch to dark, verify with screenshot
+5. **Error State Testing**: Emulate offline network, trigger action, verify error message, restore network
+6. **Performance Testing**: Start trace, perform interactions, stop trace, analyze insights
+7. **Console & Network**: List console messages (check errors), list network requests (check failures)
 
-// Create new page or select existing
-await mcp_chromedevtool_new_page({ url: 'https://localhost:5173' });
-// OR
-await mcp_chromedevtool_select_page({ pageIdx: 0 });
-```
+**Core MCP Tools:**
+- **Navigation**: `list_pages`, `select_page`, `new_page`, `navigate_page`, `close_page`
+- **Inspection**: `take_snapshot`, `take_screenshot`, `click`, `hover`, `fill`, `drag`
+- **Debugging**: `evaluate_script`, `list_console_messages`, `list_network_requests`
+- **Performance**: `performance_start_trace`, `performance_stop_trace`, `performance_analyze_insight`
+- **Testing**: `resize_page`, `emulate_network`, `emulate_cpu`, `wait_for`
 
-**2. Bilingual Testing (fa/en):**
-```typescript
-// Navigate to page
-await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173/dashboard' });
-
-// Take snapshot and find language switcher
-const snapshot = await mcp_chromedevtool_take_snapshot();
-
-// Test in English (default)
-await mcp_chromedevtool_take_screenshot({ fullPage: true, filePath: 'test-en.png' });
-
-// Switch to Persian
-await mcp_chromedevtool_click({ uid: 'language-switcher' });
-await mcp_chromedevtool_wait_for({ text: 'فارسی', timeout: 5000 });
-
-// Verify RTL layout
-await mcp_chromedevtool_take_screenshot({ fullPage: true, filePath: 'test-fa-rtl.png' });
-
-// Verify direction using evaluate_script
-const direction = await mcp_chromedevtool_evaluate_script({ 
-  function: '() => document.documentElement.dir' 
-});
-```
-
-**3. Responsive Testing:**
-```typescript
-// Test all breakpoints
-const breakpoints = [
-  { width: 375, height: 667, name: 'xs-mobile' },
-  { width: 768, height: 1024, name: 'sm-tablet' },
-  { width: 900, height: 600, name: 'md-tablet-landscape' },
-  { width: 1366, height: 768, name: 'lg-laptop' },
-  { width: 1920, height: 1080, name: 'xl-desktop' }
-];
-
-for (const bp of breakpoints) {
-  await mcp_chromedevtool_resize_page({ width: bp.width, height: bp.height });
-  await mcp_chromedevtool_take_screenshot({ 
-    fullPage: true, 
-    filePath: `test-${bp.name}.png` 
-  });
-  
-  // Check for horizontal scroll (should not exist)
-  const hasScroll = await mcp_chromedevtool_evaluate_script({ 
-    function: '() => document.documentElement.scrollWidth > window.innerWidth' 
-  });
-  
-  if (hasScroll) {
-    logger.error(`Horizontal scroll detected at ${bp.name}`);
-  }
-}
-```
-
-**4. Theme Testing:**
-```typescript
-// Test light mode
-await mcp_chromedevtool_take_snapshot();
-await mcp_chromedevtool_take_screenshot({ filePath: 'test-light-theme.png' });
-
-// Switch to dark mode
-await mcp_chromedevtool_click({ uid: 'theme-switcher' });
-await new Promise(resolve => setTimeout(resolve, 500)); // Wait for transition
-
-// Verify theme change
-const isDarkMode = await mcp_chromedevtool_evaluate_script({ 
-  function: '() => document.documentElement.getAttribute("data-theme")' 
-});
-
-await mcp_chromedevtool_take_screenshot({ filePath: 'test-dark-theme.png' });
-```
-
-**5. Error State Testing:**
-```typescript
-// Simulate network failure
-await mcp_chromedevtool_emulate_network({ throttlingOption: 'Offline' });
-
-// Attempt action that requires network
-await mcp_chromedevtool_click({ uid: 'refresh-button' });
-
-// Verify error message appears
-await mcp_chromedevtool_wait_for({ text: 'Network error', timeout: 5000 });
-await mcp_chromedevtool_take_screenshot({ filePath: 'test-error-state.png' });
-
-// Check console for error logs
-const messages = await mcp_chromedevtool_list_console_messages();
-
-// Restore network
-await mcp_chromedevtool_emulate_network({ throttlingOption: 'No emulation' });
-```
-
-**6. Performance Testing:**
-```typescript
-// Start performance trace
-await mcp_chromedevtool_performance_start_trace({ reload: true, autoStop: false });
-
-// Perform user interactions
-await mcp_chromedevtool_click({ uid: 'load-data-button' });
-await mcp_chromedevtool_wait_for({ text: 'Data loaded', timeout: 10000 });
-
-// Stop trace and analyze
-await mcp_chromedevtool_performance_stop_trace();
-
-// Get detailed insights
-const insights = await mcp_chromedevtool_performance_analyze_insight({ 
-  insightName: 'LCPBreakdown' 
-});
-```
-
-**7. Console & Network Verification:**
-```typescript
-// Check for console errors/warnings
-const consoleMessages = await mcp_chromedevtool_list_console_messages();
-const errors = consoleMessages.filter(m => m.level === 'error');
-
-if (errors.length > 0) {
-  logger.error('Console errors detected:', errors);
-}
-
-// Verify API calls
-const networkRequests = await mcp_chromedevtool_list_network_requests({ 
-  resourceTypes: ['xhr', 'fetch'] 
-});
-
-// Check for failed requests
-const failedRequests = networkRequests.filter(r => r.status >= 400);
-
-if (failedRequests.length > 0) {
-  logger.error('Failed API requests:', failedRequests);
-}
-```
-
-### Manual Testing Process (DEPRECATED - Use Chrome DevTools MCP)
-⚠️ **The following manual process is DEPRECATED. Use Chrome DevTools MCP instead.**
-
-1. ~~Test in English (LTR)~~ → Use MCP bilingual testing
-2. ~~Switch to Persian and verify RTL layout~~ → Use MCP bilingual testing
-3. ~~Resize browser through all breakpoints~~ → Use MCP responsive testing
-4. ~~Switch between light and dark themes~~ → Use MCP theme testing
-5. ~~Test error scenarios (network failures, invalid input)~~ → Use MCP error state testing
-6. ~~Test with authentication (logged in/out)~~ → Use MCP user flow testing
-7. ~~Check console for errors or warnings~~ → Use MCP console verification
 
 ## 🚀 Development Environment
 
@@ -1983,122 +1031,27 @@ public/locales/   # fa/, en/
 ## 🔧 Common Troubleshooting
 
 ### MUI Theme Issues
-
-**Problem**: Colors not updating when theme changes
-```typescript
-// ❌ Don't - hardcoded color persists
-<Box sx={{ color: '#1976d2' }}>
-
-// ✅ Do - use theme palette
-<Box sx={{ color: 'primary.main' }}>
-```
-
-**Problem**: RTL layout not working
-```typescript
-// ❌ Don't - hardcoded direction
-<Box sx={{ marginLeft: 2 }}>
-
-// ✅ Do - use logical properties
-<Box sx={{ marginInlineStart: 2 }}>
-```
+- **Colors not updating**: Use `theme.palette.*` not hardcoded values
+- **RTL not working**: Use logical properties (`marginInlineStart` not `marginLeft`)
 
 ### Axios API Issues
-
-**Problem**: API call not triggering UI update
-```typescript
-// ❌ Don't - not updating state after API call
-onClick={() => apiClient.get('/api/data')}
-
-// ✅ Do - properly handle async and update state
-onClick={async () => {
-  try {
-    setLoading(true);
-    const response = await apiClient.get('/api/data');
-    setData(response.data);
-  } catch (err) {
-    // Handle error
-    setError(err);
-  } finally {
-    setLoading(false);
-  }
-}}
-```
-
-**Problem**: Token refresh loop
-- Check `apiClient.ts` - ensure refresh mutex working
-- Verify refresh endpoint returns new tokens
-- Check browser console for 401 loops
-- Ensure Axios interceptors are properly configured
+- **No UI update**: Handle async properly, update state in try/catch/finally
+- **Token refresh loop**: Check `apiClient.ts` mutex, verify refresh endpoint, check console for 401 loops
 
 ### SignalR Stream Issues
-
-**Problem**: Stream not connecting
-- Verify backend SignalR server running on port 7136
-- Check CORS settings allow SignalR connections
-- Verify SSL certificates trusted
-- Check browser console for connection errors
-
-**Problem**: Stream memory leak
-```typescript
-// ❌ Don't - forgetting cleanup
-useEffect(() => {
-  connect();
-}, []);
-
-// ✅ Do - always cleanup
-useEffect(() => {
-  connect();
-  return () => {
-    disconnect();
-  };
-}, [disconnect]);
-```
+- **Not connecting**: Verify backend running on 7136, check CORS, verify SSL certs
+- **Memory leak**: Always cleanup in useEffect return function
 
 ### i18n Issues
-
-**Problem**: Translations not showing
-- Verify translation key exists in both `fa` and `en` files
-- Check browser console for missing key warnings
-- Ensure `useTranslation()` hook used correctly
-
-**Problem**: RTL not applying
-- Check `LanguageContext` - verify direction set
-- Ensure MUI theme receives `direction: 'rtl'`
-- Clear browser cache if styles cached
+- **Translations missing**: Verify keys exist in both fa/en files, check console warnings
+- **RTL not applying**: Check LanguageContext direction, verify theme receives `direction: 'rtl'`
 
 ### Build/Bundling Issues
-
-**Problem**: Build fails with type errors
-- Run `npm run type-check` to isolate issues
-- Check `tsconfig.json` strict mode settings
-- Verify all imports have proper types
-
-**Problem**: Bundle size too large
-- Check `npm run build -- --report` for large chunks
-- Check for duplicate dependencies in bundle
-- Verify no large libraries imported unnecessarily
+- **Type errors**: Run `npm run type-check`, check `tsconfig.json`
+- **Bundle too large**: Run `npm run build -- --report`, check for duplicates
 
 ### Performance Issues
-
-**Problem**: Slow re-renders
-```typescript
-// ❌ Don't - recreating functions
-const handleClick = () => { /* ... */ };
-
-// ✅ Do - memoize callbacks
-const handleClick = useCallback(() => {
-  /* ... */
-}, [deps]);
-```
-
-**Problem**: Slow chart rendering
-```typescript
-// ❌ Don't - recalculating options every render
-const options = getChartOptions();
-
-// ✅ Do - memoize expensive calculations
-const options = useMemo(() => getChartOptions(), [deps]);
-```
+- **Slow re-renders**: Use `useCallback` for functions, `useMemo` for expensive calculations
 
 ### AG Grid Issues
 
