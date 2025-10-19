@@ -617,287 +617,47 @@ If you find existing code using localStorage/sessionStorage:
 - For modals/dialogs: Include modal name in the identifier
 
 ### Chrome DevTools MCP Integration
-⚠️ **MANDATORY: Use Chrome DevTools MCP for ALL development workflow and debugging**
+⚠️ **MANDATORY: Use Chrome DevTools MCP for ALL testing, debugging, and verification**
 
-**CRITICAL RULES:**
-- ⚠️ **ALWAYS use Chrome DevTools MCP** for any UI testing, debugging, or verification
-- ⚠️ **NEVER rely on manual browser testing alone** - automate with MCP tools
-- ⚠️ **MANDATORY for all feature development** - test with MCP before marking complete
-- ⚠️ **REQUIRED for bug diagnosis** - use MCP tools to investigate and verify fixes
-- ⚠️ **ESSENTIAL for performance analysis** - use MCP performance tools for optimization
+**Why Mandatory:**
+- Automated, reproducible testing across breakpoints, themes, languages
+- Real-time state inspection, network monitoring, performance analysis
+- Eliminates manual testing, ensures comprehensive coverage
 
-The Chrome DevTools Model Context Protocol (MCP) server provides powerful browser automation and debugging capabilities essential for modern web development. Use these tools for real-time debugging, user behavior simulation, live styling inspection, and performance optimization.
+**Core Tools:**
+- **Navigation**: `list_pages`, `select_page`, `new_page`, `navigate_page`
+- **Interaction**: `take_snapshot`, `take_screenshot`, `click`, `fill`, `hover`, `drag`
+- **Debugging**: `evaluate_script`, `list_console_messages`, `list_network_requests`
+- **Performance**: `performance_start_trace`, `performance_stop_trace`, `resize_page`, `emulate_network`
 
-**Why Chrome DevTools MCP is Mandatory:**
-1. **Automated Testing**: Programmatic interaction with UI eliminates manual testing
-2. **Consistent Results**: Reproducible test scenarios across development sessions
-3. **Comprehensive Coverage**: Test all breakpoints, themes, and languages systematically
-4. **Performance Insights**: Real-time metrics for Core Web Vitals and bottlenecks
-5. **State Inspection**: Deep dive into React context, props, and state at runtime
-6. **Network Monitoring**: Track API calls, SignalR messages, and response times
-7. **Visual Verification**: Screenshots and snapshots for documentation and debugging
-
-#### 🔧 Core MCP Tools Overview
-**Navigation & Setup:**
-- `mcp_chromedevtool_list_pages` - List all open browser pages
-- `mcp_chromedevtool_select_page` - Set active page for operations
-- `mcp_chromedevtool_new_page` - Create new browser page
-- `mcp_chromedevtool_navigate_page` - Navigate to URLs
-- `mcp_chromedevtool_close_page` - Close specific pages
-
-**Live Inspection & Interaction:**
-- `mcp_chromedevtool_take_snapshot` - Get DOM snapshot with element UIDs
-- `mcp_chromedevtool_take_screenshot` - Capture visual state (full page or element)
-- `mcp_chromedevtool_click` - Click elements (single/double click)
-- `mcp_chromedevtool_hover` - Hover over elements
-- `mcp_chromedevtool_fill` - Fill input fields and forms
-- `mcp_chromedevtool_drag` - Drag and drop interactions
-
-**Real-Time Debugging:**
-- `mcp_chromedevtool_evaluate_script` - Execute JavaScript in browser context
-- `mcp_chromedevtool_list_console_messages` - Monitor console output
-- `mcp_chromedevtool_list_network_requests` - Track API calls and responses
-- `mcp_chromedevtool_get_network_request` - Get detailed request information
-
-**Performance & Testing:**
-- `mcp_chromedevtool_performance_start_trace` - Start performance recording
-- `mcp_chromedevtool_performance_stop_trace` - Stop and analyze performance
-- `mcp_chromedevtool_performance_analyze_insight` - Get detailed performance insights
-- `mcp_chromedevtool_resize_page` - Test responsive breakpoints
-- `mcp_chromedevtool_emulate_network` - Simulate network conditions
-- `mcp_chromedevtool_emulate_cpu` - Throttle CPU for testing
-
-#### 🐛 Real-Time Debugging and Error Diagnosis
-
-**Critical Debugging Workflow:**
-⚠️ **MANDATORY: Always take snapshots before debugging** to identify element UIDs
-
-**Key Debugging Steps:**
-1. **Console Monitoring**: Use `list_console_messages` to check for errors, warnings, network failures
-2. **Network Debugging**: Use `list_network_requests` with resourceTypes filter to monitor API calls
-3. **Live JavaScript**: Use `evaluate_script` to inspect Context state, auth tokens, theme, language settings
-4. **State Inspection**: Take snapshot first, then use `evaluate_script` with element UID to inspect React component props/state
-
-#### 👤 User Behavior Simulation
-
-**Comprehensive User Journey Testing:**
-⚠️ **MANDATORY: Test complete user workflows** including bilingual scenarios
-
-**Key Testing Scenarios:**
-1. **Authentication Flow**: Navigate to login, take snapshot, fill form with UIDs, click submit, wait for redirect
-2. **Bilingual Testing**: Click language switcher, take screenshots for RTL verification, test form inputs in both languages
-3. **Real-Time Monitoring**: Navigate to monitoring page, use `evaluate_script` to test SignalR streaming connection state
-4. **Complex Interactions**: Test drag-and-drop with element UIDs, test keyboard navigation
-
-#### 🎨 Live Styling and Layout Inspection
-
-**Real-Time Theme and Layout Testing:**
-⚠️ **MANDATORY: Test both light and dark themes** and responsive breakpoints
-
-**Key Testing Procedures:**
-1. **Theme System**: Test light and dark modes, use `evaluate_script` to inspect MUI theme values, take screenshots
-2. **Responsive Layout**: Test breakpoints using `resize_page`, check for horizontal scroll and overflow
-3. **RTL Layout**: Switch to Persian, verify MUI RTL handling, check for hardcoded left/right positioning
-4. **MUI Theme Values**: Use `evaluate_script` to inspect theme palette values and verify correct application
-
-#### ⚡ Performance Audits and Optimization
-
-**Comprehensive Performance Testing:**
-⚠️ **MANDATORY: Test Core Web Vitals** and streaming performance
-
-**Key Performance Tests:**
-1. **Core Web Vitals**: Use `performance_start_trace`, navigate/interact, then `performance_stop_trace` and `performance_analyze_insight`
-2. **Network Testing**: Use `emulate_network` with different conditions, measure load times, reset to "No emulation"
-3. **CPU Testing**: Use `emulate_cpu` with throttling rate, run heavy operations via `evaluate_script`, measure processing time
-4. **SignalR Streaming**: Use `evaluate_script` to monitor streaming metrics (messages received, latency, errors)
-5. **Memory Leaks**: Use `evaluate_script` to sample memory over time, analyze trend for memory increases
-
-#### 🔄 DevTools MCP Best Practices
-
-**Workflow Integration:**
-1. **Start with snapshots** - Always take DOM snapshots to get element UIDs
-2. **Monitor console** - Check for errors before and after each test
-3. **Test incrementally** - Break complex scenarios into smaller steps
-4. **Capture evidence** - Take screenshots at key points
-5. **Verify cleanup** - Ensure no memory leaks or hanging connections
-
-**Error Handling Pattern:**
-- Wrap test sequences in try/catch blocks
-- On error, capture screenshot and console messages before re-throwing
-- Always document the failure state for debugging
-
-**Multi-Browser Testing:**
-- Use `list_pages` to get all open pages
-- Loop through and `select_page` by index
-- Take screenshots of each page state for comparison
-
-#### 🎯 Mandatory Chrome DevTools MCP Usage Scenarios
-
-**MUST use Chrome DevTools MCP for:**
-
-1. **Feature Development:**
-   - After implementing any new component → Navigate, snapshot, interact to verify
-   - After any UI change → Take screenshots before/after for comparison
-   - After style changes → Test both themes, verify responsiveness with `resize_page`
-   - After form implementation → Fill forms, submit, verify validation with MCP tools
-
-2. **Bug Investigation:**
-   - User reports UI issue → Navigate to page, take snapshot, inspect with `evaluate_script`
-   - Visual regression → Take screenshots of affected areas, compare with expected
-   - JavaScript errors → Use `list_console_messages` to capture error details
-   - Network failures → Use `list_network_requests` to analyze API calls
-
-3. **Testing Workflows:**
-   - Authentication flow → Navigate to login, fill credentials, click submit, verify redirect
-   - Bilingual testing → Switch language, verify RTL, test all text translations
-   - Theme switching → Toggle theme, verify all components update correctly
-   - Responsive design → Test all breakpoints (xs: 375x667, sm: 768x1024, md: 900x600, lg: 1366x768, xl: 1920x1080)
-
-4. **Performance Analysis:**
-   - Page load time → Use `performance_start_trace` on navigation, analyze with `performance_analyze_insight`
-   - Component rendering → Monitor render times with performance traces
-   - Network optimization → Use `emulate_network` to test slow connections
-   - SignalR streaming → Monitor real-time message latency and throughput
-
-5. **State Debugging:**
-   - Context inspection → Use `evaluate_script` to access React context values
-   - Props verification → Inspect component props at runtime
-   - State mutations → Monitor state changes during user interactions
-   - Memory leaks → Sample memory usage over time to detect leaks
-
-**Chrome DevTools MCP Workflow Pattern:**
-```typescript
-// 1. Navigate to page under test
-await mcp_chromedevtool_navigate_page({ url: 'https://localhost:5173/dashboard' });
-
-// 2. Take snapshot to get element UIDs
-const snapshot = await mcp_chromedevtool_take_snapshot();
-
-// 3. Interact with elements
-await mcp_chromedevtool_fill({ uid: 'input-username', value: 'test@example.com' });
-await mcp_chromedevtool_click({ uid: 'button-submit' });
-
-// 4. Verify results
-const messages = await mcp_chromedevtool_list_console_messages();
-const screenshot = await mcp_chromedevtool_take_screenshot({ fullPage: true });
-
-// 5. Check network activity
-const requests = await mcp_chromedevtool_list_network_requests({ resourceTypes: ['xhr', 'fetch'] });
-
-// 6. Inspect state
-const result = await mcp_chromedevtool_evaluate_script({ 
-  function: '() => { return window.__REACT_DEVTOOLS_GLOBAL_HOOK__ }' 
-});
-```
+**Usage Scenarios:**
+1. **Feature Development**: Navigate → snapshot → interact → verify with screenshots
+2. **Bilingual Testing**: Switch language → verify RTL → test forms
+3. **Responsive Testing**: Resize to all breakpoints → check scroll
+4. **Theme Testing**: Switch themes → verify with screenshots
+5. **Debugging**: Console messages → network requests → evaluate script for state inspection
 
 ### MUI MCP Server Integration
-⚠️ **MANDATORY: Use MUI MCP Server for Material-UI documentation and examples**
+⚠️ **MANDATORY: Use MUI MCP Server for Material-UI documentation**
 
-The MUI MCP Server provides direct access to official Material-UI documentation and code examples, ensuring you're using the latest MUI patterns, components, and best practices.
+**Tools:**
+- `mcp_mui-mcp_useMuiDocs` - Access MUI docs for specific versions
+- `mcp_mui-mcp_fetchDocs` - Fetch detailed documentation
 
-#### 📚 MUI Documentation Access
+**Supported Packages:** @mui/material v6, @mui/x-data-grid, @mui/x-charts, @mui/x-date-pickers, @mui/x-tree-view
 
-**Available Tools:**
-- `mcp_mui-mcp_useMuiDocs` - Access Material-UI documentation for specific versions
-- `mcp_mui-mcp_fetchDocs` - Fetch detailed documentation from specific URLs
+**When to Use:**
+- Before implementing any MUI component
+- When encountering component errors
+- Before using theme customization, responsive layouts, or sx prop patterns
+- For form components, data display, RTL support, accessibility
 
-**Supported MUI Packages:**
-- **@mui/material** - Core Material-UI components (v5.17.1, v6.4.12, v7.2.0)
-- **@mui/x-data-grid** - Data Grid components (v7.29.7, v8.8.0)
-- **@mui/x-charts** - Chart components (v7.29.1, v8.8.0)
-- **@mui/x-date-pickers** - Date/Time pickers (v7.29.4, v8.8.0)
-- **@mui/x-tree-view** - Tree view components (v7.29.1, v8.8.0)
-- **@mui/x-common-concepts** - Common concepts across MUI X components (v7.29.7, v8.8.0)
-
-#### 🎯 When to Use MUI MCP
-
-**MANDATORY Usage Scenarios:**
-- Before implementing any MUI component for the first time
-- When encountering MUI component errors or unexpected behavior
-- Before using MUI theme customization features
-- When implementing responsive layouts with MUI Grid/Stack
-- Before using MUI sx prop patterns or styling solutions
-- When working with MUI form components and validation
-- Before implementing MUI data display components (Tables, Cards, Lists)
-- When setting up MUI RTL support for Persian language
-- Before using advanced MUI features (virtualization, customization, etc.)
-
-#### 📖 Usage Pattern
-
-**Step 1: Identify the MUI Package and Version**
-This project uses **@mui/material v6** - always reference v6 documentation using the MUI MCP server
-
-**Step 2: Fetch Specific Documentation**
-After getting the documentation structure, fetch specific pages using the appropriate MUI MCP tool
-
-#### 🔍 Common Use Cases
-
-**1. Component Implementation:**
-- Use MUI MCP before creating any component using MUI
-- Verify current API and prop interfaces
-- Check for deprecated patterns or new features
-- Get official code examples
-
-**2. Theme Customization:**
-- Reference official theming documentation
-- Verify palette structure and theme values
-- Check RTL support requirements
-- Understand theme provider patterns
-
-**3. Responsive Design:**
-- Get documentation on Grid system usage
-- Verify breakpoint definitions and usage
-- Check responsive prop patterns
-- Understand sx prop breakpoint syntax
-
-**4. Form Components:**
-- Verify TextField, Select, Checkbox patterns
-- Check form validation integration
-- Understand controlled/uncontrolled patterns
-- Get accessibility best practices
-
-**5. Data Display:**
-- Check Table, Card, List component APIs
-- Verify data formatting patterns
-- Understand virtualization options
-- Check pagination and sorting patterns
-
-#### ⚡ MUI MCP Best Practices
-
-**Workflow Integration:**
-1. **Documentation First** - Always check MUI docs before implementation
-2. **Version Specific** - Use @mui/material v6 documentation for this project
-3. **Code Examples** - Fetch and adapt official examples
-4. **Pattern Consistency** - Follow documented patterns throughout the codebase
-5. **Update Knowledge** - Your training data may be outdated - always verify with MUI MCP
-
-**Critical Guidelines:**
-- Never assume MUI API from memory - always verify with MUI MCP
-- Check for breaking changes between versions
-- Verify prop interfaces before using components
+**Best Practices:**
+- Always verify with MUI MCP (don't assume from memory)
+- Use @mui/material v6 docs for this project
+- Check for breaking changes and prop interfaces
 - Follow official styling patterns (sx prop over inline styles)
-- Check RTL considerations for bilingual support
-- Verify theme integration patterns
-- Reference official TypeScript types
 
-**Integration with Project Standards:**
-- Use MUI MCP to verify theme palette access patterns
-- Check official examples for responsive design
-- Verify component prop TypeScript interfaces
-- Ensure RTL support follows MUI guidelines
-- Validate accessibility patterns from official docs
-
-#### 🎨 MUI Theme System Reference
-
-When using MUI MCP for theme documentation:
-- Verify current theme palette structure
-- Check theme spacing and breakpoint definitions
-- Understand theme provider configuration
-- Learn about theme customization patterns
-- Verify RTL theme configuration
-- Check dark mode implementation patterns
-
-**Remember:** This project uses MUI v6 with custom theme configuration. Always cross-reference MUI MCP documentation with the project's `MuiThemeProvider.tsx` implementation.
 
 ## Structure
 ```
