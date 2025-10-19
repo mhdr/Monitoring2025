@@ -118,29 +118,33 @@ public class SignalRBroadcastService
                     }
                     else
                     {
-                        // Non-admin users: filter by ItemPermissions
-                        var userPermissions = await context.ItemPermissions
+                        // Non-admin users: filter by ItemPermissions AND GroupPermissions
+                        // Get direct item permissions
+                        var directItemIds = await context.ItemPermissions
                             .Where(p => p.UserId == userId)
                             .Select(p => p.ItemId)
                             .ToListAsync(cancellationToken);
 
+                        // Get group permissions and find all items in those groups
+                        var groupIds = await context.GroupPermissions
+                            .Where(p => p.UserId == userId)
+                            .Select(p => p.GroupId)
+                            .ToListAsync(cancellationToken);
+
+                        var groupItemIds = await context.GroupItems
+                            .Where(gi => groupIds.Contains(gi.GroupId))
+                            .Select(gi => gi.ItemId)
+                            .ToListAsync(cancellationToken);
+
+                        // Combine both direct and group-based permissions
+                        var allAccessibleItemIds = directItemIds.Concat(groupItemIds).Distinct().ToHashSet();
+
                         // Filter active alarms to only those the user has permission to see
-
-                        var count = 0;
-
-                        foreach (var alarm in activeAlarms)
-                        {
-                            if (userPermissions.Contains(alarm.ItemId))
-                            {
-                                count++;
-                            }
-                        }
-
-                        userAlarmCount = count;
+                        userAlarmCount = activeAlarms.Count(alarm => allAccessibleItemIds.Contains(alarm.ItemId));
 
                         _logger.LogDebug(
-                            "{Operation}: User {UserId} ({UserName}) has {PermissionCount} item permissions, showing {AlarmCount} alarms",
-                            operation, userIdString, user.UserName, userPermissions.Count, userAlarmCount);
+                            "{Operation}: User {UserId} ({UserName}) has {DirectPermissionCount} direct permissions, {GroupCount} group permissions ({GroupItemCount} items via groups), showing {AlarmCount} alarms",
+                            operation, userIdString, user.UserName, directItemIds.Count, groupIds.Count, groupItemIds.Count, userAlarmCount);
                     }
 
                     // Get all connections for this user
