@@ -625,6 +625,96 @@ Content-Type: application/json
 ###
 
 ### ========================================
+### Audit Log Endpoints
+### ========================================
+
+### Get Audit Logs - All Items (Last 7 Days)
+POST {{API_HostAddress}}/api/monitoring/auditlog
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "startDate": 1728950400,
+  "endDate": 1729555200,
+  "itemId": null
+}
+
+###
+
+### Get Audit Logs - Specific Item
+POST {{API_HostAddress}}/api/monitoring/auditlog
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "startDate": 1728950400,
+  "endDate": 1729555200,
+  "itemId": "550e8400-e29b-41d4-a716-446655440001"
+}
+
+###
+
+### Get Audit Logs - Last 24 Hours (All Items)
+POST {{API_HostAddress}}/api/monitoring/auditlog
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "startDate": 1729468800,
+  "endDate": 1729555200
+}
+
+###
+
+### Get Audit Logs - Invalid Date Range (should return 400)
+POST {{API_HostAddress}}/api/monitoring/auditlog
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "startDate": 1729555200,
+  "endDate": 1728950400
+}
+
+###
+
+### Get Audit Logs - Invalid ItemId Format (should return 400)
+POST {{API_HostAddress}}/api/monitoring/auditlog
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "startDate": 1728950400,
+  "endDate": 1729555200,
+  "itemId": "invalid-guid-format"
+}
+
+###
+
+### Get Audit Logs - Negative Timestamps (should return 400)
+POST {{API_HostAddress}}/api/monitoring/auditlog
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "startDate": -1,
+  "endDate": 1729555200
+}
+
+###
+
+### Get Audit Logs - Unauthorized (should return 401)
+POST {{API_HostAddress}}/api/monitoring/auditlog
+Content-Type: application/json
+
+{
+  "startDate": 1728950400,
+  "endDate": 1729555200
+}
+
+###
+
+### ========================================
 ### SignalR Hub Documentation
 ### ========================================
 

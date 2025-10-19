@@ -1340,55 +1340,138 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <summary>
     /// Retrieve audit log entries for system activities within a date range
     /// </summary>
-    /// <param name="request">Audit log request containing start date, end date, and optional item ID filter</param>
-    /// <returns>List of audit log entries showing user actions and system events</returns>
-    /// <response code="200">Returns the audit log entries</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <param name="request">Audit log request containing start date (Unix timestamp), end date (Unix timestamp), and optional item ID filter</param>
+    /// <returns>List of audit log entries showing user actions and system events with user details</returns>
+    /// <remarks>
+    /// Retrieves audit log entries within the specified date range. If itemId is provided,
+    /// only returns logs for that specific item. Otherwise, returns all logs in the system.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/auditlog
+    ///     {
+    ///        "startDate": 1697587200,
+    ///        "endDate": 1697673600,
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440001"
+    ///     }
+    ///     
+    /// Leave itemId empty or null to retrieve all audit logs for the date range.
+    /// Dates are Unix timestamps (seconds since epoch).
+    /// Results are ordered by time descending (most recent first).
+    /// </remarks>
+    /// <response code="200">Returns the audit log entries with success status</response>
+    /// <response code="400">Validation error - invalid request format, invalid GUID, or date range error</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("AuditLog")]
     [ProducesResponseType(typeof(AuditLogResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AuditLog([FromBody] AuditLogRequestDto request)
     {
         try
         {
+            _logger.LogInformation("AuditLog endpoint called: User {UserId}", User.Identity?.Name);
+
+            // Validate ModelState first
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                
+                _logger.LogWarning("AuditLog validation failed: {Errors}", string.Join(", ", errors));
+                return BadRequest(new 
+                { 
+                    success = false, 
+                    message = "Validation failed", 
+                    errors = errors 
+                });
+            }
+
+            // Extract and validate user ID
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("AuditLog unauthorized access attempt (no user id)");
+                return Unauthorized(new { success = false, message = "Invalid or missing authentication token" });
             }
 
-            List<AuditLog> logs = null;
+            // Validate date range
+            if (request.StartDate <= 0 || request.EndDate <= 0)
+            {
+                _logger.LogWarning("AuditLog invalid date range: StartDate={StartDate}, EndDate={EndDate}", 
+                    request.StartDate, request.EndDate);
+                return BadRequest(new { success = false, message = "Start date and end date must be positive Unix timestamps" });
+            }
 
-            if (string.IsNullOrEmpty(request.ItemId))
+            if (request.StartDate > request.EndDate)
+            {
+                _logger.LogWarning("AuditLog invalid date range: StartDate > EndDate");
+                return BadRequest(new { success = false, message = "Start date must be before or equal to end date" });
+            }
+
+            // Validate ItemId format if provided
+            Guid? itemIdGuid = null;
+            if (!string.IsNullOrEmpty(request.ItemId))
+            {
+                if (!Guid.TryParse(request.ItemId, out var parsedGuid))
+                {
+                    _logger.LogWarning("AuditLog invalid ItemId format: {ItemId}", request.ItemId);
+                    return BadRequest(new { success = false, message = "Invalid ItemId format. Must be a valid GUID." });
+                }
+                itemIdGuid = parsedGuid;
+            }
+
+            _logger.LogDebug("Fetching audit logs: StartDate={StartDate}, EndDate={EndDate}, ItemId={ItemId}", 
+                request.StartDate, request.EndDate, request.ItemId ?? "ALL");
+
+            // Query audit logs
+            List<AuditLog> logs;
+            if (itemIdGuid.HasValue)
+            {
+                logs = await _context.AuditLogs
+                    .Where(x => x.ItemId == itemIdGuid.Value && x.Time >= request.StartDate && x.Time <= request.EndDate)
+                    .OrderByDescending(x => x.Time)
+                    .ToListAsync();
+            }
+            else
             {
                 logs = await _context.AuditLogs
                     .Where(x => x.Time >= request.StartDate && x.Time <= request.EndDate)
                     .OrderByDescending(x => x.Time)
                     .ToListAsync();
             }
-            else
-            {
-                Guid itemId = new Guid(request.ItemId);
-                logs = await _context.AuditLogs
-                    .Where(x => x.ItemId == itemId && x.Time >= request.StartDate && x.Time <= request.EndDate)
-                    .OrderByDescending(x => x.Time)
-                    .ToListAsync();
-            }
 
+            // Get all unique user IDs from logs to avoid N+1 query problem
+            var userIds = logs
+                .Where(l => l.UserId != null)
+                .Select(l => l.UserId.ToString())
+                .Distinct()
+                .ToList();
+
+            // Fetch all users in a single query
+            var users = await _context.Users
+                .Where(u => userIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.UserName);
+
+            // Build response
             var response = new AuditLogResponseDto();
 
             foreach (var d in logs)
             {
-                string logUserId = "";
                 string userName = "";
                 if (d.UserId != null)
                 {
-                    logUserId = d.UserId.ToString();
-                    var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == logUserId);
-                    userName = user.UserName;
+                    var userIdString = d.UserId.ToString();
+                    if (userIdString != null)
+                    {
+                        users.TryGetValue(userIdString, out var foundUserName);
+                        userName = foundUserName ?? "";
+                    }
                 }
 
                 response.Data.Add(new AuditLogResponseDto.DataDto()
@@ -1396,7 +1479,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     Id = d.Id,
                     IsUser = d.IsUser,
                     UserId = d.UserId,
-                    UserName = userName ?? "",
+                    UserName = userName,
                     ItemId = d.ItemId,
                     ActionType = d.ActionType,
                     IpAddress = d.IpAddress,
@@ -1405,14 +1488,28 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 });
             }
 
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-        }
+            _logger.LogInformation("AuditLog completed successfully: User {UserId}, LogCount={LogCount}", 
+                User.Identity?.Name, response.Data.Count);
 
-        return BadRequest(ModelState);
+            return Ok(new { success = true, data = response, message = "Audit logs retrieved successfully" });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "AuditLog validation error: {Message}", ex.Message);
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "AuditLog unauthorized access: {Message}", ex.Message);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in AuditLog endpoint for user {UserId}: {Message}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier), ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { success = false, message = "Internal server error" });
+        }
     }
 
     /// <summary>
