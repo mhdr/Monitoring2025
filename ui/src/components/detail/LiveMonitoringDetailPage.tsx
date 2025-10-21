@@ -16,6 +16,8 @@ import {
   useTheme,
   useMediaQuery,
   Stack,
+  Collapse,
+  IconButton,
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -24,6 +26,7 @@ import {
   Warning as WarningIcon,
   ArrowBack as ArrowBackIcon,
   Circle as CircleIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useMonitoring } from '../../hooks/useMonitoring';
@@ -83,6 +86,7 @@ const LiveMonitoringDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [settingsLoaded, setSettingsLoaded] = useState<boolean>(false);
+  const [controlsExpanded, setControlsExpanded] = useState<boolean>(true);
 
   // Use ref to store interval ID for cleanup
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -485,21 +489,41 @@ const LiveMonitoringDetailPage: React.FC = () => {
 
       {/* Controls Card */}
       <Card sx={{ mb: 3 }} data-id-ref="live-monitoring-controls-card">
-        <CardHeader title={t('liveMonitoring')} dataIdRef="live-monitoring-controls-header" />
-        <CardContent sx={{ p: isMobile ? 2 : 3 }} data-id-ref="live-monitoring-controls-card-body">
-          <Stack direction={isMobile ? 'column' : 'row'} spacing={2} alignItems={isMobile ? 'stretch' : 'center'}>
-            {/* Start/Stop Button */}
-            <Button
-              variant="contained"
-              color={isPolling ? 'error' : 'success'}
-              size="medium"
-              onClick={isPolling ? stopPolling : startPolling}
-              startIcon={isPolling ? <StopIcon /> : <PlayIcon />}
-              sx={{ minWidth: { xs: '100%', md: 150 } }}
-              data-id-ref="live-monitoring-toggle-button"
-            >
-              {isPolling ? t('stopMonitoring') : t('startMonitoring')}
-            </Button>
+        <CardHeader
+          title={t('liveMonitoring')}
+          dataIdRef="live-monitoring-controls-header"
+          action={
+            isMobile ? (
+              <IconButton
+                onClick={() => setControlsExpanded(!controlsExpanded)}
+                aria-expanded={controlsExpanded}
+                aria-label={controlsExpanded ? t('collapse') : t('expand')}
+                sx={{
+                  transform: controlsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.3s',
+                }}
+                data-id-ref="live-monitoring-controls-expand-button"
+              >
+                <ExpandMoreIcon />
+              </IconButton>
+            ) : undefined
+          }
+        />
+        <Collapse in={!isMobile || controlsExpanded} timeout="auto" unmountOnExit>
+          <CardContent sx={{ p: isMobile ? 2 : 3 }} data-id-ref="live-monitoring-controls-card-body">
+            <Stack direction={isMobile ? 'column' : 'row'} spacing={2} alignItems={isMobile ? 'stretch' : 'center'}>
+              {/* Start/Stop Button */}
+              <Button
+                variant="contained"
+                color={isPolling ? 'error' : 'success'}
+                size="medium"
+                onClick={isPolling ? stopPolling : startPolling}
+                startIcon={isPolling ? <StopIcon /> : <PlayIcon />}
+                sx={{ minWidth: { xs: '100%', md: 150 } }}
+                data-id-ref="live-monitoring-toggle-button"
+              >
+                {isPolling ? t('stopMonitoring') : t('startMonitoring')}
+              </Button>
 
             {/* Status Indicator */}
             <Chip
@@ -563,8 +587,9 @@ const LiveMonitoringDetailPage: React.FC = () => {
             >
               {t('clearData')}
             </Button>
-          </Stack>
-        </CardContent>
+            </Stack>
+          </CardContent>
+        </Collapse>
       </Card>
 
       {/* Chart Section */}
