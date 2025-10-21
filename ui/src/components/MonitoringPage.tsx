@@ -278,7 +278,7 @@ const MonitoringPage: React.FC = () => {
 
   return (
     <Container maxWidth={false} data-id-ref="monitoring-page-root-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
-      <Card data-id-ref="monitoring-page-main-card" sx={{ height: '100%' }}>
+      <Card data-id-ref="monitoring-page-main-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <CardHeader 
           data-id-ref="monitoring-page-header"
           title={
@@ -306,7 +306,7 @@ const MonitoringPage: React.FC = () => {
           }
         />
         
-        <CardContent data-id-ref="monitoring-page-body">
+        <CardContent data-id-ref="monitoring-page-body" sx={{ flex: 1, overflow: 'auto' }}>
           {/* Breadcrumb Navigation */}
           {breadcrumbs.length > 0 && (
             <Box 
