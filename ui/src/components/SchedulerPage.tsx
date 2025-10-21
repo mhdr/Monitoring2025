@@ -14,7 +14,7 @@ const SchedulerPage: React.FC = () => {
 
   return (
     <Container maxWidth={false} data-id-ref="scheduler-page-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
-      <Card data-id-ref="scheduler-page-card" sx={{ height: '100%' }}>
+      <Card data-id-ref="scheduler-page-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <CardHeader
           data-id-ref="scheduler-page-card-header"
           title={
@@ -23,7 +23,7 @@ const SchedulerPage: React.FC = () => {
             </Typography>
           }
         />
-        <CardContent data-id-ref="scheduler-page-card-body">
+        <CardContent data-id-ref="scheduler-page-card-body" sx={{ flex: 1, overflow: 'auto' }}>
           <Box 
             sx={{ 
               display: 'flex', 

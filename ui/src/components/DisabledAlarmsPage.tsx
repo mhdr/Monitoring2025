@@ -14,7 +14,7 @@ const DisabledAlarmsPage: React.FC = () => {
 
   return (
     <Container maxWidth={false} data-id-ref="disabled-alarms-page-root-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
-      <Card data-id-ref="disabled-alarms-page-card" sx={{ height: '100%' }}>
+      <Card data-id-ref="disabled-alarms-page-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <CardHeader
           data-id-ref="disabled-alarms-page-card-header"
           title={
@@ -23,7 +23,7 @@ const DisabledAlarmsPage: React.FC = () => {
             </Typography>
           }
         />
-        <CardContent data-id-ref="disabled-alarms-page-card-body">
+        <CardContent data-id-ref="disabled-alarms-page-card-body" sx={{ flex: 1, overflow: 'auto' }}>
           <Box 
             sx={{ 
               display: 'flex', 
