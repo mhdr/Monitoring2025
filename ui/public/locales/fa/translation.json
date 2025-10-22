@@ -372,6 +372,10 @@
       "digitalOutput": "خروجی دیجیتال",
       "analogInput": "ورودی آنالوگ",
       "analogOutput": "خروجی آنالوگ"
+    },
+    "editableStatus": {
+      "editable": "قابل ویرایش",
+      "readOnly": "فقط خواندنی"
     }
   }
 }

@@ -29,6 +29,8 @@ import {
   Output as OutputIcon,
   GraphicEq as AnalogIcon,
   ToggleOn as DigitalIcon,
+  Edit as EditIcon,
+  Lock as LockIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
@@ -109,6 +111,25 @@ const getItemTypeInfo = (itemType: ItemType) => {
         translationKey: 'itemCard.itemTypes.digitalInput',
         color: 'default' as const
       };
+  }
+};
+
+/**
+ * Get editable status display information with icon and color coding
+ */
+const getEditableStatusInfo = (isEditable: boolean) => {
+  if (isEditable) {
+    return {
+      icon: <EditIcon sx={{ fontSize: 14 }} />,
+      translationKey: 'itemCard.editableStatus.editable',
+      color: 'info' as const // Blue for editable
+    };
+  } else {
+    return {
+      icon: <LockIcon sx={{ fontSize: 14 }} />,
+      translationKey: 'itemCard.editableStatus.readOnly',
+      color: 'default' as const // Gray for read-only
+    };
   }
 };
 
@@ -336,6 +357,37 @@ const ItemCard: React.FC<ItemCardProps> = ({
                         borderRadius: 1,
                       }}
                       data-id-ref="item-card-interface-type-indicator"
+                    />
+                  </Tooltip>
+                );
+              })()}
+
+              {/* Editable status indicator */}
+              {item?.isEditable !== undefined && (() => {
+                const editableInfo = getEditableStatusInfo(item.isEditable);
+                const tooltipText = t(editableInfo.translationKey);
+                return (
+                  <Tooltip 
+                    title={tooltipText} 
+                    arrow 
+                    placement="top"
+                  >
+                    <Chip
+                      icon={editableInfo.icon}
+                      size="small"
+                      color={editableInfo.color}
+                      variant="outlined"
+                      sx={{
+                        height: 24,
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        borderRadius: 1,
+                        '& .MuiChip-icon': {
+                          marginInlineStart: 1,
+                          marginInlineEnd: -0.5,
+                        },
+                      }}
+                      data-id-ref="item-card-editable-status-indicator"
                     />
                   </Tooltip>
                 );

@@ -372,6 +372,10 @@
       "digitalOutput": "Digital Output",
       "analogInput": "Analog Input",
       "analogOutput": "Analog Output"
+    },
+    "editableStatus": {
+      "editable": "Editable",
+      "readOnly": "Read Only"
     }
   }
 }
