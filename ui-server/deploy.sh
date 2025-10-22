@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 # EMS3 UI Server Deployment Script
 # This script deploys the UI server to /opt/ems3/ui and sets up systemd service

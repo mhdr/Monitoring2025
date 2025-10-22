@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 
 deploy_dir=/opt/ems3/api
 service_name=ems3_api.service
@@ -7,7 +7,6 @@ service_file=ems3_api.service
 # deploy
 sudo mkdir -p ${deploy_dir}
 sudo dotnet publish --output "${deploy_dir}" --configuration Release
-sudo cp run.sh ${deploy_dir}/run.sh
 
 # systemd
 sudo systemctl stop ${service_name}

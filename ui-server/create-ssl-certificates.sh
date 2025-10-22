@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 # SSL Certificate Generation Script for UI Server
 # This script creates self-signed SSL certificates for local development

@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 # Check if SSL certificates exist and are valid
 # This script runs before starting the dev server

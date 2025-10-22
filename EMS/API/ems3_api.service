@@ -1,12 +1,11 @@
 ﻿[Unit]
-Description=Monitoring Web
+Description=EMS3 API
 After=syslog.target network.target postgresql.service
 
 [Service]
 User=root
 Type=notify
-#ExecStart=/opt/monitoring/web/run.sh
-ExecStart=/usr/bin/dotnet /opt/monitoring/web/WebServer.dll --urls "http://0.0.0.0:3001;https://0.0.0.0:3003" --contentRoot /opt/monitoring/web --environment Production
+ExecStart=/usr/bin/dotnet /opt/monitoring/web/API.dll --urls "https://0.0.0.0:7136" --contentRoot /opt/ems3/api --environment Production
 SuccessExitStatus=143
 MemoryMax=4096M
 Restart=always
@@ -15,5 +14,5 @@ KillSignal=SIGINT
 Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
 Environment=ConnectionStrings__DefaultConnection=Host\x3dlocalhost\x3bDatabase\x3dmonitoring_core\x3bUsername\x3dmonitoring\x3bPassword\x3ddbpassword
 [Install]
-Alias=monitoring_web.service
+Alias=ems3_api.service
 WantedBy=multi-user.target

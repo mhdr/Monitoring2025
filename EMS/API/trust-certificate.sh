@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 # SSL Certificate Trust Installation Script for EndeavourOS/Arch Linux
 # This script installs the EMS API Root CA certificate to the system's trusted certificate store
