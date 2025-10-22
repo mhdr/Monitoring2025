@@ -182,7 +182,7 @@ const pulseAnimation = keyframes`
           }}
           data-id-ref="sidebar-title"
         >
-          {t('systemTitle')}
+          {t('dashboard')}
         </Typography>
         {isMobile && (
           <IconButton
