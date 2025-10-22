@@ -14,6 +14,8 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Chip,
+  Zoom,
 } from '@mui/material';
 import { 
   OpenInNew,
@@ -22,9 +24,11 @@ import {
   TrendingFlat as TrendingFlatIcon,
   Timeline as TimelineIcon,
   Close as CloseIcon,
+  NotificationsActive as NotificationsActiveIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
+import { useItemAlarmStatus } from '../hooks/useItemAlarmStatus';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
 import { createLogger } from '../utils/logger';
 import type { Item } from '../types/api';
@@ -56,7 +60,21 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const [elevation, setElevation] = useState<number>(1);
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
 
-  logger.log('ItemCard render', { itemId, name, historyLength: valueHistory.length });
+  // Check if this item has active alarms
+  const { hasAlarm, alarmPriority, isChecking } = useItemAlarmStatus({
+    itemId,
+    enablePolling: true,
+    pollingInterval: 30000, // Re-check every 30 seconds
+  });
+
+  logger.log('ItemCard render', { 
+    itemId, 
+    name, 
+    historyLength: valueHistory.length,
+    hasAlarm,
+    alarmPriority,
+    isChecking,
+  });
 
   // Memoize the detail URL to avoid recalculating on every render
   const detailUrl = useMemo(
@@ -119,10 +137,34 @@ const ItemCard: React.FC<ItemCardProps> = ({
           onMouseLeave={() => setElevation(1)}
           sx={{
             height: '100%',
+            position: 'relative',
+            overflow: 'visible',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             '&:hover': {
               transform: 'translateY(-4px)',
             },
+            // Alarm state styling
+            ...(hasAlarm && {
+              borderWidth: 2,
+              borderStyle: 'solid',
+              borderColor: alarmPriority === 2 ? 'error.main' : 'warning.main',
+              boxShadow: alarmPriority === 2 
+                ? (theme) => `0 0 0 2px ${theme.palette.error.main}40, 0 0 20px ${theme.palette.error.main}30`
+                : (theme) => `0 0 0 2px ${theme.palette.warning.main}40, 0 0 20px ${theme.palette.warning.main}30`,
+              animation: 'alarm-pulse 2s ease-in-out infinite',
+              '@keyframes alarm-pulse': {
+                '0%, 100%': {
+                  boxShadow: alarmPriority === 2 
+                    ? (theme) => `0 0 0 2px ${theme.palette.error.main}40, 0 0 20px ${theme.palette.error.main}30`
+                    : (theme) => `0 0 0 2px ${theme.palette.warning.main}40, 0 0 20px ${theme.palette.warning.main}30`,
+                },
+                '50%': {
+                  boxShadow: alarmPriority === 2 
+                    ? (theme) => `0 0 0 4px ${theme.palette.error.main}60, 0 0 30px ${theme.palette.error.main}50`
+                    : (theme) => `0 0 0 4px ${theme.palette.warning.main}60, 0 0 30px ${theme.palette.warning.main}50`,
+                },
+              },
+            }),
           }}
           data-id-ref="item-card-root-container"
         >
@@ -148,20 +190,46 @@ const ItemCard: React.FC<ItemCardProps> = ({
             }}
             data-id-ref="item-card-header"
           >
-            <Typography
-              variant="h6"
-              component="h6"
-              sx={{
-                fontWeight: 600,
-                wordBreak: 'break-word',
-                lineHeight: 1.4,
-                flex: 1,
-                fontSize: '1rem',
-              }}
-              data-id-ref="item-card-title"
-            >
-              {name}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+              <Typography
+                variant="h6"
+                component="h6"
+                sx={{
+                  fontWeight: 600,
+                  wordBreak: 'break-word',
+                  lineHeight: 1.4,
+                  flex: 1,
+                  fontSize: '1rem',
+                }}
+                data-id-ref="item-card-title"
+              >
+                {name}
+              </Typography>
+              {/* Alarm badge indicator */}
+              {hasAlarm && (
+                <Zoom in timeout={300}>
+                  <Chip
+                    icon={<NotificationsActiveIcon sx={{ fontSize: 16 }} />}
+                    label={alarmPriority === 2 ? t('itemCard.highPriorityAlarm') : t('itemCard.lowPriorityAlarm')}
+                    size="small"
+                    color={alarmPriority === 2 ? 'error' : 'warning'}
+                    sx={{
+                      fontWeight: 600,
+                      animation: 'alarm-badge-pulse 2s ease-in-out infinite',
+                      '@keyframes alarm-badge-pulse': {
+                        '0%, 100%': {
+                          opacity: 1,
+                        },
+                        '50%': {
+                          opacity: 0.7,
+                        },
+                      },
+                    }}
+                    data-id-ref="item-card-alarm-badge"
+                  />
+                </Zoom>
+              )}
+            </Box>
             <Tooltip title={t('openInNewTab')} arrow placement="top">
               <IconButton
                 onClick={handleOpenNewTab}

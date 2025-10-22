@@ -354,5 +354,11 @@
       "disabled": "اعلان‌ها غیرفعال شد",
       "denied": "اجازه نمایش اعلان توسط مرورگر رد شد"
     }
+  },
+  "itemCard": {
+    "highPriorityAlarm": "اولویت بالا",
+    "lowPriorityAlarm": "اولویت پایین",
+    "hasActiveAlarm": "این مورد دارای هشدار فعال است",
+    "checkingAlarmStatus": "بررسی وضعیت هشدار..."
   }
 }

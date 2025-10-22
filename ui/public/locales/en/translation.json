@@ -354,5 +354,11 @@
       "disabled": "Notifications Disabled",
       "denied": "Notification permission denied by browser"
     }
+  },
+  "itemCard": {
+    "highPriorityAlarm": "High Priority",
+    "lowPriorityAlarm": "Low Priority",
+    "hasActiveAlarm": "This item has an active alarm",
+    "checkingAlarmStatus": "Checking alarm status..."
   }
 }
