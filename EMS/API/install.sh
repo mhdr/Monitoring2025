@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 
 deploy_dir=/opt/ems3/api
 service_name=ems3_api.service

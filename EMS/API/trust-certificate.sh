@@ -1,8 +1,10 @@
-﻿#!/bin/bash
+#!/bin/bash
 
-# SSL Certificate Trust Installation Script for EndeavourOS/Arch Linux
+# SSL Certificate Trust Installation Script for Linux
 # This script installs the EMS API Root CA certificate to the system's trusted certificate store
 # and ensures compatibility with Chrome, Firefox, and React applications
+# 
+# Supports: Ubuntu/Debian, Arch Linux, CentOS/RHEL/Fedora
 # 
 # Usage: sudo ./trust-certificate.sh
 # 
@@ -25,9 +27,48 @@ NC='\033[0m' # No Color
 # Configuration
 CERT_DIR="certificates"
 CA_CERT_NAME="api-root-ca"
-SYSTEM_CERT_DIR="/etc/ca-certificates/trust-source/anchors"
+
+# Detect Linux distribution and set appropriate paths
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS_ID=$ID
+else
+    echo -e "${RED}Error: Cannot detect Linux distribution${NC}"
+    exit 1
+fi
+
+# Set certificate directory based on distribution
+case $OS_ID in
+    ubuntu|debian)
+        SYSTEM_CERT_DIR="/usr/local/share/ca-certificates"
+        UPDATE_CERT_CMD="update-ca-certificates"
+        PKG_MANAGER="apt-get"
+        CERT_FILENAME="ems-api-root-ca.crt"
+        ;;
+    arch|endeavouros|manjaro)
+        SYSTEM_CERT_DIR="/etc/ca-certificates/trust-source/anchors"
+        UPDATE_CERT_CMD="trust extract-compat"
+        PKG_MANAGER="pacman"
+        CERT_FILENAME="ems-api-root-ca.crt"
+        ;;
+    centos|rhel|fedora|rocky|almalinux)
+        SYSTEM_CERT_DIR="/etc/pki/ca-trust/source/anchors"
+        UPDATE_CERT_CMD="update-ca-trust"
+        PKG_MANAGER="yum"
+        CERT_FILENAME="ems-api-root-ca.crt"
+        ;;
+    *)
+        echo -e "${YELLOW}Warning: Unknown distribution '$OS_ID', using Debian/Ubuntu defaults${NC}"
+        SYSTEM_CERT_DIR="/usr/local/share/ca-certificates"
+        UPDATE_CERT_CMD="update-ca-certificates"
+        PKG_MANAGER="apt-get"
+        CERT_FILENAME="ems-api-root-ca.crt"
+        ;;
+esac
 
 echo -e "${BLUE}=== EMS API SSL Certificate Trust Installation ===${NC}"
+echo -e "Detected OS: ${GREEN}$OS_ID${NC}"
+echo -e "Certificate directory: ${BLUE}$SYSTEM_CERT_DIR${NC}"
 echo -e "This script will install the EMS API Root CA certificate to the system trust store.\n"
 
 # Check if running as root, if not, re-run with sudo
@@ -57,20 +98,57 @@ fi
 echo -e "${YELLOW}Checking and installing required packages...${NC}"
 PACKAGES_TO_INSTALL=""
 
-if ! command -v trust &> /dev/null; then
-    PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL ca-certificates"
-fi
-
-if ! command -v certutil &> /dev/null; then
-    PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL nss"
-fi
-
-if [ -n "$PACKAGES_TO_INSTALL" ]; then
-    echo -e "${YELLOW}Installing packages:$PACKAGES_TO_INSTALL${NC}"
-    pacman -S --noconfirm $PACKAGES_TO_INSTALL
-else
-    echo -e "${GREEN}✓ All required packages are already installed${NC}"
-fi
+# Check based on distribution
+case $OS_ID in
+    ubuntu|debian)
+        # Check if ca-certificates is installed
+        if ! dpkg -l | grep -q ca-certificates; then
+            PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL ca-certificates"
+        fi
+        # Check if certutil is available
+        if ! command -v certutil &> /dev/null; then
+            PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL libnss3-tools"
+        fi
+        
+        if [ -n "$PACKAGES_TO_INSTALL" ]; then
+            echo -e "${YELLOW}Installing packages:$PACKAGES_TO_INSTALL${NC}"
+            apt-get update -qq
+            apt-get install -y $PACKAGES_TO_INSTALL
+        else
+            echo -e "${GREEN}✓ All required packages are already installed${NC}"
+        fi
+        ;;
+    arch|endeavouros|manjaro)
+        if ! command -v trust &> /dev/null; then
+            PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL ca-certificates"
+        fi
+        if ! command -v certutil &> /dev/null; then
+            PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL nss"
+        fi
+        
+        if [ -n "$PACKAGES_TO_INSTALL" ]; then
+            echo -e "${YELLOW}Installing packages:$PACKAGES_TO_INSTALL${NC}"
+            pacman -S --noconfirm $PACKAGES_TO_INSTALL
+        else
+            echo -e "${GREEN}✓ All required packages are already installed${NC}"
+        fi
+        ;;
+    centos|rhel|fedora|rocky|almalinux)
+        if ! command -v certutil &> /dev/null; then
+            PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL nss-tools"
+        fi
+        
+        if [ -n "$PACKAGES_TO_INSTALL" ]; then
+            echo -e "${YELLOW}Installing packages:$PACKAGES_TO_INSTALL${NC}"
+            yum install -y $PACKAGES_TO_INSTALL
+        else
+            echo -e "${GREEN}✓ All required packages are already installed${NC}"
+        fi
+        ;;
+    *)
+        echo -e "${YELLOW}⚠ Skipping package installation for unknown distribution${NC}"
+        ;;
+esac
 
 # Create system certificate directory if it doesn't exist
 if [ ! -d "$SYSTEM_CERT_DIR" ]; then
@@ -79,7 +157,6 @@ if [ ! -d "$SYSTEM_CERT_DIR" ]; then
 fi
 
 # Check if certificate is already installed
-CERT_FILENAME="ems-api-root-ca.crt"
 SYSTEM_CERT_PATH="$SYSTEM_CERT_DIR/$CERT_FILENAME"
 
 if [ -f "$SYSTEM_CERT_PATH" ]; then
@@ -90,7 +167,7 @@ if [ -f "$SYSTEM_CERT_PATH" ]; then
         echo -e "${GREEN}Keeping existing certificate.${NC}"
         echo -e "To remove the certificate later, run:"
         echo -e "  sudo rm '$SYSTEM_CERT_PATH'"
-        echo -e "  sudo trust extract-compat"
+        echo -e "  sudo $UPDATE_CERT_CMD"
         exit 0
     else
         echo -e "${YELLOW}Removing existing certificate...${NC}"
@@ -111,13 +188,26 @@ echo -e "${GREEN}✓ Certificate copied to system trust store${NC}"
 
 # Update the certificate trust database
 echo -e "${YELLOW}Updating certificate trust database...${NC}"
-trust extract-compat
+case $OS_ID in
+    ubuntu|debian)
+        update-ca-certificates
+        ;;
+    arch|endeavouros|manjaro)
+        trust extract-compat
+        ;;
+    centos|rhel|fedora|rocky|almalinux)
+        update-ca-trust
+        ;;
+    *)
+        update-ca-certificates
+        ;;
+esac
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Certificate trust database updated successfully${NC}"
 else
     echo -e "${RED}✗ Failed to update certificate trust database${NC}"
-    echo -e "You may need to run: sudo trust extract-compat"
+    echo -e "You may need to run: sudo $UPDATE_CERT_CMD"
     exit 1
 fi
 
@@ -284,6 +374,6 @@ echo -e "  openssl s_client -connect localhost:7136 -CAfile '$CA_CERT_PATH'"
 
 echo -e "\n${BLUE}To remove this certificate later:${NC}"
 echo -e "  sudo rm '$SYSTEM_CERT_PATH'"
-echo -e "  sudo trust extract-compat"
+echo -e "  sudo $UPDATE_CERT_CMD"
 
 echo -e "\n${GREEN}You can now access your API securely without certificate warnings!${NC}"

@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 
 color_green='\033[0;32m'
 color_red='\033[0;31m'
