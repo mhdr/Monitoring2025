@@ -274,29 +274,55 @@ export function useDataSync(): UseDataSyncResult {
       const allSuccess = groupsSuccess && itemsSuccess && alarmsSuccess;
       const hasErrors = !groupsSuccess || !itemsSuccess || !alarmsSuccess;
 
-      setSyncState(prev => ({
-        ...prev,
-        overall: allSuccess ? 'completed' : 'error',
-        isCompleted: allSuccess,
-        hasErrors,
-      }));
-
-      // Set the sync flag in MonitoringContext if all operations succeeded
+      // CRITICAL FIX: Wait for IndexedDB writes to complete before marking sync as complete
+      // This prevents race condition where redirect happens before data is persisted
       if (allSuccess) {
-        setDataSynced(true);
+        // Add delay to ensure IndexedDB writes from reducer have completed
+        // The reducer dispatches async storage operations that need time to finish
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Additional safeguard: verify data is stored in IndexedDB
+        // Verify data is actually stored in IndexedDB
         const storedGroups = await monitoringStorageHelpers.getStoredGroups();
         const storedItems = await monitoringStorageHelpers.getStoredItems();
+        const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
         
         logger.log('Sync completed successfully. Verification:', {
           syncedDataCounts: {
             groups: storedGroups?.length || 0,
-            items: storedItems?.length || 0
+            items: storedItems?.length || 0,
+            alarms: storedAlarms?.length || 0
           },
           syncStatusSet: true,
           forceRefresh,
         });
+        
+        // Only mark as complete if data is verified in IndexedDB
+        if (storedGroups && storedGroups.length > 0 && storedItems && storedItems.length > 0) {
+          setDataSynced(true);
+          
+          setSyncState(prev => ({
+            ...prev,
+            overall: 'completed',
+            isCompleted: true,
+            hasErrors: false,
+          }));
+        } else {
+          logger.error('Sync verification failed: Data not found in IndexedDB after sync');
+          setSyncState(prev => ({
+            ...prev,
+            overall: 'error',
+            isCompleted: false,
+            hasErrors: true,
+          }));
+          return false;
+        }
+      } else {
+        setSyncState(prev => ({
+          ...prev,
+          overall: 'error',
+          isCompleted: false,
+          hasErrors: true,
+        }));
       }
 
       return allSuccess;
@@ -347,28 +373,52 @@ export function useDataSync(): UseDataSyncResult {
       const results = await Promise.all(failedOperations);
       const allSuccess = results.every(result => result);
 
-      setSyncState(prev => ({
-        ...prev,
-        overall: allSuccess ? 'completed' : 'error',
-        isCompleted: allSuccess,
-        hasErrors: !allSuccess,
-      }));
-
-      // Set the sync flag in MonitoringContext if all retry operations succeeded
+      // CRITICAL FIX: Wait for IndexedDB writes to complete before marking retry as complete
       if (allSuccess) {
-        setDataSynced(true);
+        // Add delay to ensure IndexedDB writes from reducer have completed
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Additional safeguard: verify data is stored in IndexedDB
+        // Verify data is actually stored in IndexedDB
         const storedGroups = await monitoringStorageHelpers.getStoredGroups();
         const storedItems = await monitoringStorageHelpers.getStoredItems();
+        const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
         
         logger.log('Retry completed successfully. Verification:', {
           syncedDataCounts: {
             groups: storedGroups?.length || 0,
-            items: storedItems?.length || 0
+            items: storedItems?.length || 0,
+            alarms: storedAlarms?.length || 0
           },
           syncStatusSet: true,
         });
+        
+        // Only mark as complete if data is verified in IndexedDB
+        if (storedGroups && storedGroups.length > 0 && storedItems && storedItems.length > 0) {
+          setDataSynced(true);
+          
+          setSyncState(prev => ({
+            ...prev,
+            overall: 'completed',
+            isCompleted: true,
+            hasErrors: false,
+          }));
+        } else {
+          logger.error('Retry verification failed: Data not found in IndexedDB');
+          setSyncState(prev => ({
+            ...prev,
+            overall: 'error',
+            isCompleted: false,
+            hasErrors: true,
+          }));
+          return false;
+        }
+      } else {
+        setSyncState(prev => ({
+          ...prev,
+          overall: 'error',
+          isCompleted: false,
+          hasErrors: true,
+        }));
       }
 
       return allSuccess;

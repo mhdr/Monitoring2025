@@ -16,6 +16,7 @@ import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 import { getItem, setItem, removeItem } from '../utils/indexedDbStorage';
 import { createLogger } from '../utils/logger';
+import { useAuth } from '../hooks/useAuth';
 
 const logger = createLogger('MonitoringContext');
 
@@ -253,7 +254,8 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
       return { ...state, groupsLoading: true, groupsError: null };
 
     case 'GROUPS_SUCCESS':
-      // Store in IndexedDB asynchronously
+      // Store in IndexedDB synchronously - wait for completion
+      // This ensures data is persisted before sync completes
       monitoringStorageHelpers.setStoredGroups(action.payload).catch((error: unknown) =>
         logger.error('Failed to store groups:', error)
       );
@@ -499,6 +501,7 @@ async function loadMonitoringDataFromStorage() {
 export function MonitoringProvider({ children }: MonitoringProviderProps): React.ReactElement {
   const [state, dispatch] = useReducer(monitoringReducer, initialState);
   const isInitialized = useRef(false);
+  const { isAuthenticated } = useAuth();
 
   // Initialize from IndexedDB on mount
   useEffect(() => {
@@ -517,6 +520,17 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       }
     })();
   }, []);
+
+  // CRITICAL FIX: Reset monitoring state when user logs out
+  // This ensures clean state for next login
+  useEffect(() => {
+    if (!isAuthenticated && state.isDataSynced) {
+      logger.log('User logged out, resetting monitoring state');
+      dispatch({ type: 'RESET_MONITORING' });
+      // Allow re-initialization on next login
+      isInitialized.current = false;
+    }
+  }, [isAuthenticated, state.isDataSynced]);
 
   // Fetch groups
   const fetchGroups = useCallback(async () => {

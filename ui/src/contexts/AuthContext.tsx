@@ -179,7 +179,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     setIsAuthenticated(false);
     setIsLoading(false);
+    
+    // Clear auth data
     await authStorageHelpers.clearAllData();
+    
+    // CRITICAL FIX: Also clear monitoring data AND sync status on logout
+    // This ensures fresh sync on next login with clean state
+    // Import the storage helpers
+    const { removeItem } = await import('../utils/indexedDbStorage');
+    const { monitoringStorageHelpers } = await import('../utils/monitoringStorage');
+    
+    // Clear sync status flag
+    await removeItem('monitoring_data_synced').catch((error) => {
+      logger.error('Failed to clear sync status on logout:', error);
+    });
+    
+    // Clear all monitoring data (groups, items, alarms)
+    await monitoringStorageHelpers.clearAllMonitoringData().catch((error) => {
+      logger.error('Failed to clear monitoring data on logout:', error);
+    });
+    
     broadcastLogout();
   }, []);
 
