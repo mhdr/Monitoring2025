@@ -112,7 +112,11 @@ body.rtl input[data-id-ref="data-table-end-date-time"],
 body.rtl input[data-id-ref="alarm-log-custom-start-date-date"],
 body.rtl input[data-id-ref="alarm-log-custom-start-date-time"],
 body.rtl input[data-id-ref="alarm-log-custom-end-date-date"],
-body.rtl input[data-id-ref="alarm-log-custom-end-date-time"] {
+body.rtl input[data-id-ref="alarm-log-custom-end-date-time"],
+body.rtl input[data-id-ref="alarm-log-detail-custom-start-date-date"],
+body.rtl input[data-id-ref="alarm-log-detail-custom-start-date-time"],
+body.rtl input[data-id-ref="alarm-log-detail-custom-end-date-date"],
+body.rtl input[data-id-ref="alarm-log-detail-custom-end-date-time"] {
   font-family: 'iransansx', 'Tahoma', 'Arial', sans-serif !important;
 }
 
@@ -129,7 +133,11 @@ body.rtl input[data-id-ref="alarm-log-custom-end-date-time"] {
   body.rtl input[data-id-ref="alarm-log-custom-start-date-date"],
   body.rtl input[data-id-ref="alarm-log-custom-start-date-time"],
   body.rtl input[data-id-ref="alarm-log-custom-end-date-date"],
-  body.rtl input[data-id-ref="alarm-log-custom-end-date-time"] {
+  body.rtl input[data-id-ref="alarm-log-custom-end-date-time"],
+  body.rtl input[data-id-ref="alarm-log-detail-custom-start-date-date"],
+  body.rtl input[data-id-ref="alarm-log-detail-custom-start-date-time"],
+  body.rtl input[data-id-ref="alarm-log-detail-custom-end-date-date"],
+  body.rtl input[data-id-ref="alarm-log-detail-custom-end-date-time"] {
     font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif !important;
   }
 }
@@ -140,7 +148,9 @@ body.rtl input[data-id-ref="alarm-log-custom-end-date-time"] {
 [data-id-ref="data-table-start-date-container"],
 [data-id-ref="data-table-end-date-container"],
 [data-id-ref="alarm-log-custom-start-date-container"],
-[data-id-ref="alarm-log-custom-end-date-container"] {
+[data-id-ref="alarm-log-custom-end-date-container"],
+[data-id-ref="alarm-log-detail-custom-start-date-container"],
+[data-id-ref="alarm-log-detail-custom-end-date-container"] {
   display: flex;
   flex-direction: column;
   min-width: 0; /* Allow flex item to shrink below content size */
@@ -151,7 +161,9 @@ body.rtl input[data-id-ref="alarm-log-custom-end-date-time"] {
 [data-id-ref="data-table-start-date-container"] .row,
 [data-id-ref="data-table-end-date-container"] .row,
 [data-id-ref="alarm-log-custom-start-date-container"] .row,
-[data-id-ref="alarm-log-custom-end-date-container"] .row {
+[data-id-ref="alarm-log-custom-end-date-container"] .row,
+[data-id-ref="alarm-log-detail-custom-start-date-container"] .row,
+[data-id-ref="alarm-log-detail-custom-end-date-container"] .row {
   margin: 0; /* Remove Bootstrap row negative margins */
   display: flex;
   align-items: flex-end; /* Align input fields at the bottom */
@@ -163,7 +175,9 @@ body.rtl input[data-id-ref="alarm-log-custom-end-date-time"] {
 [data-id-ref="data-table-start-date-container"] .row > div,
 [data-id-ref="data-table-end-date-container"] .row > div,
 [data-id-ref="alarm-log-custom-start-date-container"] .row > div,
-[data-id-ref="alarm-log-custom-end-date-container"] .row > div {
+[data-id-ref="alarm-log-custom-end-date-container"] .row > div,
+[data-id-ref="alarm-log-detail-custom-start-date-container"] .row > div,
+[data-id-ref="alarm-log-detail-custom-end-date-container"] .row > div {
   padding: 0; /* Remove Bootstrap column padding */
   flex: 1; /* Equal width for date and time columns */
   min-width: 0; /* Allow flex item to shrink */
@@ -177,7 +191,9 @@ body.rtl input[data-id-ref="alarm-log-custom-end-date-time"] {
 [data-id-ref="data-table-start-date-container"] .form-label,
 [data-id-ref="data-table-end-date-container"] .form-label,
 [data-id-ref="alarm-log-custom-start-date-container"] .form-label,
-[data-id-ref="alarm-log-custom-end-date-container"] .form-label {
+[data-id-ref="alarm-log-custom-end-date-container"] .form-label,
+[data-id-ref="alarm-log-detail-custom-start-date-container"] .form-label,
+[data-id-ref="alarm-log-detail-custom-end-date-container"] .form-label {
   margin-bottom: 0.25rem !important;
   font-size: 0.875rem;
   line-height: 1.2;
@@ -189,7 +205,9 @@ body.rtl input[data-id-ref="alarm-log-custom-end-date-time"] {
 [data-id-ref="data-table-start-date-container"] .form-control,
 [data-id-ref="data-table-end-date-container"] .form-control,
 [data-id-ref="alarm-log-custom-start-date-container"] .form-control,
-[data-id-ref="alarm-log-custom-end-date-container"] .form-control {
+[data-id-ref="alarm-log-custom-end-date-container"] .form-control,
+[data-id-ref="alarm-log-detail-custom-start-date-container"] .form-control,
+[data-id-ref="alarm-log-detail-custom-end-date-container"] .form-control {
   height: 2.25rem; /* Consistent height for all inputs */
   display: block;
   width: 100%;
