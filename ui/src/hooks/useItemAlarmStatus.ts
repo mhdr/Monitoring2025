@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
-import type { ActiveAlarm } from '../types/api';
+import type { ActiveAlarm, AlarmDto } from '../types/api';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('useItemAlarmStatus');
@@ -131,12 +131,34 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
       if (!isMountedRef.current) return;
 
       if (itemAlarm) {
+        // ActiveAlarm response doesn't include alarmPriority
+        // We need to fetch it from the alarm configuration stored in IndexedDB
+        const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
+        
+        // Handle the nested structure: {data: AlarmDto[]} or AlarmDto[]
+        let alarmsArray: AlarmDto[] = [];
+        if (storedAlarms) {
+          if (Array.isArray(storedAlarms)) {
+            alarmsArray = storedAlarms;
+          } else if (typeof storedAlarms === 'object' && 'data' in storedAlarms) {
+            const alarmsResponse = storedAlarms as { data: AlarmDto[] };
+            if (Array.isArray(alarmsResponse.data)) {
+              alarmsArray = alarmsResponse.data;
+            }
+          }
+        }
+        
+        // Find the alarm configuration by alarmId
+        const alarmConfig = alarmsArray.find((alarm: AlarmDto) => alarm.id === itemAlarm.alarmId);
+        const priority = alarmConfig?.alarmPriority || null;
+        
         logger.log(`Item ${itemId} HAS active alarm`, { 
           alarmId: itemAlarm.alarmId,
-          priority: itemAlarm.alarmPriority 
+          priority: priority,
+          foundConfig: !!alarmConfig
         });
         setHasAlarm(true);
-        setAlarmPriority(itemAlarm.alarmPriority || null);
+        setAlarmPriority(priority);
       } else {
         logger.log(`Item ${itemId} has NO active alarm`);
         setHasAlarm(false);
