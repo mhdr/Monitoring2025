@@ -12,6 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
+import MonitoringLogo from './shared/MonitoringLogo';
 import './ResponsiveNavbar.css';
 
 interface ResponsiveNavbarProps {
@@ -104,24 +105,39 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
             </IconButton>
           )}
           
-          {/* Brand/Title */}
-          <Typography
-            variant="h6"
-            component="div"
-            className="navbar-brand-gradient"
+          {/* Brand/Logo */}
+          <Box
             sx={{ 
               flexGrow: 1,
-              fontWeight: 700,
-              background: (theme) => `linear-gradient(45deg, ${theme.palette.common.white}, ${theme.palette.primary.light})`,
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2
             }}
             data-id-ref="responsive-navbar-brand"
           >
-            {t('monitoring')}
-          </Typography>
+            <MonitoringLogo 
+              size={45} 
+              animated={true}
+              data-id-ref="responsive-navbar-logo"
+            />
+            <Typography
+              variant="h6"
+              component="div"
+              className="navbar-brand-gradient"
+              sx={{ 
+                fontWeight: 700,
+                background: (theme) => `linear-gradient(45deg, ${theme.palette.common.white}, ${theme.palette.primary.light})`,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                display: { xs: 'none', sm: 'block' }
+              }}
+              data-id-ref="responsive-navbar-brand-text"
+            >
+              {t('monitoring')}
+            </Typography>
+          </Box>
 
           {/* User Menu */}
           <Box sx={{ display: 'flex', alignItems: 'center' }} data-id-ref="responsive-navbar-user-nav">
