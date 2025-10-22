@@ -110,8 +110,9 @@ const LoginPage: React.FC = () => {
         ? `${fromLoc.pathname}${fromLoc.search || ''}${fromLoc.hash || ''}`
         : '/dashboard';
 
-      const redirectParam = encodeURIComponent(target);
-      navigate(`/sync?redirect=${redirectParam}`, { replace: true });
+  const redirectParam = encodeURIComponent(target);
+  // Force a fresh sync after login to ensure data is up-to-date
+  navigate(`/sync?force=true&redirect=${redirectParam}`, { replace: true });
     } catch (error) {
       // Handle login error
       const apiErr = error as ApiError;
