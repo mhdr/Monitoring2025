@@ -84,6 +84,9 @@ export interface MonitoringState {
     highestPriority: 1 | 2 | null; // 1=Low, 2=High, null=no alarms
   };
   
+  // Alarm refresh trigger for real-time updates
+  alarmRefreshTrigger: number;
+  
   // Background refresh
   backgroundRefresh: BackgroundRefreshConfig & {
     lastRefreshTime: number | null;
@@ -129,6 +132,8 @@ const initialState: MonitoringState = {
     dataStaleThreshold: 30 * 60 * 1000, // 30 minutes
     lastRefreshTime: null,
   },
+  
+  alarmRefreshTrigger: 0,
 };
 
 /**
@@ -161,7 +166,8 @@ type MonitoringAction =
   | { type: 'SET_ACTIVE_ALARMS_FETCHING'; payload: boolean }
   | { type: 'SET_ACTIVE_ALARMS_FETCH_ERROR'; payload: string | null }
   | { type: 'UPDATE_BACKGROUND_REFRESH_CONFIG'; payload: Partial<BackgroundRefreshConfig> }
-  | { type: 'SET_LAST_REFRESH_TIME'; payload: number };
+  | { type: 'SET_LAST_REFRESH_TIME'; payload: number }
+  | { type: 'TRIGGER_ALARM_REFRESH' };
 
 /**
  * Reducer function
@@ -369,6 +375,12 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
         },
       };
 
+    case 'TRIGGER_ALARM_REFRESH':
+      return {
+        ...state,
+        alarmRefreshTrigger: state.alarmRefreshTrigger + 1,
+      };
+
     default:
       return state;
   }
@@ -413,6 +425,9 @@ export interface MonitoringContextValue {
   // Background refresh actions
   updateBackgroundRefreshConfig: (config: Partial<BackgroundRefreshConfig>) => void;
   forceRefresh: () => Promise<void>;
+  
+  // Alarm refresh trigger
+  triggerAlarmRefresh: () => void;
 }
 
 /**
@@ -684,6 +699,8 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
   // Active alarms stream actions
   const updateActiveAlarms = useCallback((alarmCount: number, timestamp: number) => {
     dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount, timestamp } });
+    // Also trigger alarm refresh for individual cards
+    dispatch({ type: 'TRIGGER_ALARM_REFRESH' });
   }, []);
 
   const setActiveAlarmsStreamStatus = useCallback((status: StreamStatus) => {
@@ -704,6 +721,11 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
 
   const setActiveAlarmsFetchError = useCallback((error: string | null) => {
     dispatch({ type: 'SET_ACTIVE_ALARMS_FETCH_ERROR', payload: error });
+  }, []);
+
+  // Trigger alarm refresh for real-time updates
+  const triggerAlarmRefresh = useCallback(() => {
+    dispatch({ type: 'TRIGGER_ALARM_REFRESH' });
   }, []);
 
   // Background refresh actions
@@ -833,6 +855,7 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       setActiveAlarmsFetchError,
       updateBackgroundRefreshConfig,
       forceRefresh,
+      triggerAlarmRefresh,
     }),
     [
       state,
@@ -855,6 +878,7 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       setActiveAlarmsFetchError,
       updateBackgroundRefreshConfig,
       forceRefresh,
+      triggerAlarmRefresh,
     ]
   );
 

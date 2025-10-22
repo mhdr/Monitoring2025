@@ -4,10 +4,11 @@
  * Returns counts of unique items in alarm (priority 2) and warning (priority 1) states
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useMonitoring } from './useMonitoring';
 import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
+import { StreamStatus } from '../contexts/MonitoringContext';
 import type { Group, Item, ActiveAlarm, AlarmDto } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -56,56 +57,98 @@ interface GroupAlarmStatus {
  */
 export function useGroupAlarmStatus(groupId: string): GroupAlarmStatus {
   const { state } = useMonitoring();
-  const { groups, items, alarms } = state;
+  const { groups, items, alarms, alarmRefreshTrigger, activeAlarms: { streamStatus } } = state;
   
   const [activeAlarms, setActiveAlarms] = useState<ActiveAlarm[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // Fetch active alarms function
+  const fetchActiveAlarms = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      // Get items from IndexedDB to build the request
+      const storedItems = await monitoringStorageHelpers.getStoredItems();
+      
+      if (!storedItems || storedItems.length === 0) {
+        logger.warn('No items in IndexedDB, cannot fetch active alarms');
+        setActiveAlarms([]);
+        return;
+      }
+
+      // Extract all itemIds for API call
+      const itemIds = storedItems
+        .map(item => item.id)
+        .filter((id): id is string => id !== null && id !== undefined);
+
+      if (itemIds.length === 0) {
+        logger.warn('No valid itemIds found');
+        setActiveAlarms([]);
+        return;
+      }
+
+      // Fetch active alarms from API
+      const response = await getActiveAlarms({ itemIds });
+      
+      // Handle nested response structure
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const activeAlarmsData: ActiveAlarm[] = (response as any).data?.data || [];
+      
+      logger.log(`Fetched ${activeAlarmsData.length} active alarms for group alarm status`);
+      setActiveAlarms(activeAlarmsData);
+    } catch (err) {
+      logger.error('Error fetching active alarms for group status:', err);
+      setActiveAlarms([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Fetch active alarms when component mounts or when dependencies change
   useEffect(() => {
-    const fetchActiveAlarms = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Get items from IndexedDB to build the request
-        const storedItems = await monitoringStorageHelpers.getStoredItems();
-        
-        if (!storedItems || storedItems.length === 0) {
-          logger.warn('No items in IndexedDB, cannot fetch active alarms');
-          setActiveAlarms([]);
-          return;
-        }
+    fetchActiveAlarms();
+  }, [groupId, fetchActiveAlarms]); // Refetch when groupId changes
 
-        // Extract all itemIds for API call
-        const itemIds = storedItems
-          .map(item => item.id)
-          .filter((id): id is string => id !== null && id !== undefined);
+  // Listen to SignalR alarm refresh trigger for real-time updates
+  useEffect(() => {
+    if (alarmRefreshTrigger > 0) {
+      logger.log(`Group alarm refresh triggered via SignalR for group ${groupId}`, { 
+        trigger: alarmRefreshTrigger 
+      });
+      fetchActiveAlarms();
+    }
+  }, [alarmRefreshTrigger, fetchActiveAlarms, groupId]);
 
-        if (itemIds.length === 0) {
-          logger.warn('No valid itemIds found');
-          setActiveAlarms([]);
-          return;
-        }
+  // Add periodic polling based on SignalR connection status
+  useEffect(() => {
+    let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
-        // Fetch active alarms from API
-        const response = await getActiveAlarms({ itemIds });
-        
-        // Handle nested response structure
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const activeAlarmsData: ActiveAlarm[] = (response as any).data?.data || [];
-        
-        logger.log(`Fetched ${activeAlarmsData.length} active alarms for group alarm status`);
-        setActiveAlarms(activeAlarmsData);
-      } catch (err) {
-        logger.error('Error fetching active alarms for group status:', err);
-        setActiveAlarms([]);
-      } finally {
-        setIsLoading(false);
+    // Determine polling interval based on SignalR status
+    let interval: number;
+    if (streamStatus === StreamStatus.CONNECTED) {
+      // SignalR is connected - poll every 1 minute
+      interval = 60000; // 1 minute
+    } else {
+      // SignalR is not connected - poll every 30 seconds as fallback
+      interval = 30000; // 30 seconds
+    }
+
+    logger.log(`Starting group alarm status polling for group ${groupId}`, { 
+      interval,
+      signalRStatus: streamStatus,
+      reason: streamStatus === StreamStatus.CONNECTED ? 'SignalR connected (1min)' : 'SignalR disconnected (fallback)'
+    });
+
+    pollingInterval = setInterval(() => {
+      fetchActiveAlarms();
+    }, interval);
+
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
       }
     };
-
-    fetchActiveAlarms();
-  }, [groupId]); // Refetch when groupId changes
+  }, [streamStatus, fetchActiveAlarms, groupId]);
 
   const status = useMemo(() => {
     // Default status

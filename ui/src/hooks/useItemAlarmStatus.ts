@@ -7,6 +7,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
+import { useMonitoring } from './useMonitoring';
+import { StreamStatus } from '../contexts/MonitoringContext';
 import type { ActiveAlarm, AlarmDto } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -79,6 +81,10 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
   
   const pollingTimerRef = useRef<number | null>(null);
   const isMountedRef = useRef<boolean>(true);
+  
+  // Get monitoring context for SignalR status and refresh trigger
+  const { state } = useMonitoring();
+  const { alarmRefreshTrigger, activeAlarms: { streamStatus } } = state;
 
   /**
    * Check if item has active alarms
@@ -180,23 +186,37 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
   }, [itemId]);
 
   /**
-   * Start polling
+   * Start polling with adaptive interval based on SignalR connection
    */
   const startPolling = useCallback(() => {
     if (pollingTimerRef.current) {
       clearInterval(pollingTimerRef.current);
     }
 
-    if (enablePolling && pollingInterval > 0) {
-      logger.log(`Starting alarm status polling for item ${itemId}`, { 
-        interval: pollingInterval 
-      });
-      
-      pollingTimerRef.current = setInterval(() => {
-        checkAlarmStatus();
-      }, pollingInterval);
+    if (enablePolling) {
+      // Use different polling intervals based on SignalR connection status
+      let actualInterval: number;
+      if (streamStatus === StreamStatus.CONNECTED) {
+        // SignalR is connected - poll every 1 minute as requested
+        actualInterval = 60000; // 1 minute
+      } else {
+        // SignalR is not connected - use provided interval (default 30s)
+        actualInterval = pollingInterval;
+      }
+
+      if (actualInterval > 0) {
+        logger.log(`Starting alarm status polling for item ${itemId}`, { 
+          interval: actualInterval,
+          signalRStatus: streamStatus,
+          reason: streamStatus === StreamStatus.CONNECTED ? 'SignalR connected (1min)' : 'SignalR disconnected (fallback)'
+        });
+        
+        pollingTimerRef.current = setInterval(() => {
+          checkAlarmStatus();
+        }, actualInterval);
+      }
     }
-  }, [enablePolling, pollingInterval, checkAlarmStatus, itemId]);
+  }, [enablePolling, pollingInterval, checkAlarmStatus, itemId, streamStatus]);
 
   /**
    * Stop polling
@@ -228,7 +248,19 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
   }, [checkAlarmStatus, startPolling, stopPolling]);
 
   /**
-   * Refresh polling when options change
+   * Listen to SignalR alarm refresh trigger for real-time updates
+   */
+  useEffect(() => {
+    if (alarmRefreshTrigger > 0) {
+      logger.log(`Alarm refresh triggered via SignalR for item ${itemId}`, { 
+        trigger: alarmRefreshTrigger 
+      });
+      checkAlarmStatus();
+    }
+  }, [alarmRefreshTrigger, checkAlarmStatus, itemId]);
+
+  /**
+   * Refresh polling when options change or SignalR status changes
    */
   useEffect(() => {
     if (enablePolling) {
@@ -236,7 +268,7 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
     } else {
       stopPolling();
     }
-  }, [enablePolling, pollingInterval, startPolling, stopPolling]);
+  }, [enablePolling, pollingInterval, streamStatus, startPolling, stopPolling]);
 
   return {
     hasAlarm,
