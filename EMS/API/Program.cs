@@ -14,17 +14,21 @@ using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Detect the public IP address for CORS and logging purposes
-var detectedIp = await IpDetectionService.DetectPublicIpAsync();
-Console.WriteLine($"[IP DETECTION] Detected public IP: {detectedIp}");
-Console.WriteLine($"[NETWORK] Binding to all interfaces (0.0.0.0) but using {detectedIp} for CORS and external access");
+// Detect both public and local network IP addresses for CORS
+var (publicIp, localIp) = await IpDetectionService.DetectIpAddressesAsync();
+Console.WriteLine($"[IP DETECTION] Detected public IP: {publicIp}");
+Console.WriteLine($"[IP DETECTION] Detected local network IP: {localIp}");
+Console.WriteLine($"[NETWORK] Binding to all interfaces (0.0.0.0)");
+Console.WriteLine($"[CORS] Will allow origins from both public IP ({publicIp}) and local network IP ({localIp})");
 
-// Configure Kestrel to bind to all interfaces but use detected IP for CORS
+// Configure Kestrel to bind to all interfaces
 builder.WebHost.ConfigureKestrel(options =>
 {
     // Bind to all interfaces (0.0.0.0) for compatibility - HTTP ONLY
     options.Listen(IPAddress.Any, 5030);
-    Console.WriteLine($"[BIND] HTTP port 5030 on all interfaces (externally accessible via {detectedIp}:5030)");
+    Console.WriteLine($"[BIND] HTTP port 5030 on all interfaces");
+    Console.WriteLine($"[BIND] Accessible via http://{localIp}:5030 (local network)");
+    Console.WriteLine($"[BIND] Accessible via http://{publicIp}:5030 (public, if port forwarded)");
 });
 
 // Add services to the container.
@@ -37,8 +41,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactClientPolicy", policy =>
     {
-        // Build comprehensive origins list including detected IP and all local dev IPs
-        var localIps = new[] { "localhost", "127.0.0.1", "0.0.0.0", "::1", detectedIp.ToString() };
+        // Build comprehensive origins list including detected IPs and all local dev IPs
+        var publicIpString = publicIp.ToString();
+        var localIpString = localIp.ToString();
+        var localIps = new[] { "localhost", "127.0.0.1", "0.0.0.0", "::1", publicIpString, localIpString };
         var apiPorts = new[] { "5030" }; // API HTTP port
         var frontendPorts = new[] { "3000", "3001", "5000", "5173", "5174", "5175", "4200", "8080", "8081", "8000" }; // Common frontend dev ports
         var protocols = new[] { "http", "https" }; // Support both HTTP and HTTPS
@@ -56,27 +62,16 @@ builder.Services.AddCors(options =>
                 }
             }
         }
-
-        // // Add frontend origins (commonly HTTP in development)
-        // foreach (var protocol in protocols)
-        // {
-        //     foreach (var ip in new[] { "localhost", "127.0.0.1" }) // Frontend typically runs on localhost
-        //     {
-        //         foreach (var port in frontendPorts)
-        //         {
-        //             allowedOrigins.Add($"{protocol}://{ip}:{port}");
-        //         }
-        //     }
-        // }
         
         // Add frontend origins (commonly HTTP in development)
         foreach (var protocol in protocols)
         {
-            foreach (var ip in new[] { "localhost", "127.0.0.1", detectedIp.ToString() }) // Include detected IP for network access
+            foreach (var ip in new[] { "localhost", "127.0.0.1", publicIpString, localIpString }) // Include both public and local network IPs
             {
                 foreach (var port in frontendPorts)
                 {
-                    allowedOrigins.Add($"{protocol}://{ip}:{port}");
+                    var origin = $"{protocol}://{ip}:{port}";
+                    allowedOrigins.Add(origin);
                 }
             }
         }
@@ -86,13 +81,56 @@ builder.Services.AddCors(options =>
         {
             "http://localhost",
             "http://127.0.0.1",
-            $"http://{detectedIp}"
+            $"http://{publicIpString}",
+            $"http://{localIpString}"
         });
 
-        Console.WriteLine($"[CORS] Allowing {allowedOrigins.Count} origins including detected IP {detectedIp}");
+        Console.WriteLine($"[CORS] Allowing {allowedOrigins.Count} explicit origins");
+        Console.WriteLine($"[CORS]   Public IP: {publicIpString}");
+        Console.WriteLine($"[CORS]   Local Network IP: {localIpString}");
+        Console.WriteLine($"[CORS]   Plus dynamic 192.168.x.x and 10.x.x.x subnet matching");
         Console.WriteLine($"[CORS] Frontend ports supported: {string.Join(", ", frontendPorts)}");
+        Console.WriteLine($"[CORS] Sample allowed origins:");
+        foreach (var origin in allowedOrigins.Where(o => o.Contains(publicIpString) || o.Contains(localIpString)).Take(8))
+        {
+            Console.WriteLine($"[CORS]   - {origin}");
+        }
 
-        policy.WithOrigins(allowedOrigins.ToArray())
+        policy.SetIsOriginAllowed(origin =>
+        {
+            // First check if it's in the explicit allowed list
+            if (allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // Then check if it matches local network patterns (192.168.x.x:port or 10.x.x.x:port)
+            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            {
+                var host = uri.Host;
+                var port = uri.Port;
+
+                // Check if port is in allowed frontend ports
+                if (!frontendPorts.Contains(port.ToString()) && port != 5030) // Allow API port too
+                {
+                    return false;
+                }
+
+                // Check for 192.168.x.x pattern
+                if (host.StartsWith("192.168."))
+                {
+                    return true;
+                }
+
+                // Check for 10.x.x.x pattern
+                if (host.StartsWith("10."))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        })
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();

@@ -5,42 +5,47 @@ using System.Net.Sockets;
 namespace API.Services
 {
     /// <summary>
-    /// Service for detecting the machine's public IP address
+    /// Service for detecting the machine's public and local network IP addresses
     /// </summary>
     public static class IpDetectionService
     {
         /// <summary>
-        /// Detects the machine's public IP address with fallback strategies
+        /// Detects both the machine's public IP and local network IP address
         /// </summary>
-        /// <returns>The detected IP address</returns>
-        public static async Task<IPAddress> DetectPublicIpAsync()
+        /// <returns>A tuple containing (publicIp, localNetworkIp)</returns>
+        public static async Task<(IPAddress publicIp, IPAddress localNetworkIp)> DetectIpAddressesAsync()
         {
+            IPAddress? publicIp = null;
+            IPAddress? localNetworkIp = null;
+
+            // First, try to get public IP from external services
             try
             {
-                // First, try to get public IP from external services
-                var publicIp = await GetPublicIpFromExternalServiceAsync();
-                if (publicIp != null && !IsPrivateIp(publicIp))
-                {
-                    Console.WriteLine($"[IP DETECTION] Detected public IP: {publicIp}");
-                    return publicIp;
-                }
+                publicIp = await GetPublicIpFromExternalServiceAsync();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[IP DETECTION] Failed to get public IP from external service: {ex.Message}");
             }
 
-            // Fallback to local network IP
-            var localIp = GetLocalNetworkIp();
-            if (localIp != null)
-            {
-                Console.WriteLine($"[IP DETECTION] Using local network IP: {localIp}");
-                return localIp;
-            }
+            // Get local network IP
+            localNetworkIp = GetLocalNetworkIp();
 
-            // Final fallback to any available IP
-            Console.WriteLine("[IP DETECTION] Using fallback IP: 0.0.0.0");
-            return IPAddress.Any;
+            // Use fallbacks if needed
+            publicIp ??= localNetworkIp ?? IPAddress.Any;
+            localNetworkIp ??= IPAddress.Loopback;
+
+            return (publicIp, localNetworkIp);
+        }
+
+        /// <summary>
+        /// Detects the machine's public IP address with fallback strategies
+        /// </summary>
+        /// <returns>The detected IP address</returns>
+        public static async Task<IPAddress> DetectPublicIpAsync()
+        {
+            var (publicIp, _) = await DetectIpAddressesAsync();
+            return publicIp;
         }
 
         /// <summary>
@@ -80,7 +85,7 @@ namespace API.Services
         }
 
         /// <summary>
-        /// Gets the local network IP address
+        /// Gets the local network IP address, prioritizing 192.168.x.x range
         /// </summary>
         private static IPAddress? GetLocalNetworkIp()
         {
@@ -92,6 +97,8 @@ namespace API.Services
                                 ni.NetworkInterfaceType != NetworkInterfaceType.Loopback)
                     .ToList();
 
+                List<IPAddress> candidateIps = new();
+
                 foreach (var networkInterface in networkInterfaces)
                 {
                     var ipProperties = networkInterface.GetIPProperties();
@@ -100,24 +107,38 @@ namespace API.Services
                                     !IPAddress.IsLoopback(ua.Address))
                         .ToList();
 
-                    // Prefer non-private IPs first
-                    var nonPrivateIp = unicastAddresses
-                        .FirstOrDefault(ua => !IsPrivateIp(ua.Address))?.Address;
-                    
-                    if (nonPrivateIp != null)
+                    foreach (var ua in unicastAddresses)
                     {
-                        return nonPrivateIp;
-                    }
-
-                    // Then try private IPs
-                    var privateIp = unicastAddresses
-                        .FirstOrDefault(ua => IsPrivateIp(ua.Address))?.Address;
-                    
-                    if (privateIp != null)
-                    {
-                        return privateIp;
+                        candidateIps.Add(ua.Address);
                     }
                 }
+
+                // Prioritize 192.168.x.x addresses (most common local network)
+                var localNetworkIp = candidateIps.FirstOrDefault(ip =>
+                {
+                    var bytes = ip.GetAddressBytes();
+                    return bytes[0] == 192 && bytes[1] == 168;
+                });
+
+                if (localNetworkIp != null)
+                {
+                    return localNetworkIp;
+                }
+
+                // Then try 10.x.x.x (common in corporate networks)
+                var privateNetworkIp = candidateIps.FirstOrDefault(ip =>
+                {
+                    var bytes = ip.GetAddressBytes();
+                    return bytes[0] == 10;
+                });
+
+                if (privateNetworkIp != null)
+                {
+                    return privateNetworkIp;
+                }
+
+                // Finally, return any private IP
+                return candidateIps.FirstOrDefault(IsPrivateIp);
             }
             catch (Exception ex)
             {
