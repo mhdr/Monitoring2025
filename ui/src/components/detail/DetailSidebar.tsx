@@ -113,9 +113,9 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ isOpen, onToggle }) => {
       { path: '/item-detail/live-monitoring', key: 'liveMonitoring', icon: <LiveMonitoringIcon /> },
       { path: '/item-detail/active-alarms', key: 'activeAlarmsDetail', icon: <ActiveAlarmsDetailIcon /> },
       { path: '/item-detail/alarm-log', key: 'alarmLogDetail', icon: <AlarmLogDetailIcon /> },
-      { path: '/item-detail/alarm-criteria', key: 'alarmCriteria', icon: <AlarmCriteriaIcon /> },
-      { path: '/item-detail/audit-trail', key: 'auditTrailDetail', icon: <AuditTrailDetailIcon /> },
-      { path: '/item-detail/management', key: 'managementDetail', icon: <ManagementDetailIcon /> },
+      // { path: '/item-detail/alarm-criteria', key: 'alarmCriteria', icon: <AlarmCriteriaIcon /> },
+      // { path: '/item-detail/audit-trail', key: 'auditTrailDetail', icon: <AuditTrailDetailIcon /> },
+      // { path: '/item-detail/management', key: 'managementDetail', icon: <ManagementDetailIcon /> },
     ];
 
     return menuItems.map((item) => ({
