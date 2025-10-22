@@ -356,8 +356,8 @@
     }
   },
   "itemCard": {
-    "highPriorityAlarm": "اولویت بالا",
-    "lowPriorityAlarm": "اولویت پایین",
+    "highPriorityAlarm": "هشدار",
+    "lowPriorityAlarm": "اخطار",
     "hasActiveAlarm": "این مورد دارای هشدار فعال است",
     "checkingAlarmStatus": "بررسی وضعیت هشدار..."
   }

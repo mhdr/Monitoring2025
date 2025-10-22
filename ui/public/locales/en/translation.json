@@ -356,8 +356,8 @@
     }
   },
   "itemCard": {
-    "highPriorityAlarm": "High Priority",
-    "lowPriorityAlarm": "Low Priority",
+    "highPriorityAlarm": "Alarm",
+    "lowPriorityAlarm": "Warning",
     "hasActiveAlarm": "This item has an active alarm",
     "checkingAlarmStatus": "Checking alarm status..."
   }
