@@ -376,6 +376,7 @@
     "editableStatus": {
       "editable": "Editable",
       "readOnly": "Read Only"
-    }
+    },
+    "setCommand": "Set Command"
   }
 }

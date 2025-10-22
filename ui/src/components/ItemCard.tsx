@@ -31,6 +31,7 @@ import {
   ToggleOn as DigitalIcon,
   Edit as EditIcon,
   Lock as LockIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
@@ -223,6 +224,18 @@ const ItemCard: React.FC<ItemCardProps> = ({
         historyLength: valueHistory?.length || 0 
       });
     }
+  };
+
+  /**
+   * Handle command button click - opens command dialog
+   * TODO: Implement command dialog for setting digital/analog values
+   */
+  const handleCommandClick = () => {
+    logger.log(`Opening command dialog for editable item: ${name}`, { 
+      itemId, 
+      itemType: item?.itemType 
+    });
+    // TODO: Open command dialog implementation will be added later
   };
 
   return (
@@ -418,25 +431,49 @@ const ItemCard: React.FC<ItemCardProps> = ({
                 </Zoom>
               )}
             </Box>
-            <Tooltip title={t('openInNewTab')} arrow placement="top">
-              <IconButton
-                onClick={handleOpenNewTab}
-                onMouseEnter={handlePrefetch}
-                aria-label={t('openInNewTab')}
-                size="small"
-                sx={{
-                  color: 'text.secondary',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    color: 'primary.main',
-                    transform: 'scale(1.1)',
-                  },
-                }}
-                data-id-ref="item-card-open-new-tab-button"
-              >
-                <OpenInNew fontSize="small" data-id-ref="item-card-open-icon" />
-              </IconButton>
-            </Tooltip>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {/* Command button - only show for editable items */}
+              {item?.isEditable && (
+                <Tooltip title={t('itemCard.setCommand')} arrow placement="top">
+                  <IconButton
+                    onClick={handleCommandClick}
+                    aria-label={t('itemCard.setCommand')}
+                    size="small"
+                    sx={{
+                      color: 'text.secondary',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        color: 'warning.main',
+                        transform: 'scale(1.1)',
+                      },
+                    }}
+                    data-id-ref="item-card-command-button"
+                  >
+                    <SettingsIcon fontSize="small" data-id-ref="item-card-command-icon" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              
+              <Tooltip title={t('openInNewTab')} arrow placement="top">
+                <IconButton
+                  onClick={handleOpenNewTab}
+                  onMouseEnter={handlePrefetch}
+                  aria-label={t('openInNewTab')}
+                  size="small"
+                  sx={{
+                    color: 'text.secondary',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      color: 'primary.main',
+                      transform: 'scale(1.1)',
+                    },
+                  }}
+                  data-id-ref="item-card-open-new-tab-button"
+                >
+                  <OpenInNew fontSize="small" data-id-ref="item-card-open-icon" />
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Box>
 
           <Divider sx={{ marginBottom: 1.5 }} />

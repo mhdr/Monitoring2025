@@ -376,6 +376,7 @@
     "editableStatus": {
       "editable": "قابل ویرایش",
       "readOnly": "فقط خواندنی"
-    }
+    },
+    "setCommand": "تنظیم دستور"
   }
 }
