@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 
 # Trust Development SSL Certificates for Chrome and Firefox on Linux
 # This script now prefers a LOCAL DEVELOPMENT ROOT CA (mkcert if available, otherwise custom) to sign the localhost cert.
@@ -21,11 +21,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Check if running as root
+# Check if running as root - warn but allow
 if [[ $EUID -eq 0 ]]; then
-   echo -e "${RED}❌ This script should NOT be run as root${NC}"
-   echo "Please run it as your regular user account"
-   exit 1
+   echo -e "${YELLOW}⚠️  Running as root - certificates will be installed in root's home directory${NC}"
+   echo "If you want per-user certificates, run as a regular user instead"
 fi
 
 # Function to check if command exists

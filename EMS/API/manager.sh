@@ -38,7 +38,7 @@ fi
 
 ########################################################### App ####################################################################
 
-service_name=monitoring_web.service
+service_name=ems3_api.service
 
 # app: 1 operation: 1
 app_start(){

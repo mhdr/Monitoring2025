@@ -7,6 +7,7 @@ service_file=ems3_api.service
 # deploy
 sudo mkdir -p ${deploy_dir}
 sudo dotnet publish --output "${deploy_dir}" --configuration Release
+sudo cp create-certificates.sh ${deploy_dir}/create-certificates.sh
 
 # systemd
 sudo systemctl stop ${service_name}
