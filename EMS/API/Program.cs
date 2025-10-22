@@ -88,7 +88,7 @@ builder.Services.AddCors(options =>
         Console.WriteLine($"[CORS] Allowing {allowedOrigins.Count} explicit origins");
         Console.WriteLine($"[CORS]   Public IP: {publicIpString}");
         Console.WriteLine($"[CORS]   Local Network IP: {localIpString}");
-        Console.WriteLine($"[CORS]   Plus dynamic 192.168.x.x and 10.x.x.x subnet matching");
+        Console.WriteLine($"[CORS]   Plus dynamic 192.168.x.x, 10.x.x.x, and 172.20.x.x subnet matching");
         Console.WriteLine($"[CORS] Frontend ports supported: {string.Join(", ", frontendPorts)}");
         Console.WriteLine($"[CORS] Sample allowed origins:");
         foreach (var origin in allowedOrigins.Where(o => o.Contains(publicIpString) || o.Contains(localIpString)).Take(8))
@@ -104,7 +104,7 @@ builder.Services.AddCors(options =>
                 return true;
             }
 
-            // Then check if it matches local network patterns (192.168.x.x:port or 10.x.x.x:port)
+            // Then check if it matches local network patterns (192.168.x.x, 10.x.x.x, 172.20.x.x)
             if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
             {
                 var host = uri.Host;
@@ -124,6 +124,12 @@ builder.Services.AddCors(options =>
 
                 // Check for 10.x.x.x pattern
                 if (host.StartsWith("10."))
+                {
+                    return true;
+                }
+
+                // Check for 172.20.x.x pattern
+                if (host.StartsWith("172.20."))
                 {
                     return true;
                 }
