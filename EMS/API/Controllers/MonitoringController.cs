@@ -3561,37 +3561,137 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
-    /// Write a value to controller or add it to the system if write fails
+    /// Write a value to a monitoring item or add it to the system if write operation fails
     /// </summary>
-    /// <param name="request">Write or add value request containing item ID, value, and timestamp</param>
-    /// <returns>Result indicating success or failure of the write or add operation</returns>
-    /// <response code="200">Returns success status of the write or add operation</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <param name="request">Write or add value request containing item ID, value, and optional timestamp</param>
+    /// <returns>Result indicating success or failure of the write or add operation with detailed status message</returns>
+    /// <remarks>
+    /// Attempts to write a value to the specified monitoring item. If the write operation fails,
+    /// the system will attempt to add the value as a new entry. If no timestamp is provided,
+    /// the current system time will be used.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/writeoraddvalue
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "value": "25.7",
+    ///        "time": 1697587200
+    ///     }
+    ///     
+    /// The time parameter is optional - if omitted, current system time will be used.
+    /// </remarks>
+    /// <response code="200">Value successfully written or added to the monitoring item</response>
+    /// <response code="400">Validation error - invalid request format, missing required fields, or invalid item ID</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - insufficient permissions for this item</response>
+    /// <response code="404">Item not found - the specified item ID does not exist</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("WriteOrAddValue")]
+    [ProducesResponseType(typeof(WriteOrAddValueResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> WriteOrAddValue([FromBody] WriteOrAddValueRequestDto request)
     {
         try
         {
+            _logger.LogInformation("WriteOrAddValue operation started: ItemId {ItemId}", request?.ItemId);
+
+            // Validate request is not null
+            if (request == null)
+            {
+                _logger.LogWarning("WriteOrAddValue null request received");
+                return BadRequest(new { success = false, message = "Request body is required" });
+            }
+
+            // Validate model state first
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("WriteOrAddValue validation failed: {Errors}", string.Join("; ", errors));
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Validation failed",
+                    errors = errors
+                });
+            }
+
+            // Extract and validate user ID
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("WriteOrAddValue unauthorized access attempt for item {ItemId}", request.ItemId);
+                return Unauthorized(new { success = false, message = "Valid JWT token required" });
             }
 
-            var response = new WriteOrAddValueResponseDto();
+            // Validate ItemId
+            if (request.ItemId == Guid.Empty)
+            {
+                _logger.LogWarning("WriteOrAddValue invalid ItemId provided by user {UserId}: {ItemId}", userId, request.ItemId);
+                return BadRequest(new { success = false, message = "ItemId cannot be empty" });
+            }
+
+            // Validate value
+            if (string.IsNullOrWhiteSpace(request.Value))
+            {
+                _logger.LogWarning("WriteOrAddValue empty value provided by user {UserId} for item {ItemId}", userId, request.ItemId);
+                return BadRequest(new { success = false, message = "Value cannot be empty or whitespace" });
+            }
+
+            _logger.LogInformation("Executing WriteOrAddValue: User {UserId}, ItemId {ItemId}, Value {Value}, Time {Time}", 
+                userId, request.ItemId, request.Value, request.Time);
+
             var result = await Core.Points.WriteOrAddValue(request.ItemId, request.Value, request.Time);
-            response.IsSuccess = result;
 
-            return Ok(response);
+            var response = new WriteOrAddValueResponseDto
+            {
+                IsSuccess = result
+            };
+
+            if (result)
+            {
+                _logger.LogInformation("WriteOrAddValue completed successfully: User {UserId}, ItemId {ItemId}", userId, request.ItemId);
+                return Ok(new { success = true, data = response, message = "Value written or added successfully" });
+            }
+            else
+            {
+                _logger.LogWarning("WriteOrAddValue failed: User {UserId}, ItemId {ItemId}, Value {Value}", userId, request.ItemId, request.Value);
+                return Ok(new { success = false, data = response, message = "Failed to write or add value" });
+            }
         }
-        catch (Exception e)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogWarning(ex, "WriteOrAddValue argument validation failed: ItemId {ItemId}, Message {Message}", 
+                request?.ItemId, ex.Message);
+            return BadRequest(new { success = false, message = ex.Message });
         }
-
-        return BadRequest(ModelState);
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "WriteOrAddValue item not found: ItemId {ItemId}", request?.ItemId);
+            return NotFound(new { success = false, message = "Monitoring item not found" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "WriteOrAddValue unauthorized access: User {UserId}, ItemId {ItemId}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier), request?.ItemId);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in WriteOrAddValue operation: User {UserId}, ItemId {ItemId}, Message {Message}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier), request?.ItemId, ex.Message);
+            return StatusCode(500, new { success = false, message = "Internal server error" });
+        }
     }
 
     /// <summary>

@@ -780,3 +780,40 @@ Accept: application/json
 # await connection.invoke('SubscribeToActiveAlarms');
 
 ###
+
+### Write or Add Value to Monitoring Item
+POST {{API_HostAddress}}/api/monitoring/WriteOrAddValue
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440000",
+  "value": "25.7",
+  "time": 1697587200
+}
+
+###
+
+### Write or Add Value to Monitoring Item (without timestamp - uses current time)
+POST {{API_HostAddress}}/api/monitoring/WriteOrAddValue
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440000",
+  "value": "42.3"
+}
+
+###
+
+### Write or Add Value - Error Case (missing required fields)
+POST {{API_HostAddress}}/api/monitoring/WriteOrAddValue
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "itemId": "00000000-0000-0000-0000-000000000000",
+  "value": ""
+}
+
+###
