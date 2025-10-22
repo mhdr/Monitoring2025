@@ -87,10 +87,22 @@ builder.Services.AddCors(options =>
             }
         }
 
+        // // Add frontend origins (commonly HTTP in development)
+        // foreach (var protocol in protocols)
+        // {
+        //     foreach (var ip in new[] { "localhost", "127.0.0.1" }) // Frontend typically runs on localhost
+        //     {
+        //         foreach (var port in frontendPorts)
+        //         {
+        //             allowedOrigins.Add($"{protocol}://{ip}:{port}");
+        //         }
+        //     }
+        // }
+        
         // Add frontend origins (commonly HTTP in development)
         foreach (var protocol in protocols)
         {
-            foreach (var ip in new[] { "localhost", "127.0.0.1" }) // Frontend typically runs on localhost
+            foreach (var ip in new[] { "localhost", "127.0.0.1", detectedIp.ToString() }) // Include detected IP for network access
             {
                 foreach (var port in frontendPorts)
                 {
