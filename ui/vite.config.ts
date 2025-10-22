@@ -1,28 +1,14 @@
 /// <reference types="vite/client" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import basicSsl from '@vitejs/plugin-basic-ssl'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
 // import PluginCritical from 'rollup-plugin-critical' // Available for manual critical CSS extraction
-import fs from 'fs'
-import path from 'path'
-import { homedir } from 'os'
-
-// Custom SSL certificate paths
-const certDir = path.join(homedir(), '.vite-plugin-basic-ssl')
-const certFile = path.join(certDir, 'cert.pem')
-const keyFile = path.join(certDir, 'key.pem')
-
-// Check if custom certificates exist
-const customCertsExist = fs.existsSync(certFile) && fs.existsSync(keyFile)
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    // Use basic SSL plugin as fallback if custom certificates don't exist
-    !customCertsExist && basicSsl(),
     // PWA plugin - service worker, manifest, and offline support
     VitePWA({
       registerType: 'prompt', // User consent before updating
@@ -176,7 +162,7 @@ export default defineConfig({
           // Serves cached data immediately while fetching fresh data in background
           // This works well with TTL system and cache invalidation
           {
-            urlPattern: /^https:\/\/localhost:7136\/api\/.*/,
+            urlPattern: /^http:\/\/localhost:5030\/api\/.*/,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'api-cache',
@@ -228,7 +214,7 @@ export default defineConfig({
     // Manual critical CSS extraction is already implemented in index.html
     // This plugin can be enabled for automated extraction if needed
     // PluginCritical({
-    //   criticalUrl: 'https://localhost:5173/',
+    //   criticalUrl: 'http://localhost:5173/',
     //   criticalBase: './dist',
     //   criticalPages: [
     //     { uri: '', template: 'index' },
@@ -246,21 +232,16 @@ export default defineConfig({
     // })
   ].filter(Boolean),
   server: {
-    https: customCertsExist ? {
-      key: fs.readFileSync(keyFile),
-      cert: fs.readFileSync(certFile),
-    } : undefined, // Let the basic SSL plugin handle HTTPS when enabled
     host: '0.0.0.0', // Allow network access via IP address
     port: 5173,
     proxy: {
       '/api': {
-        target: process.env.VITE_API_BASE_URL || 'https://localhost:7136',
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:5030',
         changeOrigin: true,
-        secure: false, // Ignore SSL certificate issues for development
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
             console.log('[Vite Proxy] Error connecting to backend:', err.message);
-            console.log('[Vite Proxy] Make sure the backend server is running on https://localhost:7136');
+            console.log('[Vite Proxy] Make sure the backend server is running on http://localhost:5030');
           });
           proxy.on('proxyReq', (proxyReq, req, _res) => {
             console.log('[Vite Proxy] Forwarding:', req.method, req.url, '→', proxyReq.getHeader('host'));
@@ -268,9 +249,8 @@ export default defineConfig({
         },
       },
       '/hubs': {
-        target: process.env.VITE_API_BASE_URL || 'https://localhost:7136',
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:5030',
         changeOrigin: true,
-        secure: false,
         ws: true, // Enable WebSocket proxying for SignalR
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {

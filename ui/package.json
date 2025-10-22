@@ -5,14 +5,10 @@
   "type": "module",
   "description": "سیستم مانیتورینگ انبار - رابط کاربری فارسی",
   "scripts": {
-    "predev": "node scripts/check-ssl.cjs",
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "setup-ssl": "chmod +x trust-dev-certs.sh && ./trust-dev-certs.sh",
-    "trust-certs:win": "powershell -ExecutionPolicy Bypass -File .\\trust-dev-certs.ps1",
-    "trust-certs:unix": "chmod +x trust-dev-certs.sh && ./trust-dev-certs.sh"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@ag-grid-community/locale": "^34.2.0",

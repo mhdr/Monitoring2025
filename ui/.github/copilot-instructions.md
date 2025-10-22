@@ -212,16 +212,16 @@ Must test on these standard resolutions:
 
 ## API
 ⚠️ MANDATORY: Use DTO interfaces for ALL requests/responses
-- Server: .NET Core ASP.NET, HTTPS-only
-- Base: `https://localhost:7136`
-- Swagger: `https://localhost:7136/swagger/v1/swagger.json`
+- Server: .NET Core ASP.NET, HTTP-only
+- Base: `http://localhost:5030`
+- Swagger: `http://localhost:5030/swagger/v1/swagger.json`
 - Auth: JWT + refresh token rotation
 - Test: `test` / `Password@12345`
 - Client: `src/services/apiClient.ts` (Axios)
 - DTOs: Define in `src/types/api.ts`, match backend DTOs exactly
 
 ⚠️ **CRITICAL: All API and SignalR DTOs are documented in Swagger JSON**
-- **Swagger URL**: `https://localhost:7136/swagger/v1/swagger.json`
+- **Swagger URL**: `http://localhost:5030/swagger/v1/swagger.json`
 - **DTO Location**: `components.schemas` section in Swagger JSON
 - **SignalR Hub Info**: GET `/api/Monitoring/SignalRHubInfo` endpoint provides complete SignalR documentation
 - **SignalR DTOs**: Look for `SignalRHubInfoResponseDto`, `SignalRHubData`, `SignalRMethodInfo`, `SignalRParameterInfo`, `SignalRConnectionExamples`
@@ -242,9 +242,9 @@ Must test on these standard resolutions:
 - **Hub Documentation**: GET `/api/Monitoring/SignalRHubInfo` returns complete hub metadata (methods, parameters, connection examples)
 - **Message Method**: `ReceiveActiveAlarmsUpdate` receives `{ alarmCount: number, timestamp: number }`
 - **Authentication**: JWT Bearer tokens via Authorization header
-- **Backend**: .NET Core SignalR server, same HTTPS port (7136)
+- **Backend**: .NET Core SignalR server, same HTTP port (5030)
 - **Context**: State managed in `MonitoringContext` with `activeAlarms` property
-- **Swagger Documentation**: All SignalR DTOs and methods documented in `https://localhost:7136/swagger/v1/swagger.json`
+- **Swagger Documentation**: All SignalR DTOs and methods documented in `http://localhost:5030/swagger/v1/swagger.json`
 
 ### Connection Lifecycle
 ⚠️ SignalR connection states match existing StreamStatus enum
@@ -310,10 +310,9 @@ The following needs to be implemented:
 ⚠️ **MANDATORY: Follow these security practices**
 
 1. **XSS Prevention**: Never use `dangerouslySetInnerHTML` without sanitization
-2. **HTTPS Only**: All API calls must use HTTPS (enforced at 7136)
-3. **Token Security**: Never log or expose JWT tokens
-4. **Input Validation**: Validate all user input on client AND server
-5. **CORS**: Only `https://localhost:5173` is whitelisted
+2. **Token Security**: Never log or expose JWT tokens
+3. **Input Validation**: Validate all user input on client AND server
+4. **CORS**: Backend configured to allow frontend domain
 
 ### Security Patterns
 - React automatically escapes content - just render user text directly
@@ -325,7 +324,6 @@ The following needs to be implemented:
 - [ ] No sensitive data in IndexedDB without encryption
 - [ ] No API keys or secrets in frontend code
 - [ ] All forms validate input client-side AND server-side
-- [ ] HTTPS enforced for all API calls
 - [ ] Authentication required for protected routes
 - [ ] CSRF tokens used where applicable
 
@@ -591,18 +589,14 @@ If you find existing code using localStorage/sessionStorage:
 ### Port Configuration
 ⚠️ **CRITICAL: Port numbers are fixed - DO NOT change**
 
-- **Frontend (Vite)**: `https://localhost:5173`
-- **Backend (.NET)**: `https://localhost:7136`
+- **Frontend (Vite)**: `http://localhost:5173`
+- **Backend (.NET)**: `http://localhost:5030`
 - **CORS**: Only port 5173 is whitelisted on backend
-- **SSL/TLS**: Development certificates must be trusted
 
 ### Environment Setup
-1. Trust development certificates:
-   - Windows: Run `trust-dev-certs.ps1`
-   - Linux/Mac: Run `trust-dev-certs.sh`
-2. Install dependencies: `npm install`
-3. Start dev server: `npm run dev`
-4. Verify SSL: Navigate to `https://localhost:5173`
+1. Install dependencies: `npm install`
+2. Start dev server: `npm run dev`
+3. Verify: Navigate to `http://localhost:5173`
 
 ### Element Identification
 ⚠️ **MANDATORY: ALL elements created by AI must have `data-id-ref` attribute**
@@ -709,7 +703,7 @@ public/locales/   # fa/, en/
 - [ ] **IndexedDB**: Use for persistent client-side storage
 
 ### API & Backend Integration
-- [ ] **HTTPS Only**: All API calls use `https://localhost:7136`
+- [ ] **HTTP Protocol**: All API calls use `http://localhost:5030`
 - [ ] **Error Handling**: API errors handled gracefully with Axios error checks
 - [ ] **Loading States**: Loading indicators for async operations
 - [ ] **Auth States**: Protected routes require authentication
@@ -799,7 +793,7 @@ public/locales/   # fa/, en/
 - **Token refresh loop**: Check `apiClient.ts` mutex, verify refresh endpoint, check console for 401 loops
 
 ### SignalR Stream Issues
-- **Not connecting**: Verify backend running on 7136, check CORS, verify SSL certs
+- **Not connecting**: Verify backend running on 5030, check CORS configuration
 - **Memory leak**: Always cleanup in useEffect return function
 
 ### i18n Issues

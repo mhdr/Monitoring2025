@@ -9,7 +9,7 @@ const logger = createLogger('ApiConfig');
 
 /**
  * Dynamically determine the API base URL based on current hostname
- * @returns The API base URL (e.g., https://localhost:7136 or https://192.168.70.10:7136)
+ * @returns The API base URL (e.g., http://localhost:5030 or http://192.168.70.10:5030)
  */
 function getApiBaseUrl(): string {
   // Check if explicitly set via environment variable (production builds)
@@ -23,7 +23,7 @@ function getApiBaseUrl(): string {
   if (import.meta.env.DEV) {
     const currentHost = window.location.hostname;
     const protocol = window.location.protocol; // Use same protocol as frontend
-    const apiPort = 7136; // Backend API port
+    const apiPort = 5030; // Backend API port
 
     // Use Vite proxy for localhost (relative URLs)
     if (currentHost === 'localhost' || currentHost === '127.0.0.1') {

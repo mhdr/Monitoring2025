@@ -9,7 +9,7 @@ This guide covers deploying the Monitoring2025 UI application to production envi
 
 **`VITE_API_BASE_URL`** - Backend API base URL
 
-- **Development**: `https://localhost:7136` (automatically set in `.env.development`)
+- **Development**: `http://localhost:5030` (automatically set in `.env.development`)
 - **Production**: Must be set in `.env.production` before building
 
 ### Setting Up Production Environment
@@ -21,12 +21,12 @@ This guide covers deploying the Monitoring2025 UI application to production envi
 
 2. **Edit `.env.production`** and set your production API URL:
    ```bash
-   VITE_API_BASE_URL=https://api.yourdomain.com
+   VITE_API_BASE_URL=http://api.yourdomain.com
    ```
 
    Or set it directly in your CI/CD pipeline:
    ```bash
-   export VITE_API_BASE_URL=https://api.yourdomain.com
+   export VITE_API_BASE_URL=http://api.yourdomain.com
    npm run build
    ```
 
@@ -43,7 +43,7 @@ The build output will be in the `dist/` directory.
 ### Build with Custom API URL
 ```bash
 # Override environment variable during build
-VITE_API_BASE_URL=https://api.yourdomain.com npm run build
+VITE_API_BASE_URL=http://api.yourdomain.com npm run build
 ```
 
 ## Deployment Options
@@ -76,7 +76,7 @@ CMD ["nginx", "-g", "daemon off;"]
 **Build and run:**
 ```bash
 # Build the app first
-VITE_API_BASE_URL=https://api.yourdomain.com npm run build
+VITE_API_BASE_URL=http://api.yourdomain.com npm run build
 
 # Build Docker image
 docker build -t monitoring-ui .
@@ -93,18 +93,6 @@ docker run -p 80:80 monitoring-ui
 server {
     listen 80;
     server_name monitoring.yourdomain.com;
-    
-    # Redirect to HTTPS
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name monitoring.yourdomain.com;
-    
-    # SSL certificates
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
     
     # Root directory
     root /var/www/monitoring-ui;
@@ -227,7 +215,7 @@ stages:
   - deploy
 
 variables:
-  VITE_API_BASE_URL: "https://api.yourdomain.com"
+  VITE_API_BASE_URL: "http://api.yourdomain.com"
 
 build:
   stage: build
@@ -263,7 +251,6 @@ deploy:
 
 - [ ] Verify `VITE_API_BASE_URL` is correctly set
 - [ ] Test API connectivity from production URL
-- [ ] Verify HTTPS is working (all API calls must be HTTPS)
 - [ ] Test both Persian (RTL) and English (LTR) layouts
 - [ ] Test responsive design on mobile, tablet, desktop
 - [ ] Verify Service Worker registration
@@ -289,7 +276,7 @@ deploy:
 ### Issue: SignalR connection fails
 **Solution:**
 - Verify WebSocket support is enabled on server
-- Check that `VITE_API_BASE_URL` includes the correct protocol (https://)
+- Check that `VITE_API_BASE_URL` includes the correct protocol (http://)
 - Ensure backend SignalR hub is accessible at `/hubs/monitoring`
 
 ### Issue: 404 errors on page refresh
@@ -332,7 +319,6 @@ Set up monitoring for:
 
 ## Security Considerations
 
-- Always use HTTPS in production
 - Set proper Content Security Policy (CSP) headers
 - Enable security headers (X-Frame-Options, X-Content-Type-Options)
 - Keep dependencies updated

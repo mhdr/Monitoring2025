@@ -8,8 +8,8 @@
 interface ImportMetaEnv {
   /**
    * Backend API base URL
-   * Development: https://localhost:7136
-   * Production: Set via .env.production (e.g., https://api.yourdomain.com)
+   * Development: http://localhost:5030
+   * Production: Set via .env.production (e.g., http://api.yourdomain.com)
    */
   readonly VITE_API_BASE_URL: string;
 }

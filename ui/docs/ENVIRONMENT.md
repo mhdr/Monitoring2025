@@ -16,12 +16,12 @@ This application uses environment variables to configure the backend API URL. Th
 
 **Description:** Backend API base URL
 
-**Format:** `https://your-api-domain.com` (no trailing slash)
+**Format:** `http://your-api-domain.com` (no trailing slash)
 
 **Examples:**
-- Development: `https://localhost:7136`
-- Production: `https://api.yourdomain.com`
-- Production: `https://monitoring-api.company.com`
+- Development: `http://localhost:5030`
+- Production: `http://api.yourdomain.com`
+- Production: `http://monitoring-api.company.com`
 
 **Usage in code:**
 ```typescript
@@ -36,7 +36,7 @@ const apiUrl = import.meta.env.VITE_API_BASE_URL;
 Development environment is already configured in `.env.development`:
 
 ```bash
-VITE_API_BASE_URL=https://localhost:7136
+VITE_API_BASE_URL=http://localhost:5030
 ```
 
 No changes needed - just run:
@@ -55,7 +55,7 @@ npm run dev
 
 2. **Edit `.env.production`** and set your production API URL:
    ```bash
-   VITE_API_BASE_URL=https://api.yourdomain.com
+   VITE_API_BASE_URL=http://api.yourdomain.com
    ```
 
 3. **Build the application:**
@@ -65,12 +65,12 @@ npm run dev
 
 **Alternative - Set via command line:**
 ```bash
-VITE_API_BASE_URL=https://api.yourdomain.com npm run build
+VITE_API_BASE_URL=http://api.yourdomain.com npm run build
 ```
 
 **Alternative - Set via CI/CD:**
 ```bash
-export VITE_API_BASE_URL=https://api.yourdomain.com
+export VITE_API_BASE_URL=http://api.yourdomain.com
 npm run build
 ```
 
