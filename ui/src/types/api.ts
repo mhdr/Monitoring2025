@@ -221,8 +221,18 @@ export type ShouldScaleType = 1 | 2;
 /** ValueCalculationMethod: 0 = Instantaneous, 1 = Average */
 export type ValueCalculationMethod = 0 | 1;
 
-/** InterfaceType: 0 = None, 1 = Controller, 2 = MessageBus */
-export type InterfaceType = 0 | 1 | 2;
+/** InterfaceType: 0 = None, 1 = Sharp7, 2 = BACnet, 3 = Modbus */
+export type InterfaceType = 0 | 1 | 2 | 3;
+
+/**
+ * InterfaceType enum values for better code readability
+ */
+export const InterfaceTypeEnum = {
+  None: 0,
+  Sharp7: 1,
+  BACnet: 2,
+  Modbus: 3,
+} as const;
 
 /**
  * Request DTO for retrieving monitoring items

@@ -359,6 +359,13 @@
     "highPriorityAlarm": "هشدار",
     "lowPriorityAlarm": "اخطار",
     "hasActiveAlarm": "این مورد دارای هشدار فعال است",
-    "checkingAlarmStatus": "بررسی وضعیت هشدار..."
+    "checkingAlarmStatus": "بررسی وضعیت هشدار...",
+    "interfaceType": "واسط: {{type}}",
+    "interfaceTypes": {
+      "none": "بدون واسط",
+      "sharp7": "شارپ 7",
+      "bacnet": "بک نت",
+      "modbus": "مودباس"
+    }
   }
 }

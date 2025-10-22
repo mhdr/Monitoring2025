@@ -359,6 +359,13 @@
     "highPriorityAlarm": "Alarm",
     "lowPriorityAlarm": "Warning",
     "hasActiveAlarm": "This item has an active alarm",
-    "checkingAlarmStatus": "Checking alarm status..."
+    "checkingAlarmStatus": "Checking alarm status...",
+    "interfaceType": "Interface: {{type}}",
+    "interfaceTypes": {
+      "none": "None",
+      "sharp7": "Sharp7",
+      "bacnet": "BACnet",
+      "modbus": "Modbus"
+    }
   }
 }

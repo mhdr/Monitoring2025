@@ -31,10 +31,28 @@ import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
 import { useItemAlarmStatus } from '../hooks/useItemAlarmStatus';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
 import { createLogger } from '../utils/logger';
-import type { Item } from '../types/api';
+import type { Item, InterfaceType } from '../types/api';
+import { InterfaceTypeEnum } from '../types/api';
 import ValueHistoryChart from './ValueHistoryChart';
 
 const logger = createLogger('ItemCard');
+
+/**
+ * Get interface type display information
+ */
+const getInterfaceTypeInfo = (interfaceType: InterfaceType) => {
+  switch (interfaceType) {
+    case InterfaceTypeEnum.Sharp7:
+      return { short: 'S', translationKey: 'itemCard.interfaceTypes.sharp7' };
+    case InterfaceTypeEnum.BACnet:
+      return { short: 'B', translationKey: 'itemCard.interfaceTypes.bacnet' };
+    case InterfaceTypeEnum.Modbus:
+      return { short: 'M', translationKey: 'itemCard.interfaceTypes.modbus' };
+    case InterfaceTypeEnum.None:
+    default:
+      return { short: 'N', translationKey: 'itemCard.interfaceTypes.none' };
+  }
+};
 
 interface ItemCardProps {
   itemId: string;
@@ -205,6 +223,38 @@ const ItemCard: React.FC<ItemCardProps> = ({
               >
                 {name}
               </Typography>
+              
+              {/* Interface type indicator */}
+              {item?.interfaceType !== undefined && (() => {
+                const interfaceInfo = getInterfaceTypeInfo(item.interfaceType);
+                const interfaceTypeName = t(interfaceInfo.translationKey);
+                const tooltipText = t('itemCard.interfaceType', { type: interfaceTypeName });
+                return (
+                  <Tooltip 
+                    title={tooltipText} 
+                    arrow 
+                    placement="top"
+                  >
+                    <Chip
+                      label={interfaceInfo.short}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        minWidth: 32,
+                        height: 24,
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        borderRadius: 1,
+                        bgcolor: 'action.selected',
+                        color: 'text.primary',
+                        borderColor: 'divider',
+                      }}
+                      data-id-ref="item-card-interface-type-indicator"
+                    />
+                  </Tooltip>
+                );
+              })()}
+              
               {/* Alarm badge indicator */}
               {hasAlarm && (
                 <Zoom in timeout={300}>
