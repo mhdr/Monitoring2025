@@ -14,7 +14,7 @@ namespace API.Hubs;
 /// <remarks>
 /// <para><strong>Connection Information:</strong></para>
 /// <list type="bullet">
-/// <item>Hub URL: https://localhost:7136/monitoringhub</item>
+/// <item>Hub URL: http://localhost:5030/monitoringhub</item>
 /// <item>Authentication: JWT Bearer token required</item>
 /// <item>Transport: WebSockets (preferred), Server-Sent Events (fallback), Long Polling (fallback)</item>
 /// </list>
@@ -51,7 +51,7 @@ namespace API.Hubs;
 /// 
 /// // Create connection with JWT token
 /// const connection = new signalR.HubConnectionBuilder()
-///     .withUrl("https://localhost:7136/monitoringhub", {
+///     .withUrl("http://localhost:5030/monitoringhub", {
 ///         accessTokenFactory: () => localStorage.getItem("jwt_token")
 ///     })
 ///     .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
@@ -78,7 +78,7 @@ namespace API.Hubs;
 /// 
 /// // Create connection with JWT token
 /// var connection = new HubConnectionBuilder()
-///     .WithUrl("https://localhost:7136/monitoringhub", options =>
+///     .WithUrl("http://localhost:5030/monitoringhub", options =>
 ///     {
 ///         options.AccessTokenProvider = () => Task.FromResult(jwtToken);
 ///     })

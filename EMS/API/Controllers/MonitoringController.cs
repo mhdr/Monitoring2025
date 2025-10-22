@@ -920,7 +920,7 @@ public class MonitoringController : ControllerBase
                 {
                     HubName = "MonitoringHub",
                     HubEndpoint = "/monitoringhub",
-                    ConnectionUrl = "https://localhost:7136/monitoringhub",
+                    ConnectionUrl = "http://localhost:5030/monitoringhub",
                     Authentication = "JWT Bearer token required - provide via Authorization header or accessTokenFactory option",
                     SupportedTransports = new List<string> { "WebSockets", "ServerSentEvents", "LongPolling" },
                     
@@ -961,7 +961,7 @@ import * as signalR from '@microsoft/signalr';
 
 // Create connection with JWT token
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl('https://localhost:7136/monitoringhub', {
+    .withUrl('http://localhost:5030/monitoringhub', {
         accessTokenFactory: () => localStorage.getItem('jwt_token')
     })
     .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
@@ -999,7 +999,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 
 // Create connection with JWT token
 var connection = new HubConnectionBuilder()
-    .WithUrl(""https://localhost:7136/monitoringhub"", options =>
+    .WithUrl(""http://localhost:5030/monitoringhub"", options =>
     {
         options.AccessTokenProvider = () => Task.FromResult(jwtToken);
     })
@@ -1046,7 +1046,7 @@ def get_token():
 
 # Create connection with JWT token
 hub_connection = HubConnectionBuilder() \
-    .with_url(""https://localhost:7136/monitoringhub"",
+    .with_url(""http://localhost:5030/monitoringhub"",
               options={
                   ""access_token_factory"": get_token,
                   ""verify_ssl"": False  # Only for development

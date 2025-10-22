@@ -22,39 +22,9 @@ Console.WriteLine($"[NETWORK] Binding to all interfaces (0.0.0.0) but using {det
 // Configure Kestrel to bind to all interfaces but use detected IP for CORS
 builder.WebHost.ConfigureKestrel(options =>
 {
-    // Resolve certificate (dev self-signed) if present
-    var potentialPaths = new List<string>
-    {
-        Path.Combine(AppContext.BaseDirectory, "certificates", "api-cert.pfx"),
-        Path.Combine(builder.Environment.ContentRootPath, "certificates", "api-cert.pfx"),
-        Path.Combine(Directory.GetCurrentDirectory(), "certificates", "api-cert.pfx")
-    };
-    var certPassword = "password123"; // Dev only; matches script
-    string? selectedCertPath = potentialPaths.FirstOrDefault(File.Exists);
-    System.Security.Cryptography.X509Certificates.X509Certificate2? devCert = null;
-    if (selectedCertPath != null)
-    {
-        try
-        {
-            devCert = new System.Security.Cryptography.X509Certificates.X509Certificate2(selectedCertPath, certPassword, System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable);
-            Console.WriteLine($"[DEV CERT] Using development certificate: {selectedCertPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[WARN] Failed to load development certificate from {selectedCertPath}: {ex.Message}. Will use ephemeral HTTPS certificate.");
-        }
-    }
-    else
-    {
-        Console.WriteLine("[INFO] Development certificate not found. Will use ephemeral HTTPS certificate.");
-    }
-
-    // Bind to all interfaces (0.0.0.0) for compatibility - HTTPS ONLY
-    options.Listen(IPAddress.Any, 7136, listenOptions =>
-    {
-        if (devCert != null) listenOptions.UseHttps(devCert); else listenOptions.UseHttps();
-    });
-    Console.WriteLine($"[BIND] HTTPS port 7136 on all interfaces (externally accessible via {detectedIp}:7136)");
+    // Bind to all interfaces (0.0.0.0) for compatibility - HTTP ONLY
+    options.Listen(IPAddress.Any, 5030);
+    Console.WriteLine($"[BIND] HTTP port 5030 on all interfaces (externally accessible via {detectedIp}:5030)");
 });
 
 // Add services to the container.
@@ -69,7 +39,7 @@ builder.Services.AddCors(options =>
     {
         // Build comprehensive origins list including detected IP and all local dev IPs
         var localIps = new[] { "localhost", "127.0.0.1", "0.0.0.0", "::1", detectedIp.ToString() };
-        var apiPorts = new[] { "7136", "5030" }; // API ports
+        var apiPorts = new[] { "5030" }; // API HTTP port
         var frontendPorts = new[] { "3000", "3001", "5000", "5173", "5174", "5175", "4200", "8080", "8081", "8000" }; // Common frontend dev ports
         var protocols = new[] { "http", "https" }; // Support both HTTP and HTTPS
 
@@ -114,9 +84,9 @@ builder.Services.AddCors(options =>
         // Add some common variations without ports for flexibility
         allowedOrigins.AddRange(new[]
         {
-            "http://localhost", "https://localhost",
-            "http://127.0.0.1", "https://127.0.0.1",
-            $"http://{detectedIp}", $"https://{detectedIp}"
+            "http://localhost",
+            "http://127.0.0.1",
+            $"http://{detectedIp}"
         });
 
         Console.WriteLine($"[CORS] Allowing {allowedOrigins.Count} origins including detected IP {detectedIp}");
@@ -178,7 +148,7 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     options.SaveToken = true;
-    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment(); // Only require HTTPS in production
+    options.RequireHttpsMetadata = false; // HTTP only - no HTTPS requirement
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -304,13 +274,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 
-    // Add servers for both HTTP and HTTPS
-    c.AddServer(new Microsoft.OpenApi.Models.OpenApiServer
-    {
-        Url = "https://localhost:7136",
-        Description = "HTTPS Development Server (Preferred)"
-    });
-
+    // Add HTTP server only
     c.AddServer(new Microsoft.OpenApi.Models.OpenApiServer
     {
         Url = "http://localhost:5030",
@@ -352,19 +316,7 @@ if (app.Environment.IsDevelopment())
 // Enable CORS
 app.UseCors("ReactClientPolicy");
 
-// Use HTTPS redirection - this will redirect HTTP requests to HTTPS
-// Can be disabled in development by setting Development:DisableHttpsRedirection to true
-var disableHttpsRedirection = builder.Configuration.GetValue<bool>("Development:DisableHttpsRedirection", false);
-if (!disableHttpsRedirection)
-{
-    app.UseHttpsRedirection();
-}
-
-// Add HSTS (HTTP Strict Transport Security) for production
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHsts();
-}
+// HTTP only - HTTPS redirection and HSTS removed
 
 // Authentication & Authorization middleware
 app.UseAuthentication();

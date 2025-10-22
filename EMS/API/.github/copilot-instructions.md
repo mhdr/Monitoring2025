@@ -29,15 +29,21 @@
 
 ## 🔒 Server Configuration
 
-### HTTPS & Security
-- **HTTPS Only**: `https://localhost:7136` (no HTTP fallback)
-- **Certificate**: `certificates/api-cert.pfx` (password: `password123` - dev only)
+### HTTP Configuration
+- **HTTP Only**: `http://localhost:5030` (HTTPS disabled for simplified development)
+- **Port**: 5030 (HTTP)
 - **CORS**: Configured for detected public IP + localhost
-- **JWT**: Token-based authentication with refresh tokens
+- **JWT**: Token-based authentication with refresh tokens (RequireHttpsMetadata = false)
 
 ### Environment
-- **Development**: Self-signed cert with auto-migration
-- **Production**: Update JWT key, use proper SSL cert, secure connection strings
+- **Development**: HTTP-only mode with auto-migration
+- **Production**: Consider enabling HTTPS with proper SSL certificates and update JWT configuration accordingly
+
+### Important Notes
+- HTTPS redirection is **disabled** - all requests use HTTP
+- HSTS (HTTP Strict Transport Security) is **disabled**
+- JWT authentication does **not** require HTTPS metadata (`RequireHttpsMetadata = false`)
+- SSL certificates are **not** required for development
 
 ---
 
@@ -279,7 +285,7 @@ import * as signalR from "@microsoft/signalr";
 
 // Create connection with JWT token
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://localhost:7136/monitoringhub", {
+    .withUrl("http://localhost:5030/monitoringhub", {
         accessTokenFactory: () => localStorage.getItem("jwt_token")
     })
     .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
@@ -303,7 +309,7 @@ await connection.invoke("SubscribeToActiveAlarms");
 using Microsoft.AspNetCore.SignalR.Client;
 
 var connection = new HubConnectionBuilder()
-    .WithUrl("https://localhost:7136/monitoringhub", options =>
+    .WithUrl("http://localhost:5030/monitoringhub", options =>
     {
         options.AccessTokenProvider = () => Task.FromResult(jwtToken);
     })
@@ -544,7 +550,7 @@ Authorization: Bearer {{access_token}}
 When implementing new features, verify:
 
 **Security & Configuration:**
-- [ ] HTTPS endpoint used (no HTTP fallback)
+- [ ] HTTP endpoint configured correctly
 - [ ] JWT authorization applied to protected endpoints
 - [ ] Input validation with data annotations
 - [ ] SQL injection prevention (parameterized queries/EF Core)
@@ -703,9 +709,9 @@ if (string.IsNullOrEmpty(userId))
 - Configuration: `appsettings.json`, `appsettings.Development.json`
 
 **Key URLs:**
-- API Base: `https://localhost:7136`
-- Swagger UI: `https://localhost:7136/swagger`
-- SignalR Hub: `https://localhost:7136/monitoringhub`
+- API Base: `http://localhost:5030`
+- Swagger UI: `http://localhost:5030/swagger`
+- SignalR Hub: `http://localhost:5030/monitoringhub`
 
 **Database:**
 - Connection: PostgreSQL on localhost
@@ -754,10 +760,6 @@ if (string.IsNullOrEmpty(userId))
 
 ### Common Issues & Solutions
 
-**Issue: Certificate errors on startup**
-- Solution: Run `create-certificates.ps1` to generate development certificate
-- Verify certificate exists at `certificates/api-cert.pfx`
-
 **Issue: Database connection fails**
 - Solution: Check PostgreSQL is running
 - Verify connection string in `appsettings.json`
@@ -776,7 +778,7 @@ if (string.IsNullOrEmpty(userId))
 **Issue: SignalR connection fails**
 - Solution: Verify SignalR is configured in `Program.cs`
 - Check JWT token is being provided correctly
-- Ensure client is using correct hub URL (`/monitoringhub`)
+- Ensure client is using correct hub URL (`/hubs/monitoring`)
 - Check browser console for connection errors
 - Verify WebSocket support or fallback transports are enabled
 
@@ -929,7 +931,7 @@ builder.Services.AddControllers()
 ```dockerfile
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
-EXPOSE 7136
+EXPOSE 5030
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
@@ -962,7 +964,7 @@ services:
       context: .
       dockerfile: API/Dockerfile
     ports:
-      - "7136:7136"
+      - "5030:5030"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=monitoring_users;Username=postgres;Password=postgres
@@ -1109,7 +1111,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 - [ ] SQL queries use parameterization
 - [ ] Authentication/authorization applied to protected endpoints
 - [ ] No secrets in code (use configuration/secrets manager)
-- [ ] HTTPS enforced
+- [ ] HTTP configured correctly (HTTPS optional for production)
 - [ ] CORS configured appropriately
 
 **Performance:**
@@ -1998,4 +2000,11 @@ public class MonitoringController : ControllerBase
 
 ---
 
-**Last Updated:** October 2025 (v2.0 - Enhanced Edition)
+**Last Updated:** October 2025 (v2.1 - HTTP-Only Configuration)
+
+**Recent Changes:**
+- **v2.1 (Oct 2025)**: Removed HTTPS requirement, configured HTTP-only mode on port 5030
+  - Removed SSL certificate dependencies
+  - Disabled HTTPS redirection and HSTS
+  - Updated all documentation and examples to use HTTP URLs
+  - Simplified development setup (no certificate generation needed)

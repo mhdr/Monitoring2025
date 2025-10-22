@@ -1,37 +1,12 @@
-@API_HostAddress = https://localhost:7136
-# HTTPS-only development endpoint
+@API_HostAddress = http://localhost:5030
+# HTTP development endpoint
 
 ###
-# EMS API Testing - SSL Certificate Configuration
+# EMS API Testing - HTTP Configuration
 # 
-# ⚠️  IMPORTANT: This API operates in HTTPS-only mode with self-signed certificates
-# 
-# 🔧 QUICK FIXES for SSL errors:
-# 1. Configure your HTTP client to trust self-signed certificates
-# 2. Add certificates to system trust store using ./create-certificates.sh
-#
-# 📖 Detailed SSL setup instructions are in SSL-README.md
+# This API now operates in HTTP-only mode for simplified development
 #
 ###
-
-# SSL Certificate Configuration for HTTPS Requests
-# 
-# The API uses HTTPS-only mode with a self-signed certificate for development.
-# If you encounter SSL handshake exceptions, configure your HTTP client to trust self-signed certificates
-# Option 3: Add the certificate to your system's trusted certificates
-#
-# For VS Code REST Client, add this to your settings.json:
-# "rest-client.certificates": {
-#   "localhost:7136": {
-#     "cert": "./certificates/api-cert.pem",
-#     "key": "./certificates/api-key.pem"
-#   }
-# }
-#
-# Or disable SSL verification (NOT recommended for production):
-# "rest-client.requestTimeout": 30000,
-# "rest-client.previewOptions": "full",
-# "rest-client.rejectUnauthorized": false
 
 
 
@@ -723,7 +698,7 @@ Content-Type: application/json
 # 
 # To view SignalR hub documentation:
 # 1. Start the API: dotnet run
-# 2. Navigate to: https://localhost:7136/swagger
+# 2. Navigate to: http://localhost:5030/swagger
 # 3. Look for the "SignalR - Monitoring Hub" tag
 # 4. Expand to see hub methods with parameters and descriptions
 # 
@@ -735,7 +710,7 @@ Content-Type: application/json
 
 ###
 
-### Get SignalR Hub Information - HTTPS (No Auth Required)
+### Get SignalR Hub Information - HTTP (No Auth Required)
 # Returns complete SignalR hub documentation including:
 # - Hub name and endpoint URL
 # - Server methods (callable from client)
@@ -754,7 +729,7 @@ Accept: application/json
 
 # SignalR Hub Connection Information:
 # 
-# Hub URL: https://localhost:7136/monitoringhub
+# Hub URL: http://localhost:5030/monitoringhub
 # Authentication: JWT Bearer token required
 # 
 # Server Methods (callable from client):
@@ -766,7 +741,7 @@ Accept: application/json
 # JavaScript Connection Example:
 # import * as signalR from '@microsoft/signalr';
 # const connection = new signalR.HubConnectionBuilder()
-#     .withUrl('https://localhost:7136/monitoringhub', {
+#     .withUrl('http://localhost:5030/monitoringhub', {
 #         accessTokenFactory: () => localStorage.getItem('jwt_token')
 #     })
 #     .withAutomaticReconnect()

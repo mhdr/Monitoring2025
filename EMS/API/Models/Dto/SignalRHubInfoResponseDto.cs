@@ -37,7 +37,7 @@ public class SignalRHubData
     /// <summary>
     /// Full connection URL for the hub
     /// </summary>
-    /// <example>https://localhost:7136/monitoringhub</example>
+    /// <example>http://localhost:5030/monitoringhub</example>
     public string ConnectionUrl { get; set; } = string.Empty;
 
     /// <summary>
