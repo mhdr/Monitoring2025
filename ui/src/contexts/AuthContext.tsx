@@ -154,13 +154,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const result = await apiLogin(credentials);
+      
+      // Store auth data first, before setting state (prevents race condition with SignalR)
+      await authStorageHelpers.setStoredAuth(result.accessToken, result.user, result.refreshToken);
+      
+      // Now set state after storage is complete
       setUser(result.user);
       setToken(result.accessToken);
       setIsAuthenticated(true);
       setIsLoading(false);
-      const authState = await authStorageHelpers.getCurrentAuth();
-      if (authState.refreshToken) {
-        broadcastLogin(result.accessToken, authState.refreshToken);
+      
+      // Broadcast login to other tabs
+      if (result.refreshToken) {
+        broadcastLogin(result.accessToken, result.refreshToken);
       }
     } catch (error) {
       setIsLoading(false);

@@ -155,7 +155,11 @@ export function useSignalR(isAuthenticated: boolean, isAuthLoading: boolean) {
     });
 
     connectionAttemptedRef.current = true;
-    connect();
+    
+    // Add small delay to ensure auth storage is completely settled
+    setTimeout(() => {
+      connect();
+    }, 100);
   }, [isAuthenticated, isAuthLoading, connect]);
 
   /**

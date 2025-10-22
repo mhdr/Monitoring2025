@@ -41,7 +41,11 @@ class SignalRConnectionManager {
         accessTokenFactory: () => {
           const token = authStorageHelpers.getStoredTokenSync();
           if (token) {
-            logger.log('SignalR request with token:', { hasToken: true });
+            logger.log('SignalR request with token:', { 
+              hasToken: true, 
+              tokenLength: token.length,
+              tokenPrefix: token.substring(0, 20) + '...'
+            });
           } else {
             logger.warn('SignalR request WITHOUT token - auth may not be initialized yet!');
           }

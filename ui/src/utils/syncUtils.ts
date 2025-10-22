@@ -73,9 +73,9 @@ export function buildSyncUrl(redirectTo: string): string {
  */
 export function pathRequiresSync(pathname: string): boolean {
   // Paths that don't require sync
-  // - /login, /sync: Authentication and sync pages
-  // - /profile, /settings: User-specific pages that work without monitoring data
-  const noSyncPaths = ['/login', '/sync', '/profile', '/settings'];
+  // - /login, /sync, /dashboard/sync: Authentication and sync pages
+  // - /profile, /settings, /dashboard/profile, /dashboard/settings: User-specific pages that work without monitoring data
+  const noSyncPaths = ['/login', '/sync', '/dashboard/sync', '/profile', '/settings', '/dashboard/profile', '/dashboard/settings'];
   
   // Check if current path is in the no-sync list
   return !noSyncPaths.some(path => pathname.startsWith(path));

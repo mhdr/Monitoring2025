@@ -103,14 +103,14 @@ const LoginPage: React.FC = () => {
       });
 
       // If we reach this point, login was successful
-      // Navigate to the saved location (preserve search/hash) or default to /dashboard
+      // Navigate to the saved location (preserve search/hash) or default to /dashboard/sync
       const state = location.state as LocationState;
       const fromLoc = state?.from;
       if (fromLoc && fromLoc.pathname) {
-        const target = `${fromLoc.pathname || '/dashboard'}${fromLoc.search || ''}${fromLoc.hash || ''}`;
+        const target = `${fromLoc.pathname || '/dashboard/sync'}${fromLoc.search || ''}${fromLoc.hash || ''}`;
         navigate(target, { replace: true });
       } else {
-        navigate('/dashboard', { replace: true });
+        navigate('/dashboard/sync', { replace: true });
       }
     } catch (error) {
       // Handle login error
