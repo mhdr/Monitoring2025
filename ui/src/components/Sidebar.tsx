@@ -21,13 +21,8 @@ import {
 import {
   Close as CloseIcon,
   Dashboard as DashboardIcon,
-  ShowChart as PlotsIcon,
   Warning as ActiveAlarmsIcon,
   Description as AlarmLogIcon,
-  ChecklistRtl as AuditTrailIcon,
-  NotificationsOff as DisabledAlarmsIcon,
-  Event as SchedulerIcon,
-  Settings as ManagementIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';

@@ -14,7 +14,6 @@ export const useRoutePreloader = () => {
    */
   const preloadDashboardRoutes = useCallback(() => {
     preloadRoute('DashboardLayout', () => import('../components/DashboardLayout'));
-    preloadRoute('Dashboard', () => import('../components/Dashboard'));
     
     // Preload frequently accessed pages with a delay
     preloadRoutesDelayed([

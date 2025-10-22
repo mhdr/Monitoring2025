@@ -14,7 +14,6 @@ import ServiceWorkerPrompt from './components/ServiceWorkerPrompt';
 import SyncPage from './components/SyncPage';
 import DashboardLayout from './components/DashboardLayout';
 import DetailLayout from './components/detail/DetailLayout';
-import Dashboard from './components/Dashboard';
 import MonitoringPage from './components/MonitoringPage';
 import PlotsPage from './components/PlotsPage';
 import ActiveAlarmsPage from './components/ActiveAlarmsPage';
@@ -61,11 +60,7 @@ const AppRoutes = () => {
             </LazyErrorBoundary>
           </ProtectedRoute>
         }>
-          <Route index element={
-            <LazyErrorBoundary>
-              <Dashboard />
-            </LazyErrorBoundary>
-          } />
+          <Route index element={<Navigate to="/dashboard/monitoring" replace />} />
           <Route path="monitoring" element={
             <LazyErrorBoundary>
               <MonitoringPage />

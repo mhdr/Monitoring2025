@@ -25,9 +25,6 @@ import {
   MonitorHeart as LiveMonitoringIcon,
   Warning as ActiveAlarmsDetailIcon,
   Description as AlarmLogDetailIcon,
-  Tune as AlarmCriteriaIcon,
-  ChecklistRtl as AuditTrailDetailIcon,
-  Settings as ManagementDetailIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useMonitoring } from '../../hooks/useMonitoring';
