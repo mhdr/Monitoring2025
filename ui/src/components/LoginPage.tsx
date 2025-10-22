@@ -103,15 +103,15 @@ const LoginPage: React.FC = () => {
       });
 
       // If we reach this point, login was successful
-      // Navigate to the saved location (preserve search/hash) or default to /dashboard/sync
+      // ALWAYS go through sync page, then redirect to intended target (preserving search/hash)
       const state = location.state as LocationState;
       const fromLoc = state?.from;
-      if (fromLoc && fromLoc.pathname) {
-        const target = `${fromLoc.pathname || '/dashboard/sync'}${fromLoc.search || ''}${fromLoc.hash || ''}`;
-        navigate(target, { replace: true });
-      } else {
-        navigate('/dashboard/sync', { replace: true });
-      }
+      const target = fromLoc && fromLoc.pathname
+        ? `${fromLoc.pathname}${fromLoc.search || ''}${fromLoc.hash || ''}`
+        : '/dashboard';
+
+      const redirectParam = encodeURIComponent(target);
+      navigate(`/sync?redirect=${redirectParam}`, { replace: true });
     } catch (error) {
       // Handle login error
       const apiErr = error as ApiError;
