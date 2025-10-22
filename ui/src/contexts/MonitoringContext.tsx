@@ -596,7 +596,7 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       const storedItems = await monitoringStorageHelpers.getStoredItems();
       
       if (!storedItems || storedItems.length === 0) {
-        logger.warn('No items found in IndexedDB, cannot fetch active alarm count');
+        logger.log('No items configured in system, setting alarm count to 0');
         dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: 0, timestamp: Date.now(), highestPriority: null } });
         return;
       }
@@ -607,7 +607,7 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
         .filter((id): id is string => id !== null && id !== undefined);
       
       if (itemIds.length === 0) {
-        logger.warn('No valid itemIds found, setting alarm count to 0');
+        logger.log('No valid itemIds found, setting alarm count to 0');
         dispatch({ type: 'UPDATE_ACTIVE_ALARMS', payload: { alarmCount: 0, timestamp: Date.now(), highestPriority: null } });
         return;
       }

@@ -524,6 +524,43 @@ const MonitoringPage: React.FC = () => {
               )}
             </Alert>
           )}
+
+          {/* Empty State - No Items or Groups */}
+          {!isLoading && !error && !isLoadingItems && !itemsError && 
+           childGroups.length === 0 && currentFolderItems.length === 0 && (
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                py: 8,
+                textAlign: 'center'
+              }} 
+              data-id-ref="monitoring-page-empty-state-container"
+            >
+              <FolderIcon 
+                sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} 
+                data-id-ref="monitoring-page-empty-state-icon" 
+              />
+              <Typography 
+                variant="h6" 
+                color="text.secondary" 
+                gutterBottom
+                data-id-ref="monitoring-page-empty-state-title"
+              >
+                {currentFolderId ? t('emptyFolder') : t('noItemsFound')}
+              </Typography>
+              <Typography 
+                variant="body2" 
+                color="text.disabled"
+                sx={{ maxWidth: 500 }}
+                data-id-ref="monitoring-page-empty-state-description"
+              >
+                {currentFolderId ? t('emptyFolderDescription') : t('noItemsDescription')}
+              </Typography>
+            </Box>
+          )}
         </CardContent>
       </Card>
     </Container>

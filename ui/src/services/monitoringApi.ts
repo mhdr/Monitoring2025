@@ -131,7 +131,7 @@ export const getValues = async (params?: ValuesRequestDto): Promise<ValuesRespon
         body.itemIds = itemIds;
         logger.log('Using itemIds from utility for getValues', { count: itemIds.length });
       } else {
-        logger.warn('No stored items found in IndexedDB for getValues, sending request without itemIds');
+        logger.log('No stored items found, sending request without itemIds (backend will return data based on user permissions)');
       }
     }
     
@@ -250,7 +250,7 @@ export const getAlarms = async (params?: AlarmsRequestDto): Promise<AlarmsRespon
         body.itemIds = itemIds;
         logger.log('Using itemIds from utility for getAlarms', { count: itemIds.length });
       } else {
-        logger.warn('No stored items found in IndexedDB, sending request without itemIds');
+        logger.log('No stored items found, sending request without itemIds (backend will return alarms based on user permissions)');
       }
       // If no stored items, send empty object (backend will return alarms based on user permissions)
     }
@@ -286,7 +286,7 @@ export const getActiveAlarms = async (params?: ActiveAlarmsRequestDto): Promise<
         body.itemIds = itemIds;
         logger.log('Using itemIds from utility for getActiveAlarms', { count: itemIds.length });
       } else {
-        logger.warn('No stored items found in IndexedDB for getActiveAlarms, sending request without itemIds');
+        logger.log('No stored items found, sending request without itemIds (backend will return active alarms based on user permissions)');
       }
     }
     
@@ -320,7 +320,7 @@ export const getAlarmHistory = async (params: AlarmHistoryRequestDto): Promise<A
         body.itemIds = itemIds;
         logger.log('Using itemIds from utility for getAlarmHistory', { count: itemIds.length });
       } else {
-        logger.warn('No stored items found in IndexedDB for getAlarmHistory, sending request without itemIds');
+        logger.log('No stored items found, sending request without itemIds (backend will return alarm history based on user permissions)');
       }
     }
     
