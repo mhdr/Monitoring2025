@@ -250,7 +250,7 @@ export default defineConfig({
       key: fs.readFileSync(keyFile),
       cert: fs.readFileSync(certFile),
     } : undefined, // Let the basic SSL plugin handle HTTPS when enabled
-    host: 'localhost',
+    host: '0.0.0.0', // Allow network access via IP address
     port: 5173,
     proxy: {
       '/api': {
