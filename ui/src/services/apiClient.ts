@@ -7,8 +7,8 @@ import { createLogger } from '../utils/logger';
 const logger = createLogger('ApiClient');
 
 // API configuration - Use relative path for development with Vite proxy
-// In production, this should be set to the actual API server URL
-const API_BASE_URL = import.meta.env.PROD ? 'https://localhost:7136' : '';
+// In production, this will use VITE_API_BASE_URL from .env.production
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // Mutex to prevent multiple concurrent refresh token requests
 const refreshMutex = new Mutex();

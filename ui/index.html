@@ -7,10 +7,12 @@
   <link rel="apple-touch-icon" href="/icons/eye.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Resource hints for faster loading -->
-    <!-- Preconnect to backend API to establish connection early -->
-    <link rel="preconnect" href="https://localhost:7136" crossorigin>
-    <link rel="dns-prefetch" href="https://localhost:7136">
+    <!-- 
+      Resource hints for faster loading
+      Note: Preconnect to backend API is handled dynamically based on environment
+      In development: Uses Vite proxy at same origin
+      In production: API domain is determined at build time from VITE_API_BASE_URL
+    -->
     
     <!-- 
       Modulepreload hints for critical vendor chunks

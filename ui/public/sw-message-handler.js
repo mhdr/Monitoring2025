@@ -30,9 +30,10 @@ async function handleClearApiCache(endpoints, cacheName, event) {
 
     if (endpoints && endpoints.length > 0) {
       // Clear specific endpoints
-      const baseUrl = 'https://localhost:7136';
+      // Use relative URLs - browser resolves them based on origin
       const deletePromises = endpoints.map(endpoint => {
-        const url = `${baseUrl}${endpoint}`;
+        // Ensure endpoint starts with /
+        const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
         console.log('[SW] Clearing cache for:', url);
         return cache.delete(url, { ignoreVary: true, ignoreSearch: true });
       });

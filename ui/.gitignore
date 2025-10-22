@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Environment variables - only track templates
+.env.production
+.env.development.local
+.env.production.local
+
 # Generated gRPC code
 src/gen
 

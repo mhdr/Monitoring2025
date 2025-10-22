@@ -10,7 +10,8 @@ import { createLogger } from '../utils/logger';
 const logger = createLogger('SignalRClient');
 
 // Base URL for the SignalR server - matches the backend API
-const SIGNALR_BASE_URL = 'https://localhost:7136';
+// In production, this will use VITE_API_BASE_URL from .env.production
+const SIGNALR_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const HUB_PATH = '/hubs/monitoring';
 
 /**
