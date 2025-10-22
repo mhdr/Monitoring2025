@@ -14,6 +14,7 @@
   "save": "ذخیره",
   "cancel": "انصراف",
   "delete": "حذف",
+  "close": "بستن",
   "edit": "ویرایش",
   "add": "افزودن",
   "search": "جستجو",
@@ -76,6 +77,7 @@
   "loadingValue": "در حال بارگذاری...",
   "value": "مقدار",
   "time": "زمان",
+  "unit": "واحد",
   "refreshingData": "در حال به‌روزرسانی داده‌ها...",
   "openInNewTab": "باز کردن در تب جدید",
   "trendAnalysis": "تحلیل روند",
@@ -156,7 +158,9 @@
       "later": "بعداً"
     },
     "retry": "تلاش مجدد",
-    "error": "خطا"
+    "error": "خطا",
+    "on": "روشن",
+    "off": "خاموش"
   },
   "settings": {
     "pageTitle": "تنظیمات",
@@ -378,5 +382,26 @@
       "readOnly": "فقط خواندنی"
     },
     "setCommand": "تنظیم دستور"
+  },
+  "itemCommandDialog": {
+    "title": "ارسال دستور",
+    "itemInformation": "اطلاعات آیتم",
+    "digitalCommand": "دستور دیجیتال",
+    "analogCommand": "مقدار آنالوگ",
+    "setValue": "تنظیم مقدار",
+    "rangeHelper": "محدوده: {{min}} تا {{max}}",
+    "sendCommand": "ارسال دستور",
+    "sending": "در حال ارسال...",
+    "commandSentSuccessfully": "دستور با موفقیت ارسال شد!",
+    "validation": {
+      "required": "مقدار اجباری است",
+      "invalidNumber": "لطفا عددی معتبر وارد کنید",
+      "belowMinimum": "مقدار باید حداقل {{min}} باشد",
+      "aboveMaximum": "مقدار نباید بیشتر از {{max}} باشد"
+    },
+    "errors": {
+      "sendFailed": "ارسال دستور ناموفق بود",
+      "commandFailed": "اجرای دستور ناموفق بود"
+    }
   }
 }

@@ -37,6 +37,7 @@ import type {
   WriteValueRequestDto,
   AddValueRequestDto,
   WriteOrAddValueRequestDto,
+  WriteOrAddValueResponseDto,
 } from '../types/api';
 
 const logger = createLogger('MonitoringAPI');
@@ -469,9 +470,9 @@ export const addValue = async (data: AddValueRequestDto): Promise<EditPointRespo
 /**
  * Write a value to controller or add it if write fails
  */
-export const writeOrAddValue = async (data: WriteOrAddValueRequestDto): Promise<EditPointResponseDto> => {
+export const writeOrAddValue = async (data: WriteOrAddValueRequestDto): Promise<WriteOrAddValueResponseDto> => {
   try {
-    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/WriteOrAddValue', data);
+    const response = await apiClient.post<WriteOrAddValueResponseDto>('/api/Monitoring/WriteOrAddValue', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

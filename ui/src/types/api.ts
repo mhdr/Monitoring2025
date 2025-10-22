@@ -775,6 +775,10 @@ export interface WriteOrAddValueRequestDto {
   time?: number | null; // int64 - Unix timestamp
 }
 
+export interface WriteOrAddValueResponseDto {
+  isSuccess: boolean;
+}
+
 // ==================== SVG Layout DTOs ====================
 
 export interface GetSvgLayoutRequestDto {

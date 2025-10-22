@@ -41,6 +41,7 @@ import { createLogger } from '../utils/logger';
 import type { Item, InterfaceType, ItemType } from '../types/api';
 import { InterfaceTypeEnum, ItemTypeEnum } from '../types/api';
 import ValueHistoryChart from './ValueHistoryChart';
+import ItemCommandDialog from './ItemCommandDialog';
 
 const logger = createLogger('ItemCard');
 
@@ -157,6 +158,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const prefetchUrl = useUrlPrefetch();
   const [elevation, setElevation] = useState<number>(1);
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
+  const [commandDialogOpen, setCommandDialogOpen] = useState<boolean>(false);
 
   // Check if this item has active alarms
   const { hasAlarm, alarmPriority, isChecking } = useItemAlarmStatus({
@@ -228,14 +230,26 @@ const ItemCard: React.FC<ItemCardProps> = ({
 
   /**
    * Handle command button click - opens command dialog
-   * TODO: Implement command dialog for setting digital/analog values
    */
   const handleCommandClick = () => {
     logger.log(`Opening command dialog for editable item: ${name}`, { 
       itemId, 
       itemType: item?.itemType 
     });
-    // TODO: Open command dialog implementation will be added later
+    setCommandDialogOpen(true);
+  };
+
+  /**
+   * Handle successful command sent
+   */
+  const handleCommandSent = (itemIdSent: string, value: string) => {
+    logger.log('Command sent successfully from ItemCard', {
+      itemId: itemIdSent,
+      value,
+      itemName: name,
+    });
+    // Optionally, you could trigger a refresh of the item value here
+    // or show a success notification
   };
 
   return (
@@ -707,6 +721,16 @@ const ItemCard: React.FC<ItemCardProps> = ({
         </Button>
       </DialogActions>
     </Dialog>
+
+    {/* Command Dialog */}
+    {item && (
+      <ItemCommandDialog
+        open={commandDialogOpen}
+        onClose={() => setCommandDialogOpen(false)}
+        item={item}
+        onCommandSent={handleCommandSent}
+      />
+    )}
   </>
   );
 };

@@ -14,6 +14,7 @@
   "save": "Save",
   "cancel": "Cancel",
   "delete": "Delete",
+  "close": "Close",
   "edit": "Edit",
   "add": "Add",
   "search": "Search",
@@ -76,6 +77,7 @@
   "loadingValue": "Loading...",
   "value": "Value",
   "time": "Time",
+  "unit": "Unit",
   "refreshingData": "Refreshing data...",
   "openInNewTab": "Open in new tab",
   "trendAnalysis": "Trend Analysis",
@@ -156,7 +158,9 @@
       "later": "Later"
     },
     "retry": "Retry",
-    "error": "Error"
+    "error": "Error",
+    "on": "ON",
+    "off": "OFF"
   },
   "settings": {
     "pageTitle": "Settings",
@@ -378,5 +382,26 @@
       "readOnly": "Read Only"
     },
     "setCommand": "Set Command"
+  },
+  "itemCommandDialog": {
+    "title": "Send Command",
+    "itemInformation": "Item Information",
+    "digitalCommand": "Digital Command",
+    "analogCommand": "Analog Value",
+    "setValue": "Set Value",
+    "rangeHelper": "Range: {{min}} to {{max}}",
+    "sendCommand": "Send Command",
+    "sending": "Sending...",
+    "commandSentSuccessfully": "Command sent successfully!",
+    "validation": {
+      "required": "Value is required",
+      "invalidNumber": "Please enter a valid number",
+      "belowMinimum": "Value must be at least {{min}}",
+      "aboveMaximum": "Value must not exceed {{max}}"
+    },
+    "errors": {
+      "sendFailed": "Failed to send command",
+      "commandFailed": "Command execution failed"
+    }
   }
 }
