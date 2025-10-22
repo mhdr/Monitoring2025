@@ -38,19 +38,35 @@ import ValueHistoryChart from './ValueHistoryChart';
 const logger = createLogger('ItemCard');
 
 /**
- * Get interface type display information
+ * Get interface type display information with color coding
  */
 const getInterfaceTypeInfo = (interfaceType: InterfaceType) => {
   switch (interfaceType) {
     case InterfaceTypeEnum.Sharp7:
-      return { short: 'S', translationKey: 'itemCard.interfaceTypes.sharp7' };
+      return { 
+        short: 'S', 
+        translationKey: 'itemCard.interfaceTypes.sharp7',
+        color: 'info' as const // Blue for Siemens/Sharp7
+      };
     case InterfaceTypeEnum.BACnet:
-      return { short: 'B', translationKey: 'itemCard.interfaceTypes.bacnet' };
+      return { 
+        short: 'B', 
+        translationKey: 'itemCard.interfaceTypes.bacnet',
+        color: 'success' as const // Green for building automation
+      };
     case InterfaceTypeEnum.Modbus:
-      return { short: 'M', translationKey: 'itemCard.interfaceTypes.modbus' };
+      return { 
+        short: 'M', 
+        translationKey: 'itemCard.interfaceTypes.modbus',
+        color: 'warning' as const // Orange for industrial protocol
+      };
     case InterfaceTypeEnum.None:
     default:
-      return { short: 'N', translationKey: 'itemCard.interfaceTypes.none' };
+      return { 
+        short: 'N', 
+        translationKey: 'itemCard.interfaceTypes.none',
+        color: 'default' as const // Gray for no interface
+      };
   }
 };
 
@@ -227,8 +243,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
               {/* Interface type indicator */}
               {item?.interfaceType !== undefined && (() => {
                 const interfaceInfo = getInterfaceTypeInfo(item.interfaceType);
-                const interfaceTypeName = t(interfaceInfo.translationKey);
-                const tooltipText = t('itemCard.interfaceType', { type: interfaceTypeName });
+                const tooltipText = t(interfaceInfo.translationKey);
                 return (
                   <Tooltip 
                     title={tooltipText} 
@@ -238,16 +253,14 @@ const ItemCard: React.FC<ItemCardProps> = ({
                     <Chip
                       label={interfaceInfo.short}
                       size="small"
-                      variant="outlined"
+                      color={interfaceInfo.color}
+                      variant="filled"
                       sx={{
                         minWidth: 32,
                         height: 24,
                         fontWeight: 600,
                         fontSize: '0.75rem',
                         borderRadius: 1,
-                        bgcolor: 'action.selected',
-                        color: 'text.primary',
-                        borderColor: 'divider',
                       }}
                       data-id-ref="item-card-interface-type-indicator"
                     />
