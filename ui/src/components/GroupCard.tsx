@@ -1,8 +1,10 @@
 import React from 'react';
-import { Card, CardActionArea, CardContent, Typography, Chip, Box, Stack, Fade } from '@mui/material';
-import { Folder } from '@mui/icons-material';
+import { Card, CardActionArea, CardContent, Typography, Chip, Box, Stack, Fade, Badge } from '@mui/material';
+import { Folder, Warning as WarningIcon, Error as ErrorIcon } from '@mui/icons-material';
 import type { Group } from '../types/api';
 import { useLanguage } from '../hooks/useLanguage';
+import { useGroupAlarmStatus } from '../hooks/useGroupAlarmStatus';
+import { toPersianDigits } from '../utils/numberFormatting';
 
 interface GroupCardProps {
   group: Group;
@@ -14,9 +16,17 @@ interface GroupCardProps {
 const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, onClick }) => {
   const { t, language } = useLanguage();
   const [elevation, setElevation] = React.useState<number>(1);
+  
+  // Get alarm/warning status for this group and all descendants
+  const { alarmCount, warningCount, totalAffectedItems, hasAlarms, hasWarnings } = useGroupAlarmStatus(group.id);
 
   // Display Persian name if language is Persian and nameFa is available, otherwise use name
   const displayName = (language === 'fa' && group.nameFa) ? group.nameFa : group.name;
+
+  // Helper function to format numbers based on language
+  const formatNumber = (num: number): string => {
+    return language === 'fa' ? toPersianDigits(num) : String(num);
+  };
 
   return (
     <Fade in timeout={300}>
@@ -32,6 +42,17 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
           '&:hover': {
             transform: 'translateY(-4px)',
           },
+          // Add border if there are alarms or warnings
+          ...(hasAlarms && {
+            borderWidth: 2,
+            borderStyle: 'solid',
+            borderColor: 'error.main',
+          }),
+          ...(!hasAlarms && hasWarnings && {
+            borderWidth: 2,
+            borderStyle: 'solid',
+            borderColor: 'warning.main',
+          }),
         }}
         data-id-ref="group-card-root-container"
       >
@@ -68,21 +89,39 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              position: 'relative',
             }}
             data-id-ref="group-card-icon-container"
           >
-            <Folder
+            <Badge
+              badgeContent={totalAffectedItems > 0 ? formatNumber(totalAffectedItems) : null}
+              color={hasAlarms ? "error" : "warning"}
+              max={99}
               sx={{
-                fontSize: '3.5rem',
-                color: 'warning.main',
-                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                willChange: 'transform',
-                '.MuiCardActionArea-root:hover &': {
-                  transform: 'scale(1.15) rotate(-5deg)',
+                '& .MuiBadge-badge': {
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  minWidth: 20,
+                  height: 20,
+                  padding: '0 6px',
+                  fontFamily: language === 'fa' ? 'IRANSansX, sans-serif' : 'inherit',
                 },
               }}
-              data-id-ref="group-card-folder-icon"
-            />
+              data-id-ref="group-card-alarm-badge"
+            >
+              <Folder
+                sx={{
+                  fontSize: '3.5rem',
+                  color: hasAlarms ? 'error.main' : hasWarnings ? 'warning.main' : 'warning.main',
+                  transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  willChange: 'transform',
+                  '.MuiCardActionArea-root:hover &': {
+                    transform: 'scale(1.15) rotate(-5deg)',
+                  },
+                }}
+                data-id-ref="group-card-folder-icon"
+              />
+            </Badge>
           </Box>
           
           <Typography
@@ -106,9 +145,41 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
             sx={{ gap: 1 }}
             data-id-ref="group-card-badges-row"
           >
+            {/* Alarm count badge */}
+            {alarmCount > 0 && (
+              <Chip
+                icon={<ErrorIcon sx={{ fontSize: 16 }} />}
+                label={`${formatNumber(alarmCount)} ${t('itemCard.highPriorityAlarm')}`}
+                color="error"
+                size="small"
+                sx={{
+                  transition: 'transform 0.2s ease',
+                  '.MuiCardActionArea-root:hover &': {
+                    transform: 'scale(1.05)',
+                  },
+                }}
+                data-id-ref="group-card-alarm-count-badge"
+              />
+            )}
+            {/* Warning count badge */}
+            {warningCount > 0 && (
+              <Chip
+                icon={<WarningIcon sx={{ fontSize: 16 }} />}
+                label={`${formatNumber(warningCount)} ${t('itemCard.lowPriorityAlarm')}`}
+                color="warning"
+                size="small"
+                sx={{
+                  transition: 'transform 0.2s ease',
+                  '.MuiCardActionArea-root:hover &': {
+                    transform: 'scale(1.05)',
+                  },
+                }}
+                data-id-ref="group-card-warning-count-badge"
+              />
+            )}
             {subgroupCount > 0 && (
               <Chip
-                label={`${subgroupCount} ${subgroupCount === 1 ? t('folder') : t('folders2')}`}
+                label={`${formatNumber(subgroupCount)} ${subgroupCount === 1 ? t('folder') : t('folders2')}`}
                 color="primary"
                 size="small"
                 sx={{
@@ -122,7 +193,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
             )}
             {itemCount > 0 && (
               <Chip
-                label={`${itemCount} ${itemCount === 1 ? t('item') : t('items2')}`}
+                label={`${formatNumber(itemCount)} ${itemCount === 1 ? t('item') : t('items2')}`}
                 color="info"
                 size="small"
                 sx={{
