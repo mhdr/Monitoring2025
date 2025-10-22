@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -13,6 +13,10 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
+  Badge,
+  CircularProgress,
+  Tooltip,
+  keyframes,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -26,6 +30,7 @@ import {
   Settings as ManagementDetailIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
+import { useMonitoring } from '../../hooks/useMonitoring';
 
 interface DetailSidebarProps {
   isOpen: boolean;
@@ -40,6 +45,22 @@ interface MenuItem {
 
 const SIDEBAR_WIDTH = 280;
 
+// Pulse animation for alarm badge
+const pulseAnimation = keyframes`
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(211, 47, 47, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0);
+  }
+`;
+
 const DetailSidebar: React.FC<DetailSidebarProps> = ({ isOpen, onToggle }) => {
   const { t } = useLanguage();
   const theme = useTheme();
@@ -47,6 +68,39 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ isOpen, onToggle }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const { state: monitoringState } = useMonitoring();
+  const { alarmCount, fetchError, isFetching, highestPriority } = monitoringState.activeAlarms;
+  
+  // Track previous alarm count to trigger animation on change
+  const prevAlarmCountRef = useRef<number>(alarmCount);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Debounced animation trigger - prevents animation spam from rapid SignalR updates
+  useEffect(() => {
+    if (prevAlarmCountRef.current !== alarmCount && alarmCount > 0) {
+      // Clear any pending animation trigger
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
+      // Debounce animation trigger by 1000ms
+      debounceTimerRef.current = setTimeout(() => {
+        setShouldAnimate(true);
+        const animationTimer = setTimeout(() => setShouldAnimate(false), 1000);
+        return () => clearTimeout(animationTimer);
+      }, 1000);
+      
+      prevAlarmCountRef.current = alarmCount;
+      
+      return () => {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+      };
+    }
+    prevAlarmCountRef.current = alarmCount;
+  }, [alarmCount]);
 
   // Get itemId from URL query string
   const itemId = searchParams.get('itemId');
@@ -190,7 +244,63 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ isOpen, onToggle }) => {
                       transition: 'color 0.2s ease-in-out',
                     }}
                   >
-                    {item.icon}
+                    {item.key === 'activeAlarmsDetail' ? (
+                      <Tooltip 
+                        title={
+                          fetchError 
+                            ? `${t('common.error')}: ${fetchError}` 
+                            : isFetching 
+                              ? t('loading') 
+                              : ''
+                        }
+                        arrow
+                        placement="right"
+                        data-id-ref="detail-sidebar-active-alarms-tooltip"
+                      >
+                        <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                          {isFetching ? (
+                            <CircularProgress 
+                              size={20} 
+                              thickness={4}
+                              sx={{ color: active ? 'primary.contrastText' : 'text.secondary' }}
+                              data-id-ref="detail-sidebar-active-alarms-spinner"
+                            />
+                          ) : null}
+                          {alarmCount > 0 && !isFetching ? (
+                            <Badge
+                              badgeContent={alarmCount}
+                              color={
+                                fetchError 
+                                  ? 'warning' 
+                                  : highestPriority === 2 
+                                    ? 'error' 
+                                    : highestPriority === 1 
+                                      ? 'warning' 
+                                      : 'error'
+                              }
+                              max={999}
+                              data-id-ref="detail-sidebar-active-alarms-badge"
+                              sx={{
+                                '& .MuiBadge-badge': {
+                                  fontSize: '0.65rem',
+                                  fontWeight: 700,
+                                  minWidth: 20,
+                                  height: 20,
+                                  animation: shouldAnimate ? `${pulseAnimation} 0.6s ease-in-out` : 'none',
+                                  transition: 'all 0.3s ease-in-out',
+                                },
+                              }}
+                            >
+                              {item.icon}
+                            </Badge>
+                          ) : (
+                            item.icon
+                          )}
+                        </Box>
+                      </Tooltip>
+                    ) : (
+                      item.icon
+                    )}
                   </ListItemIcon>
                   <ListItemText
                     primary={t(item.key)}
