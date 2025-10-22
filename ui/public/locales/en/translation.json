@@ -366,6 +366,12 @@
       "sharp7": "Sharp7",
       "bacnet": "BACnet",
       "modbus": "Modbus"
+    },
+    "itemTypes": {
+      "digitalInput": "Digital Input",
+      "digitalOutput": "Digital Output",
+      "analogInput": "Analog Input",
+      "analogOutput": "Analog Output"
     }
   }
 }

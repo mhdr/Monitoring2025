@@ -25,14 +25,18 @@ import {
   Timeline as TimelineIcon,
   Close as CloseIcon,
   NotificationsActive as NotificationsActiveIcon,
+  Input as InputIcon,
+  Output as OutputIcon,
+  GraphicEq as AnalogIcon,
+  ToggleOn as DigitalIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
 import { useItemAlarmStatus } from '../hooks/useItemAlarmStatus';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
 import { createLogger } from '../utils/logger';
-import type { Item, InterfaceType } from '../types/api';
-import { InterfaceTypeEnum } from '../types/api';
+import type { Item, InterfaceType, ItemType } from '../types/api';
+import { InterfaceTypeEnum, ItemTypeEnum } from '../types/api';
 import ValueHistoryChart from './ValueHistoryChart';
 
 const logger = createLogger('ItemCard');
@@ -66,6 +70,44 @@ const getInterfaceTypeInfo = (interfaceType: InterfaceType) => {
         short: 'N', 
         translationKey: 'itemCard.interfaceTypes.none',
         color: 'default' as const // Gray for no interface
+      };
+  }
+};
+
+/**
+ * Get item type display information with icon and color coding
+ */
+const getItemTypeInfo = (itemType: ItemType) => {
+  switch (itemType) {
+    case ItemTypeEnum.DigitalInput:
+      return { 
+        icon: <InputIcon sx={{ fontSize: 14 }} />, 
+        translationKey: 'itemCard.itemTypes.digitalInput',
+        color: 'primary' as const // Blue for digital input
+      };
+    case ItemTypeEnum.DigitalOutput:
+      return { 
+        icon: <OutputIcon sx={{ fontSize: 14 }} />, 
+        translationKey: 'itemCard.itemTypes.digitalOutput',
+        color: 'secondary' as const // Purple for digital output
+      };
+    case ItemTypeEnum.AnalogInput:
+      return { 
+        icon: <AnalogIcon sx={{ fontSize: 14 }} />, 
+        translationKey: 'itemCard.itemTypes.analogInput',
+        color: 'success' as const // Green for analog input
+      };
+    case ItemTypeEnum.AnalogOutput:
+      return { 
+        icon: <DigitalIcon sx={{ fontSize: 14 }} />, 
+        translationKey: 'itemCard.itemTypes.analogOutput',
+        color: 'warning' as const // Orange for analog output
+      };
+    default:
+      return { 
+        icon: <InputIcon sx={{ fontSize: 14 }} />, 
+        translationKey: 'itemCard.itemTypes.digitalInput',
+        color: 'default' as const
       };
   }
 };
@@ -240,6 +282,37 @@ const ItemCard: React.FC<ItemCardProps> = ({
                 {name}
               </Typography>
               
+              {/* Item type indicator */}
+              {item?.itemType !== undefined && (() => {
+                const itemTypeInfo = getItemTypeInfo(item.itemType);
+                const tooltipText = t(itemTypeInfo.translationKey);
+                return (
+                  <Tooltip 
+                    title={tooltipText} 
+                    arrow 
+                    placement="top"
+                  >
+                    <Chip
+                      icon={itemTypeInfo.icon}
+                      size="small"
+                      color={itemTypeInfo.color}
+                      variant="outlined"
+                      sx={{
+                        height: 24,
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        borderRadius: 1,
+                        '& .MuiChip-icon': {
+                          marginInlineStart: 1,
+                          marginInlineEnd: -0.5,
+                        },
+                      }}
+                      data-id-ref="item-card-item-type-indicator"
+                    />
+                  </Tooltip>
+                );
+              })()}
+
               {/* Interface type indicator */}
               {item?.interfaceType !== undefined && (() => {
                 const interfaceInfo = getInterfaceTypeInfo(item.interfaceType);

@@ -215,6 +215,16 @@ export interface Item {
 /** ItemType: 1 = DigitalInput, 2 = DigitalOutput, 3 = AnalogInput, 4 = AnalogOutput */
 export type ItemType = 1 | 2 | 3 | 4;
 
+/**
+ * ItemType enum values for better code readability
+ */
+export const ItemTypeEnum = {
+  DigitalInput: 1,
+  DigitalOutput: 2,
+  AnalogInput: 3,
+  AnalogOutput: 4,
+} as const;
+
 /** ShouldScaleType: 1 = NoScale, 2 = Scale */
 export type ShouldScaleType = 1 | 2;
 
