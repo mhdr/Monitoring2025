@@ -3,22 +3,20 @@ import { authStorageHelpers } from '../utils/authStorage';
 import { broadcastTokenRefresh } from '../utils/authBroadcast';
 import { Mutex } from 'async-mutex';
 import { createLogger } from '../utils/logger';
+import { apiConfig } from '../config/apiConfig';
 
 const logger = createLogger('ApiClient');
-
-// API configuration - Use relative path for development with Vite proxy
-// In production, this will use VITE_API_BASE_URL from .env.production
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // Mutex to prevent multiple concurrent refresh token requests
 const refreshMutex = new Mutex();
 
 /**
  * Axios instance with authentication interceptors
+ * Uses dynamic API URL detection from apiConfig
  */
 const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
+  baseURL: apiConfig.baseUrl,
+  timeout: apiConfig.timeout,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -90,14 +88,14 @@ apiClient.interceptors.response.use(
             try {
               // Attempt to refresh the token
               const refreshResponse = await axios.post(
-                `${API_BASE_URL}/api/Auth/refresh-token`,
+                `${apiConfig.baseUrl}/api/Auth/refresh-token`,
                 {
                   accessToken: currentToken,
                   refreshToken: currentRefreshToken,
                 },
                 {
                   headers: { 'Content-Type': 'application/json' },
-                  timeout: 10000,
+                  timeout: apiConfig.timeout,
                 }
               );
 

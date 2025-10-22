@@ -257,6 +257,26 @@ export default defineConfig({
         target: process.env.VITE_API_BASE_URL || 'https://localhost:7136',
         changeOrigin: true,
         secure: false, // Ignore SSL certificate issues for development
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('[Vite Proxy] Error connecting to backend:', err.message);
+            console.log('[Vite Proxy] Make sure the backend server is running on https://localhost:7136');
+          });
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('[Vite Proxy] Forwarding:', req.method, req.url, '→', proxyReq.getHeader('host'));
+          });
+        },
+      },
+      '/hubs': {
+        target: process.env.VITE_API_BASE_URL || 'https://localhost:7136',
+        changeOrigin: true,
+        secure: false,
+        ws: true, // Enable WebSocket proxying for SignalR
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('[Vite Proxy] SignalR Error:', err.message);
+          });
+        },
       }
     }
   },

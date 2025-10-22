@@ -6,12 +6,11 @@
 import * as signalR from '@microsoft/signalr';
 import { authStorageHelpers } from '../utils/authStorage';
 import { createLogger } from '../utils/logger';
+import { apiConfig } from '../config/apiConfig';
 
 const logger = createLogger('SignalRClient');
 
-// Base URL for the SignalR server - matches the backend API
-// In production, this will use VITE_API_BASE_URL from .env.production
-const SIGNALR_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+// SignalR hub path
 const HUB_PATH = '/hubs/monitoring';
 
 /**
@@ -35,10 +34,11 @@ class SignalRConnectionManager {
    * Create a new SignalR connection with authentication
    */
   createConnection(): signalR.HubConnection {
-    logger.log('Creating SignalR connection...', { url: `${SIGNALR_BASE_URL}${HUB_PATH}` });
+    const signalRUrl = `${apiConfig.signalRBaseUrl}${HUB_PATH}`;
+    logger.log('Creating SignalR connection...', { url: signalRUrl });
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${SIGNALR_BASE_URL}${HUB_PATH}`, {
+      .withUrl(signalRUrl, {
         accessTokenFactory: () => {
           const token = authStorageHelpers.getStoredTokenSync();
           if (token) {
