@@ -61,21 +61,21 @@ const MonitoringPage: React.FC = () => {
   }, [currentFolderId, setCurrentFolderId]);
 
   // Get current folder and its children
-  const { currentFolder, childGroups, breadcrumbs } = useMemo(() => {
+  const { childGroups, breadcrumbs } = useMemo(() => {
     if (!allGroups || allGroups.length === 0) {
-      return { currentFolder: null, childGroups: [], breadcrumbs: [] };
+      return { childGroups: [], breadcrumbs: [] };
     }
     
     // If no folderId, we're at root
     if (!currentFolderId) {
       const rootGroups = allGroups.filter((g: Group) => !g.parentId || g.parentId === null);
-      return { currentFolder: null, childGroups: rootGroups, breadcrumbs: [] };
+      return { childGroups: rootGroups, breadcrumbs: [] };
     }
 
     // Find current folder
     const folder = allGroups.find((g: Group) => g.id === currentFolderId);
     if (!folder) {
-      return { currentFolder: null, childGroups: [], breadcrumbs: [] };
+      return { childGroups: [], breadcrumbs: [] };
     }
 
     // Get children of current folder
@@ -89,7 +89,7 @@ const MonitoringPage: React.FC = () => {
       current = current.parentId ? allGroups.find((g: Group) => g.id === current!.parentId) : undefined;
     }
 
-    return { currentFolder: folder, childGroups: children, breadcrumbs: trail };
+    return { childGroups: children, breadcrumbs: trail };
   }, [allGroups, currentFolderId]);
 
   // Get items for current folder
@@ -379,18 +379,40 @@ const MonitoringPage: React.FC = () => {
             </Alert>
           )}
 
-          {/* Empty State */}
-          {!isLoading && !error && childGroups.length === 0 && (
+          {/* Empty State - Only show when NO folders AND NO items */}
+          {!isLoading && !error && !isLoadingItems && !itemsError && 
+           childGroups.length === 0 && currentFolderItems.length === 0 && (
             <Box 
-              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }} 
+              sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                minHeight: 400,
+                textAlign: 'center'
+              }} 
               data-id-ref="monitoring-page-empty-state-container"
             >
-              <Box sx={{ textAlign: 'center' }} data-id-ref="monitoring-page-empty-state-center">
-                <FolderIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} data-id-ref="monitoring-page-empty-state-icon" />
-                <Typography color="text.secondary" data-id-ref="monitoring-page-empty-state-text">
-                  {currentFolder ? t('noItemsInFolder') : t('noGroups')}
-                </Typography>
-              </Box>
+              <FolderIcon 
+                sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} 
+                data-id-ref="monitoring-page-empty-state-icon" 
+              />
+              <Typography 
+                variant="h6" 
+                color="text.secondary" 
+                gutterBottom
+                data-id-ref="monitoring-page-empty-state-title"
+              >
+                {currentFolderId ? t('emptyFolder') : t('noItemsFound')}
+              </Typography>
+              <Typography 
+                variant="body2" 
+                color="text.disabled"
+                sx={{ maxWidth: 500 }}
+                data-id-ref="monitoring-page-empty-state-description"
+              >
+                {currentFolderId ? t('emptyFolderDescription') : t('noItemsDescription')}
+              </Typography>
             </Box>
           )}
 
@@ -523,43 +545,6 @@ const MonitoringPage: React.FC = () => {
                 </Typography>
               )}
             </Alert>
-          )}
-
-          {/* Empty State - No Items or Groups */}
-          {!isLoading && !error && !isLoadingItems && !itemsError && 
-           childGroups.length === 0 && currentFolderItems.length === 0 && (
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                flexDirection: 'column',
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                py: 8,
-                textAlign: 'center'
-              }} 
-              data-id-ref="monitoring-page-empty-state-container"
-            >
-              <FolderIcon 
-                sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} 
-                data-id-ref="monitoring-page-empty-state-icon" 
-              />
-              <Typography 
-                variant="h6" 
-                color="text.secondary" 
-                gutterBottom
-                data-id-ref="monitoring-page-empty-state-title"
-              >
-                {currentFolderId ? t('emptyFolder') : t('noItemsFound')}
-              </Typography>
-              <Typography 
-                variant="body2" 
-                color="text.disabled"
-                sx={{ maxWidth: 500 }}
-                data-id-ref="monitoring-page-empty-state-description"
-              >
-                {currentFolderId ? t('emptyFolderDescription') : t('noItemsDescription')}
-              </Typography>
-            </Box>
           )}
         </CardContent>
       </Card>
