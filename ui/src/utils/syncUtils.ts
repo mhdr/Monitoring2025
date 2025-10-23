@@ -38,18 +38,20 @@ export function isDataSyncNeeded(monitoringState: {
     return false;
   }
   
+  // CRITICAL FIX: Check for data in state FIRST before checking sync flag
+  // This handles the case where IndexedDB data has been loaded into state
+  // but the sync flag hasn't been set yet (e.g., new tab opening)
+  // If we have both groups and items data in state, no sync is needed
+  if (groups.length > 0 && items.length > 0) {
+    return false;
+  }
+  
   // If data has been synced in this browser session, don't sync again
   if (isDataSynced) {
     return false;
   }
   
-  // If we have both groups and items data, assume it's still valid
-  // (this provides fallback for cases where localStorage might be cleared)
-  if (groups.length > 0 && items.length > 0) {
-    return false;
-  }
-  
-  // Otherwise, sync is needed
+  // Otherwise, sync is needed (no data in state and not synced)
   return true;
 }
 

@@ -460,31 +460,26 @@ async function loadSyncStatusFromStorage(): Promise<boolean> {
 }
 
 /**
- * Load monitoring data from IndexedDB if sync is complete
+ * Load monitoring data from IndexedDB
+ * CRITICAL: Always loads data from IndexedDB regardless of sync flag
+ * The sync flag only indicates whether we need to fetch fresh data from API
  */
 async function loadMonitoringDataFromStorage() {
   const isSynced = await loadSyncStatusFromStorage();
   
   logger.log('Loading monitoring data from storage:', { isSynced });
   
-  if (!isSynced) {
-    logger.log('Data not synced, starting with empty state');
-    return {
-      groups: [],
-      items: [],
-      alarms: [],
-      isDataSynced: false,
-    };
-  }
-
+  // CRITICAL FIX: Always try to load data from IndexedDB, regardless of sync flag
+  // The sync flag only tells us if we need to REFRESH from API, not whether to load cached data
   const storedGroups = (await monitoringStorageHelpers.getStoredGroups()) || [];
   const storedItems = (await monitoringStorageHelpers.getStoredItems()) || [];
   const storedAlarms = (await monitoringStorageHelpers.getStoredAlarms()) || [];
 
-  logger.log('Restoring data from IndexedDB:', {
+  logger.log('Restored data from IndexedDB:', {
     groups: storedGroups.length,
     items: storedItems.length,
     alarms: storedAlarms.length,
+    isSynced,
   });
 
   return {

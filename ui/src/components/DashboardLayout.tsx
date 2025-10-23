@@ -3,11 +3,18 @@ import { Outlet } from 'react-router-dom';
 import { Box, useTheme, useMediaQuery } from '@mui/material';
 import ResponsiveNavbar from './ResponsiveNavbar';
 import Sidebar from './Sidebar';
+import { useAuth } from '../hooks/useAuth';
+import { useGlobalDataInitialization } from '../hooks/useGlobalDataInitialization';
 
 const DashboardLayout: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const { isAuthenticated } = useAuth();
+  
+  // Initialize global monitoring data (groups, items) when authenticated
+  // This ensures data is available across all dashboard pages
+  useGlobalDataInitialization(isAuthenticated);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
