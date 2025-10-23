@@ -14,7 +14,7 @@ import {
 } from '../services/api';
 import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
-import { getItem, setItem, removeItem } from '../utils/indexedDbStorage';
+import { setItem, removeItem } from '../utils/indexedDbStorage';
 import { createLogger } from '../utils/logger';
 import { useAuth } from '../hooks/useAuth';
 
@@ -141,7 +141,7 @@ const initialState: MonitoringState = {
  * Action types
  */
 type MonitoringAction =
-  | { type: 'INITIALIZE_FROM_STORAGE'; payload: { groups: Group[]; items: Item[]; alarms: AlarmDto[]; isDataSynced: boolean } }
+  | { type: 'INITIALIZE_FROM_STORAGE'; payload: { groups: Group[]; items: Item[]; alarms: AlarmDto[] } }
   | { type: 'SET_CURRENT_FOLDER_ID'; payload: string | null }
   | { type: 'SET_DATA_SYNCED'; payload: boolean }
   | { type: 'CLEAR_DATA_SYNC_STATUS' }
@@ -180,14 +180,12 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
         groups: action.payload.groups.length,
         items: action.payload.items.length,
         alarms: action.payload.alarms.length,
-        isDataSynced: action.payload.isDataSynced,
       });
       return {
         ...state,
         groups: action.payload.groups,
         items: action.payload.items,
         alarms: action.payload.alarms,
-        isDataSynced: action.payload.isDataSynced,
       };
 
     case 'SET_CURRENT_FOLDER_ID':
@@ -445,49 +443,36 @@ interface MonitoringProviderProps {
 }
 
 /**
- * Load data sync status from IndexedDB
- */
-async function loadSyncStatusFromStorage(): Promise<boolean> {
-  try {
-    const stored = await getItem<boolean>(SYNC_STATUS_STORAGE_KEY);
-    const isSynced = stored === true;
-    logger.log('Loading sync status from IndexedDB:', { storedValue: stored, isSynced });
-    return isSynced;
-  } catch (error) {
-    logger.error('Failed to read sync status from IndexedDB:', error);
-    return false;
-  }
-}
-
-/**
  * Load monitoring data from IndexedDB
- * CRITICAL: Always loads data from IndexedDB regardless of sync flag
- * The sync flag only indicates whether we need to fetch fresh data from API
+ * SIMPLIFIED: Always load cached data, don't worry about sync flag here
+ * The sync flag is checked by ProtectedRoute to determine if redirect is needed
  */
 async function loadMonitoringDataFromStorage() {
-  const isSynced = await loadSyncStatusFromStorage();
-  
-  logger.log('Loading monitoring data from storage:', { isSynced });
-  
-  // CRITICAL FIX: Always try to load data from IndexedDB, regardless of sync flag
-  // The sync flag only tells us if we need to REFRESH from API, not whether to load cached data
-  const storedGroups = (await monitoringStorageHelpers.getStoredGroups()) || [];
-  const storedItems = (await monitoringStorageHelpers.getStoredItems()) || [];
-  const storedAlarms = (await monitoringStorageHelpers.getStoredAlarms()) || [];
+  try {
+    // Load cached data from IndexedDB (may be empty on first load)
+    const storedGroups = (await monitoringStorageHelpers.getStoredGroups()) || [];
+    const storedItems = (await monitoringStorageHelpers.getStoredItems()) || [];
+    const storedAlarms = (await monitoringStorageHelpers.getStoredAlarms()) || [];
 
-  logger.log('Restored data from IndexedDB:', {
-    groups: storedGroups.length,
-    items: storedItems.length,
-    alarms: storedAlarms.length,
-    isSynced,
-  });
+    logger.log('Loaded cached data from IndexedDB:', {
+      groups: storedGroups.length,
+      items: storedItems.length,
+      alarms: storedAlarms.length,
+    });
 
-  return {
-    groups: storedGroups,
-    items: storedItems,
-    alarms: storedAlarms,
-    isDataSynced: isSynced,
-  };
+    return {
+      groups: storedGroups,
+      items: storedItems,
+      alarms: storedAlarms,
+    };
+  } catch (error) {
+    logger.error('Failed to load monitoring data from IndexedDB:', error);
+    return {
+      groups: [],
+      items: [],
+      alarms: [],
+    };
+  }
 }
 
 /**

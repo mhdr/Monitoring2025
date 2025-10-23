@@ -1,17 +1,15 @@
 /**
- * SyncPage Component
- * Displays data synchronization progress with individual progress bars for groups and items
- * Redirects to intended destination after successful sync or provides retry options on failure
+ * SyncPage Component - Rebuilt from Scratch
  * 
- * Force Sync Behavior (force=true URL parameter):
- * - Clears the sync status flag (marks data as not synced)
- * - Forces RTK Query to bypass cache and fetch fresh data from API
- * - SAFELY overwrites existing data (old data remains until new data is successfully fetched)
- * - If sync fails, old data is still available in localStorage
+ * Clean, simple sync workflow:
+ * 1. Start sync on mount (force refresh if force=true)
+ * 2. Display progress for groups, items, alarms
+ * 3. On success: redirect to intended destination
+ * 4. On error: show retry and skip options
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Box, 
   Container, 
@@ -38,6 +36,7 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useDataSync } from '../hooks/useDataSync';
 import { useMonitoring } from '../hooks/useMonitoring';
+import { getRedirectUrl } from '../utils/syncUtils';
 import { createLogger } from '../utils/logger';
 import type { SyncProgress } from '../hooks/useDataSync';
 import './SyncPage.css';
@@ -163,11 +162,15 @@ const SyncPage: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { syncState, startSync, retryFailed } = useDataSync();
   const { clearDataSyncStatus } = useMonitoring();
   
-  // Get the intended redirect URL from query params, default to dashboard
-  const redirectTo = searchParams.get('redirect') || '/dashboard';
+  // Get the intended redirect URL using the new utility (memoized to prevent re-renders)
+  const redirectTo = useMemo(() => 
+    getRedirectUrl(searchParams, location.state as { from?: { pathname: string; search?: string; hash?: string } } | null, '/dashboard'),
+    [searchParams, location.state]
+  );
   
   // Check if this is a forced sync (initiated from navbar)
   const isForceSync = searchParams.get('force') === 'true';
@@ -207,6 +210,8 @@ const SyncPage: React.FC = () => {
       redirectInitiatedRef.current = true;
       setIsRedirecting(true);
       
+      logger.log('[SyncPage] Sync completed, initiating redirect to:', redirectTo);
+      
       // Invalidate Service Worker API cache after successful sync
       import('../services/cacheCoordinationService').then(({ invalidateApiCache }) => {
         invalidateApiCache().catch((error) => {
@@ -221,16 +226,16 @@ const SyncPage: React.FC = () => {
       
       // Add a small delay to show completion state before redirecting
       redirectTimerRef.current = window.setTimeout(() => {
+        logger.log('[SyncPage] Redirecting now to:', redirectTo);
         navigate(redirectTo, { replace: true });
       }, 1500);
     }
     
-    // Cleanup: DO NOT clear timer if redirect has been initiated
-    // This prevents StrictMode from canceling the redirect
+    // Cleanup function
     return () => {
-      // Only clear timer if we haven't started redirecting
-      // (i.e., component is unmounting before sync completed)
+      // Only clear timer if component unmounts BEFORE redirect was initiated
       if (redirectTimerRef.current && !redirectInitiatedRef.current) {
+        logger.log('[SyncPage] Component unmounting, clearing timer');
         clearTimeout(redirectTimerRef.current);
         redirectTimerRef.current = null;
       }
