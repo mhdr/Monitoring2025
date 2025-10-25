@@ -14,6 +14,9 @@ using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure systemd integration for Linux hosting
+builder.Host.UseSystemd();
+
 // Detect both public and local network IP addresses for CORS
 var (publicIp, localIp) = await IpDetectionService.DetectIpAddressesAsync();
 Console.WriteLine($"[IP DETECTION] Detected public IP: {publicIp}");

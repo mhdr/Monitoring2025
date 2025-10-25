@@ -1,18 +1,21 @@
 ﻿[Unit]
-Description=EMS3 API
+Description=EMS3 API - Monitoring System API Service
 After=syslog.target network.target postgresql.service
 
 [Service]
 User=root
 Type=notify
-ExecStart=/usr/bin/dotnet /opt/ems3/api/API.dll --urls "https://0.0.0.0:7136" --contentRoot /opt/ems3/api --environment Production
+WorkingDirectory=/opt/ems3/api
+ExecStart=/usr/bin/dotnet /opt/ems3/api/API.dll --urls "http://0.0.0.0:5030" --contentRoot /opt/ems3/api --environment Production
 SuccessExitStatus=143
 MemoryMax=4096M
 Restart=always
 RestartSec=10
 KillSignal=SIGINT
 Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
-Environment=ConnectionStrings__DefaultConnection=Host\x3dlocalhost\x3bDatabase\x3dmonitoring_core\x3bUsername\x3dmonitoring\x3bPassword\x3ddbpassword
+Environment=ConnectionStrings__DefaultConnection=Host\x3dlocalhost\x3bDatabase\x3dmonitoring_users\x3bUsername\x3dmonitoring\x3bPassword\x3ddbpassword
+SyslogIdentifier=ems3-api
+
 [Install]
 Alias=ems3_api.service
 WantedBy=multi-user.target
