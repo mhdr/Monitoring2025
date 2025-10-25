@@ -314,8 +314,13 @@ deploy_application() {
 }
 EOF
         print_success "Created appsettings.Production.json"
+        
+        # Set restrictive permissions on configuration file (contains password)
+        chmod 600 "$INSTALL_DIR/appsettings.Production.json"
+        print_info "Set restrictive permissions (600) on appsettings.Production.json"
     else
         print_info "appsettings.Production.json already exists (not overwriting)"
+        print_warning "Verify connection string is correct in existing file"
     fi
     
     # Set ownership
@@ -336,10 +341,6 @@ install_systemd_service() {
     SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
     print_info "Creating service file: $SERVICE_FILE"
     
-    # Encode connection string for systemd (escape special characters)
-    CONNECTION_STRING="Host=${DB_HOST};Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
-    ENCODED_CONNECTION_STRING=$(echo "$CONNECTION_STRING" | sed 's/;/\\x3b/g' | sed 's/=/\\x3d/g')
-    
     cat > "$SERVICE_FILE" <<EOF
 [Unit]
 Description=EMS3 API - Monitoring System API Service
@@ -356,7 +357,6 @@ Restart=always
 RestartSec=10
 KillSignal=SIGINT
 Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
-Environment=ConnectionStrings__DefaultConnection=${ENCODED_CONNECTION_STRING}
 SyslogIdentifier=ems3-api
 
 [Install]
@@ -365,6 +365,7 @@ WantedBy=multi-user.target
 EOF
     
     print_success "Service file created"
+    print_info "Connection string will be read from appsettings.Production.json"
     
     # Reload systemd
     print_info "Reloading systemd daemon"
