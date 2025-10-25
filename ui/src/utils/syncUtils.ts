@@ -57,19 +57,84 @@ export function shouldRedirectToSync(pathname: string, syncedFlag: boolean): boo
 
 /**
  * Build sync URL with redirect parameter
+ * CRITICAL: Validates redirect URL to prevent infinite loops
  * 
  * @param redirectTo - URL to redirect to after sync
  * @returns Sync URL with redirect query param
  */
 export function buildSyncUrl(redirectTo: string): string {
+  // Extract final destination to prevent nested sync URLs
+  const finalDestination = extractFinalDestination(redirectTo);
+  
+  // If final destination is a sync URL itself, use default
+  const cleanDestination = finalDestination.includes('/sync') ? '/dashboard' : finalDestination;
+  
   const syncUrl = new URL('/dashboard/sync', window.location.origin);
-  syncUrl.searchParams.set('redirect', redirectTo);
+  syncUrl.searchParams.set('redirect', cleanDestination);
+  
+  logger.log('Building sync URL:', { 
+    original: redirectTo, 
+    final: finalDestination,
+    clean: cleanDestination,
+    syncUrl: syncUrl.pathname + syncUrl.search 
+  });
+  
   return syncUrl.pathname + syncUrl.search;
+}
+
+/**
+ * Extract the final destination from a potentially nested redirect URL
+ * Prevents infinite loops by stripping out sync URLs
+ * 
+ * @param url - URL that might contain nested sync redirects
+ * @returns Final destination URL without sync in the path
+ */
+function extractFinalDestination(url: string): string {
+  try {
+    // Parse the URL to extract pathname and query
+    const urlObj = new URL(url, window.location.origin);
+    const pathname = urlObj.pathname;
+    const searchParams = urlObj.searchParams;
+    
+    // If the pathname itself is a sync URL, extract the redirect param
+    if (pathname.includes('/sync')) {
+      const nestedRedirect = searchParams.get('redirect');
+      if (nestedRedirect) {
+        // Recursively extract in case of multiple nesting levels
+        return extractFinalDestination(nestedRedirect);
+      }
+      // If it's a sync URL without redirect param, use default
+      return '/dashboard';
+    }
+    
+    // Return the full path (pathname + search + hash)
+    return pathname + urlObj.search + urlObj.hash;
+  } catch (error) {
+    // If URL parsing fails, try to extract using string manipulation
+    logger.warn('Failed to parse URL, using fallback extraction:', error);
+    
+    // Check if URL contains /sync
+    if (url.includes('/sync')) {
+      // Try to extract redirect parameter using regex
+      const redirectMatch = url.match(/[?&]redirect=([^&]*)/);
+      if (redirectMatch && redirectMatch[1]) {
+        const decodedRedirect = decodeURIComponent(redirectMatch[1]);
+        // Recursively extract in case of multiple nesting levels
+        return extractFinalDestination(decodedRedirect);
+      }
+      // If no redirect found in sync URL, use default
+      return '/dashboard';
+    }
+    
+    // Return as-is if not a sync URL
+    return url;
+  }
 }
 
 /**
  * Get the intended redirect URL after sync
  * Priority: URL param > location state > default
+ * CRITICAL: Prevents infinite redirect loops by extracting final destination
  * 
  * @param searchParams - URLSearchParams from current location
  * @param locationState - Location state object
@@ -84,16 +149,18 @@ export function getRedirectUrl(
   // 1. Check URL param first (highest priority)
   const redirectParam = searchParams.get('redirect');
   if (redirectParam) {
-    logger.log('Redirect from URL param:', redirectParam);
-    return redirectParam;
+    const finalDestination = extractFinalDestination(redirectParam);
+    logger.log('Redirect from URL param:', { original: redirectParam, final: finalDestination });
+    return finalDestination;
   }
   
   // 2. Check location state (from ProtectedRoute)
   const fromLocation = locationState?.from;
   if (fromLocation?.pathname) {
     const fullPath = `${fromLocation.pathname}${fromLocation.search || ''}${fromLocation.hash || ''}`;
-    logger.log('Redirect from location state:', fullPath);
-    return fullPath;
+    const finalDestination = extractFinalDestination(fullPath);
+    logger.log('Redirect from location state:', { original: fullPath, final: finalDestination });
+    return finalDestination;
   }
   
   // 3. Default path

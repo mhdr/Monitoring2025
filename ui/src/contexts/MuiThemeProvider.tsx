@@ -91,8 +91,16 @@ export function MuiThemeProvider({ children }: MuiThemeProviderProps): React.Rea
   // Create theme based on current preset and language direction
   const theme = useMemo(() => {
     const direction = isRTL ? 'rtl' : 'ltr';
-    return createMuiTheme(currentTheme, direction);
-  }, [currentTheme, isRTL]);
+    const newTheme = createMuiTheme(currentTheme, direction);
+    logger.log('[MuiThemeProvider] Theme created:', {
+      currentTheme,
+      direction,
+      language,
+      isRTL,
+      themeDirection: newTheme.direction
+    });
+    return newTheme;
+  }, [currentTheme, isRTL, language]);
 
   // Select appropriate cache based on direction
   const cache = isRTL ? cacheRtl : cacheLtr;

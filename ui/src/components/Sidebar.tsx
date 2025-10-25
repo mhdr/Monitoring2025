@@ -26,12 +26,15 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
+import { createLogger } from '../utils/logger';
 import { 
   areNotificationsEnabled, 
   showAlarmNotification, 
   formatAlarmNotificationMessage 
 } from '../utils/notifications';
 import { areNotificationsEnabledByUser } from '../utils/monitoringStorage';
+
+const logger = createLogger('Sidebar');
 
 interface SidebarProps {
   isOpen: boolean;
@@ -70,6 +73,16 @@ const pulseAnimation = keyframes`
   const { state: monitoringState } = useMonitoring();
   const { alarmCount, streamStatus, fetchError, isFetching, highestPriority } = monitoringState.activeAlarms;
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  
+  // Log theme direction on mount to verify RTL is applied
+  useEffect(() => {
+    logger.log('[Sidebar] Theme direction initialized:', {
+      direction: theme.direction,
+      language: document.documentElement.lang,
+      documentDir: document.documentElement.dir,
+      isRTL: theme.direction === 'rtl'
+    });
+  }, [theme.direction]);
   
   // Track previous alarm count to trigger animation on change
   const prevAlarmCountRef = useRef<number>(alarmCount);
