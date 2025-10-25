@@ -21,6 +21,7 @@ import {
   Folder as FolderIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
+import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { movePoint } from '../services/monitoringApi';
 import { createLogger } from '../utils/logger';
@@ -49,6 +50,7 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
   onSuccess,
 }) => {
   const { t } = useTranslation();
+  const { language } = useLanguage();
   const { state } = useMonitoring();
   const groups = state.groups;
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
@@ -82,14 +84,22 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
       const group = groupMap.get(groupId);
       if (!group) return '';
       
+      // Choose name based on current language
+      const getGroupName = (g: Group): string => {
+        if (language === 'fa') {
+          return g.nameFa || g.name || 'پوشه بدون نام';
+        }
+        return g.name || g.nameFa || 'Unnamed Folder';
+      };
+      
       if (!group.parentId) {
         // Root level group
-        return group.name || group.nameFa || 'Unnamed Folder';
+        return getGroupName(group);
       }
       
       // Recursively build path
       const parentPath = buildPath(group.parentId);
-      const groupName = group.name || group.nameFa || 'Unnamed';
+      const groupName = getGroupName(group);
       return parentPath ? `${parentPath} / ${groupName}` : groupName;
     };
 
@@ -104,7 +114,7 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
         parentId: group.parentId,
       }))
       .sort((a, b) => a.fullPath.localeCompare(b.fullPath)); // Sort by path
-  }, [groups, currentGroupId]);
+  }, [groups, currentGroupId, language]);
 
   /**
    * Get current folder name for display
@@ -115,8 +125,12 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
     const currentGroup = groups.find(g => g.id === currentGroupId);
     if (!currentGroup) return t('moveItemDialog.unknownFolder');
     
+    // Choose name based on current language
+    if (language === 'fa') {
+      return currentGroup.nameFa || currentGroup.name || t('moveItemDialog.unnamedFolder');
+    }
     return currentGroup.name || currentGroup.nameFa || t('moveItemDialog.unnamedFolder');
-  }, [currentGroupId, groups, t]);
+  }, [currentGroupId, groups, t, language]);
 
   /**
    * Handle dialog close - reset state
