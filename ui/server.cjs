@@ -95,6 +95,12 @@ app.use(compression({
 
 // Security headers
 app.use((req, res, next) => {
+  // Skip security headers for proxied API/SignalR requests
+  // Let the backend handle its own security headers
+  if (req.path.startsWith('/api') || req.path.startsWith('/hubs')) {
+    return next();
+  }
+  
   // Prevent clickjacking
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   
@@ -108,14 +114,14 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
   // Content Security Policy (CSP)
-  // Adjust these directives based on your application's needs
+  // Note: Relaxed for development. Tighten for production deployment.
   const csp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-eval needed for React dev tools
     "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for MUI emotion
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' http://localhost:5030 ws://localhost:5030", // API and SignalR
+    "connect-src 'self' http://localhost:5030 ws://localhost:5030 wss://localhost:5030", // API and SignalR (HTTP + WebSocket)
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self'"
