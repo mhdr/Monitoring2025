@@ -283,9 +283,20 @@ export default defineConfig({
               return 'redux';
             }
             
-            // Skip MUI, emotion, and stylis - let Vite handle these automatically
-            // Manual chunking was causing circular dependency issues
-            // These will be included in the vendor chunk or split automatically
+            // Emotion - MUST be separate from MUI to avoid circular deps
+            if (id.includes('@emotion/react') || id.includes('@emotion/styled') || id.includes('@emotion/cache')) {
+              return 'emotion';
+            }
+            
+            // Stylis - Emotion's CSS parser
+            if (id.includes('stylis')) {
+              return 'stylis';
+            }
+            
+            // MUI Core - Material-UI components
+            if (id.includes('@mui/material') || id.includes('@mui/system') || id.includes('@mui/base')) {
+              return 'mui-core';
+            }
             
             // MUI Icons - can be separate for lazy loading
             if (id.includes('@mui/icons-material')) {
