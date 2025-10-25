@@ -20,6 +20,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DIST_DIR = path.join(__dirname, 'dist');
 
+// Verify dist directory exists
+if (!fs.existsSync(DIST_DIR)) {
+  console.error('[ERROR] dist directory not found at:', DIST_DIR);
+  console.error('[ERROR] Please run "npm run build" first');
+  process.exit(1);
+}
+
+console.log('[INFO] Starting EMS3 UI Server...');
+console.log('[INFO] Dist directory:', DIST_DIR);
+console.log('[INFO] Port:', PORT);
+
 // Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
@@ -153,6 +164,13 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('Health check: http://localhost:' + PORT + '/health');
   console.log('========================================');
   console.log('');
+}).on('error', (err) => {
+  console.error('[ERROR] Failed to start server:', err.message);
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[ERROR] Port ${PORT} is already in use`);
+    console.error('[ERROR] Try changing the PORT environment variable or stop the conflicting process');
+  }
+  process.exit(1);
 });
 
 // Graceful shutdown
