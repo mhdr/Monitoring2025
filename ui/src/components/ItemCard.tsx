@@ -51,6 +51,7 @@ import type { Item, InterfaceType, ItemType } from '../types/api';
 import { InterfaceTypeEnum, ItemTypeEnum } from '../types/api';
 import ValueHistoryChart from './ValueHistoryChart';
 import ItemCommandDialog from './ItemCommandDialog';
+import MoveItemDialog from './MoveItemDialog';
 
 const logger = createLogger('ItemCard');
 
@@ -170,6 +171,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
   const [commandDialogOpen, setCommandDialogOpen] = useState<boolean>(false);
   const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
+  const [moveDialogOpen, setMoveDialogOpen] = useState<boolean>(false);
 
   // Check if user has admin or manager role
   const isAdminOrManager = useMemo(() => {
@@ -285,9 +287,9 @@ const ItemCard: React.FC<ItemCardProps> = ({
   };
 
   const handleMoveItemToGroup = () => {
-    logger.log('Move item to group clicked (not implemented)', { itemId, itemName: name });
+    logger.log('Opening move item dialog', { itemId, itemName: name });
     handleAdminMenuClose();
-    // TODO: Implement move item to group functionality
+    setMoveDialogOpen(true);
   };
 
   const handleEditGroup = () => {
@@ -300,6 +302,15 @@ const ItemCard: React.FC<ItemCardProps> = ({
     logger.log('User permissions clicked (not implemented)', { itemId, itemName: name });
     handleAdminMenuClose();
     // TODO: Implement user permissions functionality
+  };
+
+  /**
+   * Handle successful move - trigger page refresh
+   */
+  const handleMoveSuccess = () => {
+    logger.log('Item moved successfully, refreshing page', { itemId, itemName: name });
+    // Refresh the page to show the updated location
+    window.location.reload();
   };
 
   return (
@@ -838,6 +849,16 @@ const ItemCard: React.FC<ItemCardProps> = ({
         <ListItemText primary={t('itemCard.adminMenu.userPermissions')} />
       </MenuItem>
     </Menu>
+
+    {/* Move Item Dialog */}
+    <MoveItemDialog
+      open={moveDialogOpen}
+      onClose={() => setMoveDialogOpen(false)}
+      itemId={itemId}
+      itemName={name}
+      currentGroupId={item?.groupId}
+      onSuccess={handleMoveSuccess}
+    />
   </>
   );
 };

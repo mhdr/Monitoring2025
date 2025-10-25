@@ -415,5 +415,26 @@
       "sendFailed": "ارسال دستور ناموفق بود",
       "commandFailed": "اجرای دستور ناموفق بود"
     }
+  },
+  "moveItemDialog": {
+    "title": "انتقال پوینت به پوشه دیگر",
+    "itemLabel": "پوینت",
+    "currentFolderLabel": "پوشه فعلی",
+    "selectFolderLabel": "پوشه مقصد",
+    "selectFolderPlaceholder": "پوشه‌ای را انتخاب کنید",
+    "moveButton": "انتقال",
+    "moving": "در حال انتقال...",
+    "success": "پوینت با موفقیت منتقل شد!",
+    "noCurrentFolder": "پوشه‌ای تعیین نشده",
+    "unknownFolder": "پوشه نامشخص",
+    "unnamedFolder": "پوشه بدون نام",
+    "noFoldersAvailable": "هیچ پوشه‌ای برای انتقال در دسترس نیست",
+    "validation": {
+      "folderRequired": "لطفاً پوشه مقصد را انتخاب کنید"
+    },
+    "errors": {
+      "moveFailed": "انتقال پوینت ناموفق بود",
+      "unknownError": "خطای نامشخصی رخ داد"
+    }
   }
 }

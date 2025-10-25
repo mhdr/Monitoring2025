@@ -415,5 +415,26 @@
       "sendFailed": "Failed to send command",
       "commandFailed": "Command execution failed"
     }
+  },
+  "moveItemDialog": {
+    "title": "Move Point to Another Folder",
+    "itemLabel": "Point",
+    "currentFolderLabel": "Current Folder",
+    "selectFolderLabel": "Destination Folder",
+    "selectFolderPlaceholder": "Select a folder",
+    "moveButton": "Move",
+    "moving": "Moving...",
+    "success": "Point moved successfully!",
+    "noCurrentFolder": "No folder assigned",
+    "unknownFolder": "Unknown folder",
+    "unnamedFolder": "Unnamed Folder",
+    "noFoldersAvailable": "No folders available for moving",
+    "validation": {
+      "folderRequired": "Please select a destination folder"
+    },
+    "errors": {
+      "moveFailed": "Failed to move point",
+      "unknownError": "An unknown error occurred"
+    }
   }
 }
