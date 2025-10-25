@@ -283,18 +283,11 @@ export default defineConfig({
               return 'redux';
             }
             
-            // Emotion + Stylis + MUI - bundle all styling together to avoid initialization issues
-            // MUI uses emotion for styling, and stylis for RTL support
-            // Keeping them together ensures proper initialization order
-            if (id.includes('@mui/material') || 
-                id.includes('@mui/system') ||
-                id.includes('@emotion') || 
-                id.includes('stylis') || 
-                id.includes('@mui/stylis-plugin-rtl')) {
-              return 'mui-core';
-            }
+            // Skip MUI, emotion, and stylis - let Vite handle these automatically
+            // Manual chunking was causing circular dependency issues
+            // These will be included in the vendor chunk or split automatically
             
-            // MUI Icons - separate to allow lazy loading
+            // MUI Icons - can be separate for lazy loading
             if (id.includes('@mui/icons-material')) {
               return 'mui-icons';
             }
