@@ -293,17 +293,12 @@ export default defineConfig({
               return 'mui-icons';
             }
             
-            // Emotion styling - keep together to avoid circular dependencies
-            if (id.includes('@emotion/react') || 
-                id.includes('@emotion/styled') || 
-                id.includes('@emotion/cache')) {
-              return 'emotion';
-            }
-            
-            // Stylis and MUI styling plugins - separate from emotion
-            if (id.includes('stylis') || 
+            // Emotion + Stylis - must be together to maintain proper initialization order
+            // Stylis is a dependency of emotion and MUI's RTL plugin, so they must be bundled together
+            if (id.includes('@emotion') || 
+                id.includes('stylis') || 
                 id.includes('@mui/stylis-plugin-rtl')) {
-              return 'stylis';
+              return 'mui-styling';
             }
             
             // i18n - internationalization
