@@ -54,6 +54,12 @@ echo ""
 echo_info "Pulling latest code from Git..."
 git pull origin main
 
+# Step 3.5: Generate .env.production with auto-detected IP
+echo ""
+echo_info "Generating .env.production with server IP..."
+chmod +x generate-env.sh
+./generate-env.sh
+
 # Step 4: Install dependencies (if needed)
 echo ""
 echo_info "Checking for new dependencies..."
