@@ -25,11 +25,13 @@ module.exports = {
     // Environment variables
     env: {
       NODE_ENV: 'production',
-      PORT: 3000
+      PORT: 3000,
+      API_URL: 'http://localhost:5030' // Backend API URL
     },
     env_development: {
       NODE_ENV: 'development',
-      PORT: 3000
+      PORT: 3000,
+      API_URL: 'http://localhost:5030' // Backend API URL for development
     },
     
     // Auto-restart configuration
