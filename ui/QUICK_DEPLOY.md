@@ -5,11 +5,16 @@
 ```bash
 cd /path/to/Monitoring2025/ui
 git pull origin main
-chmod +x generate-env.sh fix-pm2-proxy.sh
-./fix-pm2-proxy.sh
+./manager.sh 1
 ```
 
 That's it! ✨
+
+**Or use the manager menu:**
+```bash
+./manager.sh
+# Select: 1 - Deploy (build and restart with PM2)
+```
 
 ## What This Does
 
@@ -18,6 +23,8 @@ That's it! ✨
 3. ✅ Builds React app with backend URL baked in
 4. ✅ Restarts PM2
 5. ✅ Verifies everything works
+
+**All automatically in ONE command!**
 
 ## The Magic
 
@@ -34,9 +41,13 @@ Browser → Frontend (port 3000) → Proxy → Backend ❌ (complex)
 ## Manual Steps (If Script Fails)
 
 ```bash
-# 1. Create .env.production
-./generate-env.sh
+# Just run the deploy
+./manager.sh 1
+```
 
+Or step-by-step:
+```bash
+# 1. Generate .env.production (now built into install.sh)
 # 2. Build
 npm run build
 
@@ -70,19 +81,17 @@ curl -X POST http://localhost:3000/api/Auth/login \
 **Wrong IP?**
 ```bash
 rm .env.production
-./generate-env.sh  # Re-detect IP
-npm run build
-pm2 restart ems3-ui
+./manager.sh 1  # Will auto-detect IP again
 ```
 
 ## Files Changed
 
-- `.env.production` - Contains `VITE_API_BASE_URL`
+- `.env.production` - Auto-generated with `VITE_API_BASE_URL`
 - `dist/` - Built app with API URL baked in
 
 ## Next Time
 
-Just run: `./fix-pm2-proxy.sh`
+Just run: `./manager.sh 1`
 
 ---
 **Done!** 🚀 No more 404 errors, no more proxy complexity.

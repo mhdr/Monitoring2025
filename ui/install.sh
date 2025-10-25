@@ -50,6 +50,72 @@ echo ""
 echo "Installing dependencies..."
 npm install
 
+# Auto-generate .env.production with server IP
+echo ""
+echo "Generating .env.production with auto-detected server IP..."
+
+# Detect server IP (prioritize non-localhost addresses)
+SERVER_IP=""
+
+# Method 1: hostname -I (most reliable on Linux)
+if command -v hostname &> /dev/null; then
+    SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+fi
+
+# Method 2: ip route (if hostname fails)
+if [ -z "$SERVER_IP" ] && command -v ip &> /dev/null; then
+    SERVER_IP=$(ip route get 1.1.1.1 2>/dev/null | grep -oP 'src \K\S+')
+fi
+
+# Method 3: ifconfig (fallback for older systems)
+if [ -z "$SERVER_IP" ] && command -v ifconfig &> /dev/null; then
+    SERVER_IP=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n1)
+fi
+
+# Method 4: Check common network interfaces
+if [ -z "$SERVER_IP" ]; then
+    for iface in eth0 ens33 enp0s3 wlan0; do
+        if [ -d "/sys/class/net/$iface" ]; then
+            SERVER_IP=$(ip addr show $iface 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1)
+            [ -n "$SERVER_IP" ] && break
+        fi
+    done
+fi
+
+# Fallback to localhost if detection failed
+if [ -z "$SERVER_IP" ] || [ "$SERVER_IP" == "127.0.0.1" ]; then
+    echo "Warning: Could not auto-detect server IP, using localhost"
+    SERVER_IP="localhost"
+fi
+
+echo "Detected Server IP: $SERVER_IP"
+
+# Backend port (default 5030)
+BACKEND_PORT="${BACKEND_PORT:-5030}"
+API_URL="http://${SERVER_IP}:${BACKEND_PORT}"
+
+# Create .env.production file
+cat > .env.production << EOF
+# Production Environment Variables
+# Auto-generated on $(date)
+# Server IP: $SERVER_IP
+
+# Backend API URL - Direct access (no proxy needed)
+VITE_API_BASE_URL=$API_URL
+EOF
+
+echo "Created .env.production with API URL: $API_URL"
+
+# Test backend connectivity
+echo ""
+echo "Testing backend connectivity..."
+if curl -s --connect-timeout 3 "${API_URL}/health" > /dev/null 2>&1; then
+    echo "✓ Backend is accessible at $API_URL"
+else
+    echo "⚠ Warning: Backend not responding at $API_URL"
+    echo "  Make sure the backend is running before accessing the UI"
+fi
+
 # Build the React app
 echo ""
 echo "Building React app..."
