@@ -390,7 +390,7 @@
     "setCommand": "تنظیم دستور",
     "adminMenu": {
       "title": "منوی مدیریت",
-      "moveItemToGroup": "انتقال آیتم به گروه",
+      "moveItemToGroup": "انتقال پوینت به پوشه",
       "editGroup": "ویرایش گروه",
       "userPermissions": "مجوزهای کاربر"
     }

@@ -390,7 +390,7 @@
     "setCommand": "Set Command",
     "adminMenu": {
       "title": "Admin Menu",
-      "moveItemToGroup": "Move Item to Group",
+      "moveItemToGroup": "Move Point to Folder",
       "editGroup": "Edit Group",
       "userPermissions": "User Permissions"
     }
