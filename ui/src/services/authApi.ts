@@ -26,7 +26,7 @@ import type {
  */
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
   try {
-    const response = await apiClient.post<LoginResponse>('/api/auth/login', credentials);
+    const response = await apiClient.post<LoginResponse>('/api/Auth/login', credentials);
     
     // Check if login was successful
     if (response.data.success) {

@@ -15,9 +15,11 @@ const express = require('express');
 const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const API_URL = process.env.API_URL || 'http://localhost:5030';
 const DIST_DIR = path.join(__dirname, 'dist');
 
 // Verify dist directory exists
@@ -30,6 +32,29 @@ if (!fs.existsSync(DIST_DIR)) {
 console.log('[INFO] Starting EMS3 UI Server...');
 console.log('[INFO] Dist directory:', DIST_DIR);
 console.log('[INFO] Port:', PORT);
+console.log('[INFO] API URL:', API_URL);
+
+// API Proxy - Forward /api/* and /hubs/* to backend
+app.use('/api', createProxyMiddleware({
+  target: API_URL,
+  changeOrigin: true,
+  logLevel: 'debug',
+  onError: (err, req, res) => {
+    console.error('[Proxy Error]', err.message);
+    res.status(502).json({ error: 'Bad Gateway', message: 'Failed to connect to backend API' });
+  }
+}));
+
+app.use('/hubs', createProxyMiddleware({
+  target: API_URL,
+  changeOrigin: true,
+  ws: true, // Enable WebSocket proxying for SignalR
+  logLevel: 'debug',
+  onError: (err, req, res) => {
+    console.error('[Proxy Error]', err.message);
+    res.status(502).json({ error: 'Bad Gateway', message: 'Failed to connect to backend API' });
+  }
+}));
 
 // Request logging middleware
 app.use((req, res, next) => {
