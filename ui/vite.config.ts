@@ -3,12 +3,33 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
+import viteCompression from 'vite-plugin-compression'
 // import PluginCritical from 'rollup-plugin-critical' // Available for manual critical CSS extraction
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    // Brotli compression - generates .br files (best compression for modern browsers)
+    viteCompression({
+      algorithm: 'brotliCompress',
+      ext: '.br',
+      threshold: 1024, // Only compress files > 1KB
+      deleteOriginFile: false, // Keep original files
+      compressionOptions: {
+        level: 11, // Maximum compression (0-11)
+      },
+    }),
+    // Gzip compression - generates .gz files (fallback for older browsers)
+    viteCompression({
+      algorithm: 'gzip',
+      ext: '.gz',
+      threshold: 1024,
+      deleteOriginFile: false,
+      compressionOptions: {
+        level: 9, // Maximum compression (0-9)
+      },
+    }),
     // PWA plugin - service worker, manifest, and offline support
     VitePWA({
       registerType: 'prompt', // User consent before updating
@@ -317,11 +338,51 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       ecma: 2020,
-      compress: false,
-      mangle: { safari10: true },
-      keep_classnames: true,
-      keep_fnames: true,
-      format: { comments: false },
+      compress: {
+        // Enable compression with safe settings
+        drop_console: true, // Remove console.* calls
+        drop_debugger: true, // Remove debugger statements
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'], // Remove specific console calls
+        passes: 2, // Two passes for better optimization
+        // Keep safe settings to avoid React/Emotion/MUI issues
+        keep_classnames: true, // Required for MUI and Emotion
+        keep_fnames: true, // Required for React component names in dev tools
+        arrows: true, // Convert functions to arrow functions where possible
+        arguments: false, // Don't optimize 'arguments' usage (can break code)
+        booleans: true, // Optimize boolean expressions
+        collapse_vars: true, // Collapse single-use variables
+        comparisons: true, // Optimize comparisons
+        computed_props: true, // Optimize computed property access
+        conditionals: true, // Optimize if-s and conditional expressions
+        dead_code: true, // Remove unreachable code
+        evaluate: true, // Evaluate constant expressions
+        hoist_funs: false, // Don't hoist function declarations (can cause issues)
+        hoist_props: true, // Optimize sequences of assignments
+        hoist_vars: false, // Don't hoist var declarations (can cause issues)
+        if_return: true, // Optimize if/return and if/continue
+        inline: true, // Inline functions when beneficial
+        join_vars: true, // Join consecutive var statements
+        loops: true, // Optimize loops
+        negate_iife: false, // Don't negate IIFEs (can break code)
+        properties: true, // Optimize property access
+        reduce_funcs: false, // Don't reduce functions (can cause issues)
+        reduce_vars: true, // Collapse variables assigned with single-use values
+        sequences: true, // Join consecutive statements with comma operator
+        side_effects: true, // Remove side-effect-free statements
+        switches: true, // De-duplicate and remove unreachable switch branches
+        toplevel: false, // Don't drop unreferenced top-level functions/vars
+        typeofs: true, // Optimize typeof expressions
+        unused: true, // Drop unreferenced functions and variables
+      },
+      mangle: {
+        safari10: true, // Work around Safari 10 bugs
+        properties: false, // Don't mangle property names (breaks MUI/Emotion)
+      },
+      format: {
+        comments: false, // Remove all comments
+        ecma: 2020, // Use ES2020 syntax
+        safari10: true, // Work around Safari 10 bugs
+      },
     },
   // Source maps for production debugging (can be set to true temporarily if further investigation needed)
   sourcemap: false,

@@ -2,17 +2,19 @@
  * Express.js Production Server for EMS3 UI
  * 
  * Features:
- * - Gzip compression for all responses
+ * - Pre-compressed file serving (.br, .gz) for optimal performance
+ * - Dynamic gzip/brotli compression fallback
  * - Static file serving from dist/
  * - SPA routing (all non-file routes → index.html)
- * - Security headers
- * - Access logging
+ * - Enhanced security headers (CSP, HSTS-ready)
+ * - Access logging with response time
  * - Graceful shutdown
  * - Health check endpoint
  */
 
 const express = require('express');
 const compression = require('compression');
+const expressStaticGzip = require('express-static-gzip');
 const path = require('path');
 const fs = require('fs');
 const { createProxyMiddleware } = require('http-proxy-middleware');
@@ -62,21 +64,27 @@ app.use('/hubs', createProxyMiddleware({
   }
 }));
 
-// Request logging middleware
+// Request logging middleware with response time
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+    const size = res.get('Content-Length') || 0;
+    const encoding = res.get('Content-Encoding') || 'none';
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} ${res.statusCode} ${duration}ms ${size}B (${encoding})`);
   });
   next();
 });
 
-// Gzip compression for all responses
+// Dynamic compression for responses not served from pre-compressed files
 app.use(compression({
-  level: 6, // Same as nginx config
+  level: 6, // Balanced compression
   threshold: 1024, // Only compress responses > 1KB
   filter: (req, res) => {
+    // Skip compression if pre-compressed file was served
+    if (res.get('Content-Encoding')) {
+      return false;
+    }
     // Compress unless explicitly disabled
     if (req.headers['x-no-compression']) {
       return false;
@@ -99,6 +107,28 @@ app.use((req, res, next) => {
   // Referrer policy
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
+  // Content Security Policy (CSP)
+  // Adjust these directives based on your application's needs
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-eval needed for React dev tools
+    "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for MUI emotion
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' http://localhost:5030 ws://localhost:5030", // API and SignalR
+    "frame-ancestors 'self'",
+    "base-uri 'self'",
+    "form-action 'self'"
+  ].join('; ');
+  res.setHeader('Content-Security-Policy', csp);
+  
+  // HSTS - Enable this when using HTTPS
+  // Commented out for HTTP development/deployment
+  // res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  
+  // Feature Policy / Permissions Policy
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
   next();
 });
 
@@ -107,45 +137,76 @@ app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
   });
 });
 
-// Serve static files from dist/ with caching
-app.use('/assets', express.static(path.join(DIST_DIR, 'assets'), {
-  maxAge: '1y', // 1 year cache for hashed assets
-  immutable: true,
-  etag: true,
-  lastModified: true
+// Serve static files from dist/ with pre-compressed file support
+// Serves .br (Brotli) or .gz (Gzip) files when available, with automatic fallback to original
+app.use('/assets', expressStaticGzip(path.join(DIST_DIR, 'assets'), {
+  enableBrotli: true,
+  orderPreference: ['br', 'gz'], // Prefer Brotli over Gzip
+  serveStatic: {
+    maxAge: '1y', // 1 year cache for hashed assets
+    immutable: true,
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filePath) => {
+      // Add preload hints for critical assets
+      if (filePath.includes('index-') && filePath.endsWith('.js')) {
+        res.setHeader('Link', '<' + filePath + '>; rel=preload; as=script');
+      }
+      if (filePath.endsWith('.css')) {
+        res.setHeader('Link', '<' + filePath + '>; rel=preload; as=style');
+      }
+    }
+  }
 }));
 
-app.use('/fonts', express.static(path.join(DIST_DIR, 'fonts'), {
-  maxAge: '1y',
-  immutable: true
+app.use('/fonts', expressStaticGzip(path.join(DIST_DIR, 'fonts'), {
+  enableBrotli: true,
+  orderPreference: ['br', 'gz'],
+  serveStatic: {
+    maxAge: '1y',
+    immutable: true
+  }
 }));
 
-app.use('/icons', express.static(path.join(DIST_DIR, 'icons'), {
-  maxAge: '30d'
+app.use('/icons', expressStaticGzip(path.join(DIST_DIR, 'icons'), {
+  enableBrotli: true,
+  orderPreference: ['br', 'gz'],
+  serveStatic: {
+    maxAge: '30d'
+  }
 }));
 
 // Service worker and manifest with no cache
 app.get('/sw.js', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.setHeader('Service-Worker-Allowed', '/');
   res.sendFile(path.join(DIST_DIR, 'sw.js'));
 });
 
 app.get('/manifest.webmanifest', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(DIST_DIR, 'manifest.webmanifest'));
 });
 
-// Other root-level files
-app.use(express.static(DIST_DIR, {
-  maxAge: 0, // No cache for index.html and other files
-  etag: true,
-  lastModified: true,
-  index: false // We'll handle index.html manually
+// Other root-level files (with pre-compressed file support)
+app.use(expressStaticGzip(DIST_DIR, {
+  enableBrotli: true,
+  orderPreference: ['br', 'gz'],
+  serveStatic: {
+    maxAge: 0, // No cache for root files
+    etag: true,
+    lastModified: true,
+    index: false // We'll handle index.html manually
+  }
 }));
 
 // SPA routing: serve index.html for all non-file routes
@@ -159,8 +220,32 @@ app.get('*', (req, res) => {
   }
 
   // Serve index.html for all routes (SPA)
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.sendFile(path.join(DIST_DIR, 'index.html'));
+  // Use ETag for validation but revalidate on every request
+  res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  
+  // Check if pre-compressed version exists
+  const indexPath = path.join(DIST_DIR, 'index.html');
+  const brPath = indexPath + '.br';
+  const gzPath = indexPath + '.gz';
+  
+  // Serve pre-compressed file if available and client supports it
+  const acceptEncoding = req.headers['accept-encoding'] || '';
+  
+  if (acceptEncoding.includes('br') && fs.existsSync(brPath)) {
+    res.setHeader('Content-Encoding', 'br');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.sendFile(brPath);
+  }
+  
+  if (acceptEncoding.includes('gzip') && fs.existsSync(gzPath)) {
+    res.setHeader('Content-Encoding', 'gzip');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.sendFile(gzPath);
+  }
+  
+  // Fallback to uncompressed file
+  res.sendFile(indexPath);
 });
 
 // Error handling
