@@ -283,22 +283,20 @@ export default defineConfig({
               return 'redux';
             }
             
-            // MUI Core - Material-UI core components
-            if (id.includes('@mui/material') || id.includes('@mui/system')) {
+            // Emotion + Stylis + MUI - bundle all styling together to avoid initialization issues
+            // MUI uses emotion for styling, and stylis for RTL support
+            // Keeping them together ensures proper initialization order
+            if (id.includes('@mui/material') || 
+                id.includes('@mui/system') ||
+                id.includes('@emotion') || 
+                id.includes('stylis') || 
+                id.includes('@mui/stylis-plugin-rtl')) {
               return 'mui-core';
             }
             
             // MUI Icons - separate to allow lazy loading
             if (id.includes('@mui/icons-material')) {
               return 'mui-icons';
-            }
-            
-            // Emotion + Stylis - must be together to maintain proper initialization order
-            // Stylis is a dependency of emotion and MUI's RTL plugin, so they must be bundled together
-            if (id.includes('@emotion') || 
-                id.includes('stylis') || 
-                id.includes('@mui/stylis-plugin-rtl')) {
-              return 'mui-styling';
             }
             
             // i18n - internationalization
