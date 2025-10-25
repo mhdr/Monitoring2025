@@ -34,11 +34,25 @@ console.log('[INFO] Dist directory:', DIST_DIR);
 console.log('[INFO] Port:', PORT);
 console.log('[INFO] API URL:', API_URL);
 
-// API Proxy - Forward /api/* and /hubs/* to backend
-app.use('/api', createProxyMiddleware({
+// API Proxy - MUST come BEFORE body parsers to preserve request stream
+app.use('/api', (req, res, next) => {
+  console.log('[Proxy Debug] Request received:', req.method, req.url);
+  console.log('[Proxy Debug] Headers:', JSON.stringify(req.headers, null, 2));
+  next();
+}, createProxyMiddleware({
   target: API_URL,
   changeOrigin: true,
+  pathRewrite: {
+    '^/': '/api/'  // Prepend /api since app.use('/api') strips it
+  },
   logLevel: 'debug',
+  onProxyReq: (proxyReq, req, res) => {
+    console.log('[Proxy] Forwarding request:', req.method, proxyReq.path);
+    console.log('[Proxy] Headers:', proxyReq.getHeaders());
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log('[Proxy] Response:', proxyRes.statusCode, req.url);
+  },
   onError: (err, req, res) => {
     console.error('[Proxy Error]', err.message);
     res.status(502).json({ error: 'Bad Gateway', message: 'Failed to connect to backend API' });
