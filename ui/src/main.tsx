@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './iransansx-features.css'
-import './i18n/config' // Initialize i18next
+import i18n from './i18n/config' // Initialize i18next
 import { LanguageProvider } from './contexts/LanguageContext'
 import { MuiThemeProvider } from './contexts/MuiThemeProvider'
 import { AuthProvider } from './contexts/AuthContext'
@@ -21,6 +21,35 @@ const logger = createLogger('Main');
     // CRITICAL: Wait for IndexedDB to be fully initialized
     // This sets up the database, BroadcastChannel, and cleanup schedule
     await initIndexedDB();
+    
+    // CRITICAL: Ensure language is properly initialized before React renders
+    // Wait for i18n to be fully initialized
+    await i18n.loadLanguages(['en', 'fa']);
+    
+    // Check if user has a language preference stored
+    const storedLanguage = localStorage.getItem('i18nextLng');
+    if (storedLanguage && (storedLanguage === 'en' || storedLanguage === 'fa')) {
+      // User has a stored preference - use it
+      logger.log('Stored language detected:', storedLanguage);
+      if (i18n.language !== storedLanguage) {
+        await i18n.changeLanguage(storedLanguage);
+      }
+    } else {
+      // First time user - default to English
+      logger.log('First load detected, setting default language to English');
+      await i18n.changeLanguage('en');
+      localStorage.setItem('i18nextLng', 'en');
+    }
+    
+    // Set document direction based on language
+    const isRTL = i18n.language === 'fa';
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.documentElement.lang = i18n.language;
+    logger.log('Language initialized:', {
+      language: i18n.language,
+      direction: document.documentElement.dir,
+      storedLanguage
+    });
     
     // Initialize automatic cleanup for expired data (TTL)
     await initAutoCleanup().catch((error) => {

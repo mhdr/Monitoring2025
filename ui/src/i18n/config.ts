@@ -13,8 +13,8 @@ i18n
   .use(initReactI18next)
   // Init i18next
   .init({
-    // Default language (Persian as specified in requirements)
-    fallbackLng: 'fa',
+    // Default language - English for better compatibility
+    fallbackLng: 'en',
     // lng removed - let LanguageDetector handle it from localStorage or default to fallbackLng
     
     // Debug mode for development
@@ -54,7 +54,7 @@ i18n
     
     // Load options
     load: 'currentOnly', // Only load the current language, not all fallbacks
-    preload: ['fa'], // Preload only default language
+    preload: ['en'], // Preload only default language
     
     // Partition translations into smaller chunks (if using multiple namespaces)
     partialBundledLanguages: true,
