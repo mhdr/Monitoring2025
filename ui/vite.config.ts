@@ -23,47 +23,12 @@ export default defineConfig({
         scope: '/',
         start_url: '/',
         orientation: 'any',
+        // Use existing scalable SVG icon. If you add PNG icons later, update this array accordingly.
         icons: [
           {
-            src: 'icons/icon-72x72.png',
-            sizes: '72x72',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-96x96.png',
-            sizes: '96x96',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-128x128.png',
-            sizes: '128x128',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-144x144.png',
-            sizes: '144x144',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-152x152.png',
-            sizes: '152x152',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any maskable'
-          },
-          {
-            src: 'icons/icon-384x384.png',
-            sizes: '384x384',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
+            src: 'icons/eye.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ],
@@ -74,13 +39,12 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         // Exclude stats files and SW message handler from precache
-        globIgnores: ['**/stats.html', '**/sw-message-handler.js'],
+  globIgnores: ['**/stats.html', '**/sw-message-handler.js', '**/ag-grid-*.js', '**/echarts-*.js', '**/index-*.js'],
         // Import custom message handler for cache invalidation
         importScripts: ['sw-message-handler.js'],
-        // Increase maximum file size to accommodate larger vendor chunks
-        // AG Grid (~1.3MB) and ECharts (~820KB) can now be precached if needed
-        // This significantly improves new tab load performance since chunks are already in cache
-        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024, // Back to 2 MB after re-enabling minification
+  // Increase maximum file size to accommodate larger vendor chunks (no JS minification)
+  // AG Grid and ECharts can exceed 2MB without minification
+  maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
           // Cache ALL JavaScript chunks - CacheFirst strategy with long expiration
           // This ensures any chunk loaded in one tab is immediately available in new tabs
@@ -264,74 +228,54 @@ export default defineConfig({
     // Build optimization configuration
     rollupOptions: {
       output: {
-        // Manual chunk splitting for better caching
+        // Manual chunk splitting for better caching (avoid splitting Emotion/Stylis explicitly)
         manualChunks: (id) => {
-          // Critical vendor chunks - loaded early
           if (id.includes('node_modules')) {
-            // React core - always needed first
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react-core';
-            }
-            
+            // Keep React with vendor to avoid TDZ issues
+
             // React Router - needed for routing
             if (id.includes('react-router')) {
               return 'react-router';
             }
-            
+
             // Redux - state management
             if (id.includes('@reduxjs/toolkit') || id.includes('react-redux') || id.includes('redux')) {
               return 'redux';
             }
-            
-            // Emotion - MUST be separate from MUI to avoid circular deps
-            if (id.includes('@emotion/react') || id.includes('@emotion/styled') || id.includes('@emotion/cache')) {
-              return 'emotion';
-            }
-            
-            // Stylis - Emotion's CSS parser
-            if (id.includes('stylis')) {
-              return 'stylis';
-            }
-            
+
             // MUI Core - Material-UI components
             if (id.includes('@mui/material') || id.includes('@mui/system') || id.includes('@mui/base')) {
               return 'mui-core';
             }
-            
+
             // MUI Icons - can be separate for lazy loading
             if (id.includes('@mui/icons-material')) {
               return 'mui-icons';
             }
-            
+
             // i18n - internationalization
             if (id.includes('i18next') || id.includes('react-i18next')) {
               return 'i18n';
             }
-            
-            // AG Grid Enterprise - LARGE (5MB+), only load when needed
-            if (id.includes('ag-grid-enterprise') || id.includes('ag-grid-community')) {
+
+            // AG Grid
+            if (id.includes('ag-grid-enterprise') || id.includes('ag-grid-community') || id.includes('ag-grid-react')) {
               return 'ag-grid';
             }
-            
-            // AG Grid React wrapper - small, bundle with AG Grid
-            if (id.includes('ag-grid-react')) {
-              return 'ag-grid';
-            }
-            
-            // ECharts - LARGE (~1MB), only for charts
+
+            // ECharts
             if (id.includes('echarts') || id.includes('echarts-for-react')) {
               return 'echarts';
             }
-            
-            // Date libraries - Jalali calendar
+
+            // Date utils
             if (id.includes('jalaali') || id.includes('jalalidatepicker')) {
               return 'date-utils';
             }
-            
-            // Other vendor dependencies
+
             return 'vendor';
           }
-          
+
           // Layout components - used across multiple routes
           if (id.includes('/src/components/DashboardLayout') || 
               id.includes('/src/components/Sidebar') || 
@@ -369,10 +313,18 @@ export default defineConfig({
     // Set to 1100 KB to accommodate ECharts and AG Grid vendor chunks
     // These are acceptable since they're only loaded when their pages are accessed
     chunkSizeWarningLimit: 1100,
-    // Minification configuration for better compression
-    minify: 'esbuild', // Re-enabled after fixing circular imports
-    // Source maps for production debugging (disabled for performance)
-    sourcemap: false,
+    // Use terser with safe settings to avoid TDZ issues
+    minify: 'terser',
+    terserOptions: {
+      ecma: 2020,
+      compress: false,
+      mangle: { safari10: true },
+      keep_classnames: true,
+      keep_fnames: true,
+      format: { comments: false },
+    },
+  // Source maps for production debugging (can be set to true temporarily if further investigation needed)
+  sourcemap: false,
     // CSS code splitting configuration
     cssCodeSplit: true,
     // Performance budgets and warnings

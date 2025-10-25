@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { useFontLoader } from './hooks/useFontLoader';
 import { useLanguage } from './hooks/useLanguage';
 import { useTranslation } from './hooks/useTranslation';
@@ -11,27 +12,28 @@ import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
 import LazyErrorBoundary from './components/LazyErrorBoundary';
 import ServiceWorkerPrompt from './components/ServiceWorkerPrompt';
-import SyncPage from './components/SyncPage';
-import DashboardLayout from './components/DashboardLayout';
-import DetailLayout from './components/detail/DetailLayout';
-import MonitoringPage from './components/MonitoringPage';
-import PlotsPage from './components/PlotsPage';
-import ActiveAlarmsPage from './components/ActiveAlarmsPage';
-import AlarmLogPage from './components/AlarmLogPage';
-import AuditTrailPage from './components/AuditTrailPage';
-import DisabledAlarmsPage from './components/DisabledAlarmsPage';
-import SchedulerPage from './components/SchedulerPage';
-import ManagementPage from './components/ManagementPage';
-import SettingsPage from './components/SettingsPage';
-import ProfilePage from './components/ProfilePage';
-import TrendAnalysisPage from './components/detail/TrendAnalysisPage';
-import DataTablePage from './components/detail/DataTablePage';
-import LiveMonitoringDetailPage from './components/detail/LiveMonitoringDetailPage';
-import ActiveAlarmsDetailPage from './components/detail/ActiveAlarmsDetailPage';
-import AlarmLogDetailPage from './components/detail/AlarmLogDetailPage';
-import AlarmCriteriaPage from './components/detail/AlarmCriteriaPage';
-import AuditTrailDetailPage from './components/detail/AuditTrailDetailPage';
-import ManagementDetailPage from './components/detail/ManagementDetailPage';
+// Lazy-loaded route components to avoid mixing static and dynamic imports
+const SyncPage = lazy(() => import('./components/SyncPage'));
+const DashboardLayout = lazy(() => import('./components/DashboardLayout'));
+const DetailLayout = lazy(() => import('./components/detail/DetailLayout'));
+const MonitoringPage = lazy(() => import('./components/MonitoringPage'));
+const PlotsPage = lazy(() => import('./components/PlotsPage'));
+const ActiveAlarmsPage = lazy(() => import('./components/ActiveAlarmsPage'));
+const AlarmLogPage = lazy(() => import('./components/AlarmLogPage'));
+const AuditTrailPage = lazy(() => import('./components/AuditTrailPage'));
+const DisabledAlarmsPage = lazy(() => import('./components/DisabledAlarmsPage'));
+const SchedulerPage = lazy(() => import('./components/SchedulerPage'));
+const ManagementPage = lazy(() => import('./components/ManagementPage'));
+const SettingsPage = lazy(() => import('./components/SettingsPage'));
+const ProfilePage = lazy(() => import('./components/ProfilePage'));
+const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
+const DataTablePage = lazy(() => import('./components/detail/DataTablePage'));
+const LiveMonitoringDetailPage = lazy(() => import('./components/detail/LiveMonitoringDetailPage'));
+const ActiveAlarmsDetailPage = lazy(() => import('./components/detail/ActiveAlarmsDetailPage'));
+const AlarmLogDetailPage = lazy(() => import('./components/detail/AlarmLogDetailPage'));
+const AlarmCriteriaPage = lazy(() => import('./components/detail/AlarmCriteriaPage'));
+const AuditTrailDetailPage = lazy(() => import('./components/detail/AuditTrailDetailPage'));
+const ManagementDetailPage = lazy(() => import('./components/detail/ManagementDetailPage'));
 import './App.css';
 
 /**
@@ -42,6 +44,7 @@ const AppRoutes = () => {
   // Enable intelligent route preloading based on navigation patterns
   // This must be inside Router component to access useLocation
   useRoutePreloader();
+  const { t } = useTranslation();
 
   return (
       <Routes>
@@ -49,120 +52,164 @@ const AppRoutes = () => {
         <Route path="/sync" element={
           <ProtectedRoute>
             <LazyErrorBoundary>
-              <SyncPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <SyncPage />
+              </Suspense>
             </LazyErrorBoundary>
           </ProtectedRoute>
         } />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <LazyErrorBoundary>
-              <DashboardLayout />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <DashboardLayout />
+              </Suspense>
             </LazyErrorBoundary>
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="/dashboard/monitoring" replace />} />
           <Route path="monitoring" element={
             <LazyErrorBoundary>
-              <MonitoringPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <MonitoringPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="plots" element={
             <LazyErrorBoundary>
-              <PlotsPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <PlotsPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="active-alarms" element={
             <LazyErrorBoundary>
-              <ActiveAlarmsPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <ActiveAlarmsPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="alarm-log" element={
             <LazyErrorBoundary>
-              <AlarmLogPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <AlarmLogPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="audit-trail" element={
             <LazyErrorBoundary>
-              <AuditTrailPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <AuditTrailPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="disabled-alarms" element={
             <LazyErrorBoundary>
-              <DisabledAlarmsPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <DisabledAlarmsPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="scheduler" element={
             <LazyErrorBoundary>
-              <SchedulerPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <SchedulerPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="management" element={
             <LazyErrorBoundary>
-              <ManagementPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <ManagementPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="settings" element={
             <LazyErrorBoundary>
-              <SettingsPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <SettingsPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="profile" element={
             <LazyErrorBoundary>
-              <ProfilePage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <ProfilePage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="sync" element={
             <LazyErrorBoundary>
-              <SyncPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <SyncPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
         </Route>
         <Route path="/item-detail" element={
           <ProtectedRoute>
             <LazyErrorBoundary>
-              <DetailLayout />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <DetailLayout />
+              </Suspense>
             </LazyErrorBoundary>
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="/item-detail/trend-analysis" replace />} />
           <Route path="trend-analysis" element={
             <LazyErrorBoundary>
-              <TrendAnalysisPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <TrendAnalysisPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="data-table" element={
             <LazyErrorBoundary>
-              <DataTablePage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <DataTablePage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="live-monitoring" element={
             <LazyErrorBoundary>
-              <LiveMonitoringDetailPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <LiveMonitoringDetailPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="active-alarms" element={
             <LazyErrorBoundary>
-              <ActiveAlarmsDetailPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <ActiveAlarmsDetailPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="alarm-log" element={
             <LazyErrorBoundary>
-              <AlarmLogDetailPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <AlarmLogDetailPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="alarm-criteria" element={
             <LazyErrorBoundary>
-              <AlarmCriteriaPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <AlarmCriteriaPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="audit-trail" element={
             <LazyErrorBoundary>
-              <AuditTrailDetailPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <AuditTrailDetailPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="management" element={
             <LazyErrorBoundary>
-              <ManagementDetailPage />
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <ManagementDetailPage />
+              </Suspense>
             </LazyErrorBoundary>
           } />
         </Route>

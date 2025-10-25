@@ -121,21 +121,15 @@ app.use(express.static(DIST_DIR, {
 app.get('*', (req, res) => {
   // Check if request is for a file (has extension)
   const ext = path.extname(req.path);
-  
+
   if (ext) {
     // Request for a file that doesn't exist
     return res.status(404).send('File not found');
   }
-  
-  // Serve index.html for all routes (SPA)
-  const indexPath = path.join(DIST_DIR, 'index.html');
-  
-  if (!fs.existsSync(indexPath)) {
-    return res.status(500).send('Application not built. Run: npm run build');
-  }
-  
+
+  // Serve index.html for all routes (SPA) via redirect to leverage static middleware
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.sendFile(indexPath);
+  res.redirect('/index.html');
 });
 
 // Error handling
