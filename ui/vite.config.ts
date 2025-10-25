@@ -293,9 +293,17 @@ export default defineConfig({
               return 'mui-icons';
             }
             
-            // MUI RTL and Emotion - styling
-            if (id.includes('@emotion') || id.includes('stylis') || id.includes('@mui/stylis')) {
-              return 'mui-styling';
+            // Emotion styling - keep together to avoid circular dependencies
+            if (id.includes('@emotion/react') || 
+                id.includes('@emotion/styled') || 
+                id.includes('@emotion/cache')) {
+              return 'emotion';
+            }
+            
+            // Stylis and MUI styling plugins - separate from emotion
+            if (id.includes('stylis') || 
+                id.includes('@mui/stylis-plugin-rtl')) {
+              return 'stylis';
             }
             
             // i18n - internationalization
@@ -401,6 +409,10 @@ export default defineConfig({
       'react-i18next',
       '@mui/material',
       '@mui/icons-material',
+      '@emotion/react',
+      '@emotion/styled',
+      '@emotion/cache',
+      'stylis',
     ],
     // Exclude large dependencies that should be loaded on-demand
     exclude: [
