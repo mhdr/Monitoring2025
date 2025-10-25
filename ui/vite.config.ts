@@ -359,17 +359,7 @@ export default defineConfig({
     // These are acceptable since they're only loaded when their pages are accessed
     chunkSizeWarningLimit: 1100,
     // Minification configuration for better compression
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.log in production
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug'], // Remove specific console methods
-      },
-      format: {
-        comments: false, // Remove all comments
-      },
-    },
+    minify: 'esbuild', // Changed from 'terser' to 'esbuild' - better handling of circular deps
     // Source maps for production debugging (disabled for performance)
     sourcemap: false,
     // CSS code splitting configuration
@@ -409,7 +399,8 @@ export default defineConfig({
   },
   // Experimental features for better performance
   esbuild: {
-    // Drop console statements in production (handled by terser)
+    // Drop console statements in production
+    drop: ['console', 'debugger'],
     legalComments: 'none',
   },
 })
