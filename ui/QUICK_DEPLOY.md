@@ -1,4 +1,4 @@
-# Quick Deployment - Direct API Access
+# Quick Deployment - ONE Command
 
 ## TL;DR (On Production Server)
 
@@ -8,7 +8,7 @@ git pull origin main
 ./manager.sh 1
 ```
 
-That's it! ✨
+**That's it!** ✨ Everything is automatic.
 
 **Or use the manager menu:**
 ```bash
