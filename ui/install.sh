@@ -89,7 +89,7 @@ fi
 echo ""
 if command -v pm2 &> /dev/null; then
     echo "Starting application with PM2..."
-    pm2 start ecosystem.config.js
+    pm2 start ecosystem.config.cjs
     
     # Save PM2 process list
     pm2 save

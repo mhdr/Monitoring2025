@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node server.cjs",
-    "start:pm2": "pm2 start ecosystem.config.js",
+    "start:pm2": "pm2 start ecosystem.config.cjs",
     "stop:pm2": "pm2 stop ems3-ui",
     "restart:pm2": "pm2 restart ems3-ui",
     "logs:pm2": "pm2 logs ems3-ui",
