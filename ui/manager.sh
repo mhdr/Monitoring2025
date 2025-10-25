@@ -21,24 +21,24 @@ echo_color(){
 if [[ ${bypass_user_selection} -eq 0 ]]
 then
     echo '========================================'
-    echo 'EMS3 UI Management Script'
+    echo 'EMS3 UI Management Script (Express + PM2)'
     echo '========================================'
     echo 'Select operation:'
     echo ''
-    echo '1  - Deploy (build and copy files)'
-    echo '2  - Reload nginx'
-    echo '3  - Restart nginx'
-    echo '4  - Nginx status'
-    echo '5  - Test nginx config'
+    echo '1  - Deploy (build and restart with PM2)'
+    echo '2  - Restart PM2 app'
+    echo '3  - Stop PM2 app'
+    echo '4  - Start PM2 app'
+    echo '5  - PM2 status'
     echo '6  - View error log (last 50 lines)'
-    echo '7  - View access log (last 50 lines)'
+    echo '7  - View output log (last 50 lines)'
     echo '8  - Follow error log (live)'
-    echo '9  - Follow access log (live)'
+    echo '9  - Follow output log (live)'
     echo '10 - Clean build cache'
-    echo '11 - Full deploy (install + configure)'
-    echo '12 - List deployed files'
-    echo '13 - Enable nginx site'
-    echo '14 - Disable nginx site'
+    echo '11 - Full deploy (install + build + start)'
+    echo '12 - List built files'
+    echo '13 - PM2 monitor (interactive)'
+    echo '14 - Delete PM2 app'
     echo '15 - Check deployment status'
     echo ''
 
@@ -47,8 +47,9 @@ fi
 
 ########################################################### App ####################################################################
 
-deploy_dir=/var/www/ems3/ui
-nginx_site_name=ems3_ui
+app_name=ems3-ui
+app_port=3000
+log_dir=./logs
 
 # operation: 1
 app_deploy(){
@@ -59,60 +60,87 @@ app_deploy(){
 }
 
 # operation: 2
-app_reload_nginx(){
-    echo_color "Reloading nginx..." ${color_yellow}
-    sudo systemctl reload nginx
+app_restart(){
+    echo_color "Restarting PM2 app..." ${color_yellow}
+    pm2 restart ${app_name}
     if [ $? -eq 0 ]; then
-        echo_color "✓ Nginx reloaded successfully" ${color_green}
+        echo_color "✓ App restarted successfully" ${color_green}
+        pm2 info ${app_name}
     else
-        echo_color "✗ Failed to reload nginx" ${color_red}
+        echo_color "✗ Failed to restart app" ${color_red}
     fi
 }
 
 # operation: 3
-app_restart_nginx(){
-    echo_color "Restarting nginx..." ${color_yellow}
-    sudo systemctl restart nginx
+app_stop(){
+    echo_color "Stopping PM2 app..." ${color_yellow}
+    pm2 stop ${app_name}
     if [ $? -eq 0 ]; then
-        echo_color "✓ Nginx restarted successfully" ${color_green}
+        echo_color "✓ App stopped successfully" ${color_green}
     else
-        echo_color "✗ Failed to restart nginx" ${color_red}
+        echo_color "✗ Failed to stop app" ${color_red}
     fi
 }
 
 # operation: 4
-app_nginx_status(){
-    sudo systemctl status nginx
+app_start(){
+    echo_color "Starting PM2 app..." ${color_yellow}
+    pm2 start ${app_name}
+    if [ $? -eq 0 ]; then
+        echo_color "✓ App started successfully" ${color_green}
+        pm2 info ${app_name}
+    else
+        echo_color "✗ Failed to start app" ${color_red}
+    fi
 }
 
 # operation: 5
-app_nginx_test(){
-    echo_color "Testing nginx configuration..." ${color_yellow}
-    sudo nginx -t
+app_status(){
+    pm2 status
+    echo ""
+    pm2 info ${app_name}
 }
 
 # operation: 6
-app_nginx_error_log(){
+app_error_log(){
     echo_color "Last 50 lines of error log:" ${color_yellow}
-    sudo tail -n 50 /var/log/nginx/ems3_ui_error.log
+    if [ -f "${log_dir}/${app_name}-error.log" ]; then
+        tail -n 50 ${log_dir}/${app_name}-error.log
+    else
+        echo_color "Log file not found: ${log_dir}/${app_name}-error.log" ${color_red}
+    fi
 }
 
 # operation: 7
-app_nginx_access_log(){
-    echo_color "Last 50 lines of access log:" ${color_yellow}
-    sudo tail -n 50 /var/log/nginx/ems3_ui_access.log
+app_output_log(){
+    echo_color "Last 50 lines of output log:" ${color_yellow}
+    if [ -f "${log_dir}/${app_name}-out.log" ]; then
+        tail -n 50 ${log_dir}/${app_name}-out.log
+    else
+        echo_color "Log file not found: ${log_dir}/${app_name}-out.log" ${color_red}
+    fi
 }
 
 # operation: 8
-app_nginx_error_log_live(){
+app_error_log_live(){
     echo_color "Following error log (Ctrl+C to stop)..." ${color_yellow}
-    sudo tail -f /var/log/nginx/ems3_ui_error.log
+    if [ -f "${log_dir}/${app_name}-error.log" ]; then
+        tail -f ${log_dir}/${app_name}-error.log
+    else
+        echo_color "Log file not found. Using PM2 logs instead:" ${color_yellow}
+        pm2 logs ${app_name} --err --lines 50
+    fi
 }
 
 # operation: 9
-app_nginx_access_log_live(){
-    echo_color "Following access log (Ctrl+C to stop)..." ${color_yellow}
-    sudo tail -f /var/log/nginx/ems3_ui_access.log
+app_output_log_live(){
+    echo_color "Following output log (Ctrl+C to stop)..." ${color_yellow}
+    if [ -f "${log_dir}/${app_name}-out.log" ]; then
+        tail -f ${log_dir}/${app_name}-out.log
+    else
+        echo_color "Log file not found. Using PM2 logs instead:" ${color_yellow}
+        pm2 logs ${app_name} --out --lines 50
+    fi
 }
 
 # operation: 10
@@ -136,35 +164,30 @@ app_full_deploy(){
 
 # operation: 12
 app_list_files(){
-    echo_color "Deployed files in ${deploy_dir}:" ${color_yellow}
-    if [ -d "${deploy_dir}" ]; then
-        ls -lah ${deploy_dir}
+    echo_color "Built files in dist/:" ${color_yellow}
+    if [ -d "dist" ]; then
+        ls -lah dist/
+        echo ""
+        du -sh dist/
     else
-        echo_color "✗ Deploy directory does not exist" ${color_red}
+        echo_color "✗ dist directory does not exist" ${color_red}
     fi
 }
 
 # operation: 13
-app_enable_site(){
-    echo_color "Enabling nginx site..." ${color_yellow}
-    sudo ln -sf /etc/nginx/sites-available/${nginx_site_name} /etc/nginx/sites-enabled/${nginx_site_name}
-    sudo nginx -t && sudo systemctl reload nginx
-    if [ $? -eq 0 ]; then
-        echo_color "✓ Site enabled successfully" ${color_green}
-    else
-        echo_color "✗ Failed to enable site" ${color_red}
-    fi
+app_monitor(){
+    echo_color "Opening PM2 monitor (press Ctrl+C to exit)..." ${color_yellow}
+    pm2 monit
 }
 
 # operation: 14
-app_disable_site(){
-    echo_color "Disabling nginx site..." ${color_yellow}
-    sudo rm -f /etc/nginx/sites-enabled/${nginx_site_name}
-    sudo systemctl reload nginx
+app_delete(){
+    echo_color "Deleting PM2 app..." ${color_yellow}
+    pm2 delete ${app_name}
     if [ $? -eq 0 ]; then
-        echo_color "✓ Site disabled successfully" ${color_green}
+        echo_color "✓ App deleted successfully" ${color_green}
     else
-        echo_color "✗ Failed to disable site" ${color_red}
+        echo_color "✗ Failed to delete app" ${color_red}
     fi
 }
 
@@ -173,53 +196,78 @@ app_check_status(){
     echo_color "=== Deployment Status ===" ${color_yellow}
     echo ""
     
-    # Check nginx
-    echo_color "Nginx Status:" ${color_yellow}
-    if systemctl is-active --quiet nginx; then
-        echo_color "✓ Nginx is running" ${color_green}
+    # Check Node.js
+    echo_color "Node.js Status:" ${color_yellow}
+    if command -v node &> /dev/null; then
+        echo_color "✓ Node.js is installed ($(node --version))" ${color_green}
     else
-        echo_color "✗ Nginx is not running" ${color_red}
+        echo_color "✗ Node.js is not installed" ${color_red}
     fi
     
-    # Check site enabled
+    # Check PM2
     echo ""
-    echo_color "Site Configuration:" ${color_yellow}
-    if [ -L "/etc/nginx/sites-enabled/${nginx_site_name}" ]; then
-        echo_color "✓ Site is enabled" ${color_green}
+    echo_color "PM2 Status:" ${color_yellow}
+    if command -v pm2 &> /dev/null; then
+        echo_color "✓ PM2 is installed ($(pm2 --version))" ${color_green}
     else
-        echo_color "✗ Site is not enabled" ${color_red}
+        echo_color "✗ PM2 is not installed" ${color_red}
     fi
     
-    # Check deploy directory
+    # Check app status
     echo ""
-    echo_color "Deployment Directory:" ${color_yellow}
-    if [ -d "${deploy_dir}" ] && [ -f "${deploy_dir}/index.html" ]; then
-        echo_color "✓ Files deployed at ${deploy_dir}" ${color_green}
-        file_count=$(find ${deploy_dir} -type f | wc -l)
-        dir_size=$(du -sh ${deploy_dir} 2>/dev/null | cut -f1)
+    echo_color "Application Status:" ${color_yellow}
+    if pm2 list | grep -q "${app_name}"; then
+        if pm2 list | grep "${app_name}" | grep -q "online"; then
+            echo_color "✓ App is running" ${color_green}
+            pm2 info ${app_name} | grep -E "status|uptime|restarts|cpu|memory"
+        else
+            echo_color "✗ App is not running" ${color_red}
+        fi
+    else
+        echo_color "✗ App is not registered in PM2" ${color_red}
+    fi
+    
+    # Check build directory
+    echo ""
+    echo_color "Build Directory:" ${color_yellow}
+    if [ -d "dist" ] && [ -f "dist/index.html" ]; then
+        echo_color "✓ Files built in dist/" ${color_green}
+        file_count=$(find dist -type f | wc -l)
+        dir_size=$(du -sh dist 2>/dev/null | cut -f1)
         echo "  Files: ${file_count}"
         echo "  Size: ${dir_size}"
     else
-        echo_color "✗ No deployment found" ${color_red}
+        echo_color "✗ No build found" ${color_red}
     fi
     
-    # Check config
+    # Check logs
     echo ""
-    echo_color "Configuration Test:" ${color_yellow}
-    if sudo nginx -t &>/dev/null; then
-        echo_color "✓ Nginx configuration is valid" ${color_green}
+    echo_color "Logs Directory:" ${color_yellow}
+    if [ -d "${log_dir}" ]; then
+        echo_color "✓ Logs directory exists" ${color_green}
+        if [ -f "${log_dir}/${app_name}-error.log" ]; then
+            error_size=$(du -sh ${log_dir}/${app_name}-error.log 2>/dev/null | cut -f1)
+            echo "  Error log: ${error_size}"
+        fi
+        if [ -f "${log_dir}/${app_name}-out.log" ]; then
+            out_size=$(du -sh ${log_dir}/${app_name}-out.log 2>/dev/null | cut -f1)
+            echo "  Output log: ${out_size}"
+        fi
     else
-        echo_color "✗ Nginx configuration has errors" ${color_red}
+        echo_color "✗ Logs directory not found" ${color_red}
     fi
     
     # Show access URLs
     echo ""
     echo_color "Access URLs:" ${color_yellow}
-    echo "  http://localhost"
-    local_ip=$(hostname -I | awk '{print $1}')
+    echo "  http://localhost:${app_port}"
+    local_ip=$(hostname -I 2>/dev/null | awk '{print $1}')
     if [ ! -z "$local_ip" ]; then
-        echo "  http://${local_ip}"
+        echo "  http://${local_ip}:${app_port}"
     fi
+    echo ""
+    echo "Health check:"
+    echo "  http://localhost:${app_port}/health"
 }
 
 # Execute operation
@@ -228,28 +276,28 @@ case ${operation} in
         app_deploy
         ;;
     2)
-        app_reload_nginx
+        app_restart
         ;;
     3)
-        app_restart_nginx
+        app_stop
         ;;
     4)
-        app_nginx_status
+        app_start
         ;;
     5)
-        app_nginx_test
+        app_status
         ;;
     6)
-        app_nginx_error_log
+        app_error_log
         ;;
     7)
-        app_nginx_access_log
+        app_output_log
         ;;
     8)
-        app_nginx_error_log_live
+        app_error_log_live
         ;;
     9)
-        app_nginx_access_log_live
+        app_output_log_live
         ;;
     10)
         app_clean
@@ -261,10 +309,10 @@ case ${operation} in
         app_list_files
         ;;
     13)
-        app_enable_site
+        app_monitor
         ;;
     14)
-        app_disable_site
+        app_delete
         ;;
     15)
         app_check_status

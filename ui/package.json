@@ -8,7 +8,13 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.cjs",
+    "start:pm2": "pm2 start ecosystem.config.js",
+    "stop:pm2": "pm2 stop ems3-ui",
+    "restart:pm2": "pm2 restart ems3-ui",
+    "logs:pm2": "pm2 logs ems3-ui",
+    "delete:pm2": "pm2 delete ems3-ui"
   },
   "dependencies": {
     "@ag-grid-community/locale": "^34.2.0",
@@ -25,8 +31,10 @@
     "ag-grid-react": "^34.2.0",
     "async-mutex": "^0.5.0",
     "axios": "^1.12.2",
+    "compression": "^1.7.4",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
+    "express": "^4.21.2",
     "i18next": "^25.6.0",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",

@@ -80,7 +80,7 @@ export default defineConfig({
         // Increase maximum file size to accommodate larger vendor chunks
         // AG Grid (~1.3MB) and ECharts (~820KB) can now be precached if needed
         // This significantly improves new tab load performance since chunks are already in cache
-        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024, // 2 MB - allows precaching of large chunks
+        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024, // Back to 2 MB after re-enabling minification
         runtimeCaching: [
           // Cache ALL JavaScript chunks - CacheFirst strategy with long expiration
           // This ensures any chunk loaded in one tab is immediately available in new tabs
@@ -359,7 +359,7 @@ export default defineConfig({
     // These are acceptable since they're only loaded when their pages are accessed
     chunkSizeWarningLimit: 1100,
     // Minification configuration for better compression
-    minify: 'esbuild', // Changed from 'terser' to 'esbuild' - better handling of circular deps
+    minify: 'esbuild', // Re-enabled after fixing circular imports
     // Source maps for production debugging (disabled for performance)
     sourcemap: false,
     // CSS code splitting configuration

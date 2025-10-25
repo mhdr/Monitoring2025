@@ -2,6 +2,8 @@ import React, { createContext, useState, useEffect, useCallback, type ReactNode 
 import type { AuthContextType, LoginRequest, ApiError, User } from '../types/auth';
 import { login as apiLogin } from '../services/api';
 import { authStorageHelpers } from '../utils/authStorage';
+import { removeItem } from '../utils/indexedDbStorage';
+import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 import { createLogger } from '../utils/logger';
 import {
   initAuthBroadcast,
@@ -185,9 +187,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     // CRITICAL FIX: Also clear monitoring data AND sync status on logout
     // This ensures fresh sync on next login with clean state
-    // Import the storage helpers
-    const { removeItem } = await import('../utils/indexedDbStorage');
-    const { monitoringStorageHelpers } = await import('../utils/monitoringStorage');
     
     // Clear sync status flag
     await removeItem('monitoring_data_synced').catch((error) => {

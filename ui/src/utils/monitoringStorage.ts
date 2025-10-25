@@ -18,6 +18,7 @@
 
 import type { Group, Item, AlarmDto } from '../types/api';
 import type { GroupsResponseDto, ItemsResponseDto, AlarmsResponseDto } from '../types/api';
+import { cleanupExpired as cleanupIndexedDB } from './indexedDbStorage';
 import { getItem, setItem, removeItem, getStorageEstimate } from './indexedDbStorage';
 import { createLogger } from './logger';
 
@@ -232,7 +233,6 @@ export const monitoringStorageHelpers: MonitoringStorageHelpers = {
 export const cleanupExpiredData = async (): Promise<void> => {
   try {
     // IndexedDB cleanupExpired function handles this automatically
-    const { cleanupExpired: cleanupIndexedDB } = await import('./indexedDbStorage');
     const cleanedCount = await cleanupIndexedDB();
     
     if (cleanedCount > 0) {

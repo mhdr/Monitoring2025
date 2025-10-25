@@ -38,6 +38,7 @@ import { useDataSync } from '../hooks/useDataSync';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { getRedirectUrl } from '../utils/syncUtils';
 import { createLogger } from '../utils/logger';
+import { invalidateApiCache } from '../services/cacheCoordinationService';
 import type { SyncProgress } from '../hooks/useDataSync';
 import './SyncPage.css';
 
@@ -213,10 +214,8 @@ const SyncPage: React.FC = () => {
       logger.log('[SyncPage] Sync completed, initiating redirect to:', redirectTo);
       
       // Invalidate Service Worker API cache after successful sync
-      import('../services/cacheCoordinationService').then(({ invalidateApiCache }) => {
-        invalidateApiCache().catch((error) => {
-          logger.warn('[Sync] Failed to invalidate cache:', error);
-        });
+      invalidateApiCache().catch((error) => {
+        logger.warn('[Sync] Failed to invalidate cache:', error);
       });
       
       // Clear any existing timer (in case of multiple effect runs)
