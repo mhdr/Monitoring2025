@@ -93,14 +93,8 @@ app.use(compression({
   }
 }));
 
-// Security headers
+// Security headers (basic only - no CSP to avoid blocking issues)
 app.use((req, res, next) => {
-  // Skip security headers for proxied API/SignalR requests
-  // Let the backend handle its own security headers
-  if (req.path.startsWith('/api') || req.path.startsWith('/hubs')) {
-    return next();
-  }
-  
   // Prevent clickjacking
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   
@@ -112,28 +106,6 @@ app.use((req, res, next) => {
   
   // Referrer policy
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  
-  // Content Security Policy (CSP)
-  // Note: Relaxed for development. Tighten for production deployment.
-  const csp = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-eval needed for React dev tools
-    "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for MUI emotion
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data:",
-    "connect-src 'self' http://localhost:5030 ws://localhost:5030 wss://localhost:5030", // API and SignalR (HTTP + WebSocket)
-    "frame-ancestors 'self'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ].join('; ');
-  res.setHeader('Content-Security-Policy', csp);
-  
-  // HSTS - Enable this when using HTTPS
-  // Commented out for HTTP development/deployment
-  // res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  
-  // Feature Policy / Permissions Policy
-  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
   
   next();
 });
