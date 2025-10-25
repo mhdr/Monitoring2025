@@ -387,7 +387,13 @@
       "editable": "قابل ویرایش",
       "readOnly": "فقط خواندنی"
     },
-    "setCommand": "تنظیم دستور"
+    "setCommand": "تنظیم دستور",
+    "adminMenu": {
+      "title": "منوی مدیریت",
+      "moveItemToGroup": "انتقال آیتم به گروه",
+      "editGroup": "ویرایش گروه",
+      "userPermissions": "مجوزهای کاربر"
+    }
   },
   "itemCommandDialog": {
     "title": "ارسال دستور",

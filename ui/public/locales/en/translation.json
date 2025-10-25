@@ -387,7 +387,13 @@
       "editable": "Editable",
       "readOnly": "Read Only"
     },
-    "setCommand": "Set Command"
+    "setCommand": "Set Command",
+    "adminMenu": {
+      "title": "Admin Menu",
+      "moveItemToGroup": "Move Item to Group",
+      "editGroup": "Edit Group",
+      "userPermissions": "User Permissions"
+    }
   },
   "itemCommandDialog": {
     "title": "Send Command",

@@ -16,6 +16,10 @@ import {
   Button,
   Chip,
   Zoom,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import { 
   OpenInNew,
@@ -32,10 +36,15 @@ import {
   Edit as EditIcon,
   Lock as LockIcon,
   Settings as SettingsIcon,
+  MoreVert as MoreVertIcon,
+  DriveFileMove as MoveItemIcon,
+  Group as GroupIcon,
+  Security as PermissionsIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
 import { useItemAlarmStatus } from '../hooks/useItemAlarmStatus';
+import { useAuth } from '../hooks/useAuth';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
 import { createLogger } from '../utils/logger';
 import type { Item, InterfaceType, ItemType } from '../types/api';
@@ -155,10 +164,19 @@ const ItemCard: React.FC<ItemCardProps> = ({
   item 
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const prefetchUrl = useUrlPrefetch();
   const [elevation, setElevation] = useState<number>(1);
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
   const [commandDialogOpen, setCommandDialogOpen] = useState<boolean>(false);
+  const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
+
+  // Check if user has admin or manager role
+  const isAdminOrManager = useMemo(() => {
+    if (!user || !user.roles) return false;
+    const roles = user.roles.map(r => r.toLowerCase());
+    return roles.includes('admin') || roles.includes('manager');
+  }, [user]);
 
   // Check if this item has active alarms
   const { hasAlarm, alarmPriority, isChecking } = useItemAlarmStatus({
@@ -174,6 +192,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
     hasAlarm,
     alarmPriority,
     isChecking,
+    isAdminOrManager,
   });
 
   // Memoize the detail URL to avoid recalculating on every render
@@ -250,6 +269,37 @@ const ItemCard: React.FC<ItemCardProps> = ({
     });
     // Optionally, you could trigger a refresh of the item value here
     // or show a success notification
+  };
+
+  /**
+   * Admin menu handlers
+   */
+  const handleAdminMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    logger.log('Opening admin menu', { itemId, itemName: name });
+    setAdminMenuAnchor(event.currentTarget);
+  };
+
+  const handleAdminMenuClose = () => {
+    logger.log('Closing admin menu');
+    setAdminMenuAnchor(null);
+  };
+
+  const handleMoveItemToGroup = () => {
+    logger.log('Move item to group clicked (not implemented)', { itemId, itemName: name });
+    handleAdminMenuClose();
+    // TODO: Implement move item to group functionality
+  };
+
+  const handleEditGroup = () => {
+    logger.log('Edit group clicked (not implemented)', { itemId, itemName: name });
+    handleAdminMenuClose();
+    // TODO: Implement edit group functionality
+  };
+
+  const handleUserPermissions = () => {
+    logger.log('User permissions clicked (not implemented)', { itemId, itemName: name });
+    handleAdminMenuClose();
+    // TODO: Implement user permissions functionality
   };
 
   return (
@@ -487,6 +537,28 @@ const ItemCard: React.FC<ItemCardProps> = ({
                   <OpenInNew fontSize="small" data-id-ref="item-card-open-icon" />
                 </IconButton>
               </Tooltip>
+
+              {/* Admin menu dropdown - only show for Admin/Manager roles */}
+              {isAdminOrManager && (
+                <Tooltip title={t('itemCard.adminMenu.title')} arrow placement="top">
+                  <IconButton
+                    onClick={handleAdminMenuOpen}
+                    aria-label={t('itemCard.adminMenu.title')}
+                    size="small"
+                    sx={{
+                      color: 'text.secondary',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        color: 'secondary.main',
+                        transform: 'scale(1.1)',
+                      },
+                    }}
+                    data-id-ref="item-card-admin-menu-button"
+                  >
+                    <MoreVertIcon fontSize="small" data-id-ref="item-card-admin-menu-icon" />
+                  </IconButton>
+                </Tooltip>
+              )}
             </Box>
           </Box>
 
@@ -731,6 +803,41 @@ const ItemCard: React.FC<ItemCardProps> = ({
         onCommandSent={handleCommandSent}
       />
     )}
+
+    {/* Admin Menu */}
+    <Menu
+      anchorEl={adminMenuAnchor}
+      open={Boolean(adminMenuAnchor)}
+      onClose={handleAdminMenuClose}
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'right',
+      }}
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}
+      data-id-ref="item-card-admin-menu"
+    >
+      <MenuItem onClick={handleMoveItemToGroup} data-id-ref="item-card-admin-menu-move-item">
+        <ListItemIcon>
+          <MoveItemIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText primary={t('itemCard.adminMenu.moveItemToGroup')} />
+      </MenuItem>
+      <MenuItem onClick={handleEditGroup} data-id-ref="item-card-admin-menu-edit-group">
+        <ListItemIcon>
+          <GroupIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText primary={t('itemCard.adminMenu.editGroup')} />
+      </MenuItem>
+      <MenuItem onClick={handleUserPermissions} data-id-ref="item-card-admin-menu-user-permissions">
+        <ListItemIcon>
+          <PermissionsIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText primary={t('itemCard.adminMenu.userPermissions')} />
+      </MenuItem>
+    </Menu>
   </>
   );
 };
