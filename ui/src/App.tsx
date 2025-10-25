@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useFontLoader } from './hooks/useFontLoader';
 import { useLanguage } from './hooks/useLanguage';
@@ -11,28 +12,32 @@ import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
 import LazyErrorBoundary from './components/LazyErrorBoundary';
 import ServiceWorkerPrompt from './components/ServiceWorkerPrompt';
-import SyncPage from './components/SyncPage';
-import DashboardLayout from './components/DashboardLayout';
-import DetailLayout from './components/detail/DetailLayout';
-import MonitoringPage from './components/MonitoringPage';
-import PlotsPage from './components/PlotsPage';
-import ActiveAlarmsPage from './components/ActiveAlarmsPage';
-import AlarmLogPage from './components/AlarmLogPage';
-import AuditTrailPage from './components/AuditTrailPage';
-import DisabledAlarmsPage from './components/DisabledAlarmsPage';
-import SchedulerPage from './components/SchedulerPage';
-import ManagementPage from './components/ManagementPage';
-import SettingsPage from './components/SettingsPage';
-import ProfilePage from './components/ProfilePage';
-import TrendAnalysisPage from './components/detail/TrendAnalysisPage';
-import DataTablePage from './components/detail/DataTablePage';
-import LiveMonitoringDetailPage from './components/detail/LiveMonitoringDetailPage';
-import ActiveAlarmsDetailPage from './components/detail/ActiveAlarmsDetailPage';
-import AlarmLogDetailPage from './components/detail/AlarmLogDetailPage';
-import AlarmCriteriaPage from './components/detail/AlarmCriteriaPage';
-import AuditTrailDetailPage from './components/detail/AuditTrailDetailPage';
-import ManagementDetailPage from './components/detail/ManagementDetailPage';
+import LazyRoute from './components/LazyRoute';
 import './App.css';
+
+// Lazy-loaded components
+const SyncPage = React.lazy(() => import('./components/SyncPage'));
+const DashboardLayout = React.lazy(() => import('./components/DashboardLayout'));
+const DetailLayout = React.lazy(() => import('./components/detail/DetailLayout'));
+const MonitoringPage = React.lazy(() => import('./components/MonitoringPage'));
+const PlotsPage = React.lazy(() => import('./components/PlotsPage'));
+const ActiveAlarmsPage = React.lazy(() => import('./components/ActiveAlarmsPage'));
+const AlarmLogPage = React.lazy(() => import('./components/AlarmLogPage'));
+const AuditTrailPage = React.lazy(() => import('./components/AuditTrailPage'));
+const DisabledAlarmsPage = React.lazy(() => import('./components/DisabledAlarmsPage'));
+const SchedulerPage = React.lazy(() => import('./components/SchedulerPage'));
+const ManagementPage = React.lazy(() => import('./components/ManagementPage'));
+const SettingsPage = React.lazy(() => import('./components/SettingsPage'));
+const ProfilePage = React.lazy(() => import('./components/ProfilePage'));
+const TrendAnalysisPage = React.lazy(() => import('./components/detail/TrendAnalysisPage'));
+const DataTablePage = React.lazy(() => import('./components/detail/DataTablePage'));
+const LiveMonitoringDetailPage = React.lazy(() => import('./components/detail/LiveMonitoringDetailPage'));
+const ActiveAlarmsDetailPage = React.lazy(() => import('./components/detail/ActiveAlarmsDetailPage'));
+const AlarmLogDetailPage = React.lazy(() => import('./components/detail/AlarmLogDetailPage'));
+const AlarmCriteriaPage = React.lazy(() => import('./components/detail/AlarmCriteriaPage'));
+const AuditTrailDetailPage = React.lazy(() => import('./components/detail/AuditTrailDetailPage'));
+const ManagementDetailPage = React.lazy(() => import('./components/detail/ManagementDetailPage'));
+
 
 /**
  * AppRoutes Component
@@ -48,123 +53,41 @@ const AppRoutes = () => {
         <Route path="/login" element={<PublicRoute />} />
         <Route path="/sync" element={
           <ProtectedRoute>
-            <LazyErrorBoundary>
-              <SyncPage />
-            </LazyErrorBoundary>
+            <LazyRoute component={SyncPage} />
           </ProtectedRoute>
         } />
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <LazyErrorBoundary>
-              <DashboardLayout />
-            </LazyErrorBoundary>
+            <LazyRoute component={DashboardLayout} />
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="/dashboard/monitoring" replace />} />
-          <Route path="monitoring" element={
-            <LazyErrorBoundary>
-              <MonitoringPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="plots" element={
-            <LazyErrorBoundary>
-              <PlotsPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="active-alarms" element={
-            <LazyErrorBoundary>
-              <ActiveAlarmsPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="alarm-log" element={
-            <LazyErrorBoundary>
-              <AlarmLogPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="audit-trail" element={
-            <LazyErrorBoundary>
-              <AuditTrailPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="disabled-alarms" element={
-            <LazyErrorBoundary>
-              <DisabledAlarmsPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="scheduler" element={
-            <LazyErrorBoundary>
-              <SchedulerPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="management" element={
-            <LazyErrorBoundary>
-              <ManagementPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="settings" element={
-            <LazyErrorBoundary>
-              <SettingsPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="profile" element={
-            <LazyErrorBoundary>
-              <ProfilePage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="sync" element={
-            <LazyErrorBoundary>
-              <SyncPage />
-            </LazyErrorBoundary>
-          } />
+          <Route path="monitoring" element={<LazyRoute component={MonitoringPage} />} />
+          <Route path="plots" element={<LazyRoute component={PlotsPage} />} />
+          <Route path="active-alarms" element={<LazyRoute component={ActiveAlarmsPage} />} />
+          <Route path="alarm-log" element={<LazyRoute component={AlarmLogPage} />} />
+          <Route path="audit-trail" element={<LazyRoute component={AuditTrailPage} />} />
+          <Route path="disabled-alarms" element={<LazyRoute component={DisabledAlarmsPage} />} />
+          <Route path="scheduler" element={<LazyRoute component={SchedulerPage} />} />
+          <Route path="management" element={<LazyRoute component={ManagementPage} />} />
+          <Route path="settings" element={<LazyRoute component={SettingsPage} />} />
+          <Route path="profile" element={<LazyRoute component={ProfilePage} />} />
+          <Route path="sync" element={<LazyRoute component={SyncPage} />} />
         </Route>
         <Route path="/item-detail" element={
           <ProtectedRoute>
-            <LazyErrorBoundary>
-              <DetailLayout />
-            </LazyErrorBoundary>
+            <LazyRoute component={DetailLayout} />
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="/item-detail/trend-analysis" replace />} />
-          <Route path="trend-analysis" element={
-            <LazyErrorBoundary>
-              <TrendAnalysisPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="data-table" element={
-            <LazyErrorBoundary>
-              <DataTablePage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="live-monitoring" element={
-            <LazyErrorBoundary>
-              <LiveMonitoringDetailPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="active-alarms" element={
-            <LazyErrorBoundary>
-              <ActiveAlarmsDetailPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="alarm-log" element={
-            <LazyErrorBoundary>
-              <AlarmLogDetailPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="alarm-criteria" element={
-            <LazyErrorBoundary>
-              <AlarmCriteriaPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="audit-trail" element={
-            <LazyErrorBoundary>
-              <AuditTrailDetailPage />
-            </LazyErrorBoundary>
-          } />
-          <Route path="management" element={
-            <LazyErrorBoundary>
-              <ManagementDetailPage />
-            </LazyErrorBoundary>
-          } />
+          <Route path="trend-analysis" element={<LazyRoute component={TrendAnalysisPage} />} />
+          <Route path="data-table" element={<LazyRoute component={DataTablePage} />} />
+          <Route path="live-monitoring" element={<LazyRoute component={LiveMonitoringDetailPage} />} />
+          <Route path="active-alarms" element={<LazyRoute component={ActiveAlarmsDetailPage} />} />
+          <Route path="alarm-log" element={<LazyRoute component={AlarmLogDetailPage} />} />
+          <Route path="alarm-criteria" element={<LazyRoute component={AlarmCriteriaPage} />} />
+          <Route path="audit-trail" element={<LazyRoute component={AuditTrailDetailPage} />} />
+          <Route path="management" element={<LazyRoute component={ManagementDetailPage} />} />
         </Route>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
