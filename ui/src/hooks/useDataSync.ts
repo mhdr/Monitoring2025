@@ -272,7 +272,6 @@ export function useDataSync(): UseDataSyncResult {
       }
 
       const allSuccess = groupsSuccess && itemsSuccess && alarmsSuccess;
-      const hasErrors = !groupsSuccess || !itemsSuccess || !alarmsSuccess;
 
       // CRITICAL FIX: Wait for IndexedDB writes to complete before marking sync as complete
       // This prevents race condition where redirect happens before data is persisted
