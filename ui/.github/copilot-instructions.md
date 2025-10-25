@@ -15,6 +15,7 @@
 
 | Rule | Why |
 |------|-----|
+| **NEVER commit to git** | Manual control only |
 | Use `t()` for all text | i18n support |
 | Use logger, not console | Prod cleanup |
 | Use Chrome DevTools MCP | Testing/debugging |
@@ -30,6 +31,7 @@
 
 | ❌ Don't | ✅ Do |
 |---------|-------|
+| Git commits | Never use git commands |
 | `console.log()` | `logger.log()` |
 | Hardcoded colors | `theme.palette.primary.main` |
 | `marginLeft: 16` | `marginInlineStart: 2` |
@@ -668,7 +670,7 @@ src/
 public/locales/   # fa/, en/
 ```
 
-## ✅ Pre-Commit Checklist
+## ✅ Code Quality Checklist
 
 ### Code Quality
 - [ ] **TypeScript**: All types defined, no `any` type used
