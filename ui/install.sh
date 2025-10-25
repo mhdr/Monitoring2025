@@ -45,14 +45,10 @@ else
     echo "PM2 is already installed (version: $(pm2 --version))"
 fi
 
-# Install dependencies if node_modules doesn't exist
-if [ ! -d "node_modules" ]; then
-    echo ""
-    echo "Installing dependencies..."
-    npm install
-else
-    echo "Dependencies already installed"
-fi
+# Install dependencies (always run to ensure all packages are up to date)
+echo ""
+echo "Installing dependencies..."
+npm install
 
 # Build the React app
 echo ""
