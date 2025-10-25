@@ -413,6 +413,30 @@ Authorization: Bearer {{authTokenHTTPS}}
 
 ###
 
+### Move Point to Different Group - HTTP
+POST {{API_HostAddress}}/api/monitoring/MovePoint
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "pointId": "550e8400-e29b-41d4-a716-446655440000",
+  "parentId": "550e8400-e29b-41d4-a716-446655440001"
+}
+
+###
+
+### Move Point to Different Group - HTTPS
+POST {{API_HostAddress}}/api/monitoring/MovePoint
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "pointId": "550e8400-e29b-41d4-a716-446655440000",
+  "parentId": "550e8400-e29b-41d4-a716-446655440001"
+}
+
+###
+
 ### Get Alarms (all items) - HTTP
 POST {{API_HostAddress}}/api/monitoring/alarms
 Content-Type: application/json

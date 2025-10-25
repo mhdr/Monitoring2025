@@ -2654,29 +2654,108 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// </summary>
     /// <param name="request">Move point request containing point ID and new parent group ID</param>
     /// <returns>Result indicating success or failure of point move operation</returns>
-    /// <response code="200">Returns success status of the point move operation</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <remarks>
+    /// Moves a monitoring point from its current group to a new group. If the point is not assigned
+    /// to any group yet, it will create a new group assignment. This operation updates the group
+    /// hierarchy and affects which users can access the point based on their group permissions.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/movepoint
+    ///     {
+    ///        "pointId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "parentId": "550e8400-e29b-41d4-a716-446655440001"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Point successfully moved to the target group</response>
+    /// <response code="400">Validation error - invalid point ID, parent ID, or request format</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="404">Point or group not found</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("MovePoint")]
+    [ProducesResponseType(typeof(MovePointResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> MovePoint([FromBody] MovePointRequestDto request)
     {
         try
         {
+            _logger.LogInformation("MovePoint operation started: PointId={PointId}, ParentId={ParentId}", 
+                request?.PointId, request?.ParentId);
+
+            // Validate request is not null
+            if (request == null)
+            {
+                _logger.LogWarning("MovePoint failed: Request is null");
+                return BadRequest(new { success = false, message = "Request body is required" });
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("MovePoint failed: User not authenticated");
+                return Unauthorized(new { success = false, message = "Authentication required" });
             }
 
-            var response = new MovePointResponseDto()
+            // Check ModelState
+            if (!ModelState.IsValid)
             {
-                IsSuccessful = false,
-            };
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("MovePoint validation failed: UserId={UserId}, Errors={Errors}", 
+                    userId, string.Join(", ", errors));
+
+                return BadRequest(new 
+                { 
+                    success = false, 
+                    message = "Validation failed", 
+                    errors = errors 
+                });
+            }
+
+            // Validate that the destination group exists
+            var targetGroupExists = await _context.Groups.AnyAsync(g => g.Id == request.ParentId);
+            if (!targetGroupExists)
+            {
+                _logger.LogWarning("MovePoint failed: Target group not found - GroupId={GroupId}, UserId={UserId}", 
+                    request.ParentId, userId);
+                
+                return NotFound(new 
+                { 
+                    success = false, 
+                    message = $"Target group with ID {request.ParentId} not found" 
+                });
+            }
+
+            // Check if the point exists in the system (optional validation)
+            var pointExistsInCore = await Core.Points.GetPoint(request.PointId);
+            if (pointExistsInCore == null)
+            {
+                _logger.LogWarning("MovePoint failed: Point not found in Core - PointId={PointId}, UserId={UserId}", 
+                    request.PointId, userId);
+                
+                return NotFound(new 
+                { 
+                    success = false, 
+                    message = $"Point with ID {request.PointId} not found" 
+                });
+            }
 
             var point = await _context.GroupItems.FirstOrDefaultAsync(x => x.ItemId == request.PointId);
+            
             if (point == null)
             {
+                // Point has no group assignment yet - create new assignment
+                _logger.LogInformation("Creating new group assignment: PointId={PointId}, GroupId={GroupId}, UserId={UserId}", 
+                    request.PointId, request.ParentId, userId);
+
                 point = new GroupItem()
                 {
                     ItemId = request.PointId,
@@ -2687,19 +2766,44 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             }
             else
             {
+                // Update existing group assignment
+                var oldGroupId = point.GroupId;
+                _logger.LogInformation("Updating group assignment: PointId={PointId}, OldGroupId={OldGroupId}, NewGroupId={NewGroupId}, UserId={UserId}", 
+                    request.PointId, oldGroupId, request.ParentId, userId);
+
                 point.GroupId = request.ParentId;
             }
 
             await _context.SaveChangesAsync();
-            response.IsSuccessful = true;
+
+            _logger.LogInformation("MovePoint operation completed successfully: PointId={PointId}, ParentId={ParentId}, UserId={UserId}", 
+                request.PointId, request.ParentId, userId);
+
+            var response = new MovePointResponseDto()
+            {
+                IsSuccessful = true,
+                Message = "Point moved successfully to the target group"
+            };
+
             return Ok(response);
         }
-        catch (Exception e)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogWarning(ex, "MovePoint validation error: PointId={PointId}, ParentId={ParentId}", 
+                request?.PointId, request?.ParentId);
+            return BadRequest(new { success = false, message = ex.Message });
         }
-
-        return BadRequest(ModelState);
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "MovePoint unauthorized access: PointId={PointId}", request?.PointId);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in MovePoint operation: PointId={PointId}, ParentId={ParentId}, Message={Message}", 
+                request?.PointId, request?.ParentId, ex.Message);
+            return StatusCode(500, new { success = false, message = "Internal server error" });
+        }
     }
 
     /// <summary>
