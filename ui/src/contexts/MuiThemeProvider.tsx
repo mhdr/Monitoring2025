@@ -58,7 +58,6 @@ interface MuiThemeProviderProps {
 export function MuiThemeProvider({ children }: MuiThemeProviderProps): React.ReactElement {
   const { language } = useLanguage();
   const [currentTheme, setCurrentTheme] = useState<MuiThemePreset>(getDefaultMuiTheme());
-  const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize theme from IndexedDB
   useEffect(() => {
@@ -71,8 +70,6 @@ export function MuiThemeProvider({ children }: MuiThemeProviderProps): React.Rea
         }
       } catch (error) {
         logger.error('Failed to load theme from IndexedDB:', error);
-      } finally {
-        setIsInitialized(true);
       }
     })();
   }, []);
@@ -106,11 +103,8 @@ export function MuiThemeProvider({ children }: MuiThemeProviderProps): React.Rea
     [currentTheme, setTheme]
   );
 
-  // Don't render until theme is initialized
-  if (!isInitialized) {
-    return null as unknown as React.ReactElement;
-  }
-
+  // Render immediately with default theme to prevent blocking app initialization
+  // Theme will update from IndexedDB when isInitialized becomes true
   return (
     <MuiThemeContext.Provider value={contextValue}>
       <CacheProvider value={cache}>

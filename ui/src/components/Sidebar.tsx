@@ -343,7 +343,7 @@ const pulseAnimation = keyframes`
   return (
     <Drawer
       variant={isMobile ? 'temporary' : 'persistent'}
-      anchor="left"
+      anchor={theme.direction === 'rtl' ? 'right' : 'left'}
       open={isOpen}
       onClose={onToggle}
       data-id-ref="sidebar-drawer"
@@ -355,9 +355,7 @@ const pulseAnimation = keyframes`
           boxSizing: 'border-box',
           border: 'none',
           boxShadow: theme.shadows[4],
-          // Fix RTL positioning issue
-          left: '0 !important',
-          right: 'auto !important',
+          // Use logical properties for RTL support
           insetInlineStart: 0,
           insetInlineEnd: 'auto',
         },
