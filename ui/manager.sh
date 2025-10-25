@@ -40,6 +40,9 @@ then
     echo '13 - PM2 monitor (interactive)'
     echo '14 - Delete PM2 app'
     echo '15 - Check deployment status'
+    echo '16 - Troubleshoot (diagnostic checks)'
+    echo '17 - View all PM2 logs'
+    echo '18 - Test health endpoint'
     echo ''
 
     read -p 'Enter operation number: ' operation
@@ -270,6 +273,54 @@ app_check_status(){
     echo "  http://localhost:${app_port}/health"
 }
 
+app_troubleshoot(){
+    echo_color "Running diagnostic checks..." ${color_yellow}
+    if [ -f "scripts/troubleshoot.sh" ]; then
+        bash scripts/troubleshoot.sh
+    else
+        echo_color "Troubleshoot script not found" ${color_red}
+        echo "Expected: scripts/troubleshoot.sh"
+    fi
+}
+
+app_view_logs(){
+    echo_color "Viewing all PM2 logs for ${app_name}..." ${color_yellow}
+    pm2 logs ${app_name} --lines 100
+}
+
+app_test_health(){
+    echo_color "Testing health endpoints..." ${color_yellow}
+    echo ""
+    
+    # Test frontend health
+    echo "Frontend health (http://localhost:${app_port}/health):"
+    if curl -s http://localhost:${app_port}/health 2>/dev/null; then
+        echo_color "✓ Frontend is responding" ${color_green}
+    else
+        echo_color "✗ Frontend is not responding" ${color_red}
+    fi
+    echo ""
+    
+    # Test frontend root
+    echo "Frontend root (http://localhost:${app_port}):"
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${app_port} 2>/dev/null)
+    if [ "$http_code" = "200" ] || [ "$http_code" = "304" ]; then
+        echo_color "✓ Frontend root is accessible (HTTP ${http_code})" ${color_green}
+    else
+        echo_color "✗ Frontend root returned HTTP ${http_code}" ${color_red}
+    fi
+    echo ""
+    
+    # Test backend API (if available)
+    echo "Backend API (http://localhost:5030/health):"
+    if curl -s http://localhost:5030/health 2>/dev/null; then
+        echo_color "✓ Backend API is responding" ${color_green}
+    else
+        echo_color "✗ Backend API is not responding" ${color_red}
+    fi
+    echo ""
+}
+
 # Execute operation
 case ${operation} in
     1)
@@ -316,6 +367,15 @@ case ${operation} in
         ;;
     15)
         app_check_status
+        ;;
+    16)
+        app_troubleshoot
+        ;;
+    17)
+        app_view_logs
+        ;;
+    18)
+        app_test_health
         ;;
     *)
         echo_color "Invalid operation: ${operation}" ${color_red}

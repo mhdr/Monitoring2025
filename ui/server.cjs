@@ -35,20 +35,12 @@ console.log('[INFO] Port:', PORT);
 console.log('[INFO] API URL:', API_URL);
 
 // API Proxy - MUST come BEFORE body parsers to preserve request stream
-app.use('/api', (req, res, next) => {
-  console.log('[Proxy Debug] Request received:', req.method, req.url);
-  console.log('[Proxy Debug] Headers:', JSON.stringify(req.headers, null, 2));
-  next();
-}, createProxyMiddleware({
+app.use('/api', createProxyMiddleware({
   target: API_URL,
   changeOrigin: true,
-  pathRewrite: {
-    '^/': '/api/'  // Prepend /api since app.use('/api') strips it
-  },
   logLevel: 'debug',
   onProxyReq: (proxyReq, req, res) => {
-    console.log('[Proxy] Forwarding request:', req.method, proxyReq.path);
-    console.log('[Proxy] Headers:', proxyReq.getHeaders());
+    console.log('[Proxy] Forwarding request:', req.method, `${API_URL}/api${req.url}`);
   },
   onProxyRes: (proxyRes, req, res) => {
     console.log('[Proxy] Response:', proxyRes.statusCode, req.url);
@@ -166,9 +158,9 @@ app.get('*', (req, res) => {
     return res.status(404).send('File not found');
   }
 
-  // Serve index.html for all routes (SPA) via redirect to leverage static middleware
+  // Serve index.html for all routes (SPA)
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.redirect('/index.html');
+  res.sendFile(path.join(DIST_DIR, 'index.html'));
 });
 
 // Error handling
