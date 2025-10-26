@@ -1571,6 +1571,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 CalibrationA = request.CalibrationA,
                 CalibrationB = request.CalibrationB,
                 InterfaceType = (Core.Libs.InterfaceType)request.InterfaceType,
+                IsEditable = request.IsEditable,
             };
 
             // Perform the update
@@ -1647,7 +1648,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 CalibrationBOld = existingItem.CalibrationB,
                 CalibrationBNew = request.CalibrationB,
                 InterfaceTypeOld = existingItem.InterfaceType.ToString(),
-                InterfaceTypeNew = request.InterfaceType.ToString()
+                InterfaceTypeNew = request.InterfaceType.ToString(),
+                IsEditableOld = existingItem.IsEditable,
+                IsEditableNew = request.IsEditable
             };
 
             var logValueJson = JsonConvert.SerializeObject(auditLogData, Formatting.Indented);

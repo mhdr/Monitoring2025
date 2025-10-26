@@ -187,4 +187,10 @@ public class EditItemRequestDto
     /// <example>Modbus</example>
     [Required(ErrorMessage = "Interface type is required")]
     public InterfaceType InterfaceType { get; set; }
+
+    /// <summary>
+    /// Indicates if the item allows value writes from users
+    /// </summary>
+    /// <example>true</example>
+    public bool IsEditable { get; set; }
 }
