@@ -51,6 +51,7 @@ import { InterfaceTypeEnum, ItemTypeEnum } from '../types/api';
 import ValueHistoryChart from './ValueHistoryChart';
 import ItemCommandDialog from './ItemCommandDialog';
 import MoveItemDialog from './MoveItemDialog';
+import EditItemDialog from './EditItemDialog';
 
 const logger = createLogger('ItemCard');
 
@@ -172,6 +173,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
   const [adminMenuPosition, setAdminMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState<boolean>(false);
+  const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
 
   // Check if user has admin role
   const isAdmin = useMemo(() => {
@@ -345,9 +347,9 @@ const ItemCard: React.FC<ItemCardProps> = ({
   };
 
   const handleEditGroup = () => {
-    logger.log('Edit group clicked (not implemented)', { itemId, itemName: name });
+    logger.log('Opening edit item dialog', { itemId, itemName: name });
     handleAdminMenuClose();
-    // TODO: Implement edit group functionality
+    setEditDialogOpen(true);
   };
 
   const handleUserPermissions = () => {
@@ -1009,6 +1011,14 @@ const ItemCard: React.FC<ItemCardProps> = ({
       itemId={itemId}
       itemName={name}
       currentGroupId={item?.groupId}
+      onSuccess={handleMoveSuccess}
+    />
+
+    {/* Edit Item Dialog */}
+    <EditItemDialog
+      open={editDialogOpen}
+      onClose={() => setEditDialogOpen(false)}
+      itemId={itemId}
       onSuccess={handleMoveSuccess}
     />
   </>

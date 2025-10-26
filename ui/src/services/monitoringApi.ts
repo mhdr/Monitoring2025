@@ -38,6 +38,10 @@ import type {
   AddValueRequestDto,
   WriteOrAddValueRequestDto,
   WriteOrAddValueResponseDto,
+  GetItemRequestDto,
+  GetItemResponseDto,
+  EditItemRequestDto,
+  EditItemResponseDto,
 } from '../types/api';
 
 const logger = createLogger('MonitoringAPI');
@@ -475,6 +479,52 @@ export const writeOrAddValue = async (data: WriteOrAddValueRequestDto): Promise<
     const response = await apiClient.post<WriteOrAddValueResponseDto>('/api/Monitoring/WriteOrAddValue', data);
     return response.data;
   } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get a single monitoring item by ID with all its properties
+ * The user must have access to the item either through admin privileges or explicit item permissions
+ */
+export const getItem = async (itemId: string): Promise<GetItemResponseDto> => {
+  const logger = createLogger('MonitoringAPI:getItem');
+  try {
+    logger.log('Fetching item details', { itemId });
+    
+    const response = await apiClient.post<GetItemResponseDto>('/api/Monitoring/GetItem', {
+      itemId,
+    } as GetItemRequestDto);
+    
+    logger.log('Item fetched successfully', { itemId, success: response.data.success });
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to fetch item', { itemId, error });
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit a monitoring item's complete configuration
+ * Validates that the point number is unique across all items (except the current item being edited)
+ * Creates an audit log entry for the modification
+ */
+export const editItem = async (data: EditItemRequestDto): Promise<EditItemResponseDto> => {
+  const logger = createLogger('MonitoringAPI:editItem');
+  try {
+    logger.log('Editing item', { itemId: data.id, itemName: data.itemName });
+    
+    const response = await apiClient.post<EditItemResponseDto>('/api/Monitoring/EditItem', data);
+    
+    logger.log('Item edited successfully', { 
+      itemId: data.id, 
+      success: response.data.success,
+      message: response.data.message 
+    });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to edit item', { itemId: data.id, error });
     handleApiError(error);
   }
 };

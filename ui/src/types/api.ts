@@ -225,11 +225,27 @@ export const ItemTypeEnum = {
   AnalogOutput: 4,
 } as const;
 
-/** ShouldScaleType: 1 = NoScale, 2 = Scale */
+/** ShouldScaleType: 1 = On, 2 = Off */
 export type ShouldScaleType = 1 | 2;
 
-/** ValueCalculationMethod: 0 = Instantaneous, 1 = Average */
+/**
+ * ShouldScaleType enum values for better code readability
+ */
+export const ShouldScaleTypeEnum = {
+  On: 1,
+  Off: 2,
+} as const;
+
+/** ValueCalculationMethod: 0 = Default, 1 = Mean */
 export type ValueCalculationMethod = 0 | 1;
+
+/**
+ * ValueCalculationMethod enum values for better code readability
+ */
+export const ValueCalculationMethodEnum = {
+  Default: 0,
+  Mean: 1,
+} as const;
 
 /** InterfaceType: 0 = None, 1 = Sharp7, 2 = BACnet, 3 = Modbus */
 export type InterfaceType = 0 | 1 | 2 | 3;
@@ -818,4 +834,153 @@ export interface AuditLogResponseDto {
 export interface SettingsVersionResponseDto {
   version?: string | null;
   userVersion?: string | null;
+}
+
+// ==================== GetItem/EditItem DTOs ====================
+
+/**
+ * Request DTO for retrieving a single monitoring item by ID
+ */
+export interface GetItemRequestDto {
+  /** Unique identifier of the monitoring item to retrieve */
+  itemId: string;
+}
+
+/**
+ * Response DTO containing a single monitoring item with all its properties
+ */
+export interface GetItemResponseDto {
+  /** Indicates whether the operation was successful */
+  success: boolean;
+  /** Error message if the operation failed */
+  errorMessage?: string | null;
+  /** The monitoring item data */
+  data?: MonitoringItem | null;
+}
+
+/**
+ * Represents a complete monitoring item with all its properties (same as Item but from GetItem endpoint)
+ */
+export interface MonitoringItem {
+  /** Unique identifier for the item */
+  id: string;
+  /** Group ID that this item belongs to */
+  groupId?: string | null;
+  /** Type of monitoring item (digital/analog, input/output) */
+  itemType: ItemType;
+  /** Display name of the item */
+  name: string;
+  /** Display name of the item in Farsi */
+  nameFa?: string | null;
+  /** Hardware point number for communication */
+  pointNumber: number;
+  /** Whether to apply scaling to raw values */
+  shouldScale: ShouldScaleType;
+  /** Minimum raw value from the hardware */
+  normMin: number;
+  /** Maximum raw value from the hardware */
+  normMax: number;
+  /** Minimum scaled engineering value */
+  scaleMin: number;
+  /** Maximum scaled engineering value */
+  scaleMax: number;
+  /** Interval in seconds for saving current values */
+  saveInterval: number;
+  /** Interval in seconds for saving historical values */
+  saveHistoricalInterval: number;
+  /** Method for calculating values from samples */
+  calculationMethod: ValueCalculationMethod;
+  /** Number of samples used for calculation */
+  numberOfSamples: number;
+  /** Text to display when boolean value is true */
+  onText?: string | null;
+  /** Text to display when boolean value is true in Farsi */
+  onTextFa?: string | null;
+  /** Text to display when boolean value is false */
+  offText?: string | null;
+  /** Text to display when boolean value is false in Farsi */
+  offTextFa?: string | null;
+  /** Engineering unit for the value (°C, bar, etc.) */
+  unit?: string | null;
+  /** Engineering unit for the value in Farsi */
+  unitFa?: string | null;
+  /** Whether the item is disabled from data collection */
+  isDisabled?: boolean | null;
+  /** Interface type for communication */
+  interfaceType: InterfaceType;
+  /** Whether the current user can edit this item */
+  isEditable: boolean;
+}
+
+/**
+ * Request DTO for editing a monitoring item's complete configuration
+ */
+export interface EditItemRequestDto {
+  /** Unique identifier of the monitoring item to edit */
+  id: string;
+  /** Type of monitoring item (digital/analog, input/output) */
+  itemType: ItemType;
+  /** Display name of the monitoring item (1-200 characters) */
+  itemName: string;
+  /** Display name of the monitoring item in Farsi (1-200 characters) */
+  itemNameFa?: string | null;
+  /** Physical point number for controller mapping (0-2147483647) */
+  pointNumber: number;
+  /** Whether to apply scaling to raw values */
+  shouldScale: ShouldScaleType;
+  /** Minimum value of the normalized range (before scaling) */
+  normMin: number;
+  /** Maximum value of the normalized range (before scaling) */
+  normMax: number;
+  /** Minimum value of the scaled range (after scaling) */
+  scaleMin: number;
+  /** Maximum value of the scaled range (after scaling) */
+  scaleMax: number;
+  /** Interval in seconds for saving current values (0-2147483647) */
+  saveInterval: number;
+  /** Interval in seconds for saving historical values (0-2147483647) */
+  saveHistoricalInterval: number;
+  /** Method for calculating values from samples */
+  calculationMethod: ValueCalculationMethod;
+  /** Number of samples to use for value calculation (1-2147483647) */
+  numberOfSamples: number;
+  /** Text to display when digital value is ON/true (0-100 characters) */
+  onText?: string | null;
+  /** Text to display when digital value is ON/true in Farsi (0-100 characters) */
+  onTextFa?: string | null;
+  /** Text to display when digital value is OFF/false (0-100 characters) */
+  offText?: string | null;
+  /** Text to display when digital value is OFF/false in Farsi (0-100 characters) */
+  offTextFa?: string | null;
+  /** Unit of measurement for the value (0-50 characters) */
+  unit?: string | null;
+  /** Unit of measurement for the value in Farsi (0-50 characters) */
+  unitFa?: string | null;
+  /** Indicates if the monitoring item is disabled */
+  isDisabled: boolean;
+}
+
+/**
+ * Types of errors that can occur during item editing
+ */
+export const EditItemErrorType = {
+  None: 0,
+  InvalidPointNumber: 1,
+  DuplicatePointNumber: 2,
+  ValidationError: 3,
+  Unauthorized: 4,
+} as const;
+
+export type EditItemErrorType = typeof EditItemErrorType[keyof typeof EditItemErrorType];
+
+/**
+ * Response DTO for editing a monitoring item
+ */
+export interface EditItemResponseDto {
+  /** Indicates if the edit operation was successful */
+  success: boolean;
+  /** Detailed message about the operation result */
+  message?: string | null;
+  /** Error type if the operation failed */
+  error?: EditItemErrorType;
 }

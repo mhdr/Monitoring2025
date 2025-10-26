@@ -166,7 +166,11 @@
     "retry": "Retry",
     "error": "Error",
     "on": "ON",
-    "off": "OFF"
+    "off": "OFF",
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving..."
   },
   "settings": {
     "pageTitle": "Settings",
@@ -435,6 +439,54 @@
     "errors": {
       "moveFailed": "Failed to move point",
       "unknownError": "An unknown error occurred"
+    }
+  },
+  "editItemDialog": {
+    "title": "Edit Point Configuration",
+    "sections": {
+      "basicInformation": "Basic Information",
+      "digitalFields": "Digital Point Settings",
+      "analogFields": "Analog Point Settings",
+      "rawRange": "Raw Range (Hardware Values)",
+      "scaleRange": "Scaled Range (Engineering Values)"
+    },
+    "fields": {
+      "itemType": "Item Type",
+      "pointNumber": "Point Number",
+      "itemName": "Name",
+      "itemNameFa": "Name (Persian)",
+      "valueCalculationMethod": "Value Calculation Method",
+      "numberOfSamples": "Number of Samples",
+      "saveIntervalSeconds": "Save Interval (seconds)",
+      "saveHistoricalIntervalSeconds": "Historical Save Interval (seconds)",
+      "isDisabled": "Disabled",
+      "onText": "ON Text",
+      "onTextFa": "ON Text (Persian)",
+      "offText": "OFF Text",
+      "offTextFa": "OFF Text (Persian)",
+      "unit": "Unit",
+      "unitFa": "Unit (Persian)",
+      "shouldScale": "Enable Scaling",
+      "rawLow": "Raw Low",
+      "rawHigh": "Raw High",
+      "scaleLow": "Scale Low",
+      "scaleHigh": "Scale High"
+    },
+    "valueCalculationMethods": {
+      "lastValue": "Last Value",
+      "average": "Average"
+    },
+    "errors": {
+      "loadFailed": "Failed to load point data",
+      "saveFailed": "Failed to save changes",
+      "itemNameRequired": "Point name is required",
+      "invalidPointNumber": "Point number must be a positive integer",
+      "invalidSaveInterval": "Save interval must be greater than zero",
+      "invalidRawRange": "Raw High and Raw Low must be different",
+      "invalidScaleRange": "Scale High and Scale Low must be different",
+      "duplicatePointNumber": "This point number is already in use",
+      "validationError": "Please correct the validation errors",
+      "unauthorized": "You don't have permission to edit this point"
     }
   }
 }

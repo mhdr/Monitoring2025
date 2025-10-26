@@ -166,7 +166,11 @@
     "retry": "تلاش مجدد",
     "error": "خطا",
     "on": "روشن",
-    "off": "خاموش"
+    "off": "خاموش",
+    "close": "بستن",
+    "cancel": "انصراف",
+    "save": "ذخیره",
+    "saving": "در حال ذخیره..."
   },
   "settings": {
     "pageTitle": "تنظیمات",
@@ -435,6 +439,54 @@
     "errors": {
       "moveFailed": "انتقال پوینت ناموفق بود",
       "unknownError": "خطای نامشخصی رخ داد"
+    }
+  },
+  "editItemDialog": {
+    "title": "ویرایش تنظیمات پوینت",
+    "sections": {
+      "basicInformation": "اطلاعات اصلی",
+      "digitalFields": "تنظیمات پوینت دیجیتال",
+      "analogFields": "تنظیمات پوینت آنالوگ",
+      "rawRange": "محدوده خام (مقادیر سخت‌افزار)",
+      "scaleRange": "محدوده مقیاس‌بندی (مقادیر مهندسی)"
+    },
+    "fields": {
+      "itemType": "نوع آیتم",
+      "pointNumber": "شماره پوینت",
+      "itemName": "نام",
+      "itemNameFa": "نام (فارسی)",
+      "valueCalculationMethod": "روش محاسبه مقدار",
+      "numberOfSamples": "تعداد نمونه‌ها",
+      "saveIntervalSeconds": "فاصله ذخیره‌سازی (ثانیه)",
+      "saveHistoricalIntervalSeconds": "فاصله ذخیره‌سازی تاریخچه (ثانیه)",
+      "isDisabled": "غیرفعال",
+      "onText": "متن روشن",
+      "onTextFa": "متن روشن (فارسی)",
+      "offText": "متن خاموش",
+      "offTextFa": "متن خاموش (فارسی)",
+      "unit": "واحد",
+      "unitFa": "واحد (فارسی)",
+      "shouldScale": "فعال‌سازی مقیاس‌بندی",
+      "rawLow": "حداقل خام",
+      "rawHigh": "حداکثر خام",
+      "scaleLow": "حداقل مقیاس",
+      "scaleHigh": "حداکثر مقیاس"
+    },
+    "valueCalculationMethods": {
+      "lastValue": "آخرین مقدار",
+      "average": "میانگین"
+    },
+    "errors": {
+      "loadFailed": "بارگذاری اطلاعات پوینت ناموفق بود",
+      "saveFailed": "ذخیره تغییرات ناموفق بود",
+      "itemNameRequired": "نام پوینت الزامی است",
+      "invalidPointNumber": "شماره پوینت باید یک عدد صحیح مثبت باشد",
+      "invalidSaveInterval": "فاصله ذخیره‌سازی باید بیشتر از صفر باشد",
+      "invalidRawRange": "حداکثر و حداقل خام باید متفاوت باشند",
+      "invalidScaleRange": "حداکثر و حداقل مقیاس باید متفاوت باشند",
+      "duplicatePointNumber": "این شماره پوینت قبلاً استفاده شده است",
+      "validationError": "لطفاً خطاهای اعتبارسنجی را برطرف کنید",
+      "unauthorized": "شما مجوز ویرایش این پوینت را ندارید"
     }
   }
 }
