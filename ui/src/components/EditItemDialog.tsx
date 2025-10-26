@@ -119,6 +119,7 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [itemData, setItemData] = useState<MonitoringItem | null>(null);
   
   const [formData, setFormData] = useState<EditItemFormData>({
@@ -282,6 +283,7 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
 
     setIsSaving(true);
     setSaveError(null);
+    setFieldErrors({});
     logger.log('Saving item changes for itemId:', itemId);
 
     try {
@@ -355,7 +357,52 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
       handleClose();
     } catch (error) {
       logger.error('Error saving item:', error);
-      setSaveError(t('editItemDialog.errors.saveFailed'));
+      
+      // Check if this is a validation error with field-specific errors
+      const apiError = error as Error & { status?: number; errors?: Record<string, string[]> };
+      
+      if (apiError.status === 400 && apiError.errors) {
+        // Parse validation errors - map PascalCase backend fields to camelCase form fields
+        const fieldErrorMap: Record<string, string> = {};
+        const fieldNameMap: Record<string, string> = {
+          'ItemName': 'itemName',
+          'ItemNameFa': 'itemNameFa',
+          'PointNumber': 'pointNumber',
+          'NumberOfSamples': 'numberOfSamples',
+          'SaveInterval': 'saveIntervalSeconds',
+          'SaveHistoricalInterval': 'saveHistoricalIntervalSeconds',
+          'NormMin': 'rawLow',
+          'NormMax': 'rawHigh',
+          'ScaleMin': 'scaleLow',
+          'ScaleMax': 'scaleHigh',
+          'Unit': 'unit',
+          'UnitFa': 'unitFa',
+          'OnText': 'onText',
+          'OnTextFa': 'onTextFa',
+          'OffText': 'offText',
+          'OffTextFa': 'offTextFa',
+          'CalibrationA': 'calibrationA',
+          'CalibrationB': 'calibrationB',
+          'SaveOnChangeRange': 'saveOnChangeRange',
+        };
+        
+        // Convert backend errors to field errors
+        Object.keys(apiError.errors).forEach((backendField) => {
+          const formField = fieldNameMap[backendField] || backendField.charAt(0).toLowerCase() + backendField.slice(1);
+          const errorMessages = apiError.errors![backendField];
+          if (errorMessages && errorMessages.length > 0) {
+            // Join multiple error messages with a space
+            fieldErrorMap[formField] = errorMessages.join(' ');
+          }
+        });
+        
+        setFieldErrors(fieldErrorMap);
+        setSaveError(t('editItemDialog.errors.validationErrorsFound'));
+        logger.error('Validation errors:', fieldErrorMap);
+      } else {
+        // Generic error
+        setSaveError(apiError.message || t('editItemDialog.errors.saveFailed'));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -395,6 +442,7 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
       setItemData(null);
       setLoadError(null);
       setSaveError(null);
+      setFieldErrors({});
       onClose();
     }
   };
@@ -494,6 +542,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                   onChange={(e) => handleFieldChange('pointNumber', parseInt(e.target.value) || 0)}
                   disabled={isSaving}
                   required
+                  error={!!fieldErrors.pointNumber}
+                  helperText={fieldErrors.pointNumber || ''}
                   inputProps={{ min: 0, max: 2147483647 }}
                   data-id-ref="edit-item-dialog-point-number"
                 />
@@ -547,6 +597,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                   onChange={(e) => handleFieldChange('itemName', e.target.value)}
                   disabled={isSaving}
                   required
+                  error={!!fieldErrors.itemName}
+                  helperText={fieldErrors.itemName || ''}
                   inputProps={{ maxLength: 200 }}
                   data-id-ref="edit-item-dialog-item-name"
                 />
@@ -557,6 +609,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                   value={formData.itemNameFa}
                   onChange={(e) => handleFieldChange('itemNameFa', e.target.value)}
                   disabled={isSaving}
+                  error={!!fieldErrors.itemNameFa}
+                  helperText={fieldErrors.itemNameFa || ''}
                   inputProps={{ maxLength: 200 }}
                   data-id-ref="edit-item-dialog-item-name-fa"
                 />
@@ -590,6 +644,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                   onChange={(e) => handleFieldChange('numberOfSamples', parseInt(e.target.value) || 1)}
                   disabled={isSaving}
                   required
+                  error={!!fieldErrors.numberOfSamples}
+                  helperText={fieldErrors.numberOfSamples || ''}
                   inputProps={{ min: 1, max: 100 }}
                   data-id-ref="edit-item-dialog-number-of-samples"
                 />
@@ -604,6 +660,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                   onChange={(e) => handleFieldChange('saveIntervalSeconds', parseInt(e.target.value) || 5)}
                   disabled={isSaving}
                   required
+                  error={!!fieldErrors.saveIntervalSeconds}
+                  helperText={fieldErrors.saveIntervalSeconds || ''}
                   inputProps={{ min: 1, max: 3600 }}
                   data-id-ref="edit-item-dialog-save-interval"
                 />
@@ -616,6 +674,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                   onChange={(e) => handleFieldChange('saveHistoricalIntervalSeconds', parseInt(e.target.value) || 5)}
                   disabled={isSaving}
                   required
+                  error={!!fieldErrors.saveHistoricalIntervalSeconds}
+                  helperText={fieldErrors.saveHistoricalIntervalSeconds || ''}
                   inputProps={{ min: 1, max: 3600 }}
                   data-id-ref="edit-item-dialog-save-historical-interval"
                 />
@@ -681,7 +741,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                   value={formData.saveOnChangeRange}
                   onChange={(e) => handleFieldChange('saveOnChangeRange', parseFloat(e.target.value) || 0)}
                   disabled={isSaving}
-                  helperText={t('editItemDialog.fields.saveOnChangeRangeHelper')}
+                  error={!!fieldErrors.saveOnChangeRange}
+                  helperText={fieldErrors.saveOnChangeRange || t('editItemDialog.fields.saveOnChangeRangeHelper')}
                   inputProps={{ min: 0, step: 0.1 }}
                   data-id-ref="edit-item-dialog-save-on-change-range"
                 />
@@ -715,7 +776,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                       value={formData.calibrationA}
                       onChange={(e) => handleFieldChange('calibrationA', parseFloat(e.target.value) || 1.0)}
                       disabled={isSaving}
-                      helperText={t('editItemDialog.fields.calibrationAHelper')}
+                      error={!!fieldErrors.calibrationA}
+                      helperText={fieldErrors.calibrationA || t('editItemDialog.fields.calibrationAHelper')}
                       inputProps={{ step: 0.01 }}
                       data-id-ref="edit-item-dialog-calibration-a"
                     />
@@ -727,7 +789,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                       value={formData.calibrationB}
                       onChange={(e) => handleFieldChange('calibrationB', parseFloat(e.target.value) || 0.0)}
                       disabled={isSaving}
-                      helperText={t('editItemDialog.fields.calibrationBHelper')}
+                      error={!!fieldErrors.calibrationB}
+                      helperText={fieldErrors.calibrationB || t('editItemDialog.fields.calibrationBHelper')}
                       inputProps={{ step: 0.01 }}
                       data-id-ref="edit-item-dialog-calibration-b"
                     />
@@ -757,6 +820,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                       value={formData.onText}
                       onChange={(e) => handleFieldChange('onText', e.target.value)}
                       disabled={isSaving}
+                      error={!!fieldErrors.onText}
+                      helperText={fieldErrors.onText || ''}
                       inputProps={{ maxLength: 50 }}
                       data-id-ref="edit-item-dialog-on-text"
                     />
@@ -767,6 +832,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                       value={formData.onTextFa}
                       onChange={(e) => handleFieldChange('onTextFa', e.target.value)}
                       disabled={isSaving}
+                      error={!!fieldErrors.onTextFa}
+                      helperText={fieldErrors.onTextFa || ''}
                       inputProps={{ maxLength: 50 }}
                       data-id-ref="edit-item-dialog-on-text-fa"
                     />
@@ -779,6 +846,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                       value={formData.offText}
                       onChange={(e) => handleFieldChange('offText', e.target.value)}
                       disabled={isSaving}
+                      error={!!fieldErrors.offText}
+                      helperText={fieldErrors.offText || ''}
                       inputProps={{ maxLength: 50 }}
                       data-id-ref="edit-item-dialog-off-text"
                     />
@@ -789,6 +858,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                       value={formData.offTextFa}
                       onChange={(e) => handleFieldChange('offTextFa', e.target.value)}
                       disabled={isSaving}
+                      error={!!fieldErrors.offTextFa}
+                      helperText={fieldErrors.offTextFa || ''}
                       inputProps={{ maxLength: 50 }}
                       data-id-ref="edit-item-dialog-off-text-fa"
                     />
@@ -818,6 +889,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                       value={formData.unit}
                       onChange={(e) => handleFieldChange('unit', e.target.value)}
                       disabled={isSaving}
+                      error={!!fieldErrors.unit}
+                      helperText={fieldErrors.unit || ''}
                       inputProps={{ maxLength: 20 }}
                       data-id-ref="edit-item-dialog-unit"
                     />
@@ -828,6 +901,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                       value={formData.unitFa}
                       onChange={(e) => handleFieldChange('unitFa', e.target.value)}
                       disabled={isSaving}
+                      error={!!fieldErrors.unitFa}
+                      helperText={fieldErrors.unitFa || ''}
                       inputProps={{ maxLength: 20 }}
                       data-id-ref="edit-item-dialog-unit-fa"
                     />
@@ -862,6 +937,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                           value={formData.rawLow}
                           onChange={(e) => handleFieldChange('rawLow', parseFloat(e.target.value) || 0)}
                           disabled={isSaving}
+                          error={!!fieldErrors.rawLow}
+                          helperText={fieldErrors.rawLow || ''}
                           data-id-ref="edit-item-dialog-raw-low"
                         />
 
@@ -872,6 +949,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                           value={formData.rawHigh}
                           onChange={(e) => handleFieldChange('rawHigh', parseFloat(e.target.value) || 0)}
                           disabled={isSaving}
+                          error={!!fieldErrors.rawHigh}
+                          helperText={fieldErrors.rawHigh || ''}
                           data-id-ref="edit-item-dialog-raw-high"
                         />
                       </Box>
@@ -887,6 +966,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                           value={formData.scaleLow}
                           onChange={(e) => handleFieldChange('scaleLow', parseFloat(e.target.value) || 0)}
                           disabled={isSaving}
+                          error={!!fieldErrors.scaleLow}
+                          helperText={fieldErrors.scaleLow || ''}
                           data-id-ref="edit-item-dialog-scale-low"
                         />
 
@@ -897,6 +978,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                           value={formData.scaleHigh}
                           onChange={(e) => handleFieldChange('scaleHigh', parseFloat(e.target.value) || 0)}
                           disabled={isSaving}
+                          error={!!fieldErrors.scaleHigh}
+                          helperText={fieldErrors.scaleHigh || ''}
                           data-id-ref="edit-item-dialog-scale-high"
                         />
                       </Box>

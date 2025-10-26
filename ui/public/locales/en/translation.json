@@ -509,6 +509,7 @@
       "invalidScaleRange": "Scale High and Scale Low must be different",
       "duplicatePointNumber": "This point number is already in use",
       "validationError": "Please correct the validation errors",
+      "validationErrorsFound": "Validation errors found. Please check the fields below.",
       "unauthorized": "You don't have permission to edit this point"
     }
   }
