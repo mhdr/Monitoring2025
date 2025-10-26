@@ -102,12 +102,12 @@ public class EditItemRequestDto
     /// </summary>
     /// <example>10</example>
     [Range(1, int.MaxValue, ErrorMessage = "Number of samples must be at least 1")]
-    public int NumberOfSamples { get; set; }
+    public int NumberOfSamples { get; set; } = 1;
 
     /// <summary>
     /// Whether to save data when value changes significantly
     /// </summary>
-    public SaveOnChange SaveOnChange { get; set; }
+    public SaveOnChange? SaveOnChange { get; set; }
 
     /// <summary>
     /// The range threshold for triggering save on change (percentage or absolute value)

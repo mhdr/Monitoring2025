@@ -471,7 +471,6 @@ public class MonitoringController : ControllerBase
             if (user.UserName?.ToLower() == "admin")
             {
                 hasAccess = true;
-                isEditable = true;
                 _logger.LogDebug("GetItem: Admin user {UserId} has full access to item {ItemId}", 
                     userId, request.ItemId);
             }
@@ -484,7 +483,6 @@ public class MonitoringController : ControllerBase
                 if (permission != null)
                 {
                     hasAccess = true;
-                    isEditable = item.IsEditable;
                     _logger.LogDebug("GetItem: User {UserId} has permission for item {ItemId}", 
                         userId, request.ItemId);
                 }
@@ -539,7 +537,7 @@ public class MonitoringController : ControllerBase
                     SaveHistoricalInterval = item.SaveHistoricalInterval,
                     ScaleMax = item.ScaleMax,
                     ScaleMin = item.ScaleMin,
-                    IsEditable = isEditable,
+                    IsEditable = item.IsEditable,
                     InterfaceType = (Share.Libs.InterfaceType)item.InterfaceType,
                 }
             };
@@ -1558,7 +1556,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 SaveHistoricalInterval = request.SaveHistoricalInterval,
                 CalculationMethod = (Core.Libs.ValueCalculationMethod)request.CalculationMethod,
                 NumberOfSamples = request.NumberOfSamples,
-                SaveOnChange = (Core.Libs.SaveOnChange)request.SaveOnChange,
+                SaveOnChange = request.SaveOnChange.HasValue 
+                    ? (Core.Libs.SaveOnChange)request.SaveOnChange.Value 
+                    : (Core.Libs.SaveOnChange)0,
                 SaveOnChangeRange = request.SaveOnChangeRange,
                 OnText = request.OnText,
                 OnTextFa = request.OnTextFa,
