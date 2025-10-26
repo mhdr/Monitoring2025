@@ -391,7 +391,7 @@
     "adminMenu": {
       "title": "Admin Menu",
       "moveItemToGroup": "Move Point to Folder",
-      "editGroup": "Edit Group",
+      "editPoint": "Edit Point",
       "userPermissions": "User Permissions"
     }
   },

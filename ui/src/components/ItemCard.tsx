@@ -988,11 +988,11 @@ const ItemCard: React.FC<ItemCardProps> = ({
         </ListItemIcon>
         <ListItemText primary={t('itemCard.adminMenu.moveItemToGroup')} />
       </MenuItem>
-      <MenuItem onClick={handleEditGroup} data-id-ref="item-card-admin-menu-edit-group">
+      <MenuItem onClick={handleEditGroup} data-id-ref="item-card-admin-menu-edit-point">
         <ListItemIcon>
           <GroupIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText primary={t('itemCard.adminMenu.editGroup')} />
+        <ListItemText primary={t('itemCard.adminMenu.editPoint')} />
       </MenuItem>
       <MenuItem onClick={handleUserPermissions} data-id-ref="item-card-admin-menu-user-permissions">
         <ListItemIcon>

@@ -391,7 +391,7 @@
     "adminMenu": {
       "title": "منوی مدیریت",
       "moveItemToGroup": "انتقال پوینت به پوشه",
-      "editGroup": "ویرایش گروه",
+      "editPoint": "ویرایش پوینت",
       "userPermissions": "مجوزهای کاربر"
     }
   },
