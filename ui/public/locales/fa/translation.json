@@ -445,6 +445,7 @@
     "title": "ویرایش تنظیمات پوینت",
     "sections": {
       "basicInformation": "اطلاعات اصلی",
+      "advancedSettings": "تنظیمات پیشرفته",
       "digitalFields": "تنظیمات پوینت دیجیتال",
       "analogFields": "تنظیمات پوینت آنالوگ",
       "rawRange": "محدوده خام (مقادیر سخت‌افزار)",
@@ -470,7 +471,21 @@
       "rawLow": "حداقل خام",
       "rawHigh": "حداکثر خام",
       "scaleLow": "حداقل مقیاس",
-      "scaleHigh": "حداکثر مقیاس"
+      "scaleHigh": "حداکثر مقیاس",
+      "saveOnChange": "ذخیره در صورت تغییر",
+      "saveOnChangeRange": "آستانه تغییر",
+      "saveOnChangeRangeHelper": "مقدار باید به این اندازه تغییر کند تا ذخیره شود",
+      "isCalibrationEnabled": "فعال‌سازی کالیبراسیون",
+      "calibrationFormula": "فرمول کالیبراسیون: مقدار کالیبره شده = A × مقدار خام + B",
+      "calibrationA": "ضریب A (ضرب‌کننده)",
+      "calibrationAHelper": "مقدار خام را در این ضریب ضرب کنید",
+      "calibrationB": "ضریب B (افست)",
+      "calibrationBHelper": "این افست را به نتیجه اضافه کنید"
+    },
+    "saveOnChangeOptions": {
+      "default": "پیش‌فرض (تنظیمات سیستم)",
+      "on": "فعال",
+      "off": "غیرفعال"
     },
     "valueCalculationMethods": {
       "lastValue": "آخرین مقدار",

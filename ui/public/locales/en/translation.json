@@ -445,6 +445,7 @@
     "title": "Edit Point Configuration",
     "sections": {
       "basicInformation": "Basic Information",
+      "advancedSettings": "Advanced Settings",
       "digitalFields": "Digital Point Settings",
       "analogFields": "Analog Point Settings",
       "rawRange": "Raw Range (Hardware Values)",
@@ -470,7 +471,21 @@
       "rawLow": "Raw Low",
       "rawHigh": "Raw High",
       "scaleLow": "Scale Low",
-      "scaleHigh": "Scale High"
+      "scaleHigh": "Scale High",
+      "saveOnChange": "Save On Change",
+      "saveOnChangeRange": "Change Threshold",
+      "saveOnChangeRangeHelper": "Value must change by this amount to trigger a save",
+      "isCalibrationEnabled": "Enable Calibration",
+      "calibrationFormula": "Calibration Formula: Calibrated Value = A × Raw Value + B",
+      "calibrationA": "Coefficient A (Multiplier)",
+      "calibrationAHelper": "Multiply raw value by this coefficient",
+      "calibrationB": "Coefficient B (Offset)",
+      "calibrationBHelper": "Add this offset to the result"
+    },
+    "saveOnChangeOptions": {
+      "default": "Default (System Setting)",
+      "on": "Enabled",
+      "off": "Disabled"
     },
     "valueCalculationMethods": {
       "lastValue": "Last Value",

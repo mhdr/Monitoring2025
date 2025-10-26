@@ -192,6 +192,10 @@ export interface Item {
   calculationMethod: ValueCalculationMethod;
   /** Number of samples used for calculation */
   numberOfSamples: number;
+  /** Whether to save values on change */
+  saveOnChange?: SaveOnChange | null;
+  /** The range threshold for triggering save on change (percentage or absolute value) */
+  saveOnChangeRange?: number | null;
   /** Text to display when boolean value is true */
   onText?: string | null;
   /** Text to display when boolean value is true in Farsi */
@@ -206,6 +210,12 @@ export interface Item {
   unitFa?: string | null;
   /** Whether the item is disabled from data collection */
   isDisabled?: boolean | null;
+  /** Whether calibration is enabled for this item */
+  isCalibrationEnabled?: boolean | null;
+  /** Calibration coefficient A (multiplier) in the formula: calibrated_value = A * raw_value + B */
+  calibrationA?: number | null;
+  /** Calibration coefficient B (offset) in the formula: calibrated_value = A * raw_value + B */
+  calibrationB?: number | null;
   /** Interface type for communication */
   interfaceType: InterfaceType;
   /** Whether the current user can edit this item */
@@ -245,6 +255,18 @@ export type ValueCalculationMethod = 0 | 1;
 export const ValueCalculationMethodEnum = {
   Default: 0,
   Mean: 1,
+} as const;
+
+/** SaveOnChange: 0 = Default, 1 = On, 2 = Off */
+export type SaveOnChange = 0 | 1 | 2;
+
+/**
+ * SaveOnChange enum values for better code readability
+ */
+export const SaveOnChangeEnum = {
+  Default: 0,
+  On: 1,
+  Off: 2,
 } as const;
 
 /** InterfaceType: 0 = None, 1 = Sharp7, 2 = BACnet, 3 = Modbus */
@@ -892,6 +914,10 @@ export interface MonitoringItem {
   calculationMethod: ValueCalculationMethod;
   /** Number of samples used for calculation */
   numberOfSamples: number;
+  /** Whether to save values on change */
+  saveOnChange?: SaveOnChange | null;
+  /** The range threshold for triggering save on change (percentage or absolute value) */
+  saveOnChangeRange?: number | null;
   /** Text to display when boolean value is true */
   onText?: string | null;
   /** Text to display when boolean value is true in Farsi */
@@ -906,6 +932,12 @@ export interface MonitoringItem {
   unitFa?: string | null;
   /** Whether the item is disabled from data collection */
   isDisabled?: boolean | null;
+  /** Whether calibration is enabled for this item */
+  isCalibrationEnabled?: boolean | null;
+  /** Calibration coefficient A (multiplier) in the formula: calibrated_value = A * raw_value + B */
+  calibrationA?: number | null;
+  /** Calibration coefficient B (offset) in the formula: calibrated_value = A * raw_value + B */
+  calibrationB?: number | null;
   /** Interface type for communication */
   interfaceType: InterfaceType;
   /** Whether the current user can edit this item */
@@ -944,6 +976,10 @@ export interface EditItemRequestDto {
   calculationMethod: ValueCalculationMethod;
   /** Number of samples to use for value calculation (1-2147483647) */
   numberOfSamples: number;
+  /** Whether to save values on change */
+  saveOnChange?: SaveOnChange | null;
+  /** The range threshold for triggering save on change (percentage or absolute value) */
+  saveOnChangeRange?: number | null;
   /** Text to display when digital value is ON/true (0-100 characters) */
   onText?: string | null;
   /** Text to display when digital value is ON/true in Farsi (0-100 characters) */
@@ -958,6 +994,12 @@ export interface EditItemRequestDto {
   unitFa?: string | null;
   /** Indicates if the monitoring item is disabled */
   isDisabled: boolean;
+  /** Whether calibration is enabled for this item */
+  isCalibrationEnabled?: boolean | null;
+  /** Calibration coefficient A (multiplier) in the formula: calibrated_value = A * raw_value + B */
+  calibrationA?: number | null;
+  /** Calibration coefficient B (offset) in the formula: calibrated_value = A * raw_value + B */
+  calibrationB?: number | null;
 }
 
 /**

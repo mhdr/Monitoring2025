@@ -51,9 +51,16 @@ const ValueCalculationMethodEnum = {
   Average: 1,
 } as const;
 
+const SaveOnChangeEnum = {
+  Default: 0,
+  On: 1,
+  Off: 2,
+} as const;
+
 type ItemType = typeof ItemTypeEnum[keyof typeof ItemTypeEnum];
 type ShouldScaleType = typeof ShouldScaleTypeEnum[keyof typeof ShouldScaleTypeEnum];
 type ValueCalculationMethod = typeof ValueCalculationMethodEnum[keyof typeof ValueCalculationMethodEnum];
+type SaveOnChange = typeof SaveOnChangeEnum[keyof typeof SaveOnChangeEnum];
 
 interface EditItemDialogProps {
   open: boolean;
@@ -76,6 +83,8 @@ interface EditItemFormData {
   saveIntervalSeconds: number;
   saveHistoricalIntervalSeconds: number;
   numberOfSamples: number;
+  saveOnChange: SaveOnChange;
+  saveOnChangeRange: number;
   onText: string;
   onTextFa: string;
   offText: string;
@@ -83,6 +92,9 @@ interface EditItemFormData {
   unit: string;
   unitFa: string;
   isDisabled: boolean;
+  isCalibrationEnabled: boolean;
+  calibrationA: number;
+  calibrationB: number;
 }
 
 const EditItemDialog: React.FC<EditItemDialogProps> = ({
@@ -113,6 +125,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
     saveIntervalSeconds: 5,
     saveHistoricalIntervalSeconds: 5,
     numberOfSamples: 1,
+    saveOnChange: SaveOnChangeEnum.Default,
+    saveOnChangeRange: 0,
     onText: '',
     onTextFa: '',
     offText: '',
@@ -120,6 +134,9 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
     unit: '',
     unitFa: '',
     isDisabled: false,
+    isCalibrationEnabled: false,
+    calibrationA: 1.0,
+    calibrationB: 0.0,
   });
 
   // Determine if item is digital (type 1 or 2) or analog (type 3 or 4)
@@ -174,6 +191,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
           saveIntervalSeconds: item.saveInterval,
           saveHistoricalIntervalSeconds: item.saveHistoricalInterval,
           numberOfSamples: item.numberOfSamples,
+          saveOnChange: item.saveOnChange ?? SaveOnChangeEnum.Default,
+          saveOnChangeRange: item.saveOnChangeRange ?? 0,
           onText: item.onText || '',
           onTextFa: item.onTextFa || '',
           offText: item.offText || '',
@@ -181,6 +200,9 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
           unit: item.unit || '',
           unitFa: item.unitFa || '',
           isDisabled: item.isDisabled || false,
+          isCalibrationEnabled: item.isCalibrationEnabled || false,
+          calibrationA: item.calibrationA ?? 1.0,
+          calibrationB: item.calibrationB ?? 0.0,
         });
 
         logger.log('Item data loaded successfully:', item);
@@ -264,6 +286,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
         saveHistoricalInterval: formData.saveHistoricalIntervalSeconds,
         calculationMethod: formData.valueCalculationMethod,
         numberOfSamples: formData.numberOfSamples,
+        saveOnChange: formData.saveOnChange || null,
+        saveOnChangeRange: formData.saveOnChangeRange || null,
         onText: formData.onText || null,
         onTextFa: formData.onTextFa || null,
         offText: formData.offText || null,
@@ -271,6 +295,9 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
         unit: formData.unit || null,
         unitFa: formData.unitFa || null,
         isDisabled: formData.isDisabled,
+        isCalibrationEnabled: formData.isCalibrationEnabled || null,
+        calibrationA: formData.calibrationA || null,
+        calibrationB: formData.calibrationB || null,
       };
 
       const response = await editItem(requestDto);
@@ -332,6 +359,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
         saveIntervalSeconds: 5,
         saveHistoricalIntervalSeconds: 5,
         numberOfSamples: 1,
+        saveOnChange: SaveOnChangeEnum.Default,
+        saveOnChangeRange: 0,
         onText: '',
         onTextFa: '',
         offText: '',
@@ -339,6 +368,9 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
         unit: '',
         unitFa: '',
         isDisabled: false,
+        isCalibrationEnabled: false,
+        calibrationA: 1.0,
+        calibrationB: 0.0,
       });
       setItemData(null);
       setLoadError(null);
@@ -540,6 +572,107 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                 label={t('editItemDialog.fields.isDisabled')}
                 data-id-ref="edit-item-dialog-is-disabled"
               />
+            </Box>
+
+            {/* Advanced Settings Section */}
+            <Typography 
+              variant="subtitle1" 
+              fontWeight="bold" 
+              gutterBottom
+              data-id-ref="edit-item-dialog-advanced-settings-heading"
+            >
+              {t('editItemDialog.sections.advancedSettings')}
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
+              {/* Save On Change */}
+              <FormControl fullWidth disabled={isSaving}>
+                <InputLabel id="save-on-change-label">
+                  {t('editItemDialog.fields.saveOnChange')}
+                </InputLabel>
+                <Select
+                  labelId="save-on-change-label"
+                  id="save-on-change"
+                  value={formData.saveOnChange}
+                  label={t('editItemDialog.fields.saveOnChange')}
+                  onChange={(e) => handleFieldChange('saveOnChange', e.target.value as SaveOnChange)}
+                  data-id-ref="edit-item-dialog-save-on-change"
+                >
+                  <MenuItem value={SaveOnChangeEnum.Default}>
+                    {t('editItemDialog.saveOnChangeOptions.default')}
+                  </MenuItem>
+                  <MenuItem value={SaveOnChangeEnum.On}>
+                    {t('editItemDialog.saveOnChangeOptions.on')}
+                  </MenuItem>
+                  <MenuItem value={SaveOnChangeEnum.Off}>
+                    {t('editItemDialog.saveOnChangeOptions.off')}
+                  </MenuItem>
+                </Select>
+              </FormControl>
+
+              {/* Save On Change Range - shown only when Save On Change is enabled */}
+              {formData.saveOnChange === SaveOnChangeEnum.On && (
+                <TextField
+                  fullWidth
+                  label={t('editItemDialog.fields.saveOnChangeRange')}
+                  type="number"
+                  value={formData.saveOnChangeRange}
+                  onChange={(e) => handleFieldChange('saveOnChangeRange', parseFloat(e.target.value) || 0)}
+                  disabled={isSaving}
+                  helperText={t('editItemDialog.fields.saveOnChangeRangeHelper')}
+                  inputProps={{ min: 0, step: 0.1 }}
+                  data-id-ref="edit-item-dialog-save-on-change-range"
+                />
+              )}
+
+              {/* Calibration Settings */}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.isCalibrationEnabled}
+                    onChange={(e) => handleFieldChange('isCalibrationEnabled', e.target.checked)}
+                    disabled={isSaving}
+                    data-id-ref="edit-item-dialog-is-calibration-enabled-switch"
+                  />
+                }
+                label={t('editItemDialog.fields.isCalibrationEnabled')}
+                data-id-ref="edit-item-dialog-is-calibration-enabled"
+              />
+
+              {/* Calibration Coefficients - shown only when calibration is enabled */}
+              {formData.isCalibrationEnabled && (
+                <>
+                  <Typography variant="body2" color="text.secondary" data-id-ref="edit-item-dialog-calibration-formula">
+                    {t('editItemDialog.fields.calibrationFormula')}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                    <TextField
+                      fullWidth
+                      label={t('editItemDialog.fields.calibrationA')}
+                      type="number"
+                      value={formData.calibrationA}
+                      onChange={(e) => handleFieldChange('calibrationA', parseFloat(e.target.value) || 1.0)}
+                      disabled={isSaving}
+                      helperText={t('editItemDialog.fields.calibrationAHelper')}
+                      inputProps={{ step: 0.01 }}
+                      data-id-ref="edit-item-dialog-calibration-a"
+                    />
+
+                    <TextField
+                      fullWidth
+                      label={t('editItemDialog.fields.calibrationB')}
+                      type="number"
+                      value={formData.calibrationB}
+                      onChange={(e) => handleFieldChange('calibrationB', parseFloat(e.target.value) || 0.0)}
+                      disabled={isSaving}
+                      helperText={t('editItemDialog.fields.calibrationBHelper')}
+                      inputProps={{ step: 0.01 }}
+                      data-id-ref="edit-item-dialog-calibration-b"
+                    />
+                  </Box>
+                </>
+              )}
             </Box>
 
             {/* Digital-specific Fields */}
