@@ -36,7 +36,6 @@ import {
   Edit as EditIcon,
   Lock as LockIcon,
   Settings as SettingsIcon,
-  MoreVert as MoreVertIcon,
   DriveFileMove as MoveItemIcon,
   Group as GroupIcon,
   Security as PermissionsIcon,
@@ -171,6 +170,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
   const [commandDialogOpen, setCommandDialogOpen] = useState<boolean>(false);
   const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
+  const [adminMenuPosition, setAdminMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState<boolean>(false);
 
   // Check if user has admin role
@@ -274,16 +274,35 @@ const ItemCard: React.FC<ItemCardProps> = ({
   };
 
   /**
-   * Admin menu handlers
+   * Admin menu handlers - only for admin role
    */
-  const handleAdminMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    logger.log('Opening admin menu', { itemId, itemName: name });
+  const handleCardContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault(); // Always prevent default browser context menu
+    
+    // Only show admin menu for admin users
+    if (!isAdmin) {
+      return;
+    }
+    
+    logger.log('Opening admin menu via right-click', { 
+      itemId, 
+      itemName: name,
+      x: event.clientX,
+      y: event.clientY,
+    });
+    
+    // Set anchor element and position under cursor
     setAdminMenuAnchor(event.currentTarget);
+    setAdminMenuPosition({
+      top: event.clientY,
+      left: event.clientX,
+    });
   };
 
   const handleAdminMenuClose = () => {
     logger.log('Closing admin menu');
     setAdminMenuAnchor(null);
+    setAdminMenuPosition(null);
   };
 
   const handleMoveItemToGroup = () => {
@@ -320,6 +339,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
           elevation={elevation}
           onMouseEnter={() => setElevation(6)}
           onMouseLeave={() => setElevation(1)}
+          onContextMenu={handleCardContextMenu}
           sx={{
             height: '100%',
             position: 'relative',
@@ -328,6 +348,10 @@ const ItemCard: React.FC<ItemCardProps> = ({
             '&:hover': {
               transform: 'translateY(-4px)',
             },
+            // Visual hint for admin users that right-click is available
+            ...(isAdmin && {
+              cursor: 'context-menu',
+            }),
             // Alarm state styling
             ...(hasAlarm && {
               borderWidth: 2,
@@ -447,28 +471,6 @@ const ItemCard: React.FC<ItemCardProps> = ({
                     <OpenInNew fontSize="small" data-id-ref="item-card-open-icon" />
                   </IconButton>
                 </Tooltip>
-
-                {/* Admin menu dropdown - only show for Admin role */}
-                {isAdmin && (
-                  <Tooltip title={t('itemCard.adminMenu.title')} arrow placement="top">
-                    <IconButton
-                      onClick={handleAdminMenuOpen}
-                      aria-label={t('itemCard.adminMenu.title')}
-                      size="small"
-                      sx={{
-                        color: 'text.secondary',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          color: 'secondary.main',
-                          transform: 'scale(1.1)',
-                        },
-                      }}
-                      data-id-ref="item-card-admin-menu-button"
-                    >
-                      <MoreVertIcon fontSize="small" data-id-ref="item-card-admin-menu-icon" />
-                    </IconButton>
-                  </Tooltip>
-                )}
               </Box>
             </Box>
             
@@ -643,28 +645,6 @@ const ItemCard: React.FC<ItemCardProps> = ({
                     <OpenInNew fontSize="small" data-id-ref="item-card-open-icon-desktop" />
                   </IconButton>
                 </Tooltip>
-
-                {/* Admin menu dropdown - only show for Admin role */}
-                {isAdmin && (
-                  <Tooltip title={t('itemCard.adminMenu.title')} arrow placement="top">
-                    <IconButton
-                      onClick={handleAdminMenuOpen}
-                      aria-label={t('itemCard.adminMenu.title')}
-                      size="small"
-                      sx={{
-                        color: 'text.secondary',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          color: 'secondary.main',
-                          transform: 'scale(1.1)',
-                        },
-                      }}
-                      data-id-ref="item-card-admin-menu-button-desktop"
-                    >
-                      <MoreVertIcon fontSize="small" data-id-ref="item-card-admin-menu-icon-desktop" />
-                    </IconButton>
-                  </Tooltip>
-                )}
               </Box>
             </Box>
           </Box>
@@ -956,17 +936,14 @@ const ItemCard: React.FC<ItemCardProps> = ({
 
     {/* Admin Menu */}
     <Menu
-      anchorEl={adminMenuAnchor}
-      open={Boolean(adminMenuAnchor)}
+      open={Boolean(adminMenuAnchor) && adminMenuPosition !== null}
       onClose={handleAdminMenuClose}
-      anchorOrigin={{
-        vertical: 'bottom',
-        horizontal: 'right',
-      }}
-      transformOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
+      anchorReference="anchorPosition"
+      anchorPosition={
+        adminMenuPosition !== null
+          ? { top: adminMenuPosition.top, left: adminMenuPosition.left }
+          : undefined
+      }
       data-id-ref="item-card-admin-menu"
     >
       <MenuItem onClick={handleMoveItemToGroup} data-id-ref="item-card-admin-menu-move-item">
