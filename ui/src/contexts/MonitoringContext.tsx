@@ -14,7 +14,7 @@ import {
 } from '../services/api';
 import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
-import { setItem, removeItem } from '../utils/indexedDbStorage';
+import { setItem, removeItem, getItem } from '../utils/indexedDbStorage';
 import { createLogger } from '../utils/logger';
 import { useAuth } from '../hooks/useAuth';
 
@@ -141,7 +141,7 @@ const initialState: MonitoringState = {
  * Action types
  */
 type MonitoringAction =
-  | { type: 'INITIALIZE_FROM_STORAGE'; payload: { groups: Group[]; items: Item[]; alarms: AlarmDto[] } }
+  | { type: 'INITIALIZE_FROM_STORAGE'; payload: { groups: Group[]; items: Item[]; alarms: AlarmDto[]; isDataSynced: boolean } }
   | { type: 'SET_CURRENT_FOLDER_ID'; payload: string | null }
   | { type: 'SET_DATA_SYNCED'; payload: boolean }
   | { type: 'CLEAR_DATA_SYNC_STATUS' }
@@ -180,12 +180,14 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
         groups: action.payload.groups.length,
         items: action.payload.items.length,
         alarms: action.payload.alarms.length,
+        isDataSynced: action.payload.isDataSynced,
       });
       return {
         ...state,
         groups: action.payload.groups,
         items: action.payload.items,
         alarms: action.payload.alarms,
+        isDataSynced: action.payload.isDataSynced,
       };
 
     case 'SET_CURRENT_FOLDER_ID':
@@ -307,7 +309,11 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
           streamError: null,
           fetchError: null,
           isFetching: false,
-          highestPriority: action.payload.highestPriority ?? null,
+          // Preserve existing priority if not provided (e.g., from SignalR updates)
+          // Only update priority when explicitly provided (e.g., from fetchActiveAlarmCount)
+          highestPriority: action.payload.highestPriority !== undefined 
+            ? action.payload.highestPriority 
+            : state.activeAlarms.highestPriority,
         },
       };
 
@@ -453,17 +459,23 @@ async function loadMonitoringDataFromStorage() {
     const storedGroups = (await monitoringStorageHelpers.getStoredGroups()) || [];
     const storedItems = (await monitoringStorageHelpers.getStoredItems()) || [];
     const storedAlarms = (await monitoringStorageHelpers.getStoredAlarms()) || [];
+    
+    // Load sync flag from IndexedDB
+    const syncFlag = await getItem<boolean>(SYNC_STATUS_STORAGE_KEY);
+    const isDataSynced = syncFlag === true;
 
     logger.log('Loaded cached data from IndexedDB:', {
       groups: storedGroups.length,
       items: storedItems.length,
       alarms: storedAlarms.length,
+      isDataSynced,
     });
 
     return {
       groups: storedGroups,
       items: storedItems,
       alarms: storedAlarms,
+      isDataSynced,
     };
   } catch (error) {
     logger.error('Failed to load monitoring data from IndexedDB:', error);
@@ -471,6 +483,7 @@ async function loadMonitoringDataFromStorage() {
       groups: [],
       items: [],
       alarms: [],
+      isDataSynced: false,
     };
   }
 }
