@@ -344,10 +344,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
             height: '100%',
             position: 'relative',
             overflow: 'visible',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
-              transform: 'translateY(-4px)',
-            },
+            transition: 'box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             // Visual hint for admin users that right-click is available
             ...(isAdmin && {
               cursor: 'context-menu',
