@@ -278,25 +278,58 @@ const ItemCard: React.FC<ItemCardProps> = ({
    */
   const handleCardContextMenu = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault(); // Always prevent default browser context menu
+    event.stopPropagation(); // Prevent event bubbling
     
     // Only show admin menu for admin users
     if (!isAdmin) {
       return;
     }
     
-    logger.log('Opening admin menu via right-click', { 
-      itemId, 
-      itemName: name,
-      x: event.clientX,
-      y: event.clientY,
-    });
+    // Capture event coordinates before any async operations
+    const clickX = event.clientX;
+    const clickY = event.clientY;
+    const currentTarget = event.currentTarget;
     
-    // Set anchor element and position under cursor
-    setAdminMenuAnchor(event.currentTarget);
-    setAdminMenuPosition({
-      top: event.clientY,
-      left: event.clientX,
-    });
+    // Close any existing menu first
+    if (adminMenuAnchor !== null) {
+      logger.log('Closing existing admin menu before opening new one');
+      
+      // Use requestAnimationFrame to ensure state updates happen in the right order
+      setAdminMenuAnchor(null);
+      setAdminMenuPosition(null);
+      
+      // Wait for next frame to reopen
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          logger.log('Opening admin menu at new position', { 
+            itemId, 
+            itemName: name,
+            x: clickX,
+            y: clickY,
+          });
+          
+          setAdminMenuAnchor(currentTarget);
+          setAdminMenuPosition({
+            top: clickY,
+            left: clickX,
+          });
+        });
+      });
+    } else {
+      logger.log('Opening admin menu via right-click', { 
+        itemId, 
+        itemName: name,
+        x: clickX,
+        y: clickY,
+      });
+      
+      // Set anchor element and position under cursor
+      setAdminMenuAnchor(currentTarget);
+      setAdminMenuPosition({
+        top: clickY,
+        left: clickX,
+      });
+    }
   };
 
   const handleAdminMenuClose = () => {
@@ -375,7 +408,6 @@ const ItemCard: React.FC<ItemCardProps> = ({
           data-id-ref="item-card-root-container"
         >
         <CardContent
-          onContextMenu={handleCardContextMenu}
           sx={{
             display: 'flex',
             flexDirection: 'column',
@@ -942,6 +974,12 @@ const ItemCard: React.FC<ItemCardProps> = ({
           ? { top: adminMenuPosition.top, left: adminMenuPosition.left }
           : undefined
       }
+      MenuListProps={{
+        onContextMenu: (e: React.MouseEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+        },
+      }}
       data-id-ref="item-card-admin-menu"
     >
       <MenuItem onClick={handleMoveItemToGroup} data-id-ref="item-card-admin-menu-move-item">
