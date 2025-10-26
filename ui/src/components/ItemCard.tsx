@@ -368,14 +368,22 @@ const ItemCard: React.FC<ItemCardProps> = ({
           <Box
             sx={{
               display: 'flex',
+              flexDirection: { xs: 'column', sm: 'column', md: 'row' },
               justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: 1,
+              alignItems: { xs: 'flex-start', sm: 'flex-start', md: 'center' },
+              gap: { xs: 1.5, sm: 1.5, md: 1 },
               marginBottom: 1.5,
             }}
             data-id-ref="item-card-header"
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+            {/* Title Row */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'flex-start',
+              gap: 1, 
+              width: { xs: '100%', sm: '100%', md: 'auto' },
+              flex: { xs: 'none', sm: 'none', md: 1 },
+            }}>
               <Typography
                 variant="h6"
                 component="h6"
@@ -384,13 +392,94 @@ const ItemCard: React.FC<ItemCardProps> = ({
                   wordBreak: 'break-word',
                   lineHeight: 1.4,
                   flex: 1,
-                  fontSize: '1rem',
+                  fontSize: { xs: '0.95rem', sm: '1rem' },
                 }}
                 data-id-ref="item-card-title"
               >
                 {name}
               </Typography>
               
+              {/* Action buttons on mobile - top right */}
+              <Box sx={{ 
+                display: { xs: 'flex', sm: 'flex', md: 'none' }, 
+                alignItems: 'center', 
+                gap: 0.5,
+                flexShrink: 0,
+              }}>
+                {/* Command button - only show for editable items */}
+                {item?.isEditable && (
+                  <Tooltip title={t('itemCard.setCommand')} arrow placement="top">
+                    <IconButton
+                      onClick={handleCommandClick}
+                      aria-label={t('itemCard.setCommand')}
+                      size="small"
+                      sx={{
+                        color: 'text.secondary',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          color: 'warning.main',
+                          transform: 'scale(1.1)',
+                        },
+                      }}
+                      data-id-ref="item-card-command-button"
+                    >
+                      <SettingsIcon fontSize="small" data-id-ref="item-card-command-icon" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                
+                <Tooltip title={t('openInNewTab')} arrow placement="top">
+                  <IconButton
+                    onClick={handleOpenNewTab}
+                    onMouseEnter={handlePrefetch}
+                    aria-label={t('openInNewTab')}
+                    size="small"
+                    sx={{
+                      color: 'text.secondary',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        color: 'primary.main',
+                        transform: 'scale(1.1)',
+                      },
+                    }}
+                    data-id-ref="item-card-open-new-tab-button"
+                  >
+                    <OpenInNew fontSize="small" data-id-ref="item-card-open-icon" />
+                  </IconButton>
+                </Tooltip>
+
+                {/* Admin menu dropdown - only show for Admin/Manager roles */}
+                {isAdminOrManager && (
+                  <Tooltip title={t('itemCard.adminMenu.title')} arrow placement="top">
+                    <IconButton
+                      onClick={handleAdminMenuOpen}
+                      aria-label={t('itemCard.adminMenu.title')}
+                      size="small"
+                      sx={{
+                        color: 'text.secondary',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          color: 'secondary.main',
+                          transform: 'scale(1.1)',
+                        },
+                      }}
+                      data-id-ref="item-card-admin-menu-button"
+                    >
+                      <MoreVertIcon fontSize="small" data-id-ref="item-card-admin-menu-icon" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+            </Box>
+            
+            {/* Badges Row - separate row on mobile */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1, 
+              flexWrap: 'wrap',
+              width: { xs: '100%', sm: '100%', md: 'auto' },
+            }}>
               {/* Item type indicator */}
               {item?.itemType !== undefined && (() => {
                 const itemTypeInfo = getItemTypeInfo(item.itemType);
@@ -505,71 +594,78 @@ const ItemCard: React.FC<ItemCardProps> = ({
                   />
                 </Zoom>
               )}
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              {/* Command button - only show for editable items */}
-              {item?.isEditable && (
-                <Tooltip title={t('itemCard.setCommand')} arrow placement="top">
-                  <IconButton
-                    onClick={handleCommandClick}
-                    aria-label={t('itemCard.setCommand')}
-                    size="small"
-                    sx={{
-                      color: 'text.secondary',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        color: 'warning.main',
-                        transform: 'scale(1.1)',
-                      },
-                    }}
-                    data-id-ref="item-card-command-button"
-                  >
-                    <SettingsIcon fontSize="small" data-id-ref="item-card-command-icon" />
-                  </IconButton>
-                </Tooltip>
-              )}
               
-              <Tooltip title={t('openInNewTab')} arrow placement="top">
-                <IconButton
-                  onClick={handleOpenNewTab}
-                  onMouseEnter={handlePrefetch}
-                  aria-label={t('openInNewTab')}
-                  size="small"
-                  sx={{
-                    color: 'text.secondary',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      color: 'primary.main',
-                      transform: 'scale(1.1)',
-                    },
-                  }}
-                  data-id-ref="item-card-open-new-tab-button"
-                >
-                  <OpenInNew fontSize="small" data-id-ref="item-card-open-icon" />
-                </IconButton>
-              </Tooltip>
-
-              {/* Admin menu dropdown - only show for Admin/Manager roles */}
-              {isAdminOrManager && (
-                <Tooltip title={t('itemCard.adminMenu.title')} arrow placement="top">
+              {/* Action buttons on desktop - far right */}
+              <Box sx={{ 
+                display: { xs: 'none', sm: 'none', md: 'flex' }, 
+                alignItems: 'center', 
+                gap: 0.5,
+                marginInlineStart: 'auto',
+              }}>
+                {/* Command button - only show for editable items */}
+                {item?.isEditable && (
+                  <Tooltip title={t('itemCard.setCommand')} arrow placement="top">
+                    <IconButton
+                      onClick={handleCommandClick}
+                      aria-label={t('itemCard.setCommand')}
+                      size="small"
+                      sx={{
+                        color: 'text.secondary',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          color: 'warning.main',
+                          transform: 'scale(1.1)',
+                        },
+                      }}
+                      data-id-ref="item-card-command-button-desktop"
+                    >
+                      <SettingsIcon fontSize="small" data-id-ref="item-card-command-icon-desktop" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                
+                <Tooltip title={t('openInNewTab')} arrow placement="top">
                   <IconButton
-                    onClick={handleAdminMenuOpen}
-                    aria-label={t('itemCard.adminMenu.title')}
+                    onClick={handleOpenNewTab}
+                    onMouseEnter={handlePrefetch}
+                    aria-label={t('openInNewTab')}
                     size="small"
                     sx={{
                       color: 'text.secondary',
                       transition: 'all 0.2s ease',
                       '&:hover': {
-                        color: 'secondary.main',
+                        color: 'primary.main',
                         transform: 'scale(1.1)',
                       },
                     }}
-                    data-id-ref="item-card-admin-menu-button"
+                    data-id-ref="item-card-open-new-tab-button-desktop"
                   >
-                    <MoreVertIcon fontSize="small" data-id-ref="item-card-admin-menu-icon" />
+                    <OpenInNew fontSize="small" data-id-ref="item-card-open-icon-desktop" />
                   </IconButton>
                 </Tooltip>
-              )}
+
+                {/* Admin menu dropdown - only show for Admin/Manager roles */}
+                {isAdminOrManager && (
+                  <Tooltip title={t('itemCard.adminMenu.title')} arrow placement="top">
+                    <IconButton
+                      onClick={handleAdminMenuOpen}
+                      aria-label={t('itemCard.adminMenu.title')}
+                      size="small"
+                      sx={{
+                        color: 'text.secondary',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          color: 'secondary.main',
+                          transform: 'scale(1.1)',
+                        },
+                      }}
+                      data-id-ref="item-card-admin-menu-button-desktop"
+                    >
+                      <MoreVertIcon fontSize="small" data-id-ref="item-card-admin-menu-icon-desktop" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
             </Box>
           </Box>
 
@@ -577,7 +673,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
 
           {/* Body */}
           <Stack
-            spacing={1}
+            spacing={{ xs: 0.75, sm: 1 }}
             sx={{ flex: 1 }}
             data-id-ref="item-card-body"
           >
@@ -596,6 +692,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
                   fontWeight: 600,
                   whiteSpace: 'nowrap',
                   color: 'text.primary',
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
                 }}
                 data-id-ref="item-card-label-point-number"
               >
@@ -607,6 +704,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
                 sx={{
                   color: 'text.secondary',
                   wordBreak: 'break-word',
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
                 }}
                 data-id-ref="item-card-value-point-number"
               >
@@ -629,18 +727,20 @@ const ItemCard: React.FC<ItemCardProps> = ({
                   fontWeight: 600,
                   whiteSpace: 'nowrap',
                   color: 'text.primary',
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
                 }}
                 data-id-ref="item-card-label-value"
               >
                 {t('value')}:
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flex: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flex: 1, flexWrap: 'wrap' }}>
                 <Typography
                   variant="body2"
                   component="span"
                   sx={{
                     color: 'text.secondary',
                     wordBreak: 'break-word',
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
                   }}
                   data-id-ref="item-card-value-value"
                 >
@@ -653,7 +753,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
                     return (
                       <Tooltip title={t('activeAlarmsPage.trendIncreasing')} arrow>
                         <TrendingUpIcon 
-                          sx={{ fontSize: 14, color: 'error.main' }} 
+                          sx={{ fontSize: { xs: 14, sm: 16 }, color: 'error.main' }} 
                           data-id-ref="item-card-trend-up-icon" 
                         />
                       </Tooltip>
@@ -662,7 +762,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
                     return (
                       <Tooltip title={t('activeAlarmsPage.trendDecreasing')} arrow>
                         <TrendingDownIcon 
-                          sx={{ fontSize: 14, color: 'success.main' }} 
+                          sx={{ fontSize: { xs: 14, sm: 16 }, color: 'success.main' }} 
                           data-id-ref="item-card-trend-down-icon" 
                         />
                       </Tooltip>
@@ -671,7 +771,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
                     return (
                       <Tooltip title={t('activeAlarmsPage.trendStable')} arrow>
                         <TrendingFlatIcon 
-                          sx={{ fontSize: 14, color: 'text.disabled' }} 
+                          sx={{ fontSize: { xs: 14, sm: 16 }, color: 'text.disabled' }} 
                           data-id-ref="item-card-trend-flat-icon" 
                         />
                       </Tooltip>
@@ -689,7 +789,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
                       data-id-ref="value-history-icon"
                     >
                       <TimelineIcon 
-                        sx={{ fontSize: 14, color: 'info.main' }} 
+                        sx={{ fontSize: { xs: 14, sm: 16 }, color: 'info.main' }} 
                         data-id-ref="value-history-timeline-icon" 
                       />
                     </IconButton>
@@ -713,6 +813,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
                   fontWeight: 600,
                   whiteSpace: 'nowrap',
                   color: 'text.primary',
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
                 }}
                 data-id-ref="item-card-label-time"
               >
@@ -724,6 +825,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
                 sx={{
                   color: 'text.secondary',
                   wordBreak: 'break-word',
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
                 }}
                 data-id-ref="item-card-value-time"
               >
@@ -741,6 +843,13 @@ const ItemCard: React.FC<ItemCardProps> = ({
       onClose={() => setHistoryModalOpen(false)}
       maxWidth="md"
       fullWidth
+      fullScreen={false}
+      sx={{
+        '& .MuiDialog-paper': {
+          margin: { xs: 2, sm: 3 },
+          maxHeight: { xs: 'calc(100% - 32px)', sm: 'calc(100% - 64px)' },
+        },
+      }}
       data-id-ref="item-card-history-modal"
     >
       <DialogTitle 
@@ -749,10 +858,20 @@ const ItemCard: React.FC<ItemCardProps> = ({
           justifyContent: 'space-between', 
           alignItems: 'center',
           pb: 1,
+          px: { xs: 2, sm: 3 },
+          pt: { xs: 2, sm: 3 },
         }}
         data-id-ref="item-card-history-modal-title"
       >
-        <Typography variant="h6" component="span" data-id-ref="item-card-history-modal-title-text">
+        <Typography 
+          variant="h6" 
+          component="span" 
+          sx={{ 
+            fontSize: { xs: '1rem', sm: '1.25rem' },
+            pr: 2,
+          }}
+          data-id-ref="item-card-history-modal-title-text"
+        >
           {t('activeAlarmsPage.historyModalTitle', { itemName: name })}
         </Typography>
         <IconButton
@@ -767,11 +886,18 @@ const ItemCard: React.FC<ItemCardProps> = ({
         </IconButton>
       </DialogTitle>
       <Divider />
-      <DialogContent sx={{ pt: 2, pb: 2 }} data-id-ref="item-card-history-modal-content">
+      <DialogContent 
+        sx={{ 
+          pt: 2, 
+          pb: 2,
+          px: { xs: 2, sm: 3 },
+        }} 
+        data-id-ref="item-card-history-modal-content"
+      >
         <Box 
           sx={{ 
             width: '100%', 
-            height: 500,
+            height: { xs: 300, sm: 400, md: 500 },
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -787,17 +913,30 @@ const ItemCard: React.FC<ItemCardProps> = ({
               width="100%"
             />
           ) : (
-            <Typography color="text.secondary" data-id-ref="item-card-history-no-data">
+            <Typography 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+              data-id-ref="item-card-history-no-data"
+            >
               {t('activeAlarmsPage.noHistoryData')}
             </Typography>
           )}
         </Box>
       </DialogContent>
       <Divider />
-      <DialogActions sx={{ p: 2 }} data-id-ref="item-card-history-modal-actions">
+      <DialogActions 
+        sx={{ 
+          p: { xs: 2, sm: 2 },
+        }} 
+        data-id-ref="item-card-history-modal-actions"
+      >
         <Button 
           onClick={() => setHistoryModalOpen(false)}
           variant="contained"
+          fullWidth={false}
+          sx={{
+            minWidth: { xs: 80, sm: 100 },
+          }}
           data-id-ref="item-card-history-modal-close-action-button"
         >
           {t('cancel')}

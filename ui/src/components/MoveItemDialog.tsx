@@ -215,34 +215,79 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          margin: { xs: 2, sm: 3 },
+          maxHeight: { xs: 'calc(100% - 32px)', sm: 'calc(100% - 64px)' },
+        },
+      }}
       data-id-ref="move-item-dialog"
     >
-      <DialogTitle data-id-ref="move-item-dialog-title">
+      <DialogTitle 
+        data-id-ref="move-item-dialog-title"
+        sx={{
+          px: { xs: 2, sm: 3 },
+          pt: { xs: 2, sm: 3 },
+        }}
+      >
         <Box display="flex" alignItems="center" gap={1}>
           <MoveIcon color="primary" />
-          <Typography variant="h6" component="span">
+          <Typography 
+            variant="h6" 
+            component="span"
+            sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+          >
             {t('moveItemDialog.title')}
           </Typography>
         </Box>
       </DialogTitle>
 
-      <DialogContent data-id-ref="move-item-dialog-content">
+      <DialogContent 
+        data-id-ref="move-item-dialog-content"
+        sx={{
+          px: { xs: 2, sm: 3 },
+        }}
+      >
         {/* Item Information */}
         <Box mb={2}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            gutterBottom
+            sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+          >
             {t('moveItemDialog.itemLabel')}
           </Typography>
-          <Typography variant="body1" fontWeight="medium">
+          <Typography 
+            variant="body1" 
+            fontWeight="medium"
+            sx={{ 
+              fontSize: { xs: '0.9rem', sm: '1rem' },
+              wordBreak: 'break-word',
+            }}
+          >
             {itemName}
           </Typography>
         </Box>
 
         {/* Current Folder */}
         <Box mb={3}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            gutterBottom
+            sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+          >
             {t('moveItemDialog.currentFolderLabel')}
           </Typography>
-          <Typography variant="body1" color="text.primary">
+          <Typography 
+            variant="body1" 
+            color="text.primary"
+            sx={{ 
+              fontSize: { xs: '0.9rem', sm: '1rem' },
+              wordBreak: 'break-word',
+            }}
+          >
             {currentFolderName}
           </Typography>
         </Box>
@@ -250,7 +295,12 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
         <Divider sx={{ mb: 3 }} />
 
         {/* Folder Selection */}
-        <FormControl fullWidth disabled={isSubmitting} data-id-ref="move-item-dialog-folder-select">
+        <FormControl 
+          fullWidth 
+          disabled={isSubmitting} 
+          data-id-ref="move-item-dialog-folder-select"
+          size="small"
+        >
           <InputLabel id="move-item-folder-label">
             {t('moveItemDialog.selectFolderLabel')}
           </InputLabel>
@@ -259,6 +309,13 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
             value={selectedGroupId}
             onChange={handleFolderChange}
             label={t('moveItemDialog.selectFolderLabel')}
+            MenuProps={{
+              PaperProps: {
+                style: {
+                  maxHeight: 300,
+                },
+              },
+            }}
           >
             <MenuItem value="" disabled>
               <em>{t('moveItemDialog.selectFolderPlaceholder')}</em>
@@ -271,7 +328,15 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
               >
                 <Box display="flex" alignItems="center" gap={1}>
                   <FolderIcon fontSize="small" color="action" />
-                  <Typography variant="body2">{folder.fullPath}</Typography>
+                  <Typography 
+                    variant="body2"
+                    sx={{ 
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {folder.fullPath}
+                  </Typography>
                 </Box>
               </MenuItem>
             ))}
@@ -282,7 +347,10 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
         {error && (
           <Alert 
             severity="error" 
-            sx={{ mt: 2 }}
+            sx={{ 
+              mt: 2,
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            }}
             data-id-ref="move-item-dialog-error"
           >
             {error}
@@ -293,7 +361,10 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
         {success && (
           <Alert 
             severity="success" 
-            sx={{ mt: 2 }}
+            sx={{ 
+              mt: 2,
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            }}
             data-id-ref="move-item-dialog-success"
           >
             {t('moveItemDialog.success')}
@@ -304,7 +375,10 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
         {folderOptions.length === 0 && (
           <Alert 
             severity="info" 
-            sx={{ mt: 2 }}
+            sx={{ 
+              mt: 2,
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            }}
             data-id-ref="move-item-dialog-no-folders"
           >
             {t('moveItemDialog.noFoldersAvailable')}
@@ -312,11 +386,26 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
         )}
       </DialogContent>
 
-      <DialogActions data-id-ref="move-item-dialog-actions">
+      <DialogActions 
+        data-id-ref="move-item-dialog-actions"
+        sx={{
+          px: { xs: 2, sm: 3 },
+          pb: { xs: 2, sm: 2 },
+          gap: 1,
+          flexDirection: { xs: 'column', sm: 'row' },
+          '& > :not(style)': {
+            width: { xs: '100%', sm: 'auto' },
+          },
+        }}
+      >
         <Button
           onClick={handleClose}
           disabled={isSubmitting}
           data-id-ref="move-item-dialog-cancel-button"
+          fullWidth={false}
+          sx={{
+            order: { xs: 2, sm: 1 },
+          }}
         >
           {t('cancel')}
         </Button>
@@ -326,6 +415,10 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
           disabled={isSubmitting || !selectedGroupId || folderOptions.length === 0}
           startIcon={isSubmitting ? <CircularProgress size={16} /> : <MoveIcon />}
           data-id-ref="move-item-dialog-move-button"
+          fullWidth={false}
+          sx={{
+            order: { xs: 1, sm: 2 },
+          }}
         >
           {isSubmitting ? t('moveItemDialog.moving') : t('moveItemDialog.moveButton')}
         </Button>
