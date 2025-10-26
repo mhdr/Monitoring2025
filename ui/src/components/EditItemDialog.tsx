@@ -442,12 +442,13 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
               <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <FormControl fullWidth disabled>
+                <FormControl fullWidth disabled={isSaving}>
                   <InputLabel id="item-type-label">{t('editItemDialog.fields.itemType')}</InputLabel>
                   <Select
                     labelId="item-type-label"
                     value={formData.itemType}
                     label={t('editItemDialog.fields.itemType')}
+                    onChange={(e) => handleFieldChange('itemType', e.target.value as ItemType)}
                     data-id-ref="edit-item-dialog-item-type"
                   >
                     <MenuItem value={ItemTypeEnum.DigitalInput}>
