@@ -287,11 +287,22 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
     logger.log('Saving item changes for itemId:', itemId);
 
     try {
+      // Helper function to convert empty strings to null, preserve other values
+      const stringOrNull = (value: string): string | null => {
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : null;
+      };
+
+      // Helper function to preserve numeric values including 0, convert undefined to null
+      const numberOrNull = (value: number | undefined | null): number | null => {
+        return value !== null && value !== undefined ? value : null;
+      };
+
       const requestDto: EditItemRequestDto = {
         id: itemId,
         itemType: formData.itemType,
-        itemName: formData.itemName,
-        itemNameFa: formData.itemNameFa || null,
+        itemName: formData.itemName.trim(), // Required field - trim but keep as-is
+        itemNameFa: stringOrNull(formData.itemNameFa),
         pointNumber: formData.pointNumber,
         shouldScale: formData.shouldScale,
         normMin: formData.rawLow,
@@ -304,17 +315,17 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
         numberOfSamples: formData.numberOfSamples,
         // Send null for Default (0), otherwise send the actual value
         saveOnChange: formData.saveOnChange === SaveOnChangeEnum.Default ? null : formData.saveOnChange,
-        saveOnChangeRange: formData.saveOnChangeRange || null,
-        onText: formData.onText || null,
-        onTextFa: formData.onTextFa || null,
-        offText: formData.offText || null,
-        offTextFa: formData.offTextFa || null,
-        unit: formData.unit || null,
-        unitFa: formData.unitFa || null,
+        saveOnChangeRange: numberOrNull(formData.saveOnChangeRange),
+        onText: stringOrNull(formData.onText),
+        onTextFa: stringOrNull(formData.onTextFa),
+        offText: stringOrNull(formData.offText),
+        offTextFa: stringOrNull(formData.offTextFa),
+        unit: stringOrNull(formData.unit),
+        unitFa: stringOrNull(formData.unitFa),
         isDisabled: formData.isDisabled,
-        isCalibrationEnabled: formData.isCalibrationEnabled || null,
-        calibrationA: formData.calibrationA || null,
-        calibrationB: formData.calibrationB || null,
+        isCalibrationEnabled: formData.isCalibrationEnabled ? formData.isCalibrationEnabled : null,
+        calibrationA: numberOrNull(formData.calibrationA),
+        calibrationB: numberOrNull(formData.calibrationB),
         interfaceType: formData.interfaceType,
         isEditable: formData.isEditable,
       };
