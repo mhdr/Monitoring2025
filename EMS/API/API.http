@@ -413,6 +413,32 @@ Authorization: Bearer {{authTokenHTTPS}}
 
 ###
 
+#################################################################################
+# MONITORING CONTROLLER - ITEM ENDPOINTS
+#################################################################################
+
+### Get single item by ID - HTTP
+POST {{API_HostAddress}}/api/monitoring/GetItem
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+###
+
+### Get single item by ID - HTTPS
+POST {{API_HostAddress}}/api/monitoring/GetItem
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+###
+
 ### Move Point to Different Group - HTTP
 POST {{API_HostAddress}}/api/monitoring/MovePoint
 Content-Type: application/json

@@ -365,6 +365,215 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
+    /// Get a single monitoring item by ID with all its properties
+    /// </summary>
+    /// <param name="request">Get item request containing the item ID to retrieve</param>
+    /// <returns>Complete monitoring item data including all configuration properties</returns>
+    /// <remarks>
+    /// Retrieves a single monitoring item with all its properties. The user must have access
+    /// to the item either through admin privileges or explicit item permissions.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/getitem
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the monitoring item with all its properties</response>
+    /// <response code="400">Validation error - invalid item ID format or missing required fields</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - user does not have permission to access this item</response>
+    /// <response code="404">Item not found - the specified item ID does not exist</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("GetItem")]
+    [ProducesResponseType(typeof(GetItemResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetItem([FromBody] GetItemRequestDto request)
+    {
+        try
+        {
+            // Extract user ID from JWT token
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("GetItem: User ID not found in token");
+                return Unauthorized(new { success = false, errorMessage = "User not authenticated" });
+            }
+
+            // Validate ModelState
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("GetItem: Validation failed for user {UserId}, Errors: {Errors}", 
+                    userId, string.Join(", ", errors));
+
+                return BadRequest(new GetItemResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Validation failed: " + string.Join(", ", errors)
+                });
+            }
+
+            // Validate and parse item ID
+            if (!Guid.TryParse(request.ItemId, out var itemGuid))
+            {
+                _logger.LogWarning("GetItem: Invalid item ID format {ItemId} for user {UserId}", 
+                    request.ItemId, userId);
+
+                return BadRequest(new GetItemResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Invalid item ID format"
+                });
+            }
+
+            _logger.LogInformation("GetItem: Retrieving item {ItemId} for user {UserId}", 
+                request.ItemId, userId);
+
+            // Retrieve the item from Core
+            var item = await Core.Points.GetPoint(itemGuid);
+
+            if (item == null)
+            {
+                _logger.LogWarning("GetItem: Item {ItemId} not found", request.ItemId);
+
+                return NotFound(new GetItemResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Item not found"
+                });
+            }
+
+            // Get user information
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("GetItem: User {UserId} not found", userId);
+                return Unauthorized(new { success = false, errorMessage = "User not found" });
+            }
+
+            var userGuid = Guid.Parse(userId);
+            bool hasAccess = false;
+            bool isEditable = false;
+
+            // Check access permissions
+            if (user.UserName?.ToLower() == "admin")
+            {
+                hasAccess = true;
+                isEditable = true;
+                _logger.LogDebug("GetItem: Admin user {UserId} has full access to item {ItemId}", 
+                    userId, request.ItemId);
+            }
+            else
+            {
+                // Check item-level permissions
+                var permission = await _context.ItemPermissions
+                    .FirstOrDefaultAsync(x => x.UserId == userGuid && x.ItemId == itemGuid);
+
+                if (permission != null)
+                {
+                    hasAccess = true;
+                    isEditable = item.IsEditable;
+                    _logger.LogDebug("GetItem: User {UserId} has permission for item {ItemId}", 
+                        userId, request.ItemId);
+                }
+            }
+
+            if (!hasAccess)
+            {
+                _logger.LogWarning("GetItem: User {UserId} does not have access to item {ItemId}", 
+                    userId, request.ItemId);
+
+                return StatusCode(403, new GetItemResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Access denied: You do not have permission to view this item"
+                });
+            }
+
+            // Get group assignment
+            var groupItem = await _context.GroupItems
+                .FirstOrDefaultAsync(x => x.ItemId == itemGuid);
+
+            // Build response
+            var response = new GetItemResponseDto
+            {
+                Success = true,
+                Data = new GetItemResponseDto.MonitoringItem
+                {
+                    Id = item.Id.ToString(),
+                    Name = item.ItemName,
+                    NameFa = item.ItemNameFa,
+                    ItemType = (Share.Libs.ItemType)item.ItemType,
+                    GroupId = groupItem?.GroupId.ToString(),
+                    OnText = item.OnText,
+                    OnTextFa = item.OnTextFa,
+                    OffText = item.OffText,
+                    OffTextFa = item.OffTextFa,
+                    Unit = item.Unit,
+                    UnitFa = item.UnitFa,
+                    CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
+                    NumberOfSamples = item.NumberOfSamples,
+                    IsDisabled = item.IsDisabled,
+                    NormMax = item.NormMax,
+                    NormMin = item.NormMin,
+                    PointNumber = item.PointNumber,
+                    ShouldScale = (Share.Libs.ShouldScaleType)item.ShouldScale,
+                    SaveInterval = item.SaveInterval,
+                    SaveHistoricalInterval = item.SaveHistoricalInterval,
+                    ScaleMax = item.ScaleMax,
+                    ScaleMin = item.ScaleMin,
+                    IsEditable = isEditable,
+                    InterfaceType = (Share.Libs.InterfaceType)item.InterfaceType,
+                }
+            };
+
+            _logger.LogInformation("GetItem: Successfully retrieved item {ItemId} for user {UserId}", 
+                request.ItemId, userId);
+
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "GetItem: Validation error");
+            return BadRequest(new GetItemResponseDto
+            {
+                Success = false,
+                ErrorMessage = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "GetItem: Unauthorized access attempt");
+            return StatusCode(403, new GetItemResponseDto
+            {
+                Success = false,
+                ErrorMessage = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetItem: Error retrieving item {ItemId}", request?.ItemId ?? "unknown");
+            return StatusCode(500, new GetItemResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Internal server error"
+            });
+        }
+    }
+
+    /// <summary>
     /// Get all monitoring items with admin privileges (bypasses user permissions)
     /// </summary>
     /// <param name="request">Items request parameters including ShowOrphans flag to control orphaned items visibility</param>
