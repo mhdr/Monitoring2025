@@ -235,26 +235,28 @@ export const ItemTypeEnum = {
   AnalogOutput: 4,
 } as const;
 
-/** ShouldScaleType: 1 = On, 2 = Off */
+/** ShouldScaleType: 1 = Yes (On), 2 = No (Off) - Backend uses Yes/No naming */
 export type ShouldScaleType = 1 | 2;
 
 /**
  * ShouldScaleType enum values for better code readability
+ * Backend uses Yes=1 (scaling enabled), No=2 (scaling disabled)
  */
 export const ShouldScaleTypeEnum = {
-  On: 1,
-  Off: 2,
+  Yes: 1,
+  No: 2,
 } as const;
 
-/** ValueCalculationMethod: 0 = Default, 1 = Mean */
+/** ValueCalculationMethod: 0 = LastValue, 1 = Average - Backend uses these names */
 export type ValueCalculationMethod = 0 | 1;
 
 /**
  * ValueCalculationMethod enum values for better code readability
+ * Backend uses LastValue=0, Average=1 (Mean is just Average)
  */
 export const ValueCalculationMethodEnum = {
-  Default: 0,
-  Mean: 1,
+  LastValue: 0,
+  Average: 1,
 } as const;
 
 /** SaveOnChange: 0 = Default, 1 = On, 2 = Off */
@@ -1000,6 +1002,10 @@ export interface EditItemRequestDto {
   calibrationA?: number | null;
   /** Calibration coefficient B (offset) in the formula: calibrated_value = A * raw_value + B */
   calibrationB?: number | null;
+  /** Interface type for communication protocol (None=0, Sharp7=1, BACnet=2, Modbus=3) */
+  interfaceType: InterfaceType;
+  /** Whether the current user can send and set value for this point */
+  isEditable: boolean;
 }
 
 /**

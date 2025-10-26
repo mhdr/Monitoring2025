@@ -454,6 +454,8 @@
     "fields": {
       "itemType": "Item Type",
       "pointNumber": "Point Number",
+      "interfaceType": "Interface Type",
+      "isEditable": "Allow Value Write",
       "itemName": "Name",
       "itemNameFa": "Name (Persian)",
       "valueCalculationMethod": "Value Calculation Method",
@@ -481,6 +483,12 @@
       "calibrationAHelper": "Multiply raw value by this coefficient",
       "calibrationB": "Coefficient B (Offset)",
       "calibrationBHelper": "Add this offset to the result"
+    },
+    "interfaceTypes": {
+      "none": "None",
+      "sharp7": "Sharp7 (Siemens S7)",
+      "bacnet": "BACnet",
+      "modbus": "Modbus"
     },
     "saveOnChangeOptions": {
       "default": "Default (System Setting)",

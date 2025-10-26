@@ -504,6 +504,29 @@ export const getItem = async (itemId: string): Promise<GetItemResponseDto> => {
   }
 };
 
+// Helper function to convert camelCase to PascalCase
+const toPascalCase = (str: string): string => {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+// Helper function to transform object keys from camelCase to PascalCase
+const toPascalCaseObject = (obj: unknown): unknown => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(toPascalCaseObject);
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result: Record<string, any> = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const pascalKey = toPascalCase(key);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      result[pascalKey] = toPascalCaseObject((obj as any)[key]);
+    }
+  }
+  return result;
+};
+
 /**
  * Edit a monitoring item's complete configuration
  * Validates that the point number is unique across all items (except the current item being edited)
@@ -514,7 +537,14 @@ export const editItem = async (data: EditItemRequestDto): Promise<EditItemRespon
   try {
     logger.log('Editing item', { itemId: data.id, itemName: data.itemName });
     
-    const response = await apiClient.post<EditItemResponseDto>('/api/Monitoring/EditItem', data);
+    // Convert camelCase to PascalCase for .NET API
+    const pascalCaseData = toPascalCaseObject(data);
+    
+    // Wrap the request in a 'request' field as expected by the backend
+    const requestPayload = { request: pascalCaseData };
+    logger.log('Sending wrapped PascalCase request payload:', requestPayload);
+    
+    const response = await apiClient.post<EditItemResponseDto>('/api/Monitoring/EditItem', requestPayload);
     
     logger.log('Item edited successfully', { 
       itemId: data.id, 

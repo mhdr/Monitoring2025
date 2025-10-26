@@ -42,8 +42,8 @@ const ItemTypeEnum = {
 } as const;
 
 const ShouldScaleTypeEnum = {
-  No: 1,
-  Yes: 2,
+  Yes: 1,
+  No: 2,
 } as const;
 
 const ValueCalculationMethodEnum = {
@@ -57,10 +57,18 @@ const SaveOnChangeEnum = {
   Off: 2,
 } as const;
 
+const InterfaceTypeEnum = {
+  None: 0,
+  Sharp7: 1,
+  BACnet: 2,
+  Modbus: 3,
+} as const;
+
 type ItemType = typeof ItemTypeEnum[keyof typeof ItemTypeEnum];
 type ShouldScaleType = typeof ShouldScaleTypeEnum[keyof typeof ShouldScaleTypeEnum];
 type ValueCalculationMethod = typeof ValueCalculationMethodEnum[keyof typeof ValueCalculationMethodEnum];
 type SaveOnChange = typeof SaveOnChangeEnum[keyof typeof SaveOnChangeEnum];
+type InterfaceType = typeof InterfaceTypeEnum[keyof typeof InterfaceTypeEnum];
 
 interface EditItemDialogProps {
   open: boolean;
@@ -95,6 +103,8 @@ interface EditItemFormData {
   isCalibrationEnabled: boolean;
   calibrationA: number;
   calibrationB: number;
+  interfaceType: InterfaceType;
+  isEditable: boolean;
 }
 
 const EditItemDialog: React.FC<EditItemDialogProps> = ({
@@ -137,6 +147,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
     isCalibrationEnabled: false,
     calibrationA: 1.0,
     calibrationB: 0.0,
+    interfaceType: InterfaceTypeEnum.None,
+    isEditable: false,
   });
 
   // Determine if item is digital (type 1 or 2) or analog (type 3 or 4)
@@ -203,6 +215,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
           isCalibrationEnabled: item.isCalibrationEnabled || false,
           calibrationA: item.calibrationA ?? 1.0,
           calibrationB: item.calibrationB ?? 0.0,
+          interfaceType: item.interfaceType,
+          isEditable: item.isEditable,
         });
 
         logger.log('Item data loaded successfully:', item);
@@ -286,7 +300,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
         saveHistoricalInterval: formData.saveHistoricalIntervalSeconds,
         calculationMethod: formData.valueCalculationMethod,
         numberOfSamples: formData.numberOfSamples,
-        saveOnChange: formData.saveOnChange || null,
+        // Send null for Default (0), otherwise send the actual value
+        saveOnChange: formData.saveOnChange === SaveOnChangeEnum.Default ? null : formData.saveOnChange,
         saveOnChangeRange: formData.saveOnChangeRange || null,
         onText: formData.onText || null,
         onTextFa: formData.onTextFa || null,
@@ -298,8 +313,11 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
         isCalibrationEnabled: formData.isCalibrationEnabled || null,
         calibrationA: formData.calibrationA || null,
         calibrationB: formData.calibrationB || null,
+        interfaceType: formData.interfaceType,
+        isEditable: formData.isEditable,
       };
 
+      logger.log('Sending edit request with DTO:', requestDto);
       const response = await editItem(requestDto);
 
       if (!response.success) {
@@ -371,6 +389,8 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
         isCalibrationEnabled: false,
         calibrationA: 1.0,
         calibrationB: 0.0,
+        interfaceType: InterfaceTypeEnum.None,
+        isEditable: false,
       });
       setItemData(null);
       setLoadError(null);
@@ -476,6 +496,46 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                   required
                   inputProps={{ min: 0, max: 2147483647 }}
                   data-id-ref="edit-item-dialog-point-number"
+                />
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <FormControl fullWidth disabled={isSaving}>
+                  <InputLabel id="interface-type-label">{t('editItemDialog.fields.interfaceType')}</InputLabel>
+                  <Select
+                    labelId="interface-type-label"
+                    value={formData.interfaceType}
+                    label={t('editItemDialog.fields.interfaceType')}
+                    onChange={(e) => handleFieldChange('interfaceType', e.target.value as InterfaceType)}
+                    data-id-ref="edit-item-dialog-interface-type"
+                  >
+                    <MenuItem value={InterfaceTypeEnum.None}>
+                      {t('editItemDialog.interfaceTypes.none')}
+                    </MenuItem>
+                    <MenuItem value={InterfaceTypeEnum.Sharp7}>
+                      {t('editItemDialog.interfaceTypes.sharp7')}
+                    </MenuItem>
+                    <MenuItem value={InterfaceTypeEnum.BACnet}>
+                      {t('editItemDialog.interfaceTypes.bacnet')}
+                    </MenuItem>
+                    <MenuItem value={InterfaceTypeEnum.Modbus}>
+                      {t('editItemDialog.interfaceTypes.modbus')}
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isEditable}
+                      onChange={(e) => handleFieldChange('isEditable', e.target.checked)}
+                      disabled={isSaving}
+                      data-id-ref="edit-item-dialog-is-editable-switch"
+                    />
+                  }
+                  label={t('editItemDialog.fields.isEditable')}
+                  sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}
+                  data-id-ref="edit-item-dialog-is-editable"
                 />
               </Box>
 
