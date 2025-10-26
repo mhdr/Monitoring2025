@@ -173,11 +173,11 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState<boolean>(false);
 
-  // Check if user has admin or manager role
-  const isAdminOrManager = useMemo(() => {
+  // Check if user has admin role
+  const isAdmin = useMemo(() => {
     if (!user || !user.roles) return false;
     const roles = user.roles.map(r => r.toLowerCase());
-    return roles.includes('admin') || roles.includes('manager');
+    return roles.includes('admin');
   }, [user]);
 
   // Check if this item has active alarms
@@ -194,7 +194,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
     hasAlarm,
     alarmPriority,
     isChecking,
-    isAdminOrManager,
+    isAdmin,
   });
 
   // Memoize the detail URL to avoid recalculating on every render
@@ -448,8 +448,8 @@ const ItemCard: React.FC<ItemCardProps> = ({
                   </IconButton>
                 </Tooltip>
 
-                {/* Admin menu dropdown - only show for Admin/Manager roles */}
-                {isAdminOrManager && (
+                {/* Admin menu dropdown - only show for Admin role */}
+                {isAdmin && (
                   <Tooltip title={t('itemCard.adminMenu.title')} arrow placement="top">
                     <IconButton
                       onClick={handleAdminMenuOpen}
@@ -644,8 +644,8 @@ const ItemCard: React.FC<ItemCardProps> = ({
                   </IconButton>
                 </Tooltip>
 
-                {/* Admin menu dropdown - only show for Admin/Manager roles */}
-                {isAdminOrManager && (
+                {/* Admin menu dropdown - only show for Admin role */}
+                {isAdmin && (
                   <Tooltip title={t('itemCard.adminMenu.title')} arrow placement="top">
                     <IconButton
                       onClick={handleAdminMenuOpen}
