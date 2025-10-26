@@ -180,4 +180,11 @@ public class EditItemRequestDto
     /// </summary>
     /// <example>0.0</example>
     public float? CalibrationB { get; set; }
+
+    /// <summary>
+    /// Communication interface type for this monitoring item (None, Sharp7, BACnet, Modbus)
+    /// </summary>
+    /// <example>Modbus</example>
+    [Required(ErrorMessage = "Interface type is required")]
+    public InterfaceType InterfaceType { get; set; }
 }

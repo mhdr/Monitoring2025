@@ -1459,7 +1459,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///        "isDisabled": false,
     ///        "isCalibrationEnabled": true,
     ///        "calibrationA": 1.0,
-    ///        "calibrationB": 0.0
+    ///        "calibrationB": 0.0,
+    ///        "interfaceType": "Modbus"
     ///     }
     ///     
     /// </remarks>
@@ -1569,6 +1570,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 IsCalibrationEnabled = request.IsCalibrationEnabled,
                 CalibrationA = request.CalibrationA,
                 CalibrationB = request.CalibrationB,
+                InterfaceType = (Core.Libs.InterfaceType)request.InterfaceType,
             };
 
             // Perform the update
@@ -1643,7 +1645,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 CalibrationAOld = existingItem.CalibrationA,
                 CalibrationANew = request.CalibrationA,
                 CalibrationBOld = existingItem.CalibrationB,
-                CalibrationBNew = request.CalibrationB
+                CalibrationBNew = request.CalibrationB,
+                InterfaceTypeOld = existingItem.InterfaceType.ToString(),
+                InterfaceTypeNew = request.InterfaceType.ToString()
             };
 
             var logValueJson = JsonConvert.SerializeObject(auditLogData, Formatting.Indented);
