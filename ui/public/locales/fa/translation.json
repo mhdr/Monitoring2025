@@ -344,7 +344,14 @@
     "thresholdRange": "{{min}} تا {{max}}",
     "externalAlarmEnabled": "هشدار خارجی متصل",
     "externalAlarmDisabled": "بدون هشدار خارجی",
-    "alarmDetails": "جزئیات هشدار"
+    "alarmDetails": "جزئیات هشدار",
+    "statusCritical": "بحرانی",
+    "statusWarning": "هشدار",
+    "statusNormal": "عادی",
+    "thresholdIndicatorLegend": "رنگ‌های وضعیت آستانه",
+    "legendNormal": "عادی (کمتر از ۹۰٪)",
+    "legendWarning": "هشدار (۹۰-۹۹٪)",
+    "legendCritical": "بحرانی (۱۰۰٪ یا بیشتر)"
   },
   "alarms": {
     "priority": {

@@ -344,7 +344,14 @@
     "thresholdRange": "{{min}} - {{max}}",
     "externalAlarmEnabled": "External alarm connected",
     "externalAlarmDisabled": "No external alarm",
-    "alarmDetails": "Alarm Details"
+    "alarmDetails": "Alarm Details",
+    "statusCritical": "Critical",
+    "statusWarning": "Warning",
+    "statusNormal": "Normal",
+    "thresholdIndicatorLegend": "Threshold Status Colors",
+    "legendNormal": "Normal (< 90%)",
+    "legendWarning": "Warning (90-99%)",
+    "legendCritical": "Critical (≥ 100%)"
   },
   "alarms": {
     "priority": {

@@ -20,7 +20,6 @@ import {
   TableRow,
   Stack,
   Divider,
-  LinearProgress,
   Tooltip,
   Fade,
   IconButton,
@@ -28,6 +27,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  LinearProgress,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -841,13 +841,94 @@ const ActiveAlarmsPage: React.FC = () => {
             {/* Alarms Table */}
             {!loading && !error && alarms.length > 0 && (
               <Box sx={{ flexGrow: 1 }} data-id-ref="active-alarms-content-container">
-                <Box sx={{ mb: 2 }} data-id-ref="active-alarms-count-container">
+                <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }} data-id-ref="active-alarms-count-container">
                   <Chip
                     icon={<WarningIcon data-id-ref="active-alarms-count-icon" />}
                     label={`${alarms.length} ${t('activeAlarmsPage.alarmCount')}`}
                     color="error"
                     data-id-ref="active-alarms-count-chip"
                   />
+                  
+                  {/* Color Legend for Threshold Indicators */}
+                  <Paper 
+                    variant="outlined" 
+                    sx={{ 
+                      p: 1.5, 
+                      bgcolor: 'background.default',
+                      border: 1,
+                      borderColor: 'divider',
+                    }}
+                    data-id-ref="active-alarms-legend-container"
+                  >
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        fontWeight: 600, 
+                        color: 'text.secondary',
+                        mb: 1,
+                        display: 'block',
+                      }}
+                      data-id-ref="active-alarms-legend-title"
+                    >
+                      {t('activeAlarmsPage.thresholdIndicatorLegend')}:
+                    </Typography>
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        gap: 2,
+                        flexWrap: 'wrap',
+                      }}
+                      data-id-ref="active-alarms-legend-items"
+                    >
+                      {/* Green - Normal */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} data-id-ref="active-alarms-legend-normal">
+                        <Box 
+                          sx={{ 
+                            width: 24, 
+                            height: 8, 
+                            bgcolor: 'success.main', 
+                            borderRadius: 1,
+                          }}
+                          data-id-ref="active-alarms-legend-normal-bar"
+                        />
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+                          {t('activeAlarmsPage.legendNormal')}
+                        </Typography>
+                      </Box>
+                      
+                      {/* Yellow - Warning */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} data-id-ref="active-alarms-legend-warning">
+                        <Box 
+                          sx={{ 
+                            width: 24, 
+                            height: 8, 
+                            bgcolor: 'warning.main', 
+                            borderRadius: 1,
+                          }}
+                          data-id-ref="active-alarms-legend-warning-bar"
+                        />
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+                          {t('activeAlarmsPage.legendWarning')}
+                        </Typography>
+                      </Box>
+                      
+                      {/* Red - Critical */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} data-id-ref="active-alarms-legend-critical">
+                        <Box 
+                          sx={{ 
+                            width: 24, 
+                            height: 8, 
+                            bgcolor: 'error.main', 
+                            borderRadius: 1,
+                          }}
+                          data-id-ref="active-alarms-legend-critical-bar"
+                        />
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+                          {t('activeAlarmsPage.legendCritical')}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Paper>
                 </Box>
 
                 <TableContainer component={Paper} variant="outlined" data-id-ref="active-alarms-table-wrapper">
@@ -1160,7 +1241,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                     </Box>
                                   </Box>
                                   
-                                  {/* Threshold visualization */}
+                                  {/* Threshold visualization with progress bar */}
                                   {(() => {
                                     const alarmDto = storedAlarms.find(a => a.id === alarm.alarmId);
                                     const thresholdInfo = getThresholdPercentage(item, alarmDto, itemValue.value);
@@ -1168,34 +1249,51 @@ const ActiveAlarmsPage: React.FC = () => {
                                     if (thresholdInfo) {
                                       const label = `${t(thresholdInfo.labelKey)}: ${thresholdInfo.labelValue}`;
                                       return (
-                                        <Box sx={{ mt: 0.5 }} data-id-ref={`active-alarm-threshold-viz-${index}`}>
-                                          <Tooltip title={label} arrow placement="top">
-                                            <Box data-id-ref={`active-alarm-threshold-viz-content-${index}`}>
-                                              <LinearProgress 
-                                                variant="determinate" 
-                                                value={thresholdInfo.percentage}
-                                                color={thresholdInfo.color as 'success' | 'warning' | 'error'}
-                                                sx={{ 
-                                                  height: 6, 
-                                                  borderRadius: 1,
-                                                  bgcolor: 'action.selected',
-                                                }}
-                                                data-id-ref={`active-alarm-threshold-progress-${index}`}
-                                              />
-                                              <Typography 
-                                                variant="caption" 
-                                                sx={{ 
-                                                  fontSize: '0.65rem', 
-                                                  color: 'text.disabled',
-                                                  mt: 0.5,
-                                                  display: 'block',
-                                                }}
-                                                data-id-ref={`active-alarm-threshold-label-${index}`}
-                                              >
-                                                {label}
-                                              </Typography>
-                                            </Box>
-                                          </Tooltip>
+                                        <Box sx={{ mt: 1 }} data-id-ref={`active-alarm-threshold-viz-${index}`}>
+                                          {/* Progress bar */}
+                                          <LinearProgress 
+                                            variant="determinate" 
+                                            value={thresholdInfo.percentage}
+                                            color={thresholdInfo.color as 'success' | 'warning' | 'error'}
+                                            sx={{ 
+                                              height: 8, 
+                                              borderRadius: 1,
+                                              bgcolor: 'action.selected',
+                                            }}
+                                            data-id-ref={`active-alarm-threshold-progress-${index}`}
+                                          />
+                                          {/* Label with value */}
+                                          <Box 
+                                            sx={{ 
+                                              display: 'flex', 
+                                              justifyContent: 'space-between',
+                                              alignItems: 'center',
+                                              mt: 0.5,
+                                            }}
+                                            data-id-ref={`active-alarm-threshold-info-${index}`}
+                                          >
+                                            <Typography 
+                                              variant="caption" 
+                                              sx={{ 
+                                                fontSize: '0.7rem', 
+                                                color: 'text.secondary',
+                                              }}
+                                              data-id-ref={`active-alarm-threshold-label-${index}`}
+                                            >
+                                              {label}
+                                            </Typography>
+                                            <Typography 
+                                              variant="caption" 
+                                              sx={{ 
+                                                fontSize: '0.7rem',
+                                                fontWeight: 600,
+                                                color: `${thresholdInfo.color}.main`,
+                                              }}
+                                              data-id-ref={`active-alarm-threshold-percentage-${index}`}
+                                            >
+                                              {Math.round(thresholdInfo.percentage)}%
+                                            </Typography>
+                                          </Box>
                                         </Box>
                                       );
                                     }
