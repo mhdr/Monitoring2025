@@ -4,7 +4,7 @@ After=syslog.target network.target postgresql.service
 
 [Service]
 User=root
-Type=notify
+Type=simple
 WorkingDirectory=/opt/ems3/api
 ExecStart=/usr/bin/dotnet /opt/ems3/api/API.dll --urls "http://0.0.0.0:5030" --contentRoot /opt/ems3/api --environment Production
 SuccessExitStatus=143
