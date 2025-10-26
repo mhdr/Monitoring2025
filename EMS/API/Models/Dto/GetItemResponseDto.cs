@@ -118,6 +118,17 @@ public class GetItemResponseDto
         public int NumberOfSamples { get; set; }
 
         /// <summary>
+        /// Whether to save data when value changes significantly
+        /// </summary>
+        public SaveOnChange SaveOnChange { get; set; }
+
+        /// <summary>
+        /// The range threshold for triggering save on change (percentage or absolute value)
+        /// </summary>
+        /// <example>5</example>
+        public float SaveOnChangeRange { get; set; }
+
+        /// <summary>
         /// Text to display when boolean value is true
         /// </summary>
         /// <example>ON</example>
@@ -158,6 +169,24 @@ public class GetItemResponseDto
         /// </summary>
         /// <example>false</example>
         public bool? IsDisabled { get; set; }
+
+        /// <summary>
+        /// Whether calibration is enabled for this item
+        /// </summary>
+        /// <example>false</example>
+        public bool? IsCalibrationEnabled { get; set; }
+
+        /// <summary>
+        /// Calibration coefficient A (multiplier) in the formula: calibrated_value = A * raw_value + B
+        /// </summary>
+        /// <example>1.0</example>
+        public float? CalibrationA { get; set; }
+
+        /// <summary>
+        /// Calibration coefficient B (offset) in the formula: calibrated_value = A * raw_value + B
+        /// </summary>
+        /// <example>0.0</example>
+        public float? CalibrationB { get; set; }
 
         /// <summary>
         /// Communication interface type (Modbus, TCP, etc.)
