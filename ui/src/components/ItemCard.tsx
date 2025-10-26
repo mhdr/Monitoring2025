@@ -37,7 +37,6 @@ import {
   Lock as LockIcon,
   Settings as SettingsIcon,
   DriveFileMove as MoveItemIcon,
-  Group as GroupIcon,
   Security as PermissionsIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
@@ -1000,7 +999,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
       </MenuItem>
       <MenuItem onClick={handleEditGroup} data-id-ref="item-card-admin-menu-edit-point">
         <ListItemIcon>
-          <GroupIcon fontSize="small" />
+          <EditIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText primary={t('itemCard.adminMenu.editPoint')} />
       </MenuItem>
