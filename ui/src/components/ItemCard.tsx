@@ -378,6 +378,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
           data-id-ref="item-card-root-container"
         >
         <CardContent
+          onContextMenu={handleCardContextMenu}
           sx={{
             display: 'flex',
             flexDirection: 'column',
