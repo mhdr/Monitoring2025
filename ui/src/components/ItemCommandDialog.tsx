@@ -259,6 +259,11 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
       maxWidth="sm"
       fullWidth
       data-id-ref="item-command-dialog"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+          e.preventDefault();
+        }
+      }}
     >
       <DialogTitle
         sx={{
@@ -432,7 +437,12 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
 
       <DialogActions sx={{ p: 2 }} data-id-ref="item-command-dialog-actions">
         <Button
-          onClick={handleClose}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleClose();
+          }}
           disabled={isLoading}
           color="inherit"
           data-id-ref="item-command-dialog-cancel-button"
@@ -442,7 +452,12 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
         
         {!success && (
           <Button
-            onClick={handleSendCommand}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSendCommand();
+            }}
             disabled={!canSendCommand}
             variant="contained"
             color="primary"

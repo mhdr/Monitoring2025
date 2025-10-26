@@ -465,6 +465,11 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
       maxWidth="md"
       fullWidth
       data-id-ref="edit-item-dialog"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+          e.preventDefault();
+        }
+      }}
     >
       <DialogTitle data-id-ref="edit-item-dialog-title">
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1005,14 +1010,24 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
 
       <DialogActions data-id-ref="edit-item-dialog-actions">
         <Button
-          onClick={handleClose}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleClose();
+          }}
           disabled={isSaving}
           data-id-ref="edit-item-dialog-cancel-button"
         >
           {t('common.cancel')}
         </Button>
         <Button
-          onClick={handleSave}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSave();
+          }}
           variant="contained"
           disabled={isLoading || isSaving || !!loadError}
           data-id-ref="edit-item-dialog-save-button"

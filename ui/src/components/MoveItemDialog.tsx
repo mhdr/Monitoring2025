@@ -222,6 +222,11 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
         },
       }}
       data-id-ref="move-item-dialog"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+          e.preventDefault();
+        }
+      }}
     >
       <DialogTitle 
         data-id-ref="move-item-dialog-title"
@@ -399,7 +404,12 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
         }}
       >
         <Button
-          onClick={handleClose}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleClose();
+          }}
           disabled={isSubmitting}
           data-id-ref="move-item-dialog-cancel-button"
           fullWidth={false}
@@ -410,7 +420,12 @@ const MoveItemDialog: React.FC<MoveItemDialogProps> = ({
           {t('cancel')}
         </Button>
         <Button
-          onClick={handleSubmit}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSubmit();
+          }}
           variant="contained"
           disabled={isSubmitting || !selectedGroupId || folderOptions.length === 0}
           startIcon={isSubmitting ? <CircularProgress size={16} /> : <MoveIcon />}

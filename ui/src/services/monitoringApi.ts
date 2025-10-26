@@ -540,11 +540,10 @@ export const editItem = async (data: EditItemRequestDto): Promise<EditItemRespon
     // Convert camelCase to PascalCase for .NET API
     const pascalCaseData = toPascalCaseObject(data);
     
-    // Wrap the request in a 'request' field as expected by the backend
-    const requestPayload = { request: pascalCaseData };
-    logger.log('Sending wrapped PascalCase request payload:', requestPayload);
+    // Send the request directly without wrapping - the controller expects [FromBody] EditItemRequestDto
+    logger.log('Sending PascalCase request payload:', pascalCaseData);
     
-    const response = await apiClient.post<EditItemResponseDto>('/api/Monitoring/EditItem', requestPayload);
+    const response = await apiClient.post<EditItemResponseDto>('/api/Monitoring/EditItem', pascalCaseData);
     
     logger.log('Item edited successfully', { 
       itemId: data.id, 

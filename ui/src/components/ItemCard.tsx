@@ -44,6 +44,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
 import { useItemAlarmStatus } from '../hooks/useItemAlarmStatus';
 import { useAuth } from '../hooks/useAuth';
+import { useMonitoring } from '../hooks/useMonitoring';
 import { buildDetailTabUrl } from '../utils/detailRoutes';
 import { createLogger } from '../utils/logger';
 import type { Item, InterfaceType, ItemType } from '../types/api';
@@ -166,6 +167,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { fetchGroups, fetchItems } = useMonitoring();
   const prefetchUrl = useUrlPrefetch();
   const [elevation, setElevation] = useState<number>(1);
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
@@ -359,12 +361,18 @@ const ItemCard: React.FC<ItemCardProps> = ({
   };
 
   /**
-   * Handle successful move - trigger page refresh
+   * Handle successful move or edit - refresh data without page reload
    */
-  const handleMoveSuccess = () => {
-    logger.log('Item moved successfully, refreshing page', { itemId, itemName: name });
-    // Refresh the page to show the updated location
-    window.location.reload();
+  const handleMoveSuccess = async () => {
+    logger.log('Item updated successfully, refreshing data', { itemId, itemName: name });
+    try {
+      // Refresh groups and items data from the server
+      await Promise.all([fetchGroups(), fetchItems()]);
+      logger.log('Data refreshed successfully');
+    } catch (error) {
+      logger.error('Failed to refresh data after item update', error);
+      // Even if refresh fails, the operation succeeded, so just log it
+    }
   };
 
   return (
