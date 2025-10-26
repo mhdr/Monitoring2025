@@ -31,6 +31,13 @@ public class EditItemRequestDto
     public string ItemName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Display name of the monitoring item in Farsi
+    /// </summary>
+    /// <example>دمای سنسور 1</example>
+    [StringLength(200, ErrorMessage = "Item name (Farsi) must be less than 200 characters")]
+    public string? ItemNameFa { get; set; }
+
+    /// <summary>
     /// Physical point number for controller mapping
     /// </summary>
     /// <example>101</example>
@@ -98,11 +105,29 @@ public class EditItemRequestDto
     public int NumberOfSamples { get; set; }
 
     /// <summary>
+    /// Whether to save data when value changes significantly
+    /// </summary>
+    public SaveOnChange SaveOnChange { get; set; }
+
+    /// <summary>
+    /// The range threshold for triggering save on change (percentage or absolute value)
+    /// </summary>
+    /// <example>5</example>
+    public float SaveOnChangeRange { get; set; }
+
+    /// <summary>
     /// Text to display when digital value is ON/true
     /// </summary>
     /// <example>Running</example>
     [StringLength(100, ErrorMessage = "On text must be less than 100 characters")]
     public string? OnText { get; set; }
+
+    /// <summary>
+    /// Text to display when digital value is ON/true in Farsi
+    /// </summary>
+    /// <example>روشن</example>
+    [StringLength(100, ErrorMessage = "On text (Farsi) must be less than 100 characters")]
+    public string? OnTextFa { get; set; }
 
     /// <summary>
     /// Text to display when digital value is OFF/false
@@ -112,6 +137,13 @@ public class EditItemRequestDto
     public string? OffText { get; set; }
 
     /// <summary>
+    /// Text to display when digital value is OFF/false in Farsi
+    /// </summary>
+    /// <example>خاموش</example>
+    [StringLength(100, ErrorMessage = "Off text (Farsi) must be less than 100 characters")]
+    public string? OffTextFa { get; set; }
+
+    /// <summary>
     /// Unit of measurement for the value
     /// </summary>
     /// <example>°C</example>
@@ -119,8 +151,33 @@ public class EditItemRequestDto
     public string? Unit { get; set; }
 
     /// <summary>
+    /// Unit of measurement for the value in Farsi
+    /// </summary>
+    /// <example>درجه سانتی‌گراد</example>
+    [StringLength(50, ErrorMessage = "Unit (Farsi) must be less than 50 characters")]
+    public string? UnitFa { get; set; }
+
+    /// <summary>
     /// Indicates if the monitoring item is disabled
     /// </summary>
     /// <example>false</example>
     public bool IsDisabled { get; set; }
+
+    /// <summary>
+    /// Whether calibration is enabled for this item
+    /// </summary>
+    /// <example>false</example>
+    public bool? IsCalibrationEnabled { get; set; }
+
+    /// <summary>
+    /// Calibration coefficient A (multiplier) in the formula: calibrated_value = A * raw_value + B
+    /// </summary>
+    /// <example>1.0</example>
+    public float? CalibrationA { get; set; }
+
+    /// <summary>
+    /// Calibration coefficient B (offset) in the formula: calibrated_value = A * raw_value + B
+    /// </summary>
+    /// <example>0.0</example>
+    public float? CalibrationB { get; set; }
 }

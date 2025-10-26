@@ -1425,7 +1425,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <returns>Result indicating success or failure with specific error information</returns>
     /// <remarks>
     /// Updates the complete configuration of an existing monitoring item including all properties
-    /// such as item type, name, scaling parameters, save intervals, and calculation methods.
+    /// such as item type, name (English and Farsi), scaling parameters, save intervals, calculation methods,
+    /// calibration settings, and save-on-change configuration.
     /// Validates that the point number is unique across all items (except the current item being edited).
     /// Creates an audit log entry for the modification.
     /// 
@@ -1436,6 +1437,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///        "id": "550e8400-e29b-41d4-a716-446655440000",
     ///        "itemType": "AnalogInput",
     ///        "itemName": "Temperature Sensor 1",
+    ///        "itemNameFa": "دمای سنسور 1",
     ///        "pointNumber": 101,
     ///        "shouldScale": "Yes",
     ///        "normMin": 0,
@@ -1446,10 +1448,18 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///        "saveHistoricalInterval": 300,
     ///        "calculationMethod": "Average",
     ///        "numberOfSamples": 10,
+    ///        "saveOnChange": "Disabled",
+    ///        "saveOnChangeRange": 5.0,
     ///        "onText": "Running",
+    ///        "onTextFa": "در حال اجرا",
     ///        "offText": "Stopped",
+    ///        "offTextFa": "متوقف",
     ///        "unit": "°C",
-    ///        "isDisabled": false
+    ///        "unitFa": "درجه سانتی‌گراد",
+    ///        "isDisabled": false,
+    ///        "isCalibrationEnabled": true,
+    ///        "calibrationA": 1.0,
+    ///        "calibrationB": 0.0
     ///     }
     ///     
     /// </remarks>
@@ -1536,6 +1546,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 Id = request.Id,
                 ItemType = (Core.Libs.ItemType)request.ItemType,
                 ItemName = request.ItemName,
+                ItemNameFa = request.ItemNameFa,
                 PointNumber = request.PointNumber,
                 ShouldScale = (Core.Libs.ShouldScaleType)request.ShouldScale,
                 NormMin = request.NormMin,
@@ -1546,10 +1557,18 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 SaveHistoricalInterval = request.SaveHistoricalInterval,
                 CalculationMethod = (Core.Libs.ValueCalculationMethod)request.CalculationMethod,
                 NumberOfSamples = request.NumberOfSamples,
+                SaveOnChange = (Core.Libs.SaveOnChange)request.SaveOnChange,
+                SaveOnChangeRange = request.SaveOnChangeRange,
                 OnText = request.OnText,
+                OnTextFa = request.OnTextFa,
                 OffText = request.OffText,
+                OffTextFa = request.OffTextFa,
                 Unit = request.Unit,
+                UnitFa = request.UnitFa,
                 IsDisabled = request.IsDisabled,
+                IsCalibrationEnabled = request.IsCalibrationEnabled,
+                CalibrationA = request.CalibrationA,
+                CalibrationB = request.CalibrationB,
             };
 
             // Perform the update
@@ -1577,6 +1596,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 ItemIdOld = existingItem.Id,
                 ItemNameOld = existingItem.ItemName,
                 ItemNameNew = request.ItemName,
+                ItemNameFaOld = existingItem.ItemNameFa,
+                ItemNameFaNew = request.ItemNameFa,
                 ItemTypeOld = existingItem.ItemType.ToString(),
                 ItemTypeNew = request.ItemType.ToString(),
                 PointNumberOld = existingItem.PointNumber,
@@ -1599,14 +1620,30 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 CalculationMethodNew = request.CalculationMethod.ToString(),
                 NumberOfSamplesOld = existingItem.NumberOfSamples,
                 NumberOfSamplesNew = request.NumberOfSamples,
+                SaveOnChangeOld = existingItem.SaveOnChange.ToString(),
+                SaveOnChangeNew = request.SaveOnChange.ToString(),
+                SaveOnChangeRangeOld = existingItem.SaveOnChangeRange,
+                SaveOnChangeRangeNew = request.SaveOnChangeRange,
                 OnTextOld = existingItem.OnText,
                 OnTextNew = request.OnText,
+                OnTextFaOld = existingItem.OnTextFa,
+                OnTextFaNew = request.OnTextFa,
                 OffTextOld = existingItem.OffText,
                 OffTextNew = request.OffText,
+                OffTextFaOld = existingItem.OffTextFa,
+                OffTextFaNew = request.OffTextFa,
                 UnitOld = existingItem.Unit,
                 UnitNew = request.Unit,
+                UnitFaOld = existingItem.UnitFa,
+                UnitFaNew = request.UnitFa,
                 IsDisabledOld = existingItem.IsDisabled,
-                IsDisabledNew = request.IsDisabled
+                IsDisabledNew = request.IsDisabled,
+                IsCalibrationEnabledOld = existingItem.IsCalibrationEnabled,
+                IsCalibrationEnabledNew = request.IsCalibrationEnabled,
+                CalibrationAOld = existingItem.CalibrationA,
+                CalibrationANew = request.CalibrationA,
+                CalibrationBOld = existingItem.CalibrationB,
+                CalibrationBNew = request.CalibrationB
             };
 
             var logValueJson = JsonConvert.SerializeObject(auditLogData, Formatting.Indented);
