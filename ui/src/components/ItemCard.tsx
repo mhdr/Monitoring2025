@@ -37,7 +37,6 @@ import {
   Lock as LockIcon,
   Settings as SettingsIcon,
   DriveFileMove as MoveItemIcon,
-  Security as PermissionsIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
@@ -351,12 +350,6 @@ const ItemCard: React.FC<ItemCardProps> = ({
     logger.log('Opening edit item dialog', { itemId, itemName: name });
     handleAdminMenuClose();
     setEditDialogOpen(true);
-  };
-
-  const handleUserPermissions = () => {
-    logger.log('User permissions clicked (not implemented)', { itemId, itemName: name });
-    handleAdminMenuClose();
-    // TODO: Implement user permissions functionality
   };
 
   /**
@@ -1002,12 +995,6 @@ const ItemCard: React.FC<ItemCardProps> = ({
           <EditIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText primary={t('itemCard.adminMenu.editPoint')} />
-      </MenuItem>
-      <MenuItem onClick={handleUserPermissions} data-id-ref="item-card-admin-menu-user-permissions">
-        <ListItemIcon>
-          <PermissionsIcon fontSize="small" />
-        </ListItemIcon>
-        <ListItemText primary={t('itemCard.adminMenu.userPermissions')} />
       </MenuItem>
     </Menu>
 
