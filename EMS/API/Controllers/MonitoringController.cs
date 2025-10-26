@@ -1545,6 +1545,247 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
         return BadRequest(ModelState);
     }
 
+    /// <summary>
+    /// Edit a monitoring item's complete configuration
+    /// </summary>
+    /// <param name="request">Edit item request containing the item ID and updated configuration properties</param>
+    /// <returns>Result indicating success or failure with specific error information</returns>
+    /// <remarks>
+    /// Updates the complete configuration of an existing monitoring item including all properties
+    /// such as item type, name, scaling parameters, save intervals, and calculation methods.
+    /// Validates that the point number is unique across all items (except the current item being edited).
+    /// Creates an audit log entry for the modification.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/edititem
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "itemType": "AnalogInput",
+    ///        "itemName": "Temperature Sensor 1",
+    ///        "pointNumber": 101,
+    ///        "shouldScale": "Yes",
+    ///        "normMin": 0,
+    ///        "normMax": 100,
+    ///        "scaleMin": -50,
+    ///        "scaleMax": 150,
+    ///        "saveInterval": 60,
+    ///        "saveHistoricalInterval": 300,
+    ///        "calculationMethod": "Average",
+    ///        "numberOfSamples": 10,
+    ///        "onText": "Running",
+    ///        "offText": "Stopped",
+    ///        "unit": "°C",
+    ///        "isDisabled": false
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Monitoring item updated successfully with operation status</response>
+    /// <response code="400">Validation error - invalid request format, missing required fields, or duplicate point number</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - insufficient permissions to edit this item</response>
+    /// <response code="404">Item not found - the specified item ID does not exist</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("EditItem")]
+    [ProducesResponseType(typeof(EditItemResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> EditItem([FromBody] EditItemRequestDto request)
+    {
+        try
+        {
+            _logger.LogInformation("EditItem operation started for item {ItemId}", request.Id);
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("EditItem: Unauthorized access attempt");
+                return Unauthorized(new { success = false, message = "Authentication required" });
+            }
+
+            // Validate ModelState
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("EditItem: Validation failed for item {ItemId}: {Errors}", 
+                    request.Id, string.Join(", ", errors));
+
+                return BadRequest(new EditItemResponseDto
+                {
+                    Success = false,
+                    Message = "Validation failed",
+                    Error = EditItemResponseDto.EditItemErrorType.ValidationError
+                });
+            }
+
+            var userGuid = Guid.Parse(userId);
+
+            // Check if item exists
+            var existingItem = await Core.Points.GetPoint(request.Id);
+
+            if (existingItem == null)
+            {
+                _logger.LogWarning("EditItem: Item {ItemId} not found", request.Id);
+                return NotFound(new EditItemResponseDto
+                {
+                    Success = false,
+                    Message = "Monitoring item not found",
+                    Error = EditItemResponseDto.EditItemErrorType.ItemNotFound
+                });
+            }
+
+            // Check for duplicate point number
+            var matchByPointNumber = await Core.Points.GetPoint(x => x.PointNumber == request.PointNumber);
+
+            if (matchByPointNumber != null && matchByPointNumber.Id != request.Id)
+            {
+                _logger.LogWarning("EditItem: Duplicate point number {PointNumber} found for another item", 
+                    request.PointNumber);
+                return BadRequest(new EditItemResponseDto
+                {
+                    Success = false,
+                    Message = $"Point number {request.PointNumber} is already assigned to another item",
+                    Error = EditItemResponseDto.EditItemErrorType.DuplicatePointNumber
+                });
+            }
+
+            // Create the updated item object
+            var updatedItem = new MonitoringItem
+            {
+                Id = request.Id,
+                ItemType = (Core.Libs.ItemType)request.ItemType,
+                ItemName = request.ItemName,
+                PointNumber = request.PointNumber,
+                ShouldScale = (Core.Libs.ShouldScaleType)request.ShouldScale,
+                NormMin = request.NormMin,
+                NormMax = request.NormMax,
+                ScaleMin = request.ScaleMin,
+                ScaleMax = request.ScaleMax,
+                SaveInterval = request.SaveInterval,
+                SaveHistoricalInterval = request.SaveHistoricalInterval,
+                CalculationMethod = (Core.Libs.ValueCalculationMethod)request.CalculationMethod,
+                NumberOfSamples = request.NumberOfSamples,
+                OnText = request.OnText,
+                OffText = request.OffText,
+                Unit = request.Unit,
+                IsDisabled = request.IsDisabled,
+            };
+
+            // Perform the update
+            var result = await Core.Points.EditPoint(updatedItem);
+
+            if (!result)
+            {
+                _logger.LogError("EditItem: Failed to update item {ItemId}", request.Id);
+                return StatusCode(500, new EditItemResponseDto
+                {
+                    Success = false,
+                    Message = "Failed to update monitoring item",
+                    Error = EditItemResponseDto.EditItemErrorType.UnknownError
+                });
+            }
+
+            // Create audit log entry
+            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
+            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+            var auditLogData = new
+            {
+                ItemIdOld = existingItem.Id,
+                ItemNameOld = existingItem.ItemName,
+                ItemNameNew = request.ItemName,
+                ItemTypeOld = existingItem.ItemType.ToString(),
+                ItemTypeNew = request.ItemType.ToString(),
+                PointNumberOld = existingItem.PointNumber,
+                PointNumberNew = request.PointNumber,
+                ShouldScaleOld = existingItem.ShouldScale.ToString(),
+                ShouldScaleNew = request.ShouldScale.ToString(),
+                NormMinOld = existingItem.NormMin,
+                NormMinNew = request.NormMin,
+                NormMaxOld = existingItem.NormMax,
+                NormMaxNew = request.NormMax,
+                ScaleMinOld = existingItem.ScaleMin,
+                ScaleMinNew = request.ScaleMin,
+                ScaleMaxOld = existingItem.ScaleMax,
+                ScaleMaxNew = request.ScaleMax,
+                SaveIntervalOld = existingItem.SaveInterval,
+                SaveIntervalNew = request.SaveInterval,
+                SaveHistoricalIntervalOld = existingItem.SaveHistoricalInterval,
+                SaveHistoricalIntervalNew = request.SaveHistoricalInterval,
+                CalculationMethodOld = existingItem.CalculationMethod.ToString(),
+                CalculationMethodNew = request.CalculationMethod.ToString(),
+                NumberOfSamplesOld = existingItem.NumberOfSamples,
+                NumberOfSamplesNew = request.NumberOfSamples,
+                OnTextOld = existingItem.OnText,
+                OnTextNew = request.OnText,
+                OffTextOld = existingItem.OffText,
+                OffTextNew = request.OffText,
+                UnitOld = existingItem.Unit,
+                UnitNew = request.Unit,
+                IsDisabledOld = existingItem.IsDisabled,
+                IsDisabledNew = request.IsDisabled
+            };
+
+            var logValueJson = JsonConvert.SerializeObject(auditLogData, Formatting.Indented);
+
+            await _context.AuditLogs.AddAsync(new AuditLog
+            {
+                IsUser = true,
+                UserId = userGuid,
+                ItemId = request.Id,
+                ActionType = LogType.EditPoint, // TODO: Add LogType.EditItem = 11 to Share.Libs.Enums.LogType enum
+                IpAddress = ipAddress,
+                LogValue = logValueJson,
+                Time = epochTime,
+            });
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("EditItem: Successfully updated item {ItemId} by user {UserId}", 
+                request.Id, userId);
+
+            return Ok(new EditItemResponseDto
+            {
+                Success = true,
+                Message = "Monitoring item updated successfully"
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "EditItem: Validation error for item {ItemId}", request.Id);
+            return BadRequest(new EditItemResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                Error = EditItemResponseDto.EditItemErrorType.ValidationError
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "EditItem: Unauthorized access attempt for item {ItemId}", request.Id);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "EditItem: Error updating item {ItemId}: {Message}", 
+                request.Id, ex.Message);
+            return StatusCode(500, new EditItemResponseDto
+            {
+                Success = false,
+                Message = "Internal server error",
+                Error = EditItemResponseDto.EditItemErrorType.UnknownError
+            });
+        }
+    }
 
     /// <summary>
     /// Retrieve audit log entries for system activities within a date range

@@ -842,3 +842,110 @@ Authorization: Bearer {{access_token}}
 }
 
 ###
+### Edit Monitoring Item - Complete Configuration
+POST {{API_HostAddress}}/api/monitoring/EditItem
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "itemType": 3,
+  "itemName": "Temperature Sensor 1 - Updated",
+  "pointNumber": 101,
+  "shouldScale": 1,
+  "normMin": 0,
+  "normMax": 100,
+  "scaleMin": -50,
+  "scaleMax": 150,
+  "saveInterval": 60,
+  "saveHistoricalInterval": 300,
+  "calculationMethod": 1,
+  "numberOfSamples": 10,
+  "onText": "Running",
+  "offText": "Stopped",
+  "unit": "°C",
+  "isDisabled": false
+}
+
+###
+
+### Edit Monitoring Item - Digital Input Example
+POST {{API_HostAddress}}/api/monitoring/EditItem
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440001",
+  "itemType": 1,
+  "itemName": "Motor Status Switch",
+  "pointNumber": 205,
+  "shouldScale": 2,
+  "normMin": 0,
+  "normMax": 1,
+  "scaleMin": 0,
+  "scaleMax": 1,
+  "saveInterval": 30,
+  "saveHistoricalInterval": 120,
+  "calculationMethod": 0,
+  "numberOfSamples": 1,
+  "onText": "Motor Running",
+  "offText": "Motor Stopped",
+  "unit": "",
+  "isDisabled": false
+}
+
+###
+
+### Edit Monitoring Item - Error Case (Duplicate Point Number)
+POST {{API_HostAddress}}/api/monitoring/EditItem
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "itemType": 3,
+  "itemName": "Test Item",
+  "pointNumber": 999999,
+  "shouldScale": 1,
+  "normMin": 0,
+  "normMax": 100,
+  "scaleMin": 0,
+  "scaleMax": 100,
+  "saveInterval": 60,
+  "saveHistoricalInterval": 300,
+  "calculationMethod": 1,
+  "numberOfSamples": 10,
+  "onText": "",
+  "offText": "",
+  "unit": "",
+  "isDisabled": false
+}
+
+###
+
+### Edit Monitoring Item - Error Case (Item Not Found)
+POST {{API_HostAddress}}/api/monitoring/EditItem
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "itemType": 3,
+  "itemName": "Non-existent Item",
+  "pointNumber": 100,
+  "shouldScale": 1,
+  "normMin": 0,
+  "normMax": 100,
+  "scaleMin": 0,
+  "scaleMax": 100,
+  "saveInterval": 60,
+  "saveHistoricalInterval": 300,
+  "calculationMethod": 1,
+  "numberOfSamples": 10,
+  "onText": "",
+  "offText": "",
+  "unit": "",
+  "isDisabled": false
+}
+
+###
