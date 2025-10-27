@@ -17,6 +17,7 @@ import type {
   EditPointAsAdminRequestDto,
   EditPointResponseDto,
   DeletePointRequestDto,
+  DeleteItemResponseDto,
   MovePointRequestDto,
   AlarmsRequestDto,
   AlarmsResponseDto,
@@ -290,9 +291,9 @@ export const editPointAsAdmin = async (data: EditPointAsAdminRequestDto): Promis
 /**
  * Delete a monitoring point
  */
-export const deletePoint = async (data: DeletePointRequestDto): Promise<EditPointResponseDto> => {
+export const deletePoint = async (data: DeletePointRequestDto): Promise<DeleteItemResponseDto> => {
   try {
-    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/DeletePoint', data);
+    const response = await apiClient.post<DeleteItemResponseDto>('/api/Monitoring/DeleteItem', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

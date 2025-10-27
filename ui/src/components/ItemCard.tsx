@@ -392,7 +392,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
     try {
       const response = await deletePoint({ id: itemId });
       
-      if (response.isSuccessful) {
+      if (response.isSuccess) {
         logger.log('Point deleted successfully', { itemId, itemName: name });
         setDeleteConfirmOpen(false);
         // Refresh data to remove the deleted item from UI

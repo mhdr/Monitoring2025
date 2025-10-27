@@ -419,6 +419,10 @@ export interface DeletePointRequestDto {
   id: string; // UUID
 }
 
+export interface DeleteItemResponseDto {
+  isSuccess: boolean; // Note: Backend uses 'isSuccess' not 'isSuccessful'
+}
+
 export interface MovePointRequestDto {
   pointId: string; // UUID
   parentId: string; // UUID
