@@ -326,6 +326,7 @@ Authorization: Bearer {{authTokenHTTP}}
 
 {
   "name": "Production Servers",
+  "nameFa": "سرورهای تولید",
   "parentId": null
 }
 
@@ -338,6 +339,7 @@ Authorization: Bearer {{authTokenHTTPS}}
 
 {
   "name": "Development Servers",
+  "nameFa": "سرورهای توسعه",
   "parentId": null
 }
 
@@ -350,6 +352,7 @@ Authorization: Bearer {{authTokenHTTP}}
 
 {
   "name": "Web Servers",
+  "nameFa": "سرورهای وب",
   "parentId": "replace_with_actual_parent_group_id"
 }
 
@@ -362,7 +365,19 @@ Authorization: Bearer {{authTokenHTTPS}}
 
 {
   "name": "Database Servers",
+  "nameFa": "سرورهای پایگاه داده",
   "parentId": "replace_with_actual_parent_group_id"
+}
+
+###
+
+### Add group without Farsi name - HTTP
+POST {{API_HostAddress}}/api/monitoring/AddGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "name": "Building A - HVAC System"
 }
 
 ###

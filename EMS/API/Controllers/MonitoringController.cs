@@ -2114,21 +2114,23 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <summary>
     /// Create a new monitoring group for organizing monitoring items
     /// </summary>
-    /// <param name="request">Add group request containing group name and optional parent ID</param>
+    /// <param name="request">Add group request containing group name (English and optional Farsi) and optional parent ID</param>
     /// <returns>Result indicating success or failure of group creation with the new group ID</returns>
     /// <remarks>
     /// Creates a new monitoring group in the system. Groups can be organized hierarchically by specifying a parent group ID.
-    /// Group names should be unique and descriptive for easy identification.
+    /// Group names should be unique within the same parent context and descriptive for easy identification.
+    /// Supports bilingual naming with both English and Farsi names.
     /// 
-    /// Sample request:
+    /// Sample request with Farsi name:
     /// 
     ///     POST /api/monitoring/addgroup
     ///     {
     ///        "name": "Building A - HVAC System",
+    ///        "nameFa": "ساختمان الف - سیستم تهویه مطبوع",
     ///        "parentId": "550e8400-e29b-41d4-a716-446655440000"
     ///     }
     ///     
-    /// For a root-level group, omit the parentId or set it to null:
+    /// For a root-level group without Farsi name:
     /// 
     ///     POST /api/monitoring/addgroup
     ///     {
@@ -2194,6 +2196,18 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 });
             }
 
+            // Validate NameFa if provided
+            if (!string.IsNullOrWhiteSpace(request.NameFa) && request.NameFa.Length > 100)
+            {
+                _logger.LogWarning("AddGroup: NameFa exceeds maximum length for user {UserId}", userId);
+                return BadRequest(new AddGroupResponseDto
+                {
+                    Success = false,
+                    Message = "Group name (Farsi) must not exceed 100 characters",
+                    Error = AddGroupResponseDto.AddGroupErrorType.ValidationError
+                });
+            }
+
             // Check if parent group exists if ParentId is provided
             if (request.ParentId.HasValue)
             {
@@ -2231,6 +2245,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             var newGroup = new Group()
             {
                 Name = request.Name,
+                NameFa = request.NameFa,
                 ParentId = request.ParentId,
             };
 
@@ -2246,6 +2261,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 GroupId = newGroup.Id,
                 GroupName = newGroup.Name,
+                GroupNameFa = newGroup.NameFa,
                 ParentId = newGroup.ParentId,
                 CreatedBy = userId
             };
@@ -2264,8 +2280,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             });
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("AddGroup: Successfully created group {GroupId} with name '{GroupName}' by user {UserId}", 
-                newGroup.Id, newGroup.Name, userId);
+            _logger.LogInformation("AddGroup: Successfully created group {GroupId} with name '{GroupName}' (NameFa: '{NameFa}') by user {UserId}", 
+                newGroup.Id, newGroup.Name, newGroup.NameFa ?? "N/A", userId);
 
             return Ok(new AddGroupResponseDto
             {

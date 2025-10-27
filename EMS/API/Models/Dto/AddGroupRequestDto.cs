@@ -16,6 +16,13 @@ public class AddGroupRequestDto
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// Name of the monitoring group in Farsi (optional, 1-100 characters)
+    /// </summary>
+    /// <example>ساختمان الف - سیستم تهویه مطبوع</example>
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "Group name (Farsi) must be between 1 and 100 characters")]
+    public string? NameFa { get; set; }
+
+    /// <summary>
     /// ID of the parent group for hierarchical organization. Leave null for root-level groups.
     /// </summary>
     /// <example>550e8400-e29b-41d4-a716-446655440000</example>
