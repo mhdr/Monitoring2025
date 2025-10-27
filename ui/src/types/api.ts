@@ -974,6 +974,97 @@ export interface MonitoringItem {
   isEditable: boolean;
 }
 
+// ==================== Item Creation DTOs ====================
+
+/**
+ * Types of errors that can occur during item creation
+ */
+export const AddItemErrorType = {
+  None: 0,
+  InvalidPointNumber: 1,
+  DuplicatePointNumber: 2,
+  ValidationError: 3,
+  Unauthorized: 4,
+} as const;
+
+export type AddItemErrorType = typeof AddItemErrorType[keyof typeof AddItemErrorType];
+
+/**
+ * Request model for adding a new monitoring item
+ */
+export interface AddItemRequestDto {
+  /** Type of monitoring item (digital/analog, input/output) */
+  itemType: ItemType;
+  /** Display name of the monitoring item (1-200 characters) */
+  itemName: string;
+  /** Display name of the monitoring item in Farsi (0-200 characters) */
+  itemNameFa?: string | null;
+  /** Physical point number for controller mapping (0-2147483647, must be unique) */
+  pointNumber: number;
+  /** Whether to apply scaling to raw values (1=On, 2=Off) */
+  shouldScale: ShouldScaleType;
+  /** Minimum value of the normalized range (before scaling) */
+  normMin: number;
+  /** Maximum value of the normalized range (before scaling) */
+  normMax: number;
+  /** Minimum value of the scaled range (after scaling) */
+  scaleMin: number;
+  /** Maximum value of the scaled range (after scaling) */
+  scaleMax: number;
+  /** Interval in seconds for saving current values (0-2147483647) */
+  saveInterval: number;
+  /** Interval in seconds for saving historical values (0-2147483647) */
+  saveHistoricalInterval: number;
+  /** Method for calculating values from samples (0=LastValue, 1=Average) */
+  calculationMethod: ValueCalculationMethod;
+  /** Number of samples to use for value calculation (1-2147483647) */
+  numberOfSamples: number;
+  /** Whether to save values on change (0=Default, 1=On, 2=Off) */
+  saveOnChange?: SaveOnChange | null;
+  /** The range threshold for triggering save on change (percentage or absolute value) */
+  saveOnChangeRange?: number | null;
+  /** Text to display when digital value is ON/true (0-100 characters) */
+  onText?: string | null;
+  /** Text to display when digital value is ON/true in Farsi (0-100 characters) */
+  onTextFa?: string | null;
+  /** Text to display when digital value is OFF/false (0-100 characters) */
+  offText?: string | null;
+  /** Text to display when digital value is OFF/false in Farsi (0-100 characters) */
+  offTextFa?: string | null;
+  /** Unit of measurement for the value (0-50 characters) */
+  unit?: string | null;
+  /** Unit of measurement for the value in Farsi (0-50 characters) */
+  unitFa?: string | null;
+  /** Indicates if the monitoring item is disabled */
+  isDisabled: boolean;
+  /** Whether calibration is enabled for this item */
+  isCalibrationEnabled?: boolean | null;
+  /** Calibration coefficient A (multiplier) in the formula: calibrated_value = A * raw_value + B */
+  calibrationA?: number | null;
+  /** Calibration coefficient B (offset) in the formula: calibrated_value = A * raw_value + B */
+  calibrationB?: number | null;
+  /** Interface type for communication protocol (0=None, 1=Sharp7, 2=BACnet, 3=Modbus) */
+  interfaceType: InterfaceType;
+  /** Indicates if the item allows value writes from users */
+  isEditable: boolean;
+  /** Optional parent group ID to assign the item to a group upon creation */
+  parentGroupId?: string | null;
+}
+
+/**
+ * Response model for adding a new monitoring item
+ */
+export interface AddItemResponseDto {
+  /** Indicates if the add operation was successful */
+  success: boolean;
+  /** Detailed message about the operation result */
+  message?: string | null;
+  /** The unique identifier of the newly created monitoring item */
+  itemId?: string | null;
+  /** Error type if operation failed */
+  error?: AddItemErrorType;
+}
+
 /**
  * Request DTO for editing a monitoring item's complete configuration
  */
