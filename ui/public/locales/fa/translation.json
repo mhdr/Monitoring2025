@@ -530,8 +530,10 @@
   },
   "addGroupDialog": {
     "title": "افزودن پوشه جدید",
-    "folderNameLabel": "نام پوشه",
+    "folderNameLabel": "نام پوشه (انگلیسی)",
+    "folderNameFaLabel": "نام پوشه (فارسی)",
     "folderNameHelperText": "یک نام توصیفی وارد کنید (۱-۱۰۰ کاراکتر)",
+    "folderNameFaHelperText": "نام فارسی را وارد کنید (اختیاری، ۱-۱۰۰ کاراکتر)",
     "errors": {
       "nameRequired": "نام پوشه الزامی است",
       "nameTooLong": "نام پوشه نباید از ۱۰۰ کاراکتر تجاوز کند",

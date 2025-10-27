@@ -27,6 +27,7 @@ interface AddGroupDialogProps {
 const AddGroupDialog: React.FC<AddGroupDialogProps> = ({ open, onClose, onSuccess, parentId }) => {
   const { t } = useLanguage();
   const [folderName, setFolderName] = useState('');
+  const [folderNameFa, setFolderNameFa] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +35,7 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({ open, onClose, onSucces
   useEffect(() => {
     if (open) {
       setFolderName('');
+      setFolderNameFa('');
       setError(null);
       setIsSubmitting(false);
     }
@@ -57,6 +59,7 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({ open, onClose, onSucces
     try {
       const requestDto: AddGroupRequestDto = {
         name: folderName.trim(),
+        nameFa: folderNameFa.trim() || null,
         parentId: parentId || null,
       };
 
@@ -160,6 +163,21 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({ open, onClose, onSucces
             }}
             helperText={t('addGroupDialog.folderNameHelperText')}
             data-id-ref="add-group-dialog-name-input"
+            sx={{ mb: 2 }}
+          />
+
+          <TextField
+            fullWidth
+            label={t('addGroupDialog.folderNameFaLabel')}
+            value={folderNameFa}
+            onChange={(e) => setFolderNameFa(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={isSubmitting}
+            inputProps={{
+              maxLength: 100,
+            }}
+            helperText={t('addGroupDialog.folderNameFaHelperText')}
+            data-id-ref="add-group-dialog-name-fa-input"
           />
         </Box>
       </DialogContent>

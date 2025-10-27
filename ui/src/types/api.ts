@@ -633,8 +633,10 @@ export type AddGroupErrorType = (typeof AddGroupErrorType)[keyof typeof AddGroup
  * Request model for creating a new monitoring group
  */
 export interface AddGroupRequestDto {
-  /** Name of the monitoring group (required, 1-100 characters) */
+  /** Name of the monitoring group in English (required, 1-100 characters) */
   name: string;
+  /** Name of the monitoring group in Farsi (optional, 1-100 characters) */
+  nameFa?: string | null;
   /** ID of the parent group for hierarchical organization. Leave null for root-level groups. */
   parentId?: string | null; // UUID
 }

@@ -530,8 +530,10 @@
   },
   "addGroupDialog": {
     "title": "Add New Folder",
-    "folderNameLabel": "Folder Name",
+    "folderNameLabel": "Folder Name (English)",
+    "folderNameFaLabel": "Folder Name (Farsi)",
     "folderNameHelperText": "Enter a descriptive name (1-100 characters)",
+    "folderNameFaHelperText": "Enter Farsi name (optional, 1-100 characters)",
     "errors": {
       "nameRequired": "Folder name is required",
       "nameTooLong": "Folder name must not exceed 100 characters",
