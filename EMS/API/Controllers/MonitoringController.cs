@@ -3326,43 +3326,264 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// </summary>
     /// <param name="request">Move group request containing group ID and new parent ID</param>
     /// <returns>Result indicating success or failure of group move operation</returns>
-    /// <response code="200">Returns success status of the group move operation</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <remarks>
+    /// Moves a monitoring group from its current position to a new parent in the hierarchy.
+    /// This operation reorganizes the group structure and can move groups to root level (ParentId = null).
+    /// 
+    /// The operation validates:
+    /// - The group exists
+    /// - The parent group exists (if ParentId is provided)
+    /// - No circular references (cannot move a group to itself or to one of its descendants)
+    /// 
+    /// Sample request to move group to another parent:
+    /// 
+    ///     POST /api/monitoring/movegroup
+    ///     {
+    ///        "groupId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "parentId": "550e8400-e29b-41d4-a716-446655440001"
+    ///     }
+    ///     
+    /// Sample request to move group to root level:
+    /// 
+    ///     POST /api/monitoring/movegroup
+    ///     {
+    ///        "groupId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "parentId": null
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Group successfully moved to the target parent</response>
+    /// <response code="400">Validation error - invalid request, group cannot be moved to itself, or circular reference detected</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="404">Group or parent group not found</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("MoveGroup")]
+    [ProducesResponseType(typeof(MoveGroupResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MoveGroupResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(MoveGroupResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(MoveGroupResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> MoveGroup([FromBody] MoveGroupRequestDto request)
     {
         try
         {
+            _logger.LogInformation("MoveGroup operation started: GroupId={GroupId}, ParentId={ParentId}", 
+                request?.GroupId, request?.ParentId);
+
+            // Validate request is not null
+            if (request == null)
+            {
+                _logger.LogWarning("MoveGroup failed: Request is null");
+                return BadRequest(new MoveGroupResponseDto
+                {
+                    IsSuccessful = false,
+                    Message = "Request body is required",
+                    Error = MoveGroupResponseDto.MoveGroupErrorType.ValidationError
+                });
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogWarning("MoveGroup failed: User not authenticated");
                 return Unauthorized();
             }
 
-            var response = new MoveGroupResponseDto()
+            // Check ModelState
+            if (!ModelState.IsValid)
             {
-                IsSuccessful = false,
-            };
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
 
-            var group = await _context.Groups.FirstOrDefaultAsync(x => x.Id == request.GroupId);
+                _logger.LogWarning("MoveGroup validation failed: UserId={UserId}, Errors={Errors}", 
+                    userId, string.Join(", ", errors));
 
-            if (group != null)
-            {
-                group.ParentId = request.ParentId;
-                await _context.SaveChangesAsync();
-                response.IsSuccessful = true;
+                return BadRequest(new MoveGroupResponseDto
+                { 
+                    IsSuccessful = false,
+                    Message = $"Validation failed: {string.Join(", ", errors)}",
+                    Error = MoveGroupResponseDto.MoveGroupErrorType.ValidationError
+                });
             }
 
-            return Ok(response);
+            // Validate: Cannot move group to itself
+            if (request.ParentId.HasValue && request.GroupId == request.ParentId.Value)
+            {
+                _logger.LogWarning("MoveGroup failed: Attempt to move group to itself - GroupId={GroupId}, UserId={UserId}", 
+                    request.GroupId, userId);
+                
+                return BadRequest(new MoveGroupResponseDto
+                {
+                    IsSuccessful = false,
+                    Message = "Cannot move a group to itself",
+                    Error = MoveGroupResponseDto.MoveGroupErrorType.CannotMoveToSelf
+                });
+            }
+
+            // Check if group exists
+            var group = await _context.Groups.FirstOrDefaultAsync(x => x.Id == request.GroupId);
+
+            if (group == null)
+            {
+                _logger.LogWarning("MoveGroup failed: Group not found - GroupId={GroupId}, UserId={UserId}", 
+                    request.GroupId, userId);
+                
+                return NotFound(new MoveGroupResponseDto
+                {
+                    IsSuccessful = false,
+                    Message = $"Group with ID {request.GroupId} not found",
+                    Error = MoveGroupResponseDto.MoveGroupErrorType.GroupNotFound
+                });
+            }
+
+            // Validate parent group exists if ParentId is provided
+            if (request.ParentId.HasValue)
+            {
+                var parentGroup = await _context.Groups.FirstOrDefaultAsync(g => g.Id == request.ParentId.Value);
+                
+                if (parentGroup == null)
+                {
+                    _logger.LogWarning("MoveGroup failed: Parent group not found - ParentId={ParentId}, UserId={UserId}", 
+                        request.ParentId.Value, userId);
+                    
+                    return NotFound(new MoveGroupResponseDto
+                    {
+                        IsSuccessful = false,
+                        Message = $"Parent group with ID {request.ParentId.Value} not found",
+                        Error = MoveGroupResponseDto.MoveGroupErrorType.ParentGroupNotFound
+                    });
+                }
+
+                // Check for circular reference (prevent moving a group to one of its descendants)
+                var isCircular = await IsCircularReference(request.GroupId, request.ParentId.Value);
+                
+                if (isCircular)
+                {
+                    _logger.LogWarning("MoveGroup failed: Circular reference detected - GroupId={GroupId}, ParentId={ParentId}, UserId={UserId}", 
+                        request.GroupId, request.ParentId.Value, userId);
+                    
+                    return BadRequest(new MoveGroupResponseDto
+                    {
+                        IsSuccessful = false,
+                        Message = "Cannot move a group to one of its descendants (circular reference)",
+                        Error = MoveGroupResponseDto.MoveGroupErrorType.CircularReference
+                    });
+                }
+            }
+
+            // Store old parent ID for logging
+            var oldParentId = group.ParentId;
+
+            // Update group's parent
+            group.ParentId = request.ParentId;
+            await _context.SaveChangesAsync();
+
+            // Create audit log entry
+            var userGuid = Guid.Parse(userId);
+            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
+            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+            var auditLogData = new
+            {
+                GroupId = group.Id,
+                GroupName = group.Name,
+                OldParentId = oldParentId,
+                NewParentId = request.ParentId,
+                ModifiedBy = userId
+            };
+
+            var logValueJson = JsonConvert.SerializeObject(auditLogData, Formatting.Indented);
+
+            await _context.AuditLogs.AddAsync(new AuditLog
+            {
+                IsUser = true,
+                UserId = userGuid,
+                ItemId = null,
+                ActionType = LogType.EditGroup,
+                IpAddress = ipAddress,
+                LogValue = logValueJson,
+                Time = epochTime,
+            });
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("MoveGroup operation completed successfully: GroupId={GroupId}, OldParentId={OldParentId}, NewParentId={NewParentId}, UserId={UserId}", 
+                request.GroupId, oldParentId, request.ParentId, userId);
+
+            return Ok(new MoveGroupResponseDto
+            {
+                IsSuccessful = true,
+                Message = "Group moved successfully"
+            });
         }
-        catch (Exception e)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogWarning(ex, "MoveGroup validation error: GroupId={GroupId}, ParentId={ParentId}", 
+                request?.GroupId, request?.ParentId);
+            return BadRequest(new MoveGroupResponseDto
+            {
+                IsSuccessful = false,
+                Message = ex.Message,
+                Error = MoveGroupResponseDto.MoveGroupErrorType.ValidationError
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "MoveGroup unauthorized access: GroupId={GroupId}", request?.GroupId);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in MoveGroup operation: GroupId={GroupId}, ParentId={ParentId}, Message={Message}", 
+                request?.GroupId, request?.ParentId, ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, new MoveGroupResponseDto
+            {
+                IsSuccessful = false,
+                Message = "Internal server error",
+                Error = MoveGroupResponseDto.MoveGroupErrorType.UnknownError
+            });
+        }
+    }
+
+    /// <summary>
+    /// Helper method to detect circular references in group hierarchy
+    /// </summary>
+    /// <param name="groupId">The group being moved</param>
+    /// <param name="targetParentId">The target parent group</param>
+    /// <returns>True if moving would create a circular reference, false otherwise</returns>
+    private async Task<bool> IsCircularReference(Guid groupId, Guid targetParentId)
+    {
+        var currentId = targetParentId;
+        var visitedGroups = new HashSet<Guid> { groupId };
+
+        while (currentId != Guid.Empty)
+        {
+            // If we encounter the group being moved, it's a circular reference
+            if (visitedGroups.Contains(currentId))
+            {
+                return true;
+            }
+
+            visitedGroups.Add(currentId);
+
+            // Get the parent of the current group
+            var currentGroup = await _context.Groups
+                .AsNoTracking()
+                .FirstOrDefaultAsync(g => g.Id == currentId);
+
+            if (currentGroup == null || !currentGroup.ParentId.HasValue)
+            {
+                // Reached root or invalid group
+                break;
+            }
+
+            currentId = currentGroup.ParentId.Value;
         }
 
-        return BadRequest(ModelState);
+        return false;
     }
 
     /// <summary>

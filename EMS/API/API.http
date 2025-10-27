@@ -428,6 +428,54 @@ Authorization: Bearer {{authTokenHTTPS}}
 
 ###
 
+### Move group to another parent - HTTP
+POST {{API_HostAddress}}/api/monitoring/MoveGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "groupId": "replace_with_group_id",
+  "parentId": "replace_with_parent_group_id"
+}
+
+###
+
+### Move group to another parent - HTTPS
+POST {{API_HostAddress}}/api/monitoring/MoveGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "groupId": "replace_with_group_id",
+  "parentId": "replace_with_parent_group_id"
+}
+
+###
+
+### Move group to root level (no parent) - HTTP
+POST {{API_HostAddress}}/api/monitoring/MoveGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "groupId": "replace_with_group_id",
+  "parentId": null
+}
+
+###
+
+### Move group to root level (no parent) - HTTPS
+POST {{API_HostAddress}}/api/monitoring/MoveGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "groupId": "replace_with_group_id",
+  "parentId": null
+}
+
+###
+
 #################################################################################
 # MONITORING CONTROLLER - ITEM ENDPOINTS
 #################################################################################
