@@ -606,6 +606,28 @@ Authorization: Bearer {{authTokenHTTPS}}
 
 ###
 
+### Delete monitoring item - HTTP
+POST {{API_HostAddress}}/api/monitoring/DeleteItem
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+###
+
+### Delete monitoring item - HTTPS
+POST {{API_HostAddress}}/api/monitoring/DeleteItem
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+###
+
 ### Move Point to Different Group - HTTP
 POST {{API_HostAddress}}/api/monitoring/MovePoint
 Content-Type: application/json

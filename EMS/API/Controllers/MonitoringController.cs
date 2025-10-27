@@ -1648,7 +1648,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 IsUser = true,
                 UserId = userGuid,
                 ItemId = newItemId,
-                ActionType = LogType.EditPoint, // TODO: Add LogType.AddPoint = 10 to Share.Libs.Enums.LogType enum (using EditPoint for now)
+                ActionType = LogType.AddPoint,
                 IpAddress = ipAddress,
                 LogValue = logValueJson,
                 Time = epochTime,
@@ -1937,7 +1937,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 IsUser = true,
                 UserId = userGuid,
                 ItemId = request.Id,
-                ActionType = LogType.EditPoint, // TODO: Add LogType.EditItem = 11 to Share.Libs.Enums.LogType enum
+                ActionType = LogType.EditPoint,
                 IpAddress = ipAddress,
                 LogValue = logValueJson,
                 Time = epochTime,
@@ -1978,6 +1978,164 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 Message = "Internal server error",
                 Error = EditItemResponseDto.EditItemErrorType.UnknownError
             });
+        }
+    }
+
+    /// <summary>
+    /// Delete a monitoring item from the system
+    /// </summary>
+    /// <param name="request">Delete item request containing the item ID to delete</param>
+    /// <returns>Result indicating success or failure of the item deletion operation</returns>
+    /// <remarks>
+    /// Deletes a monitoring item from the system including:
+    /// - The item from the Core database (using Core.Points.DeletePoint)
+    /// - Associated item permissions from DB.User.ItemPermissions
+    /// - Associated group assignments from DB.User.GroupItems
+    /// 
+    /// This operation is irreversible and will remove all associations with the item.
+    /// Historical data and alarm logs may be retained depending on system configuration.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/deleteitem
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Monitoring item deleted successfully</response>
+    /// <response code="400">Validation error - invalid request format or item ID</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="404">Item not found - the specified item ID does not exist</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("DeleteItem")]
+    [ProducesResponseType(typeof(DeleteItemResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeleteItem([FromBody] DeleteItemRequestDto request)
+    {
+        try
+        {
+            _logger.LogInformation("DeleteItem started: ItemId={ItemId}", request.Id);
+
+            // Validate user authentication
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("DeleteItem: Unauthorized access attempt");
+                return Unauthorized(new { success = false, message = "User not authenticated" });
+            }
+
+            // Validate ModelState
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("DeleteItem: Invalid model state for ItemId={ItemId}", request.Id);
+                return BadRequest(new { success = false, message = "Invalid request data" });
+            }
+
+            var userGuid = Guid.Parse(userId);
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+            // Check if item exists in Core database
+            var existingItem = await Core.Points.GetPoint(request.Id);
+            if (existingItem == null)
+            {
+                _logger.LogWarning("DeleteItem: Item not found, ItemId={ItemId}", request.Id);
+                return NotFound(new { success = false, message = "Item not found" });
+            }
+
+            // Delete from Core database using Core.Points.DeletePoint
+            _logger.LogInformation("DeleteItem: Deleting item from Core database, ItemId={ItemId}", request.Id);
+            var deleteResult = await Core.Points.DeletePoint(x => x.Id == request.Id);
+
+            if (!deleteResult)
+            {
+                _logger.LogError("DeleteItem: Failed to delete item from Core database, ItemId={ItemId}", request.Id);
+                return StatusCode(500, new { success = false, message = "Failed to delete item from Core database" });
+            }
+
+            // Delete associated ItemPermissions from DB.User database
+            var itemPermissions = await _context.ItemPermissions
+                .Where(x => x.ItemId == request.Id)
+                .ToListAsync();
+
+            if (itemPermissions.Any())
+            {
+                _logger.LogInformation("DeleteItem: Removing {Count} item permissions for ItemId={ItemId}", 
+                    itemPermissions.Count, request.Id);
+                _context.ItemPermissions.RemoveRange(itemPermissions);
+            }
+
+            // Delete associated GroupItems from DB.User database
+            var groupItems = await _context.GroupItems
+                .Where(x => x.ItemId == request.Id)
+                .ToListAsync();
+
+            if (groupItems.Any())
+            {
+                _logger.LogInformation("DeleteItem: Removing {Count} group items for ItemId={ItemId}", 
+                    groupItems.Count, request.Id);
+                _context.GroupItems.RemoveRange(groupItems);
+            }
+
+            // Save changes to DB.User database
+            await _context.SaveChangesAsync();
+
+            // Create audit log entry
+            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
+            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+
+            var logValue = new
+            {
+                Id = existingItem.Id,
+                ItemType = existingItem.ItemType.ToString(),
+                ItemName = existingItem.ItemName,
+                ItemNameFa = existingItem.ItemNameFa,
+                PointNumber = existingItem.PointNumber,
+                DeletedPermissionsCount = itemPermissions.Count,
+                DeletedGroupAssignmentsCount = groupItems.Count
+            };
+
+            var logValueJson = JsonConvert.SerializeObject(logValue, Formatting.Indented);
+
+            await _context.AuditLogs.AddAsync(new AuditLog()
+            {
+                IsUser = true,
+                UserId = userGuid,
+                ItemId = request.Id,
+                ActionType = LogType.DeletePoint,
+                IpAddress = ipAddress,
+                LogValue = logValueJson,
+                Time = epochTime,
+            });
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("DeleteItem completed successfully: ItemId={ItemId}, User={UserId}", 
+                request.Id, userId);
+
+            return Ok(new DeleteItemResponseDto
+            {
+                IsSuccess = true,
+                Message = "Item deleted successfully"
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "DeleteItem: Validation failed for ItemId={ItemId}", request.Id);
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "DeleteItem: Resource not found for ItemId={ItemId}", request.Id);
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "DeleteItem: Error deleting item, ItemId={ItemId}, Error={Message}", 
+                request.Id, ex.Message);
+            return StatusCode(500, new { success = false, message = "Internal server error" });
         }
     }
 
