@@ -3724,8 +3724,26 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <summary>
     /// Write a value directly to a controller for a specific monitoring item
     /// </summary>
-    /// <param name="request">Write value request containing item ID, value, and timestamp</param>
+    /// <param name="request">Write value request containing item ID, value, optional timestamp, and optional duration</param>
     /// <returns>Result indicating success or failure of the write operation</returns>
+    /// <remarks>
+    /// Writes a value directly to the controller hardware for the specified monitoring item.
+    /// If no timestamp is provided, the current system time will be used. The optional duration 
+    /// parameter specifies how long the value should persist or be valid (in seconds).
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/writevalue
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "value": "25.7",
+    ///        "time": 1697587200,
+    ///        "duration": 60
+    ///     }
+    ///     
+    /// Both the time and duration parameters are optional - if omitted, current system time will be used
+    /// and no duration limit will be applied.
+    /// </remarks>
     /// <response code="200">Returns success status of the value write operation</response>
     /// <response code="401">If user is not authenticated</response>
     /// <response code="400">If there's a validation error with the request</response>
@@ -3742,7 +3760,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             }
 
             var response = new WriteValueResponseDto();
-            var result = await Core.Points.WriteValueToController(request.ItemId, request.Value, request.Time);
+            var result = await Core.Points.WriteValueToController(request.ItemId, request.Value, request.Time, request.Duration ?? 0);
             response.IsSuccess = result;
 
             return Ok(response);
@@ -3890,12 +3908,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <summary>
     /// Write a value to a monitoring item or add it to the system if write operation fails
     /// </summary>
-    /// <param name="request">Write or add value request containing item ID, value, and optional timestamp</param>
+    /// <param name="request">Write or add value request containing item ID, value, optional timestamp, and optional duration</param>
     /// <returns>Result indicating success or failure of the write or add operation with detailed status message</returns>
     /// <remarks>
     /// Attempts to write a value to the specified monitoring item. If the write operation fails,
     /// the system will attempt to add the value as a new entry. If no timestamp is provided,
-    /// the current system time will be used.
+    /// the current system time will be used. The optional duration parameter specifies how long
+    /// the value should persist or be valid (in seconds).
     /// 
     /// Sample request:
     /// 
@@ -3903,10 +3922,12 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///     {
     ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
     ///        "value": "25.7",
-    ///        "time": 1697587200
+    ///        "time": 1697587200,
+    ///        "duration": 60
     ///     }
     ///     
-    /// The time parameter is optional - if omitted, current system time will be used.
+    /// Both the time and duration parameters are optional - if omitted, current system time will be used
+    /// and no duration limit will be applied.
     /// </remarks>
     /// <response code="200">Value successfully written or added to the monitoring item</response>
     /// <response code="400">Validation error - invalid request format, missing required fields, or invalid item ID</response>
@@ -3975,10 +3996,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 return BadRequest(new { success = false, message = "Value cannot be empty or whitespace" });
             }
 
-            _logger.LogInformation("Executing WriteOrAddValue: User {UserId}, ItemId {ItemId}, Value {Value}, Time {Time}", 
-                userId, request.ItemId, request.Value, request.Time);
+            _logger.LogInformation("Executing WriteOrAddValue: User {UserId}, ItemId {ItemId}, Value {Value}, Time {Time}, Duration {Duration}", 
+                userId, request.ItemId, request.Value, request.Time, request.Duration);
 
-            var result = await Core.Points.WriteOrAddValue(request.ItemId, request.Value, request.Time);
+            var result = await Core.Points.WriteOrAddValue(request.ItemId, request.Value, request.Time, request.Duration ?? 0);
 
             var response = new WriteOrAddValueResponseDto
             {

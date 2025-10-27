@@ -26,4 +26,10 @@ public class WriteOrAddValueRequestDto
     /// </summary>
     /// <example>1697587200</example>
     public long? Time { get; set; }
+
+    /// <summary>
+    /// Optional duration in seconds for how long the value should persist or be valid
+    /// </summary>
+    /// <example>60</example>
+    public long? Duration { get; set; }
 }

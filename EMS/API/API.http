@@ -814,12 +814,13 @@ Authorization: Bearer {{access_token}}
 {
   "itemId": "550e8400-e29b-41d4-a716-446655440000",
   "value": "25.7",
-  "time": 1697587200
+  "time": 1697587200,
+  "duration": 60
 }
 
 ###
 
-### Write or Add Value to Monitoring Item (without timestamp - uses current time)
+### Write or Add Value to Monitoring Item (without timestamp and duration - uses current time and no duration limit)
 POST {{API_HostAddress}}/api/monitoring/WriteOrAddValue
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
@@ -839,6 +840,32 @@ Authorization: Bearer {{access_token}}
 {
   "itemId": "00000000-0000-0000-0000-000000000000",
   "value": ""
+}
+
+###
+
+### Write Value Directly to Controller
+POST {{API_HostAddress}}/api/monitoring/WriteValue
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440000",
+  "value": "75.5",
+  "time": 1697587200,
+  "duration": 120
+}
+
+###
+
+### Write Value to Controller (without timestamp and duration)
+POST {{API_HostAddress}}/api/monitoring/WriteValue
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440000",
+  "value": "80.0"
 }
 
 ###
