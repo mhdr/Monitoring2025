@@ -94,31 +94,31 @@ const getItemTypeInfo = (itemType: ItemType) => {
   switch (itemType) {
     case ItemTypeEnum.DigitalInput:
       return { 
-        icon: <InputIcon sx={{ fontSize: 14 }} />, 
+        icon: <InputIcon sx={{ fontSize: 14 }} data-id-ref="item-card-item-type-icon-digital-input" />, 
         translationKey: 'itemCard.itemTypes.digitalInput',
         color: 'primary' as const // Blue for digital input
       };
     case ItemTypeEnum.DigitalOutput:
       return { 
-        icon: <OutputIcon sx={{ fontSize: 14 }} />, 
+        icon: <OutputIcon sx={{ fontSize: 14 }} data-id-ref="item-card-item-type-icon-digital-output" />, 
         translationKey: 'itemCard.itemTypes.digitalOutput',
         color: 'secondary' as const // Purple for digital output
       };
     case ItemTypeEnum.AnalogInput:
       return { 
-        icon: <AnalogIcon sx={{ fontSize: 14 }} />, 
+        icon: <AnalogIcon sx={{ fontSize: 14 }} data-id-ref="item-card-item-type-icon-analog-input" />, 
         translationKey: 'itemCard.itemTypes.analogInput',
         color: 'success' as const // Green for analog input
       };
     case ItemTypeEnum.AnalogOutput:
       return { 
-        icon: <DigitalIcon sx={{ fontSize: 14 }} />, 
+        icon: <DigitalIcon sx={{ fontSize: 14 }} data-id-ref="item-card-item-type-icon-analog-output" />, 
         translationKey: 'itemCard.itemTypes.analogOutput',
         color: 'warning' as const // Orange for analog output
       };
     default:
       return { 
-        icon: <InputIcon sx={{ fontSize: 14 }} />, 
+        icon: <InputIcon sx={{ fontSize: 14 }} data-id-ref="item-card-item-type-icon-default" />, 
         translationKey: 'itemCard.itemTypes.digitalInput',
         color: 'default' as const
       };
@@ -131,13 +131,13 @@ const getItemTypeInfo = (itemType: ItemType) => {
 const getEditableStatusInfo = (isEditable: boolean) => {
   if (isEditable) {
     return {
-      icon: <EditIcon sx={{ fontSize: 14 }} />,
+      icon: <EditIcon sx={{ fontSize: 14 }} data-id-ref="item-card-editable-status-icon-editable" />,
       translationKey: 'itemCard.editableStatus.editable',
       color: 'info' as const // Blue for editable
     };
   } else {
     return {
-      icon: <LockIcon sx={{ fontSize: 14 }} />,
+      icon: <LockIcon sx={{ fontSize: 14 }} data-id-ref="item-card-editable-status-icon-readonly" />,
       translationKey: 'itemCard.editableStatus.readOnly',
       color: 'default' as const // Gray for read-only
     };
@@ -608,7 +608,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
               {hasAlarm && (
                 <Zoom in timeout={300}>
                   <Chip
-                    icon={<NotificationsActiveIcon sx={{ fontSize: 16 }} />}
+                    icon={<NotificationsActiveIcon sx={{ fontSize: 16 }} data-id-ref="item-card-alarm-badge-icon" />}
                     label={alarmPriority === 2 ? t('itemCard.highPriorityAlarm') : t('itemCard.lowPriorityAlarm')}
                     size="small"
                     color={alarmPriority === 2 ? 'error' : 'warning'}
@@ -681,7 +681,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
             </Box>
           </Box>
 
-          <Divider sx={{ marginBottom: 1.5 }} />
+          <Divider sx={{ marginBottom: 1.5 }} data-id-ref="item-card-header-divider" />
 
           {/* Body */}
           <Stack
@@ -986,13 +986,13 @@ const ItemCard: React.FC<ItemCardProps> = ({
     >
       <MenuItem onClick={handleMoveItemToGroup} data-id-ref="item-card-admin-menu-move-item">
         <ListItemIcon>
-          <MoveItemIcon fontSize="small" />
+          <MoveItemIcon fontSize="small" data-id-ref="item-card-admin-menu-move-item-icon" />
         </ListItemIcon>
         <ListItemText primary={t('itemCard.adminMenu.moveItemToGroup')} />
       </MenuItem>
       <MenuItem onClick={handleEditGroup} data-id-ref="item-card-admin-menu-edit-point">
         <ListItemIcon>
-          <EditIcon fontSize="small" />
+          <EditIcon fontSize="small" data-id-ref="item-card-admin-menu-edit-point-icon" />
         </ListItemIcon>
         <ListItemText primary={t('itemCard.adminMenu.editPoint')} />
       </MenuItem>
