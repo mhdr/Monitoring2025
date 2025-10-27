@@ -3164,44 +3164,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
-    /// Delete a monitoring point from the system
-    /// </summary>
-    /// <param name="request">Delete point request containing the point ID</param>
-    /// <returns>Result indicating success or failure of point deletion</returns>
-    /// <response code="200">Returns success status of the point deletion</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
-    [HttpPost("DeletePoint")]
-    public async Task<IActionResult> DeletePoint([FromBody] DeletePointRequestDto request)
-    {
-        try
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
-            var response = new DeletePointResponseDto()
-            {
-                IsSuccessful = false,
-            };
-
-            var result = await Core.Points.DeletePoint(x => x.Id == request.Id);
-            response.IsSuccessful = result;
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-        }
-
-        return BadRequest(ModelState);
-    }
-
-    /// <summary>
     /// Move a group to a different parent group in the hierarchy
     /// </summary>
     /// <param name="request">Move group request containing group ID and new parent ID</param>
