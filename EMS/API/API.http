@@ -454,6 +454,158 @@ Authorization: Bearer {{authTokenHTTPS}}
 
 ###
 
+### Add new monitoring item - HTTP
+POST {{API_HostAddress}}/api/monitoring/AddItem
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemType": "AnalogInput",
+  "itemName": "Temperature Sensor 1",
+  "itemNameFa": "دمای سنسور 1",
+  "pointNumber": 101,
+  "shouldScale": "Yes",
+  "normMin": 0,
+  "normMax": 100,
+  "scaleMin": -50,
+  "scaleMax": 150,
+  "saveInterval": 60,
+  "saveHistoricalInterval": 300,
+  "calculationMethod": "Average",
+  "numberOfSamples": 10,
+  "saveOnChange": "Disabled",
+  "saveOnChangeRange": 5.0,
+  "onText": "Running",
+  "onTextFa": "در حال اجرا",
+  "offText": "Stopped",
+  "offTextFa": "متوقف",
+  "unit": "°C",
+  "unitFa": "درجه سانتی‌گراد",
+  "isDisabled": false,
+  "isCalibrationEnabled": true,
+  "calibrationA": 1.0,
+  "calibrationB": 0.0,
+  "interfaceType": "Modbus",
+  "isEditable": true,
+  "parentGroupId": null
+}
+
+###
+
+### Add new monitoring item - HTTPS
+POST {{API_HostAddress}}/api/monitoring/AddItem
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "itemType": "DigitalInput",
+  "itemName": "Pump Status",
+  "itemNameFa": "وضعیت پمپ",
+  "pointNumber": 102,
+  "shouldScale": "No",
+  "normMin": 0,
+  "normMax": 1,
+  "scaleMin": 0,
+  "scaleMax": 1,
+  "saveInterval": 10,
+  "saveHistoricalInterval": 60,
+  "calculationMethod": "Last",
+  "numberOfSamples": 1,
+  "saveOnChange": "Disabled",
+  "saveOnChangeRange": 0,
+  "onText": "Running",
+  "onTextFa": "در حال کار",
+  "offText": "Stopped",
+  "offTextFa": "متوقف",
+  "unit": "",
+  "unitFa": "",
+  "isDisabled": false,
+  "isCalibrationEnabled": false,
+  "calibrationA": 1.0,
+  "calibrationB": 0.0,
+  "interfaceType": "Modbus",
+  "isEditable": false,
+  "parentGroupId": "550e8400-e29b-41d4-a716-446655440001"
+}
+
+###
+
+### Edit existing monitoring item - HTTP
+POST {{API_HostAddress}}/api/monitoring/EditItem
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "itemType": "AnalogInput",
+  "itemName": "Temperature Sensor 1 - Updated",
+  "itemNameFa": "دمای سنسور 1 - بروزرسانی شده",
+  "pointNumber": 101,
+  "shouldScale": "Yes",
+  "normMin": 0,
+  "normMax": 100,
+  "scaleMin": -40,
+  "scaleMax": 140,
+  "saveInterval": 30,
+  "saveHistoricalInterval": 300,
+  "calculationMethod": "Average",
+  "numberOfSamples": 15,
+  "saveOnChange": "Enabled",
+  "saveOnChangeRange": 3.0,
+  "onText": "Active",
+  "onTextFa": "فعال",
+  "offText": "Inactive",
+  "offTextFa": "غیرفعال",
+  "unit": "°C",
+  "unitFa": "درجه سانتی‌گراد",
+  "isDisabled": false,
+  "isCalibrationEnabled": true,
+  "calibrationA": 1.05,
+  "calibrationB": -0.5,
+  "interfaceType": "Modbus",
+  "isEditable": true
+}
+
+###
+
+### Edit existing monitoring item - HTTPS
+POST {{API_HostAddress}}/api/monitoring/EditItem
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "itemType": "AnalogInput",
+  "itemName": "Pressure Sensor",
+  "itemNameFa": "سنسور فشار",
+  "pointNumber": 103,
+  "shouldScale": "Yes",
+  "normMin": 0,
+  "normMax": 10,
+  "scaleMin": 0,
+  "scaleMax": 100,
+  "saveInterval": 15,
+  "saveHistoricalInterval": 60,
+  "calculationMethod": "Average",
+  "numberOfSamples": 5,
+  "saveOnChange": "Disabled",
+  "saveOnChangeRange": 0,
+  "onText": "",
+  "onTextFa": "",
+  "offText": "",
+  "offTextFa": "",
+  "unit": "bar",
+  "unitFa": "بار",
+  "isDisabled": false,
+  "isCalibrationEnabled": false,
+  "calibrationA": 1.0,
+  "calibrationB": 0.0,
+  "interfaceType": "Modbus",
+  "isEditable": true
+}
+
+###
+
 ### Move Point to Different Group - HTTP
 POST {{API_HostAddress}}/api/monitoring/MovePoint
 Content-Type: application/json

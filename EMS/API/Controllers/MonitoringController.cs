@@ -1397,6 +1397,303 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
+    /// Add a new monitoring item to the system
+    /// </summary>
+    /// <param name="request">Add item request containing the new item configuration properties</param>
+    /// <returns>Result indicating success or failure with the new item ID or specific error information</returns>
+    /// <remarks>
+    /// Creates a new monitoring item with all configuration properties such as item type, 
+    /// name (English and Farsi), scaling parameters, save intervals, calculation methods,
+    /// calibration settings, and save-on-change configuration.
+    /// Validates that the point number is unique across all items.
+    /// Creates an audit log entry for the creation.
+    /// Optionally assigns the item to a parent group upon creation.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/additem
+    ///     {
+    ///        "itemType": "AnalogInput",
+    ///        "itemName": "Temperature Sensor 1",
+    ///        "itemNameFa": "دمای سنسور 1",
+    ///        "pointNumber": 101,
+    ///        "shouldScale": "Yes",
+    ///        "normMin": 0,
+    ///        "normMax": 100,
+    ///        "scaleMin": -50,
+    ///        "scaleMax": 150,
+    ///        "saveInterval": 60,
+    ///        "saveHistoricalInterval": 300,
+    ///        "calculationMethod": "Average",
+    ///        "numberOfSamples": 10,
+    ///        "saveOnChange": "Disabled",
+    ///        "saveOnChangeRange": 5.0,
+    ///        "onText": "Running",
+    ///        "onTextFa": "در حال اجرا",
+    ///        "offText": "Stopped",
+    ///        "offTextFa": "متوقف",
+    ///        "unit": "°C",
+    ///        "unitFa": "درجه سانتی‌گراد",
+    ///        "isDisabled": false,
+    ///        "isCalibrationEnabled": true,
+    ///        "calibrationA": 1.0,
+    ///        "calibrationB": 0.0,
+    ///        "interfaceType": "Modbus",
+    ///        "isEditable": true,
+    ///        "parentGroupId": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="201">Monitoring item created successfully with the new item ID</response>
+    /// <response code="400">Validation error - invalid request format, missing required fields, or duplicate point number</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - insufficient permissions to create items</response>
+    /// <response code="404">Parent group not found - the specified parent group ID does not exist</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("AddItem")]
+    [ProducesResponseType(typeof(AddItemResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> AddItem([FromBody] AddItemRequestDto request)
+    {
+        try
+        {
+            _logger.LogInformation("AddItem operation started");
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("AddItem: Unauthorized access attempt");
+                return Unauthorized(new { success = false, message = "Authentication required" });
+            }
+
+            // Validate ModelState
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("AddItem: Validation failed: {Errors}", 
+                    string.Join(", ", errors));
+
+                return BadRequest(new AddItemResponseDto
+                {
+                    Success = false,
+                    Message = "Validation failed",
+                    Error = AddItemResponseDto.AddItemErrorType.ValidationError
+                });
+            }
+
+            var userGuid = Guid.Parse(userId);
+
+            // Check for duplicate point number
+            var matchByPointNumber = await Core.Points.GetPoint(x => x.PointNumber == request.PointNumber);
+
+            if (matchByPointNumber != null)
+            {
+                _logger.LogWarning("AddItem: Duplicate point number {PointNumber} found", 
+                    request.PointNumber);
+                return BadRequest(new AddItemResponseDto
+                {
+                    Success = false,
+                    Message = $"Point number {request.PointNumber} is already assigned to another item",
+                    Error = AddItemResponseDto.AddItemErrorType.DuplicatePointNumber
+                });
+            }
+
+            // Validate parent group if provided
+            if (request.ParentGroupId.HasValue)
+            {
+                var parentGroupExists = await _context.Groups.AnyAsync(g => g.Id == request.ParentGroupId.Value);
+                if (!parentGroupExists)
+                {
+                    _logger.LogWarning("AddItem: Parent group {ParentGroupId} not found", 
+                        request.ParentGroupId.Value);
+                    return NotFound(new AddItemResponseDto
+                    {
+                        Success = false,
+                        Message = "Parent group not found",
+                        Error = AddItemResponseDto.AddItemErrorType.ParentGroupNotFound
+                    });
+                }
+            }
+
+            // Generate new item ID
+            var newItemId = Guid.NewGuid();
+
+            // Create the new item object
+            var newItem = new MonitoringItem
+            {
+                Id = newItemId,
+                ItemType = (Core.Libs.ItemType)request.ItemType,
+                ItemName = request.ItemName,
+                ItemNameFa = request.ItemNameFa,
+                PointNumber = request.PointNumber,
+                ShouldScale = (Core.Libs.ShouldScaleType)request.ShouldScale,
+                NormMin = request.NormMin,
+                NormMax = request.NormMax,
+                ScaleMin = request.ScaleMin,
+                ScaleMax = request.ScaleMax,
+                SaveInterval = request.SaveInterval,
+                SaveHistoricalInterval = request.SaveHistoricalInterval,
+                CalculationMethod = (Core.Libs.ValueCalculationMethod)request.CalculationMethod,
+                NumberOfSamples = request.NumberOfSamples,
+                SaveOnChange = request.SaveOnChange.HasValue 
+                    ? (Core.Libs.SaveOnChange)request.SaveOnChange.Value 
+                    : (Core.Libs.SaveOnChange)0,
+                SaveOnChangeRange = request.SaveOnChangeRange,
+                OnText = request.OnText,
+                OnTextFa = request.OnTextFa,
+                OffText = request.OffText,
+                OffTextFa = request.OffTextFa,
+                Unit = request.Unit,
+                UnitFa = request.UnitFa,
+                IsDisabled = request.IsDisabled,
+                IsCalibrationEnabled = request.IsCalibrationEnabled,
+                CalibrationA = request.CalibrationA,
+                CalibrationB = request.CalibrationB,
+                InterfaceType = (Core.Libs.InterfaceType)request.InterfaceType,
+                IsEditable = request.IsEditable,
+            };
+
+            // Add the item using Core.Points.AddPoint
+            var addPointResult = await Core.Points.AddPoint(newItem);
+
+            // Verify the item was created successfully
+            var verifyItem = await Core.Points.GetPoint(newItemId);
+            if (verifyItem == null)
+            {
+                _logger.LogError("AddItem: Failed to create new monitoring item - verification failed");
+                return StatusCode(500, new AddItemResponseDto
+                {
+                    Success = false,
+                    Message = "Failed to create monitoring item",
+                    Error = AddItemResponseDto.AddItemErrorType.UnknownError
+                });
+            }
+
+            // Assign to parent group if provided
+            if (request.ParentGroupId.HasValue)
+            {
+                try
+                {
+                    var groupItem = new GroupItem()
+                    {
+                        ItemId = newItemId,
+                        GroupId = request.ParentGroupId.Value,
+                    };
+                    await _context.GroupItems.AddAsync(groupItem);
+                    await _context.SaveChangesAsync();
+                    
+                    _logger.LogInformation("AddItem: Item {ItemId} assigned to group {GroupId}", 
+                        newItemId, request.ParentGroupId.Value);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "AddItem: Failed to assign item {ItemId} to group {GroupId}", 
+                        newItemId, request.ParentGroupId.Value);
+                    // Continue - item is created, just not assigned to group
+                }
+            }
+
+            // Create audit log entry
+            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
+            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+            var auditLogData = new
+            {
+                ItemId = newItemId,
+                ItemName = request.ItemName,
+                ItemNameFa = request.ItemNameFa,
+                ItemType = request.ItemType.ToString(),
+                PointNumber = request.PointNumber,
+                ShouldScale = request.ShouldScale.ToString(),
+                NormMin = request.NormMin,
+                NormMax = request.NormMax,
+                ScaleMin = request.ScaleMin,
+                ScaleMax = request.ScaleMax,
+                SaveInterval = request.SaveInterval,
+                SaveHistoricalInterval = request.SaveHistoricalInterval,
+                CalculationMethod = request.CalculationMethod.ToString(),
+                NumberOfSamples = request.NumberOfSamples,
+                SaveOnChange = request.SaveOnChange?.ToString(),
+                SaveOnChangeRange = request.SaveOnChangeRange,
+                OnText = request.OnText,
+                OnTextFa = request.OnTextFa,
+                OffText = request.OffText,
+                OffTextFa = request.OffTextFa,
+                Unit = request.Unit,
+                UnitFa = request.UnitFa,
+                IsDisabled = request.IsDisabled,
+                IsCalibrationEnabled = request.IsCalibrationEnabled,
+                CalibrationA = request.CalibrationA,
+                CalibrationB = request.CalibrationB,
+                InterfaceType = request.InterfaceType.ToString(),
+                IsEditable = request.IsEditable,
+                ParentGroupId = request.ParentGroupId
+            };
+
+            var logValueJson = JsonConvert.SerializeObject(auditLogData, Formatting.Indented);
+
+            await _context.AuditLogs.AddAsync(new AuditLog
+            {
+                IsUser = true,
+                UserId = userGuid,
+                ItemId = newItemId,
+                ActionType = LogType.EditPoint, // TODO: Add LogType.AddPoint = 10 to Share.Libs.Enums.LogType enum (using EditPoint for now)
+                IpAddress = ipAddress,
+                LogValue = logValueJson,
+                Time = epochTime,
+            });
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("AddItem: Successfully created item {ItemId} by user {UserId}", 
+                newItemId, userId);
+
+            return StatusCode(201, new AddItemResponseDto
+            {
+                Success = true,
+                Message = "Monitoring item created successfully",
+                ItemId = newItemId
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "AddItem: Validation error");
+            return BadRequest(new AddItemResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                Error = AddItemResponseDto.AddItemErrorType.ValidationError
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "AddItem: Unauthorized access attempt");
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AddItem: Error creating item: {Message}", 
+                ex.Message);
+            return StatusCode(500, new AddItemResponseDto
+            {
+                Success = false,
+                Message = "Internal server error",
+                Error = AddItemResponseDto.AddItemErrorType.UnknownError
+            });
+        }
+    }
+
+    /// <summary>
     /// Edit a monitoring item's complete configuration
     /// </summary>
     /// <param name="request">Edit item request containing the item ID and updated configuration properties</param>
