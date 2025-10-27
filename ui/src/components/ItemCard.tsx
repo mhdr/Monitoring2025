@@ -398,11 +398,21 @@ const ItemCard: React.FC<ItemCardProps> = ({
         // Refresh data to remove the deleted item from UI
         await handleMoveSuccess();
       } else {
-        logger.error('Failed to delete point', { itemId, itemName: name });
+        logger.error('Failed to delete point - backend returned isSuccess=false', { 
+          itemId, 
+          itemName: name,
+          response 
+        });
         // Could show an error message to the user here
       }
     } catch (error) {
-      logger.error('Error deleting point:', error);
+      logger.error('Error deleting point - exception caught:', { 
+        itemId, 
+        itemName: name,
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined
+      });
       // Could show an error message to the user here
     } finally {
       setIsDeleting(false);
