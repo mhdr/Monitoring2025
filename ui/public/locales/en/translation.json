@@ -170,7 +170,9 @@
     "close": "Close",
     "cancel": "Cancel",
     "save": "Save",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "create": "Create",
+    "creating": "Creating..."
   },
   "settings": {
     "pageTitle": "Settings",
@@ -524,6 +526,20 @@
       "validationError": "Please correct the validation errors",
       "validationErrorsFound": "Validation errors found. Please check the fields below.",
       "unauthorized": "You don't have permission to edit this point"
+    }
+  },
+  "addGroupDialog": {
+    "title": "Add New Folder",
+    "folderNameLabel": "Folder Name",
+    "folderNameHelperText": "Enter a descriptive name (1-100 characters)",
+    "errors": {
+      "nameRequired": "Folder name is required",
+      "nameTooLong": "Folder name must not exceed 100 characters",
+      "invalidName": "Invalid folder name",
+      "duplicateName": "A folder with this name already exists",
+      "parentNotFound": "Parent folder not found",
+      "requestFailed": "Failed to create folder. Please try again.",
+      "unknownError": "An unknown error occurred"
     }
   }
 }

@@ -617,13 +617,40 @@ export interface SavePermissionsResponseDto {
 
 // ==================== Group Management DTOs ====================
 
+/**
+ * Types of errors that can occur when adding a group
+ */
+export const AddGroupErrorType = {
+  None: 0,
+  InvalidName: 1,
+  DuplicateName: 2,
+  ParentNotFound: 3,
+} as const;
+
+export type AddGroupErrorType = (typeof AddGroupErrorType)[keyof typeof AddGroupErrorType];
+
+/**
+ * Request model for creating a new monitoring group
+ */
 export interface AddGroupRequestDto {
-  name?: string | null;
-  parentId?: string | null; // UUID - Null for root-level groups
+  /** Name of the monitoring group (required, 1-100 characters) */
+  name: string;
+  /** ID of the parent group for hierarchical organization. Leave null for root-level groups. */
+  parentId?: string | null; // UUID
 }
 
+/**
+ * Response model for adding a new monitoring group
+ */
 export interface AddGroupResponseDto {
-  isSuccessful: boolean;
+  /** Indicates whether the group was created successfully */
+  success: boolean;
+  /** Descriptive message about the operation result */
+  message?: string | null;
+  /** ID of the newly created group */
+  groupId?: string | null; // UUID
+  /** Error type if operation failed */
+  error?: AddGroupErrorType;
 }
 
 export interface EditGroupRequestDto {

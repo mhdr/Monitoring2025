@@ -30,6 +30,7 @@ import { useAuth } from '../hooks/useAuth';
 import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
 import ItemCard from './ItemCard';
+import AddGroupDialog from './AddGroupDialog';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('MonitoringPage');
@@ -41,7 +42,8 @@ const MonitoringPage: React.FC = () => {
   const { 
     state: monitoringState,
     setCurrentFolderId,
-    fetchValues
+    fetchValues,
+    fetchGroups
   } = useMonitoring();
   const [searchParams] = useSearchParams();
   const currentFolderId = searchParams.get('folderId');
@@ -49,6 +51,9 @@ const MonitoringPage: React.FC = () => {
   // Admin menu state
   const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
   const [adminMenuPosition, setAdminMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  
+  // Add Group Dialog state
+  const [addGroupDialogOpen, setAddGroupDialogOpen] = useState(false);
   
   // Check if user is admin
   const isAdmin = user?.roles?.includes('Admin') || false;
@@ -376,13 +381,19 @@ const MonitoringPage: React.FC = () => {
   const handleAddFolder = () => {
     logger.log('Add folder clicked', { currentFolderId });
     handleAdminMenuClose();
-    // TODO: Implement add folder dialog
+    setAddGroupDialogOpen(true);
   };
 
   const handleAddPoint = () => {
     logger.log('Add point clicked', { currentFolderId });
     handleAdminMenuClose();
     // TODO: Implement add point dialog
+  };
+
+  const handleAddGroupSuccess = (groupId: string) => {
+    logger.log('Group added successfully', { groupId, currentFolderId });
+    // Refresh groups to show the new folder
+    fetchGroups();
   };
 
   return (
@@ -703,6 +714,14 @@ const MonitoringPage: React.FC = () => {
           </MenuItem>
         )}
       </Menu>
+
+      {/* Add Group Dialog */}
+      <AddGroupDialog
+        open={addGroupDialogOpen}
+        onClose={() => setAddGroupDialogOpen(false)}
+        onSuccess={handleAddGroupSuccess}
+        parentId={currentFolderId}
+      />
     </Container>
   );
 };
