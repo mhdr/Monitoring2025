@@ -35,6 +35,7 @@ import type {
   AddGroupResponseDto,
   EditGroupRequestDto,
   DeleteGroupRequestDto,
+  DeleteGroupResponseDto,
   MoveGroupRequestDto,
   MoveGroupResponseDto,
   ValueRequestDto,
@@ -505,9 +506,9 @@ export const editGroup = async (data: EditGroupRequestDto): Promise<EditPointRes
 /**
  * Delete a monitoring group
  */
-export const deleteGroup = async (data: DeleteGroupRequestDto): Promise<EditPointResponseDto> => {
+export const deleteGroup = async (data: DeleteGroupRequestDto): Promise<DeleteGroupResponseDto> => {
   try {
-    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/DeleteGroup', data);
+    const response = await apiClient.post<DeleteGroupResponseDto>('/api/Monitoring/DeleteGroup', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

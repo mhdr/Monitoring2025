@@ -683,6 +683,12 @@ export interface DeleteGroupRequestDto {
   id: string; // UUID
 }
 
+export interface DeleteGroupResponseDto {
+  success: boolean;
+  message?: string | null;
+  error?: number | null;
+}
+
 export interface MoveGroupRequestDto {
   groupId: string; // UUID
   parentId?: string | null; // UUID

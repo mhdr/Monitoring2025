@@ -118,7 +118,7 @@ const DeleteGroupDialog: React.FC<DeleteGroupDialogProps> = ({
         id: groupId,
       });
 
-      if (response.isSuccessful) {
+      if (response.success) {
         logger.log('Group deleted successfully', {
           groupId,
         });
@@ -142,8 +142,10 @@ const DeleteGroupDialog: React.FC<DeleteGroupDialogProps> = ({
       } else {
         logger.error('Delete group failed - API returned unsuccessful', { 
           groupId,
+          message: response.message,
         });
-        setError(t('deleteGroupDialog.errors.deleteFailed'));
+        const errorMessage = response.message || t('deleteGroupDialog.errors.deleteFailed');
+        setError(errorMessage);
       }
     } catch (err: unknown) {
       logger.error('Error deleting group', err);
