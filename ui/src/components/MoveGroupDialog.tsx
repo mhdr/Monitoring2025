@@ -26,7 +26,6 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { moveGroup } from '../services/monitoringApi';
-import { fetchGroups } from '../services/monitoringApi';
 import { createLogger } from '../utils/logger';
 import type { Group } from '../types/api';
 
@@ -54,7 +53,7 @@ const MoveGroupDialog: React.FC<MoveGroupDialogProps> = ({
 }) => {
   const { t } = useTranslation();
   const { language } = useLanguage();
-  const { state } = useMonitoring();
+  const { state, fetchGroups } = useMonitoring();
   const groups = state.groups;
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const [moveToRoot, setMoveToRoot] = useState<boolean>(false);
@@ -250,6 +249,15 @@ const MoveGroupDialog: React.FC<MoveGroupDialogProps> = ({
         });
         
         setSuccess(true);
+        
+        // Refresh groups from backend to get updated structure
+        try {
+          await fetchGroups();
+          logger.log('Groups refreshed from backend after move');
+        } catch (refreshError) {
+          logger.error('Failed to refresh groups after move', refreshError);
+          // Continue with success flow even if refresh fails
+        }
         
         // Call success callback after short delay to show success message
         setTimeout(() => {
