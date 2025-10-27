@@ -12,8 +12,12 @@ import type {
   ValuesResponseDto,
   HistoryRequestDto,
   HistoryResponseDto,
-  AddItemRequestDto,
-  AddItemResponseDto,
+  AddPointAsAdminRequestDto,
+  EditPointRequestDto,
+  EditPointAsAdminRequestDto,
+  EditPointResponseDto,
+  DeletePointRequestDto,
+  MovePointRequestDto,
   AlarmsRequestDto,
   AlarmsResponseDto,
   AddAlarmRequestDto,
@@ -41,7 +45,6 @@ import type {
   GetItemResponseDto,
   EditItemRequestDto,
   EditItemResponseDto,
-  OperationResponseDto,
 } from '../types/api';
 
 const logger = createLogger('MonitoringAPI');
@@ -247,78 +250,61 @@ export const getHistory = async (params: HistoryRequestDto): Promise<HistoryResp
 // ==================== Item Management ====================
 
 /**
- * Add a new monitoring item to the system
- * 
- * Creates a new monitoring item with all configuration properties such as item type,
- * name (English and Farsi), scaling parameters, save intervals, calculation methods,
- * calibration settings, and save-on-change configuration.
- * 
- * Validates that the point number is unique across all items.
- * Creates an audit log entry for the creation.
- * Optionally assigns the item to a parent group upon creation.
- * 
- * @param data - Request containing the new item configuration properties
- * @returns Promise<AddItemResponseDto> - Response with success status and new item ID
- * 
- * @example
- * // Create a new analog input temperature sensor
- * const result = await addItem({
- *   itemType: ItemType.AnalogInput,
- *   itemName: 'Temperature Sensor 1',
- *   itemNameFa: 'دمای سنسور 1',
- *   pointNumber: 101,
- *   shouldScale: ShouldScaleType.Yes,
- *   normMin: 0,
- *   normMax: 100,
- *   scaleMin: -50,
- *   scaleMax: 150,
- *   saveInterval: 60,
- *   saveHistoricalInterval: 300,
- *   calculationMethod: ValueCalculationMethod.Average,
- *   numberOfSamples: 10,
- *   saveOnChange: SaveOnChange.Disabled,
- *   saveOnChangeRange: 5.0,
- *   unit: '°C',
- *   unitFa: 'درجه سانتی‌گراد',
- *   isDisabled: false,
- *   isCalibrationEnabled: true,
- *   calibrationA: 1.0,
- *   calibrationB: 0.0,
- *   interfaceType: InterfaceType.Modbus,
- *   isEditable: true,
- *   parentGroupId: '550e8400-e29b-41d4-a716-446655440000'
- * });
- * 
- * @throws {AxiosError} 400 - Validation error, duplicate point number
- * @throws {AxiosError} 401 - Unauthorized
- * @throws {AxiosError} 403 - Forbidden - insufficient permissions
- * @throws {AxiosError} 404 - Parent group not found
+ * Add a new monitoring point (admin only)
  */
-export const addItem = async (data: AddItemRequestDto): Promise<AddItemResponseDto> => {
-  const logger = createLogger('MonitoringAPI:addItem');
+export const addPointAsAdmin = async (data: AddPointAsAdminRequestDto): Promise<EditPointResponseDto> => {
   try {
-    logger.log('Adding new monitoring item', { 
-      itemName: data.itemName, 
-      pointNumber: data.pointNumber,
-      itemType: data.itemType 
-    });
-    
-    // Convert camelCase to PascalCase for .NET API
-    const pascalCaseData = toPascalCaseObject(data);
-    
-    logger.log('Sending PascalCase request payload:', pascalCaseData);
-    
-    const response = await apiClient.post<AddItemResponseDto>('/api/Monitoring/AddItem', pascalCaseData);
-    
-    logger.log('Item added successfully', { 
-      success: response.data.success,
-      itemId: response.data.itemId,
-      message: response.data.message 
-    });
-    
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/AddPointAsAdmin', data);
     return response.data;
   } catch (error) {
-    logger.error('Failed to add item', { itemName: data.itemName, error });
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit a monitoring point's basic metadata
+ */
+export const editPoint = async (data: EditPointRequestDto): Promise<EditPointResponseDto> => {
+  try {
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/EditPoint', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit a monitoring point's full configuration (admin only)
+ */
+export const editPointAsAdmin = async (data: EditPointAsAdminRequestDto): Promise<EditPointResponseDto> => {
+  try {
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/EditPointAsAdmin', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a monitoring point
+ */
+export const deletePoint = async (data: DeletePointRequestDto): Promise<EditPointResponseDto> => {
+  try {
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/DeletePoint', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Move a monitoring point to a different group
+ */
+export const movePoint = async (data: MovePointRequestDto): Promise<EditPointResponseDto> => {
+  try {
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/MovePoint', data);
+    return response.data;
+  } catch (error) {
     handleApiError(error);
   }
 };
@@ -429,9 +415,9 @@ export const getAlarmHistory = async (params: AlarmHistoryRequestDto): Promise<A
 /**
  * Add a new alarm configuration
  */
-export const addAlarm = async (data: AddAlarmRequestDto): Promise<OperationResponseDto> => {
+export const addAlarm = async (data: AddAlarmRequestDto): Promise<EditPointResponseDto> => {
   try {
-    const response = await apiClient.post<OperationResponseDto>('/api/Monitoring/AddAlarm', data);
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/AddAlarm', data);
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -453,9 +439,9 @@ export const editAlarm = async (data: EditAlarmRequestDto): Promise<EditAlarmRes
 /**
  * Delete an alarm configuration
  */
-export const deleteAlarm = async (data: DeleteAlarmRequestDto): Promise<OperationResponseDto> => {
+export const deleteAlarm = async (data: DeleteAlarmRequestDto): Promise<EditPointResponseDto> => {
   try {
-    const response = await apiClient.post<OperationResponseDto>('/api/Monitoring/DeleteAlarm', data);
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/DeleteAlarm', data);
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -477,9 +463,9 @@ export const getExternalAlarms = async (params: GetExternalAlarmsRequestDto): Pr
 /**
  * Batch edit external alarms
  */
-export const batchEditExternalAlarms = async (data: BatchEditExternalAlarmsRequestDto): Promise<OperationResponseDto> => {
+export const batchEditExternalAlarms = async (data: BatchEditExternalAlarmsRequestDto): Promise<EditPointResponseDto> => {
   try {
-    const response = await apiClient.post<OperationResponseDto>('/api/Monitoring/BatchEditExternalAlarms', data);
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/BatchEditExternalAlarms', data);
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -503,9 +489,9 @@ export const addGroup = async (data: AddGroupRequestDto): Promise<AddGroupRespon
 /**
  * Edit an existing monitoring group
  */
-export const editGroup = async (data: EditGroupRequestDto): Promise<OperationResponseDto> => {
+export const editGroup = async (data: EditGroupRequestDto): Promise<EditPointResponseDto> => {
   try {
-    const response = await apiClient.post<OperationResponseDto>('/api/Monitoring/EditGroup', data);
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/EditGroup', data);
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -515,9 +501,9 @@ export const editGroup = async (data: EditGroupRequestDto): Promise<OperationRes
 /**
  * Delete a monitoring group
  */
-export const deleteGroup = async (data: DeleteGroupRequestDto): Promise<OperationResponseDto> => {
+export const deleteGroup = async (data: DeleteGroupRequestDto): Promise<EditPointResponseDto> => {
   try {
-    const response = await apiClient.post<OperationResponseDto>('/api/Monitoring/DeleteGroup', data);
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/DeleteGroup', data);
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -527,9 +513,9 @@ export const deleteGroup = async (data: DeleteGroupRequestDto): Promise<Operatio
 /**
  * Move a group to a different parent
  */
-export const moveGroup = async (data: MoveGroupRequestDto): Promise<OperationResponseDto> => {
+export const moveGroup = async (data: MoveGroupRequestDto): Promise<EditPointResponseDto> => {
   try {
-    const response = await apiClient.post<OperationResponseDto>('/api/Monitoring/MoveGroup', data);
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/MoveGroup', data);
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -541,9 +527,9 @@ export const moveGroup = async (data: MoveGroupRequestDto): Promise<OperationRes
 /**
  * Write a value directly to a controller
  */
-export const writeValue = async (data: WriteValueRequestDto): Promise<OperationResponseDto> => {
+export const writeValue = async (data: WriteValueRequestDto): Promise<EditPointResponseDto> => {
   try {
-    const response = await apiClient.post<OperationResponseDto>('/api/Monitoring/WriteValue', data);
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/WriteValue', data);
     return response.data;
   } catch (error) {
     handleApiError(error);
@@ -553,9 +539,9 @@ export const writeValue = async (data: WriteValueRequestDto): Promise<OperationR
 /**
  * Add a new value to the system
  */
-export const addValue = async (data: AddValueRequestDto): Promise<OperationResponseDto> => {
+export const addValue = async (data: AddValueRequestDto): Promise<EditPointResponseDto> => {
   try {
-    const response = await apiClient.post<OperationResponseDto>('/api/Monitoring/AddValue', data);
+    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/AddValue', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

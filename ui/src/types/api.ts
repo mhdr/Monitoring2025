@@ -1,17 +1,5 @@
 // Common types for the monitoring system API responses
 
-/**
- * Generic response DTO for operations that return success/failure status
- */
-export interface OperationResponseDto {
-  /** Whether the operation was successful */
-  success: boolean;
-  /** Success or error message */
-  message?: string | null;
-  /** Additional data if needed */
-  data?: unknown;
-}
-
 export interface DashboardData {
   totalAlarms: number;
   activeAlarms: number;
@@ -375,93 +363,65 @@ export type EditUserErrorType = 1 | 2;
 
 // ==================== Monitoring Item Management DTOs ====================
 
-/**
- * Request DTO for adding a new monitoring item to the system
- */
-export interface AddItemRequestDto {
-  /** Type of monitoring item (digital/analog, input/output) */
+export interface AddPointAsAdminRequestDto {
   itemType: ItemType;
-  /** Display name of the monitoring item (1-200 characters) */
   itemName: string;
-  /** Display name of the monitoring item in Farsi (1-200 characters, optional) */
-  itemNameFa?: string | null;
-  /** Physical point number for controller mapping (0-2147483647) */
   pointNumber: number;
-  /** Whether to apply scaling to raw values */
   shouldScale: ShouldScaleType;
-  /** Minimum value of the normalized range (before scaling) */
   normMin: number;
-  /** Maximum value of the normalized range (before scaling) */
   normMax: number;
-  /** Minimum value of the scaled range (after scaling) */
   scaleMin: number;
-  /** Maximum value of the scaled range (after scaling) */
   scaleMax: number;
-  /** Interval in seconds for saving current values (0-2147483647) */
   saveInterval: number;
-  /** Interval in seconds for saving historical values (0-2147483647) */
   saveHistoricalInterval: number;
-  /** Method for calculating values from samples */
   calculationMethod: ValueCalculationMethod;
-  /** Number of samples to use for value calculation (1-2147483647) */
   numberOfSamples: number;
-  /** Whether to save values on change */
-  saveOnChange?: SaveOnChange | null;
-  /** The range threshold for triggering save on change (percentage or absolute value) */
-  saveOnChangeRange?: number | null;
-  /** Text to display when digital value is ON/true (0-100 characters) */
   onText?: string | null;
-  /** Text to display when digital value is ON/true in Farsi (0-100 characters) */
-  onTextFa?: string | null;
-  /** Text to display when digital value is OFF/false (0-100 characters) */
   offText?: string | null;
-  /** Text to display when digital value is OFF/false in Farsi (0-100 characters) */
-  offTextFa?: string | null;
-  /** Unit of measurement for the value (0-50 characters) */
   unit?: string | null;
-  /** Unit of measurement for the value in Farsi (0-50 characters) */
-  unitFa?: string | null;
-  /** Indicates if the monitoring item is disabled */
-  isDisabled: boolean;
-  /** Whether calibration is enabled for this item */
-  isCalibrationEnabled?: boolean | null;
-  /** Calibration coefficient A (multiplier) in the formula: calibrated_value = A * raw_value + B */
-  calibrationA?: number | null;
-  /** Calibration coefficient B (offset) in the formula: calibrated_value = A * raw_value + B */
-  calibrationB?: number | null;
-  /** Interface type for communication protocol */
-  interfaceType: InterfaceType;
-  /** Whether the item allows value writes from users */
-  isEditable: boolean;
-  /** Optional parent group ID to assign the item to a group upon creation */
-  parentGroupId?: string | null;
+  isDisabled?: boolean | null;
 }
 
-/**
- * Types of errors that can occur during item creation
- */
-export const AddItemErrorType = {
-  None: 0,
-  InvalidPointNumber: 1,
-  DuplicatePointNumber: 2,
-  ValidationError: 3,
-  ParentGroupNotFound: 4,
-} as const;
+export interface EditPointRequestDto {
+  id: string; // UUID
+  itemType: ItemType;
+  itemName?: string | null;
+  onText?: string | null;
+  offText?: string | null;
+  unit?: string | null;
+}
 
-export type AddItemErrorType = typeof AddItemErrorType[keyof typeof AddItemErrorType];
+export interface EditPointAsAdminRequestDto {
+  id: string; // UUID
+  itemType: ItemType;
+  itemName?: string | null;
+  pointNumber: number;
+  shouldScale: ShouldScaleType;
+  normMin: number;
+  normMax: number;
+  scaleMin: number;
+  scaleMax: number;
+  saveInterval: number;
+  saveHistoricalInterval: number;
+  calculationMethod: ValueCalculationMethod;
+  numberOfSamples: number;
+  onText?: string | null;
+  offText?: string | null;
+  unit?: string | null;
+  isDisabled?: boolean | null;
+}
 
-/**
- * Response DTO for adding a new monitoring item
- */
-export interface AddItemResponseDto {
-  /** Indicates if the add operation was successful */
-  success: boolean;
-  /** Detailed message about the operation result */
-  message?: string | null;
-  /** The unique identifier of the newly created monitoring item */
-  itemId?: string | null;
-  /** Error type if the operation failed */
-  error?: AddItemErrorType;
+export interface EditPointResponseDto {
+  isSuccessful: boolean;
+}
+
+export interface DeletePointRequestDto {
+  id: string; // UUID
+}
+
+export interface MovePointRequestDto {
+  pointId: string; // UUID
+  parentId: string; // UUID
 }
 
 // ==================== Alarm Management DTOs ====================
