@@ -58,10 +58,20 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
-    /// Get groups accessible to the current user
+    /// Get all groups in the system
     /// </summary>
-    /// <returns>List of groups the user has access to</returns>
-    /// <response code="200">Returns the list of accessible groups</response>
+    /// <returns>List of all groups in the system</returns>
+    /// <remarks>
+    /// Returns all groups without permission filtering. Client-side filtering should be applied
+    /// based on the items/points the user has access to.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/groups
+    ///     {}
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the complete list of groups</response>
     /// <response code="401">If user is not authenticated</response>
     /// <response code="500">If an internal error occurs</response>
     [HttpPost("Groups")]
@@ -76,79 +86,49 @@ public class MonitoringController : ControllerBase
 
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogWarning("Unauthorized access attempt to Groups endpoint (no user id)");
                 return Unauthorized();
             }
 
-            var userGuid = Guid.Parse(userId);
+            _logger.LogInformation("Fetching all groups for user {UserId}", userId);
 
-            var groups = (await _context.Groups.ToListAsync()).OrderBy(x => x.Name);
-            var permittdGroups = new List<GroupsResponseDto.Group>();
+            var groups = await _context.Groups
+                .OrderBy(x => x.Name)
+                .ToListAsync();
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var groupList = new List<GroupsResponseDto.Group>();
 
             foreach (var g in groups)
             {
-                if (user.UserName.ToLower() == "admin")
+                var parentId = "";
+                if (g.ParentId != null && g.ParentId != Guid.Empty)
                 {
-                    var parentId = "";
-                    if (g.ParentId != null && g.ParentId != Guid.Empty)
-                    {
-                        parentId = g.ParentId.ToString();
-
-                        if (string.IsNullOrEmpty(parentId))
-                        {
-                            parentId = "";
-                        }
-                    }
-
-                    permittdGroups.Add(new GroupsResponseDto.Group()
-                    {
-                        Id = g.Id.ToString(),
-                        Name = g.Name,
-                        NameFa = g.NameFa,
-                        ParentId = parentId,
-                    });
+                    parentId = g.ParentId.ToString();
                 }
-                else
+
+                groupList.Add(new GroupsResponseDto.Group()
                 {
-                    var permissions = await _context.GroupPermissions.Where(x => x.UserId == userGuid)
-                        .ToListAsync();
-                    var permission = permissions.FirstOrDefault(x => x.GroupId == g.Id);
-
-                    if (permission != null)
-                    {
-                        var parentId = "";
-                        if (g.ParentId != null && g.ParentId != Guid.Empty)
-                        {
-                            parentId = g.ParentId.ToString();
-
-                            if (string.IsNullOrEmpty(parentId))
-                            {
-                                parentId = "";
-                            }
-                        }
-
-                        permittdGroups.Add(new GroupsResponseDto.Group()
-                        {
-                            Id = g.Id.ToString(),
-                            Name = g.Name,
-                            NameFa = g.NameFa,
-                            ParentId = parentId,
-                        });
-                    }
-                }
+                    Id = g.Id.ToString(),
+                    Name = g.Name,
+                    NameFa = g.NameFa,
+                    ParentId = parentId,
+                });
             }
 
             var response = new GroupsResponseDto()
             {
-                Groups = permittdGroups,
+                Groups = groupList,
             };
+
+            _logger.LogInformation("Successfully retrieved {GroupCount} groups for user {UserId}", 
+                groupList.Count, userId);
 
             return Ok(response);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving groups for user");
+            _logger.LogError(ex, "Error retrieving groups for user {UserId}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier));
             return StatusCode(500, new { success = false, errorMessage = "Internal server error" });
         }
     }
