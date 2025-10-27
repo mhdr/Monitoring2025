@@ -14,7 +14,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Group> Groups { get; set; }
     public DbSet<GroupItem> GroupItems { get; set; }
-    public DbSet<GroupPermission> GroupPermissions { get; set; }
     public DbSet<ItemPermission> ItemPermissions { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<UserVersion> UserVersions { get; set; }
@@ -46,11 +45,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<GroupItem>()
             .Property(e => e.Id)
             .HasDefaultValueSql("gen_random_uuid()");
-
-        modelBuilder.Entity<GroupPermission>()
-            .Property(e => e.Id)
-            .HasDefaultValueSql("gen_random_uuid()");
-
 
         modelBuilder.Entity<ItemPermission>()
             .Property(e => e.Id)
