@@ -16,6 +16,7 @@
 | Rule | Why |
 |------|-----|
 | **NEVER commit to git** | Manual control only |
+| Use `formatDate()` for dates | Consistent formatting |
 | Use `t()` for all text | i18n support |
 | Use logger, not console | Prod cleanup |
 | Use Chrome DevTools MCP | Testing/debugging |
@@ -33,6 +34,7 @@
 |---------|-------|
 | Git commits | Never use git commands |
 | `console.log()` | `logger.log()` |
+| `toLocaleString()` | `formatDate(date, lang, 'short')` |
 | Hardcoded colors | `theme.palette.primary.main` |
 | `marginLeft: 16` | `marginInlineStart: 2` |
 | `<div onClick>` | `<Button onClick>` |
@@ -81,6 +83,19 @@ Enterprise monitoring dashboard with real-time SignalR streaming, bilingual supp
 - **MUI theme colors** - access via `theme.palette.*`
 - **Element IDs** - ALL AI-created elements need `data-id-ref`
 - **Logger utility** - NEVER use `console.*` directly
+- **Date formatting** - ALWAYS use `formatDate()` from `utils/dateFormatting.ts`
+
+### Date Formatting (MANDATORY)
+⚠️ **CRITICAL: Use centralized date formatting functions**
+- **File**: `src/utils/dateFormatting.ts`
+- **Main Function**: `formatDate(date, language, format)` 
+  - `date`: Date object, ISO string, or Unix timestamp (seconds/milliseconds)
+  - `language`: `'fa'` | `'en'`
+  - `format`: `'long'` | `'short'`
+- **Persian Long**: دوشنبه، ۵ آبان ۱۴۰۴، ساعت ۱۳:۰۳:۴۶
+- **Persian Short**: ۱۴۰۴/۸/۵، ۱۳:۰۳:۴۶
+- **❌ DON'T**: Use `toLocaleString()`, `toLocaleDateString()`, or `toLocaleTimeString()` directly
+- **✅ DO**: `formatDate(timestamp, language, 'short')` everywhere
 
 ### Logging (Development-Only)
 **CRITICAL: Always use logger, never console.***
