@@ -45,7 +45,8 @@ const MonitoringPage: React.FC = () => {
     state: monitoringState,
     setCurrentFolderId,
     fetchValues,
-    fetchGroups
+    fetchGroups,
+    fetchItems
   } = useMonitoring();
   const [searchParams] = useSearchParams();
   const currentFolderId = searchParams.get('folderId');
@@ -388,8 +389,9 @@ const MonitoringPage: React.FC = () => {
 
   const handleAddItemSuccess = () => {
     logger.log('Point added successfully', { currentFolderId });
-    // Refresh groups to show the new point
+    // Refresh groups and items to show the new point
     fetchGroups();
+    fetchItems();
   };
 
   const handleAddGroupSuccess = (groupId: string) => {
