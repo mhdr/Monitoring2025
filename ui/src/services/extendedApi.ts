@@ -114,7 +114,8 @@ export const setRoles = async (data: SetRolesRequestDto): Promise<SetRolesRespon
 };
 
 /**
- * Save user permissions for accessing groups and items
+ * Save user permissions for accessing monitoring items
+ * Groups are accessible to all users; filtering is handled client-side based on item access
  */
 export const savePermissions = async (data: SavePermissionsRequestDto): Promise<SavePermissionsResponseDto> => {
   try {

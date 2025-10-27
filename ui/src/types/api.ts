@@ -145,11 +145,11 @@ export interface Group {
 
 /**
  * Request DTO for retrieving monitoring groups
- * No parameters - returns groups accessible to the current user
+ * No parameters - backend returns all groups, client-side filtering is applied based on ItemPermissions
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GroupsRequestDto {
-  // Empty - endpoint returns groups accessible to current user based on JWT token
+  // Empty - backend returns all groups, client filters based on accessible items
 }
 
 export interface GroupsResponseDto {
@@ -607,7 +607,6 @@ export interface SetRolesResponseDto {
 
 export interface SavePermissionsRequestDto {
   userId?: string | null;
-  groupPermissions?: string[] | null;
   itemPermissions?: string[] | null;
 }
 

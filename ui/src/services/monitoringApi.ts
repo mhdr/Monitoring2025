@@ -1,7 +1,10 @@
 import apiClient, { handleApiError } from './apiClient';
 import { storeMonitoringResponseData, getStoredItemIds } from '../utils/monitoringStorage';
+import { authStorageHelpers } from '../utils/authStorage';
 import { createLogger } from '../utils/logger';
 import type {
+  Group,
+  Item,
   GroupsResponseDto,
   ItemsRequestDto,
   ItemsResponseDto,
@@ -52,13 +55,87 @@ const logger = createLogger('MonitoringAPI');
 
 /**
  * Get monitoring groups accessible to the current user
- * No parameters required - returns groups based on JWT token permissions
+ * 
+ * Returns groups filtered based on client-side logic:
+ * - Admin users: See all groups (no filtering) for group and item management
+ * - Regular users: Groups that contain items the user has access to (based on ItemPermissions)
+ * - Parent groups of accessible groups (hierarchical access)
+ * - Backend returns all groups; filtering is performed on the client side
+ * 
+ * @returns Promise<GroupsResponseDto> - Filtered list of accessible groups (or all groups for admin)
  */
 export const getGroups = async (): Promise<GroupsResponseDto> => {
   try {
-    const response = await apiClient.post<GroupsResponseDto>('/api/Monitoring/Groups', {});
-    // Store groups data in IndexedDB when fetched
-    return storeMonitoringResponseData.storeGroupsResponse(response.data);
+    // Fetch all groups from backend (no server-side filtering)
+    const allGroupsResponse = await apiClient.post<GroupsResponseDto>('/api/Monitoring/Groups', {});
+    
+    // Check if current user has admin role
+    const currentUser = await authStorageHelpers.getStoredUser();
+    const hasAdminRole = currentUser?.roles?.some(role => 
+      role.toLowerCase() === 'admin' || role.toLowerCase() === 'administrator'
+    ) ?? false;
+    
+    // If user has admin role, return all groups without filtering
+    if (hasAdminRole) {
+      logger.log('Admin user detected - returning all groups without filtering:', {
+        totalGroups: allGroupsResponse.data.groups.length,
+        userRoles: currentUser?.roles || [],
+      });
+      
+      const adminResponse: GroupsResponseDto = {
+        groups: allGroupsResponse.data.groups
+      };
+      
+      // Store all groups data in IndexedDB when fetched
+      return storeMonitoringResponseData.storeGroupsResponse(adminResponse);
+    }
+    
+    // Regular user - apply client-side filtering based on ItemPermissions
+    
+    // Fetch accessible items to determine which groups to show
+    const accessibleItemsResponse = await apiClient.post<ItemsResponseDto>('/api/Monitoring/Items', { showOrphans: true });
+    
+    // Get set of group IDs that contain accessible items
+    const accessibleGroupIds = new Set<string>();
+    
+    // Add groups that contain accessible items
+    accessibleItemsResponse.data.items.forEach((item: Item) => {
+      if (item.groupId) {
+        accessibleGroupIds.add(item.groupId);
+      }
+    });
+    
+    // Add parent groups recursively for hierarchical access
+    const addParentGroups = (groupId: string) => {
+      const group = allGroupsResponse.data.groups.find((g: Group) => g.id === groupId);
+      if (group && group.parentId && !accessibleGroupIds.has(group.parentId)) {
+        accessibleGroupIds.add(group.parentId);
+        addParentGroups(group.parentId); // Recursive call for hierarchy
+      }
+    };
+    
+    // Walk up the hierarchy for each accessible group
+    Array.from(accessibleGroupIds).forEach(groupId => addParentGroups(groupId));
+    
+    // Filter groups to only include accessible ones
+    const filteredGroups = allGroupsResponse.data.groups.filter((group: Group) => 
+      accessibleGroupIds.has(group.id)
+    );
+    
+    logger.log('Regular user groups filtering result:', {
+      totalGroups: allGroupsResponse.data.groups.length,
+      accessibleItems: accessibleItemsResponse.data.items.length,
+      accessibleGroupIds: Array.from(accessibleGroupIds),
+      filteredGroups: filteredGroups.length,
+      userRoles: currentUser?.roles || [],
+    });
+    
+    const response: GroupsResponseDto = {
+      groups: filteredGroups
+    };
+    
+    // Store filtered groups data in IndexedDB when fetched
+    return storeMonitoringResponseData.storeGroupsResponse(response);
   } catch (error) {
     handleApiError(error);
   }
