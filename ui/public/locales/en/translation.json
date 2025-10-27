@@ -532,6 +532,77 @@
       "unauthorized": "You don't have permission to edit this point"
     }
   },
+  "addItemDialog": {
+    "title": "Add New Point",
+    "sections": {
+      "basicInformation": "Basic Information",
+      "advancedSettings": "Advanced Settings",
+      "digitalFields": "Digital Point Settings",
+      "analogFields": "Analog Point Settings",
+      "rawRange": "Raw Range (Hardware Values)",
+      "scaleRange": "Scaled Range (Engineering Values)"
+    },
+    "fields": {
+      "itemType": "Item Type",
+      "pointNumber": "Point Number",
+      "interfaceType": "Interface Type",
+      "isEditable": "Allow Value Write",
+      "itemName": "Name",
+      "itemNameFa": "Name (Persian)",
+      "valueCalculationMethod": "Value Calculation Method",
+      "numberOfSamples": "Number of Samples",
+      "saveIntervalSeconds": "Save Interval (seconds)",
+      "saveHistoricalIntervalSeconds": "Historical Save Interval (seconds)",
+      "isDisabled": "Disabled",
+      "onText": "ON Text",
+      "onTextFa": "ON Text (Persian)",
+      "offText": "OFF Text",
+      "offTextFa": "OFF Text (Persian)",
+      "unit": "Unit",
+      "unitFa": "Unit (Persian)",
+      "shouldScale": "Enable Scaling",
+      "rawLow": "Raw Low",
+      "rawHigh": "Raw High",
+      "scaleLow": "Scale Low",
+      "scaleHigh": "Scale High",
+      "saveOnChange": "Save On Change",
+      "saveOnChangeRange": "Change Threshold",
+      "saveOnChangeRangeHelper": "Value must change by this amount to trigger a save",
+      "isCalibrationEnabled": "Enable Calibration",
+      "calibrationFormula": "Calibration Formula: Calibrated Value = A × Raw Value + B",
+      "calibrationA": "Coefficient A (Multiplier)",
+      "calibrationAHelper": "Multiply raw value by this coefficient",
+      "calibrationB": "Coefficient B (Offset)",
+      "calibrationBHelper": "Add this offset to the result"
+    },
+    "interfaceTypes": {
+      "none": "None",
+      "sharp7": "Sharp7 (Siemens S7)",
+      "bacnet": "BACnet",
+      "modbus": "Modbus"
+    },
+    "saveOnChangeOptions": {
+      "default": "Default (System Setting)",
+      "on": "Enabled",
+      "off": "Disabled"
+    },
+    "valueCalculationMethods": {
+      "lastValue": "Last Value",
+      "average": "Average"
+    },
+    "errors": {
+      "saveFailed": "Failed to add point",
+      "itemNameRequired": "Point name is required",
+      "invalidPointNumber": "Point number must be a positive integer",
+      "invalidSaveInterval": "Save interval must be greater than zero",
+      "invalidRawRange": "Raw High and Raw Low must be different",
+      "invalidScaleRange": "Scale High and Scale Low must be different",
+      "duplicatePointNumber": "This point number is already in use",
+      "validationError": "Please correct the validation errors",
+      "validationErrorsFound": "Validation errors found. Please check the fields below.",
+      "unauthorized": "You don't have permission to add points"
+    }
+  },
   "addGroupDialog": {
     "title": "Add New Folder",
     "folderNameLabel": "Folder Name (English)",

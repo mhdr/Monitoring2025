@@ -532,6 +532,77 @@
       "unauthorized": "شما مجوز ویرایش این پوینت را ندارید"
     }
   },
+  "addItemDialog": {
+    "title": "افزودن پوینت جدید",
+    "sections": {
+      "basicInformation": "اطلاعات اصلی",
+      "advancedSettings": "تنظیمات پیشرفته",
+      "digitalFields": "تنظیمات پوینت دیجیتال",
+      "analogFields": "تنظیمات پوینت آنالوگ",
+      "rawRange": "محدوده خام (مقادیر سخت‌افزار)",
+      "scaleRange": "محدوده مقیاس‌بندی (مقادیر مهندسی)"
+    },
+    "fields": {
+      "itemType": "نوع آیتم",
+      "pointNumber": "شماره پوینت",
+      "interfaceType": "نوع رابط",
+      "isEditable": "اجازه نوشتن مقدار",
+      "itemName": "نام",
+      "itemNameFa": "نام (فارسی)",
+      "valueCalculationMethod": "روش محاسبه مقدار",
+      "numberOfSamples": "تعداد نمونه‌ها",
+      "saveIntervalSeconds": "فاصله ذخیره‌سازی (ثانیه)",
+      "saveHistoricalIntervalSeconds": "فاصله ذخیره‌سازی تاریخچه (ثانیه)",
+      "isDisabled": "غیرفعال",
+      "onText": "متن روشن",
+      "onTextFa": "متن روشن (فارسی)",
+      "offText": "متن خاموش",
+      "offTextFa": "متن خاموش (فارسی)",
+      "unit": "واحد",
+      "unitFa": "واحد (فارسی)",
+      "shouldScale": "فعال‌سازی مقیاس‌بندی",
+      "rawLow": "حداقل خام",
+      "rawHigh": "حداکثر خام",
+      "scaleLow": "حداقل مقیاس",
+      "scaleHigh": "حداکثر مقیاس",
+      "saveOnChange": "ذخیره در صورت تغییر",
+      "saveOnChangeRange": "آستانه تغییر",
+      "saveOnChangeRangeHelper": "مقدار باید به این اندازه تغییر کند تا ذخیره شود",
+      "isCalibrationEnabled": "فعال‌سازی کالیبراسیون",
+      "calibrationFormula": "فرمول کالیبراسیون: مقدار کالیبره شده = A × مقدار خام + B",
+      "calibrationA": "ضریب A (ضرب‌کننده)",
+      "calibrationAHelper": "مقدار خام را در این ضریب ضرب کنید",
+      "calibrationB": "ضریب B (افست)",
+      "calibrationBHelper": "این افست را به نتیجه اضافه کنید"
+    },
+    "interfaceTypes": {
+      "none": "هیچ",
+      "sharp7": "Sharp7 (زیمنس S7)",
+      "bacnet": "BACnet",
+      "modbus": "Modbus"
+    },
+    "saveOnChangeOptions": {
+      "default": "پیش‌فرض (تنظیمات سیستم)",
+      "on": "فعال",
+      "off": "غیرفعال"
+    },
+    "valueCalculationMethods": {
+      "lastValue": "آخرین مقدار",
+      "average": "میانگین"
+    },
+    "errors": {
+      "saveFailed": "افزودن پوینت ناموفق بود",
+      "itemNameRequired": "نام پوینت الزامی است",
+      "invalidPointNumber": "شماره پوینت باید یک عدد صحیح مثبت باشد",
+      "invalidSaveInterval": "فاصله ذخیره‌سازی باید بیشتر از صفر باشد",
+      "invalidRawRange": "حداکثر و حداقل خام باید متفاوت باشند",
+      "invalidScaleRange": "حداکثر و حداقل مقیاس باید متفاوت باشند",
+      "duplicatePointNumber": "این شماره پوینت قبلاً استفاده شده است",
+      "validationError": "لطفاً خطاهای اعتبارسنجی را برطرف کنید",
+      "validationErrorsFound": "خطاهای اعتبارسنجی یافت شد. لطفاً فیلدهای زیر را بررسی کنید.",
+      "unauthorized": "شما مجوز افزودن پوینت را ندارید"
+    }
+  },
   "addGroupDialog": {
     "title": "افزودن پوشه جدید",
     "folderNameLabel": "نام پوشه (انگلیسی)",

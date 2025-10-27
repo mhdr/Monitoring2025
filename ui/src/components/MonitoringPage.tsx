@@ -31,6 +31,7 @@ import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
 import ItemCard from './ItemCard';
 import AddGroupDialog from './AddGroupDialog';
+import AddItemDialog from './AddItemDialog';
 import { createLogger } from '../utils/logger';
 import { formatDate } from '../utils/dateFormatting';
 
@@ -55,6 +56,9 @@ const MonitoringPage: React.FC = () => {
   
   // Add Group Dialog state
   const [addGroupDialogOpen, setAddGroupDialogOpen] = useState(false);
+  
+  // Add Item Dialog state
+  const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
   
   // Check if user is admin
   const isAdmin = user?.roles?.includes('Admin') || false;
@@ -379,7 +383,13 @@ const MonitoringPage: React.FC = () => {
   const handleAddPoint = () => {
     logger.log('Add point clicked', { currentFolderId });
     handleAdminMenuClose();
-    // TODO: Implement add point dialog
+    setAddItemDialogOpen(true);
+  };
+
+  const handleAddItemSuccess = () => {
+    logger.log('Point added successfully', { currentFolderId });
+    // Refresh groups to show the new point
+    fetchGroups();
   };
 
   const handleAddGroupSuccess = (groupId: string) => {
@@ -713,6 +723,14 @@ const MonitoringPage: React.FC = () => {
         onClose={() => setAddGroupDialogOpen(false)}
         onSuccess={handleAddGroupSuccess}
         parentId={currentFolderId}
+      />
+
+      {/* Add Item Dialog */}
+      <AddItemDialog
+        open={addItemDialogOpen}
+        onClose={() => setAddItemDialogOpen(false)}
+        onSuccess={handleAddItemSuccess}
+        parentGroupId={currentFolderId || undefined}
       />
     </Container>
   );

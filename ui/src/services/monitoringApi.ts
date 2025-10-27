@@ -43,6 +43,8 @@ import type {
   WriteOrAddValueResponseDto,
   GetItemRequestDto,
   GetItemResponseDto,
+  AddItemRequestDto,
+  AddItemResponseDto,
   EditItemRequestDto,
   EditItemResponseDto,
 } from '../types/api';
@@ -631,6 +633,40 @@ export const editItem = async (data: EditItemRequestDto): Promise<EditItemRespon
     return response.data;
   } catch (error) {
     logger.error('Failed to edit item', { itemId: data.id, error });
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new monitoring item to the system
+ * Creates a new monitoring item with all configuration properties
+ * Validates that the point number is unique across all items
+ * Creates an audit log entry for the creation
+ * Optionally assigns the item to a parent group upon creation
+ */
+export const addItem = async (data: AddItemRequestDto): Promise<AddItemResponseDto> => {
+  const logger = createLogger('MonitoringAPI:addItem');
+  try {
+    logger.log('Adding item', { itemName: data.itemName, pointNumber: data.pointNumber });
+    
+    // Convert camelCase to PascalCase for .NET API
+    const pascalCaseData = toPascalCaseObject(data);
+    
+    // Send the request directly without wrapping - the controller expects [FromBody] AddItemRequestDto
+    logger.log('Sending PascalCase request payload:', pascalCaseData);
+    
+    const response = await apiClient.post<AddItemResponseDto>('/api/Monitoring/AddItem', pascalCaseData);
+    
+    logger.log('Item added successfully', { 
+      itemName: data.itemName,
+      success: response.data.success,
+      itemId: response.data.itemId,
+      message: response.data.message 
+    });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to add item', { itemName: data.itemName, error });
     handleApiError(error);
   }
 };
