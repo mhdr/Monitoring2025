@@ -2518,13 +2518,26 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
 
 
     /// <summary>
-    /// Save user permissions for accessing groups and monitoring items
+    /// Save user permissions for accessing monitoring items
     /// </summary>
-    /// <param name="request">Save permissions request containing user ID and lists of group and item permissions</param>
+    /// <param name="request">Save permissions request containing user ID and list of item permissions</param>
     /// <returns>Result indicating success or failure of permission saving operation</returns>
+    /// <remarks>
+    /// Updates the user's item permissions by replacing all existing permissions with the new set.
+    /// Groups are now accessible to all users, with client-side filtering based on item access.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/savepermissions
+    ///     {
+    ///        "userId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "itemPermissions": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"]
+    ///     }
+    ///
+    /// </remarks>
     /// <response code="200">Returns success status of the permission save operation</response>
     /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <response code="400">If there's a validation error with the request or user not found</response>
     [HttpPost("SavePermissions")]
     [ProducesResponseType(typeof(SavePermissionsResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -2541,27 +2554,19 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             }
 
             var user = await _userManager.FindByIdAsync(request.UserId);
-
-            var groupsToDelete = await _context.GroupPermissions
-                .Where(x => x.UserId == new Guid(user.Id))
-                .ToListAsync();
-            _context.GroupPermissions.RemoveRange(groupsToDelete);
-
-            List<GroupPermission> groupPermissions = new();
-            foreach (var g in request.GroupPermissions)
+            
+            if (user == null)
             {
-                groupPermissions.Add(new GroupPermission()
-                {
-                    UserId = new Guid(user.Id),
-                    GroupId = new Guid(g),
-                });
+                return BadRequest(new { success = false, message = "User not found" });
             }
 
+            // Remove existing item permissions for the user
             var itemsToDelete = await _context.ItemPermissions
                 .Where(x => x.UserId == new Guid(user.Id))
                 .ToListAsync();
             _context.ItemPermissions.RemoveRange(itemsToDelete);
 
+            // Add new item permissions
             List<ItemPermission> itemPermissions = new();
 
             foreach (var i in request.ItemPermissions)
@@ -2573,7 +2578,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 });
             }
 
-            await _context.GroupPermissions.AddRangeAsync(groupPermissions);
             await _context.ItemPermissions.AddRangeAsync(itemPermissions);
 
             var response = new SavePermissionsResponseDto()

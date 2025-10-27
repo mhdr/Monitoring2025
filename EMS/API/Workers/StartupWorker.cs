@@ -67,27 +67,7 @@ public class StartupWorker : BackgroundService
             return;
         }
 
-        _logger.LogInformation("Applying permissions for admin user {UserId}", user.Id);
-
-        var groups = await context.Groups.ToListAsync(cancellationToken);
-        List<GroupPermission> groupPermissions = new();
-        foreach (var group in groups)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var match = await context.GroupPermissions
-                .FirstOrDefaultAsync(x => x.UserId == new Guid(user.Id)
-                                          && x.GroupId == group.Id, cancellationToken);
-
-            if (match == null)
-            {
-                groupPermissions.Add(new GroupPermission()
-                {
-                    UserId = new Guid(user.Id),
-                    GroupId = group.Id,
-                });
-            }
-        }
+        _logger.LogInformation("Applying item permissions for admin user {UserId}", user.Id);
 
         var items = await Core.Points.ListPoints();
         List<ItemPermission> itemPermissions = new();
@@ -109,24 +89,15 @@ public class StartupWorker : BackgroundService
             }
         }
 
-        if (groupPermissions.Count > 0)
-        {
-            await context.GroupPermissions.AddRangeAsync(groupPermissions, cancellationToken);
-        }
-
         if (itemPermissions.Count > 0)
         {
             await context.ItemPermissions.AddRangeAsync(itemPermissions, cancellationToken);
-        }
-
-        if (groupPermissions.Count > 0 || itemPermissions.Count > 0)
-        {
             await context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Added {GroupCount} group permissions and {ItemCount} item permissions for admin", groupPermissions.Count, itemPermissions.Count);
+            _logger.LogInformation("Added {ItemCount} item permissions for admin", itemPermissions.Count);
         }
         else
         {
-            _logger.LogInformation("No new permissions required for admin user {UserId}", user.Id);
+            _logger.LogInformation("No new item permissions required for admin user {UserId}", user.Id);
         }
     }
 
