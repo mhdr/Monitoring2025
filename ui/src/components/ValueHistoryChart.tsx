@@ -6,16 +6,10 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useTranslation } from '../hooks/useTranslation';
 import type { Item } from '../types/api';
 import { createLogger } from '../utils/logger';
+import { toPersianDigits } from '../utils/numberFormatting';
+import { formatDate } from '../utils/dateFormatting';
 
 const logger = createLogger('ValueHistoryChart');
-
-/**
- * Convert English digits (0-9) to Persian digits (۰-۹)
- */
-const toPersianDigits = (str: string): string => {
-  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-  return str.replace(/\d/g, (digit) => persianDigits[parseInt(digit)]);
-};
 
 interface ValueHistoryChartProps {
   /** Array of historical value data points */
@@ -104,20 +98,9 @@ const ValueHistoryChart: React.FC<ValueHistoryChartProps> = ({
   const chartOptions: EChartsOption = useMemo(() => {
     if (!history || history.length === 0) return {};
 
-    // Prepare data - convert Unix timestamp (seconds) to milliseconds and format full date/time
+    // Prepare data - convert Unix timestamp (seconds) to full date/time using global formatter
     const times = history.map(h => {
-      const date = new Date(h.time * 1000); // Convert Unix timestamp to milliseconds
-      const formattedDate = date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-      // Convert to Persian digits if in RTL mode
-      return isRTL ? toPersianDigits(formattedDate) : formattedDate;
+      return formatDate(h.time, language, 'long');
     });
     const values = history.map(h => h.value);
     

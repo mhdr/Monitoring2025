@@ -32,6 +32,7 @@ import GroupCard from './GroupCard';
 import ItemCard from './ItemCard';
 import AddGroupDialog from './AddGroupDialog';
 import { createLogger } from '../utils/logger';
+import { formatDate } from '../utils/dateFormatting';
 
 const logger = createLogger('MonitoringPage');
 
@@ -273,18 +274,9 @@ const MonitoringPage: React.FC = () => {
     return value;
   };
 
-  // Helper function to format timestamp
+  // Helper function to format timestamp using global date formatting utility
   const formatTimestamp = (time: number) => {
-    const date = new Date(time * 1000); // Convert Unix timestamp to milliseconds
-    return date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
+    return formatDate(time, language, 'long');
   };
 
   const handleFolderClick = (folderId: string) => {

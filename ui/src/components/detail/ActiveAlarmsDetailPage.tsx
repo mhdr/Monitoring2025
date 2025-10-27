@@ -54,6 +54,7 @@ import { getValues } from '../../services/monitoringApi';
 import type { ActiveAlarm, Item, AlarmDto, MultiValue } from '../../types/api';
 import { createLogger } from '../../utils/logger';
 import { monitoringStorageHelpers } from '../../utils/monitoringStorage';
+import { formatDate } from '../../utils/dateFormatting';
 import ValueHistoryChart from '../ValueHistoryChart';
 
 const logger = createLogger('ActiveAlarmsDetailPage');
@@ -419,37 +420,19 @@ const ActiveAlarmsDetailPage: React.FC = () => {
   };
 
   /**
-   * Format timestamp to readable format
+   * Format timestamp to readable format using global date formatting utility
    */
   const formatTimestamp = useCallback((timestamp: number): string => {
-    try {
-      const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
-      return date.toLocaleString(isRTL ? 'fa-IR' : 'en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-    } catch (err) {
-      logger.error('Error formatting timestamp:', err);
-      return '-';
-    }
-  }, [isRTL]);
+    return formatDate(timestamp, language, 'short');
+  }, [language]);
 
   /**
    * Format last updated time
    */
   const formattedLastUpdate = useMemo(() => {
     if (!lastFetchTime) return null;
-    const date = new Date(lastFetchTime);
-    return date.toLocaleTimeString(isRTL ? 'fa-IR' : 'en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  }, [lastFetchTime, isRTL]);
+    return formatDate(lastFetchTime, language, 'short');
+  }, [lastFetchTime, language]);
 
   /**
    * Helper function to get value for an item

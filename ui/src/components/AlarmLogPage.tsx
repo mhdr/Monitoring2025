@@ -34,7 +34,7 @@ import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 import LazyAGGrid from './LazyAGGrid';
 import { useAGGrid } from '../hooks/useAGGrid';
 import type { AGGridApi, AGGridColumnApi, AGGridColumnDef } from '../types/agGrid';
-import { formatDateByLanguage } from '../utils/numberFormatting';
+import { formatDate } from '../utils/dateFormatting';
 
 const logger = createLogger('AlarmLogPage');
 
@@ -315,16 +315,7 @@ const AlarmLogPage: React.FC = () => {
   // Prepare AG Grid row data
   const rowData = useMemo(() => {
     return alarmHistoryData.map((alarm, index) => {
-      const date = new Date(alarm.time * 1000);
-      const timeFormatted = formatDateByLanguage(date, language, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: language === 'en',
-      });
+      const timeFormatted = formatDate(alarm.time, language, 'short');
 
       // Get item and alarm from IndexedDB maps
       const item = alarm.itemId ? itemsMap.get(alarm.itemId) : undefined;

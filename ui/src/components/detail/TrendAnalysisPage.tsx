@@ -26,6 +26,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { useMonitoring } from '../../hooks/useMonitoring';
 import { getHistory } from '../../services/api';
 import { createLogger } from '../../utils/logger';
+import { formatDate } from '../../utils/dateFormatting';
 import type { HistoryRequestDto, HistoricalDataPoint, Item } from '../../types/api';
 import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
 import { EChartsWrapper } from '../shared/EChartsWrapper';
@@ -93,18 +94,9 @@ const TrendAnalysisPage: React.FC = () => {
   // Localized labeled date range for clarity in the chart title (e.g. "From: <start> To: <end>")
   const labeledDateRange = useMemo(() => {
     const { startDate, endDate } = getDateRange;
-    const locale = language === 'fa' ? 'fa-IR' : 'en-US';
-    // Use a more human-friendly format: e.g. "Oct 5, 2025 14:30" or Persian equivalent
-    const dateOptions: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    };
-
-    const startDateStr = new Date(startDate * 1000).toLocaleString(locale, dateOptions);
-    const endDateStr = new Date(endDate * 1000).toLocaleString(locale, dateOptions);
+    
+    const startDateStr = formatDate(startDate, language, 'short');
+    const endDateStr = formatDate(endDate, language, 'short');
 
     // Format differently for Persian (no colons) vs English (with colons)
     // Persian: "از ... تا ..." vs English: "From: ... To: ..."
@@ -195,10 +187,9 @@ const TrendAnalysisPage: React.FC = () => {
   const chartOption: EChartsOption = useMemo(() => {
     const isRTL = language === 'fa';
 
-    // Convert data points to chart format
+    // Convert data points to chart format with global date formatter
     const timestamps = historyData.map((point) => {
-      const date = new Date(point.time * 1000);
-      return date.toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US');
+      return formatDate(point.time, language, 'short');
     });
 
     const values = historyData.map((point) => {

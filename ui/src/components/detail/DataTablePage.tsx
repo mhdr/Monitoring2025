@@ -40,7 +40,8 @@ import { useAGGrid } from '../../hooks/useAGGrid';
 import type { AGGridApi, AGGridColumnApi } from '../../types/agGrid';
 import { useRef, useCallback } from 'react';
 import type { AGGridColumnDef } from '../../types/agGrid';
-import { formatDateByLanguage, createAGGridNumberFormatter } from '../../utils/numberFormatting';
+import { formatDate } from '../../utils/dateFormatting';
+import { createAGGridNumberFormatter } from '../../utils/numberFormatting';
 
 // Date range preset types
 type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
@@ -194,15 +195,7 @@ const DataTablePage: React.FC = () => {
     const sorted = [...historyData].sort((a, b) => b.time - a.time);
 
     return sorted.map((point, index) => {
-      const date = new Date(point.time * 1000);
-      const timeFormatted = formatDateByLanguage(date, language, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
+      const timeFormatted = formatDate(point.time, language, 'short');
       
       return {
         id: index,

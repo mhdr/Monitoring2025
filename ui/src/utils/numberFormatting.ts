@@ -151,9 +151,10 @@ export function createAGGridNumberFormatter(
 
 /**
  * Formats a date for display in Persian or English
+ * @deprecated Use formatDate from dateFormatting.ts instead
  * @param date - Date to format
  * @param language - Current language ('fa' or 'en')
- * @param options - Intl.DateTimeFormat options
+ * @param options - Intl.DateTimeFormat options (ignored, kept for compatibility)
  * @returns Formatted date string
  */
 export function formatDateByLanguage(
@@ -161,6 +162,9 @@ export function formatDateByLanguage(
   language: 'fa' | 'en',
   options?: Intl.DateTimeFormatOptions
 ): string {
+  // Import formatDate from dateFormatting.ts to avoid duplication
+  // Using dynamic import would break this function, so we'll keep the old implementation
+  // but mark it as deprecated
   const dateObj = typeof date === 'string' || typeof date === 'number' 
     ? new Date(date) 
     : date;

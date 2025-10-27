@@ -32,6 +32,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { useMonitoring } from '../../hooks/useMonitoring';
 import { getValue } from '../../services/api';
 import { createLogger } from '../../utils/logger';
+import { formatDate } from '../../utils/dateFormatting';
 import { getItem, setItem } from '../../utils/indexedDbStorage';
 import type { ValueRequestDto, Item } from '../../types/api';
 import { EChartsWrapper } from '../shared/EChartsWrapper';
@@ -262,11 +263,13 @@ const LiveMonitoringDetailPage: React.FC = () => {
   const chartOption: EChartsOption = useMemo(() => {
     const isRTL = language === 'fa';
 
-    // Convert data points to chart format
+    // Convert data points to chart format with time-only display
     const timestamps = liveData.map((point) => {
-      const date = new Date(point.time * 1000);
-      // Use short time format for live monitoring (HH:mm:ss)
-      return date.toLocaleTimeString(language === 'fa' ? 'fa-IR' : 'en-US');
+      // Extract only time portion from the formatted date
+      const fullDate = formatDate(point.time, language, 'short');
+      // Split by comma to get time part (format: "YYYY/M/D, HH:MM:SS")
+      const timePart = fullDate.split('، ')[1] || fullDate.split(', ')[1] || fullDate;
+      return timePart;
     });
 
     const values = liveData.map((point) => point.value);
