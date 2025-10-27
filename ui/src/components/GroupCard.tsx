@@ -79,9 +79,6 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
           display: 'flex',
           flexDirection: 'column',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-          },
           // Add border if there are alarms or warnings
           ...(hasAlarms && {
             borderWidth: 2,
