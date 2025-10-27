@@ -3,14 +3,15 @@
  * Clean, simple logic for data synchronization workflow
  * 
  * WORKFLOW:
- * - Fresh Login: Always sync
+ * - Fresh Login: Sync ONLY if no data in IndexedDB
  * - Logout: Clear all IndexedDB
- * - Page Refresh: Sync if flag = false
- * - New Tab: Sync if flag = false
+ * - Page Refresh: Use cached data (NO sync)
+ * - New Tab: Use cached data (NO sync)
  * - Force Sync: Always sync (from navbar)
  */
 
 import { getItem } from './indexedDbStorage';
+import { monitoringStorageHelpers } from './monitoringStorage';
 import { createLogger } from './logger';
 
 const logger = createLogger('SyncUtils');
@@ -36,13 +37,44 @@ export async function isDataSynced(): Promise<boolean> {
 }
 
 /**
- * Determines if sync is needed based on current page and sync status
+ * Check if cached data exists in IndexedDB
+ * Used to determine if we can use cached data on page refresh/new tab
+ * 
+ * @returns Promise<boolean> - true if data exists, false otherwise
+ */
+export async function hasCachedData(): Promise<boolean> {
+  try {
+    const [groups, items] = await Promise.all([
+      monitoringStorageHelpers.getStoredGroups(),
+      monitoringStorageHelpers.getStoredItems()
+    ]);
+    
+    const hasData = ((groups && groups.length > 0) || (items && items.length > 0)) === true;
+    logger.log('Cached data check:', { 
+      groupCount: groups?.length || 0, 
+      itemCount: items?.length || 0,
+      hasData 
+    });
+    
+    return hasData;
+  } catch (error) {
+    logger.error('Failed to check cached data:', error);
+    return false;
+  }
+}
+
+/**
+ * Determines if sync is needed based on current page, sync status, and cached data
+ * 
+ * NEW BEHAVIOR: Only sync if no cached data exists
+ * This prevents unnecessary syncs on page refresh and new tabs
  * 
  * @param pathname - Current pathname
  * @param syncedFlag - Sync status flag from IndexedDB
+ * @param hasCached - Whether cached data exists in IndexedDB
  * @returns true if sync is needed, false otherwise
  */
-export function shouldRedirectToSync(pathname: string, syncedFlag: boolean): boolean {
+export function shouldRedirectToSync(pathname: string, syncedFlag: boolean, hasCached: boolean): boolean {
   // Pages that don't require sync (already on sync page, login page, or user profile pages)
   const noSyncPages = ['/login', '/sync', '/dashboard/sync', '/dashboard/profile', '/dashboard/settings'];
   
@@ -51,8 +83,18 @@ export function shouldRedirectToSync(pathname: string, syncedFlag: boolean): boo
     return false;
   }
   
-  // If data is not synced, redirect to sync
-  return !syncedFlag;
+  // NEW LOGIC: Only sync if sync flag is false AND no cached data exists
+  // This allows page refresh/new tab to use cached data without syncing
+  const needsSync = !syncedFlag && !hasCached;
+  
+  logger.log('Sync decision:', { 
+    pathname, 
+    syncedFlag, 
+    hasCached, 
+    needsSync 
+  });
+  
+  return needsSync;
 }
 
 /**

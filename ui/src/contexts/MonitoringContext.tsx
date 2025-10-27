@@ -450,8 +450,8 @@ interface MonitoringProviderProps {
 
 /**
  * Load monitoring data from IndexedDB
- * SIMPLIFIED: Always load cached data, don't worry about sync flag here
- * The sync flag is checked by ProtectedRoute to determine if redirect is needed
+ * UPDATED: If cached data exists, automatically set sync flag to true
+ * This prevents unnecessary syncs on page refresh and new tabs
  */
 async function loadMonitoringDataFromStorage() {
   try {
@@ -462,13 +462,25 @@ async function loadMonitoringDataFromStorage() {
     
     // Load sync flag from IndexedDB
     const syncFlag = await getItem<boolean>(SYNC_STATUS_STORAGE_KEY);
-    const isDataSynced = syncFlag === true;
+    
+    // NEW LOGIC: If cached data exists but sync flag is false, auto-set flag to true
+    // This handles page refresh/new tab scenarios where data exists but flag was cleared
+    const hasCachedData = storedGroups.length > 0 || storedItems.length > 0;
+    let isDataSynced = syncFlag === true;
+    
+    if (hasCachedData && !isDataSynced) {
+      logger.log('Cached data exists but sync flag is false - auto-setting flag to true');
+      isDataSynced = true;
+      // Save the flag asynchronously
+      await setItem(SYNC_STATUS_STORAGE_KEY, true);
+    }
 
     logger.log('Loaded cached data from IndexedDB:', {
       groups: storedGroups.length,
       items: storedItems.length,
       alarms: storedAlarms.length,
       isDataSynced,
+      autoSetFlag: hasCachedData && syncFlag !== true,
     });
 
     return {

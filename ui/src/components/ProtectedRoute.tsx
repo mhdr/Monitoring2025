@@ -3,19 +3,21 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Container, Box, CircularProgress, Typography } from '@mui/material';
 import { useLanguage } from '../hooks/useLanguage';
-import { isDataSynced, shouldRedirectToSync, buildSyncUrl } from '../utils/syncUtils';
+import { isDataSynced, hasCachedData, shouldRedirectToSync, buildSyncUrl } from '../utils/syncUtils';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 /**
- * ProtectedRoute - Clean sync workflow
+ * ProtectedRoute - Clean sync workflow with cached data support
  * 
  * 1. Check if user is authenticated
- * 2. Check if sync is needed by reading sync flag from IndexedDB
- * 3. Redirect to sync page if needed
+ * 2. Check if cached data exists in IndexedDB
+ * 3. Only redirect to sync if NO cached data exists
  * 4. Otherwise, render the protected content
+ * 
+ * NEW BEHAVIOR: Page refresh and new tabs use cached data without syncing
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -42,15 +44,32 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       }
 
       try {
-        // Read sync flag from IndexedDB
-        const syncedFlag = await isDataSynced();
-        const needsSync = shouldRedirectToSync(location.pathname, syncedFlag);
+        // Read sync flag and check for cached data in IndexedDB
+        const [syncedFlag, hasCached] = await Promise.all([
+          isDataSynced(),
+          hasCachedData()
+        ]);
+        
+        // Only sync if no cached data exists (prevents sync on page refresh/new tab)
+        const needsSync = shouldRedirectToSync(location.pathname, syncedFlag, hasCached);
         
         setSyncCheck({ loading: false, needsSync });
       } catch (error) {
         console.error('Failed to check sync status:', error);
-        // On error, assume sync is needed (safe default)
-        setSyncCheck({ loading: false, needsSync: true });
+        // On error, check if we have cached data to fall back on
+        try {
+          const hasCached = await hasCachedData();
+          if (hasCached) {
+            // Have cached data, no need to sync
+            setSyncCheck({ loading: false, needsSync: false });
+          } else {
+            // No cached data, sync is needed
+            setSyncCheck({ loading: false, needsSync: true });
+          }
+        } catch {
+          // Complete failure, assume sync is needed
+          setSyncCheck({ loading: false, needsSync: true });
+        }
       }
     };
 
