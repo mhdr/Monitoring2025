@@ -660,5 +660,23 @@
       "moveFolder": "Move Folder",
       "deleteFolder": "Delete Folder"
     }
+  },
+  "deleteGroupDialog": {
+    "title": "Delete Folder",
+    "folderLabel": "Folder Name",
+    "confirmMessage": "This action cannot be undone. The folder will be permanently deleted.",
+    "cannotDeleteMessage": "This folder cannot be deleted because it contains:",
+    "hasSubgroups": "{{count}} subfolder(s)",
+    "hasItems": "{{count}} point(s)",
+    "description": "Are you sure you want to delete this folder?",
+    "moveOrDeleteContent": "Please move or delete all subfolders and points before deleting this folder.",
+    "deleteButton": "Delete Folder",
+    "deleting": "Deleting...",
+    "success": "Folder deleted successfully",
+    "errors": {
+      "hasContent": "Folder must be empty (no subfolders or points) to be deleted",
+      "deleteFailed": "Failed to delete folder",
+      "unknownError": "An unknown error occurred"
+    }
   }
 }

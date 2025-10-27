@@ -660,5 +660,23 @@
       "moveFolder": "انتقال پوشه",
       "deleteFolder": "حذف پوشه"
     }
+  },
+  "deleteGroupDialog": {
+    "title": "حذف پوشه",
+    "folderLabel": "نام پوشه",
+    "confirmMessage": "این عملیات قابل بازگشت نیست. پوشه به طور کامل حذف خواهد شد.",
+    "cannotDeleteMessage": "این پوشه قابل حذف نیست زیرا شامل موارد زیر است:",
+    "hasSubgroups": "{{count}} زیرپوشه",
+    "hasItems": "{{count}} نقطه",
+    "description": "آیا مطمئن هستید که می‌خواهید این پوشه را حذف کنید؟",
+    "moveOrDeleteContent": "لطفاً قبل از حذف این پوشه، تمام زیرپوشه‌ها و نقاط را منتقل یا حذف کنید.",
+    "deleteButton": "حذف پوشه",
+    "deleting": "در حال حذف...",
+    "success": "پوشه با موفقیت حذف شد",
+    "errors": {
+      "hasContent": "پوشه باید خالی باشد (بدون زیرپوشه یا نقطه) تا قابل حذف باشد",
+      "deleteFailed": "حذف پوشه ناموفق بود",
+      "unknownError": "خطای نامشخصی رخ داد"
+    }
   }
 }

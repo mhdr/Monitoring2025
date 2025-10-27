@@ -7,6 +7,7 @@ import { useGroupAlarmStatus } from '../hooks/useGroupAlarmStatus';
 import { useAuth } from '../hooks/useAuth';
 import { toPersianDigits } from '../utils/numberFormatting';
 import MoveGroupDialog from './MoveGroupDialog';
+import DeleteGroupDialog from './DeleteGroupDialog';
 
 interface GroupCardProps {
   group: Group;
@@ -21,6 +22,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
   const [elevation, setElevation] = React.useState<number>(1);
   const [contextMenu, setContextMenu] = React.useState<{ mouseX: number; mouseY: number } | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = React.useState<boolean>(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState<boolean>(false);
   
   // Get alarm/warning status for this group and all descendants
   const { alarmCount, warningCount, totalAffectedItems, hasAlarms, hasWarnings } = useGroupAlarmStatus(group.id);
@@ -63,7 +65,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
 
   // Handle delete folder action
   const handleDeleteFolder = () => {
-    // TODO: Implement delete folder logic
+    setDeleteDialogOpen(true);
     handleContextMenuClose();
   };
 
@@ -280,6 +282,18 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
         onClose={() => setMoveDialogOpen(false)}
         onSuccess={() => {
           setMoveDialogOpen(false);
+          // Success feedback is handled by the dialog component
+        }}
+      />
+
+      {/* Delete Group Dialog */}
+      <DeleteGroupDialog
+        open={deleteDialogOpen}
+        groupId={group.id}
+        groupName={displayName}
+        onClose={() => setDeleteDialogOpen(false)}
+        onSuccess={() => {
+          setDeleteDialogOpen(false);
           // Success feedback is handled by the dialog component
         }}
       />
