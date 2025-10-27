@@ -362,6 +362,10 @@
       "unknown": "Unknown Priority"
     }
   },
+  "alarmBadgePopover": {
+    "title": "Active Alarms",
+    "noMessage": "No alarm message configured"
+  },
   "notifications": {
     "alarm": {
       "single": "⚠️ {{priority}} Alarm Active",

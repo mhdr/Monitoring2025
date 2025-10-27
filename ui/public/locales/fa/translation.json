@@ -362,6 +362,10 @@
       "unknown": "اولویت نامشخص"
     }
   },
+  "alarmBadgePopover": {
+    "title": "هشدارهای فعال",
+    "noMessage": "پیام هشدار تنظیم نشده است"
+  },
   "notifications": {
     "alarm": {
       "single": "⚠️ یک هشدار {{priority}} فعال است",

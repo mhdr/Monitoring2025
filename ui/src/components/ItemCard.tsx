@@ -51,6 +51,7 @@ import ValueHistoryChart from './ValueHistoryChart';
 import ItemCommandDialog from './ItemCommandDialog';
 import MoveItemDialog from './MoveItemDialog';
 import EditItemDialog from './EditItemDialog';
+import AlarmBadgePopover from './AlarmBadgePopover';
 
 const logger = createLogger('ItemCard');
 
@@ -174,6 +175,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const [adminMenuPosition, setAdminMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState<boolean>(false);
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
+  const [alarmBadgeAnchor, setAlarmBadgeAnchor] = useState<null | HTMLElement>(null);
 
   // Check if user has admin role
   const isAdmin = useMemo(() => {
@@ -183,7 +185,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   }, [user]);
 
   // Check if this item has active alarms
-  const { hasAlarm, alarmPriority, isChecking } = useItemAlarmStatus({
+  const { hasAlarm, alarmPriority, alarms, isChecking } = useItemAlarmStatus({
     itemId,
     enablePolling: true,
     pollingInterval: 30000, // Re-check every 30 seconds
@@ -195,6 +197,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
     historyLength: valueHistory.length,
     hasAlarm,
     alarmPriority,
+    alarmCount: alarms.length,
     isChecking,
     isAdmin,
   });
@@ -274,6 +277,21 @@ const ItemCard: React.FC<ItemCardProps> = ({
     // Optionally, you could trigger a refresh of the item value here
     // or show a success notification
   };
+
+  /**
+   * Alarm badge hover handlers
+   */
+  const handleAlarmBadgeMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
+    if (hasAlarm && alarms.length > 0) {
+      setAlarmBadgeAnchor(event.currentTarget);
+    }
+  };
+
+  const handleAlarmBadgeMouseLeave = () => {
+    setAlarmBadgeAnchor(null);
+  };
+
+  const alarmPopoverOpen = Boolean(alarmBadgeAnchor);
 
   /**
    * Admin menu handlers - only for admin role
@@ -612,9 +630,12 @@ const ItemCard: React.FC<ItemCardProps> = ({
                     label={alarmPriority === 2 ? t('itemCard.highPriorityAlarm') : t('itemCard.lowPriorityAlarm')}
                     size="small"
                     color={alarmPriority === 2 ? 'error' : 'warning'}
+                    onMouseEnter={handleAlarmBadgeMouseEnter}
+                    onMouseLeave={handleAlarmBadgeMouseLeave}
                     sx={{
                       fontWeight: 600,
                       animation: 'alarm-badge-pulse 2s ease-in-out infinite',
+                      cursor: 'default',
                       '@keyframes alarm-badge-pulse': {
                         '0%, 100%': {
                           opacity: 1,
@@ -1017,6 +1038,22 @@ const ItemCard: React.FC<ItemCardProps> = ({
       itemId={itemId}
       onSuccess={handleMoveSuccess}
       data-id-ref="item-card-edit-item-dialog"
+    />
+
+    {/* Alarm Badge Popover */}
+    <AlarmBadgePopover
+      anchorEl={alarmBadgeAnchor}
+      open={alarmPopoverOpen}
+      onClose={handleAlarmBadgeMouseLeave}
+      alarms={alarms.map(alarm => ({
+        alarmId: alarm.alarmId,
+        priority: alarm.priority,
+        message: alarm.message,
+        messageFa: alarm.messageFa,
+        activatedAt: alarm.activatedAt,
+        dateTime: alarm.dateTime,
+      }))}
+      itemName={name}
     />
   </>
   );

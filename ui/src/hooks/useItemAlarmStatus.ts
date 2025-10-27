@@ -14,6 +14,38 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('useItemAlarmStatus');
 
+export interface AlarmDetail {
+  /**
+   * Unique alarm ID
+   */
+  alarmId: string;
+  
+  /**
+   * Alarm priority (1=Warning, 2=Alarm)
+   */
+  priority: 1 | 2;
+  
+  /**
+   * Alarm message in English
+   */
+  message?: string | null;
+  
+  /**
+   * Alarm message in Persian
+   */
+  messageFa?: string | null;
+  
+  /**
+   * Unix timestamp when alarm was activated
+   */
+  activatedAt: number;
+  
+  /**
+   * ISO 8601 formatted date-time string
+   */
+  dateTime?: string;
+}
+
 interface UseItemAlarmStatusOptions {
   /**
    * Item ID to check for active alarms
@@ -41,6 +73,11 @@ interface ItemAlarmStatus {
    * Alarm priority if alarm exists (1=Warning, 2=Alarm)
    */
   alarmPriority: 1 | 2 | null;
+  
+  /**
+   * Array of all active alarms for this item with full details
+   */
+  alarms: AlarmDetail[];
   
   /**
    * Whether the check is in progress
@@ -76,6 +113,7 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
   
   const [hasAlarm, setHasAlarm] = useState<boolean>(false);
   const [alarmPriority, setAlarmPriority] = useState<1 | 2 | null>(null);
+  const [alarms, setAlarms] = useState<AlarmDetail[]>([]);
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -131,14 +169,13 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
       
       logger.log(`Fetched ${activeAlarms.length} active alarms`);
 
-      // Check if our itemId is in the active alarms
-      const itemAlarm = activeAlarms.find(alarm => alarm.itemId === itemId);
+      // Find ALL active alarms for this itemId (there can be multiple)
+      const itemAlarms = activeAlarms.filter(alarm => alarm.itemId === itemId);
       
       if (!isMountedRef.current) return;
 
-      if (itemAlarm) {
-        // ActiveAlarm response doesn't include alarmPriority
-        // We need to fetch it from the alarm configuration stored in IndexedDB
+      if (itemAlarms.length > 0) {
+        // Fetch alarm configurations from IndexedDB to get messages and priorities
         const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
         
         // Handle the nested structure: {data: AlarmDto[]} or AlarmDto[]
@@ -154,21 +191,45 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
           }
         }
         
-        // Find the alarm configuration by alarmId
-        const alarmConfig = alarmsArray.find((alarm: AlarmDto) => alarm.id === itemAlarm.alarmId);
-        const priority = alarmConfig?.alarmPriority || null;
+        // Build array of alarm details with messages
+        const alarmDetails: AlarmDetail[] = itemAlarms
+          .map((activeAlarm) => {
+            const alarmConfig = alarmsArray.find((alarm: AlarmDto) => alarm.id === activeAlarm.alarmId);
+            
+            if (!alarmConfig || !activeAlarm.alarmId) {
+              return null;
+            }
+            
+            return {
+              alarmId: activeAlarm.alarmId,
+              priority: alarmConfig.alarmPriority || 1,
+              message: alarmConfig.message,
+              messageFa: alarmConfig.messageFa,
+              activatedAt: activeAlarm.time,
+              dateTime: activeAlarm.dateTime,
+            } as AlarmDetail;
+          })
+          .filter((detail): detail is AlarmDetail => detail !== null);
         
-        logger.log(`Item ${itemId} HAS active alarm`, { 
-          alarmId: itemAlarm.alarmId,
-          priority: priority,
-          foundConfig: !!alarmConfig
+        // Determine highest priority (2 = Alarm is higher than 1 = Warning)
+        const highestPriority = alarmDetails.reduce<1 | 2>((highest, alarm) => {
+          return alarm.priority === 2 ? 2 : highest;
+        }, 1);
+        
+        logger.log(`Item ${itemId} HAS ${alarmDetails.length} active alarm(s)`, { 
+          alarmCount: alarmDetails.length,
+          highestPriority: highestPriority,
+          alarmIds: alarmDetails.map(a => a.alarmId),
         });
+        
         setHasAlarm(true);
-        setAlarmPriority(priority);
+        setAlarmPriority(highestPriority);
+        setAlarms(alarmDetails);
       } else {
         logger.log(`Item ${itemId} has NO active alarm`);
         setHasAlarm(false);
         setAlarmPriority(null);
+        setAlarms([]);
       }
     } catch (err) {
       if (!isMountedRef.current) return;
@@ -178,6 +239,7 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
       setError(errorMessage);
       setHasAlarm(false);
       setAlarmPriority(null);
+      setAlarms([]);
     } finally {
       if (isMountedRef.current) {
         setIsChecking(false);
@@ -273,6 +335,7 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
   return {
     hasAlarm,
     alarmPriority,
+    alarms,
     isChecking,
     error,
     refresh: checkAlarmStatus,
