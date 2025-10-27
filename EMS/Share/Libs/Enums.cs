@@ -42,7 +42,8 @@ public enum LogType
     DeleteExternalAlarm = 9,
     EditExternalAlarm = 10,
 	AddPoint = 11,
-	DeletePoint = 12
+	DeletePoint = 12,
+	DeleteGroup = 13
 }
 
 public enum DataType

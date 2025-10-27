@@ -406,7 +406,28 @@ Authorization: Bearer {{authTokenHTTPS}}
 
 ###
 
-### Delete group - HTTP
+### Delete empty group - HTTP
+# IMPORTANT: Groups (folders) must be empty before deletion
+# This operation will fail if:
+# - The group has any child groups (subfolders)
+# - The group has any monitoring items assigned to it
+# 
+# Before deleting, ensure:
+# 1. Move or delete all child groups to other locations
+# 2. Move or delete all monitoring items to other groups
+# 3. Verify the group is completely empty
+#
+# Expected success response:
+# {
+#   "success": true,
+#   "message": "Monitoring group deleted successfully"
+# }
+#
+# Expected error responses:
+# - Group has children: error = "GroupHasChildren"
+# - Group has items: error = "GroupHasItems"
+# - Group has both: error = "GroupNotEmpty"
+# - Group not found: 404 with error = "GroupNotFound"
 POST {{API_HostAddress}}/api/monitoring/DeleteGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
@@ -417,7 +438,8 @@ Authorization: Bearer {{authTokenHTTP}}
 
 ###
 
-### Delete group - HTTPS
+### Delete empty group - HTTPS
+# See comments in HTTP version above for detailed information
 POST {{API_HostAddress}}/api/monitoring/DeleteGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}

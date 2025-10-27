@@ -3271,54 +3271,225 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
-    /// Delete a monitoring group if it contains no items
+    /// Delete a monitoring group from the system if it is empty
     /// </summary>
-    /// <param name="request">Delete group request containing the group ID</param>
-    /// <returns>Result indicating success or failure of group deletion</returns>
-    /// <response code="200">Returns success status of the group deletion</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <param name="request">Delete group request containing the group ID to delete</param>
+    /// <returns>Result indicating success or failure with specific error information</returns>
+    /// <remarks>
+    /// Deletes a monitoring group from the system only if it meets the following conditions:
+    /// - The group exists
+    /// - The group contains no child groups (subfolders)
+    /// - The group contains no monitoring items
+    /// 
+    /// ⚠️ **IMPORTANT**: Groups (folders) must be empty before deletion. This operation will fail if:
+    /// - The group has any child groups nested under it
+    /// - The group has any monitoring items assigned to it
+    /// - Both child groups and items exist in the group
+    /// 
+    /// **Before deleting a group, you must:**
+    /// 1. Move or delete all child groups (subfolders) to other locations
+    /// 2. Move or delete all monitoring items to other groups
+    /// 3. Ensure the group is completely empty
+    /// 
+    /// This safety mechanism prevents accidental deletion of group hierarchies and ensures
+    /// data integrity by requiring explicit removal of all children first.
+    /// 
+    /// The operation creates an audit log entry recording the deletion action for compliance.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/deletegroup
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Group deleted successfully or detailed error message with reason for failure</response>
+    /// <response code="400">Validation error - invalid request format, group has children, or group has items</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - insufficient permissions to delete this group</response>
+    /// <response code="404">Group not found - the specified group ID does not exist</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("DeleteGroup")]
+    [ProducesResponseType(typeof(DeleteGroupResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DeleteGroupResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(DeleteGroupResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(DeleteGroupResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteGroup([FromBody] DeleteGroupRequestDto request)
     {
         try
         {
+            _logger.LogInformation("DeleteGroup operation started: GroupId={GroupId}", request?.Id);
+
+            // Validate user authentication
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogWarning("DeleteGroup: Unauthorized access attempt");
                 return Unauthorized();
             }
 
-            var response = new DeleteGroupResponseDto()
+            // Validate ModelState
+            if (!ModelState.IsValid)
             {
-                IsSuccessful = false,
-            };
-            var foundItem = await _context.GroupItems.AnyAsync(x => x.GroupId == request.Id);
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
 
-            if (foundItem)
-            {
-                response.IsSuccessful = false;
-            }
-            else
-            {
-                var group = await _context.Groups.FirstOrDefaultAsync(x => x.Id == request.Id);
-                if (group != null)
+                _logger.LogWarning("DeleteGroup validation failed: UserId={UserId}, Errors={Errors}", 
+                    userId, string.Join(", ", errors));
+
+                return BadRequest(new DeleteGroupResponseDto
                 {
-                    _context.Groups.Remove(group);
-                    await _context.SaveChangesAsync();
-                    response.IsSuccessful = true;
-                }
+                    Success = false,
+                    Message = $"Validation failed: {string.Join(", ", errors)}",
+                    Error = DeleteGroupResponseDto.DeleteGroupErrorType.ValidationError
+                });
             }
 
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-        }
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                _logger.LogError("DeleteGroup: Invalid user ID format - UserId={UserId}", userId);
+                return BadRequest(new DeleteGroupResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid user ID format",
+                    Error = DeleteGroupResponseDto.DeleteGroupErrorType.ValidationError
+                });
+            }
 
-        return BadRequest(ModelState);
+            // Check if group exists
+            var group = await _context.Groups.FirstOrDefaultAsync(x => x.Id == request.Id);
+
+            if (group == null)
+            {
+                _logger.LogWarning("DeleteGroup: Group not found - GroupId={GroupId}, UserId={UserId}", 
+                    request.Id, userId);
+                
+                return NotFound(new DeleteGroupResponseDto
+                {
+                    Success = false,
+                    Message = $"Group with ID {request.Id} not found",
+                    Error = DeleteGroupResponseDto.DeleteGroupErrorType.GroupNotFound
+                });
+            }
+
+            // Check if group has child groups
+            var hasChildGroups = await _context.Groups.AnyAsync(x => x.ParentId == request.Id);
+            
+            // Check if group has items
+            var hasItems = await _context.GroupItems.AnyAsync(x => x.GroupId == request.Id);
+
+            // Determine if group is empty and provide specific error messages
+            if (hasChildGroups && hasItems)
+            {
+                _logger.LogWarning("DeleteGroup: Group contains both child groups and items - GroupId={GroupId}, UserId={UserId}", 
+                    request.Id, userId);
+                
+                return BadRequest(new DeleteGroupResponseDto
+                {
+                    Success = false,
+                    Message = "Cannot delete group: The group contains both child groups (subfolders) and monitoring items. Please move or delete all child groups and items first.",
+                    Error = DeleteGroupResponseDto.DeleteGroupErrorType.GroupNotEmpty
+                });
+            }
+            else if (hasChildGroups)
+            {
+                _logger.LogWarning("DeleteGroup: Group contains child groups - GroupId={GroupId}, UserId={UserId}", 
+                    request.Id, userId);
+                
+                return BadRequest(new DeleteGroupResponseDto
+                {
+                    Success = false,
+                    Message = "Cannot delete group: The group contains child groups (subfolders). Please move or delete all child groups first.",
+                    Error = DeleteGroupResponseDto.DeleteGroupErrorType.GroupHasChildren
+                });
+            }
+            else if (hasItems)
+            {
+                _logger.LogWarning("DeleteGroup: Group contains items - GroupId={GroupId}, UserId={UserId}", 
+                    request.Id, userId);
+                
+                return BadRequest(new DeleteGroupResponseDto
+                {
+                    Success = false,
+                    Message = "Cannot delete group: The group contains monitoring items. Please move or delete all items first.",
+                    Error = DeleteGroupResponseDto.DeleteGroupErrorType.GroupHasItems
+                });
+            }
+
+            // Group is empty, proceed with deletion
+            _context.Groups.Remove(group);
+            await _context.SaveChangesAsync();
+
+            // Create audit log entry
+            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
+            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+            var auditLogData = new
+            {
+                GroupId = group.Id,
+                GroupName = group.Name,
+                GroupNameFa = group.NameFa,
+                ParentId = group.ParentId,
+                DeletedBy = userId,
+                Action = "DeleteGroup"
+            };
+
+            var logValueJson = Newtonsoft.Json.JsonConvert.SerializeObject(auditLogData, Newtonsoft.Json.Formatting.Indented);
+
+            await _context.AuditLogs.AddAsync(new AuditLog
+            {
+                IsUser = true,
+                UserId = userGuid,
+                ItemId = null,
+                ActionType = LogType.DeleteGroup,
+                IpAddress = ipAddress,
+                LogValue = logValueJson,
+                Time = epochTime,
+            });
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("DeleteGroup: Successfully deleted group {GroupId} (Name: '{GroupName}') by user {UserId}", 
+                group.Id, group.Name, userId);
+
+            return Ok(new DeleteGroupResponseDto
+            {
+                Success = true,
+                Message = "Monitoring group deleted successfully"
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "DeleteGroup: Validation error - {Message}", ex.Message);
+            return BadRequest(new DeleteGroupResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                Error = DeleteGroupResponseDto.DeleteGroupErrorType.ValidationError
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "DeleteGroup: Unauthorized access attempt");
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "DeleteGroup: Error deleting group {GroupId}: {Message}", 
+                request.Id, ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, new DeleteGroupResponseDto
+            {
+                Success = false,
+                Message = "Internal server error",
+                Error = DeleteGroupResponseDto.DeleteGroupErrorType.UnknownError
+            });
+        }
     }
 
     /// <summary>
