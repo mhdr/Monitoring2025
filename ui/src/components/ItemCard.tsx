@@ -923,6 +923,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
               itemName={name}
               height="100%"
               width="100%"
+              data-id-ref="item-card-history-chart"
             />
           ) : (
             <Typography 
@@ -1006,6 +1007,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
       itemName={name}
       currentGroupId={item?.groupId}
       onSuccess={handleMoveSuccess}
+      data-id-ref="item-card-move-item-dialog"
     />
 
     {/* Edit Item Dialog */}
@@ -1014,6 +1016,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
       onClose={() => setEditDialogOpen(false)}
       itemId={itemId}
       onSuccess={handleMoveSuccess}
+      data-id-ref="item-card-edit-item-dialog"
     />
   </>
   );

@@ -1357,6 +1357,7 @@ const ActiveAlarmsPage: React.FC = () => {
                   : selectedHistoryItem.item.name}
                 height="100%"
                 width="100%"
+                data-id-ref="value-history-chart"
               />
             </Box>
           )}

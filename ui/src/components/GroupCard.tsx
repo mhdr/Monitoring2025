@@ -148,7 +148,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
             {/* Alarm count badge */}
             {alarmCount > 0 && (
               <Chip
-                icon={<ErrorIcon sx={{ fontSize: 16 }} />}
+                icon={<ErrorIcon sx={{ fontSize: 16 }} data-id-ref="group-card-alarm-icon" />}
                 label={`${formatNumber(alarmCount)} ${t('itemCard.highPriorityAlarm')}`}
                 color="error"
                 size="small"
@@ -164,7 +164,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
             {/* Warning count badge */}
             {warningCount > 0 && (
               <Chip
-                icon={<WarningIcon sx={{ fontSize: 16 }} />}
+                icon={<WarningIcon sx={{ fontSize: 16 }} data-id-ref="group-card-warning-icon" />}
                 label={`${formatNumber(warningCount)} ${t('itemCard.lowPriorityAlarm')}`}
                 color="warning"
                 size="small"

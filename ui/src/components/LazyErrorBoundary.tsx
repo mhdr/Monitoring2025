@@ -100,14 +100,12 @@ class LazyErrorBoundary extends Component<LazyErrorBoundaryProps, LazyErrorBound
             className="error-content" 
             data-id-ref="lazy-error-boundary-content"
           >
-            <div 
-              className="error-icon mb-3" 
-              data-id-ref="lazy-error-boundary-icon"
-            >
-              <Warning className="text-warning" style={{ fontSize: '3rem' }} />
-            </div>
-            
-            <h3 
+              <div 
+                className="error-icon mb-3" 
+                data-id-ref="lazy-error-boundary-icon-container"
+              >
+                <Warning className="text-warning" style={{ fontSize: '3rem' }} data-id-ref="lazy-error-boundary-icon" />
+              </div>            <h3 
               className="error-title mb-3" 
               data-id-ref="lazy-error-boundary-title"
             >
@@ -150,7 +148,7 @@ class LazyErrorBoundary extends Component<LazyErrorBoundaryProps, LazyErrorBound
                 onClick={this.handleRetry}
                 data-id-ref="lazy-error-boundary-retry-button"
               >
-                <Refresh className="me-2" />
+                <Refresh className="me-2" data-id-ref="lazy-error-boundary-retry-icon" />
                 Try Again
               </button>
               
@@ -159,7 +157,7 @@ class LazyErrorBoundary extends Component<LazyErrorBoundaryProps, LazyErrorBound
                 onClick={this.handleReload}
                 data-id-ref="lazy-error-boundary-reload-button"
               >
-                <Replay className="me-2" />
+                <Replay className="me-2" data-id-ref="lazy-error-boundary-reload-icon" />
                 Reload Page
               </button>
             </div>

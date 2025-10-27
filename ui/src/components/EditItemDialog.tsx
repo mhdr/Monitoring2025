@@ -484,7 +484,7 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
             aria-label={t('common.close')}
             data-id-ref="edit-item-dialog-close-button"
           >
-            <CloseIcon />
+            <CloseIcon data-id-ref="edit-item-dialog-close-icon" />
           </IconButton>
         </Box>
       </DialogTitle>

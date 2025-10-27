@@ -85,7 +85,7 @@ const AlarmItemCard: React.FC<AlarmItemCardProps> = ({ itemId, name, pointNumber
             </Typography>
           </Box>
 
-          <Divider sx={{ marginBottom: 1.5 }} />
+          <Divider sx={{ marginBottom: 1.5 }} data-id-ref={`alarm-item-card-divider-${itemId}`} />
 
           {/* Body */}
           <Stack
