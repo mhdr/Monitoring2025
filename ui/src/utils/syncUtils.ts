@@ -11,7 +11,7 @@
  */
 
 import { getItem } from './indexedDbStorage';
-import { monitoringStorageHelpers } from './monitoringStorage';
+import { monitoringStorageHelpers, getMetadata } from './monitoringStorage';
 import { createLogger } from './logger';
 
 const logger = createLogger('SyncUtils');
@@ -44,19 +44,42 @@ export async function isDataSynced(): Promise<boolean> {
  */
 export async function hasCachedData(): Promise<boolean> {
   try {
-    const [groups, items] = await Promise.all([
+    const [groups, items, alarms] = await Promise.all([
       monitoringStorageHelpers.getStoredGroups(),
-      monitoringStorageHelpers.getStoredItems()
+      monitoringStorageHelpers.getStoredItems(),
+      monitoringStorageHelpers.getStoredAlarms()
     ]);
-    
-    const hasData = ((groups && groups.length > 0) || (items && items.length > 0)) === true;
-    logger.log('Cached data check:', { 
-      groupCount: groups?.length || 0, 
-      itemCount: items?.length || 0,
-      hasData 
+
+    const groupCount = Array.isArray(groups) ? groups.length : 0;
+    const itemCount = Array.isArray(items) ? items.length : 0;
+    const alarmCount = Array.isArray(alarms) ? alarms.length : 0;
+    const hasStoredData = Boolean(groups || items || alarms);
+
+    logger.log('Cached data check:', {
+      groupCount,
+      itemCount,
+      alarmCount,
+      hasStoredData,
     });
-    
-    return hasData;
+
+    if (hasStoredData) {
+      return true;
+    }
+
+    // Fallback: if metadata indicates a recent sync, treat as cached to avoid unnecessary sync loops
+    const metadata = await getMetadata();
+    const hasRecentSync = typeof metadata?.lastSync === 'number' && metadata.lastSync > 0;
+
+    if (hasRecentSync) {
+      logger.log('Cached data metadata fallback:', {
+        lastSync: metadata?.lastSync,
+        lastCleanup: metadata?.lastCleanup,
+        version: metadata?.version,
+      });
+      return true;
+    }
+
+    return false;
   } catch (error) {
     logger.error('Failed to check cached data:', error);
     return false;

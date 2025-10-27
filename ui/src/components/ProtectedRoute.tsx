@@ -4,6 +4,9 @@ import { useAuth } from '../hooks/useAuth';
 import { Container, Box, CircularProgress, Typography } from '@mui/material';
 import { useLanguage } from '../hooks/useLanguage';
 import { isDataSynced, hasCachedData, shouldRedirectToSync, buildSyncUrl } from '../utils/syncUtils';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('ProtectedRoute');
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -55,7 +58,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         
         setSyncCheck({ loading: false, needsSync });
       } catch (error) {
-        console.error('Failed to check sync status:', error);
+        logger.error('Failed to check sync status:', error);
         // On error, check if we have cached data to fall back on
         try {
           const hasCached = await hasCachedData();

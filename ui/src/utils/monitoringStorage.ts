@@ -212,6 +212,7 @@ export const monitoringStorageHelpers: MonitoringStorageHelpers = {
     await safeRemoveItem(MONITORING_GROUPS_KEY);
     await safeRemoveItem(MONITORING_ITEMS_KEY);
     await safeRemoveItem(MONITORING_ALARMS_KEY);
+    await safeRemoveItem(MONITORING_METADATA_KEY);
   },
 
   /**
