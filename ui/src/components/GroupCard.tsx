@@ -1,9 +1,10 @@
 import React from 'react';
-import { Card, CardActionArea, CardContent, Typography, Chip, Box, Stack, Fade, Badge } from '@mui/material';
-import { Folder, Warning as WarningIcon, Error as ErrorIcon } from '@mui/icons-material';
+import { Card, CardActionArea, CardContent, Typography, Chip, Box, Stack, Fade, Badge, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Folder, Warning as WarningIcon, Error as ErrorIcon, DriveFileMove as MoveFolderIcon, DeleteOutline as DeleteIcon } from '@mui/icons-material';
 import type { Group } from '../types/api';
 import { useLanguage } from '../hooks/useLanguage';
 import { useGroupAlarmStatus } from '../hooks/useGroupAlarmStatus';
+import { useAuth } from '../hooks/useAuth';
 import { toPersianDigits } from '../utils/numberFormatting';
 
 interface GroupCardProps {
@@ -15,10 +16,15 @@ interface GroupCardProps {
 
 const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, onClick }) => {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const [elevation, setElevation] = React.useState<number>(1);
+  const [contextMenu, setContextMenu] = React.useState<{ mouseX: number; mouseY: number } | null>(null);
   
   // Get alarm/warning status for this group and all descendants
   const { alarmCount, warningCount, totalAffectedItems, hasAlarms, hasWarnings } = useGroupAlarmStatus(group.id);
+
+  // Check if user is admin
+  const isAdmin = user?.roles?.includes('Admin') ?? false;
 
   // Display Persian name if language is Persian and nameFa is available, otherwise use name
   const displayName = (language === 'fa' && group.nameFa) ? group.nameFa : group.name;
@@ -28,12 +34,44 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
     return language === 'fa' ? toPersianDigits(num) : String(num);
   };
 
+  // Handle context menu open (right-click)
+  const handleContextMenu = (event: React.MouseEvent) => {
+    if (!isAdmin) return; // Only show menu for admins
+    
+    event.preventDefault();
+    event.stopPropagation();
+    
+    setContextMenu(
+      contextMenu === null
+        ? { mouseX: event.clientX, mouseY: event.clientY }
+        : null
+    );
+  };
+
+  // Handle context menu close
+  const handleContextMenuClose = () => {
+    setContextMenu(null);
+  };
+
+  // Handle move folder action
+  const handleMoveFolder = () => {
+    // TODO: Implement move folder logic
+    handleContextMenuClose();
+  };
+
+  // Handle delete folder action
+  const handleDeleteFolder = () => {
+    // TODO: Implement delete folder logic
+    handleContextMenuClose();
+  };
+
   return (
     <Fade in timeout={300}>
       <Card
         elevation={elevation}
         onMouseEnter={() => setElevation(8)}
         onMouseLeave={() => setElevation(1)}
+        onContextMenu={handleContextMenu}
         sx={{
           minHeight: 160,
           display: 'flex',
@@ -208,6 +246,32 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
           </Stack>
         </CardContent>
       </CardActionArea>
+
+      {/* Admin Context Menu */}
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleContextMenuClose}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+        data-id-ref="group-card-admin-context-menu"
+      >
+        <MenuItem onClick={handleMoveFolder} data-id-ref="group-card-menu-move-folder">
+          <ListItemIcon>
+            <MoveFolderIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t('groupCard.adminMenu.moveFolder')}</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleDeleteFolder} data-id-ref="group-card-menu-delete-folder">
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t('groupCard.adminMenu.deleteFolder')}</ListItemText>
+        </MenuItem>
+      </Menu>
     </Card>
     </Fade>
   );

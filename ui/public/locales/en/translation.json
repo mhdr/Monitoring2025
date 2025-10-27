@@ -626,5 +626,12 @@
       "requestFailed": "Failed to create folder. Please try again.",
       "unknownError": "An unknown error occurred"
     }
+  },
+  "groupCard": {
+    "adminMenu": {
+      "title": "Admin Menu",
+      "moveFolder": "Move Folder",
+      "deleteFolder": "Delete Folder"
+    }
   }
 }

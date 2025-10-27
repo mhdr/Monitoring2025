@@ -626,5 +626,12 @@
       "requestFailed": "ایجاد پوشه ناموفق بود. لطفاً دوباره تلاش کنید.",
       "unknownError": "خطای نامشخصی رخ داد"
     }
+  },
+  "groupCard": {
+    "adminMenu": {
+      "title": "منوی مدیریت",
+      "moveFolder": "انتقال پوشه",
+      "deleteFolder": "حذف پوشه"
+    }
   }
 }
