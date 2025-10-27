@@ -172,7 +172,9 @@
     "save": "Save",
     "saving": "Saving...",
     "create": "Create",
-    "creating": "Creating..."
+    "creating": "Creating...",
+    "delete": "Delete",
+    "deleting": "Deleting..."
   },
   "settings": {
     "pageTitle": "Settings",
@@ -409,7 +411,13 @@
       "title": "Admin Menu",
       "moveItemToGroup": "Move Point to Folder",
       "editPoint": "Edit Point",
+      "deletePoint": "Delete Point",
       "userPermissions": "User Permissions"
+    },
+    "deleteConfirm": {
+      "title": "Confirm Delete Point",
+      "message": "Are you sure you want to delete this point? This action cannot be undone.",
+      "itemName": "Point Name"
     }
   },
   "monitoringPage": {

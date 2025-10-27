@@ -172,7 +172,9 @@
     "save": "ذخیره",
     "saving": "در حال ذخیره...",
     "create": "ایجاد",
-    "creating": "در حال ایجاد..."
+    "creating": "در حال ایجاد...",
+    "delete": "حذف",
+    "deleting": "در حال حذف..."
   },
   "settings": {
     "pageTitle": "تنظیمات",
@@ -409,7 +411,13 @@
       "title": "منوی مدیریت",
       "moveItemToGroup": "انتقال پوینت به پوشه",
       "editPoint": "ویرایش پوینت",
+      "deletePoint": "حذف پوینت",
       "userPermissions": "مجوزهای کاربر"
+    },
+    "deleteConfirm": {
+      "title": "تایید حذف پوینت",
+      "message": "آیا از حذف این پوینت اطمینان دارید؟ این عملیات قابل بازگشت نیست.",
+      "itemName": "نام پوینت"
     }
   },
   "monitoringPage": {

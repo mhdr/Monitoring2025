@@ -37,6 +37,7 @@ import {
   Lock as LockIcon,
   Settings as SettingsIcon,
   DriveFileMove as MoveItemIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
@@ -52,6 +53,7 @@ import ItemCommandDialog from './ItemCommandDialog';
 import MoveItemDialog from './MoveItemDialog';
 import EditItemDialog from './EditItemDialog';
 import AlarmBadgePopover from './AlarmBadgePopover';
+import { deletePoint } from '../services/monitoringApi';
 
 const logger = createLogger('ItemCard');
 
@@ -176,6 +178,8 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const [moveDialogOpen, setMoveDialogOpen] = useState<boolean>(false);
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
   const [alarmBadgeAnchor, setAlarmBadgeAnchor] = useState<null | HTMLElement>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Check if user has admin role
   const isAdmin = useMemo(() => {
@@ -368,6 +372,41 @@ const ItemCard: React.FC<ItemCardProps> = ({
     logger.log('Opening edit item dialog', { itemId, itemName: name });
     handleAdminMenuClose();
     setEditDialogOpen(true);
+  };
+
+  const handleDeletePoint = () => {
+    logger.log('Delete point clicked', { itemId, itemName: name });
+    handleAdminMenuClose();
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirmClose = () => {
+    logger.log('Delete confirmation dialog closed');
+    setDeleteConfirmOpen(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    logger.log('Confirming deletion', { itemId, itemName: name });
+    setIsDeleting(true);
+
+    try {
+      const response = await deletePoint({ id: itemId });
+      
+      if (response.isSuccessful) {
+        logger.log('Point deleted successfully', { itemId, itemName: name });
+        setDeleteConfirmOpen(false);
+        // Refresh data to remove the deleted item from UI
+        await handleMoveSuccess();
+      } else {
+        logger.error('Failed to delete point', { itemId, itemName: name });
+        // Could show an error message to the user here
+      }
+    } catch (error) {
+      logger.error('Error deleting point:', error);
+      // Could show an error message to the user here
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   /**
@@ -1018,6 +1057,12 @@ const ItemCard: React.FC<ItemCardProps> = ({
         </ListItemIcon>
         <ListItemText primary={t('itemCard.adminMenu.editPoint')} />
       </MenuItem>
+      <MenuItem onClick={handleDeletePoint} data-id-ref="item-card-admin-menu-delete-point">
+        <ListItemIcon>
+          <DeleteIcon fontSize="small" data-id-ref="item-card-admin-menu-delete-point-icon" />
+        </ListItemIcon>
+        <ListItemText primary={t('itemCard.adminMenu.deletePoint')} />
+      </MenuItem>
     </Menu>
 
     {/* Move Item Dialog */}
@@ -1055,6 +1100,43 @@ const ItemCard: React.FC<ItemCardProps> = ({
       }))}
       itemName={name}
     />
+
+    {/* Delete Confirmation Dialog */}
+    <Dialog
+      open={deleteConfirmOpen}
+      onClose={handleDeleteConfirmClose}
+      data-id-ref="item-card-delete-confirm-dialog"
+    >
+      <DialogTitle data-id-ref="item-card-delete-confirm-title">
+        {t('itemCard.deleteConfirm.title')}
+      </DialogTitle>
+      <DialogContent data-id-ref="item-card-delete-confirm-content">
+        <Typography data-id-ref="item-card-delete-confirm-message">
+          {t('itemCard.deleteConfirm.message')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }} data-id-ref="item-card-delete-confirm-item-name">
+          <strong>{t('itemCard.deleteConfirm.itemName')}:</strong> {name}
+        </Typography>
+      </DialogContent>
+      <DialogActions data-id-ref="item-card-delete-confirm-actions">
+        <Button
+          onClick={handleDeleteConfirmClose}
+          disabled={isDeleting}
+          data-id-ref="item-card-delete-confirm-cancel-button"
+        >
+          {t('common.cancel')}
+        </Button>
+        <Button
+          onClick={handleConfirmDelete}
+          color="error"
+          variant="contained"
+          disabled={isDeleting}
+          data-id-ref="item-card-delete-confirm-delete-button"
+        >
+          {isDeleting ? t('common.deleting') : t('common.delete')}
+        </Button>
+      </DialogActions>
+    </Dialog>
   </>
   );
 };
