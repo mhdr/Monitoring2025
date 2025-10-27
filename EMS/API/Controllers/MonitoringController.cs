@@ -2115,45 +2115,191 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// Create a new monitoring group for organizing monitoring items
     /// </summary>
     /// <param name="request">Add group request containing group name and optional parent ID</param>
-    /// <returns>Result indicating success or failure of group creation</returns>
-    /// <response code="200">Returns success status of the group creation</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <returns>Result indicating success or failure of group creation with the new group ID</returns>
+    /// <remarks>
+    /// Creates a new monitoring group in the system. Groups can be organized hierarchically by specifying a parent group ID.
+    /// Group names should be unique and descriptive for easy identification.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/addgroup
+    ///     {
+    ///        "name": "Building A - HVAC System",
+    ///        "parentId": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// For a root-level group, omit the parentId or set it to null:
+    /// 
+    ///     POST /api/monitoring/addgroup
+    ///     {
+    ///        "name": "Main Building"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Monitoring group created successfully</response>
+    /// <response code="400">Validation error - invalid request format, empty group name, or duplicate group name</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="404">Parent group not found - the specified parent group ID does not exist</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("AddGroup")]
     [ProducesResponseType(typeof(AddGroupResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AddGroupResponseDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(AddGroupResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(AddGroupResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AddGroup([FromBody] AddGroupRequestDto request)
     {
         try
         {
+            _logger.LogInformation("AddGroup endpoint called: User {UserId}, GroupName {GroupName}", 
+                User.Identity?.Name, request.Name);
+
+            // Validate ModelState first
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                
+                _logger.LogWarning("AddGroup validation failed: {Errors}", string.Join(", ", errors));
+                return BadRequest(new AddGroupResponseDto
+                { 
+                    Success = false, 
+                    Message = "Validation failed: " + string.Join(", ", errors),
+                    Error = AddGroupResponseDto.AddGroupErrorType.ValidationError
+                });
+            }
+
+            // Extract and validate user ID
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("AddGroup unauthorized access attempt (no user id)");
+                return Unauthorized(new { success = false, message = "Invalid or missing authentication token" });
             }
 
-            var response = new AddGroupResponseDto();
+            var userGuid = Guid.Parse(userId);
 
-            await _context.Groups.AddAsync(new Group()
+            // Validate group name is not empty or whitespace
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                _logger.LogWarning("AddGroup: Empty group name provided by user {UserId}", userId);
+                return BadRequest(new AddGroupResponseDto
+                {
+                    Success = false,
+                    Message = "Group name cannot be empty or whitespace",
+                    Error = AddGroupResponseDto.AddGroupErrorType.ValidationError
+                });
+            }
+
+            // Check if parent group exists if ParentId is provided
+            if (request.ParentId.HasValue)
+            {
+                var parentGroup = await _context.Groups.FirstOrDefaultAsync(g => g.Id == request.ParentId.Value);
+                if (parentGroup == null)
+                {
+                    _logger.LogWarning("AddGroup: Parent group {ParentId} not found for user {UserId}", 
+                        request.ParentId.Value, userId);
+                    return NotFound(new AddGroupResponseDto
+                    {
+                        Success = false,
+                        Message = $"Parent group with ID {request.ParentId.Value} not found",
+                        Error = AddGroupResponseDto.AddGroupErrorType.ParentGroupNotFound
+                    });
+                }
+            }
+
+            // Check for duplicate group name (optional - depending on business requirements)
+            var existingGroup = await _context.Groups
+                .FirstOrDefaultAsync(g => g.Name.ToLower() == request.Name.ToLower() && g.ParentId == request.ParentId);
+            
+            if (existingGroup != null)
+            {
+                _logger.LogWarning("AddGroup: Duplicate group name '{GroupName}' for user {UserId}", 
+                    request.Name, userId);
+                return BadRequest(new AddGroupResponseDto
+                {
+                    Success = false,
+                    Message = $"A group with the name '{request.Name}' already exists in this location",
+                    Error = AddGroupResponseDto.AddGroupErrorType.DuplicateGroupName
+                });
+            }
+
+            // Create the new group
+            var newGroup = new Group()
             {
                 Name = request.Name,
                 ParentId = request.ParentId,
-            });
+            };
 
+            await _context.Groups.AddAsync(newGroup);
             await _context.SaveChangesAsync();
 
-            response.IsSuccessful = true;
+            // Create audit log entry
+            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
+            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
 
-            return Ok(response);
+            var auditLogData = new
+            {
+                GroupId = newGroup.Id,
+                GroupName = newGroup.Name,
+                ParentId = newGroup.ParentId,
+                CreatedBy = userId
+            };
+
+            var logValueJson = JsonConvert.SerializeObject(auditLogData, Formatting.Indented);
+
+            await _context.AuditLogs.AddAsync(new AuditLog
+            {
+                IsUser = true,
+                UserId = userGuid,
+                ItemId = null,
+                ActionType = LogType.EditGroup, // Using EditGroup for AddGroup operation
+                IpAddress = ipAddress,
+                LogValue = logValueJson,
+                Time = epochTime,
+            });
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("AddGroup: Successfully created group {GroupId} with name '{GroupName}' by user {UserId}", 
+                newGroup.Id, newGroup.Name, userId);
+
+            return Ok(new AddGroupResponseDto
+            {
+                Success = true,
+                Message = "Monitoring group created successfully",
+                GroupId = newGroup.Id
+            });
         }
-        catch (Exception e)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogWarning(ex, "AddGroup: Validation error - {Message}", ex.Message);
+            return BadRequest(new AddGroupResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                Error = AddGroupResponseDto.AddGroupErrorType.ValidationError
+            });
         }
-
-        return BadRequest(ModelState);
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "AddGroup: Unauthorized access attempt");
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AddGroup: Error creating group '{GroupName}': {Message}", 
+                request.Name, ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, new AddGroupResponseDto
+            {
+                Success = false,
+                Message = "Internal server error",
+                Error = AddGroupResponseDto.AddGroupErrorType.UnknownError
+            });
+        }
     }
 
     /// <summary>
