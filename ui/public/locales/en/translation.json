@@ -468,6 +468,33 @@
       "unknownError": "An unknown error occurred"
     }
   },
+  "moveGroupDialog": {
+    "title": "Move Folder to Another Location",
+    "folderLabel": "Folder",
+    "currentParentLabel": "Current Parent Folder",
+    "selectParentLabel": "Destination Parent Folder",
+    "selectParentPlaceholder": "Select a parent folder (or leave empty for root level)",
+    "moveToRoot": "Move to Root Level (No Parent)",
+    "moveButton": "Move",
+    "moving": "Moving...",
+    "success": "Folder moved successfully!",
+    "noCurrentParent": "Root Level (No Parent)",
+    "unknownFolder": "Unknown folder",
+    "unnamedFolder": "Unnamed Folder",
+    "noFoldersAvailable": "No folders available for moving",
+    "cannotMoveToSelf": "Cannot move a folder to itself",
+    "validation": {
+      "folderRequired": "Please select a destination parent folder or choose root level"
+    },
+    "errors": {
+      "moveFailed": "Failed to move folder",
+      "groupNotFound": "Folder not found",
+      "parentNotFound": "Parent folder not found",
+      "circularReference": "Cannot move folder to one of its descendants",
+      "sameParent": "Folder is already in this parent",
+      "unknownError": "An unknown error occurred"
+    }
+  },
   "editItemDialog": {
     "title": "Edit Point Configuration",
     "sections": {

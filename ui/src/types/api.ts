@@ -428,6 +428,22 @@ export interface MovePointRequestDto {
   parentId: string; // UUID
 }
 
+export interface MovePointResponseDto {
+  isSuccessful: boolean;
+  message?: string | null;
+}
+
+export interface MoveGroupRequestDto {
+  groupId: string; // UUID - The ID of the group to move
+  parentId?: string | null; // UUID - The ID of the new parent group (null for root level)
+}
+
+export interface MoveGroupResponseDto {
+  isSuccessful: boolean;
+  message?: string | null;
+  error?: number; // MoveGroupErrorType: 0=Success, 1=GroupNotFound, 2=ParentNotFound, 3=CircularReference, 4=SameParent, 5=UnknownError
+}
+
 // ==================== Alarm Management DTOs ====================
 
 export interface AlarmDto {

@@ -6,6 +6,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useGroupAlarmStatus } from '../hooks/useGroupAlarmStatus';
 import { useAuth } from '../hooks/useAuth';
 import { toPersianDigits } from '../utils/numberFormatting';
+import MoveGroupDialog from './MoveGroupDialog';
 
 interface GroupCardProps {
   group: Group;
@@ -19,6 +20,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
   const { user } = useAuth();
   const [elevation, setElevation] = React.useState<number>(1);
   const [contextMenu, setContextMenu] = React.useState<{ mouseX: number; mouseY: number } | null>(null);
+  const [moveDialogOpen, setMoveDialogOpen] = React.useState<boolean>(false);
   
   // Get alarm/warning status for this group and all descendants
   const { alarmCount, warningCount, totalAffectedItems, hasAlarms, hasWarnings } = useGroupAlarmStatus(group.id);
@@ -55,7 +57,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
 
   // Handle move folder action
   const handleMoveFolder = () => {
-    // TODO: Implement move folder logic
+    setMoveDialogOpen(true);
     handleContextMenuClose();
   };
 
@@ -272,6 +274,18 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
           <ListItemText>{t('groupCard.adminMenu.deleteFolder')}</ListItemText>
         </MenuItem>
       </Menu>
+
+      {/* Move Group Dialog */}
+      <MoveGroupDialog
+        open={moveDialogOpen}
+        groupId={group.id}
+        groupName={group.name}
+        onClose={() => setMoveDialogOpen(false)}
+        onSuccess={() => {
+          setMoveDialogOpen(false);
+          // Success feedback is handled by the dialog component
+        }}
+      />
     </Card>
     </Fade>
   );

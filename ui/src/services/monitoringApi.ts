@@ -36,6 +36,7 @@ import type {
   EditGroupRequestDto,
   DeleteGroupRequestDto,
   MoveGroupRequestDto,
+  MoveGroupResponseDto,
   ValueRequestDto,
   ValueResponseDto,
   WriteValueRequestDto,
@@ -516,9 +517,9 @@ export const deleteGroup = async (data: DeleteGroupRequestDto): Promise<EditPoin
 /**
  * Move a group to a different parent
  */
-export const moveGroup = async (data: MoveGroupRequestDto): Promise<EditPointResponseDto> => {
+export const moveGroup = async (data: MoveGroupRequestDto): Promise<MoveGroupResponseDto> => {
   try {
-    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/MoveGroup', data);
+    const response = await apiClient.post<MoveGroupResponseDto>('/api/Monitoring/MoveGroup', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

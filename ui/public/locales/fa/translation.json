@@ -468,6 +468,33 @@
       "unknownError": "خطای نامشخصی رخ داد"
     }
   },
+  "moveGroupDialog": {
+    "title": "انتقال پوشه به مکان دیگر",
+    "folderLabel": "پوشه",
+    "currentParentLabel": "پوشه والد فعلی",
+    "selectParentLabel": "پوشه والد مقصد",
+    "selectParentPlaceholder": "یک پوشه والد انتخاب کنید (یا خالی بگذارید برای سطح ریشه)",
+    "moveToRoot": "انتقال به سطح ریشه (بدون والد)",
+    "moveButton": "انتقال",
+    "moving": "در حال انتقال...",
+    "success": "پوشه با موفقیت منتقل شد!",
+    "noCurrentParent": "سطح ریشه (بدون والد)",
+    "unknownFolder": "پوشه نامشخص",
+    "unnamedFolder": "پوشه بدون نام",
+    "noFoldersAvailable": "هیچ پوشه‌ای برای انتقال در دسترس نیست",
+    "cannotMoveToSelf": "نمی‌توان پوشه را به خودش منتقل کرد",
+    "validation": {
+      "folderRequired": "لطفاً پوشه والد مقصد را انتخاب کنید یا سطح ریشه را انتخاب کنید"
+    },
+    "errors": {
+      "moveFailed": "انتقال پوشه ناموفق بود",
+      "groupNotFound": "پوشه پیدا نشد",
+      "parentNotFound": "پوشه والد پیدا نشد",
+      "circularReference": "نمی‌توان پوشه را به یکی از فرزندانش منتقل کرد",
+      "sameParent": "پوشه از قبل در این والد قرار دارد",
+      "unknownError": "خطای نامشخصی رخ داد"
+    }
+  },
   "editItemDialog": {
     "title": "ویرایش تنظیمات پوینت",
     "sections": {
