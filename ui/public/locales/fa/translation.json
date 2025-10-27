@@ -406,6 +406,12 @@
       "userPermissions": "مجوزهای کاربر"
     }
   },
+  "monitoringPage": {
+    "adminMenu": {
+      "addFolder": "افزودن پوشه",
+      "addPoint": "افزودن پوینت"
+    }
+  },
   "itemCommandDialog": {
     "title": "ارسال دستور",
     "itemInformation": "اطلاعات آیتم",

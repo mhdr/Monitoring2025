@@ -406,6 +406,12 @@
       "userPermissions": "User Permissions"
     }
   },
+  "monitoringPage": {
+    "adminMenu": {
+      "addFolder": "Add Folder",
+      "addPoint": "Add Point"
+    }
+  },
   "itemCommandDialog": {
     "title": "Send Command",
     "itemInformation": "Item Information",

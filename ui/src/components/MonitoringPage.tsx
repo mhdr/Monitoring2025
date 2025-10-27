@@ -12,21 +12,32 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   Home as HomeIcon,
   Folder as FolderIcon,
   Description as DescriptionIcon,
+  CreateNewFolder as AddFolderIcon,
+  Add as AddPointIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
+import { useAuth } from '../hooks/useAuth';
 import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
 import ItemCard from './ItemCard';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('MonitoringPage');
 
 const MonitoringPage: React.FC = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { 
     state: monitoringState,
     setCurrentFolderId,
@@ -34,6 +45,13 @@ const MonitoringPage: React.FC = () => {
   } = useMonitoring();
   const [searchParams] = useSearchParams();
   const currentFolderId = searchParams.get('folderId');
+  
+  // Admin menu state
+  const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
+  const [adminMenuPosition, setAdminMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  
+  // Check if user is admin
+  const isAdmin = user?.roles?.includes('Admin') || false;
   
   // State to manage visible loading indicator with minimum display time
   const [showRefreshIndicator, setShowRefreshIndicator] = useState(false);
@@ -276,6 +294,97 @@ const MonitoringPage: React.FC = () => {
     }
   };
 
+  /**
+   * Admin menu handlers - only for admin role
+   */
+  const handleContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    // Check if the right-click occurred on a GroupCard or ItemCard
+    // by checking if the event target is within a card component
+    const target = event.target as HTMLElement;
+    
+    // Check for GroupCard (has group-card-root-container or group-card-action-area)
+    const isClickOnGroupCard = target.closest('[data-id-ref="group-card-root-container"]') || 
+                                target.closest('[data-id-ref="group-card-action-area"]');
+    
+    // Check for ItemCard (has item-card-root-container)
+    const isClickOnItemCard = target.closest('[data-id-ref="item-card-root-container"]');
+    
+    // If clicked on any card, don't show this menu
+    if (isClickOnGroupCard || isClickOnItemCard) {
+      return;
+    }
+    
+    event.preventDefault(); // Prevent default browser context menu
+    event.stopPropagation(); // Prevent event bubbling
+    
+    // Only show admin menu for admin users
+    if (!isAdmin) {
+      return;
+    }
+    
+    // Capture event coordinates before any async operations
+    const clickX = event.clientX;
+    const clickY = event.clientY;
+    const currentTarget = event.currentTarget;
+    
+    // Close any existing menu first
+    if (adminMenuAnchor !== null) {
+      logger.log('Closing existing admin menu before opening new one');
+      
+      // Use requestAnimationFrame to ensure state updates happen in the right order
+      setAdminMenuAnchor(null);
+      setAdminMenuPosition(null);
+      
+      // Wait for next frame to reopen
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          logger.log('Opening admin menu at new position', { 
+            currentFolderId,
+            x: clickX,
+            y: clickY,
+          });
+          
+          setAdminMenuAnchor(currentTarget);
+          setAdminMenuPosition({
+            top: clickY,
+            left: clickX,
+          });
+        });
+      });
+    } else {
+      logger.log('Opening admin menu via right-click', { 
+        currentFolderId,
+        x: clickX,
+        y: clickY,
+      });
+      
+      // Set anchor element and position under cursor
+      setAdminMenuAnchor(currentTarget);
+      setAdminMenuPosition({
+        top: clickY,
+        left: clickX,
+      });
+    }
+  };
+
+  const handleAdminMenuClose = () => {
+    logger.log('Closing admin menu');
+    setAdminMenuAnchor(null);
+    setAdminMenuPosition(null);
+  };
+
+  const handleAddFolder = () => {
+    logger.log('Add folder clicked', { currentFolderId });
+    handleAdminMenuClose();
+    // TODO: Implement add folder dialog
+  };
+
+  const handleAddPoint = () => {
+    logger.log('Add point clicked', { currentFolderId });
+    handleAdminMenuClose();
+    // TODO: Implement add point dialog
+  };
+
   return (
     <Container maxWidth={false} data-id-ref="monitoring-page-root-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
       <Card data-id-ref="monitoring-page-main-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -306,7 +415,18 @@ const MonitoringPage: React.FC = () => {
           }
         />
         
-        <CardContent data-id-ref="monitoring-page-body" sx={{ flex: 1, overflow: 'auto' }}>
+        <CardContent 
+          data-id-ref="monitoring-page-body" 
+          sx={{ 
+            flex: 1, 
+            overflow: 'auto',
+            // Visual hint for admin users that right-click is available
+            ...(isAdmin && {
+              cursor: 'context-menu',
+            }),
+          }}
+          onContextMenu={handleContextMenu}
+        >
           {/* Breadcrumb Navigation */}
           {breadcrumbs.length > 0 && (
             <Box 
@@ -548,6 +668,41 @@ const MonitoringPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Admin Menu */}
+      <Menu
+        open={Boolean(adminMenuAnchor) && adminMenuPosition !== null}
+        onClose={handleAdminMenuClose}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          adminMenuPosition !== null
+            ? { top: adminMenuPosition.top, left: adminMenuPosition.left }
+            : undefined
+        }
+        MenuListProps={{
+          onContextMenu: (e: React.MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+          },
+        }}
+        data-id-ref="monitoring-page-admin-menu"
+      >
+        <MenuItem onClick={handleAddFolder} data-id-ref="monitoring-page-admin-menu-add-folder">
+          <ListItemIcon>
+            <AddFolderIcon fontSize="small" data-id-ref="monitoring-page-admin-menu-add-folder-icon" />
+          </ListItemIcon>
+          <ListItemText primary={t('monitoringPage.adminMenu.addFolder')} />
+        </MenuItem>
+        {/* Only show Add Point menu item when inside a folder (not in root) */}
+        {currentFolderId && (
+          <MenuItem onClick={handleAddPoint} data-id-ref="monitoring-page-admin-menu-add-point">
+            <ListItemIcon>
+              <AddPointIcon fontSize="small" data-id-ref="monitoring-page-admin-menu-add-point-icon" />
+            </ListItemIcon>
+            <ListItemText primary={t('monitoringPage.adminMenu.addPoint')} />
+          </MenuItem>
+        )}
+      </Menu>
     </Container>
   );
 };
