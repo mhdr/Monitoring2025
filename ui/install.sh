@@ -311,7 +311,13 @@ if command -v pm2 &> /dev/null; then
         # Setup PM2 to start on system boot (only once)
         if ! sudo systemctl list-unit-files 2>/dev/null | grep -q pm2-root.service; then
             log_info "Setting up PM2 to start on boot..."
-            sudo pm2 startup systemd -u "$USER" --hp "$HOME" || log_warning "Failed to setup PM2 startup"
+            # Get the full path to pm2
+            PM2_PATH=$(which pm2)
+            if [ -n "$PM2_PATH" ]; then
+                sudo env PATH="$PATH" "$PM2_PATH" startup systemd -u "$USER" --hp "$HOME" || log_warning "Failed to setup PM2 startup"
+            else
+                log_warning "Could not find PM2 path for startup configuration"
+            fi
         fi
         
         # Wait for app to initialize
