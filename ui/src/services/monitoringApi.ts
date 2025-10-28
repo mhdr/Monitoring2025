@@ -591,9 +591,29 @@ export const addValue = async (data: AddValueRequestDto): Promise<EditPointRespo
  */
 export const writeOrAddValue = async (data: WriteOrAddValueRequestDto): Promise<WriteOrAddValueResponseDto> => {
   try {
-    const response = await apiClient.post<WriteOrAddValueResponseDto>('/api/Monitoring/WriteOrAddValue', data);
-    return response.data;
+    // Backend returns wrapped response: { success: boolean, data: WriteOrAddValueResponseDto, message: string }
+    const response = await apiClient.post<{ success: boolean; data: WriteOrAddValueResponseDto; message: string }>(
+      '/api/Monitoring/WriteOrAddValue', 
+      data
+    );
+    
+    // Extract the actual response data from the wrapped response
+    const actualData = response.data.data;
+    
+    logger.log('Write or add value completed successfully', {
+      itemId: data.itemId,
+      value: data.value,
+      isSuccess: actualData.isSuccess,
+      message: response.data.message,
+    });
+    
+    return actualData;
   } catch (error) {
+    logger.error('Failed to write or add value', {
+      itemId: data.itemId,
+      value: data.value,
+      error,
+    });
     handleApiError(error);
   }
 };
