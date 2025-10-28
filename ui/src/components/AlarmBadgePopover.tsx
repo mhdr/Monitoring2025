@@ -166,6 +166,8 @@ const AlarmBadgePopover: React.FC<AlarmBadgePopoverProps> = ({
         horizontal: 'center',
       }}
       disableRestoreFocus
+      disableAutoFocus
+      disableEnforceFocus
       sx={{
         pointerEvents: 'none',
       }}
@@ -182,6 +184,7 @@ const AlarmBadgePopover: React.FC<AlarmBadgePopoverProps> = ({
         },
       }}
       data-id-ref="alarm-badge-popover"
+      aria-hidden={!open}
     >
       <Paper elevation={0} data-id-ref="alarm-badge-popover-paper">
         {/* Header */}
