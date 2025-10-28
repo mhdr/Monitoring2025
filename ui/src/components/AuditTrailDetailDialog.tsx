@@ -212,11 +212,12 @@ const AuditTrailDetailDialog: React.FC<AuditTrailDetailDialogProps> = ({ open, o
         return changeList.length > 0 ? changeList : null;
       }
 
-      // Check if this is a flat structure with "New" and "Old" suffixes
+      // Check if this is a flat structure with "New" and "Old" suffixes OR prefixes
       const keys = Object.keys(parsed);
       const hasNewOldSuffixes = keys.some(key => key.endsWith('New') || key.endsWith('Old'));
+      const hasNewOldPrefixes = keys.some(key => key.startsWith('New') || key.startsWith('Old'));
 
-      if (hasNewOldSuffixes) {
+      if (hasNewOldSuffixes || hasNewOldPrefixes) {
         // Extract base field names
         const baseFields = new Set<string>();
         keys.forEach(key => {
@@ -224,6 +225,10 @@ const AuditTrailDetailDialog: React.FC<AuditTrailDetailDialogProps> = ({ open, o
             baseFields.add(key.slice(0, -3));
           } else if (key.endsWith('Old')) {
             baseFields.add(key.slice(0, -3));
+          } else if (key.startsWith('New')) {
+            baseFields.add(key.slice(3)); // Remove "New" prefix
+          } else if (key.startsWith('Old')) {
+            baseFields.add(key.slice(3)); // Remove "Old" prefix
           }
         });
 
@@ -237,8 +242,15 @@ const AuditTrailDetailDialog: React.FC<AuditTrailDetailDialogProps> = ({ open, o
         }> = [];
 
         baseFields.forEach((baseField) => {
-          const oldKey = `${baseField}Old`;
-          const newKey = `${baseField}New`;
+          // Try both suffix and prefix formats
+          const oldKeySuffix = `${baseField}Old`;
+          const newKeySuffix = `${baseField}New`;
+          const oldKeyPrefix = `Old${baseField}`;
+          const newKeyPrefix = `New${baseField}`;
+          
+          // Determine which format is present
+          const oldKey = keys.includes(oldKeySuffix) ? oldKeySuffix : oldKeyPrefix;
+          const newKey = keys.includes(newKeySuffix) ? newKeySuffix : newKeyPrefix;
           
           const oldVal = parsed[oldKey];
           const newVal = parsed[newKey];
@@ -275,8 +287,37 @@ const AuditTrailDetailDialog: React.FC<AuditTrailDetailDialogProps> = ({ open, o
         return changeList.length > 0 ? changeList : null;
       }
 
-      // If not in "Old/New" format, return the parsed object as-is for display
-      return { raw: parsed };
+      // If not in "Old/New" format, convert to a simple key-value list
+      const simpleList: Array<{
+        field: string;
+        oldValue: string;
+        newValue: string;
+        isChanged: boolean;
+        isAdded: boolean;
+        isRemoved: boolean;
+      }> = [];
+
+      Object.keys(parsed).forEach((key) => {
+        // Skip ID fields that are UUIDs (but not GroupId/ParentId/ItemId which we resolve)
+        const lowerKey = key.toLowerCase();
+        const isResolvableId = lowerKey === 'groupid' || lowerKey === 'parentid' || lowerKey === 'itemid';
+        const value = parsed[key];
+        
+        if (!isResolvableId && lowerKey.endsWith('id') && typeof value === 'string' && isUUID(value)) {
+          return;
+        }
+
+        simpleList.push({
+          field: formatFieldName(key),
+          oldValue: t('auditTrailPage.detailDialog.notApplicable'),
+          newValue: formatValue(key, value),
+          isChanged: false,
+          isAdded: true,
+          isRemoved: false,
+        });
+      });
+
+      return simpleList.length > 0 ? simpleList : { raw: parsed };
     } catch (err) {
       logger.warn('Failed to parse logValue as JSON:', err);
       return { raw: data.logValue };
