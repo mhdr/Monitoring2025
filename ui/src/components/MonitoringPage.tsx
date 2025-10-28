@@ -121,20 +121,24 @@ const MonitoringPage: React.FC = () => {
     return { childGroups: children, breadcrumbs: trail };
   }, [allGroups, currentFolderId]);
 
-  // Get items for current folder
+  // Get items for current folder, sorted by point number ascending
   const currentFolderItems = useMemo(() => {
     if (!allItems || allItems.length === 0) {
       return [];
     }
 
     // Filter items by current folder/group
+    let filteredItems;
     if (!currentFolderId) {
       // At root level - show items with no groupId
-      return allItems.filter((item) => !item.groupId || item.groupId === null);
+      filteredItems = allItems.filter((item) => !item.groupId || item.groupId === null);
+    } else {
+      // Show items belonging to current folder
+      filteredItems = allItems.filter((item) => item.groupId === currentFolderId);
     }
 
-    // Show items belonging to current folder
-    return allItems.filter((item) => item.groupId === currentFolderId);
+    // Sort by point number in ascending order
+    return filteredItems.sort((a, b) => a.pointNumber - b.pointNumber);
   }, [allItems, currentFolderId]);
 
   // Get item IDs for current folder (for values polling)
