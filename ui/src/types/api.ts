@@ -352,8 +352,28 @@ export type DataType = 1 | 2 | 3;
 // IoOperationType: 1 = Read, 2 = Write
 export type IoOperationType = 1 | 2;
 
-// LogType: 1 = Login, 2 = Logout, 3 = AddUser, 4 = EditUser, 5 = DisableUser, 6 = DeleteUser, 7 = AddGroup, 8 = EditGroup, 9 = AddItem, 10 = EditItem
-export type LogType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+// LogType: Based on backend enum - EditPoint=1, EditAlarm=2, Login=3, Logout=4, EditGroup=5, AddAlarm=6, DeleteAlarm=7, AddExternalAlarm=8, DeleteExternalAlarm=9, EditExternalAlarm=10, AddPoint=11, DeletePoint=12, DeleteGroup=13
+export type LogType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+
+/**
+ * LogType enum values for better code readability
+ * Matches backend enum exactly
+ */
+export const LogTypeEnum = {
+  EditPoint: 1,
+  EditAlarm: 2,
+  Login: 3,
+  Logout: 4,
+  EditGroup: 5,
+  AddAlarm: 6,
+  DeleteAlarm: 7,
+  AddExternalAlarm: 8,
+  DeleteExternalAlarm: 9,
+  EditExternalAlarm: 10,
+  AddPoint: 11,
+  DeletePoint: 12,
+  DeleteGroup: 13,
+} as const;
 
 // AddUserErrorType: 1 = UserAlreadyExists, 2 = ValidationError
 export type AddUserErrorType = 1 | 2;
@@ -899,14 +919,37 @@ export interface DataDto {
   dateTime?: string; // ReadOnly
 }
 
+/**
+ * Request DTO for retrieving audit log entries within a date range
+ * Supports pagination with page/pageSize parameters
+ */
 export interface AuditLogRequestDto {
-  itemId?: string | null; // Optional filter by item ID
-  startDate: number; // int64 - Unix timestamp
-  endDate: number; // int64 - Unix timestamp
+  /** Optional item ID (GUID format) to filter audit logs for a specific monitoring item. Leave null to get logs for all items. */
+  itemId?: string | null;
+  /** Start date as Unix timestamp (seconds since epoch) to filter logs from. Must be a positive value. */
+  startDate: number; // int64
+  /** End date as Unix timestamp (seconds since epoch) to filter logs until. Must be a positive value and >= startDate. */
+  endDate: number; // int64
+  /** Page number for pagination (1-based index). Defaults to 1 if not provided. */
+  page?: number | null;
+  /** Number of records per page. Defaults to 50 if not provided. Maximum 500. */
+  pageSize?: number | null;
 }
 
+/**
+ * Response DTO containing paginated audit log entries for system activities
+ */
 export interface AuditLogResponseDto {
+  /** List of audit log entries matching the request criteria */
   data: DataDto[];
+  /** Current page number (1-based index) */
+  page: number;
+  /** Number of records per page */
+  pageSize: number;
+  /** Total number of audit log entries matching the filter criteria */
+  totalCount: number;
+  /** Total number of pages available */
+  totalPages: number;
 }
 
 export interface SettingsVersionResponseDto {

@@ -678,5 +678,53 @@
       "deleteFailed": "Failed to delete folder",
       "unknownError": "An unknown error occurred"
     }
+  },
+  "auditTrailPage": {
+    "title": "Audit Trail",
+    "dateRangeLabel": "Date Range",
+    "startDateLabel": "Start Date",
+    "endDateLabel": "End Date",
+    "logTypeLabel": "Action Type",
+    "allLogTypes": "All Actions",
+    "itemIdLabel": "Point ID",
+    "itemIdPlaceholder": "Filter by point ID (optional)",
+    "applyFilters": "Apply Filters",
+    "clearFilters": "Clear Filters",
+    "loadingData": "Loading audit logs...",
+    "noData": "No audit logs found for the selected filters",
+    "error": "Error loading audit logs",
+    "pagination": {
+      "page": "Page",
+      "of": "of",
+      "rowsPerPage": "Rows per page:",
+      "showing": "Showing {{from}}-{{to}} of {{total}} records"
+    },
+    "columns": {
+      "id": "ID",
+      "dateTime": "Date & Time",
+      "userName": "User",
+      "actionType": "Action",
+      "itemId": "Point ID",
+      "ipAddress": "IP Address",
+      "details": "Details"
+    },
+    "logTypes": {
+      "EditPoint": "Edit Point",
+      "EditAlarm": "Edit Alarm",
+      "Login": "Login",
+      "Logout": "Logout",
+      "EditGroup": "Edit Group",
+      "AddAlarm": "Add Alarm",
+      "DeleteAlarm": "Delete Alarm",
+      "AddExternalAlarm": "Add External Alarm",
+      "DeleteExternalAlarm": "Delete External Alarm",
+      "EditExternalAlarm": "Edit External Alarm",
+      "AddPoint": "Add Point",
+      "DeletePoint": "Delete Point",
+      "DeleteGroup": "Delete Group"
+    },
+    "systemUser": "System",
+    "userAction": "User Action",
+    "systemAction": "System Action"
   }
 }

@@ -678,5 +678,53 @@
       "deleteFailed": "حذف پوشه ناموفق بود",
       "unknownError": "خطای نامشخصی رخ داد"
     }
+  },
+  "auditTrailPage": {
+    "title": "گزارش بازرسی‌ها",
+    "dateRangeLabel": "بازه زمانی",
+    "startDateLabel": "تاریخ شروع",
+    "endDateLabel": "تاریخ پایان",
+    "logTypeLabel": "نوع عملیات",
+    "allLogTypes": "همه عملیات",
+    "itemIdLabel": "شناسه نقطه",
+    "itemIdPlaceholder": "فیلتر بر اساس شناسه نقطه (اختیاری)",
+    "applyFilters": "اعمال فیلترها",
+    "clearFilters": "پاک کردن فیلترها",
+    "loadingData": "در حال بارگذاری گزارش‌ها...",
+    "noData": "هیچ گزارشی برای فیلترهای انتخاب شده یافت نشد",
+    "error": "خطا در بارگذاری گزارش‌ها",
+    "pagination": {
+      "page": "صفحه",
+      "of": "از",
+      "rowsPerPage": "تعداد ردیف در هر صفحه:",
+      "showing": "نمایش {{from}}-{{to}} از {{total}} رکورد"
+    },
+    "columns": {
+      "id": "شناسه",
+      "dateTime": "تاریخ و زمان",
+      "userName": "کاربر",
+      "actionType": "عملیات",
+      "itemId": "شناسه نقطه",
+      "ipAddress": "آدرس IP",
+      "details": "جزئیات"
+    },
+    "logTypes": {
+      "EditPoint": "ویرایش نقطه",
+      "EditAlarm": "ویرایش هشدار",
+      "Login": "ورود",
+      "Logout": "خروج",
+      "EditGroup": "ویرایش گروه",
+      "AddAlarm": "افزودن هشدار",
+      "DeleteAlarm": "حذف هشدار",
+      "AddExternalAlarm": "افزودن هشدار خارجی",
+      "DeleteExternalAlarm": "حذف هشدار خارجی",
+      "EditExternalAlarm": "ویرایش هشدار خارجی",
+      "AddPoint": "افزودن نقطه",
+      "DeletePoint": "حذف نقطه",
+      "DeleteGroup": "حذف گروه"
+    },
+    "systemUser": "سیستم",
+    "userAction": "عملیات کاربر",
+    "systemAction": "عملیات سیستم"
   }
 }
