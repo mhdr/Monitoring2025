@@ -26,6 +26,12 @@ import type { ColDef } from 'ag-grid-community';
 import type { AuditLogRequestDto, AuditLogResponseDto, DataDto, LogType } from '../types/api';
 import type { AGGridRowData } from '../types/agGrid';
 import { LogTypeEnum } from '../types/api';
+
+// Backend wraps the AuditLogResponseDto in a response envelope
+interface AuditLogApiResponse {
+  success: boolean;
+  data: AuditLogResponseDto;
+}
 import apiClient, { handleApiError } from '../services/apiClient';
 import { formatDate } from '../utils/dateFormatting';
 import { createLogger } from '../utils/logger';
@@ -84,22 +90,22 @@ const AuditTrailPage: React.FC = () => {
 
       logger.log('Fetching audit logs:', requestDto);
 
-      const response = await apiClient.post<AuditLogResponseDto>('/api/Monitoring/AuditLog', requestDto);
+      const response = await apiClient.post<AuditLogApiResponse>('/api/Monitoring/AuditLog', requestDto);
 
-      if (response.data) {
-        let filteredData = response.data.data || [];
+      if (response.data?.data) {
+        let filteredData = response.data.data.data || [];
 
         // Client-side filter by LogType if not 'all'
         if (selectedLogType !== 'all') {
-          filteredData = filteredData.filter((log) => log.actionType === selectedLogType);
+          filteredData = filteredData.filter((log: DataDto) => log.actionType === selectedLogType);
         }
 
         setAuditLogs(filteredData);
-        setTotalCount(response.data.totalCount || 0);
-        setTotalPages(response.data.totalPages || 0);
-        setCurrentPage(response.data.page || 1);
+        setTotalCount(response.data.data.totalCount || 0);
+        setTotalPages(response.data.data.totalPages || 0);
+        setCurrentPage(response.data.data.page || 1);
 
-        logger.log(`Loaded ${filteredData.length} audit logs (page ${response.data.page}/${response.data.totalPages})`);
+        logger.log(`Loaded ${filteredData.length} audit logs (page ${response.data.data.page}/${response.data.data.totalPages})`);
       }
     } catch (err) {
       logger.error('Error fetching audit logs:', err);
