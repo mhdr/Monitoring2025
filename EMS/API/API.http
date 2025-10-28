@@ -382,7 +382,7 @@ Authorization: Bearer {{authTokenHTTP}}
 
 ###
 
-### Edit existing group - HTTP
+### Edit existing group - HTTP (name only)
 POST {{API_HostAddress}}/api/monitoring/EditGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
@@ -394,7 +394,7 @@ Authorization: Bearer {{authTokenHTTP}}
 
 ###
 
-### Edit existing group - HTTPS
+### Edit existing group - HTTPS (name only)
 POST {{API_HostAddress}}/api/monitoring/EditGroup
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}
@@ -402,6 +402,32 @@ Authorization: Bearer {{authTokenHTTPS}}
 {
   "id": "replace_with_actual_group_id",
   "name": "Updated Group Name HTTPS"
+}
+
+###
+
+### Edit existing group with Farsi name - HTTP
+POST {{API_HostAddress}}/api/monitoring/EditGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "replace_with_actual_group_id",
+  "name": "Production Servers - Updated",
+  "nameFa": "سرورهای تولید - به‌روزرسانی شده"
+}
+
+###
+
+### Edit existing group with Farsi name - HTTPS
+POST {{API_HostAddress}}/api/monitoring/EditGroup
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "id": "replace_with_actual_group_id",
+  "name": "Development Servers - Updated",
+  "nameFa": "سرورهای توسعه - به‌روزرسانی شده"
 }
 
 ###

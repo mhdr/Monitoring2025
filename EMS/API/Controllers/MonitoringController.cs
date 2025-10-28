@@ -2791,6 +2791,222 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
+    /// Edit an existing monitoring group's name and Farsi name
+    /// </summary>
+    /// <param name="request">Edit group request containing group ID and updated name properties</param>
+    /// <returns>Result indicating success or failure of group update operation</returns>
+    /// <remarks>
+    /// Updates the name and/or Farsi name of an existing monitoring group.
+    /// This endpoint does NOT change the parent-child hierarchy; use the MoveGroup endpoint to move groups.
+    /// 
+    /// Validates:
+    /// - The group exists
+    /// - The new name is not empty or whitespace
+    /// - The new name is not a duplicate within the same parent location
+    /// - Name length constraints are met (1-100 characters)
+    /// 
+    /// Sample request to update both English and Farsi names:
+    /// 
+    ///     POST /api/monitoring/editgroup
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Building A - HVAC System",
+    ///        "nameFa": "ساختمان الف - سیستم تهویه مطبوع"
+    ///     }
+    ///     
+    /// Sample request to update only the English name:
+    /// 
+    ///     POST /api/monitoring/editgroup
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Building A - Updated Name"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Monitoring group updated successfully</response>
+    /// <response code="400">Validation error - invalid request format, empty group name, duplicate group name, or invalid GUID</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - insufficient permissions to edit this group</response>
+    /// <response code="404">Group not found - the specified group ID does not exist</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("EditGroup")]
+    [ProducesResponseType(typeof(EditGroupResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(EditGroupResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(EditGroupResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(EditGroupResponseDto), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> EditGroup([FromBody] EditGroupRequestDto request)
+    {
+        try
+        {
+            _logger.LogInformation("EditGroup endpoint called: User {UserId}, GroupId {GroupId}, NewName {GroupName}", 
+                User.Identity?.Name, request.Id, request.Name);
+
+            // Validate ModelState first
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                
+                _logger.LogWarning("EditGroup validation failed: {Errors}", string.Join(", ", errors));
+                return BadRequest(new EditGroupResponseDto
+                { 
+                    Success = false, 
+                    Message = "Validation failed: " + string.Join(", ", errors),
+                    Error = EditGroupResponseDto.EditGroupErrorType.ValidationError
+                });
+            }
+
+            // Extract and validate user ID
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("EditGroup unauthorized access attempt (no user id)");
+                return Unauthorized(new { success = false, message = "Invalid or missing authentication token" });
+            }
+
+            var userGuid = Guid.Parse(userId);
+
+            // Validate group name is not empty or whitespace
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                _logger.LogWarning("EditGroup: Empty group name provided by user {UserId}", userId);
+                return BadRequest(new EditGroupResponseDto
+                {
+                    Success = false,
+                    Message = "Group name cannot be empty or whitespace",
+                    Error = EditGroupResponseDto.EditGroupErrorType.ValidationError
+                });
+            }
+
+            // Validate NameFa if provided
+            if (!string.IsNullOrWhiteSpace(request.NameFa) && request.NameFa.Length > 100)
+            {
+                _logger.LogWarning("EditGroup: NameFa exceeds maximum length for user {UserId}", userId);
+                return BadRequest(new EditGroupResponseDto
+                {
+                    Success = false,
+                    Message = "Group name (Farsi) must not exceed 100 characters",
+                    Error = EditGroupResponseDto.EditGroupErrorType.ValidationError
+                });
+            }
+
+            // Find the existing group
+            var existingGroup = await _context.Groups.FirstOrDefaultAsync(g => g.Id == request.Id);
+            
+            if (existingGroup == null)
+            {
+                _logger.LogWarning("EditGroup: Group {GroupId} not found for user {UserId}", 
+                    request.Id, userId);
+                return NotFound(new EditGroupResponseDto
+                {
+                    Success = false,
+                    Message = $"Group with ID {request.Id} not found",
+                    Error = EditGroupResponseDto.EditGroupErrorType.GroupNotFound
+                });
+            }
+
+            // Check for duplicate group name (excluding the current group)
+            var duplicateGroup = await _context.Groups
+                .FirstOrDefaultAsync(g => 
+                    g.Id != request.Id && 
+                    g.Name.ToLower() == request.Name.ToLower() && 
+                    g.ParentId == existingGroup.ParentId);
+            
+            if (duplicateGroup != null)
+            {
+                _logger.LogWarning("EditGroup: Duplicate group name '{GroupName}' in same parent location for user {UserId}", 
+                    request.Name, userId);
+                return BadRequest(new EditGroupResponseDto
+                {
+                    Success = false,
+                    Message = $"A group with the name '{request.Name}' already exists in this location",
+                    Error = EditGroupResponseDto.EditGroupErrorType.DuplicateGroupName
+                });
+            }
+
+            // Store old values for audit log
+            var oldName = existingGroup.Name;
+            var oldNameFa = existingGroup.NameFa;
+
+            // Update the group
+            existingGroup.Name = request.Name;
+            existingGroup.NameFa = request.NameFa;
+
+            _context.Groups.Update(existingGroup);
+            await _context.SaveChangesAsync();
+
+            // Create audit log entry
+            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
+            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+            var auditLogData = new
+            {
+                GroupId = existingGroup.Id,
+                OldName = oldName,
+                NewName = existingGroup.Name,
+                OldNameFa = oldNameFa,
+                NewNameFa = existingGroup.NameFa,
+                ModifiedBy = userId
+            };
+
+            var logValueJson = JsonConvert.SerializeObject(auditLogData, Formatting.Indented);
+
+            await _context.AuditLogs.AddAsync(new AuditLog
+            {
+                IsUser = true,
+                UserId = userGuid,
+                ItemId = null,
+                ActionType = LogType.EditGroup,
+                IpAddress = ipAddress,
+                LogValue = logValueJson,
+                Time = epochTime,
+            });
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("EditGroup: Successfully updated group {GroupId} - Name: '{OldName}' -> '{NewName}', NameFa: '{OldNameFa}' -> '{NewNameFa}' by user {UserId}", 
+                existingGroup.Id, oldName, existingGroup.Name, oldNameFa ?? "N/A", existingGroup.NameFa ?? "N/A", userId);
+
+            return Ok(new EditGroupResponseDto
+            {
+                Success = true,
+                Message = "Monitoring group updated successfully"
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "EditGroup: Validation error - {Message}", ex.Message);
+            return BadRequest(new EditGroupResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                Error = EditGroupResponseDto.EditGroupErrorType.ValidationError
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "EditGroup: Unauthorized access attempt");
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "EditGroup: Error updating group {GroupId}: {Message}", 
+                request.Id, ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, new EditGroupResponseDto
+            {
+                Success = false,
+                Message = "Internal server error",
+                Error = EditGroupResponseDto.EditGroupErrorType.UnknownError
+            });
+        }
+    }
+
+    /// <summary>
     /// Edit an existing user's account information
     /// </summary>
     /// <param name="request">Edit user request containing updated username, first name, and last name</param>
