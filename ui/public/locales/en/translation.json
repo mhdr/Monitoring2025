@@ -704,6 +704,7 @@
       "dateTime": "Date & Time",
       "userName": "User",
       "actionType": "Action",
+      "point": "Point",
       "itemId": "Point ID",
       "ipAddress": "IP Address",
       "details": "Details"

@@ -704,6 +704,7 @@
       "dateTime": "تاریخ و زمان",
       "userName": "کاربر",
       "actionType": "عملیات",
+      "point": "نقطه",
       "itemId": "شناسه نقطه",
       "ipAddress": "آدرس IP",
       "details": "جزئیات"

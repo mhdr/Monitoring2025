@@ -21,6 +21,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAGGrid } from '../hooks/useAGGrid';
+import { useMonitoring } from '../hooks/useMonitoring';
 import AGGridWrapper from './AGGridWrapper';
 import type { ColDef } from 'ag-grid-community';
 import type { AuditLogRequestDto, AuditLogResponseDto, DataDto, LogType } from '../types/api';
@@ -42,6 +43,8 @@ const AuditTrailPage: React.FC = () => {
   const { t, language } = useLanguage();
   const theme = useTheme();
   const isRTL = language === 'fa';
+  const { state: monitoringState } = useMonitoring();
+  const items = monitoringState.items;
 
   // Filter state
   const [startDate, setStartDate] = useState<string>(() => {
@@ -153,6 +156,26 @@ const AuditTrailPage: React.FC = () => {
   }, []);
 
   /**
+   * Get point name translation
+   */
+  const getPointName = useCallback(
+    (itemId: string | null | undefined): string => {
+      if (!itemId) {
+        return '-';
+      }
+      
+      const item = items.find(i => i.id === itemId);
+      if (!item) {
+        return '-';
+      }
+      
+      // Return appropriate name based on language
+      return language === 'fa' ? (item.nameFa || item.name) : item.name;
+    },
+    [items, language]
+  );
+
+  /**
    * Get log type translation
    */
   const getLogTypeLabel = useCallback(
@@ -197,22 +220,9 @@ const AuditTrailPage: React.FC = () => {
   const columnDefs = useMemo<ColDef<DataDto>[]>(
     () => [
       {
-        field: 'dateTime',
-        headerName: t('auditTrailPage.columns.dateTime'),
-        width: 200,
-        valueGetter: (params) => {
-          if (params.data?.time) {
-            return formatDate(params.data.time, language, 'long');
-          }
-          return '';
-        },
-        sort: 'desc',
-        sortIndex: 0,
-      },
-      {
         field: 'userName',
         headerName: t('auditTrailPage.columns.userName'),
-        width: 150,
+        width: 180,
         valueGetter: (params) => {
           if (params.data?.isUser) {
             return params.data.userName || '-';
@@ -223,7 +233,7 @@ const AuditTrailPage: React.FC = () => {
       {
         field: 'actionType',
         headerName: t('auditTrailPage.columns.actionType'),
-        width: 180,
+        width: 200,
         valueGetter: (params) => {
           if (params.data?.actionType) {
             return getLogTypeLabel(params.data.actionType);
@@ -232,15 +242,28 @@ const AuditTrailPage: React.FC = () => {
         },
       },
       {
-        field: 'itemId',
-        headerName: t('auditTrailPage.columns.itemId'),
+        field: 'point',
+        headerName: t('auditTrailPage.columns.point'),
         width: 280,
-        valueGetter: (params) => params.data?.itemId || '-',
+        valueGetter: (params) => getPointName(params.data?.itemId),
+      },
+      {
+        field: 'dateTime',
+        headerName: t('auditTrailPage.columns.dateTime'),
+        width: 250,
+        valueGetter: (params) => {
+          if (params.data?.time) {
+            return formatDate(params.data.time, language, 'long');
+          }
+          return '';
+        },
+        sort: 'desc',
+        sortIndex: 0,
       },
       {
         field: 'ipAddress',
         headerName: t('auditTrailPage.columns.ipAddress'),
-        width: 150,
+        width: 160,
         valueGetter: (params) => params.data?.ipAddress || '-',
       },
       {
@@ -295,7 +318,7 @@ const AuditTrailPage: React.FC = () => {
         autoHeight: true,
       },
     ],
-    [t, language, getLogTypeLabel, theme.palette.mode]
+    [t, language, getLogTypeLabel, getPointName, theme.palette.mode]
   );
 
   /**
@@ -316,9 +339,10 @@ const AuditTrailPage: React.FC = () => {
       data-id-ref="audit-trail-page-container"
       sx={{ height: '100%', width: '100%', py: 3, px: 0, mx: 0, display: 'flex', flexDirection: 'column' }}
     >
-      <Card data-id-ref="audit-trail-page-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Card data-id-ref="audit-trail-page-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
         <CardHeader
           data-id-ref="audit-trail-page-card-header"
+          sx={{ py: 3, minHeight: 80 }}
           title={
             <Typography variant="h4" component="h1" data-id-ref="audit-trail-page-title">
               {t('auditTrailPage.title')}
