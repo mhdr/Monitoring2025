@@ -636,38 +636,50 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
       // This avoids unnecessary API calls every 5 seconds during polling
       const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
       
-      // Handle both array and object with data property
-      const alarmsArray = Array.isArray(storedAlarms) 
-        ? storedAlarms 
-        : (storedAlarms as unknown as { data?: AlarmDto[] })?.data;
+      // CRITICAL FIX: Simplify alarm array extraction - getStoredAlarms() returns AlarmDto[] | null
+      const alarmsArray: AlarmDto[] = Array.isArray(storedAlarms) ? storedAlarms : [];
+      
+      if (alarmsArray.length === 0) {
+        logger.warn('No alarm configurations found in IndexedDB cache');
+      }
       
       // Create a map of alarmId -> priority from cached alarms
       const alarmPriorityMap = new Map<string, 1 | 2>();
-      if (Array.isArray(alarmsArray)) {
-        alarmsArray.forEach((alarm: AlarmDto) => {
-          if (alarm.id && alarm.alarmPriority) {
-            alarmPriorityMap.set(alarm.id, alarm.alarmPriority);
-          }
-        });
-        logger.log('Loaded alarm priorities from IndexedDB cache', { count: alarmPriorityMap.size });
-      }
+      alarmsArray.forEach((alarm: AlarmDto) => {
+        if (alarm.id && alarm.alarmPriority) {
+          alarmPriorityMap.set(alarm.id, alarm.alarmPriority);
+        }
+      });
+      
+      logger.log('Loaded alarm priorities from IndexedDB cache', { 
+        totalAlarms: alarmsArray.length,
+        alarmsWithPriority: alarmPriorityMap.size,
+        samplePriorities: Array.from(alarmPriorityMap.entries()).slice(0, 5).map(([id, p]) => ({ id, priority: p }))
+      });
       
       // Determine highest priority (2=High is highest, 1=Low)
       let highestPriority: 1 | 2 | null = null;
+      const activeAlarmDetails: Array<{ alarmId: string; priority: 1 | 2 | null }> = [];
+      
       activeAlarmsData.forEach((activeAlarm: { alarmId?: string | null }) => {
         if (activeAlarm.alarmId) {
           const priority = alarmPriorityMap.get(activeAlarm.alarmId);
+          activeAlarmDetails.push({ alarmId: activeAlarm.alarmId, priority: priority || null });
+          
           if (priority) {
             if (highestPriority === null || priority > highestPriority) {
               highestPriority = priority;
             }
+          } else {
+            logger.warn(`Active alarm missing priority config in cache: ${activeAlarm.alarmId}`);
           }
         }
       });
       
       logger.log('Active alarm count fetched successfully:', {
         count: activeAlarmsData.length,
-        highestPriority: highestPriority === 2 ? 'High' : highestPriority === 1 ? 'Low' : 'None',
+        highestPriority: highestPriority === 2 ? 'Alarm (2)' : highestPriority === 1 ? 'Warning (1)' : 'None',
+        activeAlarmDetails: activeAlarmDetails.slice(0, 10), // Log first 10 for debugging
       });
       
       // Update the context's alarm count and priority
