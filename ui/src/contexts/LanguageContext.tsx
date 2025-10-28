@@ -7,7 +7,7 @@ type Language = 'fa' | 'en';
 interface LanguageContextType {
   language: Language;
   changeLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
   isLoadingLanguage: boolean;
 }
 

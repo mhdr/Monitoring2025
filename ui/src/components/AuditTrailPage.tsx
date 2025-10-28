@@ -248,24 +248,54 @@ const AuditTrailPage: React.FC = () => {
         headerName: t('auditTrailPage.columns.details'),
         flex: 1,
         minWidth: 300,
-        valueGetter: (params) => {
-          if (params.data?.logValue) {
-            try {
-              // Try to pretty-print JSON
-              const parsed = JSON.parse(params.data.logValue);
-              return JSON.stringify(parsed, null, 2);
-            } catch {
-              // If not JSON, return as-is
-              return params.data.logValue;
-            }
+        cellRenderer: (params: { data?: DataDto }) => {
+          if (!params.data?.logValue) {
+            return '-';
           }
-          return '-';
+          
+          try {
+            // Try to parse and format JSON
+            const parsed = JSON.parse(params.data.logValue);
+            return (
+              <pre
+                style={{
+                  margin: 0,
+                  padding: '8px',
+                  fontSize: '12px',
+                  fontFamily: 'monospace',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                  borderRadius: '4px',
+                  maxHeight: '300px',
+                  overflow: 'auto',
+                }}
+              >
+                {JSON.stringify(parsed, null, 2)}
+              </pre>
+            );
+          } catch {
+            // If not JSON, return as-is in a pre tag
+            return (
+              <pre
+                style={{
+                  margin: 0,
+                  padding: '8px',
+                  fontSize: '12px',
+                  fontFamily: 'monospace',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {params.data.logValue}
+              </pre>
+            );
+          }
         },
-        wrapText: true,
         autoHeight: true,
       },
     ],
-    [t, language, getLogTypeLabel]
+    [t, language, getLogTypeLabel, theme.palette.mode]
   );
 
   /**
@@ -421,7 +451,11 @@ const AuditTrailPage: React.FC = () => {
                   </Select>
                 </FormControl>
                 <Typography variant="body2" color="text.secondary" data-id-ref="audit-trail-pagination-text">
-                  {`${t('auditTrailPage.pagination.showing')} ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalCount)} ${t('auditTrailPage.pagination.of')} ${totalCount}`}
+                  {t('auditTrailPage.pagination.showing', {
+                    from: (currentPage - 1) * pageSize + 1,
+                    to: Math.min(currentPage * pageSize, totalCount),
+                    total: totalCount,
+                  })}
                 </Typography>
               </Box>
 
