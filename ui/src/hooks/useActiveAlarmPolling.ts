@@ -41,6 +41,14 @@ export function useActiveAlarmPolling(isAuthenticated: boolean, isAuthLoading: b
   const signalRDisconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSignalRStateRef = useRef<StreamStatus>(StreamStatus.IDLE);
   const hasInitialFetchRef = useRef(false);
+  
+  // CRITICAL: Store current stream status in ref to avoid stale closure in interval
+  const currentStreamStatusRef = useRef<StreamStatus>(activeAlarms.streamStatus);
+  
+  // Update ref whenever stream status changes
+  useEffect(() => {
+    currentStreamStatusRef.current = activeAlarms.streamStatus;
+  }, [activeAlarms.streamStatus]);
 
   /**
    * Fetch active alarm count
@@ -112,14 +120,19 @@ export function useActiveAlarmPolling(isAuthenticated: boolean, isAuthLoading: b
       
       // Check if we've been polling for 1 minute
       if (elapsedTime >= POLLING_DURATION) {
+        // FIXED: Use ref to get current stream status, not stale closure value
+        const currentStatus = currentStreamStatusRef.current;
+        
         // If SignalR is connected, stop polling
-        if (activeAlarms.streamStatus === StreamStatus.CONNECTED) {
-          logger.log('1 minute elapsed and SignalR connected - stopping polling');
+        if (currentStatus === StreamStatus.CONNECTED) {
+          logger.log('1 minute elapsed and SignalR connected - stopping polling', {
+            streamStatus: currentStatus,
+          });
           stopPolling();
           return;
         } else {
           logger.log('1 minute elapsed but SignalR not connected - continuing polling', {
-            streamStatus: activeAlarms.streamStatus,
+            streamStatus: currentStatus,
           });
         }
       }
@@ -129,7 +142,7 @@ export function useActiveAlarmPolling(isAuthenticated: boolean, isAuthLoading: b
     }, POLL_INTERVAL);
 
     logger.log('Polling started successfully');
-  }, [fetchAlarms, activeAlarms.streamStatus, stopPolling]);
+  }, [fetchAlarms, stopPolling]);
 
   /**
    * Initial fetch on app start/refresh
