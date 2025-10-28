@@ -187,8 +187,7 @@ const MonitoringPage: React.FC = () => {
         pollingIntervalRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentFolderItemIds]); // fetchValues is a stable callback, intentionally excluded to prevent infinite loop
+  }, [currentFolderItemIds, fetchValues]);
 
   // Manage refresh indicator visibility with minimum display time
   useEffect(() => {
