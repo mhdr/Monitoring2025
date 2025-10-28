@@ -387,6 +387,7 @@ export const getActiveAlarms = async (params?: ActiveAlarmsRequestDto): Promise<
 /**
  * Get historical alarm data
  * Automatically extracts itemIds from stored items in IndexedDB if not provided
+ * Supports pagination through page and pageSize parameters (default page=1, pageSize=100, max pageSize=1000)
  */
 export const getAlarmHistory = async (params: AlarmHistoryRequestDto): Promise<AlarmHistoryResponseDto> => {
   try {
@@ -411,8 +412,39 @@ export const getAlarmHistory = async (params: AlarmHistoryRequestDto): Promise<A
       }
     }
     
-    const response = await apiClient.post<AlarmHistoryResponseDto>('/api/Monitoring/HistoryAlarms', body);
-    return response.data;
+    // Add pagination parameters if provided
+    if (params.page !== undefined && params.page !== null) {
+      body.page = params.page;
+    }
+    if (params.pageSize !== undefined && params.pageSize !== null) {
+      body.pageSize = params.pageSize;
+    }
+    
+    logger.log('Fetching alarm history with pagination', { 
+      startDate: params.startDate, 
+      endDate: params.endDate,
+      page: body.page || 1,
+      pageSize: body.pageSize || 100,
+    });
+    
+    // Backend returns wrapped response: { success: boolean, data: AlarmHistoryResponseDto, message: string }
+    const response = await apiClient.post<{ success: boolean; data: AlarmHistoryResponseDto; message: string }>(
+      '/api/Monitoring/HistoryAlarms', 
+      body
+    );
+    
+    // Extract the actual response data from the wrapped response
+    const actualData = response.data.data;
+    
+    logger.log('Alarm history fetched successfully', {
+      page: actualData.page,
+      pageSize: actualData.pageSize,
+      totalCount: actualData.totalCount,
+      totalPages: actualData.totalPages,
+      itemsInCurrentPage: actualData.data?.length || 0,
+    });
+    
+    return actualData;
   } catch (error) {
     handleApiError(error);
   }

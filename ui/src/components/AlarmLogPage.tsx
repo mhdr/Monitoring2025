@@ -55,6 +55,12 @@ const AlarmLogPage: React.FC = () => {
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [dateRangeCollapsed, setDateRangeCollapsed] = useState<boolean>(isMobile);
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(isMobile ? 20 : 100);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  
   // IndexedDB data for enrichment
   const [itemsMap, setItemsMap] = useState<Map<string, Item>>(new Map());
   const [alarmsMap, setAlarmsMap] = useState<Map<string, AlarmDto>>(new Map());
@@ -188,7 +194,7 @@ const AlarmLogPage: React.FC = () => {
   }, [selectedPreset, customStartDate, customEndDate]);
 
   // Fetch alarm history data
-  const fetchAlarmHistoryData = async () => {
+  const fetchAlarmHistoryData = async (page: number = currentPage, size: number = pageSize) => {
     setError(null);
     setLoading(true);
 
@@ -206,18 +212,28 @@ const AlarmLogPage: React.FC = () => {
         // itemIds will be automatically extracted from IndexedDB by the API function
         startDate,
         endDate,
+        page, // 1-based page number
+        pageSize: size,
       };
 
-      // Fetch alarm history from API
+      // Fetch alarm history from API with pagination
       const result = await getAlarmHistory(request);
       
-      // Update alarm history data and stop loading
+      // Update alarm history data and pagination metadata
       setAlarmHistoryData(result.data || []);
+      setTotalCount(result.totalCount || 0);
+      setTotalPages(result.totalPages || 0);
+      setCurrentPage(result.page || 1);
+      setPageSize(result.pageSize || size);
       setError(null); // Clear any previous errors
       setLoading(false);
       
       logger.log('Alarm history data fetched successfully', { 
         count: result.data?.length || 0,
+        page: result.page,
+        pageSize: result.pageSize,
+        totalCount: result.totalCount,
+        totalPages: result.totalPages,
         startDate,
         endDate 
       });
@@ -229,8 +245,10 @@ const AlarmLogPage: React.FC = () => {
   };
 
   // Fetch data on mount and when preset changes (not when custom dates change)
+  // Reset to page 1 when date range changes
   useEffect(() => {
-    fetchAlarmHistoryData();
+    setCurrentPage(1); // Reset to first page
+    fetchAlarmHistoryData(1, pageSize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPreset]);
 
@@ -314,6 +332,12 @@ const AlarmLogPage: React.FC = () => {
 
   // Prepare AG Grid row data
   const rowData = useMemo(() => {
+    // Safety check: ensure alarmHistoryData is an array
+    if (!Array.isArray(alarmHistoryData)) {
+      logger.warn('alarmHistoryData is not an array', { type: typeof alarmHistoryData, value: alarmHistoryData });
+      return [];
+    }
+    
     return alarmHistoryData.map((alarm, index) => {
       const timeFormatted = formatDate(alarm.time, language, 'short');
 
@@ -495,7 +519,10 @@ const AlarmLogPage: React.FC = () => {
                 variant="contained"
                 color="success"
                 size="small"
-                onClick={fetchAlarmHistoryData}
+                onClick={() => {
+                  setCurrentPage(1); // Reset to first page on refresh
+                  fetchAlarmHistoryData(1, pageSize);
+                }}
                 disabled={loading}
                 startIcon={loading ? <CircularProgress size={20} /> : <RefreshIcon />}
                 data-id-ref="alarm-log-refresh-button"
@@ -625,7 +652,8 @@ const AlarmLogPage: React.FC = () => {
                 gridOptions={{
                   enableRtl: language === 'fa',
                   pagination: true,
-                  paginationPageSize: isMobile ? 20 : 50,
+                  paginationPageSize: pageSize,
+                  paginationPageSizeSelector: [20, 50, 100, 200, 500],
                   paginationAutoPageSize: false,
                   suppressMenuHide: true,
                   enableCellTextSelection: true,
@@ -652,9 +680,48 @@ const AlarmLogPage: React.FC = () => {
                     flex: 1,
                     minWidth: 120,
                   },
+                  // Server-side pagination handlers
+                  onPaginationChanged: (event) => {
+                    const gridApi = event.api;
+                    const newPage = gridApi.paginationGetCurrentPage() + 1; // AG Grid is 0-based, API is 1-based
+                    const newPageSize = gridApi.paginationGetPageSize();
+                    
+                    // Only fetch if page or pageSize changed and not during initial load
+                    if ((newPage !== currentPage || newPageSize !== pageSize) && rowData.length > 0) {
+                      logger.log('Pagination changed', { 
+                        oldPage: currentPage, 
+                        newPage, 
+                        oldPageSize: pageSize, 
+                        newPageSize 
+                      });
+                      setCurrentPage(newPage);
+                      setPageSize(newPageSize);
+                      fetchAlarmHistoryData(newPage, newPageSize);
+                    }
+                  },
                 }}
                 data-id-ref="alarm-log-ag-grid"
               />
+              
+              {/* Pagination Info */}
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  mt: 2,
+                  px: 1,
+                }}
+                data-id-ref="alarm-log-pagination-info"
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {t('paginationInfo', { 
+                    page: currentPage, 
+                    totalPages, 
+                    totalCount 
+                  })}
+                </Typography>
+              </Box>
             </Box>
           )}
         </CardContent>

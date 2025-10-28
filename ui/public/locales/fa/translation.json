@@ -128,6 +128,7 @@
   "inactive": "غیرفعال",
   "noAlarmsFound": "هیچ هشداری در بازه زمانی انتخاب شده یافت نشد",
   "tryDifferentDateRange": "لطفاً بازه زمانی دیگری را انتخاب کنید",
+  "paginationInfo": "صفحه {{page}} از {{totalPages}} ({{totalCount}} رکورد)",
   "loadingData": "در حال بارگذاری داده‌ها...",
   "collapse": "بستن",
   "expand": "باز کردن",

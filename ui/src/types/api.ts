@@ -571,10 +571,22 @@ export interface AlarmHistoryRequestDto {
   itemIds?: string[] | null;
   startDate: number; // int64 - Unix timestamp
   endDate: number; // int64 - Unix timestamp
+  /** Page number for pagination (1-based index). Defaults to 1 if not provided. */
+  page?: number | null;
+  /** Number of records per page. Defaults to 100 if not provided. Maximum 1000. */
+  pageSize?: number | null;
 }
 
 export interface AlarmHistoryResponseDto {
   data: AlarmHistory[];
+  /** Current page number (1-based index) */
+  page: number;
+  /** Number of records per page */
+  pageSize: number;
+  /** Total number of alarm history entries matching the filter criteria */
+  totalCount: number;
+  /** Total number of pages available */
+  totalPages: number;
 }
 
 // ==================== User Management DTOs ====================
