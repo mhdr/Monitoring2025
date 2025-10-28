@@ -30,6 +30,20 @@ public class AlarmHistoryRequestDto
     public long EndDate { get; set; }
 
     /// <summary>
+    /// Page number for pagination (1-based index). Defaults to 1 if not provided.
+    /// </summary>
+    /// <example>1</example>
+    [Range(1, int.MaxValue, ErrorMessage = "Page must be a positive integer")]
+    public int? Page { get; set; }
+
+    /// <summary>
+    /// Number of records per page. Defaults to 100 if not provided. Maximum 1000.
+    /// </summary>
+    /// <example>100</example>
+    [Range(1, 1000, ErrorMessage = "PageSize must be between 1 and 1000")]
+    public int? PageSize { get; set; }
+
+    /// <summary>
     /// Initializes a new instance of AlarmHistoryRequestDto
     /// </summary>
     public AlarmHistoryRequestDto()

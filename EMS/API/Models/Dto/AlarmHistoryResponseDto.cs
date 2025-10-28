@@ -11,6 +11,30 @@ public class AlarmHistoryResponseDto
     public List<AlarmHistory> Data { get; set; }
 
     /// <summary>
+    /// Current page number (1-based index)
+    /// </summary>
+    /// <example>1</example>
+    public int Page { get; set; }
+
+    /// <summary>
+    /// Number of records per page
+    /// </summary>
+    /// <example>100</example>
+    public int PageSize { get; set; }
+
+    /// <summary>
+    /// Total number of alarm history entries matching the filter criteria
+    /// </summary>
+    /// <example>450</example>
+    public int TotalCount { get; set; }
+
+    /// <summary>
+    /// Total number of pages available
+    /// </summary>
+    /// <example>5</example>
+    public int TotalPages { get; set; }
+
+    /// <summary>
     /// Initializes a new instance of AlarmHistoryResponseDto
     /// </summary>
     public AlarmHistoryResponseDto()

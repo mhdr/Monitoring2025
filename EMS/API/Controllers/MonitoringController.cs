@@ -1284,11 +1284,14 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <summary>
     /// Get historical alarm data for specified monitoring items within a date range
     /// </summary>
-    /// <param name="request">Alarm history request containing start date (Unix timestamp), end date (Unix timestamp), and optional item IDs</param>
-    /// <returns>Historical alarm events for the specified time period and items</returns>
+    /// <param name="request">Alarm history request containing start date (Unix timestamp), end date (Unix timestamp), optional item IDs, and pagination parameters</param>
+    /// <returns>Paginated historical alarm events for the specified time period and items</returns>
     /// <remarks>
     /// Retrieves historical alarm events within the specified date range. If itemIds is provided,
     /// only returns alarms for those specific items. Otherwise, returns all alarms in the system.
+    /// 
+    /// Supports pagination through the Page and PageSize parameters. Default page size is 100 records,
+    /// with a maximum of 1000 records per page. Results are ordered by time in descending order (most recent first).
     /// 
     /// Sample request:
     /// 
@@ -1296,13 +1299,16 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///     {
     ///        "startDate": 1697587200,
     ///        "endDate": 1697673600,
-    ///        "itemIds": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"]
+    ///        "itemIds": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"],
+    ///        "page": 1,
+    ///        "pageSize": 100
     ///     }
     ///     
     /// Leave itemIds empty or null to retrieve all alarms in the system for the date range.
     /// Dates are Unix timestamps (seconds since epoch).
+    /// Page numbers are 1-based (first page is 1, not 0).
     /// </remarks>
-    /// <response code="200">Returns the historical alarm data with success status</response>
+    /// <response code="200">Returns the paginated historical alarm data with metadata (page, pageSize, totalCount, totalPages)</response>
     /// <response code="400">Validation error - invalid request format or date range</response>
     /// <response code="401">Unauthorized - valid JWT token required</response>
     /// <response code="500">Internal server error</response>
@@ -1357,16 +1363,40 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 return BadRequest(new { success = false, message = "Start date must be before or equal to end date" });
             }
 
-            _logger.LogDebug("Fetching alarm history: StartDate={StartDate}, EndDate={EndDate}, ItemCount={ItemCount}", 
-                request.StartDate, request.EndDate, request.ItemIds?.Count ?? 0);
+            // Set pagination defaults
+            var page = request.Page ?? 1;
+            var pageSize = request.PageSize ?? 100;
+            pageSize = Math.Min(pageSize, 1000); // Cap at 1000
+
+            _logger.LogDebug("Fetching alarm history: StartDate={StartDate}, EndDate={EndDate}, ItemCount={ItemCount}, Page={Page}, PageSize={PageSize}", 
+                request.StartDate, request.EndDate, request.ItemIds?.Count ?? 0, page, pageSize);
 
             // Retrieve alarm history from Core
-            var alarms = await Core.Alarms.HistoryAlarms(request.StartDate, request.EndDate, request.ItemIds);
+            var allAlarms = await Core.Alarms.HistoryAlarms(request.StartDate, request.EndDate, request.ItemIds);
+
+            // Sort by time descending (most recent first)
+            var sortedAlarms = allAlarms.OrderByDescending(a => a.Time).ToList();
+
+            // Calculate pagination values
+            var totalCount = sortedAlarms.Count;
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            // Apply pagination
+            var paginatedAlarms = sortedAlarms
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
 
             // Build response
-            var response = new AlarmHistoryResponseDto();
+            var response = new AlarmHistoryResponseDto
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages
+            };
 
-            foreach (var a in alarms)
+            foreach (var a in paginatedAlarms)
             {
                 response.Data.Add(new AlarmHistoryResponseDto.AlarmHistory()
                 {
@@ -1379,10 +1409,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 });
             }
 
-            _logger.LogInformation("HistoryAlarms completed successfully: User {UserId}, AlarmCount={AlarmCount}", 
-                User.Identity?.Name, response.Data.Count);
+            _logger.LogInformation("HistoryAlarms completed successfully: User {UserId}, Page={Page}/{TotalPages}, AlarmCount={AlarmCount}/{TotalCount}", 
+                User.Identity?.Name, page, totalPages, response.Data.Count, totalCount);
 
-            return Ok(response);
+            return Ok(new { success = true, data = response, message = "Alarm history retrieved successfully" });
         }
         catch (ArgumentException ex)
         {
