@@ -73,6 +73,13 @@ const AlarmLogPage: React.FC = () => {
     gridRef.current = api;
     columnApiRef.current = colApi;
     handleGridReady(api, colApi);
+    
+    // Force grid to recalculate layout after initialization
+    setTimeout(() => {
+      if (gridRef.current) {
+        gridRef.current.sizeColumnsToFit();
+      }
+    }, 100);
   }, [handleGridReady]);
 
   // Helper function to format condition string based on alarm and item data
@@ -406,11 +413,11 @@ const AlarmLogPage: React.FC = () => {
     <Box 
       data-id-ref="alarm-log-page-container" 
       sx={{ 
-        height: '100%', 
         display: 'flex', 
         flexDirection: 'column',
         p: isMobile ? 1 : 3,
         maxWidth: '100%',
+        minHeight: '100%',
       }}
     >
       {/* Date Range Selection Card */}
@@ -641,16 +648,17 @@ const AlarmLogPage: React.FC = () => {
 
           {/* AG Grid */}
           {!loading && !error && alarmHistoryData.length > 0 && (
-            <Box sx={{ flex: 1, minHeight: 0 }} data-id-ref="alarm-log-ag-grid-container">
+            <Box sx={{ flex: 1, minHeight: 400 }} data-id-ref="alarm-log-ag-grid-container">
               <LazyAGGrid
                 columnDefs={columnDefs}
                 rowData={rowData}
                 theme="quartz"
-                height="100%"
+                height="600px"
                 width="100%"
                 onGridReady={onGridReadyInternal}
                 gridOptions={{
                   enableRtl: language === 'fa',
+                  domLayout: 'normal',
                   pagination: true,
                   paginationPageSize: pageSize,
                   paginationPageSizeSelector: [20, 50, 100, 200, 500],
