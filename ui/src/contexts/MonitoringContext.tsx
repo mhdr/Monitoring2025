@@ -595,7 +595,7 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
     dispatch({ type: 'SET_ACTIVE_ALARMS_FETCHING', payload: true });
     
     try {
-      logger.log('Fetching active alarm count and priorities for sidebar badge...');
+      logger.log('Fetching active alarm count for sidebar badge...');
       
       // Get items from IndexedDB to extract itemIds
       const storedItems = await monitoringStorageHelpers.getStoredItems();
@@ -632,21 +632,24 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
         return;
       }
       
-      // Fetch alarm configurations to get priorities
-      const alarmsConfigResponse = await getAlarms({ itemIds });
+      // OPTIMIZATION: Get alarm configurations from IndexedDB cache instead of API
+      // This avoids unnecessary API calls every 5 seconds during polling
+      const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
       
-      // FIX: API returns nested structure, similar to active alarms
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const alarmConfigs = (alarmsConfigResponse as any).data || [];
+      // Handle both array and object with data property
+      const alarmsArray = Array.isArray(storedAlarms) 
+        ? storedAlarms 
+        : (storedAlarms as unknown as { data?: AlarmDto[] })?.data;
       
-      // Create a map of alarmId -> priority
+      // Create a map of alarmId -> priority from cached alarms
       const alarmPriorityMap = new Map<string, 1 | 2>();
-      if (Array.isArray(alarmConfigs)) {
-        alarmConfigs.forEach((alarm: { id?: string | null; alarmPriority?: 1 | 2 }) => {
+      if (Array.isArray(alarmsArray)) {
+        alarmsArray.forEach((alarm: AlarmDto) => {
           if (alarm.id && alarm.alarmPriority) {
             alarmPriorityMap.set(alarm.id, alarm.alarmPriority);
           }
         });
+        logger.log('Loaded alarm priorities from IndexedDB cache', { count: alarmPriorityMap.size });
       }
       
       // Determine highest priority (2=High is highest, 1=Low)
