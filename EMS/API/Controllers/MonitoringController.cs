@@ -5071,7 +5071,12 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// the current system time will be used. The optional duration parameter specifies how long
     /// the value should persist or be valid (in seconds).
     /// 
-    /// Sample request:
+    /// **Duration Parameter:**
+    /// - If omitted (null): Uses default behavior (typically 0, meaning infinite)
+    /// - If set to 0: Infinite write - the value never expires and persists indefinitely
+    /// - If set to a positive value (e.g., 60): The value expires after the specified number of seconds
+    /// 
+    /// Sample request with temporary write (60 seconds):
     /// 
     ///     POST /api/monitoring/writeoraddvalue
     ///     {
@@ -5081,8 +5086,18 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///        "duration": 60
     ///     }
     ///     
+    /// Sample request with infinite write (never expires):
+    /// 
+    ///     POST /api/monitoring/writeoraddvalue
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "value": "25.7",
+    ///        "time": 1697587200,
+    ///        "duration": 0
+    ///     }
+    ///     
     /// Both the time and duration parameters are optional - if omitted, current system time will be used
-    /// and no duration limit will be applied.
+    /// and duration defaults to 0 (infinite, never expires).
     /// </remarks>
     /// <response code="200">Value successfully written or added to the monitoring item</response>
     /// <response code="400">Validation error - invalid request format, missing required fields, or invalid item ID</response>
