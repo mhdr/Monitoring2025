@@ -445,6 +445,7 @@ const AuditTrailPage: React.FC = () => {
                   },
                   enableRtl: isRTL,
                   pagination: false,
+                  suppressContextMenu: true,
                 }}
               />
             </Box>
