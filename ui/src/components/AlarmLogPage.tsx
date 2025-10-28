@@ -61,6 +61,10 @@ const AlarmLogPage: React.FC = () => {
   const [totalCount, setTotalCount] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(0);
   
+  // Grid container ref for dynamic height calculation
+  const gridContainerRef = useRef<HTMLDivElement | null>(null);
+  const [gridHeight, setGridHeight] = useState<number>(500);
+  
   // IndexedDB data for enrichment
   const [itemsMap, setItemsMap] = useState<Map<string, Item>>(new Map());
   const [alarmsMap, setAlarmsMap] = useState<Map<string, AlarmDto>>(new Map());
@@ -259,6 +263,28 @@ const AlarmLogPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPreset]);
 
+  // Calculate grid height based on available viewport space
+  useEffect(() => {
+    const calculateGridHeight = () => {
+      if (gridContainerRef.current) {
+        const containerRect = gridContainerRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        // Calculate available height: viewport - top position - bottom padding (50px buffer)
+        const availableHeight = viewportHeight - containerRect.top - 50;
+        // Ensure minimum height of 400px and maximum of 800px
+        const calculatedHeight = Math.max(400, Math.min(800, availableHeight));
+        setGridHeight(calculatedHeight);
+      }
+    };
+
+    // Calculate on mount and when data changes
+    calculateGridHeight();
+    
+    // Recalculate on window resize
+    window.addEventListener('resize', calculateGridHeight);
+    return () => window.removeEventListener('resize', calculateGridHeight);
+  }, [alarmHistoryData]);
+
   // Convert Unix timestamp to datetime-local format for input
   const unixToDateTimeLocal = (unix: number): string => {
     const date = new Date(unix * 1000);
@@ -417,7 +443,8 @@ const AlarmLogPage: React.FC = () => {
         flexDirection: 'column',
         p: isMobile ? 1 : 3,
         maxWidth: '100%',
-        minHeight: '100%',
+        height: '100%',
+        overflow: 'hidden',
       }}
     >
       {/* Date Range Selection Card */}
@@ -648,87 +675,151 @@ const AlarmLogPage: React.FC = () => {
 
           {/* AG Grid */}
           {!loading && !error && alarmHistoryData.length > 0 && (
-            <Box sx={{ flex: 1, minHeight: 400 }} data-id-ref="alarm-log-ag-grid-container">
-              <LazyAGGrid
-                columnDefs={columnDefs}
-                rowData={rowData}
-                theme="quartz"
-                height="600px"
-                width="100%"
-                onGridReady={onGridReadyInternal}
-                gridOptions={{
-                  enableRtl: language === 'fa',
-                  domLayout: 'normal',
-                  pagination: true,
-                  paginationPageSize: pageSize,
-                  paginationPageSizeSelector: [20, 50, 100, 200, 500],
-                  paginationAutoPageSize: false,
-                  suppressMenuHide: true,
-                  enableCellTextSelection: true,
-                  animateRows: true,
-                  cellSelection: true,
-                  rowHeight: 50,
-                  headerHeight: 50,
-                  sideBar: false,
-                  statusBar: {
-                    statusPanels: [
-                      { statusPanel: 'agTotalRowCountComponent', align: 'left' },
-                      { statusPanel: 'agFilteredRowCountComponent' },
-                      { statusPanel: 'agAggregationComponent' }
-                    ]
-                  },
-                  rowSelection: {
-                    mode: 'singleRow',
-                    checkboxes: false,
-                  },
-                  defaultColDef: {
-                    resizable: true,
-                    sortable: true,
-                    filter: true,
-                    flex: 1,
-                    minWidth: 120,
-                  },
-                  // Server-side pagination handlers
-                  onPaginationChanged: (event) => {
-                    const gridApi = event.api;
-                    const newPage = gridApi.paginationGetCurrentPage() + 1; // AG Grid is 0-based, API is 1-based
-                    const newPageSize = gridApi.paginationGetPageSize();
-                    
-                    // Only fetch if page or pageSize changed and not during initial load
-                    if ((newPage !== currentPage || newPageSize !== pageSize) && rowData.length > 0) {
-                      logger.log('Pagination changed', { 
-                        oldPage: currentPage, 
-                        newPage, 
-                        oldPageSize: pageSize, 
-                        newPageSize 
-                      });
-                      setCurrentPage(newPage);
-                      setPageSize(newPageSize);
-                      fetchAlarmHistoryData(newPage, newPageSize);
-                    }
-                  },
-                }}
-                data-id-ref="alarm-log-ag-grid"
-              />
-              
-              {/* Pagination Info */}
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                flex: 1,
+                minHeight: 0, // Important for flex child to respect parent height
+              }} 
+              data-id-ref="alarm-log-ag-grid-container"
+            >
+              {/* Server-Side Pagination Controls - Moved to top */}
               <Box 
                 sx={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center',
-                  mt: 2,
+                  mb: 2,
                   px: 1,
+                  gap: 2,
+                  flexWrap: 'wrap',
                 }}
-                data-id-ref="alarm-log-pagination-info"
+                data-id-ref="alarm-log-pagination-controls"
               >
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" data-id-ref="alarm-log-pagination-info">
                   {t('paginationInfo', { 
                     page: currentPage, 
                     totalPages, 
                     totalCount 
                   })}
                 </Typography>
+                
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                  {/* Page Size Selector */}
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('pageSize')}:
+                    </Typography>
+                    <ButtonGroup size="small" variant="outlined" data-id-ref="alarm-log-page-size-selector">
+                      {[20, 50, 100, 200].map((size) => (
+                        <Button
+                          key={size}
+                          variant={pageSize === size ? 'contained' : 'outlined'}
+                          onClick={() => {
+                            setPageSize(size);
+                            setCurrentPage(1);
+                            fetchAlarmHistoryData(1, size);
+                          }}
+                          data-id-ref={`alarm-log-page-size-${size}`}
+                        >
+                          {size}
+                        </Button>
+                      ))}
+                    </ButtonGroup>
+                  </Box>
+                  
+                  {/* Page Navigation */}
+                  <ButtonGroup size="small" variant="outlined" data-id-ref="alarm-log-page-navigation">
+                    <Button
+                      onClick={() => {
+                        const newPage = 1;
+                        setCurrentPage(newPage);
+                        fetchAlarmHistoryData(newPage, pageSize);
+                      }}
+                      disabled={currentPage === 1 || loading}
+                      data-id-ref="alarm-log-first-page"
+                    >
+                      {t('firstPage')}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        const newPage = currentPage - 1;
+                        setCurrentPage(newPage);
+                        fetchAlarmHistoryData(newPage, pageSize);
+                      }}
+                      disabled={currentPage === 1 || loading}
+                      data-id-ref="alarm-log-previous-page"
+                    >
+                      {t('previousPage')}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        const newPage = currentPage + 1;
+                        setCurrentPage(newPage);
+                        fetchAlarmHistoryData(newPage, pageSize);
+                      }}
+                      disabled={currentPage >= totalPages || loading}
+                      data-id-ref="alarm-log-next-page"
+                    >
+                      {t('nextPage')}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        const newPage = totalPages;
+                        setCurrentPage(newPage);
+                        fetchAlarmHistoryData(newPage, pageSize);
+                      }}
+                      disabled={currentPage >= totalPages || loading}
+                      data-id-ref="alarm-log-last-page"
+                    >
+                      {t('lastPage')}
+                    </Button>
+                  </ButtonGroup>
+                </Box>
+              </Box>
+
+              {/* AG Grid - fills remaining space */}
+              <Box ref={gridContainerRef} sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                <LazyAGGrid
+                  columnDefs={columnDefs}
+                  rowData={rowData}
+                  theme="quartz"
+                  height={`${gridHeight}px`}
+                  width="100%"
+                  onGridReady={onGridReadyInternal}
+                  gridOptions={{
+                    enableRtl: language === 'fa',
+                    domLayout: 'normal',
+                    pagination: false, // Disable client-side pagination
+                    suppressMenuHide: true,
+                    enableCellTextSelection: true,
+                    animateRows: true,
+                    cellSelection: true,
+                    rowHeight: 50,
+                    headerHeight: 50,
+                    sideBar: false,
+                    statusBar: {
+                      statusPanels: [
+                        { statusPanel: 'agTotalRowCountComponent', align: 'left' },
+                        { statusPanel: 'agFilteredRowCountComponent' },
+                        { statusPanel: 'agAggregationComponent' }
+                      ]
+                    },
+                    rowSelection: {
+                      mode: 'singleRow',
+                      checkboxes: false,
+                    },
+                    defaultColDef: {
+                      resizable: true,
+                      sortable: true,
+                      filter: true,
+                      flex: 1,
+                      minWidth: 120,
+                    },
+                  }}
+                  data-id-ref="alarm-log-ag-grid"
+                />
               </Box>
             </Box>
           )}
