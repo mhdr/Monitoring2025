@@ -13,7 +13,13 @@ import {
   ButtonGroup,
   IconButton,
   Collapse,
+  Pagination,
+  Select,
+  FormControl,
+  InputLabel,
+  MenuItem,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 import {
   Refresh as RefreshIcon,
   ExpandMore as ExpandMoreIcon,
@@ -60,10 +66,6 @@ const AlarmLogPage: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(isMobile ? 20 : 100);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(0);
-  
-  // Grid container ref for dynamic height calculation
-  const gridContainerRef = useRef<HTMLDivElement | null>(null);
-  const [gridHeight, setGridHeight] = useState<number>(500);
   
   // IndexedDB data for enrichment
   const [itemsMap, setItemsMap] = useState<Map<string, Item>>(new Map());
@@ -205,7 +207,7 @@ const AlarmLogPage: React.FC = () => {
   }, [selectedPreset, customStartDate, customEndDate]);
 
   // Fetch alarm history data
-  const fetchAlarmHistoryData = async (page: number = currentPage, size: number = pageSize) => {
+  const fetchAlarmHistoryData = useCallback(async (page: number, size: number) => {
     setError(null);
     setLoading(true);
 
@@ -253,7 +255,7 @@ const AlarmLogPage: React.FC = () => {
       setError(t('errorLoadingData'));
       setLoading(false);
     }
-  };
+  }, [getDateRange, t]);
 
   // Fetch data on mount and when preset changes (not when custom dates change)
   // Reset to page 1 when date range changes
@@ -263,27 +265,19 @@ const AlarmLogPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPreset]);
 
-  // Calculate grid height based on available viewport space
-  useEffect(() => {
-    const calculateGridHeight = () => {
-      if (gridContainerRef.current) {
-        const containerRect = gridContainerRef.current.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        // Calculate available height: viewport - top position - bottom padding (50px buffer)
-        const availableHeight = viewportHeight - containerRect.top - 50;
-        // Ensure minimum height of 400px and maximum of 800px
-        const calculatedHeight = Math.max(400, Math.min(800, availableHeight));
-        setGridHeight(calculatedHeight);
-      }
-    };
+  // Handle page change
+  const handlePageChange = useCallback((_event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page);
+    fetchAlarmHistoryData(page, pageSize);
+  }, [pageSize, fetchAlarmHistoryData]);
 
-    // Calculate on mount and when data changes
-    calculateGridHeight();
-    
-    // Recalculate on window resize
-    window.addEventListener('resize', calculateGridHeight);
-    return () => window.removeEventListener('resize', calculateGridHeight);
-  }, [alarmHistoryData]);
+  // Handle page size change
+  const handlePageSizeChange = useCallback((event: SelectChangeEvent<number>) => {
+    const newSize = Number(event.target.value);
+    setPageSize(newSize);
+    setCurrentPage(1); // Reset to first page
+    fetchAlarmHistoryData(1, newSize);
+  }, [fetchAlarmHistoryData]);
 
   // Convert Unix timestamp to datetime-local format for input
   const unixToDateTimeLocal = (unix: number): string => {
@@ -675,117 +669,20 @@ const AlarmLogPage: React.FC = () => {
 
           {/* AG Grid */}
           {!loading && !error && alarmHistoryData.length > 0 && (
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                flexDirection: 'column',
-                flex: 1,
-                minHeight: 0, // Important for flex child to respect parent height
-              }} 
-              data-id-ref="alarm-log-ag-grid-container"
-            >
-              {/* Server-Side Pagination Controls - Moved to top */}
+            <>
+              {/* AG Grid Container */}
               <Box 
                 sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  mb: 2,
-                  px: 1,
-                  gap: 2,
-                  flexWrap: 'wrap',
-                }}
-                data-id-ref="alarm-log-pagination-controls"
+                  flex: 1, 
+                  minHeight: 0,
+                }} 
+                data-id-ref="alarm-log-ag-grid-container"
               >
-                <Typography variant="body2" color="text.secondary" data-id-ref="alarm-log-pagination-info">
-                  {t('paginationInfo', { 
-                    page: currentPage, 
-                    totalPages, 
-                    totalCount 
-                  })}
-                </Typography>
-                
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                  {/* Page Size Selector */}
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('pageSize')}:
-                    </Typography>
-                    <ButtonGroup size="small" variant="outlined" data-id-ref="alarm-log-page-size-selector">
-                      {[20, 50, 100, 200].map((size) => (
-                        <Button
-                          key={size}
-                          variant={pageSize === size ? 'contained' : 'outlined'}
-                          onClick={() => {
-                            setPageSize(size);
-                            setCurrentPage(1);
-                            fetchAlarmHistoryData(1, size);
-                          }}
-                          data-id-ref={`alarm-log-page-size-${size}`}
-                        >
-                          {size}
-                        </Button>
-                      ))}
-                    </ButtonGroup>
-                  </Box>
-                  
-                  {/* Page Navigation */}
-                  <ButtonGroup size="small" variant="outlined" data-id-ref="alarm-log-page-navigation">
-                    <Button
-                      onClick={() => {
-                        const newPage = 1;
-                        setCurrentPage(newPage);
-                        fetchAlarmHistoryData(newPage, pageSize);
-                      }}
-                      disabled={currentPage === 1 || loading}
-                      data-id-ref="alarm-log-first-page"
-                    >
-                      {t('firstPage')}
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        const newPage = currentPage - 1;
-                        setCurrentPage(newPage);
-                        fetchAlarmHistoryData(newPage, pageSize);
-                      }}
-                      disabled={currentPage === 1 || loading}
-                      data-id-ref="alarm-log-previous-page"
-                    >
-                      {t('previousPage')}
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        const newPage = currentPage + 1;
-                        setCurrentPage(newPage);
-                        fetchAlarmHistoryData(newPage, pageSize);
-                      }}
-                      disabled={currentPage >= totalPages || loading}
-                      data-id-ref="alarm-log-next-page"
-                    >
-                      {t('nextPage')}
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        const newPage = totalPages;
-                        setCurrentPage(newPage);
-                        fetchAlarmHistoryData(newPage, pageSize);
-                      }}
-                      disabled={currentPage >= totalPages || loading}
-                      data-id-ref="alarm-log-last-page"
-                    >
-                      {t('lastPage')}
-                    </Button>
-                  </ButtonGroup>
-                </Box>
-              </Box>
-
-              {/* AG Grid - fills remaining space */}
-              <Box ref={gridContainerRef} sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 <LazyAGGrid
                   columnDefs={columnDefs}
                   rowData={rowData}
                   theme="quartz"
-                  height={`${gridHeight}px`}
+                  height="100%"
                   width="100%"
                   onGridReady={onGridReadyInternal}
                   gridOptions={{
@@ -821,7 +718,52 @@ const AlarmLogPage: React.FC = () => {
                   data-id-ref="alarm-log-ag-grid"
                 />
               </Box>
-            </Box>
+
+              {/* Pagination Controls - MUI Style */}
+              <Box
+                data-id-ref="alarm-log-pagination"
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 2,
+                  pt: 2,
+                  borderTop: `1px solid ${theme.palette.divider}`,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }} data-id-ref="alarm-log-pagination-info">
+                  <FormControl size="small" sx={{ minWidth: 120 }} data-id-ref="alarm-log-page-size-select">
+                    <InputLabel>{t('auditTrailPage.pagination.rowsPerPage')}</InputLabel>
+                    <Select value={pageSize} label={t('auditTrailPage.pagination.rowsPerPage')} onChange={handlePageSizeChange}>
+                      <MenuItem value={20}>20</MenuItem>
+                      <MenuItem value={50}>50</MenuItem>
+                      <MenuItem value={100}>100</MenuItem>
+                      <MenuItem value={200}>200</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <Typography variant="body2" color="text.secondary" data-id-ref="alarm-log-pagination-text">
+                    {t('auditTrailPage.pagination.showing', {
+                      from: (currentPage - 1) * pageSize + 1,
+                      to: Math.min(currentPage * pageSize, totalCount),
+                      total: totalCount,
+                    })}
+                  </Typography>
+                </Box>
+
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  showFirstButton
+                  showLastButton
+                  siblingCount={1}
+                  boundaryCount={1}
+                  data-id-ref="alarm-log-pagination-component"
+                />
+              </Box>
+            </>
           )}
         </CardContent>
       </Card>
