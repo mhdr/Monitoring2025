@@ -435,24 +435,6 @@
       "addPoint": "Add Point"
     }
   },
-  "itemSortMenu": {
-    "title": "Sort Items",
-    "sortBy": "Sort By",
-    "sortDirection": "Sort Direction",
-    "reset": "Reset to Default",
-    "fields": {
-      "pointNumber": "Point Number",
-      "name": "Name",
-      "itemType": "Item Type",
-      "value": "Current Value",
-      "time": "Last Update Time",
-      "alarmStatus": "Alarm Status"
-    },
-    "directions": {
-      "asc": "Ascending",
-      "desc": "Descending"
-    }
-  },
   "itemCommandDialog": {
     "title": "Send Command",
     "itemInformation": "Item Information",

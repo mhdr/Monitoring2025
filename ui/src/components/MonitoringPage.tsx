@@ -16,8 +16,6 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -25,18 +23,15 @@ import {
   Description as DescriptionIcon,
   CreateNewFolder as AddFolderIcon,
   Add as AddPointIcon,
-  Sort as SortIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { useAuth } from '../hooks/useAuth';
-import { useItemSorting } from '../hooks/useItemSorting';
 import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
 import ItemCard from './ItemCard';
 import AddGroupDialog from './AddGroupDialog';
 import AddItemDialog from './AddItemDialog';
-import ItemSortMenu from './ItemSortMenu';
 import { createLogger } from '../utils/logger';
 import { formatDate } from '../utils/dateFormatting';
 
@@ -65,9 +60,6 @@ const MonitoringPage: React.FC = () => {
   
   // Add Item Dialog state
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
-  
-  // Sort menu state
-  const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
   
   // Check if user is admin
   const isAdmin = user?.roles?.includes('Admin') || false;
@@ -129,41 +121,30 @@ const MonitoringPage: React.FC = () => {
     return { childGroups: children, breadcrumbs: trail };
   }, [allGroups, currentFolderId]);
 
-  // Get items for current folder
+  // Get items for current folder, sorted by point number ascending
   const currentFolderItems = useMemo(() => {
     if (!allItems || allItems.length === 0) {
       return [];
     }
 
     // Filter items by current folder/group
+    let filteredItems;
     if (!currentFolderId) {
       // At root level - show items with no groupId
-      return allItems.filter((item) => !item.groupId || item.groupId === null);
+      filteredItems = allItems.filter((item) => !item.groupId || item.groupId === null);
+    } else {
+      // Show items belonging to current folder
+      filteredItems = allItems.filter((item) => item.groupId === currentFolderId);
     }
 
-    // Show items belonging to current folder
-    return allItems.filter((item) => item.groupId === currentFolderId);
+    // Sort by point number in ascending order
+    return filteredItems.sort((a, b) => a.pointNumber - b.pointNumber);
   }, [allItems, currentFolderId]);
-
-  // Use sorting hook with IndexedDB persistence
-  const {
-    sortedItems: sortedFolderItems,
-    sortConfig,
-    setSortField,
-    setSortDirection,
-    resetSort,
-    isLoading: isSortConfigLoading,
-  } = useItemSorting({
-    folderId: currentFolderId,
-    items: currentFolderItems,
-    itemValues,
-    activeAlarms: [], // TODO: Pass actual active alarms when available
-  });
 
   // Get item IDs for current folder (for values polling)
   const currentFolderItemIds = useMemo(() => {
-    return sortedFolderItems.map((item) => item.id);
-  }, [sortedFolderItems]);
+    return currentFolderItems.map((item) => item.id);
+  }, [currentFolderItems]);
 
   // Poll values every 5 seconds for items in current folder
   useEffect(() => {
@@ -264,7 +245,7 @@ const MonitoringPage: React.FC = () => {
   };
 
   // Helper function to get item display name based on language
-  const getItemDisplayName = (item: typeof sortedFolderItems[0]) => {
+  const getItemDisplayName = (item: typeof currentFolderItems[0]) => {
     return (language === 'fa' && item.nameFa) ? item.nameFa : item.name;
   };
 
@@ -274,7 +255,7 @@ const MonitoringPage: React.FC = () => {
   };
 
   // Helper function to format value based on item type
-  const formatItemValue = (item: typeof sortedFolderItems[0], value: string | null) => {
+  const formatItemValue = (item: typeof currentFolderItems[0], value: string | null) => {
     if (value === null || value === undefined) {
       return t('noValue');
     }
@@ -423,17 +404,6 @@ const MonitoringPage: React.FC = () => {
     fetchGroups();
   };
 
-  /**
-   * Sort menu handlers
-   */
-  const handleSortMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setSortMenuAnchor(event.currentTarget);
-  };
-
-  const handleSortMenuClose = () => {
-    setSortMenuAnchor(null);
-  };
-
   return (
     <Container maxWidth={false} data-id-ref="monitoring-page-root-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
       <Card data-id-ref="monitoring-page-main-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -444,7 +414,7 @@ const MonitoringPage: React.FC = () => {
               <Typography variant="h4" component="h1" data-id-ref="monitoring-page-title">
                 {t('monitoring')}
               </Typography>
-              {showRefreshIndicator && sortedFolderItems.length > 0 && (
+              {showRefreshIndicator && currentFolderItems.length > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-id-ref="monitoring-page-refresh-indicator-container">
                   <CircularProgress 
                     size={16} 
@@ -550,7 +520,7 @@ const MonitoringPage: React.FC = () => {
 
           {/* Empty State - Only show when NO folders AND NO items */}
           {!isLoading && !error && !isLoadingItems && !itemsError && 
-           childGroups.length === 0 && sortedFolderItems.length === 0 && (
+           childGroups.length === 0 && currentFolderItems.length === 0 && (
             <Box 
               sx={{ 
                 display: 'flex', 
@@ -636,7 +606,7 @@ const MonitoringPage: React.FC = () => {
           )}
 
           {/* Items List View */}
-          {!isLoadingItems && !itemsError && sortedFolderItems.length > 0 && (
+          {!isLoadingItems && !itemsError && currentFolderItems.length > 0 && (
             <Box data-id-ref="monitoring-page-items-list-section">
               <Box 
                 sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1, mb: 3 }} 
@@ -647,23 +617,11 @@ const MonitoringPage: React.FC = () => {
                   {t('items')}
                 </Typography>
                 <Chip 
-                  label={sortedFolderItems.length} 
+                  label={currentFolderItems.length} 
                   size="small" 
                   color="secondary"
                   data-id-ref="monitoring-page-items-list-count"
                 />
-                {/* Sort Button */}
-                <Tooltip title={t('itemSortMenu.title')} arrow>
-                  <IconButton
-                    onClick={handleSortMenuOpen}
-                    size="small"
-                    color={sortConfig.field !== 'pointNumber' || sortConfig.direction !== 'asc' ? 'primary' : 'default'}
-                    sx={{ ml: 'auto' }}
-                    data-id-ref="monitoring-page-sort-button"
-                  >
-                    <SortIcon data-id-ref="monitoring-page-sort-icon" />
-                  </IconButton>
-                </Tooltip>
               </Box>
               
               <Box
@@ -678,7 +636,7 @@ const MonitoringPage: React.FC = () => {
                 }}
                 data-id-ref="monitoring-page-items-grid"
               >
-                {sortedFolderItems.map((item: typeof sortedFolderItems[0]) => {
+                {currentFolderItems.map((item: typeof currentFolderItems[0]) => {
                   const itemValue = getItemValue(item.id);
                   const itemValueHistory = valueHistory.get(item.id);
                   return (
@@ -779,17 +737,6 @@ const MonitoringPage: React.FC = () => {
         onClose={() => setAddItemDialogOpen(false)}
         onSuccess={handleAddItemSuccess}
         parentGroupId={currentFolderId || undefined}
-      />
-
-      {/* Sort Menu */}
-      <ItemSortMenu
-        anchorEl={sortMenuAnchor}
-        open={Boolean(sortMenuAnchor)}
-        onClose={handleSortMenuClose}
-        sortConfig={sortConfig}
-        onSortFieldChange={setSortField}
-        onSortDirectionChange={setSortDirection}
-        onReset={resetSort}
       />
     </Container>
   );
