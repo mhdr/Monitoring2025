@@ -242,6 +242,9 @@ builder.Services.AddAuthorization();
 // Add JWT Token Service
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
+// Add Audit Service
+builder.Services.AddScoped<IAuditService, AuditService>();
+
 // Add SignalR services
 builder.Services.AddSignalR();
 

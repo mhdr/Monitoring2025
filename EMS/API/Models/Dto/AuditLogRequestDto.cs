@@ -28,4 +28,18 @@ public class AuditLogRequestDto
     [Required(ErrorMessage = "EndDate is required")]
     [Range(1, long.MaxValue, ErrorMessage = "EndDate must be a positive Unix timestamp")]
     public long EndDate { get; set; }
+
+    /// <summary>
+    /// Page number for pagination (1-based index). Defaults to 1 if not provided.
+    /// </summary>
+    /// <example>1</example>
+    [Range(1, int.MaxValue, ErrorMessage = "Page must be a positive integer")]
+    public int? Page { get; set; }
+
+    /// <summary>
+    /// Number of records per page. Defaults to 50 if not provided. Maximum 500.
+    /// </summary>
+    /// <example>50</example>
+    [Range(1, 500, ErrorMessage = "PageSize must be between 1 and 500")]
+    public int? PageSize { get; set; }
 }

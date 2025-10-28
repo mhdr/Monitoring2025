@@ -13,6 +13,30 @@ public class AuditLogResponseDto
     public List<DataDto> Data { get; set; }
 
     /// <summary>
+    /// Current page number (1-based index)
+    /// </summary>
+    /// <example>1</example>
+    public int Page { get; set; }
+
+    /// <summary>
+    /// Number of records per page
+    /// </summary>
+    /// <example>50</example>
+    public int PageSize { get; set; }
+
+    /// <summary>
+    /// Total number of audit log entries matching the filter criteria
+    /// </summary>
+    /// <example>150</example>
+    public int TotalCount { get; set; }
+
+    /// <summary>
+    /// Total number of pages available
+    /// </summary>
+    /// <example>3</example>
+    public int TotalPages { get; set; }
+
+    /// <summary>
     /// Initializes a new instance of the AuditLogResponseDto with an empty data list
     /// </summary>
     public AuditLogResponseDto()

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using API.Models.Dto;
 using API.Models.ModelDto;
+using API.Services;
 using Contracts;
 using Core;
 using Core.Libs;
@@ -34,6 +35,7 @@ public class MonitoringController : ControllerBase
     private readonly ILogger<MonitoringController> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IBus _bus;
+    private readonly IAuditService _auditService;
 
     /// <summary>
     /// Initializes a new instance of the MonitoringController
@@ -43,18 +45,21 @@ public class MonitoringController : ControllerBase
     /// <param name="logger">The logger service</param>
     /// <param name="httpContextAccessor">The HTTP context accessor</param>
     /// <param name="bus">The MassTransit bus service</param>
+    /// <param name="auditService">The audit service for logging operations</param>
     public MonitoringController(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
         ILogger<MonitoringController> logger,
         IHttpContextAccessor httpContextAccessor,
-        IBus bus)
+        IBus bus,
+        IAuditService auditService)
     {
         _userManager = userManager;
         _context = context;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
         _bus = bus;
+        _auditService = auditService;
     }
 
     /// <summary>
@@ -1602,58 +1607,44 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 }
             }
 
-            // Create audit log entry
-            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
-            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
-
-            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-
-            var auditLogData = new
-            {
-                ItemId = newItemId,
-                ItemName = request.ItemName,
-                ItemNameFa = request.ItemNameFa,
-                ItemType = request.ItemType.ToString(),
-                PointNumber = request.PointNumber,
-                ShouldScale = request.ShouldScale.ToString(),
-                NormMin = request.NormMin,
-                NormMax = request.NormMax,
-                ScaleMin = request.ScaleMin,
-                ScaleMax = request.ScaleMax,
-                SaveInterval = request.SaveInterval,
-                SaveHistoricalInterval = request.SaveHistoricalInterval,
-                CalculationMethod = request.CalculationMethod.ToString(),
-                NumberOfSamples = request.NumberOfSamples,
-                SaveOnChange = request.SaveOnChange?.ToString(),
-                SaveOnChangeRange = request.SaveOnChangeRange,
-                OnText = request.OnText,
-                OnTextFa = request.OnTextFa,
-                OffText = request.OffText,
-                OffTextFa = request.OffTextFa,
-                Unit = request.Unit,
-                UnitFa = request.UnitFa,
-                IsDisabled = request.IsDisabled,
-                IsCalibrationEnabled = request.IsCalibrationEnabled,
-                CalibrationA = request.CalibrationA,
-                CalibrationB = request.CalibrationB,
-                InterfaceType = request.InterfaceType.ToString(),
-                IsEditable = request.IsEditable,
-                ParentGroupId = request.ParentGroupId
-            };
-
-            var logValueJson = JsonConvert.SerializeObject(auditLogData, Formatting.Indented);
-
-            await _context.AuditLogs.AddAsync(new AuditLog
-            {
-                IsUser = true,
-                UserId = userGuid,
-                ItemId = newItemId,
-                ActionType = LogType.AddPoint,
-                IpAddress = ipAddress,
-                LogValue = logValueJson,
-                Time = epochTime,
-            });
-            await _context.SaveChangesAsync();
+            // Create audit log entry using AuditService
+            await _auditService.LogAsync(
+                LogType.AddPoint,
+                new
+                {
+                    ItemId = newItemId,
+                    ItemName = request.ItemName,
+                    ItemNameFa = request.ItemNameFa,
+                    ItemType = request.ItemType.ToString(),
+                    PointNumber = request.PointNumber,
+                    ShouldScale = request.ShouldScale.ToString(),
+                    NormMin = request.NormMin,
+                    NormMax = request.NormMax,
+                    ScaleMin = request.ScaleMin,
+                    ScaleMax = request.ScaleMax,
+                    SaveInterval = request.SaveInterval,
+                    SaveHistoricalInterval = request.SaveHistoricalInterval,
+                    CalculationMethod = request.CalculationMethod.ToString(),
+                    NumberOfSamples = request.NumberOfSamples,
+                    SaveOnChange = request.SaveOnChange?.ToString(),
+                    SaveOnChangeRange = request.SaveOnChangeRange,
+                    OnText = request.OnText,
+                    OnTextFa = request.OnTextFa,
+                    OffText = request.OffText,
+                    OffTextFa = request.OffTextFa,
+                    Unit = request.Unit,
+                    UnitFa = request.UnitFa,
+                    IsDisabled = request.IsDisabled,
+                    IsCalibrationEnabled = request.IsCalibrationEnabled,
+                    CalibrationA = request.CalibrationA,
+                    CalibrationB = request.CalibrationB,
+                    InterfaceType = request.InterfaceType.ToString(),
+                    IsEditable = request.IsEditable,
+                    ParentGroupId = request.ParentGroupId
+                },
+                itemId: newItemId,
+                userId: userGuid
+            );
 
             _logger.LogInformation("AddItem: Successfully created item {ItemId} by user {UserId}", 
                 newItemId, userId);
@@ -1866,83 +1857,70 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             }
 
             // Create audit log entry
-            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
-            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
-
-            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-
-            var auditLogData = new
-            {
-                ItemIdOld = existingItem.Id,
-                ItemNameOld = existingItem.ItemName,
-                ItemNameNew = request.ItemName,
-                ItemNameFaOld = existingItem.ItemNameFa,
-                ItemNameFaNew = request.ItemNameFa,
-                ItemTypeOld = existingItem.ItemType.ToString(),
-                ItemTypeNew = request.ItemType.ToString(),
-                PointNumberOld = existingItem.PointNumber,
-                PointNumberNew = request.PointNumber,
-                ShouldScaleOld = existingItem.ShouldScale.ToString(),
-                ShouldScaleNew = request.ShouldScale.ToString(),
-                NormMinOld = existingItem.NormMin,
-                NormMinNew = request.NormMin,
-                NormMaxOld = existingItem.NormMax,
-                NormMaxNew = request.NormMax,
-                ScaleMinOld = existingItem.ScaleMin,
-                ScaleMinNew = request.ScaleMin,
-                ScaleMaxOld = existingItem.ScaleMax,
-                ScaleMaxNew = request.ScaleMax,
-                SaveIntervalOld = existingItem.SaveInterval,
-                SaveIntervalNew = request.SaveInterval,
-                SaveHistoricalIntervalOld = existingItem.SaveHistoricalInterval,
-                SaveHistoricalIntervalNew = request.SaveHistoricalInterval,
-                CalculationMethodOld = existingItem.CalculationMethod.ToString(),
-                CalculationMethodNew = request.CalculationMethod.ToString(),
-                NumberOfSamplesOld = existingItem.NumberOfSamples,
-                NumberOfSamplesNew = request.NumberOfSamples,
-                SaveOnChangeOld = existingItem.SaveOnChange.ToString(),
-                SaveOnChangeNew = request.SaveOnChange.ToString(),
-                SaveOnChangeRangeOld = existingItem.SaveOnChangeRange,
-                SaveOnChangeRangeNew = request.SaveOnChangeRange,
-                OnTextOld = existingItem.OnText,
-                OnTextNew = request.OnText,
-                OnTextFaOld = existingItem.OnTextFa,
-                OnTextFaNew = request.OnTextFa,
-                OffTextOld = existingItem.OffText,
-                OffTextNew = request.OffText,
-                OffTextFaOld = existingItem.OffTextFa,
-                OffTextFaNew = request.OffTextFa,
-                UnitOld = existingItem.Unit,
-                UnitNew = request.Unit,
-                UnitFaOld = existingItem.UnitFa,
-                UnitFaNew = request.UnitFa,
-                IsDisabledOld = existingItem.IsDisabled,
-                IsDisabledNew = request.IsDisabled,
-                IsCalibrationEnabledOld = existingItem.IsCalibrationEnabled,
-                IsCalibrationEnabledNew = request.IsCalibrationEnabled,
-                CalibrationAOld = existingItem.CalibrationA,
-                CalibrationANew = request.CalibrationA,
-                CalibrationBOld = existingItem.CalibrationB,
-                CalibrationBNew = request.CalibrationB,
-                InterfaceTypeOld = existingItem.InterfaceType.ToString(),
-                InterfaceTypeNew = request.InterfaceType.ToString(),
-                IsEditableOld = existingItem.IsEditable,
-                IsEditableNew = request.IsEditable
-            };
-
-            var logValueJson = JsonConvert.SerializeObject(auditLogData, Formatting.Indented);
-
-            await _context.AuditLogs.AddAsync(new AuditLog
-            {
-                IsUser = true,
-                UserId = userGuid,
-                ItemId = request.Id,
-                ActionType = LogType.EditPoint,
-                IpAddress = ipAddress,
-                LogValue = logValueJson,
-                Time = epochTime,
-            });
-            await _context.SaveChangesAsync();
+            // Create audit log entry using AuditService
+            await _auditService.LogAsync(
+                LogType.EditPoint,
+                new
+                {
+                    ItemIdOld = existingItem.Id,
+                    ItemNameOld = existingItem.ItemName,
+                    ItemNameNew = request.ItemName,
+                    ItemNameFaOld = existingItem.ItemNameFa,
+                    ItemNameFaNew = request.ItemNameFa,
+                    ItemTypeOld = existingItem.ItemType.ToString(),
+                    ItemTypeNew = request.ItemType.ToString(),
+                    PointNumberOld = existingItem.PointNumber,
+                    PointNumberNew = request.PointNumber,
+                    ShouldScaleOld = existingItem.ShouldScale.ToString(),
+                    ShouldScaleNew = request.ShouldScale.ToString(),
+                    NormMinOld = existingItem.NormMin,
+                    NormMinNew = request.NormMin,
+                    NormMaxOld = existingItem.NormMax,
+                    NormMaxNew = request.NormMax,
+                    ScaleMinOld = existingItem.ScaleMin,
+                    ScaleMinNew = request.ScaleMin,
+                    ScaleMaxOld = existingItem.ScaleMax,
+                    ScaleMaxNew = request.ScaleMax,
+                    SaveIntervalOld = existingItem.SaveInterval,
+                    SaveIntervalNew = request.SaveInterval,
+                    SaveHistoricalIntervalOld = existingItem.SaveHistoricalInterval,
+                    SaveHistoricalIntervalNew = request.SaveHistoricalInterval,
+                    CalculationMethodOld = existingItem.CalculationMethod.ToString(),
+                    CalculationMethodNew = request.CalculationMethod.ToString(),
+                    NumberOfSamplesOld = existingItem.NumberOfSamples,
+                    NumberOfSamplesNew = request.NumberOfSamples,
+                    SaveOnChangeOld = existingItem.SaveOnChange.ToString(),
+                    SaveOnChangeNew = request.SaveOnChange.ToString(),
+                    SaveOnChangeRangeOld = existingItem.SaveOnChangeRange,
+                    SaveOnChangeRangeNew = request.SaveOnChangeRange,
+                    OnTextOld = existingItem.OnText,
+                    OnTextNew = request.OnText,
+                    OnTextFaOld = existingItem.OnTextFa,
+                    OnTextFaNew = request.OnTextFa,
+                    OffTextOld = existingItem.OffText,
+                    OffTextNew = request.OffText,
+                    OffTextFaOld = existingItem.OffTextFa,
+                    OffTextFaNew = request.OffTextFa,
+                    UnitOld = existingItem.Unit,
+                    UnitNew = request.Unit,
+                    UnitFaOld = existingItem.UnitFa,
+                    UnitFaNew = request.UnitFa,
+                    IsDisabledOld = existingItem.IsDisabled,
+                    IsDisabledNew = request.IsDisabled,
+                    IsCalibrationEnabledOld = existingItem.IsCalibrationEnabled,
+                    IsCalibrationEnabledNew = request.IsCalibrationEnabled,
+                    CalibrationAOld = existingItem.CalibrationA,
+                    CalibrationANew = request.CalibrationA,
+                    CalibrationBOld = existingItem.CalibrationB,
+                    CalibrationBNew = request.CalibrationB,
+                    InterfaceTypeOld = existingItem.InterfaceType.ToString(),
+                    InterfaceTypeNew = request.InterfaceType.ToString(),
+                    IsEditableOld = existingItem.IsEditable,
+                    IsEditableNew = request.IsEditable
+                },
+                itemId: request.Id,
+                userId: userGuid
+            );
 
             _logger.LogInformation("EditItem: Successfully updated item {ItemId} by user {UserId}", 
                 request.Id, userId);
@@ -2083,34 +2061,22 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             // Save changes to DB.User database
             await _context.SaveChangesAsync();
 
-            // Create audit log entry
-            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
-            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
-
-            var logValue = new
-            {
-                Id = existingItem.Id,
-                ItemType = existingItem.ItemType.ToString(),
-                ItemName = existingItem.ItemName,
-                ItemNameFa = existingItem.ItemNameFa,
-                PointNumber = existingItem.PointNumber,
-                DeletedPermissionsCount = itemPermissions.Count,
-                DeletedGroupAssignmentsCount = groupItems.Count
-            };
-
-            var logValueJson = JsonConvert.SerializeObject(logValue, Formatting.Indented);
-
-            await _context.AuditLogs.AddAsync(new AuditLog()
-            {
-                IsUser = true,
-                UserId = userGuid,
-                ItemId = request.Id,
-                ActionType = LogType.DeletePoint,
-                IpAddress = ipAddress,
-                LogValue = logValueJson,
-                Time = epochTime,
-            });
-            await _context.SaveChangesAsync();
+            // Create audit log entry using AuditService
+            await _auditService.LogAsync(
+                LogType.DeletePoint,
+                new
+                {
+                    Id = existingItem.Id,
+                    ItemType = existingItem.ItemType.ToString(),
+                    ItemName = existingItem.ItemName,
+                    ItemNameFa = existingItem.ItemNameFa,
+                    PointNumber = existingItem.PointNumber,
+                    DeletedPermissionsCount = itemPermissions.Count,
+                    DeletedGroupAssignmentsCount = groupItems.Count
+                },
+                itemId: request.Id,
+                userId: userGuid
+            );
 
             _logger.LogInformation("DeleteItem completed successfully: ItemId={ItemId}, User={UserId}", 
                 request.Id, userId);
@@ -2142,27 +2108,36 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <summary>
     /// Retrieve audit log entries for system activities within a date range
     /// </summary>
-    /// <param name="request">Audit log request containing start date (Unix timestamp), end date (Unix timestamp), and optional item ID filter</param>
-    /// <returns>List of audit log entries showing user actions and system events with user details</returns>
+    /// <param name="request">Audit log request containing start date (Unix timestamp), end date (Unix timestamp), optional item ID filter, and optional pagination parameters</param>
+    /// <returns>Paginated list of audit log entries showing user actions and system events with user details</returns>
     /// <remarks>
     /// Retrieves audit log entries within the specified date range. If itemId is provided,
     /// only returns logs for that specific item. Otherwise, returns all logs in the system.
     /// 
-    /// Sample request:
+    /// **Pagination:**
+    /// - Default page size is 50 records
+    /// - Maximum page size is 500 records
+    /// - Page numbers are 1-based (first page is 1, not 0)
+    /// - Response includes total count and total pages for navigation
+    /// 
+    /// Sample request with pagination:
     /// 
     ///     POST /api/monitoring/auditlog
     ///     {
     ///        "startDate": 1697587200,
     ///        "endDate": 1697673600,
-    ///        "itemId": "550e8400-e29b-41d4-a716-446655440001"
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440001",
+    ///        "page": 1,
+    ///        "pageSize": 50
     ///     }
     ///     
     /// Leave itemId empty or null to retrieve all audit logs for the date range.
+    /// Leave page and pageSize empty to use defaults (page 1, 50 records per page).
     /// Dates are Unix timestamps (seconds since epoch).
     /// Results are ordered by time descending (most recent first).
     /// </remarks>
-    /// <response code="200">Returns the audit log entries with success status</response>
-    /// <response code="400">Validation error - invalid request format, invalid GUID, or date range error</response>
+    /// <response code="200">Returns the paginated audit log entries with success status and pagination metadata</response>
+    /// <response code="400">Validation error - invalid request format, invalid GUID, date range error, or pagination parameters</response>
     /// <response code="401">Unauthorized - valid JWT token required</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("AuditLog")]
@@ -2231,22 +2206,29 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             _logger.LogDebug("Fetching audit logs: StartDate={StartDate}, EndDate={EndDate}, ItemId={ItemId}", 
                 request.StartDate, request.EndDate, request.ItemId ?? "ALL");
 
-            // Query audit logs
-            List<AuditLog> logs;
+            // Set pagination defaults
+            var page = request.Page ?? 1;
+            var pageSize = request.PageSize ?? 50;
+            pageSize = Math.Min(pageSize, 500); // Cap at 500
+
+            // Build base query
+            IQueryable<AuditLog> query = _context.AuditLogs
+                .Where(x => x.Time >= request.StartDate && x.Time <= request.EndDate);
+
             if (itemIdGuid.HasValue)
             {
-                logs = await _context.AuditLogs
-                    .Where(x => x.ItemId == itemIdGuid.Value && x.Time >= request.StartDate && x.Time <= request.EndDate)
-                    .OrderByDescending(x => x.Time)
-                    .ToListAsync();
+                query = query.Where(x => x.ItemId == itemIdGuid.Value);
             }
-            else
-            {
-                logs = await _context.AuditLogs
-                    .Where(x => x.Time >= request.StartDate && x.Time <= request.EndDate)
-                    .OrderByDescending(x => x.Time)
-                    .ToListAsync();
-            }
+
+            // Get total count before pagination
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination
+            var logs = await query
+                .OrderByDescending(x => x.Time)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             // Get all unique user IDs from logs to avoid N+1 query problem
             var userIds = logs
@@ -2261,7 +2243,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 .ToDictionaryAsync(u => u.Id, u => u.UserName);
 
             // Build response
-            var response = new AuditLogResponseDto();
+            var response = new AuditLogResponseDto
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
 
             foreach (var d in logs)
             {
@@ -2290,8 +2278,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 });
             }
 
-            _logger.LogInformation("AuditLog completed successfully: User {UserId}, LogCount={LogCount}", 
-                User.Identity?.Name, response.Data.Count);
+            _logger.LogInformation("AuditLog completed successfully: User {UserId}, Page={Page}/{TotalPages}, LogCount={LogCount}/{TotalCount}", 
+                User.Identity?.Name, page, response.TotalPages, response.Data.Count, totalCount);
 
             return Ok(new { success = true, data = response, message = "Audit logs retrieved successfully" });
         }
@@ -3426,34 +3414,21 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             _context.Groups.Remove(group);
             await _context.SaveChangesAsync();
 
-            // Create audit log entry
-            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
-            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
-            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-
-            var auditLogData = new
-            {
-                GroupId = group.Id,
-                GroupName = group.Name,
-                GroupNameFa = group.NameFa,
-                ParentId = group.ParentId,
-                DeletedBy = userId,
-                Action = "DeleteGroup"
-            };
-
-            var logValueJson = Newtonsoft.Json.JsonConvert.SerializeObject(auditLogData, Newtonsoft.Json.Formatting.Indented);
-
-            await _context.AuditLogs.AddAsync(new AuditLog
-            {
-                IsUser = true,
-                UserId = userGuid,
-                ItemId = null,
-                ActionType = LogType.DeleteGroup,
-                IpAddress = ipAddress,
-                LogValue = logValueJson,
-                Time = epochTime,
-            });
-            await _context.SaveChangesAsync();
+            // Create audit log entry using AuditService
+            await _auditService.LogAsync(
+                LogType.DeleteGroup,
+                new
+                {
+                    GroupId = group.Id,
+                    GroupName = group.Name,
+                    GroupNameFa = group.NameFa,
+                    ParentId = group.ParentId,
+                    DeletedBy = userId,
+                    Action = "DeleteGroup"
+                },
+                itemId: null,
+                userId: userGuid
+            );
 
             _logger.LogInformation("DeleteGroup: Successfully deleted group {GroupId} (Name: '{GroupName}') by user {UserId}", 
                 group.Id, group.Name, userId);

@@ -14,7 +14,7 @@ namespace DB.User.Models;
 [Index(nameof(Time), nameof(UserId), nameof(ItemId))]
 public class AuditLog
 {
-    [Key, Column("id", Order = 0)]
+    [Key, Column("id")]  // ✅ Single primary key
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public Guid Id { get; set; }
 
@@ -24,5 +24,5 @@ public class AuditLog
     [Column("ip_address")] public string? IpAddress { get; set; }
     [Column("action_type")] public LogType ActionType { get; set; }
     [Column("log_value")] public string? LogValue { get; set; }
-    [Key, Column("time", Order = 1)] public long Time { get; set; }
+    [Column("time")] public long Time { get; set; }  // ✅ Just an indexed column
 }
