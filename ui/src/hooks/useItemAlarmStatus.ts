@@ -1,14 +1,17 @@
 /**
  * Custom hook to check if an item has active alarms
- * Fetches active alarms from API and checks if itemId is in the list
- * Automatically re-checks on data fetch events
+ * CRITICAL: This hook does NOT make continuous API calls - it ONLY refreshes when SignalR triggers an update
+ * API calls are centralized in useActiveAlarmPolling and MonitoringContext
+ * 
+ * This hook checks alarm status when:
+ * 1. Component mounts
+ * 2. SignalR triggers an alarm refresh (via alarmRefreshTrigger from context)
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 import { useMonitoring } from './useMonitoring';
-import { StreamStatus } from '../contexts/MonitoringContext';
 import type { ActiveAlarm, AlarmDto } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -53,12 +56,14 @@ interface UseItemAlarmStatusOptions {
   itemId: string;
   
   /**
-   * Whether to enable automatic polling (default: false)
+   * DEPRECATED: Polling is no longer supported - alarm updates are pushed via SignalR
+   * This parameter is kept for backwards compatibility but has no effect
    */
   enablePolling?: boolean;
   
   /**
-   * Polling interval in milliseconds (default: 30000 = 30 seconds)
+   * DEPRECATED: Polling is no longer supported - alarm updates are pushed via SignalR
+   * This parameter is kept for backwards compatibility but has no effect
    */
   pollingInterval?: number;
 }
@@ -98,18 +103,19 @@ interface ItemAlarmStatus {
 /**
  * Hook to check if an item has active alarms
  * 
+ * CRITICAL: This hook does NOT poll or make continuous API calls
+ * It checks alarm status ONLY when triggered by SignalR updates
+ * 
  * @param options - Configuration options
  * @returns ItemAlarmStatus object with alarm state and refresh function
  * 
  * @example
  * const { hasAlarm, alarmPriority, isChecking, refresh } = useItemAlarmStatus({ 
- *   itemId: 'item-123',
- *   enablePolling: true,
- *   pollingInterval: 30000
+ *   itemId: 'item-123'
  * });
  */
 export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlarmStatus {
-  const { itemId, enablePolling = false, pollingInterval = 30000 } = options;
+  const { itemId } = options;
   
   const [hasAlarm, setHasAlarm] = useState<boolean>(false);
   const [alarmPriority, setAlarmPriority] = useState<1 | 2 | null>(null);
@@ -117,15 +123,21 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  const pollingTimerRef = useRef<number | null>(null);
   const isMountedRef = useRef<boolean>(true);
   
-  // Get monitoring context for SignalR status and refresh trigger
+  // Get monitoring context for alarm refresh trigger (SignalR updates)
   const { state } = useMonitoring();
-  const { alarmRefreshTrigger, activeAlarms: { streamStatus } } = state;
+  const { alarmRefreshTrigger } = state;
 
   /**
    * Check if item has active alarms
+   * CRITICAL: This function makes an API call to fetch the LATEST active alarms
+   * It is ONLY called when:
+   * 1. Component mounts (initial check)
+   * 2. SignalR triggers a refresh (alarmRefreshTrigger changes)
+   * 3. User manually calls refresh()
+   * 
+   * It does NOT poll on an interval - that would cause excessive API calls
    */
   const checkAlarmStatus = useCallback(async () => {
     if (!itemId || !isMountedRef.current) {
@@ -136,7 +148,7 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
       setIsChecking(true);
       setError(null);
 
-      logger.log(`Checking alarm status for item: ${itemId}`);
+      logger.log(`Checking alarm status for item: ${itemId} (triggered by SignalR or manual refresh)`);
 
       // Get items from IndexedDB to build the request
       const storedItems = await monitoringStorageHelpers.getStoredItems();
@@ -145,6 +157,7 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
         logger.warn('No items in IndexedDB, cannot check alarm status');
         setHasAlarm(false);
         setAlarmPriority(null);
+        setAlarms([]);
         return;
       }
 
@@ -157,6 +170,7 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
         logger.warn('No valid itemIds found');
         setHasAlarm(false);
         setAlarmPriority(null);
+        setAlarms([]);
         return;
       }
 
@@ -167,7 +181,7 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const activeAlarms: ActiveAlarm[] = (response as any).data?.data || [];
       
-      logger.log(`Fetched ${activeAlarms.length} active alarms`);
+      logger.log(`Fetched ${activeAlarms.length} active alarms from API`);
 
       // Find ALL active alarms for this itemId (there can be multiple)
       const itemAlarms = activeAlarms.filter(alarm => alarm.itemId === itemId);
@@ -248,69 +262,23 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
   }, [itemId]);
 
   /**
-   * Start polling with adaptive interval based on SignalR connection
-   */
-  const startPolling = useCallback(() => {
-    if (pollingTimerRef.current) {
-      clearInterval(pollingTimerRef.current);
-    }
-
-    if (enablePolling) {
-      // Use different polling intervals based on SignalR connection status
-      let actualInterval: number;
-      if (streamStatus === StreamStatus.CONNECTED) {
-        // SignalR is connected - poll every 1 minute as requested
-        actualInterval = 60000; // 1 minute
-      } else {
-        // SignalR is not connected - use provided interval (default 30s)
-        actualInterval = pollingInterval;
-      }
-
-      if (actualInterval > 0) {
-        logger.log(`Starting alarm status polling for item ${itemId}`, { 
-          interval: actualInterval,
-          signalRStatus: streamStatus,
-          reason: streamStatus === StreamStatus.CONNECTED ? 'SignalR connected (1min)' : 'SignalR disconnected (fallback)'
-        });
-        
-        pollingTimerRef.current = setInterval(() => {
-          checkAlarmStatus();
-        }, actualInterval);
-      }
-    }
-  }, [enablePolling, pollingInterval, checkAlarmStatus, itemId, streamStatus]);
-
-  /**
-   * Stop polling
-   */
-  const stopPolling = useCallback(() => {
-    if (pollingTimerRef.current) {
-      logger.log(`Stopping alarm status polling for item ${itemId}`);
-      clearInterval(pollingTimerRef.current);
-      pollingTimerRef.current = null;
-    }
-  }, [itemId]);
-
-  /**
-   * Initial check and polling setup
+   * Initial check on mount
    */
   useEffect(() => {
     isMountedRef.current = true;
     
-    // Initial check
+    // Initial check when component mounts
     checkAlarmStatus();
-    
-    // Start polling if enabled
-    startPolling();
     
     return () => {
       isMountedRef.current = false;
-      stopPolling();
     };
-  }, [checkAlarmStatus, startPolling, stopPolling]);
+  }, [checkAlarmStatus]);
 
   /**
    * Listen to SignalR alarm refresh trigger for real-time updates
+   * CRITICAL: This is the ONLY way alarms are refreshed after initial check
+   * No polling - updates are pushed via SignalR
    */
   useEffect(() => {
     if (alarmRefreshTrigger > 0) {
@@ -320,17 +288,6 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
       checkAlarmStatus();
     }
   }, [alarmRefreshTrigger, checkAlarmStatus, itemId]);
-
-  /**
-   * Refresh polling when options change or SignalR status changes
-   */
-  useEffect(() => {
-    if (enablePolling) {
-      startPolling();
-    } else {
-      stopPolling();
-    }
-  }, [enablePolling, pollingInterval, streamStatus, startPolling, stopPolling]);
 
   return {
     hasAlarm,

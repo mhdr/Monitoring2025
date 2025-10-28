@@ -191,12 +191,17 @@ const MonitoringPage: React.FC = () => {
   });
 
   // Get item IDs for current folder (for values polling)
-  const currentFolderItemIds = useMemo(() => {
-    return currentFolderItems.map((item) => item.id);
+  // CRITICAL: Stringify to stabilize the dependency - only re-poll when IDs actually change
+  const currentFolderItemIdsString = useMemo(() => {
+    const ids = currentFolderItems.map((item) => item.id);
+    return JSON.stringify(ids);
   }, [currentFolderItems]);
 
-  // Poll values every 5 seconds for items in current folder
+  // Poll values every 4 seconds for items in current folder
   useEffect(() => {
+    // Parse the stringified IDs
+    const currentFolderItemIds: string[] = JSON.parse(currentFolderItemIdsString);
+    
     // Skip polling if there are no items in the current folder
     if (currentFolderItemIds.length === 0) {
       return;
@@ -205,10 +210,10 @@ const MonitoringPage: React.FC = () => {
     // Fetch values immediately
     fetchValues(currentFolderItemIds);
 
-    // Set up polling interval (every 5 seconds)
+    // Set up polling interval (every 4 seconds as per requirement)
     pollingIntervalRef.current = window.setInterval(() => {
       fetchValues(currentFolderItemIds);
-    }, 5000);
+    }, 4000);
 
     // Cleanup on unmount or when item IDs change
     return () => {
@@ -217,7 +222,10 @@ const MonitoringPage: React.FC = () => {
         pollingIntervalRef.current = null;
       }
     };
-  }, [currentFolderItemIds, fetchValues]);
+    // CRITICAL: Only depend on the stringified IDs, not fetchValues
+    // fetchValues is stable (useCallback in context), no need to include it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentFolderItemIdsString]);
 
   // Manage refresh indicator visibility with minimum display time
   useEffect(() => {
