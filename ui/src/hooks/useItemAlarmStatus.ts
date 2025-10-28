@@ -178,48 +178,31 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
         // Fetch alarm configurations from IndexedDB to get messages and priorities
         const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
         
-        // CRITICAL FIX: Simplify alarm array extraction - getStoredAlarms() returns AlarmDto[] | null
-        const alarmsArray: AlarmDto[] = Array.isArray(storedAlarms) ? storedAlarms : [];
-        
-        if (alarmsArray.length === 0) {
-          logger.warn(`No alarm configurations found in IndexedDB for item ${itemId}`);
+        // Handle the nested structure: {data: AlarmDto[]} or AlarmDto[]
+        let alarmsArray: AlarmDto[] = [];
+        if (storedAlarms) {
+          if (Array.isArray(storedAlarms)) {
+            alarmsArray = storedAlarms;
+          } else if (typeof storedAlarms === 'object' && 'data' in storedAlarms) {
+            const alarmsResponse = storedAlarms as { data: AlarmDto[] };
+            if (Array.isArray(alarmsResponse.data)) {
+              alarmsArray = alarmsResponse.data;
+            }
+          }
         }
         
         // Build array of alarm details with messages
         const alarmDetails: AlarmDetail[] = itemAlarms
           .map((activeAlarm) => {
-            if (!activeAlarm.alarmId) {
-              logger.warn('Active alarm missing alarmId', { activeAlarm });
-              return null;
-            }
-            
             const alarmConfig = alarmsArray.find((alarm: AlarmDto) => alarm.id === activeAlarm.alarmId);
             
-            if (!alarmConfig) {
-              logger.warn(`Alarm config not found for alarmId: ${activeAlarm.alarmId}`, {
-                itemId,
-                alarmId: activeAlarm.alarmId,
-                availableAlarmIds: alarmsArray.map(a => a.id).slice(0, 10), // Log first 10 for debugging
-              });
-              // CRITICAL FIX: Return null if alarm config not found instead of creating partial record
-              // This prevents incorrect priority defaulting to 1 (Warning)
-              return null;
-            }
-            
-            // CRITICAL FIX: Use alarmConfig.alarmPriority directly without fallback
-            // If priority is missing, log error and skip this alarm
-            if (!alarmConfig.alarmPriority) {
-              logger.error(`Alarm config missing priority for alarmId: ${activeAlarm.alarmId}`, {
-                itemId,
-                alarmId: activeAlarm.alarmId,
-                alarmConfig,
-              });
+            if (!alarmConfig || !activeAlarm.alarmId) {
               return null;
             }
             
             return {
               alarmId: activeAlarm.alarmId,
-              priority: alarmConfig.alarmPriority, // 1 or 2, no fallback
+              priority: alarmConfig.alarmPriority || 1,
               message: alarmConfig.message,
               messageFa: alarmConfig.messageFa,
               activatedAt: activeAlarm.time,
@@ -228,14 +211,6 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
           })
           .filter((detail): detail is AlarmDetail => detail !== null);
         
-        if (alarmDetails.length === 0) {
-          logger.warn(`No valid alarm details found for item ${itemId} (${itemAlarms.length} active alarms, but configs missing or invalid)`);
-          setHasAlarm(false);
-          setAlarmPriority(null);
-          setAlarms([]);
-          return;
-        }
-        
         // Determine highest priority (2 = Alarm is higher than 1 = Warning)
         const highestPriority = alarmDetails.reduce<1 | 2>((highest, alarm) => {
           return alarm.priority === 2 ? 2 : highest;
@@ -243,8 +218,8 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
         
         logger.log(`Item ${itemId} HAS ${alarmDetails.length} active alarm(s)`, { 
           alarmCount: alarmDetails.length,
-          highestPriority: highestPriority === 2 ? 'Alarm (2)' : 'Warning (1)',
-          alarmIds: alarmDetails.map(a => `${a.alarmId} (priority: ${a.priority})`),
+          highestPriority: highestPriority,
+          alarmIds: alarmDetails.map(a => a.alarmId),
         });
         
         setHasAlarm(true);
