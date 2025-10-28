@@ -2112,7 +2112,12 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <returns>Paginated list of audit log entries showing user actions and system events with user details</returns>
     /// <remarks>
     /// Retrieves audit log entries within the specified date range. If itemId is provided,
-    /// only returns logs for that specific item. Otherwise, returns all logs in the system.
+    /// only returns logs for that specific item. Otherwise, returns logs for all items the user has access to.
+    /// 
+    /// **Access Control:**
+    /// - Admin users can see all audit logs in the system
+    /// - Regular users can only see audit logs for items they have permission to access
+    /// - Logs without associated items (system-level logs) are visible to all authenticated users
     /// 
     /// **Pagination:**
     /// - Default page size is 50 records
@@ -2131,7 +2136,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///        "pageSize": 50
     ///     }
     ///     
-    /// Leave itemId empty or null to retrieve all audit logs for the date range.
+    /// Leave itemId empty or null to retrieve all accessible audit logs for the date range.
     /// Leave page and pageSize empty to use defaults (page 1, 50 records per page).
     /// Dates are Unix timestamps (seconds since epoch).
     /// Results are ordered by time descending (most recent first).
@@ -2139,11 +2144,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <response code="200">Returns the paginated audit log entries with success status and pagination metadata</response>
     /// <response code="400">Validation error - invalid request format, invalid GUID, date range error, or pagination parameters</response>
     /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - user does not have permission to access the requested item</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("AuditLog")]
     [ProducesResponseType(typeof(AuditLogResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AuditLog([FromBody] AuditLogRequestDto request)
     {
@@ -2177,6 +2184,17 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 return Unauthorized(new { success = false, message = "Invalid or missing authentication token" });
             }
 
+            // Get user information to check admin status
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("AuditLog user not found: {UserId}", userId);
+                return Unauthorized(new { success = false, message = "User not found" });
+            }
+
+            var isAdmin = user.UserName?.ToLower() == "admin";
+            var userGuid = Guid.Parse(userId);
+
             // Validate date range
             if (request.StartDate <= 0 || request.EndDate <= 0)
             {
@@ -2203,8 +2221,31 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 itemIdGuid = parsedGuid;
             }
 
-            _logger.LogDebug("Fetching audit logs: StartDate={StartDate}, EndDate={EndDate}, ItemId={ItemId}", 
-                request.StartDate, request.EndDate, request.ItemId ?? "ALL");
+            // For non-admin users, get the list of items they have permission to access
+            List<Guid> accessibleItemIds = new List<Guid>();
+            if (!isAdmin)
+            {
+                var permissions = await _context.ItemPermissions
+                    .Where(x => x.UserId == userGuid)
+                    .Select(x => x.ItemId)
+                    .ToListAsync();
+                
+                accessibleItemIds = permissions;
+
+                // If user requested a specific item, check if they have access to it
+                if (itemIdGuid.HasValue && !accessibleItemIds.Contains(itemIdGuid.Value))
+                {
+                    _logger.LogWarning("AuditLog forbidden access attempt: User {UserId} requested item {ItemId} without permission",
+                        userId, itemIdGuid.Value);
+                    return StatusCode(StatusCodes.Status403Forbidden, 
+                        new { success = false, message = "You do not have permission to access logs for this item" });
+                }
+
+                _logger.LogDebug("Non-admin user {UserId} has access to {Count} items", userId, accessibleItemIds.Count);
+            }
+
+            _logger.LogDebug("Fetching audit logs: StartDate={StartDate}, EndDate={EndDate}, ItemId={ItemId}, IsAdmin={IsAdmin}", 
+                request.StartDate, request.EndDate, request.ItemId ?? "ALL", isAdmin);
 
             // Set pagination defaults
             var page = request.Page ?? 1;
@@ -2215,10 +2256,18 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             IQueryable<AuditLog> query = _context.AuditLogs
                 .Where(x => x.Time >= request.StartDate && x.Time <= request.EndDate);
 
+            // Apply item filtering
             if (itemIdGuid.HasValue)
             {
+                // Specific item requested
                 query = query.Where(x => x.ItemId == itemIdGuid.Value);
             }
+            else if (!isAdmin)
+            {
+                // Non-admin user: filter to only accessible items OR logs without an item association (system logs)
+                query = query.Where(x => x.ItemId == null || accessibleItemIds.Contains(x.ItemId.Value));
+            }
+            // Admin users: no filtering, see all logs
 
             // Get total count before pagination
             var totalCount = await query.CountAsync();
@@ -2278,8 +2327,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 });
             }
 
-            _logger.LogInformation("AuditLog completed successfully: User {UserId}, Page={Page}/{TotalPages}, LogCount={LogCount}/{TotalCount}", 
-                User.Identity?.Name, page, response.TotalPages, response.Data.Count, totalCount);
+            _logger.LogInformation("AuditLog completed successfully: User {UserId}, IsAdmin={IsAdmin}, Page={Page}/{TotalPages}, LogCount={LogCount}/{TotalCount}", 
+                User.Identity?.Name, isAdmin, page, response.TotalPages, response.Data.Count, totalCount);
 
             return Ok(new { success = true, data = response, message = "Audit logs retrieved successfully" });
         }

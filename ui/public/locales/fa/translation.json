@@ -174,7 +174,9 @@
     "create": "ایجاد",
     "creating": "در حال ایجاد...",
     "delete": "حذف",
-    "deleting": "در حال حذف..."
+    "deleting": "در حال حذف...",
+    "yes": "بله",
+    "no": "خیر"
   },
   "settings": {
     "pageTitle": "تنظیمات",
@@ -726,6 +728,16 @@
     },
     "systemUser": "سیستم",
     "userAction": "عملیات کاربر",
-    "systemAction": "عملیات سیستم"
+    "systemAction": "عملیات سیستم",
+    "detailDialog": {
+      "title": "جزئیات گزارش بازرسی",
+      "detailsSection": "جزئیات",
+      "point": "نقطه",
+      "notApplicable": "ندارد",
+      "unknownPoint": "نقطه نامشخص",
+      "unknownUser": "کاربر نامشخص",
+      "unknown": "نامشخص",
+      "noDetails": "جزئیات موجود نیست"
+    }
   }
 }

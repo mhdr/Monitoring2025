@@ -174,7 +174,9 @@
     "create": "Create",
     "creating": "Creating...",
     "delete": "Delete",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "yes": "Yes",
+    "no": "No"
   },
   "settings": {
     "pageTitle": "Settings",
@@ -726,6 +728,16 @@
     },
     "systemUser": "System",
     "userAction": "User Action",
-    "systemAction": "System Action"
+    "systemAction": "System Action",
+    "detailDialog": {
+      "title": "Audit Trail Details",
+      "detailsSection": "Details",
+      "point": "Point",
+      "notApplicable": "N/A",
+      "unknownPoint": "Unknown Point",
+      "unknownUser": "Unknown User",
+      "unknown": "Unknown",
+      "noDetails": "No details available"
+    }
   }
 }

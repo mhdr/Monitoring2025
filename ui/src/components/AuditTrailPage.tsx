@@ -23,7 +23,8 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useAGGrid } from '../hooks/useAGGrid';
 import { useMonitoring } from '../hooks/useMonitoring';
 import AGGridWrapper from './AGGridWrapper';
-import type { ColDef } from 'ag-grid-community';
+import AuditTrailDetailDialog from './AuditTrailDetailDialog';
+import type { ColDef, RowClickedEvent } from 'ag-grid-community';
 import type { AuditLogRequestDto, AuditLogResponseDto, DataDto, LogType } from '../types/api';
 import type { AGGridRowData } from '../types/agGrid';
 import { LogTypeEnum } from '../types/api';
@@ -70,6 +71,10 @@ const AuditTrailPage: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(50);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(0);
+
+  // Dialog state
+  const [selectedRow, setSelectedRow] = useState<DataDto | null>(null);
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
   /**
    * Fetch audit logs from API
@@ -322,6 +327,25 @@ const AuditTrailPage: React.FC = () => {
   );
 
   /**
+   * Handle row click - open detail dialog
+   */
+  const handleRowClick = useCallback((event: RowClickedEvent<DataDto>) => {
+    if (event.data) {
+      logger.log('Row clicked:', event.data);
+      setSelectedRow(event.data);
+      setDialogOpen(true);
+    }
+  }, []);
+
+  /**
+   * Handle dialog close
+   */
+  const handleDialogClose = useCallback(() => {
+    setDialogOpen(false);
+    setSelectedRow(null);
+  }, []);
+
+  /**
    * AG Grid setup
    */
   const { handleGridReady } = useAGGrid({});
@@ -446,6 +470,7 @@ const AuditTrailPage: React.FC = () => {
                   enableRtl: isRTL,
                   pagination: false,
                   suppressContextMenu: true,
+                  onRowClicked: handleRowClick,
                 }}
               />
             </Box>
@@ -509,6 +534,9 @@ const AuditTrailPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Detail Dialog */}
+      <AuditTrailDetailDialog open={dialogOpen} onClose={handleDialogClose} data={selectedRow} />
     </Container>
   );
 };
