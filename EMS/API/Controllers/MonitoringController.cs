@@ -2745,7 +2745,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 IsUser = true,
                 UserId = userGuid,
                 ItemId = null,
-                ActionType = LogType.EditGroup, // Using EditGroup for AddGroup operation
+                ActionType = LogType.AddGroup,
                 IpAddress = ipAddress,
                 LogValue = logValueJson,
                 Time = epochTime,

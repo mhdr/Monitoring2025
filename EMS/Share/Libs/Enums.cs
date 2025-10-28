@@ -41,9 +41,16 @@ public enum LogType
     AddExternalAlarm = 8,
     DeleteExternalAlarm = 9,
     EditExternalAlarm = 10,
-	AddPoint = 11,
-	DeletePoint = 12,
-	DeleteGroup = 13
+    AddPoint = 11,
+    DeletePoint = 12,
+    DeleteGroup = 13,
+    AddGroup = 14,
+    EditUser = 15,
+    AddUser = 16,
+    DeleteUser = 17,
+    EditRole = 18,
+    AddRole = 19,
+    DeleteRole = 20    
 }
 
 public enum DataType
@@ -79,8 +86,8 @@ public enum SaveOnChange
 
 public enum IoOperationType
 {
-    Read=1,
-    Write=2,
+    Read = 1,
+    Write = 2,
 }
 
 public enum InterfaceType
