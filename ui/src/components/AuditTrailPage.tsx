@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Container,
   Card,
@@ -9,6 +9,7 @@ import {
   TextField,
   MenuItem,
   Button,
+  ButtonGroup,
   Alert,
   CircularProgress,
   Stack,
@@ -24,6 +25,7 @@ import { useAGGrid } from '../hooks/useAGGrid';
 import { useMonitoring } from '../hooks/useMonitoring';
 import AGGridWrapper from './AGGridWrapper';
 import AuditTrailDetailDialog from './AuditTrailDetailDialog';
+import SeparatedDateTimePicker from './SeparatedDateTimePicker';
 import type { ColDef, RowClickedEvent } from 'ag-grid-community';
 import type { AuditLogRequestDto, AuditLogResponseDto, DataDto, LogType } from '../types/api';
 import type { AGGridRowData } from '../types/agGrid';
@@ -34,6 +36,9 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('AuditTrailPage');
 
+// Date range preset types
+type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
+
 const AuditTrailPage: React.FC = () => {
   const { t, language } = useLanguage();
   const theme = useTheme();
@@ -42,16 +47,9 @@ const AuditTrailPage: React.FC = () => {
   const items = monitoringState.items;
 
   // Filter state
-  const [startDate, setStartDate] = useState<string>(() => {
-    // Default: 7 days ago
-    const date = new Date();
-    date.setDate(date.getDate() - 7);
-    return date.toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState<string>(() => {
-    // Default: today
-    return new Date().toISOString().split('T')[0];
-  });
+  const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>('last7Days');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
   const [selectedLogType, setSelectedLogType] = useState<LogType | 'all'>('all');
   const [itemIdFilter, setItemIdFilter] = useState<string>('');
 
@@ -70,6 +68,38 @@ const AuditTrailPage: React.FC = () => {
   const [selectedRow, setSelectedRow] = useState<DataDto | null>(null);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
+  // Calculate Unix timestamps based on date range
+  const getDateRange = useMemo(() => {
+    const now = Math.floor(Date.now() / 1000); // Current time in Unix seconds
+    let startDate: number;
+    let endDate: number = now;
+
+    switch (selectedPreset) {
+      case 'last24Hours':
+        startDate = now - 24 * 60 * 60; // 24 hours ago
+        break;
+      case 'last7Days':
+        startDate = now - 7 * 24 * 60 * 60; // 7 days ago
+        break;
+      case 'last30Days':
+        startDate = now - 30 * 24 * 60 * 60; // 30 days ago
+        break;
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          startDate = Math.floor(new Date(customStartDate).getTime() / 1000);
+          endDate = Math.floor(new Date(customEndDate).getTime() / 1000);
+        } else {
+          // Default to last 7 days if custom dates not set
+          startDate = now - 7 * 24 * 60 * 60;
+        }
+        break;
+      default:
+        startDate = now - 7 * 24 * 60 * 60;
+    }
+
+    return { startDate, endDate };
+  }, [selectedPreset, customStartDate, customEndDate]);
+
   /**
    * Fetch audit logs from API
    */
@@ -78,13 +108,11 @@ const AuditTrailPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Convert date strings to Unix timestamps (start of day and end of day)
-      const startTimestamp = new Date(startDate).setHours(0, 0, 0, 0) / 1000;
-      const endTimestamp = new Date(endDate).setHours(23, 59, 59, 999) / 1000;
+      const { startDate, endDate } = getDateRange;
 
       const requestDto: AuditLogRequestDto = {
-        startDate: Math.floor(startTimestamp),
-        endDate: Math.floor(endTimestamp),
+        startDate,
+        endDate,
         itemId: itemIdFilter.trim() || null,
         page: currentPage,
         pageSize: pageSize,
@@ -117,7 +145,7 @@ const AuditTrailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, itemIdFilter, currentPage, pageSize, selectedLogType, t]);
+  }, [getDateRange, itemIdFilter, currentPage, pageSize, selectedLogType, t]);
 
   /**
    * Handle filter application
@@ -131,14 +159,48 @@ const AuditTrailPage: React.FC = () => {
    * Handle clear filters
    */
   const handleClearFilters = useCallback(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 7);
-    setStartDate(date.toISOString().split('T')[0]);
-    setEndDate(new Date().toISOString().split('T')[0]);
+    setSelectedPreset('last7Days');
+    setCustomStartDate('');
+    setCustomEndDate('');
     setSelectedLogType('all');
     setItemIdFilter('');
     setCurrentPage(1);
   }, []);
+
+  /**
+   * Handle date range preset change
+   */
+  const handlePresetChange = (preset: DateRangePreset) => {
+    setSelectedPreset(preset);
+    if (preset !== 'custom') {
+      setCustomStartDate('');
+      setCustomEndDate('');
+    }
+  };
+
+  /**
+   * Convert Unix timestamp to datetime-local format for input
+   */
+  const unixToDateTimeLocal = (unix: number): string => {
+    const date = new Date(unix * 1000);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  /**
+   * Initialize custom dates when switching to custom preset
+   */
+  useEffect(() => {
+    if (selectedPreset === 'custom' && !customStartDate && !customEndDate) {
+      const { startDate, endDate } = getDateRange;
+      setCustomStartDate(unixToDateTimeLocal(startDate));
+      setCustomEndDate(unixToDateTimeLocal(endDate));
+    }
+  }, [selectedPreset, customStartDate, customEndDate, getDateRange]);
 
   /**
    * Handle page change
@@ -344,6 +406,12 @@ const AuditTrailPage: React.FC = () => {
    */
   const { handleGridReady } = useAGGrid({});
 
+  // Fetch data on mount and when preset changes (not when custom dates change)
+  // Reset to page 1 when date range changes
+  useEffect(() => {
+    setCurrentPage(1); // Reset to first page
+  }, [selectedPreset]);
+
   // Fetch data on mount and when pagination changes
   React.useEffect(() => {
     if (currentPage > 0) {
@@ -370,26 +438,81 @@ const AuditTrailPage: React.FC = () => {
         <CardContent data-id-ref="audit-trail-page-card-body" sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: 2 }}>
           {/* Filters Section */}
           <Box data-id-ref="audit-trail-filters" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} data-id-ref="audit-trail-date-filters">
-              <TextField
-                label={t('auditTrailPage.startDateLabel')}
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-                data-id-ref="audit-trail-start-date"
-              />
-              <TextField
-                label={t('auditTrailPage.endDateLabel')}
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-                data-id-ref="audit-trail-end-date"
-              />
-            </Stack>
+            {/* Date Range Selection */}
+            <Box data-id-ref="audit-trail-date-range-section">
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                {t('dateRange')}
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  alignItems: { xs: 'stretch', md: 'flex-end' },
+                  gap: 2,
+                }}
+              >
+                {/* Preset Buttons */}
+                <ButtonGroup
+                  variant="outlined"
+                  size="small"
+                  sx={{ flexWrap: 'wrap' }}
+                  data-id-ref="audit-trail-preset-button-group"
+                >
+                  <Button
+                    variant={selectedPreset === 'last24Hours' ? 'contained' : 'outlined'}
+                    onClick={() => handlePresetChange('last24Hours')}
+                    data-id-ref="audit-trail-preset-24h-button"
+                  >
+                    {t('last24Hours')}
+                  </Button>
+                  <Button
+                    variant={selectedPreset === 'last7Days' ? 'contained' : 'outlined'}
+                    onClick={() => handlePresetChange('last7Days')}
+                    data-id-ref="audit-trail-preset-7d-button"
+                  >
+                    {t('last7Days')}
+                  </Button>
+                  <Button
+                    variant={selectedPreset === 'last30Days' ? 'contained' : 'outlined'}
+                    onClick={() => handlePresetChange('last30Days')}
+                    data-id-ref="audit-trail-preset-30d-button"
+                  >
+                    {t('last30Days')}
+                  </Button>
+                  <Button
+                    variant={selectedPreset === 'custom' ? 'contained' : 'outlined'}
+                    onClick={() => handlePresetChange('custom')}
+                    data-id-ref="audit-trail-preset-custom-button"
+                  >
+                    {t('customRange')}
+                  </Button>
+                </ButtonGroup>
+
+                {/* Custom Date Range Picker (only shown when custom is selected) */}
+                {selectedPreset === 'custom' && (
+                  <>
+                    <SeparatedDateTimePicker
+                      id="audit-trail-start"
+                      value={customStartDate}
+                      onChange={setCustomStartDate}
+                      data-id-ref="audit-trail-start-datetime"
+                      className=""
+                      dateLabel={t('startDate')}
+                      timeLabel={t('startTime')}
+                    />
+                    <SeparatedDateTimePicker
+                      id="audit-trail-end"
+                      value={customEndDate}
+                      onChange={setCustomEndDate}
+                      data-id-ref="audit-trail-end-datetime"
+                      className=""
+                      dateLabel={t('endDate')}
+                      timeLabel={t('endTime')}
+                    />
+                  </>
+                )}
+              </Box>
+            </Box>
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} data-id-ref="audit-trail-type-filters">
               <FormControl fullWidth data-id-ref="audit-trail-log-type-filter">
