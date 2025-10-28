@@ -1,12 +1,13 @@
 import React from 'react';
 import { Card, CardActionArea, CardContent, Typography, Chip, Box, Stack, Fade, Badge, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-import { Folder, Warning as WarningIcon, Error as ErrorIcon, DriveFileMove as MoveFolderIcon, DeleteOutline as DeleteIcon } from '@mui/icons-material';
+import { Folder, Warning as WarningIcon, Error as ErrorIcon, DriveFileMove as MoveFolderIcon, Edit as EditIcon, DeleteOutline as DeleteIcon } from '@mui/icons-material';
 import type { Group } from '../types/api';
 import { useLanguage } from '../hooks/useLanguage';
 import { useGroupAlarmStatus } from '../hooks/useGroupAlarmStatus';
 import { useAuth } from '../hooks/useAuth';
 import { toPersianDigits } from '../utils/numberFormatting';
 import MoveGroupDialog from './MoveGroupDialog';
+import EditGroupDialog from './EditGroupDialog';
 import DeleteGroupDialog from './DeleteGroupDialog';
 
 interface GroupCardProps {
@@ -22,6 +23,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
   const [elevation, setElevation] = React.useState<number>(1);
   const [contextMenu, setContextMenu] = React.useState<{ mouseX: number; mouseY: number } | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = React.useState<boolean>(false);
+  const [editDialogOpen, setEditDialogOpen] = React.useState<boolean>(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState<boolean>(false);
   
   // Get alarm/warning status for this group and all descendants
@@ -60,6 +62,12 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
   // Handle move folder action
   const handleMoveFolder = () => {
     setMoveDialogOpen(true);
+    handleContextMenuClose();
+  };
+
+  // Handle edit folder action
+  const handleEditFolder = () => {
+    setEditDialogOpen(true);
     handleContextMenuClose();
   };
 
@@ -266,6 +274,12 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
           </ListItemIcon>
           <ListItemText>{t('groupCard.adminMenu.moveFolder')}</ListItemText>
         </MenuItem>
+        <MenuItem onClick={handleEditFolder} data-id-ref="group-card-menu-edit-folder">
+          <ListItemIcon>
+            <EditIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t('groupCard.adminMenu.editFolder')}</ListItemText>
+        </MenuItem>
         <MenuItem onClick={handleDeleteFolder} data-id-ref="group-card-menu-delete-folder">
           <ListItemIcon>
             <DeleteIcon fontSize="small" />
@@ -282,6 +296,19 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
         onClose={() => setMoveDialogOpen(false)}
         onSuccess={() => {
           setMoveDialogOpen(false);
+          // Success feedback is handled by the dialog component
+        }}
+      />
+
+      {/* Edit Group Dialog */}
+      <EditGroupDialog
+        open={editDialogOpen}
+        groupId={group.id}
+        groupName={group.name}
+        groupNameFa={group.nameFa}
+        onClose={() => setEditDialogOpen(false)}
+        onSuccess={() => {
+          setEditDialogOpen(false);
           // Success feedback is handled by the dialog component
         }}
       />

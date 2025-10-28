@@ -660,7 +660,34 @@
     "adminMenu": {
       "title": "منوی مدیریت",
       "moveFolder": "انتقال پوشه",
+      "editFolder": "ویرایش پوشه",
       "deleteFolder": "حذف پوشه"
+    }
+  },
+  "editGroupDialog": {
+    "title": "ویرایش پوشه",
+    "currentNamesLabel": "نام‌های فعلی",
+    "currentNameLabel": "نام فعلی",
+    "englishLabel": "انگلیسی",
+    "persianLabel": "فارسی",
+    "notSet": "(تنظیم نشده)",
+    "englishNameLabel": "نام انگلیسی",
+    "persianNameLabel": "نام فارسی",
+    "englishNamePlaceholder": "Enter folder name in English",
+    "persianNamePlaceholder": "نام پوشه را به فارسی وارد کنید",
+    "atLeastOneRequired": "حداقل یک نام (انگلیسی یا فارسی) الزامی است",
+    "newNameLabel": "نام جدید پوشه",
+    "saveButton": "ذخیره تغییرات",
+    "saving": "در حال ذخیره...",
+    "success": "نام پوشه با موفقیت به‌روزرسانی شد",
+    "validation": {
+      "nameRequired": "نام پوشه الزامی است",
+      "atLeastOneName": "حداقل یک نام (انگلیسی یا فارسی) الزامی است",
+      "nameUnchanged": "لطفاً نام متفاوتی وارد کنید"
+    },
+    "errors": {
+      "editFailed": "به‌روزرسانی نام پوشه ناموفق بود",
+      "unknownError": "خطای نامشخصی رخ داد"
     }
   },
   "deleteGroupDialog": {

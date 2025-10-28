@@ -660,7 +660,34 @@
     "adminMenu": {
       "title": "Admin Menu",
       "moveFolder": "Move Folder",
+      "editFolder": "Edit Folder",
       "deleteFolder": "Delete Folder"
+    }
+  },
+  "editGroupDialog": {
+    "title": "Edit Folder",
+    "currentNamesLabel": "Current Names",
+    "currentNameLabel": "Current Name",
+    "englishLabel": "English",
+    "persianLabel": "Persian/Farsi",
+    "notSet": "(Not set)",
+    "englishNameLabel": "English Name",
+    "persianNameLabel": "Persian/Farsi Name",
+    "englishNamePlaceholder": "Enter folder name in English",
+    "persianNamePlaceholder": "نام پوشه را به فارسی وارد کنید",
+    "atLeastOneRequired": "At least one name (English or Persian) is required",
+    "newNameLabel": "New Folder Name",
+    "saveButton": "Save Changes",
+    "saving": "Saving...",
+    "success": "Folder name updated successfully",
+    "validation": {
+      "nameRequired": "Folder name is required",
+      "atLeastOneName": "At least one name (English or Persian) is required",
+      "nameUnchanged": "Please enter a different name"
+    },
+    "errors": {
+      "editFailed": "Failed to update folder name",
+      "unknownError": "An unknown error occurred"
     }
   },
   "deleteGroupDialog": {

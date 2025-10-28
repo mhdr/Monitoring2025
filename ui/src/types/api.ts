@@ -697,6 +697,16 @@ export interface AddGroupResponseDto {
 export interface EditGroupRequestDto {
   id: string; // UUID
   name?: string | null;
+  nameFa?: string | null;
+}
+
+export interface EditGroupResponseDto {
+  /** Indicates whether the group was updated successfully */
+  success: boolean;
+  /** Descriptive message about the operation result */
+  message?: string | null;
+  /** Error type if operation failed */
+  error?: number | null;
 }
 
 export interface DeleteGroupRequestDto {

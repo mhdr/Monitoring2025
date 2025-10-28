@@ -34,6 +34,7 @@ import type {
   AddGroupRequestDto,
   AddGroupResponseDto,
   EditGroupRequestDto,
+  EditGroupResponseDto,
   DeleteGroupRequestDto,
   DeleteGroupResponseDto,
   MoveGroupRequestDto,
@@ -494,9 +495,9 @@ export const addGroup = async (data: AddGroupRequestDto): Promise<AddGroupRespon
 /**
  * Edit an existing monitoring group
  */
-export const editGroup = async (data: EditGroupRequestDto): Promise<EditPointResponseDto> => {
+export const editGroup = async (data: EditGroupRequestDto): Promise<EditGroupResponseDto> => {
   try {
-    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/EditGroup', data);
+    const response = await apiClient.post<EditGroupResponseDto>('/api/Monitoring/EditGroup', data);
     return response.data;
   } catch (error) {
     handleApiError(error);
