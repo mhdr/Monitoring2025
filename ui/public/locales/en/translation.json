@@ -19,6 +19,7 @@
   "add": "Add",
   "search": "Search",
   "and": "and",
+  "seconds": "sec",
   "languageSwitch": "فارسی",
   "systemDescription": "This system is designed for warehouse monitoring and management.",
   "notificationDescription": "Manage notifications and alerts",
@@ -441,6 +442,9 @@
     "analogCommand": "Analog Value",
     "setValue": "Set Value",
     "rangeHelper": "Range: {{min}} to {{max}}",
+    "duration": "Duration (seconds)",
+    "durationHelper": "Optional: How long the value should persist (leave empty for indefinite)",
+    "durationOptional": "Optional",
     "sendCommand": "Send Command",
     "sending": "Sending...",
     "commandSentSuccessfully": "Command sent successfully!",
@@ -448,7 +452,8 @@
       "required": "Value is required",
       "invalidNumber": "Please enter a valid number",
       "belowMinimum": "Value must be at least {{min}}",
-      "aboveMaximum": "Value must not exceed {{max}}"
+      "aboveMaximum": "Value must not exceed {{max}}",
+      "invalidDuration": "Duration must be a positive number"
     },
     "errors": {
       "sendFailed": "Failed to send command",

@@ -897,6 +897,7 @@ export interface WriteValueRequestDto {
   itemId: string; // UUID
   value?: string | null;
   time?: number | null; // int64 - Unix timestamp
+  duration?: number | null; // int64 - Duration in seconds for how long the value should persist or be valid
 }
 
 export interface AddValueRequestDto {
@@ -909,6 +910,7 @@ export interface WriteOrAddValueRequestDto {
   itemId: string; // UUID
   value?: string | null;
   time?: number | null; // int64 - Unix timestamp
+  duration?: number | null; // int64 - Duration in seconds for how long the value should persist or be valid
 }
 
 export interface WriteOrAddValueResponseDto {

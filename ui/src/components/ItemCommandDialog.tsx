@@ -60,6 +60,7 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
   // State for command values
   const [digitalValue, setDigitalValue] = useState<boolean>(false);
   const [analogValue, setAnalogValue] = useState<string>('');
+  const [duration, setDuration] = useState<string>(''); // Duration in seconds (optional)
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<boolean>(false);
@@ -106,6 +107,7 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
       // Reset form state
       setDigitalValue(false);
       setAnalogValue('');
+      setDuration('');
       setError('');
       setSuccess(false);
       setIsLoading(false);
@@ -155,6 +157,29 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
   }, [t, analogRange]);
 
   /**
+   * Validate duration input (optional field)
+   */
+  const validateDuration = useMemo(() => {
+    return (value: string): string | null => {
+      // Duration is optional, so empty is valid
+      if (!value.trim()) {
+        return null;
+      }
+
+      const numValue = parseFloat(value);
+      if (isNaN(numValue)) {
+        return t('itemCommandDialog.validation.invalidNumber');
+      }
+
+      if (numValue <= 0) {
+        return t('itemCommandDialog.validation.invalidDuration');
+      }
+
+      return null;
+    };
+  }, [t]);
+
+  /**
    * Get the command value to send
    */
   const getCommandValue = (): string => {
@@ -185,11 +210,21 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
         }
       }
 
+      // Validate duration if provided
+      if (duration.trim()) {
+        const durationError = validateDuration(duration);
+        if (durationError) {
+          setError(durationError);
+          return;
+        }
+      }
+
       logger.log('Sending command', {
         itemId: item.id,
         itemName: item.name,
         itemType: item.itemType,
         commandValue,
+        duration: duration.trim() || 'not specified',
       });
 
       // Send command via API
@@ -197,6 +232,8 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
         itemId: item.id!,
         value: commandValue,
         // time is optional - backend will use current time if not provided
+        // duration is optional - only include if user provided a value
+        ...(duration.trim() && { duration: parseInt(duration, 10) }),
       });
 
       if (response.isSuccess) {
@@ -213,6 +250,7 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
       logger.log('Command sent successfully', {
         itemId: item.id,
         commandValue,
+        duration: duration.trim() || 'not specified',
       });
 
     } catch (err) {
@@ -243,6 +281,11 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
   const canSendCommand = useMemo(() => {
     if (isLoading || success) return false;
     
+    // Validate duration if provided (it's optional)
+    if (duration.trim() && validateDuration(duration) !== null) {
+      return false;
+    }
+    
     if (isDigitalItem) {
       return true; // Digital items are always valid (boolean)
     } else if (isAnalogItem) {
@@ -250,7 +293,7 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
     }
     
     return false;
-  }, [isDigitalItem, isAnalogItem, analogValue, isLoading, success, validateAnalogValue]);
+  }, [isDigitalItem, isAnalogItem, analogValue, duration, isLoading, success, validateAnalogValue, validateDuration]);
 
   return (
     <Dialog
@@ -408,6 +451,48 @@ const ItemCommandDialog: React.FC<ItemCommandDialogProps> = ({
               />
             </Box>
           )}
+
+          {/* Duration Field (Optional) - Shown for both digital and analog items */}
+          <Box data-id-ref="item-command-dialog-duration-field">
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              {t('itemCommandDialog.duration')}
+              <Chip 
+                label={t('itemCommandDialog.durationOptional')} 
+                size="small" 
+                variant="outlined" 
+                sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
+                data-id-ref="item-command-dialog-duration-optional-chip"
+              />
+            </Typography>
+            <TextField
+              fullWidth
+              type="number"
+              label={t('itemCommandDialog.duration')}
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              disabled={isLoading || success}
+              error={!!duration.trim() && !!validateDuration(duration)}
+              helperText={
+                duration.trim() && validateDuration(duration)
+                  ? validateDuration(duration)
+                  : t('itemCommandDialog.durationHelper')
+              }
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Typography variant="caption" color="text.secondary">
+                      {t('seconds')}
+                    </Typography>
+                  </InputAdornment>
+                ),
+              }}
+              inputProps={{
+                step: 1,
+                min: 1,
+              }}
+              data-id-ref="item-command-dialog-duration-input"
+            />
+          </Box>
 
           {/* Error Display */}
           {error && (

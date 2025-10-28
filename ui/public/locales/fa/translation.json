@@ -19,6 +19,7 @@
   "add": "افزودن",
   "search": "جستجو",
   "and": "و",
+  "seconds": "ثانیه",
   "languageSwitch": "English",
   "systemDescription": "این سیستم برای مانیتورینگ و مدیریت انبار طراحی شده است.",
   "notificationDescription": "مدیریت اعلان‌ها و هشدارها",
@@ -441,6 +442,9 @@
     "analogCommand": "مقدار آنالوگ",
     "setValue": "تنظیم مقدار",
     "rangeHelper": "محدوده: {{min}} تا {{max}}",
+    "duration": "مدت زمان (ثانیه)",
+    "durationHelper": "اختیاری: مدت زمان ماندگاری مقدار (خالی بگذارید برای نامحدود)",
+    "durationOptional": "اختیاری",
     "sendCommand": "ارسال دستور",
     "sending": "در حال ارسال...",
     "commandSentSuccessfully": "دستور با موفقیت ارسال شد!",
@@ -448,7 +452,8 @@
       "required": "مقدار اجباری است",
       "invalidNumber": "لطفا عددی معتبر وارد کنید",
       "belowMinimum": "مقدار باید حداقل {{min}} باشد",
-      "aboveMaximum": "مقدار نباید بیشتر از {{max}} باشد"
+      "aboveMaximum": "مقدار نباید بیشتر از {{max}} باشد",
+      "invalidDuration": "مدت زمان باید یک عدد مثبت باشد"
     },
     "errors": {
       "sendFailed": "ارسال دستور ناموفق بود",
