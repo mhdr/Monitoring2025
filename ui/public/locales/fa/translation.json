@@ -435,6 +435,24 @@
       "addPoint": "افزودن پوینت"
     }
   },
+  "itemSortMenu": {
+    "title": "مرتب‌سازی آیتم‌ها",
+    "sortBy": "مرتب‌سازی بر اساس",
+    "sortDirection": "جهت مرتب‌سازی",
+    "reset": "بازگشت به پیش‌فرض",
+    "fields": {
+      "pointNumber": "شماره پوینت",
+      "name": "نام",
+      "itemType": "نوع آیتم",
+      "value": "مقدار فعلی",
+      "time": "زمان آخرین بروزرسانی",
+      "alarmStatus": "وضعیت آلارم"
+    },
+    "directions": {
+      "asc": "صعودی",
+      "desc": "نزولی"
+    }
+  },
   "itemCommandDialog": {
     "title": "ارسال دستور",
     "itemInformation": "اطلاعات آیتم",
