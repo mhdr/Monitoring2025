@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 # Quick Fix Script for PM2 API Proxy Issue
 # Run this on the production server (192.168.70.10)

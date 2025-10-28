@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 # Auto-detect Server IP and Generate .env.production
 # This script detects the server's public/network IP and creates .env.production

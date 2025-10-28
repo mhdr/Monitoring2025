@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # PM2 Troubleshooting Script for Monitoring UI
 
 echo "=========================================="
