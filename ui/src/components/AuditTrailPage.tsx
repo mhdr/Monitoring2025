@@ -28,12 +28,6 @@ import type { ColDef, RowClickedEvent } from 'ag-grid-community';
 import type { AuditLogRequestDto, AuditLogResponseDto, DataDto, LogType } from '../types/api';
 import type { AGGridRowData } from '../types/agGrid';
 import { LogTypeEnum } from '../types/api';
-
-// Backend wraps the AuditLogResponseDto in a response envelope
-interface AuditLogApiResponse {
-  success: boolean;
-  data: AuditLogResponseDto;
-}
 import apiClient, { handleApiError } from '../services/apiClient';
 import { formatDate } from '../utils/dateFormatting';
 import { createLogger } from '../utils/logger';
@@ -98,10 +92,11 @@ const AuditTrailPage: React.FC = () => {
 
       logger.log('Fetching audit logs:', requestDto);
 
-      const response = await apiClient.post<AuditLogApiResponse>('/api/Monitoring/AuditLog', requestDto);
+      const response = await apiClient.post<{ success: boolean; data: AuditLogResponseDto }>('/api/Monitoring/AuditLog', requestDto);
 
       if (response.data?.data) {
-        let filteredData = response.data.data.data || [];
+        const auditLogResponse = response.data.data;
+        let filteredData = auditLogResponse.data || [];
 
         // Client-side filter by LogType if not 'all'
         if (selectedLogType !== 'all') {
@@ -109,11 +104,11 @@ const AuditTrailPage: React.FC = () => {
         }
 
         setAuditLogs(filteredData);
-        setTotalCount(response.data.data.totalCount || 0);
-        setTotalPages(response.data.data.totalPages || 0);
-        setCurrentPage(response.data.data.page || 1);
+        setTotalCount(auditLogResponse.totalCount || 0);
+        setTotalPages(auditLogResponse.totalPages || 0);
+        setCurrentPage(auditLogResponse.page || 1);
 
-        logger.log(`Loaded ${filteredData.length} audit logs (page ${response.data.data.page}/${response.data.data.totalPages})`);
+        logger.log(`Loaded ${filteredData.length} audit logs (page ${auditLogResponse.page}/${auditLogResponse.totalPages}, total: ${auditLogResponse.totalCount})`);
       }
     } catch (err) {
       logger.error('Error fetching audit logs:', err);
@@ -247,7 +242,6 @@ const AuditTrailPage: React.FC = () => {
         },
       },
       {
-        field: 'point',
         headerName: t('auditTrailPage.columns.point'),
         width: 280,
         valueGetter: (params) => getPointName(params.data?.itemId),
