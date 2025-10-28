@@ -785,5 +785,24 @@
       "unknown": "Unknown",
       "noDetails": "No details available"
     }
+  },
+  "sort": {
+    "tooltip": "Sort items",
+    "currentSort": "Current Sort",
+    "toggleDirection": "Toggle sort direction",
+    "reset": "Reset Sort",
+    "fields": {
+      "none": "Default Order",
+      "name": "Name",
+      "value": "Value",
+      "alarm": "Alarm Status",
+      "type": "Point Type",
+      "pointNumber": "Point Number",
+      "timestamp": "Last Update"
+    },
+    "directions": {
+      "asc": "Ascending",
+      "desc": "Descending"
+    }
   }
 }

@@ -27,11 +27,13 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { useAuth } from '../hooks/useAuth';
+import { useSortPreferences } from '../hooks/useSortPreferences';
 import type { Group } from '../types/api';
 import GroupCard from './GroupCard';
 import ItemCard from './ItemCard';
 import AddGroupDialog from './AddGroupDialog';
 import AddItemDialog from './AddItemDialog';
+import SortMenu from './SortMenu';
 import { createLogger } from '../utils/logger';
 import { formatDate } from '../utils/dateFormatting';
 
@@ -81,7 +83,8 @@ const MonitoringPage: React.FC = () => {
     itemsLoading: isLoadingItems,
     itemsError,
     values: itemValues,
-    valuesLoading: isRefreshing
+    valuesLoading: isRefreshing,
+    alarms: allAlarms,
   } = monitoringState;
 
   // Update current folder ID when URL parameter changes
@@ -121,25 +124,71 @@ const MonitoringPage: React.FC = () => {
     return { childGroups: children, breadcrumbs: trail };
   }, [allGroups, currentFolderId]);
 
-  // Get items for current folder, sorted by point number ascending
-  const currentFolderItems = useMemo(() => {
+  // Get items for current folder (unsorted)
+  const unsortedFolderItems = useMemo(() => {
     if (!allItems || allItems.length === 0) {
       return [];
     }
 
     // Filter items by current folder/group
-    let filteredItems;
     if (!currentFolderId) {
       // At root level - show items with no groupId
-      filteredItems = allItems.filter((item) => !item.groupId || item.groupId === null);
+      return allItems.filter((item) => !item.groupId || item.groupId === null);
     } else {
       // Show items belonging to current folder
-      filteredItems = allItems.filter((item) => item.groupId === currentFolderId);
+      return allItems.filter((item) => item.groupId === currentFolderId);
     }
-
-    // Sort by point number in ascending order
-    return filteredItems.sort((a, b) => a.pointNumber - b.pointNumber);
   }, [allItems, currentFolderId]);
+
+  // Create timestamps map from item values
+  const itemTimestamps = useMemo(() => {
+    const timestamps: Record<string, number> = {};
+    Object.entries(itemValues || {}).forEach(([itemId, valueData]) => {
+      if (valueData && 'time' in valueData) {
+        timestamps[itemId] = valueData.time;
+      }
+    });
+    return timestamps;
+  }, [itemValues]);
+
+  // Convert itemValues to simple value map (convert string values to numbers where possible)
+  const itemValuesMap = useMemo(() => {
+    const values: Record<string, number | boolean> = {};
+    Object.entries(itemValues || {}).forEach(([itemId, valueData]) => {
+      if (valueData && 'value' in valueData && valueData.value !== null) {
+        // Try to convert string value to number
+        const numValue = Number(valueData.value);
+        if (!isNaN(numValue)) {
+          values[itemId] = numValue;
+        } else {
+          // For boolean-like strings
+          const lowerValue = valueData.value.toLowerCase();
+          if (lowerValue === 'true' || lowerValue === '1') {
+            values[itemId] = true;
+          } else if (lowerValue === 'false' || lowerValue === '0') {
+            values[itemId] = false;
+          }
+        }
+      }
+    });
+    return values;
+  }, [itemValues]);
+
+  // Use sort hook to manage sorting with IndexedDB persistence
+  const {
+    sortedItems: currentFolderItems,
+    sortConfig,
+    setSortField,
+    toggleDirection,
+    resetSort,
+  } = useSortPreferences({
+    groupId: currentFolderId,
+    language,
+    items: unsortedFolderItems,
+    values: itemValuesMap,
+    alarms: allAlarms || [],
+    timestamps: itemTimestamps,
+  });
 
   // Get item IDs for current folder (for values polling)
   const currentFolderItemIds = useMemo(() => {
@@ -622,6 +671,16 @@ const MonitoringPage: React.FC = () => {
                   color="secondary"
                   data-id-ref="monitoring-page-items-list-count"
                 />
+                {/* Sort Menu */}
+                <Box sx={{ ml: 'auto' }} data-id-ref="monitoring-page-items-sort-container">
+                  <SortMenu
+                    sortConfig={sortConfig}
+                    onSortFieldChange={setSortField}
+                    onDirectionToggle={toggleDirection}
+                    onReset={resetSort}
+                    data-id-ref="monitoring-page-items-sort-menu"
+                  />
+                </Box>
               </Box>
               
               <Box
