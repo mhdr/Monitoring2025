@@ -119,7 +119,6 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
   
   const pollingTimerRef = useRef<number | null>(null);
   const isMountedRef = useRef<boolean>(true);
-  const isInitialMount = useRef<boolean>(true);
   
   // Get monitoring context for SignalR status and refresh trigger
   const { state } = useMonitoring();
@@ -304,7 +303,7 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
         }, actualInterval);
       }
     }
-  }, [enablePolling, pollingInterval, streamStatus, checkAlarmStatus, itemId]);
+  }, [enablePolling, pollingInterval, checkAlarmStatus, itemId, streamStatus]);
 
   /**
    * Stop polling
@@ -318,37 +317,22 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
   }, [itemId]);
 
   /**
-   * Initial check and setup
+   * Initial check and polling setup
    */
   useEffect(() => {
     isMountedRef.current = true;
-    isInitialMount.current = false;
     
     // Initial check
     checkAlarmStatus();
+    
+    // Start polling if enabled
+    startPolling();
     
     return () => {
       isMountedRef.current = false;
       stopPolling();
     };
-  }, [itemId, checkAlarmStatus, stopPolling]); // Only re-run when itemId changes
-
-  /**
-   * Handle polling setup separately to prevent infinite loops
-   */
-  useEffect(() => {
-    if (isInitialMount.current) return; // Skip on initial mount (handled above)
-    
-    if (enablePolling) {
-      startPolling();
-    } else {
-      stopPolling();
-    }
-    
-    return () => {
-      stopPolling();
-    };
-  }, [enablePolling, pollingInterval, streamStatus, startPolling, stopPolling]);
+  }, [checkAlarmStatus, startPolling, stopPolling]);
 
   /**
    * Listen to SignalR alarm refresh trigger for real-time updates
@@ -360,7 +344,18 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
       });
       checkAlarmStatus();
     }
-  }, [alarmRefreshTrigger, itemId, checkAlarmStatus]);
+  }, [alarmRefreshTrigger, checkAlarmStatus, itemId]);
+
+  /**
+   * Refresh polling when options change or SignalR status changes
+   */
+  useEffect(() => {
+    if (enablePolling) {
+      startPolling();
+    } else {
+      stopPolling();
+    }
+  }, [enablePolling, pollingInterval, streamStatus, startPolling, stopPolling]);
 
   return {
     hasAlarm,

@@ -161,40 +161,23 @@ const MonitoringPage: React.FC = () => {
   });
 
   // Get item IDs for current folder (for values polling)
-  // CRITICAL FIX: Use useMemo with deep comparison to prevent infinite loop
-  // Only recalculate when the actual SET of IDs changes, not when ORDER changes
   const currentFolderItemIds = useMemo(() => {
-    const ids = sortedFolderItems.map((item) => item.id);
-    // Sort IDs to ensure consistent comparison regardless of display order
-    return ids.sort();
+    return sortedFolderItems.map((item) => item.id);
   }, [sortedFolderItems]);
-
-  // Track previous IDs to detect actual changes (not just reordering)
-  const prevItemIdsRef = useRef<string>('');
-  const stableItemIds = useMemo(() => {
-    const idsString = currentFolderItemIds.join(',');
-    // Only return new array if the actual IDs changed
-    if (idsString !== prevItemIdsRef.current) {
-      prevItemIdsRef.current = idsString;
-      return currentFolderItemIds;
-    }
-    // Return previous reference to prevent useEffect re-trigger
-    return prevItemIdsRef.current.split(',').filter(id => id);
-  }, [currentFolderItemIds]);
 
   // Poll values every 5 seconds for items in current folder
   useEffect(() => {
     // Skip polling if there are no items in the current folder
-    if (stableItemIds.length === 0) {
+    if (currentFolderItemIds.length === 0) {
       return;
     }
 
     // Fetch values immediately
-    fetchValues(stableItemIds);
+    fetchValues(currentFolderItemIds);
 
     // Set up polling interval (every 5 seconds)
     pollingIntervalRef.current = window.setInterval(() => {
-      fetchValues(stableItemIds);
+      fetchValues(currentFolderItemIds);
     }, 5000);
 
     // Cleanup on unmount or when item IDs change
@@ -205,7 +188,7 @@ const MonitoringPage: React.FC = () => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stableItemIds]); // fetchValues is a stable callback, intentionally excluded to prevent infinite loop
+  }, [currentFolderItemIds]); // fetchValues is a stable callback, intentionally excluded to prevent infinite loop
 
   // Manage refresh indicator visibility with minimum display time
   useEffect(() => {

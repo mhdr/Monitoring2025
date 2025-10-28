@@ -506,7 +506,6 @@ async function loadMonitoringDataFromStorage() {
 export function MonitoringProvider({ children }: MonitoringProviderProps): React.ReactElement {
   const [state, dispatch] = useReducer(monitoringReducer, initialState);
   const isInitialized = useRef(false);
-  const hasResetOnLogout = useRef(false);
   const { isAuthenticated } = useAuth();
 
   // Initialize from IndexedDB on mount
@@ -529,20 +528,12 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
 
   // CRITICAL FIX: Reset monitoring state when user logs out
   // This ensures clean state for next login
-  // Use ref to prevent infinite loop from state.isDataSynced changing
   useEffect(() => {
-    if (!isAuthenticated) {
-      // User logged out - reset if we haven't already
-      if (state.isDataSynced && !hasResetOnLogout.current) {
-        logger.log('User logged out, resetting monitoring state');
-        hasResetOnLogout.current = true;
-        dispatch({ type: 'RESET_MONITORING' });
-        // Allow re-initialization on next login
-        isInitialized.current = false;
-      }
-    } else {
-      // User logged in - clear the reset flag for next logout
-      hasResetOnLogout.current = false;
+    if (!isAuthenticated && state.isDataSynced) {
+      logger.log('User logged out, resetting monitoring state');
+      dispatch({ type: 'RESET_MONITORING' });
+      // Allow re-initialization on next login
+      isInitialized.current = false;
     }
   }, [isAuthenticated, state.isDataSynced]);
 
