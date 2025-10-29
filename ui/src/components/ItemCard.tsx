@@ -20,7 +20,10 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { 
   OpenInNew,
   TrendingUp as TrendingUpIcon,
@@ -170,6 +173,9 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const { user } = useAuth();
   const { fetchGroups, fetchItems } = useMonitoring();
   const prefetchUrl = useUrlPrefetch();
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [elevation, setElevation] = useState<number>(1);
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
   const [commandDialogOpen, setCommandDialogOpen] = useState<boolean>(false);
@@ -227,14 +233,22 @@ const ItemCard: React.FC<ItemCardProps> = ({
   }, [valueHistory]);
 
   const handleOpenNewTab = () => {
-    // Open a new tab with the item detail page
+    // On mobile (xs/sm), navigate in current tab for better UX
+    // On desktop (md+), open in new tab
     try {
-      // Open in new tab
-      window.open(detailUrl, '_blank');
+      if (isMobile) {
+        // Mobile: navigate in same tab
+        // detailUrl is absolute (with origin), but navigate() needs relative path
+        const relativePath = detailUrl.replace(window.location.origin, '');
+        navigate(relativePath);
+      } else {
+        // Desktop: open in new tab
+        window.open(detailUrl, '_blank');
+      }
     } catch (e) {
       // no-op - window may be undefined in some test environments
       // keep silent to avoid breaking UI; log warning in dev
-      logger.warn('Could not open new tab', e);
+      logger.warn('Could not open tab', e);
     }
   };
 
@@ -551,11 +565,11 @@ const ItemCard: React.FC<ItemCardProps> = ({
                   </Tooltip>
                 )}
                 
-                <Tooltip title={t('openInNewTab')} arrow placement="top">
+                <Tooltip title={t(isMobile ? 'openDetails' : 'openInNewTab')} arrow placement="top">
                   <IconButton
                     onClick={handleOpenNewTab}
                     onMouseEnter={handlePrefetch}
-                    aria-label={t('openInNewTab')}
+                    aria-label={t(isMobile ? 'openDetails' : 'openInNewTab')}
                     size="small"
                     sx={{
                       color: 'text.secondary',
@@ -728,11 +742,11 @@ const ItemCard: React.FC<ItemCardProps> = ({
                   </Tooltip>
                 )}
                 
-                <Tooltip title={t('openInNewTab')} arrow placement="top">
+                <Tooltip title={t(isMobile ? 'openDetails' : 'openInNewTab')} arrow placement="top">
                   <IconButton
                     onClick={handleOpenNewTab}
                     onMouseEnter={handlePrefetch}
-                    aria-label={t('openInNewTab')}
+                    aria-label={t(isMobile ? 'openDetails' : 'openInNewTab')}
                     size="small"
                     sx={{
                       color: 'text.secondary',

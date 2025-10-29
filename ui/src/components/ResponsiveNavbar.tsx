@@ -107,11 +107,17 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
           
           {/* Brand/Logo */}
           <Box
+            onClick={() => navigate('/dashboard/monitoring')}
             sx={{ 
               flexGrow: 1,
               display: 'flex',
               alignItems: 'center',
-              gap: 2
+              gap: 2,
+              cursor: 'pointer',
+              transition: 'opacity 0.2s ease',
+              '&:hover': {
+                opacity: 0.8,
+              },
             }}
             data-id-ref="responsive-navbar-brand"
           >
