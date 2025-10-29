@@ -1,0 +1,270 @@
+/**
+ * Linux-Specific Font Rendering Optimizations
+ * 
+ * This file contains font styling enhancements specifically for Linux systems,
+ * addressing common font rendering issues on various Linux distributions,
+ * desktop environments, and display servers (X11/Wayland).
+ */
+
+/* ============================================
+   Global Linux Font Rendering
+   ============================================ */
+
+/* Enhanced antialiasing for all elements on Linux */
+* {
+  /* Optimize font rendering for Linux */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Better text rendering on Linux */
+  text-rendering: optimizeLegibility;
+  
+  /* Enable font features */
+  font-variant-ligatures: common-ligatures;
+  font-kerning: normal;
+}
+
+/* ============================================
+   Headings and Important Text
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6,
+.MuiTypography-h1,
+.MuiTypography-h2,
+.MuiTypography-h3,
+.MuiTypography-h4,
+.MuiTypography-h5,
+.MuiTypography-h6 {
+  /* Stronger antialiasing for headings */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+  
+  /* Better letter spacing for readability */
+  letter-spacing: -0.01em;
+  
+  /* Improve font weight rendering on Linux */
+  font-weight: 500;
+}
+
+/* ============================================
+   Body Text Optimization
+   ============================================ */
+
+p, span, div, li, td, th,
+.MuiTypography-body1,
+.MuiTypography-body2 {
+  /* Optimized for body text readability */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Slightly increased letter spacing for better readability */
+  letter-spacing: 0.01em;
+}
+
+/* ============================================
+   Button and Interactive Elements
+   ============================================ */
+
+button,
+.MuiButton-root,
+.MuiIconButton-root,
+input,
+textarea,
+select {
+  /* Ensure buttons have crisp text on Linux */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* Better font weight for UI elements */
+  font-weight: 500;
+}
+
+/* ============================================
+   Monospace and Code Elements
+   ============================================ */
+
+code, pre, kbd, samp,
+.MuiTypography-code {
+  /* Better monospace rendering on Linux */
+  font-family: 'Fira Code', 'JetBrains Mono', 'Ubuntu Mono', 'DejaVu Sans Mono', 'Liberation Mono', 'Courier New', monospace;
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: optimizeSpeed;
+}
+
+/* ============================================
+   Small Text (Captions, Labels)
+   ============================================ */
+
+small,
+.MuiTypography-caption,
+.MuiTypography-overline,
+.MuiFormLabel-root {
+  /* Better rendering for small text */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Slightly bolder for better visibility */
+  font-weight: 500;
+  
+  /* Improve legibility of small text */
+  letter-spacing: 0.02em;
+}
+
+/* ============================================
+   RTL (Persian) Text Enhancements
+   ============================================ */
+
+body.rtl,
+body.rtl * {
+  /* Enhanced Persian text rendering on Linux */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* Better Persian font features */
+  font-feature-settings: "ss02", "kern", "liga";
+  font-variant-ligatures: common-ligatures contextual;
+  
+  /* Improved spacing for Persian text */
+  word-spacing: 0.05em;
+}
+
+/* ============================================
+   AG Grid Table Text
+   ============================================ */
+
+.ag-root-wrapper,
+.ag-cell,
+.ag-header-cell,
+.ag-header-cell-text {
+  /* Optimize table text on Linux */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* Better readability for table data */
+  letter-spacing: 0.01em;
+}
+
+/* ============================================
+   High DPI Display Optimization
+   ============================================ */
+
+@media (-webkit-min-device-pixel-ratio: 1.5),
+       (min-resolution: 144dpi) {
+  /* Better rendering on high DPI Linux displays */
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+  }
+}
+
+/* ============================================
+   Low DPI Display Optimization
+   ============================================ */
+
+@media (-webkit-max-device-pixel-ratio: 1.25),
+       (max-resolution: 120dpi) {
+  /* Enhance rendering on standard DPI displays */
+  * {
+    -webkit-font-smoothing: antialiased;
+    text-shadow: rgba(0, 0, 0, 0.01) 0 0 1px;
+  }
+  
+  /* Slightly bolder text for better visibility */
+  body {
+    font-weight: 450;
+  }
+}
+
+/* ============================================
+   Firefox-Specific Optimizations
+   ============================================ */
+
+@-moz-document url-prefix() {
+  body {
+    /* Firefox on Linux prefers auto smoothing */
+    -moz-osx-font-smoothing: auto;
+  }
+  
+  /* Better hinting for Firefox on Linux */
+  * {
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* ============================================
+   Webkit/Blink-Specific Optimizations
+   ============================================ */
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  /* Chrome/Chromium on Linux optimizations */
+  body {
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  /* Better subpixel rendering */
+  h1, h2, h3, h4, h5, h6 {
+    -webkit-text-stroke: 0.45px transparent;
+  }
+}
+
+/* ============================================
+   Dark Mode Font Adjustments
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  /* Lighter font weight in dark mode for better readability */
+  body {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 400;
+  }
+  
+  /* Slightly bolder headings in dark mode */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+  }
+  
+  /* Enhance text visibility in dark mode */
+  * {
+    text-shadow: rgba(0, 0, 0, 0.5) 0 0 1px;
+  }
+}
+
+/* ============================================
+   Wayland-Specific Optimizations
+   ============================================ */
+
+/* Note: No direct CSS detection for Wayland, these are general improvements
+   that work well with Wayland compositors */
+
+@supports (backdrop-filter: blur(10px)) {
+  /* Modern compositors (often Wayland) support backdrop filters */
+  body {
+    /* Enhanced antialiasing for modern display servers */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ============================================
+   Font Loading Performance
+   ============================================ */
+
+/* Prevent FOIT (Flash of Invisible Text) on Linux */
+.fonts-loading * {
+  /* Use system fonts during font loading */
+  font-family: system-ui, -apple-system, sans-serif !important;
+}
+
+.fonts-loaded * {
+  /* Smooth transition to custom fonts */
+  transition: font-family 0.1s ease-in;
+}

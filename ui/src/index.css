@@ -1,6 +1,6 @@
 /* Global font and color scheme */
 :root {
-  font-family: 'iransansx', 'Tahoma', 'Arial', sans-serif;
+  font-family: 'iransansx', 'Tahoma', 'DejaVu Sans', 'Liberation Sans', 'Noto Sans', 'Arial', sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -10,6 +10,15 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  /* Enhanced font rendering for Linux */
+  font-variant-ligatures: common-ligatures;
+  font-kerning: normal;
+  font-optical-sizing: auto;
+  
+  /* Better subpixel rendering */
+  -webkit-text-stroke: 0.45px transparent;
+  text-shadow: rgba(0, 0, 0, 0.01) 0 0 1px;
 
   /* Note: All colors now come from MUI theme */
   /* MUI ThemeProvider provides all color definitions */
@@ -18,7 +27,7 @@
 /* Variable Font Support - for modern browsers */
 @supports (font-variation-settings: normal) {
   :root {
-    font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif;
+    font-family: 'iransansxv', 'Tahoma', 'DejaVu Sans', 'Liberation Sans', 'Noto Sans', 'Arial', sans-serif;
   }
 }
 
@@ -26,11 +35,15 @@
 body.rtl {
   direction: rtl;
   text-align: right;
-  font-family: 'iransansx', 'Tahoma', 'Arial', sans-serif;
+  font-family: 'iransansx', 'Tahoma', 'DejaVu Sans', 'Liberation Sans', 'Noto Sans Arabic', 'Noto Sans', 'Arial', sans-serif;
   /* Enable Persian digits globally for Persian/RTL mode */
   -moz-font-feature-settings: "ss02";
   -webkit-font-feature-settings: "ss02";
   font-feature-settings: "ss02";
+  
+  /* Enhanced rendering for RTL text on Linux */
+  font-variant-ligatures: common-ligatures contextual;
+  font-kerning: normal;
 }
 
 body.rtl * {
@@ -40,14 +53,14 @@ body.rtl * {
 /* Variable Font Support for RTL - for modern browsers */
 @supports (font-variation-settings: normal) {
   body.rtl {
-    font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif;
+    font-family: 'iransansxv', 'Tahoma', 'DejaVu Sans', 'Liberation Sans', 'Noto Sans Arabic', 'Noto Sans', 'Arial', sans-serif;
   }
 }
 
 body.ltr {
   direction: ltr;
   text-align: left;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Liberation Sans', 'DejaVu Sans', 'Noto Sans', 'Helvetica Neue', sans-serif;
 }
 
 body.ltr * {
@@ -73,6 +86,26 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  
+  /* Linux-specific font rendering optimizations */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Linux-specific font rendering enhancements */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  body {
+    /* Better rendering on Linux with Chrome/Chromium */
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}
+
+/* Firefox on Linux optimization */
+@-moz-document url-prefix() {
+  body {
+    -moz-osx-font-smoothing: auto;
+  }
 }
 
 #root {
@@ -89,14 +122,14 @@ body {
 /* Note: jdp-container is a custom HTML element, not a class */
 body.rtl jdp-container,
 body.rtl jdp-container * {
-  font-family: 'iransansx', 'Tahoma', 'Arial', sans-serif !important;
+  font-family: 'iransansx', 'Tahoma', 'DejaVu Sans', 'Liberation Sans', 'Noto Sans Arabic', 'Arial', sans-serif !important;
 }
 
 /* Variable Font Support for JalaliDatePicker - for modern browsers */
 @supports (font-variation-settings: normal) {
   body.rtl jdp-container,
   body.rtl jdp-container * {
-    font-family: 'iransansxv', 'Tahoma', 'Arial', sans-serif !important;
+    font-family: 'iransansxv', 'Tahoma', 'DejaVu Sans', 'Liberation Sans', 'Noto Sans Arabic', 'Arial', sans-serif !important;
   }
 }
 

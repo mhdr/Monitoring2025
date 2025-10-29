@@ -6,7 +6,10 @@
        url('./fonts/woff/IRANSansXV.woff') format('woff-variations'),
        url('./fonts/woff/IRANSansXV.woff') format('woff');
   font-weight: 100 1000;
-  font-display: fallback;
+  font-display: swap;
+  font-style: normal;
+  /* Enhanced font rendering hints for Linux */
+  text-rendering: optimizeLegibility;
 }
 
 /* IRANSansX Static Fonts (Fallback for older browsers) */
@@ -15,7 +18,9 @@
   src: url('./fonts/woff2/IRANSansXV.woff2') format('woff2'),
        url('./fonts/woff/IRANSansXV.woff') format('woff');
   font-weight: 400;
-  font-display: fallback;
+  font-display: swap;
+  font-style: normal;
+  text-rendering: optimizeLegibility;
 }
 
 @font-face {
@@ -23,5 +28,7 @@
   src: url('./fonts/woff2/IRANSansXV.woff2') format('woff2'),
        url('./fonts/woff/IRANSansXV.woff') format('woff');
   font-weight: 700;
-  font-display: fallback;
+  font-display: swap;
+  font-style: normal;
+  text-rendering: optimizeLegibility;
 }
