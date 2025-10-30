@@ -39,100 +39,112 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+// Load CORS configuration
+var corsConfig = new CorsConfig();
+builder.Configuration.GetSection("CORS").Bind(corsConfig);
+
 // Configure CORS for React client
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactClientPolicy", policy =>
     {
-        // Build comprehensive origins list including detected IPs and all local dev IPs
         var publicIpString = publicIp.ToString();
         var localIpString = localIp.ToString();
-        var localIps = new[] { "localhost", "127.0.0.1", "0.0.0.0", "::1", publicIpString, localIpString };
-        var apiPorts = new[] { "5030" }; // API HTTP port
-        var frontendPorts = new[] { "3000", "3001", "5000", "5173", "5174", "5175", "4200", "8080", "8081", "8000" }; // Common frontend dev ports
-        var protocols = new[] { "http", "https" }; // Support both HTTP and HTTPS
-
         var allowedOrigins = new List<string>();
 
-        // Add API origins (HTTPS for production, both HTTP/HTTPS for dev)
-        foreach (var protocol in protocols)
+        Console.WriteLine($"[CORS] Configuration loaded from appsettings.json");
+        Console.WriteLine($"[CORS]   Allowed Domains: {string.Join(", ", corsConfig.AllowedDomains)}");
+        Console.WriteLine($"[CORS]   Allowed Ports: {string.Join(", ", corsConfig.AllowedPorts)}");
+        Console.WriteLine($"[CORS]   Allow Localhost: {corsConfig.AllowLocalhost}");
+        Console.WriteLine($"[CORS]   Allow Local Network: {corsConfig.AllowLocalNetwork}");
+        Console.WriteLine($"[CORS]   Allow Detected IPs: {corsConfig.AllowDetectedIPs}");
+
+        // Build origins list from configuration
+        if (corsConfig.AllowDetectedIPs)
         {
-            foreach (var ip in localIps)
+            var ips = new List<string> { publicIpString, localIpString };
+            if (corsConfig.AllowLocalhost)
             {
-                foreach (var port in apiPorts)
-                {
-                    allowedOrigins.Add($"{protocol}://{ip}:{port}");
-                }
+                ips.AddRange(new[] { "localhost", "127.0.0.1", "0.0.0.0", "::1" });
             }
-        }
-        
-        // Add frontend origins (commonly HTTP in development)
-        foreach (var protocol in protocols)
-        {
-            foreach (var ip in new[] { "localhost", "127.0.0.1", publicIpString, localIpString }) // Include both public and local network IPs
+
+            foreach (var protocol in corsConfig.AllowedProtocols)
             {
-                foreach (var port in frontendPorts)
+                foreach (var ip in ips)
                 {
-                    var origin = $"{protocol}://{ip}:{port}";
-                    allowedOrigins.Add(origin);
+                    foreach (var port in corsConfig.AllowedPorts)
+                    {
+                        allowedOrigins.Add($"{protocol}://{ip}:{port}");
+                    }
+                    // Add without port
+                    allowedOrigins.Add($"{protocol}://{ip}");
                 }
             }
         }
 
-        // Add some common variations without ports for flexibility
-        allowedOrigins.AddRange(new[]
-        {
-            "http://localhost",
-            "http://127.0.0.1",
-            $"http://{publicIpString}",
-            $"http://{localIpString}"
-        });
-
-        Console.WriteLine($"[CORS] Allowing {allowedOrigins.Count} explicit origins");
+        Console.WriteLine($"[CORS] Total explicit origins: {allowedOrigins.Count}");
         Console.WriteLine($"[CORS]   Public IP: {publicIpString}");
         Console.WriteLine($"[CORS]   Local Network IP: {localIpString}");
-        Console.WriteLine($"[CORS]   Plus dynamic 192.168.x.x, 10.x.x.x, and 172.20.x.x subnet matching");
-        Console.WriteLine($"[CORS] Frontend ports supported: {string.Join(", ", frontendPorts)}");
-        Console.WriteLine($"[CORS] Sample allowed origins:");
-        foreach (var origin in allowedOrigins.Where(o => o.Contains(publicIpString) || o.Contains(localIpString)).Take(8))
-        {
-            Console.WriteLine($"[CORS]   - {origin}");
-        }
 
         policy.SetIsOriginAllowed(origin =>
         {
-            // First check if it's in the explicit allowed list
+            // Check explicit allowed list
             if (allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
             {
                 return true;
             }
 
-            // Then check if it matches local network patterns (192.168.x.x, 10.x.x.x, 172.20.x.x)
-            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
             {
-                var host = uri.Host;
-                var port = uri.Port;
+                return false;
+            }
 
-                // Check if port is in allowed frontend ports
-                if (!frontendPorts.Contains(port.ToString()) && port != 5030) // Allow API port too
+            var host = uri.Host;
+            var port = uri.Port;
+
+            // Check configured domain patterns (e.g., *.sobhanonco.ir)
+            foreach (var domainPattern in corsConfig.AllowedDomains)
+            {
+                if (domainPattern.StartsWith("*."))
                 {
-                    return false;
+                    // Wildcard subdomain pattern
+                    var baseDomain = domainPattern.Substring(2);
+                    if (host.EndsWith("." + baseDomain, StringComparison.OrdinalIgnoreCase) ||
+                        host.Equals(baseDomain, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Console.WriteLine($"[CORS] ✓ Allowing domain pattern '{domainPattern}': {origin}");
+                        return true;
+                    }
                 }
-
-                // Check for 192.168.x.x pattern
-                if (host.StartsWith("192.168."))
+                else if (host.Equals(domainPattern, StringComparison.OrdinalIgnoreCase))
                 {
+                    Console.WriteLine($"[CORS] ✓ Allowing exact domain '{domainPattern}': {origin}");
                     return true;
                 }
+            }
 
-                // Check for 10.x.x.x pattern
-                if (host.StartsWith("10."))
-                {
-                    return true;
-                }
+            // Check port is allowed
+            if (!corsConfig.AllowedPorts.Contains(port))
+            {
+                return false;
+            }
 
-                // Check for 172.20.x.x pattern
-                if (host.StartsWith("172.20."))
+            // Check localhost
+            if (corsConfig.AllowLocalhost &&
+                (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                 host.Equals("127.0.0.1") ||
+                 host.Equals("0.0.0.0") ||
+                 host.Equals("::1")))
+            {
+                return true;
+            }
+
+            // Check local network patterns
+            if (corsConfig.AllowLocalNetwork)
+            {
+                if (host.StartsWith("192.168.") ||
+                    host.StartsWith("10.") ||
+                    host.StartsWith("172.20."))
                 {
                     return true;
                 }
