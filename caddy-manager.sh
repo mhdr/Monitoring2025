@@ -165,33 +165,110 @@ configure_domain() {
     
     # Show current configuration
     if [ -f "$CONFIG_FILE" ]; then
+        # shellcheck disable=SC1090
         source "$CONFIG_FILE"
         print_info "Current domain: $CADDY_DOMAIN"
         [ -n "$CADDY_EMAIL" ] && print_info "Current email: $CADDY_EMAIL"
+        [ -n "$CADDY_CERT_MODE" ] && print_info "Current cert mode: $CADDY_CERT_MODE"
     else
         print_warn "No domain configuration found."
     fi
     
     echo ""
-    echo "Domain options:"
-    echo "  1. localhost:8443 (Development - self-signed certificate)"
-    echo "  2. Custom domain (Production - automatic Let's Encrypt certificate)"
-    echo "  3. Cancel (keep current configuration)"
+    echo "Domain & Certificate Options:"
     echo ""
-    read -p "Choose option [1-3]: " -r DOMAIN_CHOICE
+    echo "  1. localhost:8443 (Development - self-signed certificate)"
+    echo "     • For local development only"
+    echo "     • Browser will show security warning (normal)"
+    echo ""
+    echo "  2. Custom domain with Let's Encrypt on standard port 443 (RECOMMENDED)"
+    echo "     • Best for production: ems3.sobhanonco.ir"
+    echo "     • Automatic trusted SSL certificate"
+    echo "     • Requires port 443 available (must stop other web servers first)"
+    echo ""
+    echo "  3. Custom domain with Let's Encrypt on custom port (e.g., 8443)"
+    echo "     • For production when port 443 is occupied"
+    echo "     • Requires port 80 available for ACME validation"
+    echo "     • Users must specify port in URL: https://domain.com:8443"
+    echo ""
+    echo "  4. Custom domain with self-signed certificate on custom port"
+    echo "     • When ports 80 and 443 are both occupied"
+    echo "     • Browser will show security warning (must accept)"
+    echo "     • No external port requirements"
+    echo ""
+    echo "  5. Cancel (keep current configuration)"
+    echo ""
+    read -p "Choose option [1-5]: " -r DOMAIN_CHOICE
     
     NEW_DOMAIN=""
     NEW_EMAIL=""
+    CERT_MODE="letsencrypt"
+    CONFIGURED_PORT=""
     
     case "$DOMAIN_CHOICE" in
         1)
+            # Option 1: localhost development
             NEW_DOMAIN="localhost:8443"
             NEW_EMAIL=""
+            CERT_MODE="internal"
+            CONFIGURED_PORT="8443"
             print_info "Switching to localhost:8443 for development"
             ;;
         2)
+            # Option 2: Production with Let's Encrypt on port 443
             echo ""
-            read -p "Enter your domain (e.g., monitoring.yourdomain.com): " -r NEW_DOMAIN
+            read -p "Enter your domain (e.g., ems3.sobhanonco.ir): " -r NEW_DOMAIN
+            if [ -z "$NEW_DOMAIN" ]; then
+                print_error "Domain cannot be empty!"
+                return 1
+            fi
+            
+            # Remove protocol and trailing slash if present
+            NEW_DOMAIN=$(echo "$NEW_DOMAIN" | sed -E 's~^https?://~~' | sed 's~/$~~')
+            
+            # Check if port 443 is available
+            if command -v ss &> /dev/null; then
+                if ss -tlnp 2>/dev/null | grep -q ":443 "; then
+                    print_error "Port 443 is already in use!"
+                    echo ""
+                    ss -tlnp 2>/dev/null | grep ":443 " || true
+                    echo ""
+                    print_error "Stop the service using port 443 first, or choose option 3 or 4."
+                    return 1
+                fi
+            elif command -v netstat &> /dev/null; then
+                if netstat -tlnp 2>/dev/null | grep -q ":443 "; then
+                    print_error "Port 443 is already in use!"
+                    echo ""
+                    netstat -tlnp 2>/dev/null | grep ":443 " || true
+                    echo ""
+                    print_error "Stop the service using port 443 first, or choose option 3 or 4."
+                    return 1
+                fi
+            fi
+            
+            CONFIGURED_PORT="443"
+            CERT_MODE="letsencrypt"
+            
+            echo ""
+            read -p "Enter your email for Let's Encrypt notifications: " -r NEW_EMAIL
+            if [ -z "$NEW_EMAIL" ]; then
+                print_warn "No email provided. Let's Encrypt notifications will be disabled."
+            fi
+            
+            print_info "Domain: $NEW_DOMAIN (port 443)"
+            [ -n "$NEW_EMAIL" ] && print_info "Email: $NEW_EMAIL"
+            
+            echo ""
+            print_warn "IMPORTANT: Make sure your DNS A record points to this server!"
+            print_warn "Domain: $NEW_DOMAIN → $(hostname -I 2>/dev/null | awk '{print $1}' || echo 'N/A')"
+            echo ""
+            read -p "Press Enter to continue, or Ctrl+C to cancel..."
+            ;;
+        3)
+            # Option 3: Custom port with Let's Encrypt (requires port 80)
+            echo ""
+            read -p "Enter your domain (e.g., ems3.sobhanonco.ir): " -r NEW_DOMAIN
             if [ -z "$NEW_DOMAIN" ]; then
                 print_error "Domain cannot be empty!"
                 return 1
@@ -201,11 +278,11 @@ configure_domain() {
             NEW_DOMAIN=$(echo "$NEW_DOMAIN" | sed -E 's~^https?://~~' | sed 's~/$~~')
             
             echo ""
-            print_warn "IMPORTANT: Another web server may be running on port 443."
-            print_warn "If you want to use port 443, you must stop the other web server first."
-            echo ""
-            read -p "Enter HTTPS port for Caddy (443 or custom like 8443, default: 8443): " -r NEW_PORT
-            NEW_PORT="${NEW_PORT:-8443}"
+            read -p "Enter HTTPS port for Caddy (e.g., 8443): " -r NEW_PORT
+            if [ -z "$NEW_PORT" ]; then
+                print_error "Port cannot be empty!"
+                return 1
+            fi
             
             # Validate port number
             if ! [[ "$NEW_PORT" =~ ^[0-9]+$ ]] || [ "$NEW_PORT" -lt 1 ] || [ "$NEW_PORT" -gt 65535 ]; then
@@ -213,32 +290,49 @@ configure_domain() {
                 return 1
             fi
             
-            # Warn about privileged ports
-            if [ "$NEW_PORT" -lt 1024 ] && [ "$NEW_PORT" != "443" ] && [ "$NEW_PORT" != "80" ]; then
-                print_warn "Port $NEW_PORT is a privileged port (< 1024)"
-            fi
-            
-            # Check if port is in use
+            # Check if chosen port is in use
             if command -v ss &> /dev/null; then
                 if ss -tlnp 2>/dev/null | grep -q ":$NEW_PORT "; then
                     print_error "Port $NEW_PORT is already in use!"
-                    print_error "Stop the service using this port first, or choose a different port."
                     ss -tlnp 2>/dev/null | grep ":$NEW_PORT " || true
                     return 1
                 fi
             elif command -v netstat &> /dev/null; then
                 if netstat -tlnp 2>/dev/null | grep -q ":$NEW_PORT "; then
                     print_error "Port $NEW_PORT is already in use!"
-                    print_error "Stop the service using this port first, or choose a different port."
                     netstat -tlnp 2>/dev/null | grep ":$NEW_PORT " || true
                     return 1
                 fi
             fi
             
-            # Add port to domain (skip for standard ports 80 and 443)
-            if [ "$NEW_PORT" != "443" ] && [ "$NEW_PORT" != "80" ]; then
-                NEW_DOMAIN="$NEW_DOMAIN:$NEW_PORT"
+            # Check if port 80 is available for ACME
+            echo ""
+            print_warn "IMPORTANT: Let's Encrypt requires port 80 for domain validation!"
+            if command -v ss &> /dev/null; then
+                if ss -tlnp 2>/dev/null | grep -q ":80 "; then
+                    print_error "Port 80 is already in use!"
+                    echo ""
+                    ss -tlnp 2>/dev/null | grep ":80 " || true
+                    echo ""
+                    print_error "Let's Encrypt cannot validate domain without port 80 access."
+                    print_error "Choose option 4 (self-signed) instead, or free up port 80."
+                    return 1
+                fi
+            elif command -v netstat &> /dev/null; then
+                if netstat -tlnp 2>/dev/null | grep -q ":80 "; then
+                    print_error "Port 80 is already in use!"
+                    echo ""
+                    netstat -tlnp 2>/dev/null | grep ":80 " || true
+                    echo ""
+                    print_error "Let's Encrypt cannot validate domain without port 80 access."
+                    print_error "Choose option 4 (self-signed) instead, or free up port 80."
+                    return 1
+                fi
             fi
+            
+            NEW_DOMAIN="$NEW_DOMAIN:$NEW_PORT"
+            CONFIGURED_PORT="$NEW_PORT"
+            CERT_MODE="letsencrypt"
             
             echo ""
             read -p "Enter your email for Let's Encrypt notifications: " -r NEW_EMAIL
@@ -246,16 +340,69 @@ configure_domain() {
                 print_warn "No email provided. Let's Encrypt notifications will be disabled."
             fi
             
-            print_info "New domain: $NEW_DOMAIN"
-            [ -n "$NEW_EMAIL" ] && print_info "New email: $NEW_EMAIL"
+            print_info "Domain: $NEW_DOMAIN"
+            [ -n "$NEW_EMAIL" ] && print_info "Email: $NEW_EMAIL"
+            print_info "Port 80 will be used for ACME challenges only"
             
             echo ""
-            print_warn "IMPORTANT: Make sure your DNS A record points to this server's IP address!"
+            print_warn "IMPORTANT: Make sure your DNS A record points to this server!"
             print_warn "Domain: $NEW_DOMAIN → $(hostname -I 2>/dev/null | awk '{print $1}' || echo 'N/A')"
             echo ""
             read -p "Press Enter to continue, or Ctrl+C to cancel..."
             ;;
-        3|*)
+        4)
+            # Option 4: Custom port with self-signed certificate
+            echo ""
+            read -p "Enter your domain (e.g., ems3.sobhanonco.ir): " -r NEW_DOMAIN
+            if [ -z "$NEW_DOMAIN" ]; then
+                print_error "Domain cannot be empty!"
+                return 1
+            fi
+            
+            # Remove protocol and trailing slash if present
+            NEW_DOMAIN=$(echo "$NEW_DOMAIN" | sed -E 's~^https?://~~' | sed 's~/$~~')
+            
+            echo ""
+            read -p "Enter HTTPS port for Caddy (e.g., 8443): " -r NEW_PORT
+            if [ -z "$NEW_PORT" ]; then
+                print_error "Port cannot be empty!"
+                return 1
+            fi
+            
+            # Validate port number
+            if ! [[ "$NEW_PORT" =~ ^[0-9]+$ ]] || [ "$NEW_PORT" -lt 1 ] || [ "$NEW_PORT" -gt 65535 ]; then
+                print_error "Invalid port number! Must be between 1-65535"
+                return 1
+            fi
+            
+            # Check if port is in use
+            if command -v ss &> /dev/null; then
+                if ss -tlnp 2>/dev/null | grep -q ":$NEW_PORT "; then
+                    print_error "Port $NEW_PORT is already in use!"
+                    ss -tlnp 2>/dev/null | grep ":$NEW_PORT " || true
+                    return 1
+                fi
+            elif command -v netstat &> /dev/null; then
+                if netstat -tlnp 2>/dev/null | grep -q ":$NEW_PORT "; then
+                    print_error "Port $NEW_PORT is already in use!"
+                    netstat -tlnp 2>/dev/null | grep ":$NEW_PORT " || true
+                    return 1
+                fi
+            fi
+            
+            NEW_DOMAIN="$NEW_DOMAIN:$NEW_PORT"
+            CONFIGURED_PORT="$NEW_PORT"
+            CERT_MODE="internal"
+            NEW_EMAIL=""
+            
+            print_info "Domain: $NEW_DOMAIN"
+            print_info "Certificate: Self-signed (internal)"
+            print_warn "Browser will show security warning - users must click 'Advanced' → 'Proceed'"
+            
+            echo ""
+            read -p "Press Enter to continue, or Ctrl+C to cancel..."
+            ;;
+        5|*)
             print_info "Configuration unchanged."
             return 0
             ;;
@@ -264,22 +411,36 @@ configure_domain() {
     # Generate new Caddyfile
     print_info "Generating new Caddyfile..."
     
-    # Extract port from domain if present
-    CONFIGURED_PORT=""
-    if [[ "$NEW_DOMAIN" =~ :([0-9]+)$ ]]; then
-        CONFIGURED_PORT="${BASH_REMATCH[1]}"
-    fi
-    
     cat > /tmp/Caddyfile.tmp <<EOF
 # Caddy Reverse Proxy Configuration - Monitoring2025
 # Updated on $(date)
+# Certificate Mode: $CERT_MODE
 
 EOF
 
-    # Disable HTTP->HTTPS redirects if using custom port (port 80 is occupied)
-    if [[ ! "$NEW_DOMAIN" =~ ^localhost ]] && [ -n "$CONFIGURED_PORT" ] && [ "$CONFIGURED_PORT" != "443" ] && [ "$CONFIGURED_PORT" != "80" ]; then
+    # Add port 80 handler for Let's Encrypt ACME challenges (Option 3 only)
+    if [ "$CERT_MODE" = "letsencrypt" ] && [ -n "$CONFIGURED_PORT" ] && [ "$CONFIGURED_PORT" != "443" ] && [ "$CONFIGURED_PORT" != "80" ]; then
         cat >> /tmp/Caddyfile.tmp <<EOF
-# Disable automatic HTTP redirects (port 80 is in use by another service)
+# Port 80 - ACME HTTP-01 challenge handler for Let's Encrypt
+:80 {
+    # Handle ACME challenges for certificate validation
+    handle /.well-known/acme-challenge/* {
+        respond "ACME challenge handler active" 200
+    }
+    
+    # Redirect all other traffic to HTTPS with custom port
+    handle {
+        redir https://{host}:$CONFIGURED_PORT{uri} permanent
+    }
+}
+
+EOF
+    fi
+
+    # Global options for self-signed certificates
+    if [ "$CERT_MODE" = "internal" ]; then
+        cat >> /tmp/Caddyfile.tmp <<EOF
+# Global options for self-signed certificates
 {
     auto_https disable_redirects
 }
@@ -292,20 +453,32 @@ EOF
 $NEW_DOMAIN {
 EOF
 
-    # Add TLS configuration for production domains
-    if [[ ! "$NEW_DOMAIN" =~ ^localhost ]]; then
-        if [ -n "$NEW_EMAIL" ]; then
-            cat >> /tmp/Caddyfile.tmp <<EOF
-    # Automatic HTTPS with Let's Encrypt
-    tls $NEW_EMAIL
+    # Add TLS configuration based on mode
+    if [ "$CERT_MODE" = "internal" ]; then
+        cat >> /tmp/Caddyfile.tmp <<EOF
+    # Self-signed certificate (internal CA)
+    tls internal
 
 EOF
-        else
-            cat >> /tmp/Caddyfile.tmp <<EOF
+    elif [ "$CERT_MODE" = "letsencrypt" ]; then
+        if [[ ! "$NEW_DOMAIN" =~ ^localhost ]]; then
+            if [ -n "$NEW_EMAIL" ]; then
+                cat >> /tmp/Caddyfile.tmp <<EOF
     # Automatic HTTPS with Let's Encrypt
-    tls
+    tls $NEW_EMAIL {
+        protocols tls1.2 tls1.3
+    }
 
 EOF
+            else
+                cat >> /tmp/Caddyfile.tmp <<EOF
+    # Automatic HTTPS with Let's Encrypt
+    tls {
+        protocols tls1.2 tls1.3
+    }
+
+EOF
+            fi
         fi
     fi
 
@@ -417,6 +590,7 @@ EOF
 CADDY_DOMAIN=$NEW_DOMAIN
 CADDY_EMAIL=$NEW_EMAIL
 CADDY_PORT=$CONFIGURED_PORT
+CADDY_CERT_MODE=$CERT_MODE
 EOF
         sudo chown caddy:caddy "$CONFIG_FILE" 2>/dev/null || true
     else
@@ -427,6 +601,7 @@ EOF
 CADDY_DOMAIN=$NEW_DOMAIN
 CADDY_EMAIL=$NEW_EMAIL
 CADDY_PORT=$CONFIGURED_PORT
+CADDY_CERT_MODE=$CERT_MODE
 EOF
     fi
     
@@ -453,14 +628,30 @@ EOF
         print_info "Configuration updated successfully!"
         echo ""
         print_info "Access your application at: https://$NEW_DOMAIN"
+        echo ""
         
-        if [[ "$NEW_DOMAIN" =~ ^localhost ]]; then
-            print_warn "Your browser will show a certificate warning for localhost."
-            print_warn "This is normal - click 'Advanced' → 'Proceed' to continue."
-        else
-            print_info "Caddy will automatically obtain a Let's Encrypt certificate."
-            print_info "This may take a few moments on first access."
+        # Display certificate mode specific information
+        if [ "$CERT_MODE" = "internal" ]; then
+            print_warn "Using self-signed certificate - browser will show a security warning"
+            print_warn "This is expected - click 'Advanced' → 'Proceed to $NEW_DOMAIN' to continue"
+            echo ""
+            print_info "The connection is still encrypted, but the certificate is not from a trusted CA"
+        elif [ "$CERT_MODE" = "letsencrypt" ]; then
+            print_info "Using Let's Encrypt for automatic trusted SSL certificate"
+            print_info "Certificate will be obtained on first access (may take 10-30 seconds)"
+            echo ""
+            if [ -n "$CONFIGURED_PORT" ] && [ "$CONFIGURED_PORT" != "443" ]; then
+                print_info "Port 80 is being used for ACME challenges only"
+            fi
+            print_info "Certificate will auto-renew before expiration"
         fi
+        
+        echo ""
+        print_info "URLs:"
+        print_info "  Frontend:    https://$NEW_DOMAIN"
+        print_info "  API:         https://$NEW_DOMAIN/api/"
+        print_info "  SignalR:     https://$NEW_DOMAIN/hubs/monitoring"
+        print_info "  API Docs:    https://$NEW_DOMAIN/swagger/"
     else
         print_error "Failed to reload Caddy with new configuration!"
         show_logs
@@ -549,9 +740,11 @@ show_info() {
     echo ""
     echo "Current Configuration:"
     if [ -f "$CONFIG_FILE" ]; then
+        # shellcheck disable=SC1090
         source "$CONFIG_FILE"
         echo "  Domain: $CADDY_DOMAIN"
         [ -n "$CADDY_EMAIL" ] && echo "  Email:  $CADDY_EMAIL"
+        [ -n "$CADDY_CERT_MODE" ] && echo "  Cert Mode: $CADDY_CERT_MODE"
     else
         echo "  Domain: Not configured"
     fi
@@ -559,6 +752,7 @@ show_info() {
     echo ""
     echo "Access URLs:"
     if [ -f "$CONFIG_FILE" ]; then
+        # shellcheck disable=SC1090
         source "$CONFIG_FILE"
         echo "  Frontend:     https://$CADDY_DOMAIN"
         echo "  API:          https://$CADDY_DOMAIN/api/"
@@ -633,9 +827,13 @@ check_ports() {
     fi
     
     echo ""
-    print_info "If port 443 is in use and you need port 8443, run:"
-    echo "  $0 domain"
-    echo "  Then select option 1 (localhost:8443) or option 2 with port 8443"
+    print_info "SSL/TLS Certificate Options:"
+    echo "  Run: $0 domain"
+    echo ""
+    echo "  Option 1: localhost:8443 (development)"
+    echo "  Option 2: Standard port 443 + Let's Encrypt (production, recommended)"
+    echo "  Option 3: Custom port + Let's Encrypt (needs port 80 for validation)"
+    echo "  Option 4: Custom port + self-signed cert (no port 80/443 needed)"
 }
 
 show_help() {
