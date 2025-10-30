@@ -224,20 +224,44 @@ case "${DOMAIN_CHOICE:-1}" in
         CADDY_DOMAIN=$(echo "$CADDY_DOMAIN" | sed -E 's~^https?://~~' | sed 's~/$~~')
         
         echo ""
-        print_warn "IMPORTANT: Another web server is running on port 443."
-        print_warn "Caddy needs to use a different HTTPS port."
+        print_warn "IMPORTANT: Another web server may be running on port 443."
+        print_warn "If you want to use port 443, you must stop the other web server first."
         echo ""
-        read -p "Enter custom HTTPS port for Caddy (default: 8443): " -r CADDY_PORT
+        read -p "Enter HTTPS port for Caddy (443 or custom like 8443, default: 8443): " -r CADDY_PORT
         CADDY_PORT="${CADDY_PORT:-8443}"
         
         # Validate port number
-        if ! [[ "$CADDY_PORT" =~ ^[0-9]+$ ]] || [ "$CADDY_PORT" -lt 1024 ] || [ "$CADDY_PORT" -gt 65535 ]; then
-            print_error "Invalid port number! Must be between 1024-65535"
+        if ! [[ "$CADDY_PORT" =~ ^[0-9]+$ ]] || [ "$CADDY_PORT" -lt 1 ] || [ "$CADDY_PORT" -gt 65535 ]; then
+            print_error "Invalid port number! Must be between 1-65535"
             exit 1
         fi
         
-        # Add port to domain
-        CADDY_DOMAIN="$CADDY_DOMAIN:$CADDY_PORT"
+        # Warn about privileged ports
+        if [ "$CADDY_PORT" -lt 1024 ] && [ "$CADDY_PORT" != "443" ] && [ "$CADDY_PORT" != "80" ]; then
+            print_warn "Port $CADDY_PORT is a privileged port (< 1024)"
+        fi
+        
+        # Check if port is in use
+        if command -v ss &> /dev/null; then
+            if ss -tlnp 2>/dev/null | grep -q ":$CADDY_PORT "; then
+                print_error "Port $CADDY_PORT is already in use!"
+                print_error "Stop the service using this port first, or choose a different port."
+                ss -tlnp 2>/dev/null | grep ":$CADDY_PORT " || true
+                exit 1
+            fi
+        elif command -v netstat &> /dev/null; then
+            if netstat -tlnp 2>/dev/null | grep -q ":$CADDY_PORT "; then
+                print_error "Port $CADDY_PORT is already in use!"
+                print_error "Stop the service using this port first, or choose a different port."
+                netstat -tlnp 2>/dev/null | grep ":$CADDY_PORT " || true
+                exit 1
+            fi
+        fi
+        
+        # Add port to domain (skip for standard ports 80 and 443)
+        if [ "$CADDY_PORT" != "443" ] && [ "$CADDY_PORT" != "80" ]; then
+            CADDY_DOMAIN="$CADDY_DOMAIN:$CADDY_PORT"
+        fi
         
         echo ""
         read -p "Enter your email for Let's Encrypt notifications: " -r CADDY_EMAIL
