@@ -292,10 +292,6 @@ export const getResponsiveFontSize = (
 export const hapticFeedback = (type: 'light' | 'medium' | 'heavy' = 'light'): void => {
   if (typeof window === 'undefined') return;
   
-  interface NavigatorWithVibrate extends Navigator {
-    vibrate?: (pattern: number | number[]) => boolean;
-  }
-  
   // Check for Vibration API support
   if ('vibrate' in navigator) {
     const patterns = {
@@ -303,7 +299,13 @@ export const hapticFeedback = (type: 'light' | 'medium' | 'heavy' = 'light'): vo
       medium: 20,
       heavy: 30,
     };
-    (navigator as NavigatorWithVibrate).vibrate?.(patterns[type]);
+    
+    // Type assertion for navigator.vibrate
+    const navigatorWithVibrate = navigator as Navigator & {
+      vibrate?: (pattern: number | number[]) => boolean;
+    };
+    
+    navigatorWithVibrate.vibrate?.(patterns[type]);
     logger.debug(`Haptic feedback: ${type}`);
   }
 };
@@ -314,23 +316,22 @@ export const hapticFeedback = (type: 'light' | 'medium' | 'heavy' = 'light'): vo
 export const lockOrientation = (orientation: 'portrait' | 'landscape' | 'any' = 'any'): Promise<void> => {
   if (typeof window === 'undefined') return Promise.resolve();
   
-  interface ScreenWithOrientation extends Screen {
+  // Type assertion for screen.orientation
+  const screenWithOrientation = window.screen as Screen & {
     orientation?: {
       lock?: (orientation: string) => Promise<void>;
       unlock?: () => void;
     };
-  }
+  };
   
-  const screen = window.screen as ScreenWithOrientation;
-  
-  if (screen.orientation?.lock) {
+  if (screenWithOrientation.orientation?.lock) {
     const orientationMap = {
       portrait: 'portrait-primary',
       landscape: 'landscape-primary',
       any: 'any',
     };
     
-    return screen.orientation.lock(orientationMap[orientation]).catch((err: Error) => {
+    return screenWithOrientation.orientation.lock(orientationMap[orientation]).catch((err: Error) => {
       logger.warn('Failed to lock screen orientation:', err);
     });
   }
@@ -344,17 +345,16 @@ export const lockOrientation = (orientation: 'portrait' | 'landscape' | 'any' = 
 export const unlockOrientation = (): void => {
   if (typeof window === 'undefined') return;
   
-  interface ScreenWithOrientation extends Screen {
+  // Type assertion for screen.orientation
+  const screenWithOrientation = window.screen as Screen & {
     orientation?: {
       lock?: (orientation: string) => Promise<void>;
       unlock?: () => void;
     };
-  }
+  };
   
-  const screen = window.screen as ScreenWithOrientation;
-  
-  if (screen.orientation?.unlock) {
-    screen.orientation.unlock();
+  if (screenWithOrientation.orientation?.unlock) {
+    screenWithOrientation.orientation.unlock();
     logger.debug('Screen orientation unlocked');
   }
 };
