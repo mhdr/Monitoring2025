@@ -108,6 +108,8 @@ if [[ ${bypass_user_selection} -eq 0 ]]; then
     echo '29 - Show HTTPS configuration'
     echo '30 - Configure Apache only'
     echo '31 - Configure Nginx only'
+    echo '32 - Move project to /var/www/monitoring for Apache'
+    echo '33 - Move project to /var/www/monitoring for Nginx'
     echo ''
 
     read -p 'Enter operation number: ' operation
@@ -901,60 +903,21 @@ configure_apache(){
         echo_warning "⚠ CRITICAL: dist directory is under /root/"
         echo_warning "Apache (www-data user) cannot access /root directory"
         echo ""
-        echo_info "You have 2 options:"
+        echo_error "You MUST move the project to an accessible location"
         echo ""
-        echo "Option 1 (Recommended): Move project to accessible location"
-        echo "  sudo mkdir -p /var/www/monitoring"
-        echo "  sudo cp -r $(pwd)/* /var/www/monitoring/"
-        echo "  sudo chown -R www-data:www-data /var/www/monitoring"
-        echo "  cd /var/www/monitoring"
-        echo "  Then rerun option 30"
-        echo ""
-        echo "Option 2: Grant Apache access to current location (less secure)"
-        echo "  sudo chmod +rx /root"
-        echo "  sudo chmod -R +r $(pwd)"
-        echo "  sudo chown -R www-data:www-data $(pwd)/dist"
+        echo_info "Solution: Use manager.sh option 32"
+        echo "  1. Exit this configuration (press Ctrl+C or Enter)"
+        echo "  2. Run: ./manager.sh"
+        echo "  3. Select option 32 to move project to /var/www/monitoring"
+        echo "  4. Then cd /var/www/monitoring"
+        echo "  5. Run ./manager.sh and select option 30 again"
         echo ""
         
-        read -p "Choose option (1=move, 2=grant access, 0=cancel): " -n 1 -r
+        read -p "Press Enter to cancel and use option 32 (recommended)... " -r
         echo
-        echo ""
-        
-        case $REPLY in
-            1)
-                echo_info "Creating /var/www/monitoring directory..."
-                sudo mkdir -p /var/www/monitoring
-                
-                echo_info "Copying project files..."
-                sudo cp -r "$(pwd)"/* /var/www/monitoring/
-                sudo cp -r "$(pwd)"/.[!.]* /var/www/monitoring/ 2>/dev/null || true
-                
-                echo_info "Setting ownership..."
-                sudo chown -R www-data:www-data /var/www/monitoring
-                
-                echo_success "Project moved to /var/www/monitoring"
-                echo ""
-                echo_warning "IMPORTANT: Your working directory is now /var/www/monitoring"
-                echo_info "To continue:"
-                echo "  cd /var/www/monitoring"
-                echo "  ./manager.sh"
-                echo "  Select option 30 again"
-                echo ""
-                exit 0
-                ;;
-            2)
-                echo_warning "Granting Apache access to current location..."
-                sudo chmod +rx /root
-                sudo chmod -R +r "$(pwd)"
-                sudo chown -R www-data:www-data "$(pwd)/dist"
-                echo_success "Permissions granted"
-                echo ""
-                ;;
-            *)
-                echo_info "Configuration cancelled"
-                exit 0
-                ;;
-        esac
+        echo_info "Configuration cancelled"
+        echo_info "Please run option 32 to move the project first"
+        exit 0
     fi
     
     # Ensure dist directory exists and has proper permissions
@@ -1549,6 +1512,158 @@ EOF
     echo "  sudo tail -f /var/log/nginx/${ui_domain}-error.log"
 }
 
+# operation: 32 - Move project to /var/www/monitoring for Apache
+move_project_to_var_www(){
+    echo_color "=== Move Project to /var/www/monitoring ===" ${color_yellow}
+    echo ""
+    
+    echo_warning "This will move your entire project to /var/www/monitoring"
+    echo_warning "This is required for Apache (www-data user) to access files"
+    echo ""
+    
+    current_dir="$(pwd)"
+    target_dir="/var/www/monitoring"
+    
+    echo_info "Current directory: ${current_dir}"
+    echo_info "Target directory:  ${target_dir}"
+    echo ""
+    
+    # Check if target already exists
+    if [ -d "$target_dir" ]; then
+        echo_error "Target directory already exists: ${target_dir}"
+        echo ""
+        read -p "Delete existing directory and proceed? (y/N): " -n 1 -r
+        echo
+        
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo_info "Operation cancelled"
+            exit 0
+        fi
+        
+        echo_info "Removing existing directory..."
+        if sudo rm -rf "$target_dir"; then
+            echo_success "Existing directory removed"
+        else
+            echo_error "Failed to remove existing directory"
+            exit 1
+        fi
+        echo ""
+    fi
+    
+    # Confirm action
+    read -p "Proceed with moving project? (y/N): " -n 1 -r
+    echo
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo_info "Operation cancelled"
+        exit 0
+    fi
+    
+    echo ""
+    
+    # Step 1: Create target directory
+    echo_info "[1/4] Creating target directory..."
+    if sudo mkdir -p "$target_dir"; then
+        echo_success "Directory created: ${target_dir}"
+    else
+        echo_error "Failed to create directory"
+        exit 1
+    fi
+    
+    echo ""
+    
+    # Step 2: Copy all files including hidden files
+    echo_info "[2/4] Copying project files..."
+    echo_info "This may take a few moments..."
+    
+    if sudo cp -r "${current_dir}"/* "$target_dir/" 2>/dev/null; then
+        echo_success "Visible files copied"
+    else
+        echo_warning "Some files may have failed to copy"
+    fi
+    
+    # Copy hidden files separately (excluding . and ..)
+    if sudo cp -r "${current_dir}"/.[!.]* "$target_dir/" 2>/dev/null; then
+        echo_success "Hidden files copied"
+    else
+        echo_info "No hidden files or already copied"
+    fi
+    
+    echo ""
+    
+    # Step 3: Set ownership to www-data
+    echo_info "[3/4] Setting ownership to www-data:www-data..."
+    if sudo chown -R www-data:www-data "$target_dir"; then
+        echo_success "Ownership set"
+    else
+        echo_error "Failed to set ownership"
+        exit 1
+    fi
+    
+    echo ""
+    
+    # Step 4: Set proper permissions
+    echo_info "[4/4] Setting permissions..."
+    
+    # Directories: 755 (rwxr-xr-x)
+    sudo find "$target_dir" -type d -exec chmod 755 {} \; 2>/dev/null
+    
+    # Files: 644 (rw-r--r--)
+    sudo find "$target_dir" -type f -exec chmod 644 {} \; 2>/dev/null
+    
+    # Scripts: 755 (executable)
+    sudo chmod 755 "$target_dir"/*.sh 2>/dev/null
+    sudo chmod 755 "$target_dir"/scripts/*.sh 2>/dev/null
+    
+    echo_success "Permissions set"
+    
+    echo ""
+    echo_color "=== Move Complete ===" ${color_green}
+    echo ""
+    echo_success "Project successfully moved to: ${target_dir}"
+    echo ""
+    
+    # Verify key files
+    echo_info "Verifying key files..."
+    key_files=("package.json" "manager.sh" "install.sh" "ecosystem.config.cjs" "server.cjs")
+    all_good=true
+    
+    for file in "${key_files[@]}"; do
+        if [ -f "$target_dir/$file" ]; then
+            echo_success "  ✓ ${file}"
+        else
+            echo_error "  ✗ ${file} NOT FOUND"
+            all_good=false
+        fi
+    done
+    
+    echo ""
+    
+    if [ "$all_good" = false ]; then
+        echo_warning "Some files are missing - manual verification required"
+    fi
+    
+    echo ""
+    echo_color "=== Next Steps ===" ${color_blue}
+    echo ""
+    echo "1. Change to the new directory:"
+    echo "   cd ${target_dir}"
+    echo ""
+    echo "2. Run manager.sh:"
+    echo "   ./manager.sh"
+    echo ""
+    echo "3. Select option 30 to configure Apache"
+    echo ""
+    echo "4. Deploy the application (option 1 or 27)"
+    echo ""
+    
+    echo_warning "IMPORTANT:"
+    echo "  • Your working directory is still: ${current_dir}"
+    echo "  • You MUST cd to ${target_dir} before running any commands"
+    echo "  • The old directory in ${current_dir} is still present (you can delete it later)"
+    echo ""
+}
+
 # operation: 28 - Configure HTTPS URLs
 configure_https(){
     echo_color "=== HTTPS Configuration ===" ${color_yellow}
@@ -1929,6 +2044,9 @@ case ${operation} in
         ;;
     31)
         configure_nginx
+        ;;
+    32)
+        move_project_to_var_www
         ;;
     *)
         echo_error "Invalid operation: ${operation}"
