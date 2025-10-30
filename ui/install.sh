@@ -303,6 +303,21 @@ file_count=$(find dist -type f | wc -l)
 dist_size=$(du -sh dist 2>/dev/null | cut -f1)
 log_success "Build output: ${file_count} files, ${dist_size} total"
 
+# Verify and copy icons to dist (fix for PWA manifest icons)
+log_info "Verifying icons in dist..."
+if [ ! -d "dist/icons" ] && [ -d "public/icons" ]; then
+    log_warning "Icons directory not found in dist/ - copying from public/"
+    cp -r public/icons dist/
+    log_success "Icons copied to dist/icons/"
+elif [ ! -f "dist/icons/eye.svg" ] && [ -f "public/icons/eye.svg" ]; then
+    log_warning "eye.svg missing in dist/icons/ - copying from public/"
+    mkdir -p dist/icons
+    cp public/icons/eye.svg dist/icons/
+    log_success "eye.svg copied to dist/icons/"
+else
+    log_success "Icons verified in dist/"
+fi
+
 # Create logs directory
 log_info "Creating logs directory..."
 mkdir -p logs

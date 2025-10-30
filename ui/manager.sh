@@ -973,14 +973,44 @@ configure_apache(){
         echo_success "Permissions set for dist directory"
         echo ""
         
-        # Also fix permissions for public directory (icons, fonts, etc.)
-        public_path="${PROJECT_ROOT}/public"
-        if [ -d "$public_path" ]; then
-            echo_info "Setting permissions for public directory (icons, fonts, etc.)..."
-            sudo chown -R www-data:www-data "$public_path"
-            sudo chmod -R 755 "$public_path"
-            echo_success "Permissions set for public directory"
+        # Verify icons directory exists in dist (Vite should copy from public/)
+        if [ ! -d "$dist_path/icons" ]; then
+            echo_warning "Icons directory not found in dist/ - Vite didn't copy public/icons"
+            echo_info "Manually copying icons from public/ to dist/..."
+            
+            public_path="${PROJECT_ROOT}/public"
+            if [ -d "$public_path/icons" ]; then
+                sudo mkdir -p "$dist_path/icons"
+                sudo cp -r "$public_path/icons"/* "$dist_path/icons/"
+                sudo chown -R www-data:www-data "$dist_path/icons"
+                sudo chmod -R 755 "$dist_path/icons"
+                echo_success "Icons copied to dist/icons/"
+            else
+                echo_error "Source icons directory not found: ${public_path}/icons"
+            fi
             echo ""
+        else
+            echo_success "Icons directory exists in dist/"
+            # Verify eye.svg specifically
+            if [ -f "$dist_path/icons/eye.svg" ]; then
+                echo_success "eye.svg found in dist/icons/"
+            else
+                echo_warning "eye.svg NOT found in dist/icons/ - copying from public/"
+                public_path="${PROJECT_ROOT}/public"
+                if [ -f "$public_path/icons/eye.svg" ]; then
+                    sudo cp "$public_path/icons/eye.svg" "$dist_path/icons/"
+                    sudo chown www-data:www-data "$dist_path/icons/eye.svg"
+                    sudo chmod 644 "$dist_path/icons/eye.svg"
+                    echo_success "eye.svg copied"
+                fi
+            fi
+            echo ""
+        fi
+        
+        # Set permissions for icons in dist
+        if [ -d "$dist_path/icons" ]; then
+            sudo chown -R www-data:www-data "$dist_path/icons"
+            sudo chmod -R 755 "$dist_path/icons"
         fi
     fi
     
