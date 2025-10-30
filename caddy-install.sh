@@ -204,10 +204,12 @@ read -p "Choose option [1-3] (default: 1): " -r DOMAIN_CHOICE
 
 CADDY_DOMAIN=""
 CADDY_EMAIL=""
+CADDY_PORT=""
 
 case "${DOMAIN_CHOICE:-1}" in
     1)
         CADDY_DOMAIN="localhost:8443"
+        CADDY_PORT="8443"
         print_info "Using localhost:8443 for development"
         ;;
     2)
@@ -222,6 +224,22 @@ case "${DOMAIN_CHOICE:-1}" in
         CADDY_DOMAIN=$(echo "$CADDY_DOMAIN" | sed -E 's~^https?://~~' | sed 's~/$~~')
         
         echo ""
+        print_warn "IMPORTANT: Another web server is running on port 443."
+        print_warn "Caddy needs to use a different HTTPS port."
+        echo ""
+        read -p "Enter custom HTTPS port for Caddy (default: 8443): " -r CADDY_PORT
+        CADDY_PORT="${CADDY_PORT:-8443}"
+        
+        # Validate port number
+        if ! [[ "$CADDY_PORT" =~ ^[0-9]+$ ]] || [ "$CADDY_PORT" -lt 1024 ] || [ "$CADDY_PORT" -gt 65535 ]; then
+            print_error "Invalid port number! Must be between 1024-65535"
+            exit 1
+        fi
+        
+        # Add port to domain
+        CADDY_DOMAIN="$CADDY_DOMAIN:$CADDY_PORT"
+        
+        echo ""
         read -p "Enter your email for Let's Encrypt notifications: " -r CADDY_EMAIL
         if [ -z "$CADDY_EMAIL" ]; then
             print_warn "No email provided. Let's Encrypt notifications will be disabled."
@@ -233,11 +251,13 @@ case "${DOMAIN_CHOICE:-1}" in
         echo ""
         print_warn "IMPORTANT: Make sure your DNS A record points to this server's IP address!"
         print_warn "Domain: $CADDY_DOMAIN → $(hostname -I | awk '{print $1}')"
+        print_warn "Users will access your app at: https://${CADDY_DOMAIN}"
         echo ""
         read -p "Press Enter to continue after DNS is configured, or Ctrl+C to cancel..."
         ;;
     3|*)
         CADDY_DOMAIN="localhost:8443"
+        CADDY_PORT="8443"
         print_info "Skipping domain configuration. Using localhost:8443 as default."
         print_info "Run './caddy-manager.sh domain' later to configure your domain."
         ;;
@@ -393,12 +413,14 @@ if [ "$INSTALL_TYPE" = "system" ]; then
     sudo tee "$CONFIG_FILE" > /dev/null <<EOF
 CADDY_DOMAIN=$CADDY_DOMAIN
 CADDY_EMAIL=$CADDY_EMAIL
+CADDY_PORT=$CADDY_PORT
 EOF
     sudo chown caddy:caddy "$CONFIG_FILE" 2>/dev/null || true
 else
     cat > "$CONFIG_FILE" <<EOF
 CADDY_DOMAIN=$CADDY_DOMAIN
 CADDY_EMAIL=$CADDY_EMAIL
+CADDY_PORT=$CADDY_PORT
 EOF
 fi
 
