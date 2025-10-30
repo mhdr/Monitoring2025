@@ -588,6 +588,7 @@ const AuditTrailPage: React.FC = () => {
                   pagination: false,
                   suppressContextMenu: true,
                   onRowClicked: handleRowClick,
+                  headerHeight: 50,
                 }}
               />
             </Box>
