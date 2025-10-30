@@ -105,10 +105,21 @@ reload_config() {
         fi
     fi
     
-    # Reload
-    $SYSTEMCTL_CMD reload caddy-monitoring.service
-    sleep 1
-    print_info "Configuration reloaded successfully!"
+    # Reload with timeout
+    if timeout 10s $SYSTEMCTL_CMD reload caddy-monitoring.service 2>/dev/null; then
+        sleep 1
+        print_info "Configuration reloaded successfully!"
+    else
+        print_warn "Reload timed out or failed, trying restart instead..."
+        if timeout 15s $SYSTEMCTL_CMD restart caddy-monitoring.service; then
+            sleep 2
+            print_info "Service restarted successfully!"
+        else
+            print_error "Restart also failed!"
+            show_logs
+            exit 1
+        fi
+    fi
 }
 
 show_logs() {
@@ -357,9 +368,22 @@ CADDY_EMAIL=$NEW_EMAIL
 EOF
     fi
     
-    # Reload Caddy
+    # Reload Caddy with timeout
     print_info "Reloading Caddy with new configuration..."
-    $SYSTEMCTL_CMD reload caddy-monitoring.service
+    
+    # Try reload first with timeout
+    if timeout 10s $SYSTEMCTL_CMD reload caddy-monitoring.service 2>/dev/null; then
+        print_info "Configuration reloaded via systemctl reload"
+    else
+        print_warn "Reload timed out or failed, trying restart instead..."
+        if timeout 15s $SYSTEMCTL_CMD restart caddy-monitoring.service; then
+            print_info "Service restarted successfully"
+        else
+            print_error "Restart also failed!"
+            show_logs
+            return 1
+        fi
+    fi
     
     sleep 2
     
