@@ -39,6 +39,39 @@ else
     INSTALL_TYPE="user"
 fi
 
+# Ask about proxychains usage
+echo ""
+print_info "Some servers require proxychains to access the internet."
+read -p "Do you need to use proxychains for internet access? (y/N): " -n 1 -r
+echo ""
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    USE_PROXYCHAINS=true
+    print_info "Will use proxychains for all internet commands."
+    
+    # Check if proxychains is installed
+    if ! command -v proxychains &> /dev/null && ! command -v proxychains4 &> /dev/null; then
+        print_error "proxychains/proxychains4 not found!"
+        print_error "Please install proxychains first:"
+        echo "  Ubuntu/Debian: sudo apt install proxychains4"
+        echo "  CentOS/RHEL:   sudo yum install proxychains-ng"
+        echo "  Arch:          sudo pacman -S proxychains-ng"
+        exit 1
+    fi
+    
+    # Determine which proxychains command to use
+    if command -v proxychains4 &> /dev/null; then
+        PROXY_CMD="proxychains4 -q"
+    else
+        PROXY_CMD="proxychains -q"
+    fi
+    print_info "Using: $PROXY_CMD"
+else
+    USE_PROXYCHAINS=false
+    PROXY_CMD=""
+    print_info "Will run commands without proxychains."
+fi
+echo ""
+
 # Detect OS
 if [ -f /etc/os-release ]; then
     . /etc/os-release
@@ -58,8 +91,8 @@ install_caddy() {
         ubuntu|debian)
             print_info "Installing Caddy on Debian/Ubuntu..."
             sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
-            curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-            curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+            $PROXY_CMD curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+            $PROXY_CMD curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
             sudo apt update
             sudo apt install caddy -y
             ;;
@@ -106,11 +139,11 @@ install_caddy_binary() {
     esac
     
     # Download latest Caddy
-    CADDY_VERSION=$(curl -s https://api.github.com/repos/caddyserver/caddy/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    CADDY_VERSION=$($PROXY_CMD curl -s https://api.github.com/repos/caddyserver/caddy/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
     print_info "Downloading Caddy v$CADDY_VERSION for linux/$CADDY_ARCH..."
     
     cd /tmp
-    curl -L "https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_${CADDY_ARCH}.tar.gz" -o caddy.tar.gz
+    $PROXY_CMD curl -L "https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_${CADDY_ARCH}.tar.gz" -o caddy.tar.gz
     tar -xzf caddy.tar.gz caddy
     
     # Install to /usr/local/bin or ~/.local/bin
