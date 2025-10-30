@@ -8,6 +8,9 @@ import viteCompression from 'vite-plugin-compression'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Base path for deployment - supports subpath deployment like /dashboard/monitoring/
+  // Set via VITE_BASE_PATH environment variable, defaults to / (root)
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [
     react(),
     // Brotli compression - generates .br files (best compression for modern browsers)
@@ -41,8 +44,9 @@ export default defineConfig({
         theme_color: '#1976d2', // MUI primary color (blue)
         background_color: '#ffffff',
         display: 'standalone',
-        scope: '/',
-        start_url: '/',
+        // Scope and start_url use base path for flexible deployment
+        scope: process.env.VITE_BASE_PATH || '/',
+        start_url: process.env.VITE_BASE_PATH || '/',
         orientation: 'any',
         // Use existing scalable SVG icon. If you add PNG icons later, update this array accordingly.
         icons: [

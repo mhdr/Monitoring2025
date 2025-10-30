@@ -12,6 +12,14 @@ interface ImportMetaEnv {
    * Production: Set via .env.production (e.g., http://api.yourdomain.com)
    */
   readonly VITE_API_BASE_URL: string;
+  
+  /**
+   * Base path for deployment (must start and end with /)
+   * Root deployment: /
+   * Subpath deployment: /dashboard/monitoring/
+   * Default: /
+   */
+  readonly VITE_BASE_PATH: string;
 }
 
 interface ImportMeta {
