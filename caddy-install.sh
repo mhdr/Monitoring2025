@@ -281,17 +281,19 @@ EOF
 
     # Add TLS configuration for production domains
     if [[ ! "$domain" =~ ^localhost ]]; then
-        cat >> /tmp/Caddyfile.tmp <<EOF
-    # Automatic HTTPS with Let's Encrypt
-    tls {
-EOF
         if [ -n "$email" ]; then
-            echo "        email $email" >> /tmp/Caddyfile.tmp
-        fi
-        cat >> /tmp/Caddyfile.tmp <<EOF
-    }
+            cat >> /tmp/Caddyfile.tmp <<EOF
+    # Automatic HTTPS with Let's Encrypt
+    tls $email
 
 EOF
+        else
+            cat >> /tmp/Caddyfile.tmp <<EOF
+    # Automatic HTTPS with Let's Encrypt
+    tls
+
+EOF
+        fi
     fi
 
     # Add common configuration
