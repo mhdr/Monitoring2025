@@ -472,7 +472,7 @@ const MonitoringPage: React.FC = () => {
                 {t('monitoring')}
               </Typography>
               {showRefreshIndicator && currentFolderItems.length > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-id-ref="monitoring-page-refresh-indicator-container">
+                <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }} data-id-ref="monitoring-page-refresh-indicator-container">
                   <CircularProgress 
                     size={16} 
                     data-id-ref="monitoring-page-refresh-spinner"
@@ -480,7 +480,6 @@ const MonitoringPage: React.FC = () => {
                   <Typography 
                     variant="body2" 
                     color="text.secondary"
-                    sx={{ display: { xs: 'none', md: 'inline' } }}
                     data-id-ref="monitoring-page-refresh-label"
                   >
                     {t('refreshingData')}
