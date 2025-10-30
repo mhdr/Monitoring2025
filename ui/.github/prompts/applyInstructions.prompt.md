@@ -1,3 +1,7 @@
+---
+mode: Beast Mode
+---
+
 # Apply Project Instructions
 
 ## Instructions for AI Agent

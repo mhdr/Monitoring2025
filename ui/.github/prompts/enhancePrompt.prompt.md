@@ -1,3 +1,7 @@
+---
+mode: ask
+---
+
 # Request Enhancement Prompt
 
 ## Your Role

@@ -1,3 +1,7 @@
+---
+mode: Beast Mode
+---
+
 # Condense Copilot Instructions
 
 ## Instructions for AI Agent
