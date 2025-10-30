@@ -164,10 +164,19 @@ fi
 log_info "Fixing permissions on node_modules binaries..."
 if [ -d "node_modules/.bin" ]; then
     chmod +x node_modules/.bin/* 2>/dev/null || true
-    log_success "Permissions fixed on node_modules binaries"
-else
-    log_warning "node_modules/.bin directory not found"
+    log_info "Fixed permissions on .bin directory"
 fi
+
+# Fix permissions on platform-specific binaries (esbuild, etc.)
+if [ -d "node_modules/@esbuild" ]; then
+    find node_modules/@esbuild -type f -name "esbuild" -exec chmod +x {} \; 2>/dev/null || true
+    log_info "Fixed permissions on @esbuild binaries"
+fi
+
+# Fix all binaries in node_modules (comprehensive approach)
+find node_modules -type f \( -name "*.node" -o -path "*/bin/*" \) -exec chmod +x {} \; 2>/dev/null || true
+
+log_success "Permissions fixed on node_modules binaries"
 
 # Check if .env.production already exists (e.g., from HTTPS configuration)
 if [ -f ".env.production" ]; then
