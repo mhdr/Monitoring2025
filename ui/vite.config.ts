@@ -146,8 +146,9 @@ export default defineConfig({
           // Cache API calls - StaleWhileRevalidate for better performance
           // Serves cached data immediately while fetching fresh data in background
           // This works well with TTL system and cache invalidation
+          // Protocol-agnostic pattern: matches /api/ on any protocol (HTTP/HTTPS) or host
           {
-            urlPattern: /^http:\/\/localhost:5030\/api\/.*/,
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'api-cache',
