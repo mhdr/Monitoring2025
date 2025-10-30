@@ -49,6 +49,7 @@ const DashboardLayout: React.FC = () => {
           flexDirection: 'column',
           width: '100%',
           minHeight: '100vh',
+          overflow: 'hidden',
         }}
         data-id-ref="dashboard-layout-main-content-area"
       >

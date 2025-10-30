@@ -86,9 +86,20 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
       position="static" 
       className="custom-navbar shadow"
       elevation={0}
+      sx={{
+        borderRadius: 0,
+        width: '100%',
+      }}
       data-id-ref="responsive-navbar-root"
     >
-      <Container maxWidth={false} data-id-ref="responsive-navbar-container">
+      <Container 
+        maxWidth={false} 
+        disableGutters
+        sx={{
+          px: { xs: 2, sm: 3 },
+        }}
+        data-id-ref="responsive-navbar-container"
+      >
         <Toolbar disableGutters sx={{ minHeight: '50px !important', padding: 0 }}>
           {/* Sidebar Toggle Button */}
           {onToggleSidebar && (
