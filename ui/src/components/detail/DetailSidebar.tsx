@@ -25,6 +25,7 @@ import {
   MonitorHeart as LiveMonitoringIcon,
   Warning as ActiveAlarmsDetailIcon,
   Description as AlarmLogDetailIcon,
+  Assessment as AuditTrailDetailIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useMonitoring } from '../../hooks/useMonitoring';
