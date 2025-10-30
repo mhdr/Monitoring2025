@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './linux-fonts.css'
 import './iransansx-features.css'
+import './styles/mobile.css' // Mobile enhancements
 import i18n from './i18n/config' // Initialize i18next
 import { LanguageProvider } from './contexts/LanguageContext'
 import { MuiThemeProvider } from './contexts/MuiThemeProvider'

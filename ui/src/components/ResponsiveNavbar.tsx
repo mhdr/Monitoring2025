@@ -97,8 +97,13 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
               color="inherit"
               aria-label="Toggle sidebar"
               onClick={onToggleSidebar}
-              className="sidebar-toggle-btn"
-              sx={{ mr: 2, display: { lg: 'none' } }}
+              className="sidebar-toggle-btn touch-target"
+              sx={{ 
+                mr: 2, 
+                display: { lg: 'none' },
+                minWidth: { xs: 48, sm: 44 },
+                minHeight: { xs: 48, sm: 44 },
+              }}
               data-id-ref="responsive-navbar-sidebar-toggle-btn"
             >
               <MenuIcon data-id-ref="responsive-navbar-sidebar-toggle-icon" />
@@ -150,10 +155,15 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
             <IconButton
               onClick={handleMenuOpen}
               color="inherit"
-              className="user-dropdown-toggle"
+              className="user-dropdown-toggle touch-target"
               aria-controls="user-menu"
               aria-haspopup="true"
               aria-expanded={Boolean(anchorEl)}
+              sx={{
+                minWidth: { xs: 48, sm: 44 },
+                minHeight: { xs: 48, sm: 44 },
+                paddingX: { xs: 1.5, sm: 1 },
+              }}
               data-id-ref="responsive-navbar-user-dropdown"
             >
               <AccountCircle 
@@ -193,7 +203,8 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
                   elevation: 8,
                   sx: {
                     mt: 1.5,
-                    minWidth: 200,
+                    minWidth: { xs: 180, sm: 200 },
+                    maxWidth: { xs: 'calc(100vw - 32px)', sm: 'none' },
                   }
                 }
               }}
@@ -201,6 +212,12 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
             >
               <MenuItem 
                 onClick={handleProfileClick}
+                className="touch-target"
+                sx={{
+                  minHeight: { xs: 48, sm: 44 },
+                  px: { xs: 2, sm: 2 },
+                  py: { xs: 1.5, sm: 1 },
+                }}
                 data-id-ref="responsive-navbar-user-profile-link"
               >
                 <PersonIcon 
@@ -212,6 +229,12 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
               </MenuItem>
               <MenuItem 
                 onClick={handleSettingsClick}
+                className="touch-target"
+                sx={{
+                  minHeight: { xs: 48, sm: 44 },
+                  px: { xs: 2, sm: 2 },
+                  py: { xs: 1.5, sm: 1 },
+                }}
                 data-id-ref="responsive-navbar-user-settings-link"
               >
                 <SettingsIcon 
@@ -224,6 +247,12 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
               <Divider data-id-ref="responsive-navbar-user-divider-1" />
               <MenuItem 
                 onClick={handleForceSyncClick}
+                className="touch-target"
+                sx={{
+                  minHeight: { xs: 48, sm: 44 },
+                  px: { xs: 2, sm: 2 },
+                  py: { xs: 1.5, sm: 1 },
+                }}
                 data-id-ref="responsive-navbar-user-force-sync-link"
               >
                 <SyncIcon 
@@ -236,7 +265,13 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
               <Divider data-id-ref="responsive-navbar-user-divider-2" />
               <MenuItem 
                 onClick={handleLogout}
-                sx={{ color: 'error.main' }}
+                className="touch-target"
+                sx={{ 
+                  color: 'error.main',
+                  minHeight: { xs: 48, sm: 44 },
+                  px: { xs: 2, sm: 2 },
+                  py: { xs: 1.5, sm: 1 },
+                }}
                 data-id-ref="responsive-navbar-logout-link"
               >
                 <LogoutIcon 

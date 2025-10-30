@@ -636,10 +636,13 @@ const MonitoringPage: React.FC = () => {
                 sx={{
                   display: 'grid',
                   gridTemplateColumns: {
-                    xs: 'repeat(auto-fill, minmax(140px, 1fr))',
-                    sm: 'repeat(auto-fill, minmax(180px, 1fr))',
+                    xs: 'repeat(2, 1fr)',               // 2 columns on mobile
+                    sm: 'repeat(3, minmax(160px, 1fr))', // 3 columns on small tablets
+                    md: 'repeat(4, minmax(180px, 1fr))', // 4 columns on medium screens
+                    lg: 'repeat(5, minmax(180px, 1fr))', // 5 columns on large screens
+                    xl: 'repeat(6, minmax(200px, 1fr))', // 6 columns on XL screens
                   },
-                  gap: { xs: 2, sm: 3 },
+                  gap: { xs: 1.5, sm: 2, md: 3 },
                   marginTop: 2,
                 }}
                 data-id-ref="monitoring-page-folder-grid"
@@ -695,8 +698,11 @@ const MonitoringPage: React.FC = () => {
                 sx={{
                   display: 'grid',
                   gridTemplateColumns: {
-                    xs: '1fr',
-                    sm: 'repeat(2, minmax(280px, 1fr))',
+                    xs: '1fr',                             // 1 column on mobile
+                    sm: 'repeat(2, minmax(280px, 1fr))',   // 2 columns on small tablets
+                    md: 'repeat(2, minmax(320px, 1fr))',   // 2 columns on medium screens
+                    lg: 'repeat(3, minmax(320px, 1fr))',   // 3 columns on large screens
+                    xl: 'repeat(4, minmax(320px, 1fr))',   // 4 columns on XL screens
                   },
                   gap: 2,
                   marginTop: 2,

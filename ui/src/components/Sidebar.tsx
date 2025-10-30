@@ -197,10 +197,13 @@ const pulseAnimation = keyframes`
           <IconButton
             onClick={onToggle}
             edge="end"
+            className="touch-target"
             aria-label={t('common.buttons.close')}
             size="small"
             data-id-ref="sidebar-toggle-close-btn"
             sx={{
+              minWidth: { xs: 48, sm: 44 },
+              minHeight: { xs: 48, sm: 44 },
               color: 'text.secondary',
               '&:hover': {
                 color: 'primary.main',
