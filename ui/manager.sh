@@ -972,6 +972,16 @@ configure_apache(){
         sudo chmod -R 755 "$dist_path"
         echo_success "Permissions set for dist directory"
         echo ""
+        
+        # Also fix permissions for public directory (icons, fonts, etc.)
+        public_path="${PROJECT_ROOT}/public"
+        if [ -d "$public_path" ]; then
+            echo_info "Setting permissions for public directory (icons, fonts, etc.)..."
+            sudo chown -R www-data:www-data "$public_path"
+            sudo chmod -R 755 "$public_path"
+            echo_success "Permissions set for public directory"
+            echo ""
+        fi
     fi
     
     # Generate API virtual host
@@ -1156,6 +1166,7 @@ EOF
     echo "  ✓ SSL/TLS encryption"
     echo "  ✓ Automatic HTTP → HTTPS redirect"
     echo "  ✓ SPA routing support"
+    echo "  ✓ Proper file permissions (dist + public directories)"
     echo ""
     echo_info "Access URLs:"
     echo "  Frontend: ${UI_HTTPS_URL}"
