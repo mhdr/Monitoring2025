@@ -103,10 +103,10 @@ if [[ ${bypass_user_selection} -eq 0 ]]; then
     echo '26 - Check SSL certificates'
     echo ''
     echo 'HTTPS Deployment (Reverse Proxy):'
-    echo '27 - Deploy with HTTPS'
+    echo '27 - Deploy with HTTPS + Apache (recommended)'
     echo '28 - Configure HTTPS URLs'
     echo '29 - Show HTTPS configuration'
-    echo '30 - Configure Apache (auto-setup with WebSocket)'
+    echo '30 - Configure Apache only (without deployment)'
     echo ''
 
     read -p 'Enter operation number: ' operation
@@ -1411,6 +1411,28 @@ app_deploy_https(){
         exit 0
     fi
     
+    # Ask if user wants to configure Apache automatically
+    echo ""
+    echo_color "=== Reverse Proxy Configuration ===" ${color_blue}
+    echo ""
+    echo_info "Would you like to automatically configure Apache as reverse proxy?"
+    echo "  • Enables WebSocket support (mod_proxy_wstunnel)"
+    echo "  • Generates virtual host configurations"
+    echo "  • Sets up SSL/TLS with your certificates"
+    echo "  • Configures proper file permissions"
+    echo ""
+    read -p "Configure Apache automatically? (Y/n): " -n 1 -r
+    echo
+    echo ""
+    
+    configure_apache_now=true
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        configure_apache_now=false
+        echo_info "Skipping Apache configuration"
+        echo_warning "You will need to configure your reverse proxy manually"
+        echo ""
+    fi
+    
     # Deploy using standard deployment
     echo_info "[$(timestamp)] Building and deploying with HTTPS configuration..."
     dos2unix install.sh 2>/dev/null || true
@@ -1420,12 +1442,28 @@ app_deploy_https(){
         echo_success "HTTPS deployment completed successfully"
         echo ""
         
+        # Configure Apache if requested
+        if [ "$configure_apache_now" = true ]; then
+            echo ""
+            echo_color "=== Configuring Apache ===" ${color_blue}
+            echo ""
+            configure_apache
+        fi
+        
+        echo ""
         source "$https_config"
         echo_info "Application Access URLs:"
         echo "  Frontend: ${UI_HTTPS_URL}"
         echo "  Backend:  ${API_HTTPS_URL}"
         echo ""
-        echo_warning "Make sure your reverse proxy (nginx/apache) is running and configured"
+        
+        if [ "$configure_apache_now" = true ]; then
+            echo_success "Apache is configured and ready!"
+            echo_info "Your application should now be accessible at the URLs above"
+        else
+            echo_warning "Make sure your reverse proxy (nginx/apache) is running and configured"
+        fi
+        
         echo ""
         echo_info "To verify the build is using correct API URL:"
         echo "  1. Open browser DevTools (F12)"
