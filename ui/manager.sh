@@ -895,6 +895,85 @@ configure_apache(){
     # Get absolute path to dist directory
     dist_path="$(pwd)/dist"
     
+    # Check if dist directory is in /root and warn about permissions
+    if [[ "$dist_path" == /root/* ]]; then
+        echo_warning "⚠ CRITICAL: dist directory is under /root/"
+        echo_warning "Apache (www-data user) cannot access /root directory"
+        echo ""
+        echo_info "You have 2 options:"
+        echo ""
+        echo "Option 1 (Recommended): Move project to accessible location"
+        echo "  sudo mkdir -p /var/www/monitoring"
+        echo "  sudo cp -r $(pwd)/* /var/www/monitoring/"
+        echo "  sudo chown -R www-data:www-data /var/www/monitoring"
+        echo "  cd /var/www/monitoring"
+        echo "  Then rerun option 30"
+        echo ""
+        echo "Option 2: Grant Apache access to current location (less secure)"
+        echo "  sudo chmod +rx /root"
+        echo "  sudo chmod -R +r $(pwd)"
+        echo "  sudo chown -R www-data:www-data $(pwd)/dist"
+        echo ""
+        
+        read -p "Choose option (1=move, 2=grant access, 0=cancel): " -n 1 -r
+        echo
+        echo ""
+        
+        case $REPLY in
+            1)
+                echo_info "Creating /var/www/monitoring directory..."
+                sudo mkdir -p /var/www/monitoring
+                
+                echo_info "Copying project files..."
+                sudo cp -r "$(pwd)"/* /var/www/monitoring/
+                sudo cp -r "$(pwd)"/.[!.]* /var/www/monitoring/ 2>/dev/null || true
+                
+                echo_info "Setting ownership..."
+                sudo chown -R www-data:www-data /var/www/monitoring
+                
+                echo_success "Project moved to /var/www/monitoring"
+                echo ""
+                echo_warning "IMPORTANT: Your working directory is now /var/www/monitoring"
+                echo_info "To continue:"
+                echo "  cd /var/www/monitoring"
+                echo "  ./manager.sh"
+                echo "  Select option 30 again"
+                echo ""
+                exit 0
+                ;;
+            2)
+                echo_warning "Granting Apache access to current location..."
+                sudo chmod +rx /root
+                sudo chmod -R +r "$(pwd)"
+                sudo chown -R www-data:www-data "$(pwd)/dist"
+                echo_success "Permissions granted"
+                echo ""
+                ;;
+            *)
+                echo_info "Configuration cancelled"
+                exit 0
+                ;;
+        esac
+    fi
+    
+    # Ensure dist directory exists and has proper permissions
+    if [ ! -d "$dist_path" ]; then
+        echo_warning "dist directory not found: ${dist_path}"
+        echo_info "Run './manager.sh' option 1 to build first"
+        read -p "Continue anyway? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 0
+        fi
+    else
+        # Set proper permissions for dist directory
+        echo_info "Setting permissions for dist directory..."
+        sudo chown -R www-data:www-data "$dist_path"
+        sudo chmod -R 755 "$dist_path"
+        echo_success "Permissions set for dist directory"
+        echo ""
+    fi
+    
     # Generate API virtual host
     api_vhost="/tmp/api-${api_domain}.conf"
     
