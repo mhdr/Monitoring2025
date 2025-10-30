@@ -314,11 +314,26 @@ print_info "Generating Caddyfile configuration..."
 generate_caddyfile() {
     local domain="$1"
     local email="$2"
+    local port="$3"
     
     cat > /tmp/Caddyfile.tmp <<EOF
 # Caddy Reverse Proxy Configuration - Monitoring2025
 # Generated on $(date)
 
+EOF
+
+    # Disable HTTP->HTTPS redirects if using custom port (port 80 is occupied)
+    if [[ ! "$domain" =~ ^localhost ]] && [ "$port" != "443" ] && [ "$port" != "80" ]; then
+        cat >> /tmp/Caddyfile.tmp <<EOF
+# Disable automatic HTTP redirects (port 80 is in use by another service)
+{
+    auto_https disable_redirects
+}
+
+EOF
+    fi
+
+    cat >> /tmp/Caddyfile.tmp <<EOF
 # Main domain configuration
 $domain {
 EOF
@@ -419,7 +434,7 @@ EOF
 EOF
 }
 
-generate_caddyfile "$CADDY_DOMAIN" "$CADDY_EMAIL"
+generate_caddyfile "$CADDY_DOMAIN" "$CADDY_EMAIL" "$CADDY_PORT"
 
 # Copy generated Caddyfile
 if [ "$INSTALL_TYPE" = "system" ]; then
