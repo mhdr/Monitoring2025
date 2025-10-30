@@ -7,6 +7,7 @@ app_name=ems3-ui
 app_port=3000
 log_dir=./logs
 backup_dir=./backups
+https_config=".https-config"
 
 # Colors
 color_green='\033[0;32m'
@@ -100,6 +101,11 @@ if [[ ${bypass_user_selection} -eq 0 ]]; then
     echo '24 - Zero-downtime deployment'
     echo '25 - Validate configuration'
     echo '26 - Check SSL certificates'
+    echo ''
+    echo 'HTTPS Deployment (Reverse Proxy):'
+    echo '27 - Deploy with HTTPS'
+    echo '28 - Configure HTTPS URLs'
+    echo '29 - Show HTTPS configuration'
     echo ''
 
     read -p 'Enter operation number: ' operation
@@ -801,6 +807,213 @@ app_check_ssl(){
     fi
 }
 
+########################################################### HTTPS Functions ########################################################
+
+# Validate URL format
+validate_url(){
+    local url=$1
+    if [[ $url =~ ^https?:// ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# operation: 28 - Configure HTTPS URLs
+configure_https(){
+    echo_color "=== HTTPS Configuration ===" ${color_yellow}
+    echo ""
+    echo_info "This configuration is for reverse proxy setups (nginx/apache)"
+    echo_info "Your reverse proxy should already be configured to forward requests"
+    echo ""
+    
+    # Prompt for UI URL
+    echo_info "Enter your HTTPS UI URL (where users access the app):"
+    echo "  Example: https://monitoring.example.com"
+    echo "  Example: https://example.com:8443"
+    read -p "UI HTTPS URL: " ui_url
+    
+    # Validate UI URL
+    if ! validate_url "$ui_url"; then
+        echo_error "Invalid URL format. URL must start with https:// or http://"
+        exit 1
+    fi
+    
+    echo ""
+    echo_info "Enter your HTTPS API URL (backend API endpoint):"
+    echo "  Example: https://api.example.com"
+    echo "  Example: https://api.example.com:5030"
+    echo "  Example: https://example.com/api"
+    read -p "API HTTPS URL: " api_url
+    
+    # Validate API URL
+    if ! validate_url "$api_url"; then
+        echo_error "Invalid URL format. URL must start with https:// or http://"
+        exit 1
+    fi
+    
+    echo ""
+    echo_info "Configuration Summary:"
+    echo "  UI URL:  ${ui_url}"
+    echo "  API URL: ${api_url}"
+    echo ""
+    
+    read -p "Save this configuration? (y/N): " -n 1 -r
+    echo
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        # Save configuration
+        cat > "$https_config" << EOF
+# HTTPS Configuration for Reverse Proxy
+# Generated on $(date)
+
+UI_HTTPS_URL=${ui_url}
+API_HTTPS_URL=${api_url}
+EOF
+        
+        echo_success "HTTPS configuration saved to ${https_config}"
+        echo ""
+        echo_info "You can now use option 27 to deploy with HTTPS"
+    else
+        echo_info "Configuration not saved"
+        exit 0
+    fi
+}
+
+# Generate .env.production with HTTPS URLs
+generate_env_https(){
+    if [ ! -f "$https_config" ]; then
+        echo_error "HTTPS configuration not found: ${https_config}"
+        echo_info "Run option 28 to configure HTTPS URLs first"
+        exit 1
+    fi
+    
+    # Load HTTPS configuration
+    source "$https_config"
+    
+    if [ -z "$API_HTTPS_URL" ]; then
+        echo_error "API_HTTPS_URL not found in configuration"
+        exit 1
+    fi
+    
+    echo_info "Generating .env.production with HTTPS configuration..."
+    
+    # Create .env.production file
+    ENV_FILE=".env.production"
+    
+    cat > "$ENV_FILE" << EOF
+# Production Environment Variables (HTTPS)
+# Generated on $(date)
+# HTTPS Configuration
+
+# Backend API URL (via HTTPS reverse proxy)
+VITE_API_BASE_URL=${API_HTTPS_URL}
+
+# Note: Frontend is served via reverse proxy at ${UI_HTTPS_URL}
+EOF
+    
+    echo_success "Created ${ENV_FILE} with HTTPS API URL"
+    echo_info "API URL: ${API_HTTPS_URL}"
+}
+
+# operation: 29 - Show HTTPS configuration
+show_https_config(){
+    echo_color "=== HTTPS Configuration ===" ${color_yellow}
+    echo ""
+    
+    if [ ! -f "$https_config" ]; then
+        echo_warning "HTTPS not configured yet"
+        echo_info "Run option 28 to configure HTTPS URLs"
+        echo ""
+        return
+    fi
+    
+    # Load and display configuration
+    source "$https_config"
+    
+    echo_info "Current HTTPS Configuration:"
+    echo "  UI URL:  ${UI_HTTPS_URL}"
+    echo "  API URL: ${API_HTTPS_URL}"
+    echo ""
+    
+    # Check if .env.production matches HTTPS config
+    if [ -f ".env.production" ]; then
+        current_api=$(grep "VITE_API_BASE_URL" .env.production 2>/dev/null | cut -d'=' -f2)
+        echo_info "Current .env.production API URL:"
+        echo "  ${current_api}"
+        echo ""
+        
+        if [ "$current_api" = "$API_HTTPS_URL" ]; then
+            echo_success "Application is configured for HTTPS"
+        else
+            echo_warning "Application is NOT using HTTPS API URL"
+            echo_info "Run option 27 to deploy with HTTPS"
+        fi
+    else
+        echo_warning ".env.production not found"
+    fi
+    echo ""
+    
+    echo_info "Configuration file: ${https_config}"
+    echo_info "To reconfigure, run option 28"
+}
+
+# operation: 27 - Deploy with HTTPS
+app_deploy_https(){
+    echo_color "=== HTTPS Deployment ===" ${color_yellow}
+    echo ""
+    
+    # Check if HTTPS is configured
+    if [ ! -f "$https_config" ]; then
+        echo_warning "HTTPS not configured yet"
+        echo_info "Let's configure it now..."
+        echo ""
+        configure_https
+        echo ""
+    else
+        # Show current config
+        source "$https_config"
+        echo_info "Using existing HTTPS configuration:"
+        echo "  UI URL:  ${UI_HTTPS_URL}"
+        echo "  API URL: ${API_HTTPS_URL}"
+        echo ""
+        
+        read -p "Use this configuration? (Y/n): " -n 1 -r
+        echo
+        
+        if [[ $REPLY =~ ^[Nn]$ ]]; then
+            echo_info "Reconfiguring HTTPS..."
+            echo ""
+            configure_https
+            echo ""
+        fi
+    fi
+    
+    # Generate .env.production with HTTPS URLs
+    generate_env_https
+    echo ""
+    
+    # Deploy using standard deployment
+    echo_info "[$(timestamp)] Building and deploying with HTTPS configuration..."
+    dos2unix install.sh 2>/dev/null || true
+    chmod +x install.sh
+    
+    if ./install.sh; then
+        echo_success "HTTPS deployment completed successfully"
+        echo ""
+        
+        source "$https_config"
+        echo_info "Application Access URLs:"
+        echo "  Frontend: ${UI_HTTPS_URL}"
+        echo "  Backend:  ${API_HTTPS_URL}"
+        echo ""
+        echo_warning "Make sure your reverse proxy (nginx/apache) is running and configured"
+    else
+        echo_error "Deployment failed"
+        exit 1
+    fi
+}
+
 # Execute operation
 case ${operation} in
     1)
@@ -880,6 +1093,15 @@ case ${operation} in
         ;;
     26)
         app_check_ssl
+        ;;
+    27)
+        app_deploy_https
+        ;;
+    28)
+        configure_https
+        ;;
+    29)
+        show_https_config
         ;;
     *)
         echo_error "Invalid operation: ${operation}"
