@@ -347,3 +347,335 @@
   right: auto;
   left: 0;
 }
+
+/* ===========================
+   MOBILE OPTIMIZATIONS
+   =========================== */
+
+/* Mobile Device Detection and Base Styles */
+@media (max-width: 899px) {
+  /* Mobile Wrapper */
+  .ag-grid-wrapper {
+    border-radius: 4px; /* Smaller border radius on mobile */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Touch-optimized row height - WCAG 2.1 Level AAA (44px minimum) */
+  .ag-theme-quartz .ag-row,
+  .ag-theme-alpine .ag-row,
+  .ag-theme-balham .ag-row,
+  .ag-theme-material .ag-row {
+    min-height: 52px !important; /* Comfortable touch target */
+  }
+
+  /* Touch-optimized header height */
+  .ag-header-row {
+    min-height: 48px !important;
+  }
+
+  /* Larger touch targets for header cells */
+  .ag-header-cell {
+    padding: 12px 8px !important;
+    min-height: 48px;
+    touch-action: manipulation;
+  }
+
+  /* Larger touch targets for cells */
+  .ag-cell {
+    padding: 12px 8px !important;
+    min-height: 52px;
+    font-size: 14px;
+    touch-action: manipulation;
+  }
+
+  /* Simplified column headers on mobile */
+  .ag-header-cell-label {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Hide complex column menu on mobile */
+  .ag-header-cell-menu-button {
+    display: none !important; /* Simplify mobile interface */
+  }
+
+  /* Simplify pagination controls */
+  .ag-paging-panel {
+    padding: 12px 8px !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ag-paging-button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 10px !important;
+    touch-action: manipulation;
+  }
+
+  .ag-paging-page-summary-panel {
+    font-size: 13px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Horizontal scroll indicator */
+  .ag-body-horizontal-scroll-viewport {
+    position: relative;
+  }
+
+  /* Make scrollbar more visible on mobile */
+  .ag-body-horizontal-scroll::-webkit-scrollbar {
+    height: 12px !important; /* Larger scrollbar for touch */
+  }
+
+  .ag-body-vertical-scroll::-webkit-scrollbar {
+    width: 12px !important;
+  }
+
+  .ag-body-horizontal-scroll::-webkit-scrollbar-thumb,
+  .ag-body-vertical-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    min-height: 48px; /* Easier to grab */
+  }
+
+  /* Add scroll shadow indicator */
+  .ag-body-horizontal-scroll-viewport::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.1), transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* RTL scroll shadow */
+  .ag-grid-rtl .ag-body-horizontal-scroll-viewport::after {
+    right: auto;
+    left: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.1), transparent);
+  }
+
+  /* Touch-friendly checkbox sizing */
+  .ag-checkbox-input-wrapper {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 20px;
+  }
+
+  .ag-selection-checkbox {
+    padding: 8px;
+  }
+
+  /* Simplify filter panel on mobile */
+  .ag-filter {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Touch-optimized context menu */
+  .ag-menu-option {
+    min-height: 44px !important;
+    padding: 12px 16px !important;
+    touch-action: manipulation;
+  }
+
+  /* Overlay adjustments */
+  .ag-overlay-loading-wrapper,
+  .ag-overlay-no-rows-wrapper {
+    font-size: 16px;
+    padding: 24px;
+  }
+
+  /* Status bar - simplify on mobile */
+  .ag-status-bar {
+    font-size: 12px;
+    padding: 8px !important;
+  }
+
+  /* Tool panel - full width on mobile */
+  .ag-tool-panel-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Side bar - overlay on mobile */
+  .ag-side-bar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 80vw;
+    z-index: 100;
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .ag-grid-rtl .ag-side-bar {
+    right: auto;
+    left: 0;
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Extra Small Devices (< 600px) - Additional Optimizations */
+@media (max-width: 599px) {
+  /* Further reduce padding on very small screens */
+  .ag-header-cell {
+    padding: 10px 6px !important;
+  }
+
+  .ag-cell {
+    padding: 10px 6px !important;
+    font-size: 13px;
+  }
+
+  /* Compact pagination */
+  .ag-paging-panel {
+    padding: 10px 6px !important;
+    font-size: 12px;
+  }
+
+  .ag-paging-button {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 8px !important;
+  }
+
+  /* Hide less important pagination elements */
+  .ag-paging-row-summary-panel {
+    display: none; /* Hide row summary on very small screens */
+  }
+
+  /* Column headers - further simplification */
+  .ag-header-cell-label {
+    font-size: 12px;
+  }
+
+  /* Reduce grid wrapper padding */
+  .ag-grid-wrapper {
+    border-radius: 2px;
+  }
+}
+
+/* Landscape Mobile Optimization */
+@media (max-width: 899px) and (orientation: landscape) {
+  /* Reduce vertical padding in landscape mode */
+  .ag-row {
+    min-height: 44px !important; /* Minimum WCAG compliant */
+  }
+
+  .ag-header-row {
+    min-height: 44px !important;
+  }
+
+  .ag-header-cell,
+  .ag-cell {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  /* More compact pagination in landscape */
+  .ag-paging-panel {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+}
+
+/* Touch Device Enhancements (regardless of screen size) */
+@media (hover: none) and (pointer: coarse) {
+  /* Prevent text selection during touch interactions */
+  .ag-root-wrapper {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Allow text selection only in cells when focused */
+  .ag-cell-focus .ag-cell-value,
+  .ag-cell.ag-cell-inline-editing {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Touch feedback for cells */
+  .ag-cell {
+    transition: background-color 0.15s ease;
+  }
+
+  .ag-cell:active {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  /* Touch feedback for header cells */
+  .ag-header-cell:active {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  /* Touch feedback for buttons */
+  .ag-paging-button:active,
+  .ag-menu-option:active {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  /* Smooth scrolling on touch devices */
+  .ag-body-viewport,
+  .ag-body-horizontal-scroll-viewport {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Performance Optimization for Mobile */
+@media (max-width: 899px) {
+  /* Disable animations on mobile for better performance */
+  .ag-theme-quartz,
+  .ag-theme-alpine,
+  .ag-theme-balham,
+  .ag-theme-material {
+    --ag-card-shadow: none; /* Remove shadows for performance */
+  }
+
+  /* Simplify transitions */
+  .ag-row {
+    transition: none !important;
+  }
+
+  .ag-cell {
+    transition: none !important;
+  }
+}
+
+/* Accessibility Enhancements for Mobile */
+@media (max-width: 899px) {
+  /* Ensure focus indicators are visible on mobile */
+  .ag-cell-focus:focus-within {
+    outline: 3px solid var(--bs-primary);
+    outline-offset: -3px;
+    z-index: 1;
+  }
+
+  .ag-header-cell:focus-within {
+    outline: 3px solid var(--bs-primary);
+    outline-offset: -3px;
+  }
+
+  /* High contrast for selected rows on mobile */
+  .ag-row-selected {
+    background-color: rgba(var(--bs-primary-rgb), 0.15) !important;
+  }
+
+  /* Ensure adequate contrast for touch feedback */
+  .ag-row-hover {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .dark-theme .ag-row-hover {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+  }
+}

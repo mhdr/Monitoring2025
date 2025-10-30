@@ -2,12 +2,14 @@
  * AG Grid React Wrapper Component
  */
 
-import { useMemo, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
+import { useMemo, useCallback, forwardRef, useImperativeHandle, useRef, useState, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { ModuleRegistry } from 'ag-grid-community';
 import { LicenseManager } from 'ag-grid-enterprise';
 import { AG_GRID_LOCALE_IR } from '@ag-grid-community/locale';
 import { useLanguage } from '../hooks/useLanguage';
+import { isMobile, isTouchDevice } from '../utils/deviceDetection';
+import { getMobileGridOptions } from '../utils/agGridHelpers';
 import type { AGGridApi, AGGridWrapperProps } from '../types/agGrid';
 import './AGGridWrapper.css';
 // Legacy ag-grid.css removed - using Theming API (v33+)
@@ -17,6 +19,9 @@ import 'ag-grid-community/styles/ag-theme-balham.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 // Custom MUI theme integration
 import './AGGridMuiTheme.css';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('AGGridWrapper');
 
 import {
   ClientSideRowModelModule, TextEditorModule, NumberEditorModule,
@@ -51,6 +56,25 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
   const gridApiRef = useRef<AGGridApi | null>(null);
   const isRTL = language === 'fa';
   
+  // Detect mobile and touch devices
+  const [deviceInfo, setDeviceInfo] = useState(() => ({
+    isMobile: isMobile(),
+    isTouch: isTouchDevice(),
+  }));
+
+  // Update device info on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setDeviceInfo({
+        isMobile: isMobile(),
+        isTouch: isTouchDevice(),
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
   useImperativeHandle(ref, () => gridApiRef.current ?? ({} as AGGridApi), []);
 
   const localeText = useMemo(() => {
@@ -59,8 +83,18 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
 
   const handleGridReady = useCallback((params: { api: AGGridApi }) => {
     gridApiRef.current = params.api;
+    
+    // Log device info and grid configuration
+    logger.log('AG Grid ready:', {
+      isMobile: deviceInfo.isMobile,
+      isTouch: deviceInfo.isTouch,
+      language,
+      theme,
+      columnCount: columnDefs.length,
+    });
+    
     if (onGridReady) onGridReady(params.api, params.api);
-  }, [onGridReady]);
+  }, [onGridReady, deviceInfo, language, theme, columnDefs.length]);
 
   const themeClassName = useMemo(() => {
     const themes: Record<string, string> = { alpine: 'ag-theme-alpine', balham: 'ag-theme-balham', material: 'ag-theme-material' };
@@ -69,15 +103,24 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
 
   const containerStyle = useMemo(() => ({ height, width }), [height, width]);
   const defaultColDef = useMemo(() => ({ resizable: true, sortable: true, filter: true, ...gridOptions.defaultColDef }), [gridOptions.defaultColDef]);
+  
+  // Apply mobile optimizations if on mobile device
+  const mobileOptimizedOptions = useMemo(() => {
+    if (deviceInfo.isMobile || deviceInfo.isTouch) {
+      return getMobileGridOptions(gridOptions);
+    }
+    return gridOptions;
+  }, [deviceInfo, gridOptions]);
+  
   const mergedGridOptions = useMemo(() => {
-    const options = { 
+    const options: Record<string, unknown> = { 
       animateRows: true, 
       enableRtl: isRTL, 
       enableCellTextSelection: true, 
       ensureDomOrder: true, 
       defaultColDef, 
       onGridReady: handleGridReady,
-      ...gridOptions
+      ...mobileOptimizedOptions
     };
     
     // Apply localeText after spreading gridOptions to ensure it's not overwritten
@@ -86,7 +129,7 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
     }
     
     return options;
-  }, [gridOptions, localeText, defaultColDef, handleGridReady, isRTL]);
+  }, [mobileOptimizedOptions, localeText, defaultColDef, handleGridReady, isRTL]);
 
   return (
     <div className={`ag-grid-wrapper ${containerClassName} ${isRTL ? 'ag-grid-rtl' : 'ag-grid-ltr'}`} style={containerStyle} data-id-ref={idRef ? `${idRef}-wrapper-container` : 'ag-grid-wrapper-container'}>

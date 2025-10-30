@@ -4,14 +4,18 @@
  * Provides easy access to AG Grid API and utilities
  */
 
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import type { AGGridApi, AGGridRowData } from '../types/agGrid';
+import type { ColDef } from 'ag-grid-community';
 import { createLogger } from '../utils/logger';
+import { isMobile, isTouchDevice } from '../utils/deviceDetection';
+import { adjustColumnsForMobile, getMobileDefaultColDef } from '../utils/agGridHelpers';
 
 const logger = createLogger('useAGGrid');
 
 interface UseAGGridOptions {
-  // Options for future extensibility
+  enableMobileOptimizations?: boolean; // Auto-detect and apply mobile optimizations
+  criticalFields?: string[]; // Fields that should always be visible on mobile
 }
 
 interface UseAGGridReturn {
@@ -30,14 +34,49 @@ interface UseAGGridReturn {
   autoSizeAllColumns: () => void;
   showLoadingOverlay: () => void;
   hideOverlay: () => void;
+  
+  // Mobile-specific utilities
+  isMobileDevice: boolean;
+  isTouchDevice: boolean;
+  optimizeColumnsForMobile: (columnDefs: ColDef[], criticalFields?: string[]) => ColDef[];
+  getMobileDefaultColDef: () => ColDef;
+  applyMobileLayout: () => void;
 }
 
 /**
  * Custom hook for AG Grid integration
  */
-export const useAGGrid = (_options: UseAGGridOptions = {}): UseAGGridReturn => {
+export const useAGGrid = (options: UseAGGridOptions = {}): UseAGGridReturn => {
+  const { enableMobileOptimizations = true, criticalFields = [] } = options;
+  
   const gridApiRef = useRef<AGGridApi | null>(null);
   const [gridApi, setGridApiState] = useState<AGGridApi | null>(null);
+  
+  // Detect mobile and touch devices
+  const [deviceInfo, setDeviceInfo] = useState(() => ({
+    isMobile: isMobile(),
+    isTouch: isTouchDevice(),
+  }));
+
+  // Update device info on resize
+  useEffect(() => {
+    const handleResize = () => {
+      const newIsMobile = isMobile();
+      const newIsTouch = isTouchDevice();
+      
+      if (newIsMobile !== deviceInfo.isMobile || newIsTouch !== deviceInfo.isTouch) {
+        setDeviceInfo({
+          isMobile: newIsMobile,
+          isTouch: newIsTouch,
+        });
+        
+        logger.log('Device info updated:', { isMobile: newIsMobile, isTouch: newIsTouch });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [deviceInfo]);
 
   /**
    * Set Grid API
@@ -50,9 +89,18 @@ export const useAGGrid = (_options: UseAGGridOptions = {}): UseAGGridReturn => {
   /**
    * Handle grid ready event
    */
-  const handleGridReady = useCallback((api: AGGridApi, _columnApi?: AGGridApi) => {
+  const handleGridReady = useCallback((api: AGGridApi) => {
     setGridApi(api);
-  }, [setGridApi]);
+    
+    // Apply mobile layout if enabled and on mobile device
+    if (enableMobileOptimizations && deviceInfo.isMobile && gridApiRef.current) {
+      logger.log('Applying mobile optimizations on grid ready');
+      // Auto-size columns to fit on mobile
+      setTimeout(() => {
+        gridApiRef.current?.sizeColumnsToFit();
+      }, 100);
+    }
+  }, [setGridApi, enableMobileOptimizations, deviceInfo.isMobile]);
 
   /**
    * Refresh data in the grid
@@ -151,6 +199,49 @@ export const useAGGrid = (_options: UseAGGridOptions = {}): UseAGGridReturn => {
     }
   }, []);
 
+  /**
+   * Optimize column definitions for mobile display
+   */
+  const optimizeColumnsForMobile = useCallback((columnDefs: ColDef[], fields: string[] = criticalFields): ColDef[] => {
+    if (!deviceInfo.isMobile) {
+      logger.log('Not on mobile, skipping column optimization');
+      return columnDefs;
+    }
+    
+    logger.log('Optimizing columns for mobile', { criticalFields: fields });
+    return adjustColumnsForMobile(columnDefs, fields);
+  }, [deviceInfo.isMobile, criticalFields]);
+
+  /**
+   * Get mobile-optimized default column definition
+   */
+  const getMobileDefaultColDefCallback = useCallback((): ColDef => {
+    return getMobileDefaultColDef();
+  }, []);
+
+  /**
+   * Apply mobile-specific layout adjustments to current grid
+   */
+  const applyMobileLayout = useCallback(() => {
+    if (!gridApiRef.current) {
+      logger.warn('Grid API not available for mobile layout');
+      return;
+    }
+
+    if (!deviceInfo.isMobile) {
+      logger.log('Not on mobile, skipping mobile layout');
+      return;
+    }
+
+    logger.log('Applying mobile layout');
+    
+    // Size columns to fit on mobile
+    gridApiRef.current.sizeColumnsToFit();
+    
+    // Refresh cells to apply new styles
+    gridApiRef.current.refreshCells();
+  }, [deviceInfo.isMobile]);
+
   return {
     gridApi,
     setGridApi,
@@ -165,6 +256,12 @@ export const useAGGrid = (_options: UseAGGridOptions = {}): UseAGGridReturn => {
     autoSizeAllColumns,
     showLoadingOverlay,
     hideOverlay,
+    // Mobile-specific utilities
+    isMobileDevice: deviceInfo.isMobile,
+    isTouchDevice: deviceInfo.isTouch,
+    optimizeColumnsForMobile,
+    getMobileDefaultColDef: getMobileDefaultColDefCallback,
+    applyMobileLayout,
   };
 };
 
