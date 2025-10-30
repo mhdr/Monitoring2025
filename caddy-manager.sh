@@ -201,6 +201,46 @@ configure_domain() {
             NEW_DOMAIN=$(echo "$NEW_DOMAIN" | sed -E 's~^https?://~~' | sed 's~/$~~')
             
             echo ""
+            print_warn "IMPORTANT: Another web server may be running on port 443."
+            print_warn "If you want to use port 443, you must stop the other web server first."
+            echo ""
+            read -p "Enter HTTPS port for Caddy (443 or custom like 8443, default: 8443): " -r NEW_PORT
+            NEW_PORT="${NEW_PORT:-8443}"
+            
+            # Validate port number
+            if ! [[ "$NEW_PORT" =~ ^[0-9]+$ ]] || [ "$NEW_PORT" -lt 1 ] || [ "$NEW_PORT" -gt 65535 ]; then
+                print_error "Invalid port number! Must be between 1-65535"
+                return 1
+            fi
+            
+            # Warn about privileged ports
+            if [ "$NEW_PORT" -lt 1024 ] && [ "$NEW_PORT" != "443" ] && [ "$NEW_PORT" != "80" ]; then
+                print_warn "Port $NEW_PORT is a privileged port (< 1024)"
+            fi
+            
+            # Check if port is in use
+            if command -v ss &> /dev/null; then
+                if ss -tlnp 2>/dev/null | grep -q ":$NEW_PORT "; then
+                    print_error "Port $NEW_PORT is already in use!"
+                    print_error "Stop the service using this port first, or choose a different port."
+                    ss -tlnp 2>/dev/null | grep ":$NEW_PORT " || true
+                    return 1
+                fi
+            elif command -v netstat &> /dev/null; then
+                if netstat -tlnp 2>/dev/null | grep -q ":$NEW_PORT "; then
+                    print_error "Port $NEW_PORT is already in use!"
+                    print_error "Stop the service using this port first, or choose a different port."
+                    netstat -tlnp 2>/dev/null | grep ":$NEW_PORT " || true
+                    return 1
+                fi
+            fi
+            
+            # Add port to domain (skip for standard ports 80 and 443)
+            if [ "$NEW_PORT" != "443" ] && [ "$NEW_PORT" != "80" ]; then
+                NEW_DOMAIN="$NEW_DOMAIN:$NEW_PORT"
+            fi
+            
+            echo ""
             read -p "Enter your email for Let's Encrypt notifications: " -r NEW_EMAIL
             if [ -z "$NEW_EMAIL" ]; then
                 print_warn "No email provided. Let's Encrypt notifications will be disabled."
@@ -224,10 +264,30 @@ configure_domain() {
     # Generate new Caddyfile
     print_info "Generating new Caddyfile..."
     
+    # Extract port from domain if present
+    CONFIGURED_PORT=""
+    if [[ "$NEW_DOMAIN" =~ :([0-9]+)$ ]]; then
+        CONFIGURED_PORT="${BASH_REMATCH[1]}"
+    fi
+    
     cat > /tmp/Caddyfile.tmp <<EOF
 # Caddy Reverse Proxy Configuration - Monitoring2025
 # Updated on $(date)
 
+EOF
+
+    # Disable HTTP->HTTPS redirects if using custom port (port 80 is occupied)
+    if [[ ! "$NEW_DOMAIN" =~ ^localhost ]] && [ -n "$CONFIGURED_PORT" ] && [ "$CONFIGURED_PORT" != "443" ] && [ "$CONFIGURED_PORT" != "80" ]; then
+        cat >> /tmp/Caddyfile.tmp <<EOF
+# Disable automatic HTTP redirects (port 80 is in use by another service)
+{
+    auto_https disable_redirects
+}
+
+EOF
+    fi
+
+    cat >> /tmp/Caddyfile.tmp <<EOF
 # Main domain configuration
 $NEW_DOMAIN {
 EOF
@@ -356,6 +416,7 @@ EOF
         sudo tee "$CONFIG_FILE" > /dev/null <<EOF
 CADDY_DOMAIN=$NEW_DOMAIN
 CADDY_EMAIL=$NEW_EMAIL
+CADDY_PORT=$CONFIGURED_PORT
 EOF
         sudo chown caddy:caddy "$CONFIG_FILE" 2>/dev/null || true
     else
@@ -365,6 +426,7 @@ EOF
         cat > "$CONFIG_FILE" <<EOF
 CADDY_DOMAIN=$NEW_DOMAIN
 CADDY_EMAIL=$NEW_EMAIL
+CADDY_PORT=$CONFIGURED_PORT
 EOF
     fi
     
@@ -515,6 +577,67 @@ show_info() {
     echo "  Frontend UI:  http://localhost:5173"
 }
 
+check_ports() {
+    print_header "Port Usage Check"
+    echo ""
+    
+    print_info "Checking which ports are in use..."
+    echo ""
+    
+    # Check port 80
+    echo "Port 80 (HTTP):"
+    if command -v ss &> /dev/null; then
+        ss -tlnp 2>/dev/null | grep ":80 " || echo "  Not in use"
+    elif command -v netstat &> /dev/null; then
+        netstat -tlnp 2>/dev/null | grep ":80 " || echo "  Not in use"
+    else
+        echo "  Cannot check (ss/netstat not available)"
+    fi
+    
+    echo ""
+    
+    # Check port 443
+    echo "Port 443 (HTTPS):"
+    if command -v ss &> /dev/null; then
+        ss -tlnp 2>/dev/null | grep ":443 " || echo "  Not in use"
+    elif command -v netstat &> /dev/null; then
+        netstat -tlnp 2>/dev/null | grep ":443 " || echo "  Not in use"
+    else
+        echo "  Cannot check (ss/netstat not available)"
+    fi
+    
+    echo ""
+    
+    # Check port 8443
+    echo "Port 8443 (Alternative HTTPS):"
+    if command -v ss &> /dev/null; then
+        ss -tlnp 2>/dev/null | grep ":8443 " || echo "  Not in use"
+    elif command -v netstat &> /dev/null; then
+        netstat -tlnp 2>/dev/null | grep ":8443 " || echo "  Not in use"
+    else
+        echo "  Cannot check (ss/netstat not available)"
+    fi
+    
+    echo ""
+    
+    # Show current Caddyfile configuration
+    if [ "$SERVICE_TYPE" = "system" ]; then
+        CADDY_FILE="/etc/caddy/Caddyfile"
+    else
+        CADDY_FILE="$HOME/.config/caddy/Caddyfile"
+    fi
+    
+    if [ -f "$CADDY_FILE" ]; then
+        print_info "Current Caddyfile domain configuration:"
+        grep -E "^[a-zA-Z0-9.-]+(:)?[0-9]*\s+{" "$CADDY_FILE" | head -1 || echo "  Could not detect domain line"
+    fi
+    
+    echo ""
+    print_info "If port 443 is in use and you need port 8443, run:"
+    echo "  $0 domain"
+    echo "  Then select option 1 (localhost:8443) or option 2 with port 8443"
+}
+
 show_help() {
     print_header "Caddy Service Manager - Monitoring2025"
     echo ""
@@ -532,6 +655,7 @@ show_help() {
     echo "  validate    Validate Caddyfile configuration"
     echo "  edit        Edit Caddyfile manually (not recommended)"
     echo "  info        Show service information"
+    echo "  ports       Check port usage and diagnose conflicts"
     echo "  help        Show this help message"
     echo ""
     echo "Examples:"
@@ -540,6 +664,7 @@ show_help() {
     echo "  $0 logs                 # Show recent logs"
     echo "  $0 reload               # Reload configuration"
     echo "  $0 info                 # Show current configuration"
+    echo "  $0 ports                # Check which ports are in use"
     echo ""
 }
 
@@ -577,6 +702,9 @@ case "${1:-help}" in
         ;;
     info)
         show_info
+        ;;
+    ports)
+        check_ports
         ;;
     help|--help|-h)
         show_help
