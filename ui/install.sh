@@ -160,6 +160,15 @@ else
     exit 1
 fi
 
+# Fix permissions on node_modules binaries (required on some Linux systems)
+log_info "Fixing permissions on node_modules binaries..."
+if [ -d "node_modules/.bin" ]; then
+    chmod +x node_modules/.bin/* 2>/dev/null || true
+    log_success "Permissions fixed on node_modules binaries"
+else
+    log_warning "node_modules/.bin directory not found"
+fi
+
 # Check if .env.production already exists (e.g., from HTTPS configuration)
 if [ -f ".env.production" ]; then
     log_info ".env.production already exists, using existing configuration"
