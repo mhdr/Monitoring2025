@@ -700,9 +700,9 @@ const MonitoringPage: React.FC = () => {
                   gridTemplateColumns: {
                     xs: '1fr',                             // 1 column on mobile
                     sm: 'repeat(2, minmax(280px, 1fr))',   // 2 columns on small tablets
-                    md: 'repeat(2, minmax(400px, 1fr))',   // 2 columns on medium screens (wider cards)
-                    lg: 'repeat(3, minmax(380px, 1fr))',   // 3 columns on large screens (wider cards)
-                    xl: 'repeat(4, minmax(360px, 1fr))',   // 4 columns on XL screens (wider cards)
+                    md: 'repeat(2, 1fr)',                  // 2 columns on medium screens
+                    lg: 'repeat(2, 1fr)',                  // 2 columns on large screens
+                    xl: 'repeat(2, 1fr)',                  // 2 columns on XL screens
                   },
                   gap: 2,
                   marginTop: 2,
