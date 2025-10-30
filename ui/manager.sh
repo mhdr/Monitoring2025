@@ -1226,6 +1226,28 @@ configure_nginx(){
     # Get absolute path to dist directory
     dist_path="$(pwd)/dist"
     
+    # Check if dist directory is in /root and warn about permissions
+    if [[ "$dist_path" == /root/* ]]; then
+        echo_warning "⚠ CRITICAL: dist directory is under /root/"
+        echo_warning "Nginx (www-data user) cannot access /root directory"
+        echo ""
+        echo_error "You MUST move the project to an accessible location"
+        echo ""
+        echo_info "Solution: Use manager.sh option 33"
+        echo "  1. Exit this configuration (press Ctrl+C or Enter)"
+        echo "  2. Run: ./manager.sh"
+        echo "  3. Select option 33 to move project to /var/www/monitoring"
+        echo "  4. Then cd /var/www/monitoring"
+        echo "  5. Run ./manager.sh and select option 31 again"
+        echo ""
+        
+        read -p "Press Enter to cancel and use option 33 (recommended)... " -r
+        echo
+        echo_info "Configuration cancelled"
+        echo_info "Please run option 33 to move the project first"
+        exit 0
+    fi
+    
     # Ensure dist directory exists and has proper permissions
     if [ ! -d "$dist_path" ]; then
         echo_warning "dist directory not found: ${dist_path}"
@@ -1664,6 +1686,163 @@ move_project_to_var_www(){
     echo ""
 }
 
+# operation: 33 - Move project to /var/www/monitoring for Nginx
+move_project_to_var_www_nginx(){
+    echo_color "=== Move Project to /var/www/monitoring (Nginx) ===" ${color_yellow}
+    echo ""
+    
+    echo_warning "This will move your entire project to /var/www/monitoring"
+    echo_warning "This is required for Nginx (www-data user) to access files"
+    echo ""
+    
+    current_dir="$(pwd)"
+    target_dir="/var/www/monitoring"
+    
+    echo_info "Current directory: ${current_dir}"
+    echo_info "Target directory:  ${target_dir}"
+    echo ""
+    
+    # Check if target already exists
+    if [ -d "$target_dir" ]; then
+        echo_error "Target directory already exists: ${target_dir}"
+        echo ""
+        read -p "Delete existing directory and proceed? (y/N): " -n 1 -r
+        echo
+        
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo_info "Operation cancelled"
+            exit 0
+        fi
+        
+        echo_info "Removing existing directory..."
+        if sudo rm -rf "$target_dir"; then
+            echo_success "Existing directory removed"
+        else
+            echo_error "Failed to remove existing directory"
+            exit 1
+        fi
+        echo ""
+    fi
+    
+    # Confirm action
+    read -p "Proceed with moving project? (y/N): " -n 1 -r
+    echo
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo_info "Operation cancelled"
+        exit 0
+    fi
+    
+    echo ""
+    
+    # Step 1: Create target directory
+    echo_info "[1/4] Creating target directory..."
+    if sudo mkdir -p "$target_dir"; then
+        echo_success "Directory created: ${target_dir}"
+    else
+        echo_error "Failed to create directory"
+        exit 1
+    fi
+    
+    echo ""
+    
+    # Step 2: Copy all files including hidden files
+    echo_info "[2/4] Copying project files..."
+    echo_info "This may take a few moments..."
+    
+    if sudo cp -r "${current_dir}"/* "$target_dir/" 2>/dev/null; then
+        echo_success "Visible files copied"
+    else
+        echo_warning "Some files may have failed to copy"
+    fi
+    
+    # Copy hidden files separately (excluding . and ..)
+    if sudo cp -r "${current_dir}"/.[!.]* "$target_dir/" 2>/dev/null; then
+        echo_success "Hidden files copied"
+    else
+        echo_info "No hidden files or already copied"
+    fi
+    
+    echo ""
+    
+    # Step 3: Set ownership to www-data (Nginx user on Ubuntu/Debian)
+    echo_info "[3/4] Setting ownership to www-data:www-data (Nginx user)..."
+    if sudo chown -R www-data:www-data "$target_dir"; then
+        echo_success "Ownership set"
+    else
+        echo_error "Failed to set ownership"
+        exit 1
+    fi
+    
+    echo ""
+    
+    # Step 4: Set proper permissions
+    echo_info "[4/4] Setting permissions..."
+    
+    # Directories: 755 (rwxr-xr-x)
+    sudo find "$target_dir" -type d -exec chmod 755 {} \; 2>/dev/null
+    
+    # Files: 644 (rw-r--r--)
+    sudo find "$target_dir" -type f -exec chmod 644 {} \; 2>/dev/null
+    
+    # Scripts: 755 (executable)
+    sudo chmod 755 "$target_dir"/*.sh 2>/dev/null
+    sudo chmod 755 "$target_dir"/scripts/*.sh 2>/dev/null
+    
+    echo_success "Permissions set"
+    
+    echo ""
+    echo_color "=== Move Complete ===" ${color_green}
+    echo ""
+    echo_success "Project successfully moved to: ${target_dir}"
+    echo ""
+    
+    # Verify key files
+    echo_info "Verifying key files..."
+    key_files=("package.json" "manager.sh" "install.sh" "ecosystem.config.cjs" "server.cjs")
+    all_good=true
+    
+    for file in "${key_files[@]}"; do
+        if [ -f "$target_dir/$file" ]; then
+            echo_success "  ✓ ${file}"
+        else
+            echo_error "  ✗ ${file} NOT FOUND"
+            all_good=false
+        fi
+    done
+    
+    echo ""
+    
+    if [ "$all_good" = false ]; then
+        echo_warning "Some files are missing - manual verification required"
+    fi
+    
+    echo ""
+    echo_color "=== Next Steps ===" ${color_blue}
+    echo ""
+    echo "1. Change to the new directory:"
+    echo "   cd ${target_dir}"
+    echo ""
+    echo "2. Run manager.sh:"
+    echo "   ./manager.sh"
+    echo ""
+    echo "3. Select option 31 to configure Nginx"
+    echo ""
+    echo "4. Deploy the application (option 1 or 27)"
+    echo ""
+    
+    echo_warning "IMPORTANT:"
+    echo "  • Your working directory is still: ${current_dir}"
+    echo "  • You MUST cd to ${target_dir} before running any commands"
+    echo "  • The old directory in ${current_dir} is still present (you can delete it later)"
+    echo ""
+    
+    echo_info "Note: Nginx typically uses www-data user on Ubuntu/Debian"
+    echo_info "If your Nginx runs as a different user (e.g., nginx), you may need to adjust ownership:"
+    echo "  sudo chown -R nginx:nginx ${target_dir}"
+    echo ""
+}
+
 # operation: 28 - Configure HTTPS URLs
 configure_https(){
     echo_color "=== HTTPS Configuration ===" ${color_yellow}
@@ -2047,6 +2226,9 @@ case ${operation} in
         ;;
     32)
         move_project_to_var_www
+        ;;
+    33)
+        move_project_to_var_www_nginx
         ;;
     *)
         echo_error "Invalid operation: ${operation}"
