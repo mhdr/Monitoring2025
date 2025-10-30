@@ -993,6 +993,28 @@ app_deploy_https(){
     generate_env_https
     echo ""
     
+    # Important warnings
+    echo_color "=== IMPORTANT: Protocol Matching ===" ${color_yellow}
+    echo ""
+    echo_warning "The API URL protocol MUST match how you access the UI:"
+    echo "  • If UI accessed via HTTPS → API URL must be HTTPS"
+    echo "  • If UI accessed via HTTP  → API URL must be HTTP"
+    echo ""
+    echo_info "Current configuration will use:"
+    source "$https_config"
+    echo "  API URL: ${API_HTTPS_URL}"
+    echo ""
+    echo_warning "Mixed protocols (HTTPS UI → HTTP API) will cause CORS/security errors!"
+    echo ""
+    
+    read -p "Continue with deployment? (Y/n): " -n 1 -r
+    echo
+    
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        echo_info "Deployment cancelled"
+        exit 0
+    fi
+    
     # Deploy using standard deployment
     echo_info "[$(timestamp)] Building and deploying with HTTPS configuration..."
     dos2unix install.sh 2>/dev/null || true
@@ -1008,6 +1030,12 @@ app_deploy_https(){
         echo "  Backend:  ${API_HTTPS_URL}"
         echo ""
         echo_warning "Make sure your reverse proxy (nginx/apache) is running and configured"
+        echo ""
+        echo_info "To verify the build is using correct API URL:"
+        echo "  1. Open browser DevTools (F12)"
+        echo "  2. Go to Network tab"
+        echo "  3. Try to login"
+        echo "  4. Check the API request URL matches: ${API_HTTPS_URL}"
     else
         echo_error "Deployment failed"
         exit 1

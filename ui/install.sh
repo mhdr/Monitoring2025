@@ -160,11 +160,26 @@ else
     exit 1
 fi
 
-# Auto-generate .env.production with server IP
-log_info "Generating .env.production with auto-detected server IP..."
+# Check if .env.production already exists (e.g., from HTTPS configuration)
+if [ -f ".env.production" ]; then
+    log_info ".env.production already exists, using existing configuration"
+    
+    if grep -q "VITE_API_BASE_URL" .env.production; then
+        existing_api_url=$(grep "VITE_API_BASE_URL" .env.production | cut -d'=' -f2)
+        log_success "Using existing API URL: $existing_api_url"
+    else
+        log_warning ".env.production exists but missing VITE_API_BASE_URL"
+        log_info "Backing up and regenerating .env.production..."
+        mv .env.production .env.production.backup.$(date +%Y%m%d-%H%M%S)
+    fi
+fi
 
-# Detect server IP (prioritize non-localhost addresses)
-SERVER_IP=""
+# Auto-generate .env.production with server IP (only if not already present)
+if [ ! -f ".env.production" ]; then
+    log_info "Generating .env.production with auto-detected server IP..."
+
+    # Detect server IP (prioritize non-localhost addresses)
+    SERVER_IP=""
 
 # Method 1: hostname -I (most reliable on Linux)
 if command -v hostname &> /dev/null; then
@@ -203,8 +218,8 @@ fi
 BACKEND_PORT="${BACKEND_PORT:-5030}"
 API_URL="http://${SERVER_IP}:${BACKEND_PORT}"
 
-# Create .env.production file
-cat > .env.production << EOF
+    # Create .env.production file
+    cat > .env.production << EOF
 # Production Environment Variables
 # Auto-generated on $(date)
 # Server IP: $SERVER_IP
@@ -213,7 +228,8 @@ cat > .env.production << EOF
 VITE_API_BASE_URL=$API_URL
 EOF
 
-log_success "Created .env.production with API URL: $API_URL"
+    log_success "Created .env.production with API URL: $API_URL"
+fi
 
 # Validate .env.production
 if [ ! -f ".env.production" ]; then
