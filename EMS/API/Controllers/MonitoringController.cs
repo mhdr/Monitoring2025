@@ -4495,28 +4495,124 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// </summary>
     /// <param name="request">Get external alarms request containing the alarm ID</param>
     /// <returns>List of external alarms associated with the specified alarm</returns>
-    /// <response code="200">Returns the external alarm configurations</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <remarks>
+    /// Retrieves all external alarm configurations that are linked to a parent alarm. 
+    /// External alarms allow one alarm condition to trigger outputs on other monitoring items in the system.
+    /// 
+    /// When an alarm is triggered, each associated external alarm can:
+    /// - Write a specific value (true/false) to a target monitoring item
+    /// - Be individually enabled or disabled
+    /// - Operate independently of other external alarms
+    /// 
+    /// Use this endpoint to view all external alarm configurations for a given parent alarm,
+    /// which is useful for:
+    /// - Reviewing alarm propagation logic
+    /// - Auditing system interlock configurations
+    /// - Debugging alarm cascading behavior
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/getexternalalarms
+    ///     {
+    ///        "alarmId": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// Sample successful response:
+    /// 
+    ///     {
+    ///        "success": true,
+    ///        "message": "Retrieved 3 external alarm(s) successfully",
+    ///        "externalAlarms": [
+    ///          {
+    ///            "id": "550e8400-e29b-41d4-a716-446655440001",
+    ///            "alarmId": "550e8400-e29b-41d4-a716-446655440000",
+    ///            "itemId": "550e8400-e29b-41d4-a716-446655440002",
+    ///            "value": true,
+    ///            "isDisabled": false
+    ///          }
+    ///        ]
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">External alarm configurations retrieved successfully</response>
+    /// <response code="400">Validation error - invalid request format or missing alarm ID</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="404">Alarm not found - the specified alarm ID does not exist</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("GetExternalAlarms")]
+    [ProducesResponseType(typeof(GetExternalAlarmsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GetExternalAlarmsResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(GetExternalAlarmsResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(GetExternalAlarmsResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetExternalAlarms([FromBody] GetExternalAlarmsRequestDto request)
     {
         try
         {
+            _logger.LogInformation("GetExternalAlarms operation started: AlarmId={AlarmId}", request?.AlarmId);
+
+            // Validate request is not null
+            if (request == null)
+            {
+                _logger.LogWarning("GetExternalAlarms failed: Request is null");
+                return BadRequest(new GetExternalAlarmsResponseDto
+                {
+                    Success = false,
+                    Message = "Request body is required"
+                });
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("GetExternalAlarms failed: User not authenticated");
+                return Unauthorized(new { success = false, message = "Authentication required" });
             }
 
-            var response = new GetExternalAlarmsResponseDto();
+            // Check ModelState
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("GetExternalAlarms validation failed: UserId={UserId}, AlarmId={AlarmId}, Errors={Errors}",
+                    userId, request.AlarmId, string.Join(", ", errors));
+
+                return BadRequest(new GetExternalAlarmsResponseDto
+                {
+                    Success = false,
+                    Message = $"Validation failed: {string.Join(", ", errors)}"
+                });
+            }
+
+            // Verify parent alarm exists
+            var parentAlarm = await Core.Alarms.GetAlarm(request.AlarmId);
+            if (parentAlarm == null)
+            {
+                _logger.LogWarning("GetExternalAlarms failed: Parent alarm not found - AlarmId={AlarmId}, UserId={UserId}",
+                    request.AlarmId, userId);
+
+                return NotFound(new GetExternalAlarmsResponseDto
+                {
+                    Success = false,
+                    Message = $"Parent alarm with ID {request.AlarmId} not found"
+                });
+            }
 
             var alarms = await Core.Alarms.GetExternalAlarms(x => x.AlarmId == request.AlarmId);
 
+            var response = new GetExternalAlarmsResponseDto
+            {
+                Success = true,
+                Message = $"Retrieved {alarms.Count} external alarm(s) successfully"
+            };
+
             foreach (var externalAlarm in alarms)
             {
-                response.ExternalAlarms.Add(new GetExternalAlarmsResponseDto.ExternalAlarm()
+                response.ExternalAlarms.Add(new GetExternalAlarmsResponseDto.ExternalAlarmInfo()
                 {
                     Id = externalAlarm.Id,
                     AlarmId = externalAlarm.AlarmId,
@@ -4526,14 +4622,44 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 });
             }
 
+            _logger.LogInformation("GetExternalAlarms operation completed successfully: AlarmId={AlarmId}, Count={Count}, UserId={UserId}",
+                request.AlarmId, alarms.Count, userId);
+
             return Ok(response);
         }
-        catch (Exception e)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogWarning(ex, "GetExternalAlarms validation error: AlarmId={AlarmId}", request?.AlarmId);
+            return BadRequest(new GetExternalAlarmsResponseDto
+            {
+                Success = false,
+                Message = ex.Message
+            });
         }
-
-        return BadRequest(ModelState);
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "GetExternalAlarms resource not found: AlarmId={AlarmId}", request?.AlarmId);
+            return NotFound(new GetExternalAlarmsResponseDto
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "GetExternalAlarms unauthorized access: AlarmId={AlarmId}", request?.AlarmId);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetExternalAlarms operation: AlarmId={AlarmId}, Message={Message}",
+                request?.AlarmId, ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, new GetExternalAlarmsResponseDto
+            {
+                Success = false,
+                Message = "Internal server error"
+            });
+        }
     }
 
     /// <summary>

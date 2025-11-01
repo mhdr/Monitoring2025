@@ -980,6 +980,63 @@ Content-Type: application/json
 ###
 
 ### ========================================
+### External Alarm Configuration Endpoints
+### ========================================
+
+### Get External Alarms for a Specific Alarm - HTTP
+POST {{API_HostAddress}}/api/monitoring/getexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "alarmId": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+###
+
+### Get External Alarms for a Specific Alarm - HTTPS
+POST {{API_HostAddress}}/api/monitoring/getexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "alarmId": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+###
+
+### Get External Alarms - Error Case (Invalid Alarm ID)
+POST {{API_HostAddress}}/api/monitoring/getexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "alarmId": "00000000-0000-0000-0000-000000000000"
+}
+
+###
+
+### Get External Alarms - Error Case (Missing Alarm ID - Validation Failure)
+POST {{API_HostAddress}}/api/monitoring/getexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+}
+
+###
+
+### Get External Alarms - Error Case (Unauthorized - No Token)
+POST {{API_HostAddress}}/api/monitoring/getexternalalarms
+Content-Type: application/json
+
+{
+  "alarmId": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+###
+
+### ========================================
 ### Audit Log Endpoints
 ### ========================================
 
