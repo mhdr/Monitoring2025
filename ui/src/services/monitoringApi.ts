@@ -26,6 +26,7 @@ import type {
   EditAlarmResponseDto,
   DeleteAlarmRequestDto,
   GetExternalAlarmsRequestDto,
+  GetExternalAlarmsResponseDto,
   BatchEditExternalAlarmsRequestDto,
   ActiveAlarmsRequestDto,
   ActiveAlarmsResponseDto,
@@ -488,10 +489,22 @@ export const deleteAlarm = async (data: DeleteAlarmRequestDto): Promise<EditPoin
 
 /**
  * Get external alarms for a specific alarm
+ * 
+ * Retrieves all external alarm configurations that are linked to a parent alarm.
+ * External alarms allow one alarm condition to trigger outputs on other monitoring items in the system.
+ * 
+ * @param params - GetExternalAlarmsRequestDto containing the alarm ID
+ * @returns Promise<GetExternalAlarmsResponseDto> - Response with success status, message, and external alarms list
+ * 
+ * @example
+ * const result = await getExternalAlarms({ alarmId: '550e8400-e29b-41d4-a716-446655440000' });
+ * if (result.success) {
+ *   console.log(`Retrieved ${result.externalAlarms?.length || 0} external alarm(s)`);
+ * }
  */
-export const getExternalAlarms = async (params: GetExternalAlarmsRequestDto): Promise<{ data: unknown[] }> => {
+export const getExternalAlarms = async (params: GetExternalAlarmsRequestDto): Promise<GetExternalAlarmsResponseDto> => {
   try {
-    const response = await apiClient.post<{ data: unknown[] }>('/api/Monitoring/GetExternalAlarms', params);
+    const response = await apiClient.post<GetExternalAlarmsResponseDto>('/api/Monitoring/GetExternalAlarms', params);
     return response.data;
   } catch (error) {
     handleApiError(error);

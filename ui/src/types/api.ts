@@ -533,6 +533,28 @@ export interface GetExternalAlarmsRequestDto {
   alarmId: string; // UUID
 }
 
+/**
+ * External alarm information returned from GetExternalAlarms API
+ * Represents an external alarm configuration with all details
+ */
+export interface ExternalAlarmInfo {
+  id?: string | null; // UUID - Unique identifier for the external alarm
+  alarmId?: string | null; // UUID - The parent alarm ID that this external alarm belongs to
+  itemId?: string | null; // UUID - The monitoring item ID associated with this external alarm
+  value?: boolean; // The output value to write when this external alarm is triggered
+  isDisabled?: boolean; // Indicates whether this external alarm is currently disabled
+}
+
+/**
+ * Response model for GetExternalAlarms API
+ * Contains the list of external alarm configurations for a parent alarm
+ */
+export interface GetExternalAlarmsResponseDto {
+  success?: boolean; // Indicates whether the operation was successful
+  message?: string | null; // Optional message providing additional information
+  externalAlarms?: ExternalAlarmInfo[] | null; // List of external alarm configurations
+}
+
 export interface BatchEditExternalAlarmsRequestDto {
   alarmId: string; // UUID
   changed?: ExternalAlarm[] | null;
