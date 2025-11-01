@@ -258,7 +258,8 @@ const AlarmsDetailPage: React.FC = () => {
     {
       headerName: t('alarms.columns.type'),
       field: 'alarmType',
-      width: 120,
+      flex: 0.8,
+      minWidth: 140,
       sortable: true,
       filter: true,
       cellDataType: 'text',
@@ -272,7 +273,8 @@ const AlarmsDetailPage: React.FC = () => {
     {
       headerName: t('alarms.columns.priority'),
       field: 'alarmPriority',
-      width: 120,
+      flex: 0.8,
+      minWidth: 140,
       sortable: true,
       filter: true,
       cellDataType: 'text',
@@ -296,7 +298,8 @@ const AlarmsDetailPage: React.FC = () => {
     {
       headerName: t('alarms.columns.delay'),
       field: 'alarmDelay',
-      width: 100,
+      flex: 0.6,
+      minWidth: 110,
       sortable: true,
       filter: 'agNumberColumnFilter',
       cellDataType: 'number',
@@ -307,7 +310,8 @@ const AlarmsDetailPage: React.FC = () => {
     {
       headerName: t('alarms.columns.timeout'),
       field: 'timeout',
-      width: 100,
+      flex: 0.6,
+      minWidth: 130,
       sortable: true,
       filter: 'agNumberColumnFilter',
       cellDataType: 'number',
@@ -318,7 +322,8 @@ const AlarmsDetailPage: React.FC = () => {
     {
       headerName: t('alarms.columns.status'),
       field: 'isDisabled',
-      width: 120,
+      flex: 0.8,
+      minWidth: 140,
       sortable: true,
       filter: true,
       cellDataType: 'text',
@@ -343,7 +348,8 @@ const AlarmsDetailPage: React.FC = () => {
     {
       headerName: t('alarms.columns.externalAlarms'),
       field: 'hasExternalAlarm',
-      width: 160,
+      flex: 1,
+      minWidth: 180,
       sortable: true,
       filter: true,
       cellDataType: 'text',
@@ -399,7 +405,8 @@ const AlarmsDetailPage: React.FC = () => {
     {
       headerName: t('alarms.columns.actions'),
       field: 'actions',
-      width: 150,
+      flex: 0.8,
+      minWidth: 150,
       sortable: false,
       filter: false,
       cellRenderer: (params: { data: EnrichedAlarm }) => {
@@ -655,6 +662,7 @@ const AlarmsDetailPage: React.FC = () => {
                 pagination: true,
                 paginationPageSize: 20,
                 paginationPageSizeSelector: [10, 20, 50, 100],
+                suppressColumnVirtualisation: true,
               }}
             />
           </Box>

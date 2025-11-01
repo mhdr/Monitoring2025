@@ -102,7 +102,14 @@ export const AGGridWrapper = forwardRef<AGGridApi, AGGridWrapperProps>(({
   }, [theme]);
 
   const containerStyle = useMemo(() => ({ height, width }), [height, width]);
-  const defaultColDef = useMemo(() => ({ resizable: true, sortable: true, filter: true, ...gridOptions.defaultColDef }), [gridOptions.defaultColDef]);
+  const defaultColDef = useMemo(() => ({ 
+    resizable: true, 
+    sortable: true, 
+    filter: true, 
+    wrapHeaderText: true,
+    autoHeaderHeight: true,
+    ...gridOptions.defaultColDef 
+  }), [gridOptions.defaultColDef]);
   
   // Apply mobile optimizations if on mobile device
   const mobileOptimizedOptions = useMemo(() => {
