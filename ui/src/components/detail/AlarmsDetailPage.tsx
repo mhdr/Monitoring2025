@@ -29,6 +29,7 @@ import {
   FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
+import { useMonitoring } from '../../hooks/useMonitoring';
 import { getAlarms, getExternalAlarms } from '../../services/monitoringApi';
 import { createLogger } from '../../utils/logger';
 import type { 
@@ -38,7 +39,6 @@ import type {
   GetExternalAlarmsRequestDto,
   Item,
 } from '../../types/api';
-import { monitoringStorageHelpers } from '../../utils/monitoringStorage';
 
 // Use LazyAGGrid component for optimized AG Grid loading
 import LazyAGGrid from '../LazyAGGrid';
@@ -60,6 +60,7 @@ const AlarmsDetailPage: React.FC = () => {
   const { t, language } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { state } = useMonitoring();
   
   // State management
   const [error, setError] = useState<string | null>(null);
@@ -67,8 +68,17 @@ const AlarmsDetailPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingExternalAlarms, setLoadingExternalAlarms] = useState<Set<string>>(new Set());
   
-  // IndexedDB data for enrichment
-  const [itemsMap, setItemsMap] = useState<Map<string, Item>>(new Map());
+  // Create items map from MonitoringContext
+  const itemsMap = useMemo(() => {
+    const map = new Map<string, Item>();
+    state.items.forEach((item: Item) => {
+      if (item.id) {
+        map.set(item.id, item);
+      }
+    });
+    logger.log('Created items map from MonitoringContext:', { size: map.size, itemsCount: state.items.length });
+    return map;
+  }, [state.items]);
 
   // AG Grid integration
   const { exportToCsv, exportToExcel, handleGridReady } = useAGGrid();
@@ -80,34 +90,13 @@ const AlarmsDetailPage: React.FC = () => {
     handleGridReady(api, colApi);
   }, [handleGridReady]);
 
-  // Load items from IndexedDB on component mount
-  useEffect(() => {
-    const loadIndexedDBData = async () => {
-      try {
-        logger.log('Loading items from IndexedDB');
-        
-        const items = await monitoringStorageHelpers.getStoredItems();
-
-        if (items) {
-          const itemsMapData = new Map<string, Item>();
-          items.forEach(item => {
-            if (item.id) {
-              itemsMapData.set(item.id, item);
-            }
-          });
-          setItemsMap(itemsMapData);
-          logger.log('Items loaded from IndexedDB', { count: itemsMapData.size });
-        }
-      } catch (err) {
-        logger.error('Error loading data from IndexedDB:', err);
-      }
-    };
-
-    loadIndexedDBData();
-  }, []);
-
   // Helper function to get item name based on language
-  const getItemName = useCallback((item: Item | undefined): string => {
+  const getItemName = useCallback((item: Item | undefined, itemId?: string): string => {
+    // If items haven't loaded yet, show item ID as fallback
+    if (!item && itemId) {
+      return itemId;
+    }
+    
     if (!item) return t('unknown');
     
     if (language === 'fa') {
@@ -123,17 +112,17 @@ const AlarmsDetailPage: React.FC = () => {
     const value2 = alarm.value2 || '';
     const unit = language === 'fa' ? (item?.unitFa || item?.unit || '') : (item?.unit || '');
 
-    // CompareType: 1 = Equal, 2 = NotEqual, 3 = GreaterThan, 4 = LessThan, 5 = InRange
+    // CompareType: 1 = Equal, 2 = NotEqual, 3 = Higher, 4 = Lower, 5 = Between
     switch (compareType) {
       case 1: // Equal
         return `${t('alarms.condition.equal')} ${value1} ${unit}`;
       case 2: // NotEqual
         return `${t('alarms.condition.notEqual')} ${value1} ${unit}`;
-      case 3: // GreaterThan
+      case 3: // Higher
         return `${t('alarms.condition.greaterThan')} ${value1} ${unit}`;
-      case 4: // LessThan
+      case 4: // Lower
         return `${t('alarms.condition.lessThan')} ${value1} ${unit}`;
-      case 5: // InRange
+      case 5: // Between
         return `${t('alarms.condition.between')} ${value1} ${t('and')} ${value2} ${unit}`;
       default:
         return '';
@@ -165,7 +154,7 @@ const AlarmsDetailPage: React.FC = () => {
         const item = alarm.itemId ? itemsMap.get(alarm.itemId) : undefined;
         return {
           ...alarm,
-          itemName: getItemName(item),
+          itemName: getItemName(item, alarm.itemId || undefined),
         };
       });
 
@@ -219,28 +208,13 @@ const AlarmsDetailPage: React.FC = () => {
     }
   }, []);
 
-  // Fetch alarms on component mount or when itemId changes
+  // Fetch alarms on component mount or when itemId or itemsMap changes
   useEffect(() => {
     if (itemId) {
       fetchAlarmsData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemId]); // Fetch alarms when itemId is available
-
-  // Re-enrich alarms with item names when itemsMap loads or changes
-  useEffect(() => {
-    if (itemsMap.size > 0 && alarmsData.length > 0) {
-      logger.log('Re-enriching alarms with item names from IndexedDB');
-      setAlarmsData(prev => prev.map(alarm => {
-        const item = alarm.itemId ? itemsMap.get(alarm.itemId) : undefined;
-        return {
-          ...alarm,
-          itemName: getItemName(item),
-        };
-      }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemsMap.size]); // Re-enrich when itemsMap changes
+  }, [itemId, itemsMap]); // Fetch alarms when itemId is available or items change
 
   // Column definitions for AG Grid
   const columnDefs = useMemo<AGGridColumnDef[]>(() => [
@@ -289,10 +263,10 @@ const AlarmsDetailPage: React.FC = () => {
       filter: true,
       cellDataType: 'text',
       valueGetter: (params: { data: EnrichedAlarm }) => {
-        // AlarmType: 1 = Process, 2 = Digital
+        // AlarmType: 1 = Comparative, 2 = Timeout
         return params.data.alarmType === 1 
-          ? t('alarms.type.process') 
-          : t('alarms.type.digital');
+          ? t('alarms.type.comparative') 
+          : t('alarms.type.timeout');
       },
     },
     {
@@ -303,7 +277,7 @@ const AlarmsDetailPage: React.FC = () => {
       filter: true,
       cellDataType: 'text',
       cellRenderer: (params: { data: EnrichedAlarm }) => {
-        // AlarmPriority: 1 = Medium, 2 = High
+        // AlarmPriority: 1 = Warning, 2 = Alarm
         const priority = params.data.alarmPriority;
         const label = priority === 2 ? t('alarms.priority.high') : t('alarms.priority.medium');
         const color = priority === 2 ? 'error' : 'warning';

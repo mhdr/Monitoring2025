@@ -377,8 +377,8 @@
       "unknown": "Unknown Priority"
     },
     "type": {
-      "process": "Process",
-      "digital": "Digital"
+      "comparative": "Comparative",
+      "timeout": "Timeout"
     },
     "status": {
       "enabled": "Enabled",

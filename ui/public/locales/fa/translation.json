@@ -377,8 +377,8 @@
       "unknown": "اولویت نامشخص"
     },
     "type": {
-      "process": "فرآیند",
-      "digital": "دیجیتال"
+      "comparative": "مقایسه‌ای",
+      "timeout": "تایم‌اوت"
     },
     "status": {
       "enabled": "فعال",
