@@ -20,7 +20,7 @@ interface GroupCardProps {
 const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, onClick }) => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
-  const [elevation, setElevation] = React.useState<number>(1);
+  const [elevation, setElevation] = React.useState<number>(3);
   const [contextMenu, setContextMenu] = React.useState<{ mouseX: number; mouseY: number } | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = React.useState<boolean>(false);
   const [editDialogOpen, setEditDialogOpen] = React.useState<boolean>(false);
@@ -82,12 +82,14 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, subgroupCount, itemCount, 
       <Card
         elevation={elevation}
         onMouseEnter={() => setElevation(8)}
-        onMouseLeave={() => setElevation(1)}
+        onMouseLeave={() => setElevation(3)}
         onContextMenu={handleContextMenu}
         sx={{
           minHeight: 160,
           display: 'flex',
           flexDirection: 'column',
+          border: '1px solid',
+          borderColor: 'divider',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           // Add border if there are alarms or warnings
           ...(hasAlarms && {

@@ -176,7 +176,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [elevation, setElevation] = useState<number>(1);
+  const [elevation, setElevation] = useState<number>(3);
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
   const [commandDialogOpen, setCommandDialogOpen] = useState<boolean>(false);
   const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
@@ -453,13 +453,15 @@ const ItemCard: React.FC<ItemCardProps> = ({
       <Fade in timeout={300}>
         <Card
           elevation={elevation}
-          onMouseEnter={() => setElevation(6)}
-          onMouseLeave={() => setElevation(1)}
+          onMouseEnter={() => setElevation(8)}
+          onMouseLeave={() => setElevation(3)}
           onContextMenu={handleCardContextMenu}
           sx={{
             height: '100%',
             position: 'relative',
             overflow: 'visible',
+            border: '1px solid',
+            borderColor: 'divider',
             transition: 'box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             // Visual hint for admin users that right-click is available
             ...(isAdmin && {
