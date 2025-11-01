@@ -85,6 +85,7 @@
   "trendAnalysis": "Trend Analysis",
   "dataTable": "Data Table",
   "liveMonitoring": "Live Monitoring",
+  "alarmsDetail": "Alarms",
   "activeAlarmsDetail": "Active Alarms",
   "alarmLogDetail": "Alarm Log",
   "alarmCriteria": "Alarm Criteria",
@@ -106,6 +107,7 @@
   "customRange": "Custom Range",
   "apply": "Apply",
   "refresh": "Refresh",
+  "retry": "Retry",
   "noData": "No data available for the selected period",
   "noItemsFound": "No monitoring items found",
   "noItemsDescription": "There are no items configured in the system yet. Please contact your administrator to add monitoring items.",
@@ -370,9 +372,56 @@
   "alarms": {
     "priority": {
       "high": "High Priority",
+      "medium": "Medium",
       "low": "Low Priority",
       "unknown": "Unknown Priority"
-    }
+    },
+    "type": {
+      "process": "Process",
+      "digital": "Digital"
+    },
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "condition": {
+      "equal": "Equal to",
+      "notEqual": "Not equal to",
+      "greaterThan": "Greater than",
+      "lessThan": "Less than",
+      "between": "Between"
+    },
+    "columns": {
+      "itemName": "Point Name",
+      "message": "Message",
+      "condition": "Condition",
+      "type": "Type",
+      "priority": "Priority",
+      "delay": "Delay",
+      "timeout": "Timeout",
+      "status": "Status",
+      "externalAlarms": "External Alarms",
+      "actions": "Actions"
+    },
+    "externalAlarms": {
+      "none": "None",
+      "load": "Load",
+      "count": "External Alarm(s)"
+    },
+    "actions": {
+      "viewDetails": "View Details",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "summary": {
+      "total": "Total Alarms",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "highPriority": "High Priority"
+    },
+    "noMessage": "No message",
+    "noTimeout": "No timeout",
+    "seconds": "s"
   },
   "alarmBadgePopover": {
     "title": "Active Alarms",

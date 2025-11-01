@@ -49,7 +49,6 @@ export const useRoutePreloader = () => {
     preloadRoutesDelayed([
       { name: 'AlarmLogPage', loader: () => import('../components/AlarmLogPage') },
       { name: 'AlarmLogDetailPage', loader: () => import('../components/detail/AlarmLogDetailPage') },
-      { name: 'AlarmCriteriaPage', loader: () => import('../components/detail/AlarmCriteriaPage') },
     ], 1500);
   }, []);
 
@@ -68,9 +67,9 @@ export const useRoutePreloader = () => {
       { name: 'TrendAnalysisPage', loader: () => import('../components/detail/TrendAnalysisPage') },
       { name: 'DataTablePage', loader: () => import('../components/detail/DataTablePage') },
       { name: 'LiveMonitoringDetailPage', loader: () => import('../components/detail/LiveMonitoringDetailPage') },
+      { name: 'AlarmsDetailPage', loader: () => import('../components/detail/AlarmsDetailPage') },
       { name: 'ActiveAlarmsDetailPage', loader: () => import('../components/detail/ActiveAlarmsDetailPage') },
       { name: 'AlarmLogDetailPage', loader: () => import('../components/detail/AlarmLogDetailPage') },
-      { name: 'AlarmCriteriaPage', loader: () => import('../components/detail/AlarmCriteriaPage') },
       { name: 'AuditTrailDetailPage', loader: () => import('../components/detail/AuditTrailDetailPage') },
       { name: 'ManagementDetailPage', loader: () => import('../components/detail/ManagementDetailPage') },
     ], 1000);

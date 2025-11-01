@@ -487,7 +487,9 @@ export interface AlarmsRequestDto {
 }
 
 export interface AlarmsResponseDto {
-  data: AlarmDto[];
+  data: {
+    data: AlarmDto[];
+  };
 }
 
 export interface AddAlarmRequestDto {

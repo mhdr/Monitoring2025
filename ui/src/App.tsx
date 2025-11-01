@@ -29,9 +29,9 @@ const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
 const DataTablePage = lazy(() => import('./components/detail/DataTablePage'));
 const LiveMonitoringDetailPage = lazy(() => import('./components/detail/LiveMonitoringDetailPage'));
+const AlarmsDetailPage = lazy(() => import('./components/detail/AlarmsDetailPage'));
 const ActiveAlarmsDetailPage = lazy(() => import('./components/detail/ActiveAlarmsDetailPage'));
 const AlarmLogDetailPage = lazy(() => import('./components/detail/AlarmLogDetailPage'));
-const AlarmCriteriaPage = lazy(() => import('./components/detail/AlarmCriteriaPage'));
 const AuditTrailDetailPage = lazy(() => import('./components/detail/AuditTrailDetailPage'));
 const ManagementDetailPage = lazy(() => import('./components/detail/ManagementDetailPage'));
 import './App.css';
@@ -177,6 +177,13 @@ const AppRoutes = () => {
               </Suspense>
             </LazyErrorBoundary>
           } />
+          <Route path="alarms" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+                <AlarmsDetailPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
           <Route path="active-alarms" element={
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
@@ -188,13 +195,6 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
                 <AlarmLogDetailPage />
-              </Suspense>
-            </LazyErrorBoundary>
-          } />
-          <Route path="alarm-criteria" element={
-            <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
-                <AlarmCriteriaPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

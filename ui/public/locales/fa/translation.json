@@ -85,6 +85,7 @@
   "trendAnalysis": "تحلیل روند",
   "dataTable": "جدول داده",
   "liveMonitoring": "مانیتورینگ زنده",
+  "alarmsDetail": "هشدارها",
   "activeAlarmsDetail": "هشدارهای فعال",
   "alarmLogDetail": "گزارش هشدارها",
   "alarmCriteria": "معیارهای هشدار",
@@ -106,6 +107,7 @@
   "customRange": "بازه سفارشی",
   "apply": "اعمال",
   "refresh": "بروزرسانی",
+  "retry": "تلاش مجدد",
   "noData": "هیچ داده‌ای برای بازه انتخاب شده موجود نیست",
   "noItemsFound": "هیچ آیتم نظارتی یافت نشد",
   "noItemsDescription": "هنوز هیچ آیتمی در سیستم پیکربندی نشده است. لطفاً با مدیر سیستم برای افزودن آیتم‌های نظارتی تماس بگیرید.",
@@ -370,9 +372,56 @@
   "alarms": {
     "priority": {
       "high": "اولویت بالا",
+      "medium": "متوسط",
       "low": "اولویت پایین",
       "unknown": "اولویت نامشخص"
-    }
+    },
+    "type": {
+      "process": "فرآیند",
+      "digital": "دیجیتال"
+    },
+    "status": {
+      "enabled": "فعال",
+      "disabled": "غیرفعال"
+    },
+    "condition": {
+      "equal": "برابر با",
+      "notEqual": "نابرابر با",
+      "greaterThan": "بزرگتر از",
+      "lessThan": "کوچکتر از",
+      "between": "بین"
+    },
+    "columns": {
+      "itemName": "نام پوینت",
+      "message": "پیام",
+      "condition": "شرط",
+      "type": "نوع",
+      "priority": "اولویت",
+      "delay": "تاخیر",
+      "timeout": "زمان انقضا",
+      "status": "وضعیت",
+      "externalAlarms": "هشدارهای خارجی",
+      "actions": "عملیات"
+    },
+    "externalAlarms": {
+      "none": "ندارد",
+      "load": "بارگذاری",
+      "count": "هشدار خارجی"
+    },
+    "actions": {
+      "viewDetails": "مشاهده جزئیات",
+      "edit": "ویرایش",
+      "delete": "حذف"
+    },
+    "summary": {
+      "total": "کل هشدارها",
+      "enabled": "فعال",
+      "disabled": "غیرفعال",
+      "highPriority": "اولویت بالا"
+    },
+    "noMessage": "بدون پیام",
+    "noTimeout": "بدون زمان انقضا",
+    "seconds": "ثانیه"
   },
   "alarmBadgePopover": {
     "title": "هشدارهای فعال",
