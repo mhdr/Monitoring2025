@@ -129,6 +129,24 @@ Enterprise monitoring dashboard with real-time SignalR streaming, bilingual supp
 - Locale: `AG_GRID_LOCALE_IR` with `enableRtl: true` for Persian
 - **CRITICAL**: Register `LocaleModule`, `RowSelectionModule`, `ColumnApiModule`
 
+### AG Grid Styling Standards (MANDATORY)
+⚠️ **All styling centralized in `src/components/AGGridWrapper.css`** - DO NOT create grid-specific CSS files
+
+**Header Requirements** (56px height):
+- Padding: `0.75rem 1rem` | Font: `600` weight, `1.4` line-height
+- Always enable: `wrapHeaderText: true`, `autoHeaderHeight: true`
+- Config: `suppressColumnVirtualisation: true` to prevent clipping
+
+**Column Widths** (❌ NO fixed pixels, ✅ USE flex + minWidth):
+```typescript
+// Short: { flex: 0.8, minWidth: 140 } | Very short: { flex: 0.6, minWidth: 110 }
+// Standard: { flex: 1, minWidth: 180 } | Actions: { flex: 0.8, minWidth: 150 }
+```
+
+**Testing Checklist**:
+- ✅ 56px header height | ✅ Text visible without expansion | ✅ Both languages (RTL/LTR)
+- ✅ Both themes (light/dark) | ✅ Mobile breakpoints (52px rows, 48px headers)
+
 ## 🎨 Theme System (Material-UI)
 
 ⚠️ **CRITICAL: NEVER hardcode colors - ALWAYS use MUI theme palette**
