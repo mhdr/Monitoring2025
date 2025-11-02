@@ -14,13 +14,10 @@ import {
 } from '../services/api';
 import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
-import { setItem, removeItem, getItem } from '../utils/indexedDbStorage';
 import { createLogger } from '../utils/logger';
 import { useAuth } from '../hooks/useAuth';
 
 const logger = createLogger('MonitoringContext');
-
-const SYNC_STATUS_STORAGE_KEY = 'monitoring_data_synced';
 
 /**
  * Stream connection status for real-time active alarms (SignalR)
@@ -194,24 +191,7 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
       return { ...state, currentFolderId: action.payload };
 
     case 'SET_DATA_SYNCED':
-      // Save to IndexedDB asynchronously
-      setItem(SYNC_STATUS_STORAGE_KEY, action.payload).catch((error) =>
-        logger.error('Failed to save sync status:', error)
-      );
-      // Also set localStorage cache for fast access (synchronous)
-      if (action.payload) {
-        try {
-          localStorage.setItem('monitoring_synced_cache', 'true');
-        } catch (error) {
-          logger.warn('Failed to set sync cache:', error);
-        }
-      } else {
-        try {
-          localStorage.removeItem('monitoring_synced_cache');
-        } catch (error) {
-          logger.warn('Failed to clear sync cache:', error);
-        }
-      }
+      // Zustand store handles persistence automatically
       logger.log('Data sync status updated:', {
         isDataSynced: action.payload,
         currentDataCounts: {
@@ -223,22 +203,11 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
       return { ...state, isDataSynced: action.payload };
 
     case 'CLEAR_DATA_SYNC_STATUS':
-      removeItem(SYNC_STATUS_STORAGE_KEY).catch((error) =>
-        logger.error('Failed to clear sync status:', error)
-      );
-      // Clear cache as well
-      try {
-        localStorage.removeItem('monitoring_synced_cache');
-      } catch (error) {
-        logger.warn('Failed to clear sync cache:', error);
-      }
+      // Zustand store handles persistence automatically
       return { ...state, isDataSynced: false };
 
     case 'CLEAR_ALL_MONITORING_DATA':
-      // Clear from IndexedDB asynchronously
-      removeItem(SYNC_STATUS_STORAGE_KEY).catch((error: unknown) =>
-        logger.error('Failed to clear sync status:', error)
-      );
+      // Clear from Zustand store asynchronously
       monitoringStorageHelpers.clearAllMonitoringData().catch((error: unknown) =>
         logger.error('Failed to clear monitoring data:', error)
       );
@@ -261,10 +230,7 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
       };
 
     case 'RESET_MONITORING':
-      // Clear from IndexedDB asynchronously
-      removeItem(SYNC_STATUS_STORAGE_KEY).catch((error: unknown) =>
-        logger.error('Failed to clear sync status:', error)
-      );
+      // Clear from Zustand store asynchronously
       monitoringStorageHelpers.clearAllMonitoringData().catch((error: unknown) =>
         logger.error('Failed to clear monitoring data:', error)
       );
@@ -475,13 +441,14 @@ interface MonitoringProviderProps {
  */
 async function loadMonitoringDataFromStorage() {
   try {
-    // Load cached data from IndexedDB (may be empty on first load)
+    // Load cached data from Zustand store (may be empty on first load)
     const storedGroups = (await monitoringStorageHelpers.getStoredGroups()) || [];
     const storedItems = (await monitoringStorageHelpers.getStoredItems()) || [];
     const storedAlarms = (await monitoringStorageHelpers.getStoredAlarms()) || [];
     
-    // Load sync flag from IndexedDB
-    const syncFlag = await getItem<boolean>(SYNC_STATUS_STORAGE_KEY);
+    // Load sync flag from Zustand store
+    const { useMonitoringStore } = await import('../stores/monitoringStore');
+    const syncFlag = useMonitoringStore.getState().isDataSynced;
     
     // NEW LOGIC: If cached data exists but sync flag is false, auto-set flag to true
     // This handles page refresh/new tab scenarios where data exists but flag was cleared
@@ -491,11 +458,11 @@ async function loadMonitoringDataFromStorage() {
     if (hasCachedData && !isDataSynced) {
       logger.log('Cached data exists but sync flag is false - auto-setting flag to true');
       isDataSynced = true;
-      // Save the flag asynchronously
-      await setItem(SYNC_STATUS_STORAGE_KEY, true);
+      // Save the flag automatically via Zustand
+      useMonitoringStore.getState().setDataSynced(true);
     }
 
-    logger.log('Loaded cached data from IndexedDB:', {
+    logger.log('Loaded cached data from Zustand store:', {
       groups: storedGroups.length,
       items: storedItems.length,
       alarms: storedAlarms.length,
@@ -586,7 +553,7 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
     dispatch({ type: 'ALARMS_LOADING' });
     try {
       const response = await getAlarms();
-      dispatch({ type: 'ALARMS_SUCCESS', payload: response.data || [] });
+      dispatch({ type: 'ALARMS_SUCCESS', payload: response.data.data });
     } catch (error) {
       logger.error('Failed to fetch alarms:', error);
       dispatch({ type: 'ALARMS_ERROR', payload: error as ApiError });
@@ -828,7 +795,7 @@ export function MonitoringProvider({ children }: MonitoringProviderProps): React
           await Promise.all([
             getGroups().then(res => dispatch({ type: 'GROUPS_SUCCESS', payload: res.groups || [] })),
             getItems().then(res => dispatch({ type: 'ITEMS_SUCCESS', payload: res.items || [] })),
-            getAlarms().then(res => dispatch({ type: 'ALARMS_SUCCESS', payload: res.data || [] })),
+            getAlarms().then(res => dispatch({ type: 'ALARMS_SUCCESS', payload: res.data.data })),
           ]);
           
           dispatch({ type: 'SET_LAST_REFRESH_TIME', payload: Date.now() });

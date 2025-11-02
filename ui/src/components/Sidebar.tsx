@@ -33,7 +33,7 @@ import {
   showAlarmNotification, 
   formatAlarmNotificationMessage 
 } from '../utils/notifications';
-import { areNotificationsEnabledByUser } from '../utils/monitoringStorage';
+import { useNotificationStore } from '../stores/notificationStore';
 
 const logger = createLogger('Sidebar');
 
@@ -74,6 +74,7 @@ const pulseAnimation = keyframes`
   const { state: monitoringState } = useMonitoring();
   const { alarmCount, streamStatus, fetchError, isFetching, highestPriority } = monitoringState.activeAlarms;
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const { preferences } = useNotificationStore();
   
   // Log theme direction on mount to verify RTL is applied
   useEffect(() => {
@@ -123,19 +124,15 @@ const pulseAnimation = keyframes`
     
     if (hasNewAlarms) {
       // Check both browser permission AND user preference
-      const checkAndNotify = async () => {
-        const browserPermission = areNotificationsEnabled();
-        const userEnabled = await areNotificationsEnabledByUser();
-        
-        if (browserPermission && userEnabled) {
-          const notificationOptions = formatAlarmNotificationMessage(alarmCount, highestPriority, t);
-          showAlarmNotification(notificationOptions);
-        }
-      };
+      const browserPermission = areNotificationsEnabled();
+      const userEnabled = preferences.enabled;
       
-      checkAndNotify();
+      if (browserPermission && userEnabled) {
+        const notificationOptions = formatAlarmNotificationMessage(alarmCount, highestPriority, t);
+        showAlarmNotification(notificationOptions);
+      }
     }
-  }, [alarmCount, highestPriority, t]);
+  }, [alarmCount, highestPriority, t, preferences.enabled]);
 
   const menuItems: MenuItem[] = [
     { path: '/dashboard/monitoring', key: 'monitoring', icon: <DashboardIcon /> },

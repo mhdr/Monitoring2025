@@ -23,11 +23,7 @@ import {
 import { useTranslation } from '../hooks/useTranslation';
 import { useLanguage } from '../hooks/useLanguage';
 import { MuiThemeSwitcher } from './MuiThemeSwitcher';
-import {
-  getNotificationPreferences,
-  saveNotificationPreferences,
-  type NotificationPreferences,
-} from '../utils/monitoringStorage';
+import { useNotificationStore } from '../stores/notificationStore';
 import {
   isNotificationSupported,
   getNotificationPermission,
@@ -234,47 +230,27 @@ const LanguageOptions = (): React.ReactElement => {
  */
 const NotificationSettings = (): React.ReactElement => {
   const { t } = useTranslation();
-  const [preferences, setPreferences] = useState<NotificationPreferences>({ enabled: false, lastUpdated: Date.now() });
+  const { preferences, setEnabled } = useNotificationStore();
   const [permission, setPermission] = useState<NotificationPermission>('default');
-  const [isLoading, setIsLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({
     open: false,
     message: '',
     severity: 'info',
   });
 
-  // Load preferences and check permission on mount
+  // Check permission on mount
   useEffect(() => {
-    const loadPreferences = async () => {
-      try {
-        const prefs = await getNotificationPreferences();
-        setPreferences(prefs);
-        
-        if (isNotificationSupported()) {
-          setPermission(getNotificationPermission());
-        }
-      } catch (error) {
-        console.error('Failed to load notification preferences:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadPreferences();
+    if (isNotificationSupported()) {
+      setPermission(getNotificationPermission());
+    }
   }, []);
 
   // Handle toggle enable/disable
-  const handleToggle = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newEnabled = event.target.checked;
     
     try {
-      const updatedPrefs: NotificationPreferences = {
-        enabled: newEnabled,
-        lastUpdated: Date.now(),
-      };
-      
-      await saveNotificationPreferences(updatedPrefs);
-      setPreferences(updatedPrefs);
+      setEnabled(newEnabled);
       
       setSnackbar({
         open: true,
@@ -305,12 +281,7 @@ const NotificationSettings = (): React.ReactElement => {
         });
         
         // Auto-enable notifications when permission granted
-        const updatedPrefs: NotificationPreferences = {
-          enabled: true,
-          lastUpdated: Date.now(),
-        };
-        await saveNotificationPreferences(updatedPrefs);
-        setPreferences(updatedPrefs);
+        setEnabled(true);
       } else if (result === 'denied') {
         setSnackbar({
           open: true,
@@ -352,10 +323,6 @@ const NotificationSettings = (): React.ReactElement => {
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };
-
-  if (isLoading) {
-    return <Typography>{t('loading')}</Typography>;
-  }
 
   const isSupported = isNotificationSupported();
   const canEnable = isSupported && permission === 'granted';

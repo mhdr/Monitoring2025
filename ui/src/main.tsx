@@ -9,21 +9,14 @@ import { LanguageProvider } from './contexts/LanguageContext'
 import { MuiThemeProvider } from './contexts/MuiThemeProvider'
 import { AuthProvider } from './contexts/AuthContext'
 import { MonitoringProvider } from './contexts/MonitoringContext'
-import { initAutoCleanup } from './utils/monitoringStorage'
-import { initIndexedDB } from './utils/indexedDbStorage'
 import { createLogger } from './utils/logger'
 import App from './App.tsx'
 
 const logger = createLogger('Main');
 
-// Initialize IndexedDB storage first and wait for it to complete
-// This is critical - the app needs IndexedDB ready before rendering
+// Initialize app (no IndexedDB needed - using Zustand + localStorage now)
 (async () => {
   try {
-    // CRITICAL: Wait for IndexedDB to be fully initialized
-    // This sets up the database, BroadcastChannel, and cleanup schedule
-    await initIndexedDB();
-    
     // CRITICAL: Ensure language is properly initialized before React renders
     // Wait for i18n to be fully initialized
     await i18n.loadLanguages(['en', 'fa']);
@@ -53,10 +46,8 @@ const logger = createLogger('Main');
       storedLanguage
     });
     
-    // Initialize automatic cleanup for expired data (TTL)
-    await initAutoCleanup().catch((error) => {
-      logger.error('Failed to initialize auto-cleanup:', error);
-    });
+    // NOTE: No cleanup needed with localStorage (unlike IndexedDB TTL)
+    // Zustand persist middleware handles localStorage automatically
     
     // NOTE: Background refresh service is now started in AuthContext
     // after authentication is confirmed to prevent 401 errors on startup
