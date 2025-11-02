@@ -5,9 +5,9 @@
 ## 📋 Quick Reference
 
 ### Decision Trees
-- **State**: Local → useState | Shared → Context API | Real-time → SignalR + Context
+- **State**: Local → useState | Shared → Zustand store | Real-time → SignalR + Zustand
 - **Styling**: MUI sx prop → theme values | Variants → styled() | RTL → logical properties
-- **Data**: REST → Axios | Real-time → SignalR | Storage → IndexedDB (NEVER localStorage)
+- **Data**: REST → Axios | Real-time → SignalR | Storage → Zustand + localStorage
 - **Components**: Functional + hooks | Error handling → LazyErrorBoundary | Performance → useMemo/useCallback
 - **Testing**: Chrome DevTools MCP (mandatory for ALL testing/debugging)
 
@@ -24,7 +24,7 @@
 | No `any` type | Type safety |
 | Add `data-id-ref` | Testing/debugging |
 | Use MUI components | Design system |
-| IndexedDB for storage | Performance/security |
+| Zustand + localStorage | State management |
 | Test both languages | i18n verification |
 | Test all breakpoints | Responsive design |
 
@@ -38,7 +38,7 @@
 | Hardcoded colors | `theme.palette.primary.main` |
 | `marginLeft: 16` | `marginInlineStart: 2` |
 | `<div onClick>` | `<Button onClick>` |
-| `localStorage` | IndexedDB |
+| React Context | Zustand stores |
 | `any` type | `unknown` + type guard |
 | Hardcoded text | `t('key')` |
 | Class components | Functional + hooks |
@@ -46,7 +46,7 @@
 
 
 ## 🎯 Project Overview
-Enterprise monitoring dashboard with real-time SignalR streaming, bilingual support (Persian/English), RTL/LTR layouts, AG Grid Enterprise, JWT auth with refresh token rotation, MUI theming (light/dark), and ECharts with i18n.
+Enterprise monitoring dashboard with real-time SignalR streaming, bilingual support (Persian/English), RTL/LTR layouts, AG Grid Enterprise, JWT auth with refresh token rotation, MUI theming (light/dark), ECharts with i18n, and Zustand state management with localStorage persistence.
 
 ## 🌍 Internationalization (i18n)
 
@@ -70,6 +70,7 @@ Enterprise monitoring dashboard with real-time SignalR streaming, bilingual supp
 ### Core
 - **React 18**: Functional components, hooks only
 - **TypeScript 5**: Strict mode, no `any` type
+- **Zustand 5**: State management with localStorage persistence
 - **Axios**: HTTP client with interceptors
 - **SignalR**: Real-time alarms streaming
 - **Material-UI v6**: Component library, responsive grid (xs/sm/md/lg/xl)
@@ -108,10 +109,10 @@ Enterprise monitoring dashboard with real-time SignalR streaming, bilingual supp
 ### File Organization
 - `src/components/` - React components
 - `src/types/` - TypeScript interfaces
-- `src/hooks/` - Custom hooks
+- `src/hooks/` - Custom hooks (useAuth, useMonitoring, useLanguage, etc.)
 - `src/utils/` - Helpers
 - `src/services/` - API clients (Axios, SignalR)
-- `src/contexts/` - React Context providers
+- `src/stores/` - Zustand stores (authStore, monitoringStore, languageStore, themeStore, etc.)
 
 ### Naming
 - **Components**: PascalCase
@@ -272,33 +273,34 @@ Must test on these standard resolutions:
 ⚠️ Never manually refresh - Axios interceptors handle it automatically
 
 ## Data Synchronization (CRITICAL)
-⚠️ **PRINCIPLE: If user is authenticated, data MUST be in IndexedDB**
+⚠️ **PRINCIPLE: If user is authenticated, data MUST be in Zustand stores (persisted to localStorage)**
 
 ### Sync Strategy
-- **Login**: Auto-redirect to `/dashboard/sync?force=true` → syncs once → data persists until logout
-- **Page Refresh/New Tab**: NO sync checks → assumes data in IndexedDB
-- **Force Sync (navbar)**: User-triggered → bypasses cache, refreshes from API
-- **Logout**: Clears ALL IndexedDB data + sync flag
+- **Login**: Auto-redirect to `/dashboard/sync?force=true` → syncs once → data persists in Zustand + localStorage until logout
+- **Page Refresh/New Tab**: NO sync checks → assumes data in Zustand stores (auto-loaded from localStorage)
+- **Force Sync (navbar)**: User-triggered → bypasses cache, refreshes from API, updates Zustand stores
+- **Logout**: Clears ALL Zustand store data (automatically clears localStorage)
 
 ### Three-Phase Sync Process
 ```
-Phase 1: Groups (parallel)  → GET /api/Groups
-Phase 2: Items (parallel)   → GET /api/Items  
-Phase 3: Alarms (sequential) → GET /api/Alarms (requires itemIds from Phase 2)
+Phase 1: Groups (parallel)  → GET /api/Groups → setGroups()
+Phase 2: Items (parallel)   → GET /api/Items  → setItems()
+Phase 3: Alarms (sequential) → GET /api/Alarms (requires itemIds from Phase 2) → setAlarms()
 ```
 
 ### Critical Components
-- **`ProtectedRoute`**: Only checks authentication, NO sync checks (assumes data exists)
+- **`ProtectedRoute`**: Only checks authentication, NO sync checks (assumes data exists in Zustand)
 - **`LoginPage`**: Redirects to sync after successful login
 - **`useDataSync`**: Orchestrates 3-phase sync with progress tracking
-- **`MonitoringContext`**: Manages state + IndexedDB persistence
-- **localStorage cache**: Fast hint for `isDataSynced()` check (avoids async IndexedDB read)
+- **`useMonitoringStore`**: Zustand store for groups, items, alarms with localStorage persistence
+- **Zustand persist middleware**: Automatic localStorage synchronization
 
 ### Key Files
 - `src/components/ProtectedRoute.tsx` - Auth guard only, no sync checks
 - `src/components/LoginPage.tsx` - Redirects to sync after login
 - `src/hooks/useDataSync.ts` - Sync orchestration
-- `src/contexts/MonitoringContext.tsx` - State + persistence
+- `src/stores/monitoringStore.ts` - Zustand store with persist middleware
+- `src/hooks/useMonitoring.ts` - Hook to access monitoring store
 - `src/components/SyncPage.tsx` - Sync UI with progress
 
 ## SignalR Real-Time Communication
@@ -497,84 +499,189 @@ const handleClose = () => {
 - Test with screen readers in RTL mode (NVDA, JAWS with Arabic/Persian)
 - Verify keyboard shortcuts don't conflict with RTL conventions
 
-## � Data Persistence
+## 🗄️ State Management with Zustand + localStorage
 
-### Critical Data Storage Rules
-⚠️ **MANDATORY: Use IndexedDB for ALL client-side data persistence**
+### Critical State Management Rules
+⚠️ **MANDATORY: Use Zustand stores with localStorage persistence for ALL application state**
 
-**DO NOT use `localStorage` or `sessionStorage`** - they have significant limitations and security concerns.
+**Architecture Change:** This project migrated from React Context + IndexedDB to Zustand + localStorage for simplified state management and better performance.
 
-### Why IndexedDB?
-1. **Larger Storage Capacity**: IndexedDB can store GBs of data vs. localStorage's 5-10MB limit
-2. **Asynchronous Operations**: Non-blocking API prevents UI freezes with large datasets
-3. **Structured Data**: Store complex objects, arrays, and binary data natively (no JSON.stringify/parse overhead)
-4. **Transactional Integrity**: ACID-compliant transactions ensure data consistency
-5. **Indexing & Querying**: Fast lookups via indexes, range queries, and cursors
-6. **Better Performance**: Optimized for large-scale data operations
-7. **Typed Arrays Support**: Efficient binary data storage (blobs, files, ArrayBuffers)
-8. **Web Worker Compatible**: Can be accessed from service workers and web workers
+### Why Zustand + localStorage?
+1. **Simpler API**: Less boilerplate than React Context, no Provider/Consumer complexity
+2. **Better Performance**: Only re-renders components that subscribe to changed state slices
+3. **Synchronous Access**: Critical for API interceptors (e.g., `getTokenSync()` in authStore)
+4. **DevTools Integration**: Built-in Redux DevTools support for debugging
+5. **Middleware System**: Persist, devtools, immer middleware for enhanced functionality
+6. **Automatic Persistence**: `persist` middleware handles localStorage sync automatically
+7. **Cross-Tab Sync**: Built-in support for state sync across browser tabs
+8. **TypeScript-First**: Excellent TypeScript inference and type safety
 
-### When to Use IndexedDB
-✅ **MANDATORY for:**
-- Authentication tokens (JWT, refresh tokens) - see `src/utils/authStorage.ts`
-- User preferences and settings (theme, language, UI state)
-- Offline data caching (API responses, user data)
-- Draft data (unsaved forms, work-in-progress content)
-- Application state persistence across sessions
-- Large datasets (monitoring data, logs, historical records)
-- Binary data (files, images, blobs)
+### Current Zustand Stores
+✅ **Implemented Stores** (`src/stores/`):
+- **`authStore.ts`**: Authentication (tokens, user, expiration) - 7-day rolling expiration
+- **`monitoringStore.ts`**: Monitoring data (groups, items, alarms, sync status) - partial persistence
+- **`languageStore.ts`**: Language preferences (fa/en) with i18n integration
+- **`themeStore.ts`**: MUI theme preferences (light/dark mode)
+- **`sortStore.ts`**: Sort preferences for various pages
+- **`notificationStore.ts`**: Desktop notification preferences
 
-### localStorage/sessionStorage Limitations
-❌ **DO NOT use for:**
-- Sensitive data (tokens, credentials) - synchronous, not secure
-- Large datasets (>5MB) - quota exceeded errors
-- Complex objects - requires JSON serialization overhead
-- Binary data - inefficient base64 encoding required
-- Concurrent access - no transaction support, race conditions possible
-- Service worker access - not available in worker context
+### Zustand Store Patterns
 
-### Implementation Patterns
+**Basic Store Structure:**
+```typescript
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-**Existing Implementation:**
-This project uses IndexedDB via `src/utils/authStorage.ts` for secure token storage with:
-- Automatic expiration handling (7-day rolling window)
-- Transactional operations for data consistency
-- Error handling and fallback mechanisms
-- TypeScript-safe interfaces
+interface MyState {
+  data: string;
+  count: number;
+}
 
-**Creating New IndexedDB Stores:**
-- Use `idb` library for Promise-based API
-- Define TypeScript schema using `DBSchema` interface
-- Implement version migrations in `upgrade` callback
-- Handle opening database, putting data, and getting data
-- Include error handling and TypeScript-safe interfaces
+interface MyActions {
+  setData: (data: string) => void;
+  increment: () => void;
+}
+
+export const useMyStore = create<MyState & MyActions>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      data: '',
+      count: 0,
+      
+      // Actions
+      setData: (data) => set({ data }),
+      increment: () => set((state) => ({ count: state.count + 1 })),
+    }),
+    {
+      name: 'my-storage', // localStorage key
+      version: 1,
+    }
+  )
+);
+```
+
+**Partial Persistence** (for transient + persistent state):
+```typescript
+export const useMonitoringStore = create<State & Actions>()(
+  persist(
+    (set, get) => ({ /* state and actions */ }),
+    {
+      name: 'monitoring-storage',
+      version: 1,
+      // Only persist specific fields
+      partialize: (state) => ({
+        groups: state.groups,
+        items: state.items,
+        alarms: state.alarms,
+        isDataSynced: state.isDataSynced,
+        // Exclude: activeAlarms (real-time), backgroundRefresh (transient)
+      }),
+    }
+  )
+);
+```
+
+**DevTools Integration:**
+```typescript
+import { devtools } from 'zustand/middleware';
+
+export const useMyStore = create<State & Actions>()(
+  devtools(
+    persist(
+      (set, get) => ({ /* state and actions */ }),
+      { name: 'my-storage', version: 1 }
+    ),
+    { name: 'MyStore', enabled: true }
+  )
+);
+```
+
+### Accessing Zustand Stores
+
+**In Components (React hooks):**
+```typescript
+import { useAuthStore } from '../stores/authStore';
+
+function MyComponent() {
+  // Subscribe to specific state slices (prevents unnecessary re-renders)
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const login = useAuthStore((state) => state.setAuth);
+  
+  // Or subscribe to entire store (not recommended)
+  const auth = useAuthStore();
+}
+```
+
+**Outside React (API interceptors, utilities):**
+```typescript
+import { useAuthStore } from '../stores/authStore';
+
+// Direct access to store state
+const token = useAuthStore.getState().token;
+const user = useAuthStore.getState().user;
+
+// Call actions directly
+useAuthStore.getState().setAuth(token, user, refreshToken);
+useAuthStore.getState().clearAuth();
+```
+
+**Custom Hooks Pattern:**
+```typescript
+// src/hooks/useAuth.ts
+import { useAuthStore } from '../stores/authStore';
+
+export const useAuth = () => {
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const isAuthenticated = Boolean(token && user);
+  
+  const login = useCallback(async (credentials) => {
+    const result = await apiLogin(credentials);
+    useAuthStore.getState().setAuth(result.accessToken, result.user, result.refreshToken);
+  }, []);
+  
+  const logout = useCallback(async () => {
+    useAuthStore.getState().clearAuth();
+  }, []);
+  
+  return { user, token, isAuthenticated, login, logout };
+};
+```
+
+### When to Create New Stores
+✅ **Create a new Zustand store when:**
+- State needs to be shared across multiple components
+- State needs to persist across page refreshes
+- State requires complex update logic
+- State needs to be accessed outside React components
+
+❌ **Use local state (useState) when:**
+- State is only used in a single component
+- State is ephemeral (form inputs, UI toggles)
+- State doesn't need to persist
+
+### Migration from React Context
+If you find existing React Context code:
+1. Create Zustand store in `src/stores/`
+2. Move state and actions from Context to store
+3. Replace `useContext()` with `useStoreName()`
+4. Remove Context Provider from component tree
+5. Update imports throughout codebase
+6. Test thoroughly including persistence
 
 ### Best Practices
-1. **Use `idb` library**: Provides Promise-based API wrapper around native IndexedDB
-2. **Define TypeScript schemas**: Use `DBSchema` interface for type safety
-3. **Version migrations**: Handle schema changes in `upgrade` callback
-4. **Error handling**: Wrap operations in try/catch, provide fallbacks
-5. **Cleanup old data**: Implement TTL or periodic cleanup for expired data
-6. **Indexing strategy**: Create indexes for frequently queried fields
-7. **Transaction scope**: Keep transactions short, commit frequently
-8. **Security**: Encrypt sensitive data before storing (use Web Crypto API)
-9. **Testing**: Test quota exceeded scenarios, corrupted data recovery
-10. **Service Worker**: Use for offline-first patterns and background sync
-
-### Migration from localStorage/sessionStorage
-If you find existing code using localStorage/sessionStorage:
-1. Create IndexedDB store with appropriate schema
-2. Migrate existing data to IndexedDB
-3. Update all read/write operations to use IndexedDB API
-4. Remove localStorage/sessionStorage calls
-5. Test thoroughly including offline scenarios
-
-### Performance Considerations
-- **Batch operations**: Use transactions to group multiple operations
-- **Lazy loading**: Open database connection only when needed
-- **Cursor iteration**: For large result sets, use cursors instead of getAll()
-- **Index optimization**: Create compound indexes for multi-field queries
-- **Blob storage**: Store large binary data directly, avoid base64 encoding
+1. **Slice Subscriptions**: Only subscribe to state slices you need (prevents re-renders)
+2. **Immutable Updates**: Always return new objects in `set()`, never mutate
+3. **Action Creators**: Define all state updates as named actions in the store
+4. **TypeScript**: Define separate interfaces for state and actions
+5. **Middleware Order**: `devtools(persist(...))` for both features
+6. **Version Migration**: Use `version` field for schema migrations
+7. **Partialize**: Only persist what's necessary (exclude transient state)
+8. **Logging**: Log state changes in actions using logger utility
+9. **Backward Compat**: Provide helper functions for gradual migration (see `authStorageHelpers`)
+10. **Cross-Tab Sync**: Use BroadcastChannel API for critical state (auth, logout)
 
 ## 🐛 Error Handling
 
@@ -722,10 +829,10 @@ If you find existing code using localStorage/sessionStorage:
 ```
 src/
 ├── components/   # React components
-├── contexts/     # Auth, Language, Monitoring
-├── hooks/        # Custom hooks
+├── stores/       # Zustand stores (auth, monitoring, language, theme, etc.)
+├── hooks/        # Custom hooks (useAuth, useMonitoring, useLanguage, etc.)
 ├── i18n/         # i18n config
-├── services/     # API clients (apiClient.ts, signalrClient.ts TODO)
+├── services/     # API clients (apiClient.ts, signalrClient.ts)
 ├── styles/       # Global styles
 ├── types/        # TypeScript types
 └── utils/        # Helpers
@@ -761,11 +868,13 @@ public/locales/   # fa/, en/
 - [ ] **RTL Styling**: No broken layouts in RTL mode
 
 ### State Management
-- [ ] **Context API**: Use Context for shared state across components
-- [ ] **Local State**: Use useState/useReducer for component-level state
-- [ ] **No Direct Mutation**: Use immutable update patterns
+- [ ] **Zustand Stores**: Use Zustand for shared state across components
+- [ ] **Local State**: Use useState/useReducer for component-level state only
+- [ ] **No Direct Mutation**: Always return new objects in `set()`, never mutate
 - [ ] **State Minimal**: Keep only necessary data in state
-- [ ] **IndexedDB**: Use for persistent client-side storage
+- [ ] **Persist Middleware**: Use for localStorage persistence
+- [ ] **Slice Subscriptions**: Subscribe to specific state slices to prevent re-renders
+- [ ] **DevTools**: Enable Redux DevTools for debugging
 
 ### Data Synchronization
 - [ ] **Authenticated = Data Exists**: If user is authenticated, data MUST be in IndexedDB
@@ -903,8 +1012,8 @@ public/locales/   # fa/, en/
 - Use MUI theme palette values for ALL colors
 - Use MUI components first before custom implementations
 - Use Axios for all REST API calls
-- Use IndexedDB for client-side data persistence
-- Use Context API for shared state management
+- Use Zustand stores with persist middleware for state management
+- Use Zustand for shared state, useState for local state
 - Use direct imports (no lazy loading for internal networks)
 - Use memoization for performance
 - Use error boundaries
@@ -928,7 +1037,8 @@ public/locales/   # fa/, en/
 - Don't use alternate ports
 - Don't skip error handling
 - Don't forget loading states
-- Don't use localStorage/sessionStorage - use IndexedDB instead
+- Don't use React Context for state management - use Zustand instead
+- Don't use IndexedDB - use Zustand + localStorage instead
 - Don't forget to clean up streams/subscriptions
 - Don't skip RTL testing with Chrome DevTools MCP
 - Don't skip responsive testing with Chrome DevTools MCP
