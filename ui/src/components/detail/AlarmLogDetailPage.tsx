@@ -59,7 +59,7 @@ const AlarmLogDetailPage: React.FC = () => {
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [dateRangeCollapsed, setDateRangeCollapsed] = useState<boolean>(isMobile);
   
-  // IndexedDB data for enrichment
+  // Zustand store data for enrichment (items and alarms from monitoringStore)
   const [itemsMap, setItemsMap] = useState<Map<string, Item>>(new Map());
   const [alarmsMap, setAlarmsMap] = useState<Map<string, AlarmDto>>(new Map());
 
@@ -101,11 +101,11 @@ const AlarmLogDetailPage: React.FC = () => {
     }
   }, [language, t]);
 
-  // Load items and alarms from IndexedDB on component mount
+  // Load items and alarms from Zustand store on component mount
   useEffect(() => {
-    const loadIndexedDBData = async () => {
+    const loadStoredData = async () => {
       try {
-        logger.log('Loading items and alarms from IndexedDB');
+        logger.log('Loading items and alarms from Zustand store');
         
         const [items, alarms] = await Promise.all([
           monitoringStorageHelpers.getStoredItems(),
@@ -120,11 +120,11 @@ const AlarmLogDetailPage: React.FC = () => {
             }
           });
           setItemsMap(itemsMapData);
-          logger.log('Items loaded from IndexedDB', { count: itemsMapData.size });
+          logger.log('Items loaded from Zustand store', { count: itemsMapData.size });
         }
 
         if (alarms) {
-          logger.log('Alarms data received from IndexedDB', { 
+          logger.log('Alarms data received from Zustand store', { 
             isArray: Array.isArray(alarms), 
             count: Array.isArray(alarms) ? alarms.length : 'N/A',
             hasDataProperty: 'data' in alarms,
@@ -144,19 +144,19 @@ const AlarmLogDetailPage: React.FC = () => {
               }
             });
             setAlarmsMap(alarmsMapData);
-            logger.log('Alarms loaded from IndexedDB', { count: alarmsMapData.size });
+            logger.log('Alarms loaded from Zustand store', { count: alarmsMapData.size });
           } else {
             logger.warn('Alarms data is not in expected format', { type: typeof alarmsArray });
           }
         } else {
-          logger.warn('No alarms found in IndexedDB');
+          logger.warn('No alarms found in Zustand store');
         }
       } catch (err) {
-        logger.error('Error loading data from IndexedDB:', err);
+        logger.error('Error loading data from Zustand store:', err);
       }
     };
 
-    loadIndexedDBData();
+    loadStoredData();
   }, []);
 
   // Calculate Unix timestamps based on date range
@@ -329,7 +329,7 @@ const AlarmLogDetailPage: React.FC = () => {
     return alarmHistoryData.map((alarm, index) => {
       const timeFormatted = formatDate(alarm.time, language, 'short');
 
-      // Get item and alarm from IndexedDB maps
+      // Get item and alarm from Zustand store maps
       const item = alarm.itemId ? itemsMap.get(alarm.itemId) : undefined;
       const alarmConfig = alarm.alarmId ? alarmsMap.get(alarm.alarmId) : undefined;
 

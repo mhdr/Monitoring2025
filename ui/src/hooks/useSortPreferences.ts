@@ -1,11 +1,11 @@
 /**
  * Custom React hook for managing sort preferences
- * Handles loading, saving, and applying sort configuration with IndexedDB persistence
+ * Handles loading, saving, and applying sort configuration with Zustand + localStorage persistence
  * 
  * Features:
- * - Automatic loading of saved preferences
+ * - Automatic loading of saved preferences from Zustand store
  * - Memoized sorting to prevent unnecessary re-calculations
- * - Cross-tab synchronization via IndexedDB
+ * - Cross-tab synchronization via localStorage (automatic via Zustand persist middleware)
  * - Type-safe sort operations
  */
 
@@ -58,7 +58,7 @@ interface UseSortPreferencesReturn {
 }
 
 /**
- * Custom hook for managing sort preferences with IndexedDB persistence
+ * Custom hook for managing sort preferences with Zustand + localStorage persistence
  * 
  * @param params - Hook parameters
  * @returns Sort state and control functions
@@ -135,7 +135,7 @@ export const useSortPreferences = (
     });
   }, [items, sortConfig, language, values, alarms, timestamps]);
   
-  // Set sort field and save to IndexedDB
+  // Set sort field and save to Zustand store (persisted to localStorage)
   const setSortField = useCallback(
     (field: SortField) => {
       const newConfig: SortConfig = {
@@ -146,10 +146,12 @@ export const useSortPreferences = (
       
       setSortConfig(newConfig);
       
-      // Save asynchronously
-      setSortPreference(groupId, newConfig).catch((error) =>
-        logger.error('Failed to save sort field:', error)
-      );
+      // Save asynchronously (only if groupId is defined)
+      if (groupId) {
+        setSortPreference(groupId, newConfig).catch((error) =>
+          logger.error('Failed to save sort field:', error)
+        );
+      }
       
       logger.log('Changed sort field:', {
         groupId: groupId || 'root',
@@ -160,8 +162,8 @@ export const useSortPreferences = (
     [groupId, sortConfig.direction]
   );
   
-  // Set sort direction and save to IndexedDB
-  const setSortDirectionFn = useCallback(
+  // Set sort direction and save to Zustand store (persisted to localStorage)
+  const setSortDirection = useCallback(
     (direction: SortDirection) => {
       const newConfig: SortConfig = {
         field: sortConfig.field,
@@ -171,10 +173,12 @@ export const useSortPreferences = (
       
       setSortConfig(newConfig);
       
-      // Save asynchronously
-      setSortPreference(groupId, newConfig).catch((error) =>
-        logger.error('Failed to save sort direction:', error)
-      );
+      // Save asynchronously (only if groupId is defined)
+      if (groupId) {
+        setSortPreference(groupId, newConfig).catch((error) =>
+          logger.error('Failed to save sort direction:', error)
+        );
+      }
       
       logger.log('Changed sort direction:', {
         groupId: groupId || 'root',
@@ -188,17 +192,32 @@ export const useSortPreferences = (
   // Toggle sort direction and save to Zustand store
   const toggleDirectionFn = useCallback(() => {
     const newDirection = toggleSortDirection(sortConfig.direction);
-    setSortDirectionFn(newDirection);
-  }, [sortConfig.direction, setSortDirectionFn]);
+    const newConfig: SortConfig = {
+      field: sortConfig.field,
+      direction: newDirection,
+      savedAt: Date.now(),
+    };
+    
+    setSortConfig(newConfig);
+    
+    // Save asynchronously (only if groupId is defined)
+    if (groupId) {
+      setSortPreference(groupId, newConfig).catch((error) =>
+        logger.error('Failed to save sort direction:', error)
+      );
+    }
+  }, [sortConfig.direction, sortConfig.field, groupId]);
   
   // Reset to default sort
   const resetSort = useCallback(() => {
     setSortConfig(DEFAULT_SORT_CONFIG);
     
-    // Clear from Zustand store
-    clearSortPreference(groupId).catch((error) =>
-      logger.error('Failed to clear sort preference:', error)
-    );
+    // Clear from Zustand store (only if groupId is defined)
+    if (groupId) {
+      clearSortPreference(groupId).catch((error) =>
+        logger.error('Failed to clear sort preference:', error)
+      );
+    }
     
     logger.log('Reset sort to default:', {
       groupId: groupId || 'root'
@@ -209,7 +228,7 @@ export const useSortPreferences = (
     sortConfig,
     sortedItems,
     setSortField,
-    setSortDirection: setSortDirectionFn,
+    setSortDirection,
     toggleDirection: toggleDirectionFn,
     resetSort,
     isLoading,

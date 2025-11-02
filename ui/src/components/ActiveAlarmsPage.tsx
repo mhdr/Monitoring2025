@@ -121,12 +121,12 @@ const ActiveAlarmsPage: React.FC = () => {
   }, [storedAlarms, isRTL]);
 
   /**
-   * Load items and alarms from IndexedDB on mount
+   * Load items and alarms from Zustand store on mount
    */
   useEffect(() => {
     const loadStoredData = async () => {
       try {
-        logger.log('Loading stored items and alarms from IndexedDB...');
+        logger.log('Loading stored items and alarms from Zustand store...');
         
         const [items, alarms] = await Promise.all([
           monitoringStorageHelpers.getStoredItems(),
@@ -135,14 +135,14 @@ const ActiveAlarmsPage: React.FC = () => {
         
         if (items && Array.isArray(items)) {
           setStoredItems(items);
-          logger.log('Loaded items from IndexedDB:', { count: items.length });
+          logger.log('Loaded items from Zustand store:', { count: items.length });
         } else {
-          logger.warn('No valid items array found in IndexedDB');
+          logger.warn('No valid items array found in Zustand store');
           setStoredItems([]);
         }
         
-        // FIX: IndexedDB stores the full response object with {data: AlarmDto[]}
-        // We need to extract the data array
+        // FIX: Zustand store returns the full response object or array directly
+        // We need to handle both array and object formats
         let alarmsArray: AlarmDto[] = [];
         if (alarms) {
           if (Array.isArray(alarms)) {
@@ -159,13 +159,13 @@ const ActiveAlarmsPage: React.FC = () => {
         
         if (alarmsArray.length > 0) {
           setStoredAlarms(alarmsArray);
-          logger.log('Loaded alarms from IndexedDB:', { count: alarmsArray.length });
+          logger.log('Loaded alarms from Zustand store:', { count: alarmsArray.length });
         } else {
-          logger.warn('No alarms found in IndexedDB');
+          logger.warn('No alarms found in Zustand store');
           setStoredAlarms([]);
         }
       } catch (err) {
-        logger.error('Failed to load stored data from IndexedDB:', err);
+        logger.error('Failed to load stored data from Zustand store:', err);
         setStoredItems([]);
         setStoredAlarms([]);
       }
@@ -291,12 +291,12 @@ const ActiveAlarmsPage: React.FC = () => {
       
       setError(null);
       
-      // Get items from IndexedDB to extract itemIds
-      logger.log('Retrieving items from IndexedDB...');
+      // Get items from Zustand store to extract itemIds
+      logger.log('Retrieving items from Zustand store...');
       const storedItems = await monitoringStorageHelpers.getStoredItems();
       
       if (!storedItems || storedItems.length === 0) {
-        logger.warn('No items found in IndexedDB, cannot fetch active alarms');
+        logger.warn('No items found in Zustand store, cannot fetch active alarms');
         setError(t('activeAlarmsPage.noItemsAvailable'));
         setAlarms([]);
         setLastFetchTime(Date.now());
