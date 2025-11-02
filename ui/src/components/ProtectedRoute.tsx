@@ -1,86 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Container, Box, CircularProgress, Typography } from '@mui/material';
 import { useLanguage } from '../hooks/useLanguage';
-import { isDataSynced, hasCachedData, shouldRedirectToSync, buildSyncUrl } from '../utils/syncUtils';
-import { createLogger } from '../utils/logger';
-
-const logger = createLogger('ProtectedRoute');
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 /**
- * ProtectedRoute - Clean sync workflow with cached data support
+ * ProtectedRoute - Maximally Simplified
+ * 
+ * PRINCIPLE: If user is authenticated, data is in IndexedDB
  * 
  * 1. Check if user is authenticated
- * 2. Check if cached data exists in IndexedDB
- * 3. Only redirect to sync if NO cached data exists
- * 4. Otherwise, render the protected content
+ * 2. If yes, render content (assume data is in IndexedDB)
+ * 3. If no, redirect to login
  * 
- * NEW BEHAVIOR: Page refresh and new tabs use cached data without syncing
+ * SYNC WORKFLOW:
+ * - Login page handles initial sync after authentication
+ * - Data persists in IndexedDB until logout
+ * - NO sync checks on route navigation
+ * - Force sync available from navbar when needed
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
-  
-  const [syncCheck, setSyncCheck] = useState<{ loading: boolean; needsSync: boolean }>({
-    loading: true,
-    needsSync: false,
-  });
 
-  // Check sync status on mount and when location changes
-  useEffect(() => {
-    const checkSync = async () => {
-      // If auth is still loading, wait
-      if (authLoading) {
-        return;
-      }
-
-      // If not authenticated, no need to check sync - will redirect to login
-      if (!isAuthenticated) {
-        setSyncCheck({ loading: false, needsSync: false });
-        return;
-      }
-
-      try {
-        // Read sync flag and check for cached data in IndexedDB
-        const [syncedFlag, hasCached] = await Promise.all([
-          isDataSynced(),
-          hasCachedData()
-        ]);
-        
-        // Only sync if no cached data exists (prevents sync on page refresh/new tab)
-        const needsSync = shouldRedirectToSync(location.pathname, syncedFlag, hasCached);
-        
-        setSyncCheck({ loading: false, needsSync });
-      } catch (error) {
-        logger.error('Failed to check sync status:', error);
-        // On error, check if we have cached data to fall back on
-        try {
-          const hasCached = await hasCachedData();
-          if (hasCached) {
-            // Have cached data, no need to sync
-            setSyncCheck({ loading: false, needsSync: false });
-          } else {
-            // No cached data, sync is needed
-            setSyncCheck({ loading: false, needsSync: true });
-          }
-        } catch {
-          // Complete failure, assume sync is needed
-          setSyncCheck({ loading: false, needsSync: true });
-        }
-      }
-    };
-
-    checkSync();
-  }, [isAuthenticated, authLoading, location.pathname]);
-
-  // Show loading state while checking auth or sync status
-  if (authLoading || syncCheck.loading) {
+  // Show loading state while checking auth
+  if (authLoading) {
     return (
       <Container
         maxWidth={false}
@@ -120,14 +69,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Redirect to sync if sync is needed
-  if (syncCheck.needsSync) {
-    const currentUrl = `${location.pathname}${location.search}${location.hash}`;
-    const syncUrl = buildSyncUrl(currentUrl);
-    return <Navigate to={syncUrl} replace data-id-ref="protected-route-navigate-sync" />;
-  }
-
-  // All checks passed, render protected content
+  // User is authenticated, render protected content
+  // Data is assumed to be in IndexedDB
   return <>{children}</>;
 };
 

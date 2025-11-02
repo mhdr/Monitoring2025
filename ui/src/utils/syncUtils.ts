@@ -1,34 +1,57 @@
 /**
- * Sync Utilities - Rebuilt from Scratch
- * Clean, simple logic for data synchronization workflow
+ * Sync Utilities - Simplified for Login-Once Persistence
  * 
  * WORKFLOW:
- * - Fresh Login: Sync ONLY if no data in IndexedDB
- * - Logout: Clear all IndexedDB
- * - Page Refresh: Use cached data (NO sync)
- * - New Tab: Use cached data (NO sync)
- * - Force Sync: Always sync (from navbar)
+ * - Fresh Login: Sync once, data persists in IndexedDB
+ * - Page Refresh: Use persisted data (NO sync)
+ * - New Tab: Use persisted data (NO sync)
+ * - Force Sync: User triggers from navbar, always sync
+ * - Logout: Clear ALL IndexedDB data
  */
 
 import { getItem } from './indexedDbStorage';
-import { monitoringStorageHelpers, getMetadata } from './monitoringStorage';
 import { createLogger } from './logger';
 
 const logger = createLogger('SyncUtils');
 
 const SYNC_FLAG_KEY = 'monitoring_data_synced';
+const SYNC_FLAG_CACHE_KEY = 'monitoring_synced_cache'; // localStorage cache for fast sync
 
 /**
  * Check if data is synced by reading the sync flag from IndexedDB
- * This is the SINGLE SOURCE OF TRUTH for sync status
+ * This flag is set ONCE after successful login sync and persists until logout
  * 
- * @returns Promise<boolean> - true if data is synced, false otherwise
+ * Uses localStorage as a fast cache hint to avoid unnecessary async checks
+ * 
+ * @returns Promise<boolean> - true if data has been synced, false otherwise
  */
 export async function isDataSynced(): Promise<boolean> {
   try {
+    // First check localStorage cache (fast, synchronous)
+    const cachedFlag = localStorage.getItem(SYNC_FLAG_CACHE_KEY);
+    if (cachedFlag === 'true') {
+      logger.log('Sync flag status (from cache):', { cached: true });
+      // Still verify with IndexedDB in background, but return cached value immediately
+      getItem<boolean>(SYNC_FLAG_KEY).then(dbFlag => {
+        if (dbFlag !== true) {
+          // Cache is stale, clear it
+          localStorage.removeItem(SYNC_FLAG_CACHE_KEY);
+          logger.warn('Cache was stale, cleared');
+        }
+      });
+      return true;
+    }
+    
+    // If no cache, check IndexedDB
     const syncFlag = await getItem<boolean>(SYNC_FLAG_KEY);
     const isSynced = syncFlag === true;
-    logger.log('Sync flag status:', { syncFlag, isSynced });
+    
+    // Update cache if synced
+    if (isSynced) {
+      localStorage.setItem(SYNC_FLAG_CACHE_KEY, 'true');
+    }
+    
+    logger.log('Sync flag status:', { syncFlag, isSynced, cached: false });
     return isSynced;
   } catch (error) {
     logger.error('Failed to read sync flag:', error);
@@ -37,67 +60,29 @@ export async function isDataSynced(): Promise<boolean> {
 }
 
 /**
- * Check if cached data exists in IndexedDB
- * Used to determine if we can use cached data on page refresh/new tab
+ * Clear the sync flag cache (called on logout)
  * 
- * @returns Promise<boolean> - true if data exists, false otherwise
+ * @internal Used by AuthContext during logout
  */
-export async function hasCachedData(): Promise<boolean> {
+export function clearSyncFlagCache(): void {
   try {
-    const [groups, items, alarms] = await Promise.all([
-      monitoringStorageHelpers.getStoredGroups(),
-      monitoringStorageHelpers.getStoredItems(),
-      monitoringStorageHelpers.getStoredAlarms()
-    ]);
-
-    const groupCount = Array.isArray(groups) ? groups.length : 0;
-    const itemCount = Array.isArray(items) ? items.length : 0;
-    const alarmCount = Array.isArray(alarms) ? alarms.length : 0;
-    const hasStoredData = Boolean(groups || items || alarms);
-
-    logger.log('Cached data check:', {
-      groupCount,
-      itemCount,
-      alarmCount,
-      hasStoredData,
-    });
-
-    if (hasStoredData) {
-      return true;
-    }
-
-    // Fallback: if metadata indicates a recent sync, treat as cached to avoid unnecessary sync loops
-    const metadata = await getMetadata();
-    const hasRecentSync = typeof metadata?.lastSync === 'number' && metadata.lastSync > 0;
-
-    if (hasRecentSync) {
-      logger.log('Cached data metadata fallback:', {
-        lastSync: metadata?.lastSync,
-        lastCleanup: metadata?.lastCleanup,
-        version: metadata?.version,
-      });
-      return true;
-    }
-
-    return false;
+    localStorage.removeItem(SYNC_FLAG_CACHE_KEY);
+    logger.log('Cleared sync flag cache');
   } catch (error) {
-    logger.error('Failed to check cached data:', error);
-    return false;
+    logger.warn('Failed to clear sync flag cache:', error);
   }
 }
 
 /**
- * Determines if sync is needed based on current page, sync status, and cached data
+ * Determines if sync is needed based on current page and sync status
  * 
- * NEW BEHAVIOR: Only sync if no cached data exists
- * This prevents unnecessary syncs on page refresh and new tabs
+ * SIMPLIFIED LOGIC: Only check sync flag, assume data persists after login
  * 
  * @param pathname - Current pathname
  * @param syncedFlag - Sync status flag from IndexedDB
- * @param hasCached - Whether cached data exists in IndexedDB
  * @returns true if sync is needed, false otherwise
  */
-export function shouldRedirectToSync(pathname: string, syncedFlag: boolean, hasCached: boolean): boolean {
+export function shouldRedirectToSync(pathname: string, syncedFlag: boolean): boolean {
   // Pages that don't require sync (already on sync page, login page, or user profile pages)
   const noSyncPages = ['/login', '/sync', '/dashboard/sync', '/dashboard/profile', '/dashboard/settings'];
   
@@ -106,14 +91,13 @@ export function shouldRedirectToSync(pathname: string, syncedFlag: boolean, hasC
     return false;
   }
   
-  // NEW LOGIC: Only sync if sync flag is false AND no cached data exists
-  // This allows page refresh/new tab to use cached data without syncing
-  const needsSync = !syncedFlag && !hasCached;
+  // Only sync if sync flag is false
+  // Data persists in IndexedDB until logout, no need to check for cached data
+  const needsSync = !syncedFlag;
   
   logger.log('Sync decision:', { 
     pathname, 
     syncedFlag, 
-    hasCached, 
     needsSync 
   });
   
@@ -122,25 +106,47 @@ export function shouldRedirectToSync(pathname: string, syncedFlag: boolean, hasC
 
 /**
  * Build sync URL with redirect parameter
- * CRITICAL: Validates redirect URL to prevent infinite loops
+ * Prevents nested sync URLs by extracting the final destination
  * 
  * @param redirectTo - URL to redirect to after sync
- * @returns Sync URL with redirect query param
+ * @param forceSync - Whether this is a force sync (defaults to false)
+ * @returns Sync URL with redirect and force query params
  */
-export function buildSyncUrl(redirectTo: string): string {
-  // Extract final destination to prevent nested sync URLs
-  const finalDestination = extractFinalDestination(redirectTo);
+export function buildSyncUrl(redirectTo: string, forceSync: boolean = false): string {
+  let cleanRedirect = redirectTo;
   
-  // If final destination is a sync URL itself, use default
-  const cleanDestination = finalDestination.includes('/sync') ? '/dashboard' : finalDestination;
+  // If redirectTo is already a sync URL, extract the redirect parameter
+  if (redirectTo.includes('/sync')) {
+    try {
+      const url = new URL(redirectTo, window.location.origin);
+      const existingRedirect = url.searchParams.get('redirect');
+      if (existingRedirect) {
+        // Use the existing redirect destination
+        cleanRedirect = decodeURIComponent(existingRedirect);
+        // Recursively extract in case of multiple nesting
+        if (cleanRedirect.includes('/sync')) {
+          return buildSyncUrl(cleanRedirect, forceSync);
+        }
+      } else {
+        // Sync URL without redirect, use default
+        cleanRedirect = '/dashboard';
+      }
+    } catch (error) {
+      logger.warn('Failed to parse sync URL, using default:', error);
+      cleanRedirect = '/dashboard';
+    }
+  }
   
   const syncUrl = new URL('/dashboard/sync', window.location.origin);
-  syncUrl.searchParams.set('redirect', cleanDestination);
+  syncUrl.searchParams.set('redirect', cleanRedirect);
+  if (forceSync) {
+    syncUrl.searchParams.set('force', 'true');
+  }
   
   logger.log('Building sync URL:', { 
-    original: redirectTo, 
-    final: finalDestination,
-    clean: cleanDestination,
+    original: redirectTo,
+    cleanRedirect, 
+    forceSync,
     syncUrl: syncUrl.pathname + syncUrl.search 
   });
   
@@ -148,58 +154,8 @@ export function buildSyncUrl(redirectTo: string): string {
 }
 
 /**
- * Extract the final destination from a potentially nested redirect URL
- * Prevents infinite loops by stripping out sync URLs
- * 
- * @param url - URL that might contain nested sync redirects
- * @returns Final destination URL without sync in the path
- */
-function extractFinalDestination(url: string): string {
-  try {
-    // Parse the URL to extract pathname and query
-    const urlObj = new URL(url, window.location.origin);
-    const pathname = urlObj.pathname;
-    const searchParams = urlObj.searchParams;
-    
-    // If the pathname itself is a sync URL, extract the redirect param
-    if (pathname.includes('/sync')) {
-      const nestedRedirect = searchParams.get('redirect');
-      if (nestedRedirect) {
-        // Recursively extract in case of multiple nesting levels
-        return extractFinalDestination(nestedRedirect);
-      }
-      // If it's a sync URL without redirect param, use default
-      return '/dashboard';
-    }
-    
-    // Return the full path (pathname + search + hash)
-    return pathname + urlObj.search + urlObj.hash;
-  } catch (error) {
-    // If URL parsing fails, try to extract using string manipulation
-    logger.warn('Failed to parse URL, using fallback extraction:', error);
-    
-    // Check if URL contains /sync
-    if (url.includes('/sync')) {
-      // Try to extract redirect parameter using regex
-      const redirectMatch = url.match(/[?&]redirect=([^&]*)/);
-      if (redirectMatch && redirectMatch[1]) {
-        const decodedRedirect = decodeURIComponent(redirectMatch[1]);
-        // Recursively extract in case of multiple nesting levels
-        return extractFinalDestination(decodedRedirect);
-      }
-      // If no redirect found in sync URL, use default
-      return '/dashboard';
-    }
-    
-    // Return as-is if not a sync URL
-    return url;
-  }
-}
-
-/**
  * Get the intended redirect URL after sync
  * Priority: URL param > location state > default
- * CRITICAL: Prevents infinite redirect loops by extracting final destination
  * 
  * @param searchParams - URLSearchParams from current location
  * @param locationState - Location state object
@@ -214,21 +170,30 @@ export function getRedirectUrl(
   // 1. Check URL param first (highest priority)
   const redirectParam = searchParams.get('redirect');
   if (redirectParam) {
-    const finalDestination = extractFinalDestination(redirectParam);
-    logger.log('Redirect from URL param:', { original: redirectParam, final: finalDestination });
-    return finalDestination;
+    logger.log('Redirect from URL param:', redirectParam);
+    return redirectParam;
   }
   
   // 2. Check location state (from ProtectedRoute)
   const fromLocation = locationState?.from;
   if (fromLocation?.pathname) {
     const fullPath = `${fromLocation.pathname}${fromLocation.search || ''}${fromLocation.hash || ''}`;
-    const finalDestination = extractFinalDestination(fullPath);
-    logger.log('Redirect from location state:', { original: fullPath, final: finalDestination });
-    return finalDestination;
+    logger.log('Redirect from location state:', fullPath);
+    return fullPath;
   }
   
   // 3. Default path
   logger.log('Using default redirect:', defaultPath);
   return defaultPath;
+}
+
+/**
+ * Check if this is a force sync request
+ * 
+ * @param searchParams - URLSearchParams from current location
+ * @returns true if force sync is requested, false otherwise
+ */
+export function isForceSync(searchParams: URLSearchParams): boolean {
+  const forceParam = searchParams.get('force');
+  return forceParam === 'true';
 }

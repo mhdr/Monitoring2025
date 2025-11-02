@@ -272,13 +272,13 @@ Must test on these standard resolutions:
 ⚠️ Never manually refresh - Axios interceptors handle it automatically
 
 ## Data Synchronization (CRITICAL)
-⚠️ **DO NOT modify sync logic without understanding the complete workflow**
+⚠️ **PRINCIPLE: If user is authenticated, data MUST be in IndexedDB**
 
 ### Sync Strategy
-- **Fresh Login + No Cached Data**: Sync required → fetch from API
-- **Page Refresh/New Tab + Cached Data**: NO sync → use IndexedDB cache
-- **Force Sync (navbar button)**: Always sync → bypass all caches
-- **Logout**: Clear IndexedDB + reset sync flag
+- **Login**: Auto-redirect to `/dashboard/sync?force=true` → syncs once → data persists until logout
+- **Page Refresh/New Tab**: NO sync checks → assumes data in IndexedDB
+- **Force Sync (navbar)**: User-triggered → bypasses cache, refreshes from API
+- **Logout**: Clears ALL IndexedDB data + sync flag
 
 ### Three-Phase Sync Process
 ```
@@ -288,31 +288,18 @@ Phase 3: Alarms (sequential) → GET /api/Alarms (requires itemIds from Phase 2)
 ```
 
 ### Critical Components
-- **`useDataSync` Hook**: Orchestrates sync with progress tracking
+- **`ProtectedRoute`**: Only checks authentication, NO sync checks (assumes data exists)
+- **`LoginPage`**: Redirects to sync after successful login
+- **`useDataSync`**: Orchestrates 3-phase sync with progress tracking
 - **`MonitoringContext`**: Manages state + IndexedDB persistence
-- **`ProtectedRoute`**: Guards routes, checks `hasCachedData()` before redirecting to sync
-- **`syncUtils.ts`**: `hasCachedData()`, `shouldRedirectToSync()`, `isDataSynced()`
-- **Sync Flag**: `monitoring_data_synced` in IndexedDB (boolean)
-
-### IndexedDB Persistence Rules
-1. **Write Pattern**: API response → Redux action → reducer updates state + triggers async IndexedDB write
-2. **Verification**: Wait 500ms for IndexedDB writes → verify data exists → set sync flag → redirect
-3. **Auto-Set Flag**: If cached data exists but flag is false, auto-set flag to true (handles refresh scenarios)
-4. **Single Source of Truth**: Sync flag + cached data check determines if sync is needed
-
-### DO NOT
-- ❌ Remove `hasCachedData()` check from `ProtectedRoute`
-- ❌ Change sync flag logic without updating both `syncUtils.ts` and `MonitoringContext`
-- ❌ Skip the 500ms IndexedDB verification delay (prevents race conditions)
-- ❌ Sync on every page load (use cached data when available)
-- ❌ Modify `shouldRedirectToSync()` without testing page refresh behavior
+- **localStorage cache**: Fast hint for `isDataSynced()` check (avoids async IndexedDB read)
 
 ### Key Files
+- `src/components/ProtectedRoute.tsx` - Auth guard only, no sync checks
+- `src/components/LoginPage.tsx` - Redirects to sync after login
 - `src/hooks/useDataSync.ts` - Sync orchestration
 - `src/contexts/MonitoringContext.tsx` - State + persistence
-- `src/components/ProtectedRoute.tsx` - Route guard with cache check
-- `src/utils/syncUtils.ts` - Sync decision logic
-- `src/components/SyncPage.tsx` - UI for sync progress
+- `src/components/SyncPage.tsx` - Sync UI with progress
 
 ## SignalR Real-Time Communication
 ⚠️ MANDATORY: Use SignalR for real-time streaming data
@@ -781,9 +768,9 @@ public/locales/   # fa/, en/
 - [ ] **IndexedDB**: Use for persistent client-side storage
 
 ### Data Synchronization
-- [ ] **NO sync on refresh**: Page refresh and new tabs use cached data
-- [ ] **hasCachedData() check**: ProtectedRoute checks for cached data before redirecting
-- [ ] **Sync flag auto-set**: MonitoringContext auto-sets flag when cached data exists
+- [ ] **Authenticated = Data Exists**: If user is authenticated, data MUST be in IndexedDB
+- [ ] **NO sync checks in ProtectedRoute**: Only checks auth, assumes data exists
+- [ ] **Login triggers sync**: LoginPage redirects to sync after successful auth
 - [ ] **500ms verification**: Wait for IndexedDB writes before marking sync complete
 - [ ] **Phase order**: Groups+Items parallel → Alarms sequential (needs itemIds)
 

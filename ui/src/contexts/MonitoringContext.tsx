@@ -198,6 +198,20 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
       setItem(SYNC_STATUS_STORAGE_KEY, action.payload).catch((error) =>
         logger.error('Failed to save sync status:', error)
       );
+      // Also set localStorage cache for fast access (synchronous)
+      if (action.payload) {
+        try {
+          localStorage.setItem('monitoring_synced_cache', 'true');
+        } catch (error) {
+          logger.warn('Failed to set sync cache:', error);
+        }
+      } else {
+        try {
+          localStorage.removeItem('monitoring_synced_cache');
+        } catch (error) {
+          logger.warn('Failed to clear sync cache:', error);
+        }
+      }
       logger.log('Data sync status updated:', {
         isDataSynced: action.payload,
         currentDataCounts: {
@@ -212,6 +226,12 @@ function monitoringReducer(state: MonitoringState, action: MonitoringAction): Mo
       removeItem(SYNC_STATUS_STORAGE_KEY).catch((error) =>
         logger.error('Failed to clear sync status:', error)
       );
+      // Clear cache as well
+      try {
+        localStorage.removeItem('monitoring_synced_cache');
+      } catch (error) {
+        logger.warn('Failed to clear sync cache:', error);
+      }
       return { ...state, isDataSynced: false };
 
     case 'CLEAR_ALL_MONITORING_DATA':

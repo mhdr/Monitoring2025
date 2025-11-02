@@ -193,6 +193,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       logger.error('Failed to clear sync status on logout:', error);
     });
     
+    // Clear sync flag cache (localStorage)
+    const { clearSyncFlagCache } = await import('../utils/syncUtils');
+    clearSyncFlagCache();
+    
     // Clear all monitoring data (groups, items, alarms)
     await monitoringStorageHelpers.clearAllMonitoringData().catch((error) => {
       logger.error('Failed to clear monitoring data on logout:', error);
