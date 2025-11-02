@@ -8,7 +8,7 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, devtools } from 'zustand/middleware';
 import type { Group, Item, AlarmDto } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -145,10 +145,13 @@ const initialTransientState: TransientMonitoringState = {
  * Zustand store for monitoring data with partial localStorage persistence
  * Only groups, items, alarms, and sync status are persisted
  * Active alarms and stream state are transient (runtime only)
+ * 
+ * Redux DevTools integration enabled for debugging
  */
 export const useMonitoringStore = create<MonitoringState & MonitoringActions>()(
-  persist(
-    (set, get) => ({
+  devtools(
+    persist(
+      (set, get) => ({
       ...initialPersistedState,
       ...initialTransientState,
       
@@ -298,17 +301,22 @@ export const useMonitoringStore = create<MonitoringState & MonitoringActions>()(
         return state.groups.length > 0 || state.items.length > 0 || state.alarms.length > 0;
       },
     }),
+      {
+        name: 'monitoring-storage', // localStorage key
+        version: 1,
+        // Only persist specific fields (exclude transient state)
+        partialize: (state) => ({
+          groups: state.groups,
+          items: state.items,
+          alarms: state.alarms,
+          isDataSynced: state.isDataSynced,
+          lastSyncTime: state.lastSyncTime,
+        }),
+      }
+    ),
     {
-      name: 'monitoring-storage', // localStorage key
-      version: 1,
-      // Only persist specific fields (exclude transient state)
-      partialize: (state) => ({
-        groups: state.groups,
-        items: state.items,
-        alarms: state.alarms,
-        isDataSynced: state.isDataSynced,
-        lastSyncTime: state.lastSyncTime,
-      }),
+      name: 'MonitoringStore', // DevTools display name
+      enabled: true, // Enable in development
     }
   )
 );
