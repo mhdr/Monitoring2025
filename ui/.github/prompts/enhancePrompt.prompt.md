@@ -46,9 +46,9 @@ You are a **Request Analyzer and Enhancement Specialist** for the Monitoring2025
 
 3. **Verify Conventions**:
    - Component patterns (functional + hooks)
-   - State management approach (local vs. context)
+   - State management approach (Zustand stores)
    - Styling approach (MUI sx prop vs. styled())
-   - Data persistence (IndexedDB, not localStorage)
+   - Data persistence (Zustand + localStorage)
 
 ### Phase 3: Enhancement & Optimization
 1. **Suggest Improvements**:
@@ -111,9 +111,9 @@ Produce your enhanced prompt in this structured format:
 
 #### Technical Specifications
 - **Component Structure**: [Functional component with specific hooks]
-- **State Management**: [useState / Context API / IndexedDB]
+- **State Management**: [useState for local state / Zustand store for shared state]
 - **Styling Approach**: [MUI components + sx prop / styled()]
-- **Data Flow**: [API calls / SignalR / props / context]
+- **Data Flow**: [API calls / SignalR / props / Zustand stores]
 - **Type Safety**: [Interfaces needed, no `any` type]
 
 #### Internationalization
@@ -311,7 +311,7 @@ Add a button to export alarm data to CSV
 2. **Format Options**: Allow user to choose between CSV, Excel (XLSX), or JSON formats
 3. **Column Selection**: Let users choose which columns to include in export
 4. **Progress Indicator**: For large datasets, show progress bar during export generation
-5. **Export History**: Store recent exports in IndexedDB with metadata (timestamp, row count)
+5. **Export History**: Store recent exports in localStorage or Zustand store with metadata (timestamp, row count)
 6. **Email Integration**: Add option to email CSV instead of downloading
 
 ### Alternative Approaches

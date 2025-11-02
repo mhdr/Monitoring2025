@@ -40,7 +40,7 @@ import { CardHeader } from '../shared/CardHeader';
 
 const logger = createLogger('LiveMonitoringDetailPage');
 
-// localStorage key for settings (replaces IndexedDB)
+// localStorage key for settings
 const SETTINGS_DB_KEY = 'live_monitoring_settings';
 
 // Interface for saved settings

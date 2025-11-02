@@ -504,7 +504,7 @@ const handleClose = () => {
 ### Critical State Management Rules
 ⚠️ **MANDATORY: Use Zustand stores with localStorage persistence for ALL application state**
 
-**Architecture Change:** This project migrated from React Context + IndexedDB to Zustand + localStorage for simplified state management and better performance.
+**Architecture**: This project uses Zustand stores with localStorage persistence for simplified state management and better performance.
 
 ### Why Zustand + localStorage?
 1. **Simpler API**: Less boilerplate than React Context, no Provider/Consumer complexity

@@ -2,7 +2,7 @@
  * Monitoring Storage Helper
  * 
  * Re-exports from monitoringStore for backward compatibility.
- * Uses Zustand + localStorage instead of IndexedDB.
+ * Uses Zustand + localStorage for persistence.
  */
 
 import type { Group, Item, AlarmDto } from '../types/api';
@@ -42,7 +42,7 @@ export const getStoredItemIds = async (): Promise<string[]> => {
 };
 
 export const initAutoCleanup = (): void => {
-  // No-op: localStorage doesn't need cleanup like IndexedDB did
+  // No-op: localStorage doesn't require cleanup
 };
 
 export const isDataSynced = async (): Promise<boolean> => {
