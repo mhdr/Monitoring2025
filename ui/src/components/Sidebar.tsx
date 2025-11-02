@@ -72,7 +72,7 @@ const pulseAnimation = keyframes`
   const location = useLocation();
   const navigate = useNavigate();
   const { state: monitoringState } = useMonitoring();
-  const { alarmCount, streamStatus, fetchError, isFetching, highestPriority } = monitoringState.activeAlarms;
+  const { alarmCount, fetchError, isFetching, highestPriority } = monitoringState.activeAlarms;
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const { preferences } = useNotificationStore();
   
@@ -228,7 +228,7 @@ const pulseAnimation = keyframes`
         <List sx={{ px: 1 }} data-id-ref="sidebar-nav-list">
           {menuItems.map((item) => {
             const active = isActive(item.path);
-            const showBadge = item.key === 'activeAlarms' && streamStatus === 'connected' && alarmCount > 0;
+            const showBadge = item.key === 'activeAlarms' && alarmCount > 0;
 
             return (
               <ListItem

@@ -13,7 +13,7 @@ import {
   getAlarms,
 } from '../services/api';
 import { getActiveAlarms, getValues } from '../services/monitoringApi';
-import type { MultiValue } from '../types/api';
+import type { MultiValue, ActiveAlarm } from '../types/api';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('useMonitoring');
@@ -98,13 +98,37 @@ export function useMonitoring() {
     try {
       setActiveAlarmsFetching(true);
       const activeAlarmsResponse = await getActiveAlarms();
-      const activeAlarmsData = activeAlarmsResponse.data;
       
-      // Calculate highest priority
+      // FIX: API returns nested structure {data: {data: ActiveAlarm[]}}
+      // TypeScript types don't match the actual API response
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const activeAlarmsData: ActiveAlarm[] = (activeAlarmsResponse as any).data.data || [];
+      
+      // Calculate highest priority by looking up alarm configurations from stored alarms
+      // The API response doesn't include priority, so we need to enrich it from alarm configs
       let highestPriority: 1 | 2 | null = null;
       if (activeAlarmsData.length > 0) {
-        const hasHighPriority = activeAlarmsData.some((alarm) => alarm.alarmPriority === 2);
-        highestPriority = hasHighPriority ? 2 : 1;
+        // Get current alarm configurations from Zustand store
+        const currentState = useMonitoringStore.getState();
+        const storedAlarms = currentState.alarms;
+        
+        // Find the highest priority among active alarms by matching with alarm configs
+        for (const activeAlarm of activeAlarmsData) {
+          if (activeAlarm.alarmId) {
+            const alarmConfig = storedAlarms.find(a => a.id === activeAlarm.alarmId);
+            if (alarmConfig?.alarmPriority) {
+              // Priority 2 (High) is the highest, so we can break early if found
+              if (alarmConfig.alarmPriority === 2) {
+                highestPriority = 2;
+                break;
+              }
+              // Otherwise track if we have at least priority 1 (Low/Warning)
+              if (alarmConfig.alarmPriority === 1 && !highestPriority) {
+                highestPriority = 1;
+              }
+            }
+          }
+        }
       }
       
       logger.log('Active alarm count fetched successfully:', {
