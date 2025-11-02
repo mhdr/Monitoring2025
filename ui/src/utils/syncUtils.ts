@@ -53,7 +53,7 @@ export function clearSyncFlagCache(): void {
  * SIMPLIFIED LOGIC: Only check sync flag, assume data persists after login
  * 
  * @param pathname - Current pathname
- * @param syncedFlag - Sync status flag from IndexedDB
+ * @param syncedFlag - Sync status flag from Zustand store (persisted to localStorage)
  * @returns true if sync is needed, false otherwise
  */
 export function shouldRedirectToSync(pathname: string, syncedFlag: boolean): boolean {
@@ -66,7 +66,7 @@ export function shouldRedirectToSync(pathname: string, syncedFlag: boolean): boo
   }
   
   // Only sync if sync flag is false
-  // Data persists in IndexedDB until logout, no need to check for cached data
+  // Data persists in Zustand stores (localStorage) until logout, no need to check for cached data
   const needsSync = !syncedFlag;
   
   logger.log('Sync decision:', { 

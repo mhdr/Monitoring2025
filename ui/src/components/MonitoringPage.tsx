@@ -174,7 +174,7 @@ const MonitoringPage: React.FC = () => {
     return values;
   }, [itemValues]);
 
-  // Use sort hook to manage sorting with IndexedDB persistence
+  // Use sort hook to manage sorting with Zustand store persistence
   const {
     sortedItems: currentFolderItems,
     sortConfig,

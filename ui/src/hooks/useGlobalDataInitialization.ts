@@ -112,7 +112,7 @@ export function useGlobalDataInitialization(
 
   // Determine if we consider the data "initialized"
   // Data is initialized if:
-  // 1. Data is synced and we have data in state (loaded from IndexedDB), OR
+  // 1. Data is synced and we have data in state (loaded from Zustand store via localStorage), OR
   // 2. We've tried to load data and fetching is complete
   const isInitialized = 
     (isDataSynced && (groups.length > 0 || items.length > 0)) ||

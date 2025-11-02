@@ -158,7 +158,7 @@ export function useActiveAlarmPolling(isAuthenticated: boolean, isAuthLoading: b
     logger.log('Performing initial fetch on app start/refresh');
     hasInitialFetchRef.current = true;
     
-    // Small delay to ensure IndexedDB is ready
+    // Small delay to ensure Zustand store is ready
     setTimeout(() => {
       fetchAlarms();
       // Start polling after initial fetch

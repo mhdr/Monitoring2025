@@ -150,11 +150,11 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
 
       logger.log(`Checking alarm status for item: ${itemId} (triggered by SignalR or manual refresh)`);
 
-      // Get items from IndexedDB to build the request
+      // Get items from Zustand store to build the request
       const storedItems = await monitoringStorageHelpers.getStoredItems();
       
       if (!storedItems || storedItems.length === 0) {
-        logger.warn('No items in IndexedDB, cannot check alarm status');
+        logger.warn('No items in Zustand store, cannot check alarm status');
         setHasAlarm(false);
         setAlarmPriority(null);
         setAlarms([]);
@@ -189,7 +189,7 @@ export function useItemAlarmStatus(options: UseItemAlarmStatusOptions): ItemAlar
       if (!isMountedRef.current) return;
 
       if (itemAlarms.length > 0) {
-        // Fetch alarm configurations from IndexedDB to get messages and priorities
+        // Fetch alarm configurations from Zustand store to get messages and priorities
         const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
         
         // Handle the nested structure: {data: AlarmDto[]} or AlarmDto[]

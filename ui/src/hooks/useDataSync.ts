@@ -273,14 +273,14 @@ export function useDataSync(): UseDataSyncResult {
 
       const allSuccess = groupsSuccess && itemsSuccess && alarmsSuccess;
 
-      // CRITICAL FIX: Wait for IndexedDB writes to complete before marking sync as complete
+      // CRITICAL FIX: Wait for Zustand store updates to complete before marking sync as complete
       // This prevents race condition where redirect happens before data is persisted
       if (allSuccess) {
-        // Add delay to ensure IndexedDB writes from reducer have completed
-        // The reducer dispatches async storage operations that need time to finish
+        // Add delay to ensure Zustand store updates have completed
+        // The store dispatches async persistence operations to localStorage
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Verify data is actually stored in IndexedDB
+        // Verify data is actually stored in Zustand store
         const storedGroups = await monitoringStorageHelpers.getStoredGroups();
         const storedItems = await monitoringStorageHelpers.getStoredItems();
         const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
@@ -295,7 +295,7 @@ export function useDataSync(): UseDataSyncResult {
           forceRefresh,
         });
         
-        // Only mark as complete if data is verified in IndexedDB
+        // Only mark as complete if data is verified in Zustand store
         if (storedGroups && storedGroups.length > 0 && storedItems && storedItems.length > 0) {
           setDataSynced(true);
           
@@ -306,7 +306,7 @@ export function useDataSync(): UseDataSyncResult {
             hasErrors: false,
           }));
         } else {
-          logger.error('Sync verification failed: Data not found in IndexedDB after sync');
+          logger.error('Sync verification failed: Data not found in Zustand store after sync');
           setSyncState(prev => ({
             ...prev,
             overall: 'error',
@@ -372,12 +372,12 @@ export function useDataSync(): UseDataSyncResult {
       const results = await Promise.all(failedOperations);
       const allSuccess = results.every(result => result);
 
-      // CRITICAL FIX: Wait for IndexedDB writes to complete before marking retry as complete
+      // CRITICAL FIX: Wait for Zustand store updates to complete before marking retry as complete
       if (allSuccess) {
-        // Add delay to ensure IndexedDB writes from reducer have completed
+        // Add delay to ensure Zustand store updates have completed
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Verify data is actually stored in IndexedDB
+        // Verify data is actually stored in Zustand store
         const storedGroups = await monitoringStorageHelpers.getStoredGroups();
         const storedItems = await monitoringStorageHelpers.getStoredItems();
         const storedAlarms = await monitoringStorageHelpers.getStoredAlarms();
@@ -391,7 +391,7 @@ export function useDataSync(): UseDataSyncResult {
           syncStatusSet: true,
         });
         
-        // Only mark as complete if data is verified in IndexedDB
+        // Only mark as complete if data is verified in Zustand store
         if (storedGroups && storedGroups.length > 0 && storedItems && storedItems.length > 0) {
           setDataSynced(true);
           
@@ -402,7 +402,7 @@ export function useDataSync(): UseDataSyncResult {
             hasErrors: false,
           }));
         } else {
-          logger.error('Retry verification failed: Data not found in IndexedDB');
+          logger.error('Retry verification failed: Data not found in Zustand store');
           setSyncState(prev => ({
             ...prev,
             overall: 'error',

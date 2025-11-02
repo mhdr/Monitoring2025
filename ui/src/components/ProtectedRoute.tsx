@@ -11,15 +11,15 @@ interface ProtectedRouteProps {
 /**
  * ProtectedRoute - Maximally Simplified
  * 
- * PRINCIPLE: If user is authenticated, data is in IndexedDB
+ * PRINCIPLE: If user is authenticated, data is in Zustand stores (persisted to localStorage)
  * 
  * 1. Check if user is authenticated
- * 2. If yes, render content (assume data is in IndexedDB)
+ * 2. If yes, render content (assume data is in Zustand stores)
  * 3. If no, redirect to login
  * 
  * SYNC WORKFLOW:
  * - Login page handles initial sync after authentication
- * - Data persists in IndexedDB until logout
+ * - Data persists in Zustand stores (localStorage) until logout
  * - NO sync checks on route navigation
  * - Force sync available from navbar when needed
  */
@@ -70,7 +70,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   // User is authenticated, render protected content
-  // Data is assumed to be in IndexedDB
+  // Data is assumed to be in Zustand stores (persisted to localStorage)
   return <>{children}</>;
 };
 

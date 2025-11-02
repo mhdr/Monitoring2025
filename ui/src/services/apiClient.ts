@@ -76,7 +76,7 @@ apiClient.interceptors.response.use(
         const release = await refreshMutex.acquire();
 
         try {
-          // Get current auth state (async from IndexedDB)
+          // Get current auth state from Zustand store
           const currentToken = await authStorageHelpers.getStoredToken();
           const currentRefreshToken = await authStorageHelpers.getStoredRefreshToken();
           const currentUser = await authStorageHelpers.getStoredUser();

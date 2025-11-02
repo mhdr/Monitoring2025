@@ -29,7 +29,7 @@ const PublicRoute: React.FC = () => {
       }
 
       try {
-        // Read sync flag from IndexedDB
+        // Read sync flag from Zustand store (persisted to localStorage)
         const syncedFlag = await isDataSynced();
         // We're on /login page, so check if we need to redirect to dashboard via sync
         const needsSync = !syncedFlag; // If not synced, we need to sync before going to dashboard

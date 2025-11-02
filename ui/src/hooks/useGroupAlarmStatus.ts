@@ -67,11 +67,11 @@ export function useGroupAlarmStatus(groupId: string): GroupAlarmStatus {
     try {
       setIsLoading(true);
       
-      // Get items from IndexedDB to build the request
+      // Get items from Zustand store to build the request
       const storedItems = await monitoringStorageHelpers.getStoredItems();
       
       if (!storedItems || storedItems.length === 0) {
-        logger.warn('No items in IndexedDB, cannot fetch active alarms');
+        logger.warn('No items in Zustand store, cannot fetch active alarms');
         setActiveAlarms([]);
         return;
       }

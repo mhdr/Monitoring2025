@@ -185,7 +185,7 @@ export const useSortPreferences = (
     [groupId, sortConfig.field]
   );
   
-  // Toggle sort direction and save to IndexedDB
+  // Toggle sort direction and save to Zustand store
   const toggleDirectionFn = useCallback(() => {
     const newDirection = toggleSortDirection(sortConfig.direction);
     setSortDirectionFn(newDirection);
@@ -195,7 +195,7 @@ export const useSortPreferences = (
   const resetSort = useCallback(() => {
     setSortConfig(DEFAULT_SORT_CONFIG);
     
-    // Clear from IndexedDB
+    // Clear from Zustand store
     clearSortPreference(groupId).catch((error) =>
       logger.error('Failed to clear sort preference:', error)
     );

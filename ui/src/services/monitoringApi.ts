@@ -93,7 +93,7 @@ export const getGroups = async (): Promise<GroupsResponseDto> => {
         groups: allGroupsResponse.data.groups
       };
       
-      // Store all groups data in IndexedDB when fetched
+      // Store all groups data in Zustand store (persisted to localStorage) when fetched
       return storeMonitoringResponseData.storeGroupsResponse(adminResponse);
     }
     
@@ -141,7 +141,7 @@ export const getGroups = async (): Promise<GroupsResponseDto> => {
       groups: filteredGroups
     };
     
-    // Store filtered groups data in IndexedDB when fetched
+    // Store filtered groups data in Zustand store (persisted to localStorage) when fetched
     return storeMonitoringResponseData.storeGroupsResponse(response);
   } catch (error) {
     handleApiError(error);
@@ -166,7 +166,7 @@ export const getGroups = async (): Promise<GroupsResponseDto> => {
 export const getItems = async (params: ItemsRequestDto = { showOrphans: false }): Promise<ItemsResponseDto> => {
   try {
     const response = await apiClient.post<ItemsResponseDto>('/api/Monitoring/Items', params);
-    // Store items data in IndexedDB when fetched
+    // Store items data in Zustand store (persisted to localStorage) when fetched
     return storeMonitoringResponseData.storeItemsResponse(response.data);
   } catch (error) {
     handleApiError(error);
@@ -201,7 +201,7 @@ export const getItemsAsAdmin = async (params: ItemsRequestDto = { showOrphans: f
 
 /**
  * Get current values for monitoring items
- * Automatically extracts itemIds from stored items in IndexedDB if not provided
+ * Automatically extracts itemIds from stored items in Zustand store if not provided
  */
 export const getValues = async (params?: ValuesRequestDto): Promise<ValuesResponseDto> => {
   try {
@@ -213,7 +213,7 @@ export const getValues = async (params?: ValuesRequestDto): Promise<ValuesRespon
       body.itemIds = params.itemIds;
       logger.log('Using provided itemIds for getValues', { count: params.itemIds.length });
     } else {
-      // Otherwise, extract itemIds from stored items in IndexedDB using utility method
+      // Otherwise, extract itemIds from stored items in Zustand store using utility method
       const itemIds = await getStoredItemIds();
       if (itemIds && itemIds.length > 0) {
         body.itemIds = itemIds;
@@ -320,7 +320,7 @@ export const movePoint = async (data: MovePointRequestDto): Promise<EditPointRes
 
 /**
  * Get configured alarms for specified monitoring items
- * Automatically extracts itemIds from stored items in IndexedDB if not provided
+ * Automatically extracts itemIds from stored items in Zustand store if not provided
  */
 export const getAlarms = async (params?: AlarmsRequestDto): Promise<AlarmsResponseDto> => {
   try {
@@ -332,7 +332,7 @@ export const getAlarms = async (params?: AlarmsRequestDto): Promise<AlarmsRespon
       body.itemIds = params.itemIds;
       logger.log('Using provided itemIds for getAlarms', { count: params.itemIds.length });
     } else {
-      // Otherwise, extract itemIds from stored items in IndexedDB using utility method
+      // Otherwise, extract itemIds from stored items in Zustand store using utility method
       const itemIds = await getStoredItemIds();
       if (itemIds && itemIds.length > 0) {
         body.itemIds = itemIds;
@@ -346,7 +346,7 @@ export const getAlarms = async (params?: AlarmsRequestDto): Promise<AlarmsRespon
     const response = await apiClient.post<AlarmsResponseDto>('/api/Monitoring/Alarms', body);
     logger.log('Alarms fetched successfully', { alarmsCount: response.data.data?.length || 0 });
     
-    // Store alarms data in IndexedDB when fetched
+    // Store alarms data in Zustand store (persisted to localStorage) when fetched
     return storeMonitoringResponseData.storeAlarmsResponse(response.data);
   } catch (error) {
     logger.error('Failed to fetch alarms', error);
@@ -356,7 +356,7 @@ export const getAlarms = async (params?: AlarmsRequestDto): Promise<AlarmsRespon
 
 /**
  * Get currently active alarms
- * Automatically extracts itemIds from stored items in IndexedDB if not provided
+ * Automatically extracts itemIds from stored items in Zustand store if not provided
  */
 export const getActiveAlarms = async (params?: ActiveAlarmsRequestDto): Promise<ActiveAlarmsResponseDto> => {
   try {
@@ -368,7 +368,7 @@ export const getActiveAlarms = async (params?: ActiveAlarmsRequestDto): Promise<
       body.itemIds = params.itemIds;
       logger.log('Using provided itemIds for getActiveAlarms', { count: params.itemIds.length });
     } else {
-      // Otherwise, extract itemIds from stored items in IndexedDB using utility method
+      // Otherwise, extract itemIds from stored items in Zustand store using utility method
       const itemIds = await getStoredItemIds();
       if (itemIds && itemIds.length > 0) {
         body.itemIds = itemIds;
@@ -387,7 +387,7 @@ export const getActiveAlarms = async (params?: ActiveAlarmsRequestDto): Promise<
 
 /**
  * Get historical alarm data
- * Automatically extracts itemIds from stored items in IndexedDB if not provided
+ * Automatically extracts itemIds from stored items in Zustand store if not provided
  * Supports pagination through page and pageSize parameters (default page=1, pageSize=100, max pageSize=1000)
  */
 export const getAlarmHistory = async (params: AlarmHistoryRequestDto): Promise<AlarmHistoryResponseDto> => {
@@ -403,7 +403,7 @@ export const getAlarmHistory = async (params: AlarmHistoryRequestDto): Promise<A
       body.itemIds = params.itemIds;
       logger.log('Using provided itemIds for getAlarmHistory', { count: params.itemIds.length });
     } else {
-      // Otherwise, extract itemIds from stored items in IndexedDB using utility method
+      // Otherwise, extract itemIds from stored items in Zustand store using utility method
       const itemIds = await getStoredItemIds();
       if (itemIds && itemIds.length > 0) {
         body.itemIds = itemIds;

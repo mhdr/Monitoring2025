@@ -30,7 +30,7 @@ export const login = async (credentials: LoginRequest): Promise<LoginResponse> =
     
     // Check if login was successful
     if (response.data.success) {
-      // Store tokens and user data in IndexedDB
+      // Store tokens and user data in Zustand store (persisted to localStorage)
       await authStorageHelpers.setStoredAuth(
         response.data.accessToken,
         response.data.user,

@@ -103,7 +103,7 @@ export function useActiveAlarmCount(isAuthenticated: boolean, isAuthLoading: boo
 
     hasFetchedRef.current = true;
     
-    // Fetch with a small delay to allow IndexedDB to fully initialize
+    // Fetch with a small delay to allow Zustand store to fully initialize
     const timeoutId = setTimeout(() => {
       fetchWithRetry(0);
     }, 500);
