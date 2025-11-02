@@ -6,13 +6,14 @@
  */
 
 import { useMonitoringStore, StreamStatus } from '../stores/monitoringStore';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
   getGroups,
   getItems,
   getAlarms,
 } from '../services/api';
-import { getActiveAlarms } from '../services/monitoringApi';
+import { getActiveAlarms, getValues } from '../services/monitoringApi';
+import type { MultiValue } from '../types/api';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('useMonitoring');
@@ -21,6 +22,11 @@ const logger = createLogger('useMonitoring');
  * Hook for accessing monitoring store
  */
 export function useMonitoring() {
+  // Local state for values (not persisted - real-time data)
+  const [values, setValues] = useState<MultiValue[]>([]);
+  const [valuesLoading, setValuesLoading] = useState(false);
+  const [valuesError, setValuesError] = useState<{ status?: number; message: string } | null>(null);
+  
   // State selectors
   const groups = useMonitoringStore((state) => state.groups);
   const items = useMonitoringStore((state) => state.items);
@@ -36,6 +42,7 @@ export function useMonitoring() {
   const setItems = useMonitoringStore((state) => state.setItems);
   const setAlarms = useMonitoringStore((state) => state.setAlarms);
   const setDataSynced = useMonitoringStore((state) => state.setDataSynced);
+  const clearDataSyncStatus = useMonitoringStore((state) => state.clearDataSyncStatus);
   const updateActiveAlarms = useMonitoringStore((state) => state.updateActiveAlarms);
   const setActiveAlarmsStreamStatus = useMonitoringStore((state) => state.setActiveAlarmsStreamStatus);
   const setActiveAlarmsStreamError = useMonitoringStore((state) => state.setActiveAlarmsStreamError);
@@ -116,12 +123,48 @@ export function useMonitoring() {
     }
   }, [updateActiveAlarms, setActiveAlarmsFetching, setActiveAlarmsFetchError]);
   
+  // Fetch values for specific items
+  const fetchValues = useCallback(async (itemIds: string[]) => {
+    try {
+      setValuesLoading(true);
+      setValuesError(null);
+      logger.log('Fetching values for items:', { count: itemIds.length });
+      
+      const response = await getValues({ itemIds });
+      setValues(response.values);
+      
+      logger.log('Values fetched successfully:', { count: response.values.length });
+    } catch (error) {
+      logger.error('Failed to fetch values:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch values';
+      setValuesError({ message: errorMessage });
+    } finally {
+      setValuesLoading(false);
+    }
+  }, []);
+  
+  // Alias for syncGroups (backward compatibility)
+  const fetchGroups = syncGroups;
+  
+  // Alias for syncItems (backward compatibility)
+  const fetchItems = syncItems;
+  
+  // Alias for syncAlarms (backward compatibility)
+  const fetchAlarms = syncAlarms;
+  
+  // No-op function for setCurrentFolderId (folder ID is managed by URL params in MonitoringPage)
+  const setCurrentFolderId = useCallback((_folderId: string | null) => {
+    // This is intentionally a no-op as folder ID is managed by URL search params
+    // Kept for backward compatibility with MonitoringPage
+  }, []);
+  
   return {
     // State (similar to MonitoringContext)
     state: {
       groups,
       items,
       alarms,
+      values,
       isDataSynced,
       lastSyncTime,
       activeAlarms: {
@@ -143,14 +186,24 @@ export function useMonitoring() {
       groupsLoading: false,
       itemsLoading: false,
       alarmsLoading: false,
-      valuesLoading: false,
+      valuesLoading,
+      groupsError: null,
+      itemsError: null,
+      alarmsError: null,
+      valuesError,
     },
     
     // Actions
     syncGroups,
     syncItems,
     syncAlarms,
+    fetchGroups,
+    fetchItems,
+    fetchAlarms,
+    fetchValues,
+    setCurrentFolderId,
     setDataSynced,
+    clearDataSyncStatus,
     updateActiveAlarms,
     setActiveAlarmsStreamStatus,
     setActiveAlarmsStreamError,
