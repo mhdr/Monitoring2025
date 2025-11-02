@@ -92,8 +92,12 @@ const pulseAnimation = keyframes`
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Debounced animation trigger - prevents animation spam from rapid SignalR updates
+  // FIXED: Only animate when alarm count actually increases (not on every polling update)
   useEffect(() => {
-    if (prevAlarmCountRef.current !== alarmCount && alarmCount > 0) {
+    // Only trigger animation if alarm count increased (not decreased or stayed same)
+    const hasIncreasedAlarms = prevAlarmCountRef.current < alarmCount && alarmCount > 0;
+    
+    if (hasIncreasedAlarms) {
       // Clear any pending animation trigger
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -106,14 +110,13 @@ const pulseAnimation = keyframes`
         return () => clearTimeout(animationTimer);
       }, 1000);
       
-      prevAlarmCountRef.current = alarmCount;
-      
       return () => {
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
         }
       };
     }
+    
     prevAlarmCountRef.current = alarmCount;
   }, [alarmCount]);
 
@@ -228,7 +231,6 @@ const pulseAnimation = keyframes`
         <List sx={{ px: 1 }} data-id-ref="sidebar-nav-list">
           {menuItems.map((item) => {
             const active = isActive(item.path);
-            const showBadge = item.key === 'activeAlarms' && alarmCount > 0;
 
             return (
               <ListItem
@@ -283,7 +285,36 @@ const pulseAnimation = keyframes`
                         data-id-ref="sidebar-active-alarms-tooltip"
                       >
                         <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                          {isFetching ? (
+                          {/* FIXED: Always render Badge to prevent flicker, only hide when count is 0 */}
+                          <Badge
+                            badgeContent={alarmCount}
+                            invisible={alarmCount === 0}
+                            color={
+                              fetchError 
+                                ? 'warning' 
+                                : highestPriority === 2 
+                                  ? 'error' 
+                                  : highestPriority === 1 
+                                    ? 'warning' 
+                                    : 'error'
+                            }
+                            max={999}
+                            data-id-ref="sidebar-active-alarms-badge"
+                            sx={{
+                              '& .MuiBadge-badge': {
+                                fontSize: '0.65rem',
+                                fontWeight: 700,
+                                minWidth: 20,
+                                height: 20,
+                                animation: shouldAnimate ? `${pulseAnimation} 0.6s ease-in-out` : 'none',
+                                transition: 'all 0.3s ease-in-out',
+                              },
+                            }}
+                          >
+                            {item.icon}
+                          </Badge>
+                          {/* Show loading spinner on top of icon when fetching */}
+                          {isFetching && (
                             <CircularProgress 
                               size={20} 
                               thickness={4}
@@ -297,36 +328,6 @@ const pulseAnimation = keyframes`
                               }}
                               data-id-ref="sidebar-active-alarms-loading"
                             />
-                          ) : null}
-                          {showBadge ? (
-                            <Badge
-                              badgeContent={alarmCount}
-                              color={
-                                fetchError 
-                                  ? 'warning' 
-                                  : highestPriority === 2 
-                                    ? 'error' 
-                                    : highestPriority === 1 
-                                      ? 'warning' 
-                                      : 'error'
-                              }
-                              max={999}
-                              data-id-ref="sidebar-active-alarms-badge"
-                              sx={{
-                                '& .MuiBadge-badge': {
-                                  fontSize: '0.65rem',
-                                  fontWeight: 700,
-                                  minWidth: 20,
-                                  height: 20,
-                                  animation: shouldAnimate ? `${pulseAnimation} 0.6s ease-in-out` : 'none',
-                                  transition: 'all 0.3s ease-in-out',
-                                },
-                              }}
-                            >
-                              {item.icon}
-                            </Badge>
-                          ) : (
-                            item.icon
                           )}
                         </Box>
                       </Tooltip>
