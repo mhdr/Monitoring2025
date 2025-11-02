@@ -33,7 +33,7 @@ import { useMonitoring } from '../../hooks/useMonitoring';
 import { getValue } from '../../services/api';
 import { createLogger } from '../../utils/logger';
 import { formatDate } from '../../utils/dateFormatting';
-import { getItem, setItem } from '../../utils/indexedDbStorage';
+// Settings are now stored in localStorage directly (simple key-value)
 import type { ValueRequestDto, Item } from '../../types/api';
 import { EChartsWrapper } from '../shared/EChartsWrapper';
 import { CardHeader } from '../shared/CardHeader';
@@ -92,15 +92,16 @@ const LiveMonitoringDetailPage: React.FC = () => {
   // Use ref to store interval ID for cleanup
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Load settings from IndexedDB
+  // Load settings from localStorage
   useEffect(() => {
-    const loadSettings = async () => {
+    const loadSettings = () => {
       try {
-        const settings = await getItem<LiveMonitoringSettings>(SETTINGS_DB_KEY);
-        if (settings) {
+        const savedSettings = localStorage.getItem(SETTINGS_DB_KEY);
+        if (savedSettings) {
+          const settings = JSON.parse(savedSettings) as LiveMonitoringSettings;
           setPollingInterval(settings.pollingInterval);
           setMaxDataPoints(settings.maxDataPoints);
-          logger.log('Loaded live monitoring settings from IndexedDB', settings);
+          logger.log('Loaded live monitoring settings from localStorage', settings);
         } else {
           logger.log('No saved settings found, using defaults', {
             pollingInterval: 4000,
@@ -108,7 +109,7 @@ const LiveMonitoringDetailPage: React.FC = () => {
           });
         }
       } catch (err) {
-        logger.error('Error loading settings from IndexedDB:', err);
+        logger.error('Error loading settings from localStorage:', err);
       } finally {
         setSettingsLoaded(true);
       }
@@ -117,25 +118,21 @@ const LiveMonitoringDetailPage: React.FC = () => {
     loadSettings();
   }, []);
 
-  // Save settings to IndexedDB when they change
+  // Save settings to localStorage when they change
   useEffect(() => {
     // Don't save until initial settings are loaded
     if (!settingsLoaded) return;
 
-    const saveSettings = async () => {
-      try {
-        const settings: LiveMonitoringSettings = {
-          pollingInterval,
-          maxDataPoints,
-        };
-        await setItem(SETTINGS_DB_KEY, settings);
-        logger.log('Saved live monitoring settings to IndexedDB', settings);
-      } catch (err) {
-        logger.error('Error saving settings to IndexedDB:', err);
-      }
-    };
-
-    saveSettings();
+    try {
+      const settings: LiveMonitoringSettings = {
+        pollingInterval,
+        maxDataPoints,
+      };
+      localStorage.setItem(SETTINGS_DB_KEY, JSON.stringify(settings));
+      logger.log('Saved live monitoring settings to localStorage', settings);
+    } catch (err) {
+      logger.error('Error saving settings to localStorage:', err);
+    }
   }, [pollingInterval, maxDataPoints, settingsLoaded]);
 
   // Get item name based on language

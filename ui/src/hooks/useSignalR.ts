@@ -7,7 +7,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { HubConnectionState } from '@microsoft/signalr';
 import { signalRManager, type ActiveAlarmsUpdate } from '../services/signalrClient';
 import { useMonitoring } from './useMonitoring';
-import { StreamStatus } from '../contexts/MonitoringContext';
+import { StreamStatus } from '../stores/monitoringStore';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('useSignalR');

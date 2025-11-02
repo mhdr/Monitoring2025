@@ -2,56 +2,30 @@
  * Sync Utilities - Simplified for Login-Once Persistence
  * 
  * WORKFLOW:
- * - Fresh Login: Sync once, data persists in IndexedDB
+ * - Fresh Login: Sync once, data persists in localStorage via Zustand
  * - Page Refresh: Use persisted data (NO sync)
  * - New Tab: Use persisted data (NO sync)
  * - Force Sync: User triggers from navbar, always sync
- * - Logout: Clear ALL IndexedDB data
+ * - Logout: Clear ALL localStorage data
  */
 
-import { getItem } from './indexedDbStorage';
 import { createLogger } from './logger';
 
 const logger = createLogger('SyncUtils');
 
-const SYNC_FLAG_KEY = 'monitoring_data_synced';
-const SYNC_FLAG_CACHE_KEY = 'monitoring_synced_cache'; // localStorage cache for fast sync
-
 /**
- * Check if data is synced by reading the sync flag from IndexedDB
+ * Check if data is synced by reading from Zustand store
  * This flag is set ONCE after successful login sync and persists until logout
- * 
- * Uses localStorage as a fast cache hint to avoid unnecessary async checks
  * 
  * @returns Promise<boolean> - true if data has been synced, false otherwise
  */
 export async function isDataSynced(): Promise<boolean> {
   try {
-    // First check localStorage cache (fast, synchronous)
-    const cachedFlag = localStorage.getItem(SYNC_FLAG_CACHE_KEY);
-    if (cachedFlag === 'true') {
-      logger.log('Sync flag status (from cache):', { cached: true });
-      // Still verify with IndexedDB in background, but return cached value immediately
-      getItem<boolean>(SYNC_FLAG_KEY).then(dbFlag => {
-        if (dbFlag !== true) {
-          // Cache is stale, clear it
-          localStorage.removeItem(SYNC_FLAG_CACHE_KEY);
-          logger.warn('Cache was stale, cleared');
-        }
-      });
-      return true;
-    }
+    // Import Zustand store dynamically to avoid circular dependencies
+    const { useMonitoringStore } = await import('../stores/monitoringStore');
+    const isSynced = useMonitoringStore.getState().isDataSynced;
     
-    // If no cache, check IndexedDB
-    const syncFlag = await getItem<boolean>(SYNC_FLAG_KEY);
-    const isSynced = syncFlag === true;
-    
-    // Update cache if synced
-    if (isSynced) {
-      localStorage.setItem(SYNC_FLAG_CACHE_KEY, 'true');
-    }
-    
-    logger.log('Sync flag status:', { syncFlag, isSynced, cached: false });
+    logger.log('Sync flag status:', { isSynced });
     return isSynced;
   } catch (error) {
     logger.error('Failed to read sync flag:', error);
@@ -62,12 +36,12 @@ export async function isDataSynced(): Promise<boolean> {
 /**
  * Clear the sync flag cache (called on logout)
  * 
- * @internal Used by AuthContext during logout
+ * @internal Used during logout
  */
 export function clearSyncFlagCache(): void {
   try {
-    localStorage.removeItem(SYNC_FLAG_CACHE_KEY);
-    logger.log('Cleared sync flag cache');
+    // Nothing to do - Zustand handles persistence automatically
+    logger.log('Sync flag cache cleared (via Zustand)');
   } catch (error) {
     logger.warn('Failed to clear sync flag cache:', error);
   }

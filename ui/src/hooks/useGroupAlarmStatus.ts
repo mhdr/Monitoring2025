@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useMonitoring } from './useMonitoring';
 import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
-import { StreamStatus } from '../contexts/MonitoringContext';
+import { StreamStatus } from '../stores/monitoringStore';
 import type { Group, Item, ActiveAlarm, AlarmDto } from '../types/api';
 import { createLogger } from '../utils/logger';
 

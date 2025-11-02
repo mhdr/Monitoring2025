@@ -1,34 +1,28 @@
 /**
  * Cache Coordination Service
  * 
- * Coordinates between IndexedDB TTL system and Service Worker runtime caching.
+ * Coordinates between localStorage and Service Worker runtime caching.
  * 
  * Key Responsibilities:
- * - Listens for IndexedDB changes via BroadcastChannel and invalidates Service Worker caches
+ * - Monitors Zustand store updates and invalidates Service Worker caches
  * - Sends messages to Service Worker to clear API caches when data updates
- * - Prevents stale data in Service Worker cache when IndexedDB data is refreshed
+ * - Prevents stale data in Service Worker cache when store data is refreshed
  * 
  * Integration:
- * - Works with monitoringStorage.ts (TTL system) and indexedDbStorage.ts (BroadcastChannel)
+ * - Works with Zustand stores (monitoringStore, authStore)
  * - Communicates with Service Worker via postMessage
  * - Triggered by background refresh and manual sync operations
  */
 
 import type { Workbox } from 'workbox-window';
-import { onStorageChange } from '../utils/indexedDbStorage';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('CacheCoordination');
 
 /**
  * Storage keys that require cache invalidation when updated
+ * (No longer used with Zustand - kept for reference)
  */
-const MONITORING_STORAGE_KEYS = [
-  'monitoring_groups',
-  'monitoring_items',
-  'monitoring_active_alarms',
-  'monitoring_metadata',
-] as const;
 
 /**
  * API endpoints to clear from Service Worker cache when storage updates
@@ -90,24 +84,27 @@ class CacheCoordinationService {
   }
 
   /**
-   * Setup IndexedDB change listener for cross-tab cache invalidation
-   * Uses BroadcastChannel for synchronization across tabs
+   * Setup storage change listener for cache invalidation
+   * 
+   * Note: With Zustand + localStorage, cross-tab sync is automatic via the 'storage' event.
+   * We don't need explicit BroadcastChannel coordination.
    */
   private setupStorageListener(): void {
-    // Listen for IndexedDB changes from other tabs via BroadcastChannel
-    this.storageChangeCleanup = onStorageChange((key, action) => {
-      // Check if the updated key is a monitoring data key
-      const isMonitoringKey = MONITORING_STORAGE_KEYS.some(monitoringKey => 
-        key.startsWith(monitoringKey)
-      );
-
-      if (isMonitoringKey) {
-        logger.log(`IndexedDB ${action}: ${key}, invalidating caches`);
+    // Listen for localStorage storage events (cross-tab sync)
+    const handleStorageChange = (event: StorageEvent): void => {
+      // Check if this is a monitoring store update
+      if (event.key && event.key.includes('monitoring-storage')) {
+        logger.log(`Storage changed: ${event.key}, invalidating caches`);
         this.invalidateApiCache();
       }
-    });
+    };
 
-    logger.log('IndexedDB change listener registered via BroadcastChannel');
+    window.addEventListener('storage', handleStorageChange);
+    this.storageChangeCleanup = () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+
+    logger.log('Storage change listener registered');
   }
 
   /**

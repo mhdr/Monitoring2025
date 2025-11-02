@@ -14,7 +14,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useMonitoring } from './useMonitoring';
-import { StreamStatus } from '../contexts/MonitoringContext';
+import { StreamStatus } from '../stores/monitoringStore';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('useActiveAlarmPolling');
