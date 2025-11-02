@@ -265,9 +265,9 @@ Must test on these standard resolutions:
 
 ## Auth
 ⚠️ Refresh Token Rotation (OAuth 2.0) - auto-handled by Axios interceptors
-- Files: `src/services/apiClient.ts`, `src/utils/authStorage.ts`, `src/contexts/AuthContext.tsx`
+- Files: `src/services/apiClient.ts`, `src/stores/authStore.ts`, `src/hooks/useAuth.ts`
 - Mutex: Prevents concurrent refresh (`async-mutex`)
-- Storage: IndexedDB with 7-day rolling expiration
+- Storage: Zustand + localStorage with 7-day rolling expiration
 - Flow: Login → 401 → Auto-refresh → New tokens → Retry
 
 ⚠️ Never manually refresh - Axios interceptors handle it automatically
@@ -388,7 +388,7 @@ The following needs to be implemented:
 - Always validate user input on both client and server
 
 ### Security Checklist
-- [ ] No sensitive data in IndexedDB without encryption
+- [ ] No sensitive data logged or exposed in client code
 - [ ] No API keys or secrets in frontend code
 - [ ] All forms validate input client-side AND server-side
 - [ ] Authentication required for protected routes
@@ -877,10 +877,10 @@ public/locales/   # fa/, en/
 - [ ] **DevTools**: Enable Redux DevTools for debugging
 
 ### Data Synchronization
-- [ ] **Authenticated = Data Exists**: If user is authenticated, data MUST be in IndexedDB
+- [ ] **Authenticated = Data Exists**: If user is authenticated, data MUST be in Zustand stores
 - [ ] **NO sync checks in ProtectedRoute**: Only checks auth, assumes data exists
 - [ ] **Login triggers sync**: LoginPage redirects to sync after successful auth
-- [ ] **500ms verification**: Wait for IndexedDB writes before marking sync complete
+- [ ] **Zustand persist middleware**: Automatic localStorage synchronization
 - [ ] **Phase order**: Groups+Items parallel → Alarms sequential (needs itemIds)
 
 ### API & Backend Integration
