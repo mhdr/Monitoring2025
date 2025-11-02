@@ -20,6 +20,7 @@
   "search": "جستجو",
   "and": "و",
   "seconds": "ثانیه",
+  "selected": "انتخاب شده",
   "languageSwitch": "English",
   "systemDescription": "این سیستم برای مانیتورینگ و مدیریت انبار طراحی شده است.",
   "notificationDescription": "مدیریت اعلان‌ها و هشدارها",
@@ -412,6 +413,9 @@
       "viewDetails": "مشاهده جزئیات",
       "edit": "ویرایش",
       "delete": "حذف"
+    },
+    "toolbar": {
+      "selectRowsHint": "یک یا چند هشدار را برای انجام عملیات انتخاب کنید"
     },
     "summary": {
       "total": "کل هشدارها",

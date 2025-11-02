@@ -14,8 +14,7 @@ import {
   Stack,
   Paper,
   Divider,
-  Tooltip,
-  IconButton,
+  Toolbar,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -27,6 +26,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   FileDownload as FileDownloadIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useMonitoring } from '../../hooks/useMonitoring';
@@ -84,11 +84,22 @@ const AlarmsDetailPage: React.FC = () => {
   const { exportToCsv, exportToExcel, handleGridReady } = useAGGrid();
   const gridRef = useRef<AGGridApi | null>(null);
   const columnApiRef = useRef<AGGridColumnApi | null>(null);
+  const [selectedRows, setSelectedRows] = useState<EnrichedAlarm[]>([]);
+  
   const onGridReadyInternal = useCallback((api: AGGridApi, colApi: AGGridColumnApi) => {
     gridRef.current = api;
     columnApiRef.current = colApi;
     handleGridReady(api, colApi);
   }, [handleGridReady]);
+
+  // Handle row selection changes
+  const onSelectionChanged = useCallback(() => {
+    if (gridRef.current) {
+      const selected = gridRef.current.getSelectedRows() as EnrichedAlarm[];
+      setSelectedRows(selected);
+      logger.log('Row selection changed:', { count: selected.length });
+    }
+  }, []);
 
   // Helper function to get item name based on language
   const getItemName = useCallback((item: Item | undefined, itemId?: string): string => {
@@ -402,52 +413,6 @@ const AlarmsDetailPage: React.FC = () => {
         );
       },
     },
-    {
-      headerName: t('alarms.columns.actions'),
-      field: 'actions',
-      flex: 0.8,
-      minWidth: 150,
-      sortable: false,
-      filter: false,
-      cellRenderer: (params: { data: EnrichedAlarm }) => {
-        const alarmId = params.data.id;
-        
-        return (
-          <Stack direction="row" spacing={0.5} data-id-ref={`alarm-actions-${alarmId}`}>
-            <Tooltip title={t('alarms.actions.viewDetails')} arrow>
-              <IconButton 
-                size="small" 
-                color="info"
-                data-id-ref={`alarm-action-view-${alarmId}`}
-                disabled
-              >
-                <InfoIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t('alarms.actions.edit')} arrow>
-              <IconButton 
-                size="small" 
-                color="primary"
-                data-id-ref={`alarm-action-edit-${alarmId}`}
-                disabled
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t('alarms.actions.delete')} arrow>
-              <IconButton 
-                size="small" 
-                color="error"
-                data-id-ref={`alarm-action-delete-${alarmId}`}
-                disabled
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        );
-      },
-    },
   ], [t, language, itemsMap, formatCondition, loadingExternalAlarms, fetchExternalAlarms]);
 
   // Handle export actions
@@ -460,6 +425,33 @@ const AlarmsDetailPage: React.FC = () => {
     exportToExcel('alarms-export');
     logger.log('Exporting alarms data to Excel');
   }, [exportToExcel]);
+
+  // Handle action button clicks
+  const handleAdd = useCallback(() => {
+    logger.log('Add new alarm for itemId:', itemId);
+    // TODO: Implement add alarm dialog
+  }, [itemId]);
+
+  const handleViewDetails = useCallback(() => {
+    if (selectedRows.length === 1) {
+      logger.log('View details for alarm:', selectedRows[0]);
+      // TODO: Implement view details dialog
+    }
+  }, [selectedRows]);
+
+  const handleEdit = useCallback(() => {
+    if (selectedRows.length === 1) {
+      logger.log('Edit alarm:', selectedRows[0]);
+      // TODO: Implement edit dialog
+    }
+  }, [selectedRows]);
+
+  const handleDelete = useCallback(() => {
+    if (selectedRows.length === 1) {
+      logger.log('Delete alarm:', selectedRows[0]);
+      // TODO: Implement delete confirmation dialog
+    }
+  }, [selectedRows]);
 
   // Render loading state
   if (loading && alarmsData.length === 0) {
@@ -601,6 +593,118 @@ const AlarmsDetailPage: React.FC = () => {
 
           <Divider sx={{ mb: 2 }} data-id-ref="alarms-detail-divider" />
 
+          {/* Grid Toolbar */}
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              mb: 2,
+              border: 1,
+              borderColor: 'divider',
+            }}
+            data-id-ref="alarms-detail-toolbar-paper"
+          >
+            <Toolbar 
+              sx={{ 
+                gap: 1,
+                minHeight: { xs: 56, sm: 64 },
+                px: { xs: 2, sm: 3 },
+              }}
+              data-id-ref="alarms-detail-toolbar"
+            >
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  flexGrow: 1,
+                  color: 'text.secondary',
+                }}
+                data-id-ref="alarms-detail-selected-count"
+              >
+                {selectedRows.length > 0 
+                  ? `${selectedRows.length} ${t('selected')}`
+                  : t('alarms.toolbar.selectRowsHint')}
+              </Typography>
+              
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={handleAdd}
+                size={isMobile ? 'small' : 'medium'}
+                data-id-ref="alarms-toolbar-add-btn"
+                sx={{
+                  alignItems: 'center',
+                  '& .MuiButton-startIcon': {
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginInlineEnd: 1,
+                  },
+                }}
+              >
+                {t('add')}
+              </Button>
+              
+              <Button
+                variant="outlined"
+                color="info"
+                startIcon={<InfoIcon />}
+                onClick={handleViewDetails}
+                disabled={selectedRows.length !== 1}
+                size={isMobile ? 'small' : 'medium'}
+                data-id-ref="alarms-toolbar-view-btn"
+                sx={{
+                  alignItems: 'center',
+                  '& .MuiButton-startIcon': {
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginInlineEnd: 1,
+                  },
+                }}
+              >
+                {t('alarms.actions.viewDetails')}
+              </Button>
+              
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<EditIcon />}
+                onClick={handleEdit}
+                disabled={selectedRows.length !== 1}
+                size={isMobile ? 'small' : 'medium'}
+                data-id-ref="alarms-toolbar-edit-btn"
+                sx={{
+                  alignItems: 'center',
+                  '& .MuiButton-startIcon': {
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginInlineEnd: 1,
+                  },
+                }}
+              >
+                {t('alarms.actions.edit')}
+              </Button>
+              
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={handleDelete}
+                disabled={selectedRows.length !== 1}
+                size={isMobile ? 'small' : 'medium'}
+                data-id-ref="alarms-toolbar-delete-btn"
+                sx={{
+                  alignItems: 'center',
+                  '& .MuiButton-startIcon': {
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginInlineEnd: 1,
+                  },
+                }}
+              >
+                {t('alarms.actions.delete')}
+              </Button>
+            </Toolbar>
+          </Paper>
+
           {/* Summary Section */}
           <Paper 
             elevation={0} 
@@ -663,6 +767,8 @@ const AlarmsDetailPage: React.FC = () => {
                 paginationPageSize: 20,
                 paginationPageSizeSelector: [10, 20, 50, 100],
                 suppressColumnVirtualisation: true,
+                rowSelection: { mode: 'singleRow' },
+                onSelectionChanged: onSelectionChanged,
               }}
             />
           </Box>

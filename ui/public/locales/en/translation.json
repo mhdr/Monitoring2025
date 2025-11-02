@@ -20,6 +20,7 @@
   "search": "Search",
   "and": "and",
   "seconds": "sec",
+  "selected": "selected",
   "languageSwitch": "فارسی",
   "systemDescription": "This system is designed for warehouse monitoring and management.",
   "notificationDescription": "Manage notifications and alerts",
@@ -412,6 +413,9 @@
       "viewDetails": "View Details",
       "edit": "Edit",
       "delete": "Delete"
+    },
+    "toolbar": {
+      "selectRowsHint": "Select one or more alarms to perform actions"
     },
     "summary": {
       "total": "Total Alarms",
