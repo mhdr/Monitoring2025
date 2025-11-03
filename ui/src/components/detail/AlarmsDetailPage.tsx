@@ -533,8 +533,12 @@ const AlarmsDetailPage: React.FC = () => {
     <Box 
       sx={{ 
         width: '100%', 
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         p: isMobile ? 1 : 3,
         boxSizing: 'border-box',
+        overflow: 'hidden',
       }} 
       data-id-ref="alarms-detail-page"
     >
@@ -544,6 +548,8 @@ const AlarmsDetailPage: React.FC = () => {
         sx={{ 
           display: 'flex', 
           flexDirection: 'column',
+          height: '100%',
+          overflow: 'hidden',
         }}
       >
         <CardContent 
@@ -551,6 +557,9 @@ const AlarmsDetailPage: React.FC = () => {
             display: 'flex', 
             flexDirection: 'column', 
             p: { xs: 2, sm: 3 },
+            flex: 1,
+            minHeight: 0,
+            overflow: 'hidden',
             '&:last-child': { pb: { xs: 2, sm: 3 } },
           }}
           data-id-ref="alarms-detail-card-content"
@@ -780,6 +789,10 @@ const AlarmsDetailPage: React.FC = () => {
             sx={{ 
               width: '100%',
               minWidth: 0,
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
             }} 
             data-id-ref="alarms-detail-grid-container"
           >
@@ -787,7 +800,7 @@ const AlarmsDetailPage: React.FC = () => {
               columnDefs={columnDefs}
               rowData={alarmsData as never[]}
               onGridReady={onGridReadyInternal}
-              height={isMobile ? '400px' : '600px'}
+              height="100%"
               gridOptions={{
                 pagination: true,
                 paginationPageSize: 20,
