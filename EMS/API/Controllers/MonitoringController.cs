@@ -2393,6 +2393,29 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// - Custom alarm message (English and Farsi)
     /// - Comparison values (Value1, Value2) for alarm conditions
     /// - Acknowledgment timeout
+    /// - Alarm type (Comparative or Timeout)
+    /// - Alarm priority (Critical, High, Medium, Low)
+    /// - Comparison type (Equal, NotEqual, Greater, etc.)
+    /// 
+    /// **Alarm Types:**
+    /// - Comparative (1): For digital and analog values using comparison logic with thresholds (Value1/Value2) and comparison operators
+    /// - Timeout (2): Time-based alarm that triggers after a specified timeout duration without receiving data updates
+    /// 
+    /// **Comparison Types:** (Used only with Comparative alarm type)
+    /// - Equal (0): Value equals Value1
+    /// - NotEqual (1): Value does not equal Value1
+    /// - Greater (2): Value is greater than Value1
+    /// - GreaterOrEqual (3): Value is greater than or equal to Value1
+    /// - Less (4): Value is less than Value1
+    /// - LessOrEqual (5): Value is less than or equal to Value1
+    /// - Between (6): Value is between Value1 and Value2 (inclusive)
+    /// - OutOfRange (7): Value is outside the range Value1 to Value2
+    /// 
+    /// **Priority Levels:**
+    /// - Critical (0): Highest priority - immediate attention required
+    /// - High (1): High priority - prompt response needed
+    /// - Medium (2): Medium priority - normal response time
+    /// - Low (3): Low priority - informational
     /// 
     /// Validates:
     /// - The alarm exists in the system
@@ -2401,7 +2424,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// 
     /// Creates an audit log entry with before/after values for all changed properties.
     /// 
-    /// Sample request with bilingual messages:
+    /// Sample request for a critical high-temperature alarm (Comparative with Greater Than):
     /// 
     ///     POST /api/monitoring/editalarm
     ///     {
@@ -2413,21 +2436,28 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///        "messageFa": "حداکثر آستانه دما تجاوز شده است",
     ///        "value1": "75.5",
     ///        "value2": "100.0",
-    ///        "timeout": 300
+    ///        "timeout": null,
+    ///        "alarmType": 1,
+    ///        "alarmPriority": 0,
+    ///        "compareType": 2
     ///     }
     ///     
-    /// To disable an alarm without changing other properties:
+    /// Sample request for a timeout-based alarm (AlarmType 2 - triggers when no data received):
     /// 
     ///     POST /api/monitoring/editalarm
     ///     {
     ///        "id": "550e8400-e29b-41d4-a716-446655440000",
     ///        "itemId": "550e8400-e29b-41d4-a716-446655440001",
-    ///        "isDisabled": true,
-    ///        "alarmDelay": 5,
-    ///        "message": "Temperature exceeded maximum threshold",
-    ///        "messageFa": "حداکثر آستانه دما تجاوز شده است",
-    ///        "value1": "75.5",
-    ///        "value2": "100.0"
+    ///        "isDisabled": false,
+    ///        "alarmDelay": 0,
+    ///        "message": "Communication timeout - device not responding",
+    ///        "messageFa": "وقفه ارتباطی - دستگاه پاسخ نمی‌دهد",
+    ///        "value1": null,
+    ///        "value2": null,
+    ///        "timeout": 300,
+    ///        "alarmType": 2,
+    ///        "alarmPriority": 1,
+    ///        "compareType": 0
     ///     }
     ///     
     /// </remarks>
@@ -2529,6 +2559,12 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 Value2New = request.Value2,
                 TimeoutOld = alarm.Timeout,
                 TimeoutNew = request.Timeout,
+                AlarmTypeOld = (Share.Libs.AlarmType)alarm.AlarmType,
+                AlarmTypeNew = request.AlarmType,
+                AlarmPriorityOld = (Share.Libs.AlarmPriority)alarm.AlarmPriority,
+                AlarmPriorityNew = request.AlarmPriority,
+                CompareTypeOld = (Share.Libs.CompareType)alarm.CompareType,
+                CompareTypeNew = request.CompareType,
             };
 
             // Update alarm properties
@@ -2539,6 +2575,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             alarm.Value1 = request.Value1;
             alarm.Value2 = request.Value2;
             alarm.Timeout = request.Timeout;
+            alarm.AlarmType = (Core.Libs.AlarmType)request.AlarmType;
+            alarm.AlarmPriority = (Core.Libs.AlarmPriority)request.AlarmPriority;
+            alarm.CompareType = (Core.Libs.CompareType)request.CompareType;
 
             _logger.LogInformation("EditAlarm: Updating alarm in database, AlarmId={AlarmId}", request.Id);
             var result = await Core.Alarms.EditAlarm(alarm);
