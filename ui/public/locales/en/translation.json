@@ -873,7 +873,7 @@
       "value2": "Upper Bound Value",
       "alarmDelay": "Alarm Delay (seconds)",
       "message": "Alarm Message",
-      "timeout": "Auto-Acknowledge Timeout (seconds)",
+      "timeout": "Data Timeout (seconds)",
       "isDisabled": "Disable Alarm"
     },
     "hints": {
