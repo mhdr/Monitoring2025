@@ -22,6 +22,7 @@ import type {
   AlarmsRequestDto,
   AlarmsResponseDto,
   AddAlarmRequestDto,
+  AddAlarmResponseDto,
   EditAlarmRequestDto,
   EditAlarmResponseDto,
   DeleteAlarmRequestDto,
@@ -344,7 +345,7 @@ export const getAlarms = async (params?: AlarmsRequestDto): Promise<AlarmsRespon
     }
     
     const response = await apiClient.post<AlarmsResponseDto>('/api/Monitoring/Alarms', body);
-    logger.log('Alarms fetched successfully', { alarmsCount: response.data.data?.length || 0 });
+    logger.log('Alarms fetched successfully', { alarmsCount: response.data.data?.data?.length || 0 });
     
     // Store alarms data in Zustand store (persisted to localStorage) when fetched
     return storeMonitoringResponseData.storeAlarmsResponse(response.data);
@@ -452,13 +453,33 @@ export const getAlarmHistory = async (params: AlarmHistoryRequestDto): Promise<A
 };
 
 /**
- * Add a new alarm configuration
+ * Add a new alarm configuration to a monitoring item
+ * Creates a new alarm with specified type, priority, and comparison logic
+ * 
+ * @param data - AddAlarmRequestDto with itemId, alarm type, priority, compare type, etc.
+ * @returns Promise<AddAlarmResponseDto> - Success status, message, and new alarm ID
  */
-export const addAlarm = async (data: AddAlarmRequestDto): Promise<EditPointResponseDto> => {
+export const addAlarm = async (data: AddAlarmRequestDto): Promise<AddAlarmResponseDto> => {
   try {
-    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/AddAlarm', data);
+    logger.log('Adding new alarm:', { 
+      itemId: data.itemId, 
+      alarmType: data.alarmType, 
+      alarmPriority: data.alarmPriority,
+      compareType: data.compareType,
+      isDisabled: data.isDisabled,
+    });
+    
+    const response = await apiClient.post<AddAlarmResponseDto>('/api/Monitoring/AddAlarm', data);
+    
+    logger.log('Alarm added successfully:', { 
+      isSuccessful: response.data.isSuccessful,
+      alarmId: response.data.alarmId,
+      message: response.data.message,
+    });
+    
     return response.data;
   } catch (error) {
+    logger.error('Failed to add alarm:', error);
     handleApiError(error);
   }
 };

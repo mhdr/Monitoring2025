@@ -334,23 +334,102 @@ export interface HistoryResponseDto {
 
 // ==================== Type Definitions ====================
 
-// AlarmType: 1 = Notification, 2 = Safety
+/** AlarmType: 1 = Comparative (threshold/value-based), 2 = Timeout (time-based) */
 export type AlarmType = 1 | 2;
 
-// AlarmPriority: 1 = Low, 2 = High
+/**
+ * AlarmType enum values for better code readability
+ * Backend uses Comparative=1 (threshold-based alarms), Timeout=2 (time-based alarms)
+ */
+export const AlarmTypeEnum = {
+  Comparative: 1,
+  Timeout: 2,
+} as const;
+
+/** AlarmPriority: 1 = Warning, 2 = Alarm (Critical) */
 export type AlarmPriority = 1 | 2;
 
-// CompareType: 1 = Equal, 2 = NotEqual, 3 = GreaterThan, 4 = LessThan, 5 = InRange
+/**
+ * AlarmPriority enum values for better code readability
+ * Backend uses Warning=1 (lower priority), Alarm=2 (critical priority)
+ */
+export const AlarmPriorityEnum = {
+  Warning: 1,
+  Alarm: 2,
+} as const;
+
+/** CompareType: 1 = Equal, 2 = NotEqual, 3 = Higher, 4 = Lower, 5 = Between */
 export type CompareType = 1 | 2 | 3 | 4 | 5;
 
-// ControllerType: 1 = Siemens
+/**
+ * CompareType enum values for better code readability
+ * Backend uses Equal=1, NotEqual=2, Higher=3, Lower=4, Between=5 (range comparison)
+ */
+export const CompareTypeEnum = {
+  Equal: 1,
+  NotEqual: 2,
+  Higher: 3,
+  Lower: 4,
+  Between: 5,
+} as const;
+
+/** ControllerType: 1 = Siemens */
 export type ControllerType = 1;
 
-// DataType: 1 = Byte, 2 = Word, 3 = DWord
+/**
+ * ControllerType enum values for better code readability
+ */
+export const ControllerTypeEnum = {
+  Siemens: 1,
+} as const;
+
+/** DataType: 1 = Bit, 2 = Real, 3 = Integer */
 export type DataType = 1 | 2 | 3;
 
-// IoOperationType: 1 = Read, 2 = Write
+/**
+ * DataType enum values for better code readability
+ * Backend uses Bit=1 (boolean), Real=2 (floating point), Integer=3 (whole numbers)
+ */
+export const DataTypeEnum = {
+  Bit: 1,
+  Real: 2,
+  Integer: 3,
+} as const;
+
+/** IoOperationType: 1 = Read, 2 = Write */
 export type IoOperationType = 1 | 2;
+
+/**
+ * IoOperationType enum values for better code readability
+ */
+export const IoOperationTypeEnum = {
+  Read: 1,
+  Write: 2,
+} as const;
+
+/** BACnetObjectType: 1 = AnalogInput, 2 = AnalogOutput */
+export type BACnetObjectType = 1 | 2;
+
+/**
+ * BACnetObjectType enum values for better code readability
+ * Backend uses AnalogInput=1, AnalogOutput=2 for BACnet protocol objects
+ */
+export const BACnetObjectTypeEnum = {
+  AnalogInput: 1,
+  AnalogOutput: 2,
+} as const;
+
+/** ModbusDataType: 1 = Boolean, 2 = Int */
+export type ModbusDataType = 1 | 2;
+
+/**
+ * ModbusDataType enum values for better code readability
+ * Backend uses Boolean=1 (single bit), Int=2 (integer register) for Modbus protocol
+ */
+export const ModbusDataTypeEnum = {
+  Boolean: 1,
+  Int: 2,
+} as const;
 
 // LogType: Based on backend enum - EditPoint=1, EditAlarm=2, Login=3, Logout=4, EditGroup=5, AddAlarm=6, DeleteAlarm=7, AddExternalAlarm=8, DeleteExternalAlarm=9, EditExternalAlarm=10, AddPoint=11, DeletePoint=12, DeleteGroup=13
 export type LogType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
@@ -492,17 +571,44 @@ export interface AlarmsResponseDto {
   };
 }
 
+/**
+ * Request DTO for adding a new alarm to a monitoring item
+ * All fields match backend AddAlarmRequestDto exactly
+ */
 export interface AddAlarmRequestDto {
+  /** ID of the monitoring item to add the alarm to (required) */
   itemId: string; // UUID
+  /** Whether the alarm is disabled (won't trigger notifications) */
   isDisabled: boolean;
+  /** Delay in seconds before the alarm triggers after condition is met (0-3600 seconds) */
   alarmDelay: number; // int32 - seconds
+  /** Custom message to display when the alarm triggers (max 500 characters) */
   message?: string | null;
+  /** First comparison value for the alarm condition (threshold or lower bound, max 100 characters) */
   value1?: string | null;
+  /** Second comparison value for range-based alarm conditions (upper bound for Between comparisons, max 100 characters) */
   value2?: string | null;
+  /** Optional timeout in seconds for automatic alarm acknowledgment (0-86400 seconds = 24 hours) */
   timeout?: number | null; // int32 - seconds
+  /** Type of alarm: Comparative (1) for threshold-based, Timeout (2) for time-based (required) */
   alarmType: AlarmType;
+  /** Priority level: Warning (1) or Alarm/Critical (2) (required) */
   alarmPriority: AlarmPriority;
+  /** Comparison operation: Equal (1), NotEqual (2), Higher (3), Lower (4), Between (5) (required) */
   compareType: CompareType;
+}
+
+/**
+ * Response DTO for adding an alarm operation
+ * Indicates success/failure and provides the new alarm ID on success
+ */
+export interface AddAlarmResponseDto {
+  /** Indicates whether the alarm was successfully added */
+  isSuccessful: boolean;
+  /** Descriptive message about the operation result */
+  message?: string | null;
+  /** The unique identifier of the newly created alarm (only present on successful creation) */
+  alarmId?: string | null; // UUID
 }
 
 export interface EditAlarmRequestDto {
