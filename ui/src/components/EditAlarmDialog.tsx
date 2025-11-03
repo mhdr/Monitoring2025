@@ -337,8 +337,8 @@ const EditAlarmDialog: React.FC<EditAlarmDialogProps> = ({
               onChange={(e) => setFormData({ ...formData, alarmPriority: e.target.value as AlarmPriority })}
               disabled={isSaving}
             >
-              <MenuItem value={AlarmPriorityEnum.Warning}>{t('alarms.priority.warning')}</MenuItem>
-              <MenuItem value={AlarmPriorityEnum.Alarm}>{t('alarms.priority.alarm')}</MenuItem>
+              <MenuItem value={AlarmPriorityEnum.Warning}>{t('alarms.priority.medium')}</MenuItem>
+              <MenuItem value={AlarmPriorityEnum.Alarm}>{t('alarms.priority.high')}</MenuItem>
             </Select>
           </FormControl>
 
