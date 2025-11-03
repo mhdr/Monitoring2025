@@ -39,7 +39,7 @@ public class AddAlarmRequestDto
     /// <summary>
     /// Custom message to display when the alarm triggers (Farsi version)
     /// </summary>
-    /// <example>High temperature detected - immediate action required</example>
+    /// <example>تشخیص دمای بالا - اقدام فوری مورد نیاز است</example>
     [StringLength(500, ErrorMessage = "Message cannot exceed 500 characters")]
     public string? MessageFa { get; set; }
 

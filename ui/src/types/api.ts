@@ -595,6 +595,8 @@ export interface AddAlarmRequestDto {
   alarmDelay: number; // int32 - seconds
   /** Custom message to display when the alarm triggers (max 500 characters) */
   message?: string | null;
+  /** Custom message to display when the alarm triggers in Farsi/Persian (max 500 characters) */
+  messageFa?: string | null;
   /** First comparison value for the alarm condition (threshold or lower bound, max 100 characters) */
   value1?: string | null;
   /** Second comparison value for range-based alarm conditions (upper bound for Between comparisons, max 100 characters) */
@@ -628,6 +630,7 @@ export interface EditAlarmRequestDto {
   isDisabled: boolean;
   alarmDelay: number; // int32
   message?: string | null;
+  messageFa?: string | null;
   value1?: string | null;
   value2?: string | null;
   timeout?: number | null; // int32

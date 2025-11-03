@@ -29,6 +29,7 @@ export const createHighTemperatureAlarm = async (itemId: string): Promise<void> 
       isDisabled: false, // Alarm is active
       alarmDelay: 5, // Wait 5 seconds before triggering (prevents false alarms)
       message: 'High temperature detected - immediate action required',
+      messageFa: 'دمای بالا شناسایی شد - اقدام فوری لازم است',
       value1: '80', // Threshold value (temperature in °C)
       value2: null, // Not used for single threshold comparison
       timeout: 3600, // Auto-acknowledge after 1 hour (3600 seconds)
@@ -63,6 +64,7 @@ export const createTemperatureRangeAlarm = async (itemId: string): Promise<void>
       isDisabled: false,
       alarmDelay: 10, // 10 second delay
       message: 'Temperature in warning range (20-30°C)',
+      messageFa: 'دما در محدوده هشدار (۲۰-۳۰ درجه سانتیگراد)',
       value1: '20', // Lower bound
       value2: '30', // Upper bound
       timeout: null, // No auto-acknowledgment
@@ -92,6 +94,7 @@ export const createDoorOpenAlarm = async (itemId: string): Promise<void> => {
       isDisabled: false,
       alarmDelay: 2, // 2 second delay
       message: 'Unauthorized door access detected',
+      messageFa: 'دسترسی غیرمجاز به در شناسایی شد',
       value1: '1', // 1 = Door open (digital value)
       value2: null,
       timeout: 7200, // Auto-acknowledge after 2 hours
@@ -121,6 +124,7 @@ export const createDisabledLowPressureAlarm = async (itemId: string): Promise<vo
       isDisabled: true, // Alarm is disabled (won't trigger)
       alarmDelay: 0, // No delay
       message: 'Low pressure warning',
+      messageFa: 'هشدار فشار پایین',
       value1: '30', // Threshold value (pressure in bar)
       value2: null,
       timeout: null,
@@ -151,6 +155,7 @@ export const createTimeoutAlarm = async (itemId: string): Promise<void> => {
       isDisabled: false,
       alarmDelay: 0,
       message: 'Sensor has not responded for extended period',
+      messageFa: 'سنسور برای مدت طولانی پاسخ نداده است',
       value1: null, // Not used for timeout alarms
       value2: null,
       timeout: 1800, // Trigger after 30 minutes (1800 seconds)
@@ -188,6 +193,7 @@ export const AddAlarmForm: React.FC<{ itemId: string }> = ({ itemId }) => {
     isDisabled: false,
     alarmDelay: 5,
     message: '',
+    messageFa: '',
     value1: '',
     value2: null,
     timeout: null,
@@ -226,6 +232,15 @@ export const AddAlarmForm: React.FC<{ itemId: string }> = ({ itemId }) => {
         fullWidth
         margin="normal"
         data-id-ref="alarm-message-input"
+      />
+      
+      <TextField
+        label={t('alarm.messageFa')}
+        value={formData.messageFa || ''}
+        onChange={(e) => setFormData({ ...formData, messageFa: e.target.value })}
+        fullWidth
+        margin="normal"
+        data-id-ref="alarm-message-fa-input"
       />
       
       <TextField

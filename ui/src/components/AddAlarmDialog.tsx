@@ -68,6 +68,7 @@ interface AddAlarmFormData {
   isDisabled: boolean;
   alarmDelay: number;
   message: string;
+  messageFa: string;
   value1: string;
   value2: string;
   timeout: number | null;
@@ -93,6 +94,7 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
     isDisabled: false,
     alarmDelay: 5,
     message: '',
+    messageFa: '',
     value1: '',
     value2: '',
     timeout: null,
@@ -120,6 +122,11 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
     // Message validation (optional, but if provided max 500 chars)
     if (formData.message && formData.message.length > 500) {
       errors.message = t('addAlarmDialog.validation.messageTooLong');
+    }
+
+    // MessageFa validation (optional, but if provided max 500 chars)
+    if (formData.messageFa && formData.messageFa.length > 500) {
+      errors.messageFa = t('addAlarmDialog.validation.messageFaTooLong');
     }
 
     // Value1 validation (required for Comparative alarms)
@@ -178,6 +185,7 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
         isDisabled: formData.isDisabled,
         alarmDelay: formData.alarmDelay,
         message: formData.message || null,
+        messageFa: formData.messageFa || null,
         value1: formData.value1 || null,
         value2: formData.value2 || null,
         timeout: formData.timeout,
@@ -215,6 +223,7 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
         isDisabled: false,
         alarmDelay: 5,
         message: '',
+        messageFa: '',
         value1: '',
         value2: '',
         timeout: null,
@@ -378,6 +387,20 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
             helperText={fieldErrors.message || t('addAlarmDialog.hints.message')}
             disabled={isSaving}
             data-id-ref="add-alarm-message-field"
+          />
+
+          {/* Message Farsi */}
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label={t('addAlarmDialog.fields.messageFa')}
+            value={formData.messageFa}
+            onChange={(e) => setFormData({ ...formData, messageFa: e.target.value })}
+            error={Boolean(fieldErrors.messageFa)}
+            helperText={fieldErrors.messageFa || t('addAlarmDialog.hints.messageFa')}
+            disabled={isSaving}
+            data-id-ref="add-alarm-message-fa-field"
           />
 
           {/* Timeout (only for Timeout alarm type) */}

@@ -869,7 +869,8 @@
       "value1": "Threshold Value",
       "value2": "Upper Bound Value",
       "alarmDelay": "Alarm Delay (seconds)",
-      "message": "Alarm Message",
+      "message": "Alarm Message (English)",
+      "messageFa": "Alarm Message (Farsi)",
       "timeout": "Data Timeout (seconds)",
       "isDisabled": "Disable Alarm"
     },
@@ -878,10 +879,12 @@
       "value2": "The upper bound for 'Between' comparison",
       "alarmDelay": "Seconds the condition must persist before triggering (0-3600)",
       "message": "Custom message to display when alarm triggers (optional, max 500 chars)",
+      "messageFa": "Custom Farsi message to display when alarm triggers (optional, max 500 chars)",
       "timeout": "Required for Timeout alarms: Seconds without data before alarm triggers (1-86400)"
     },
     "validation": {
       "messageTooLong": "Message must be 500 characters or less",
+      "messageFaTooLong": "Farsi message must be 500 characters or less",
       "value1Required": "Threshold value is required",
       "value1TooLong": "Value must be 100 characters or less",
       "value2Required": "Upper bound value is required for Between comparison",

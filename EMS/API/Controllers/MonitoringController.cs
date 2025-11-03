@@ -4364,6 +4364,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///        "isDisabled": false,
     ///        "alarmDelay": 5,
     ///        "message": "High temperature detected - immediate action required",
+    ///        "messageFa": "تشخیص دمای بالا - اقدام فوری مورد نیاز است",
     ///        "value1": "80.0",
     ///        "value2": null,
     ///        "timeout": null,
@@ -4380,6 +4381,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///        "isDisabled": false,
     ///        "alarmDelay": 10,
     ///        "message": "Pressure out of acceptable range",
+    ///        "messageFa": "فشار خارج از محدوده قابل قبول",
     ///        "value1": "50.0",
     ///        "value2": "100.0",
     ///        "timeout": null,
@@ -4396,6 +4398,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///        "isDisabled": false,
     ///        "alarmDelay": 0,
     ///        "message": "Communication timeout - device not responding",
+    ///        "messageFa": "وقفه ارتباطی - دستگاه پاسخ نمی‌دهد",
     ///        "value1": null,
     ///        "value2": null,
     ///        "timeout": 300,
@@ -4489,8 +4492,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 });
             }
 
-            // Create alarm
-            var result = await Core.Alarms.AddAlarm(new Alarm()
+            // Prepare alarm object for creation
+            var alarmToCreate = new Alarm()
             {
                 ItemId = request.ItemId,
                 IsDisabled = request.IsDisabled,
@@ -4504,7 +4507,22 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 AlarmPriority = (Core.Libs.AlarmPriority)request.AlarmPriority,
                 CompareType = (Core.Libs.CompareType)request.CompareType,
                 HasExternalAlarm = false,
-            });
+            };
+
+            // Log alarm details before creation for diagnostics
+            _logger.LogInformation("Calling Core.Alarms.AddAlarm with parameters: ItemId={ItemId}, AlarmType={AlarmType}, " +
+                "AlarmPriority={AlarmPriority}, CompareType={CompareType}, IsDisabled={IsDisabled}, AlarmDelay={AlarmDelay}, " +
+                "Message={Message}, MessageFa={MessageFa}, Value1={Value1}, Value2={Value2}, Timeout={Timeout}, HasExternalAlarm={HasExternalAlarm}",
+                alarmToCreate.ItemId, alarmToCreate.AlarmType, alarmToCreate.AlarmPriority, alarmToCreate.CompareType,
+                alarmToCreate.IsDisabled, alarmToCreate.AlarmDelay, alarmToCreate.Message, alarmToCreate.MessageFa,
+                alarmToCreate.Value1, alarmToCreate.Value2, alarmToCreate.Timeout, alarmToCreate.HasExternalAlarm);
+
+            // Create alarm
+            var result = await Core.Alarms.AddAlarm(alarmToCreate);
+
+            // Log the result for diagnostics
+            _logger.LogInformation("Core.Alarms.AddAlarm returned: AlarmId={AlarmId}, ItemId={ItemId}", 
+                result, request.ItemId);
 
             if (result == Guid.Empty)
             {
@@ -4525,6 +4543,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 IsDisabled = request.IsDisabled,
                 AlarmDelay = request.AlarmDelay,
                 Message = request.Message,
+                MessageFa = request.MessageFa,
                 Value1 = request.Value1,
                 Value2 = request.Value2,
                 Timeout = request.Timeout,
