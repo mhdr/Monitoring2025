@@ -18,6 +18,7 @@
   "edit": "Edit",
   "add": "Add",
   "search": "Search",
+  "unknown": "Unknown",
   "and": "and",
   "seconds": "sec",
   "selected": "selected",
@@ -413,6 +414,13 @@
       "viewDetails": "View Details",
       "edit": "Edit",
       "delete": "Delete"
+    },
+    "delete": {
+      "confirmTitle": "Delete Alarm Confirmation",
+      "confirmMessage": "Are you sure you want to delete this alarm configuration?",
+      "warningMessage": "This action is permanent and cannot be undone. Historical alarm data will be preserved in audit logs.",
+      "noAlarmId": "No alarm ID provided",
+      "errorDeletingAlarm": "Failed to delete alarm. Please try again."
     },
     "toolbar": {
       "selectRowsHint": "Select one or more alarms to perform actions"

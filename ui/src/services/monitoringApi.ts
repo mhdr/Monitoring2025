@@ -26,6 +26,7 @@ import type {
   EditAlarmRequestDto,
   EditAlarmResponseDto,
   DeleteAlarmRequestDto,
+  DeleteAlarmResponseDto,
   GetExternalAlarmsRequestDto,
   GetExternalAlarmsResponseDto,
   BatchEditExternalAlarmsRequestDto,
@@ -499,9 +500,9 @@ export const editAlarm = async (data: EditAlarmRequestDto): Promise<EditAlarmRes
 /**
  * Delete an alarm configuration
  */
-export const deleteAlarm = async (data: DeleteAlarmRequestDto): Promise<EditPointResponseDto> => {
+export const deleteAlarm = async (data: DeleteAlarmRequestDto): Promise<DeleteAlarmResponseDto> => {
   try {
-    const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/DeleteAlarm', data);
+    const response = await apiClient.post<DeleteAlarmResponseDto>('/api/Monitoring/DeleteAlarm', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

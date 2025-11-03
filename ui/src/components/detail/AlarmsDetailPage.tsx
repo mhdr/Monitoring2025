@@ -45,6 +45,7 @@ import LazyAGGrid from '../LazyAGGrid';
 import { useAGGrid } from '../../hooks/useAGGrid';
 import type { AGGridApi, AGGridColumnApi, AGGridColumnDef } from '../../types/agGrid';
 import AddAlarmDialog from '../AddAlarmDialog';
+import DeleteAlarmDialog from '../DeleteAlarmDialog';
 
 const logger = createLogger('AlarmsDetailPage');
 
@@ -69,6 +70,8 @@ const AlarmsDetailPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingExternalAlarms, setLoadingExternalAlarms] = useState<Set<string>>(new Set());
   const [addAlarmDialogOpen, setAddAlarmDialogOpen] = useState<boolean>(false);
+  const [deleteAlarmDialogOpen, setDeleteAlarmDialogOpen] = useState<boolean>(false);
+  const [alarmToDelete, setAlarmToDelete] = useState<EnrichedAlarm | null>(null);
   
   // Create items map from MonitoringContext
   const itemsMap = useMemo(() => {
@@ -460,10 +463,22 @@ const AlarmsDetailPage: React.FC = () => {
 
   const handleDelete = useCallback(() => {
     if (selectedRows.length === 1) {
-      logger.log('Delete alarm:', selectedRows[0]);
-      // TODO: Implement delete confirmation dialog
+      logger.log('Opening delete confirmation for alarm:', selectedRows[0]);
+      setAlarmToDelete(selectedRows[0]);
+      setDeleteAlarmDialogOpen(true);
     }
   }, [selectedRows]);
+
+  const handleDeleteAlarmSuccess = useCallback(() => {
+    logger.log('Alarm deleted successfully, refreshing data');
+    setAlarmToDelete(null);
+    fetchAlarmsData();
+  }, [fetchAlarmsData]);
+
+  const handleDeleteAlarmClose = useCallback(() => {
+    setDeleteAlarmDialogOpen(false);
+    setAlarmToDelete(null);
+  }, []);
 
   // Render loading state
   if (loading && alarmsData.length === 0) {
@@ -819,6 +834,15 @@ const AlarmsDetailPage: React.FC = () => {
           onSuccess={handleAddAlarmSuccess}
         />
       )}
+
+      {/* Delete Alarm Dialog */}
+      <DeleteAlarmDialog
+        open={deleteAlarmDialogOpen}
+        onClose={handleDeleteAlarmClose}
+        alarm={alarmToDelete}
+        itemName={alarmToDelete?.itemId ? getItemName(itemsMap.get(alarmToDelete.itemId), alarmToDelete.itemId) : undefined}
+        onSuccess={handleDeleteAlarmSuccess}
+      />
     </Box>
   );
 };

@@ -644,6 +644,11 @@ export interface DeleteAlarmRequestDto {
   id: string; // UUID
 }
 
+export interface DeleteAlarmResponseDto {
+  success: boolean;
+  message?: string;
+}
+
 export interface ExternalAlarm {
   id: string; // UUID
   itemId: string; // UUID
