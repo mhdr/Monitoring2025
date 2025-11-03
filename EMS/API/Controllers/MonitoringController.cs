@@ -2384,43 +2384,135 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <summary>
     /// Edit the configuration of an existing alarm
     /// </summary>
-    /// <param name="request">Edit alarm request containing alarm ID and updated properties</param>
-    /// <returns>Result indicating success or failure of the alarm edit operation</returns>
-    /// <response code="200">Returns success status of the alarm edit operation</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <param name="request">Edit alarm request containing alarm ID and updated configuration properties</param>
+    /// <returns>Result indicating success or failure of the alarm edit operation with detailed status</returns>
+    /// <remarks>
+    /// Updates the complete configuration of an existing alarm including:
+    /// - Enabled/disabled state
+    /// - Alarm delay (time before triggering after condition is met)
+    /// - Custom alarm message (English and Farsi)
+    /// - Comparison values (Value1, Value2) for alarm conditions
+    /// - Acknowledgment timeout
+    /// 
+    /// Validates:
+    /// - The alarm exists in the system
+    /// - The associated monitoring item exists
+    /// - All input parameters are within valid ranges
+    /// 
+    /// Creates an audit log entry with before/after values for all changed properties.
+    /// 
+    /// Sample request with bilingual messages:
+    /// 
+    ///     POST /api/monitoring/editalarm
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440001",
+    ///        "isDisabled": false,
+    ///        "alarmDelay": 5,
+    ///        "message": "Temperature exceeded maximum threshold",
+    ///        "messageFa": "حداکثر آستانه دما تجاوز شده است",
+    ///        "value1": "75.5",
+    ///        "value2": "100.0",
+    ///        "timeout": 300
+    ///     }
+    ///     
+    /// To disable an alarm without changing other properties:
+    /// 
+    ///     POST /api/monitoring/editalarm
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440001",
+    ///        "isDisabled": true,
+    ///        "alarmDelay": 5,
+    ///        "message": "Temperature exceeded maximum threshold",
+    ///        "messageFa": "حداکثر آستانه دما تجاوز شده است",
+    ///        "value1": "75.5",
+    ///        "value2": "100.0"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Alarm configuration updated successfully</response>
+    /// <response code="400">Validation error - invalid request format, missing required fields, or values out of range</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - insufficient permissions to edit this alarm</response>
+    /// <response code="404">Alarm or item not found - the specified alarm or item ID does not exist</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("EditAlarm")]
     [ProducesResponseType(typeof(EditAlarmResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> EditAlarm([FromBody] EditAlarmRequestDto request)
     {
         try
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            _logger.LogInformation("EditAlarm started: AlarmId={AlarmId}, ItemId={ItemId}", 
+                request.Id, request.ItemId);
 
+            // Validate ModelState first
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                
+                _logger.LogWarning("EditAlarm: Validation failed for AlarmId={AlarmId}, Errors={Errors}", 
+                    request.Id, string.Join(", ", errors));
+                
+                return BadRequest(new EditAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Validation failed: " + string.Join("; ", errors),
+                    Error = EditAlarmResponseDto.EditAlarmErrorType.ValidationError
+                });
+            }
+
+            // Validate user authentication
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("EditAlarm: Unauthorized access attempt for AlarmId={AlarmId}", request.Id);
+                return Unauthorized(new EditAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "User not authenticated"
+                });
             }
 
             var userGuid = Guid.Parse(userId);
 
-            var response = new EditAlarmResponseDto()
-            {
-                IsSuccessful = false,
-            };
-
+            // Check if item exists
+            _logger.LogDebug("EditAlarm: Checking if item exists, ItemId={ItemId}", request.ItemId);
             var point = await Core.Points.GetPoint(request.ItemId);
-            var alarm = await Core.Alarms.GetAlarm(request.Id);
-
-            if (alarm == null)
+            if (point == null)
             {
-                return Ok(response);
+                _logger.LogWarning("EditAlarm: Item not found, ItemId={ItemId}", request.ItemId);
+                return NotFound(new EditAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Monitoring item not found",
+                    Error = EditAlarmResponseDto.EditAlarmErrorType.ItemNotFound
+                });
             }
 
-            // create log
+            // Check if alarm exists
+            _logger.LogDebug("EditAlarm: Checking if alarm exists, AlarmId={AlarmId}", request.Id);
+            var alarm = await Core.Alarms.GetAlarm(request.Id);
+            if (alarm == null)
+            {
+                _logger.LogWarning("EditAlarm: Alarm not found, AlarmId={AlarmId}", request.Id);
+                return NotFound(new EditAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Alarm not found",
+                    Error = EditAlarmResponseDto.EditAlarmErrorType.AlarmNotFound
+                });
+            }
 
+            // Create audit log with before/after values
             var logValue = new EditAlarmLog()
             {
                 IsDisabledOld = alarm.IsDisabled,
@@ -2429,6 +2521,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 AlarmDelayNew = request.AlarmDelay,
                 MessageOld = alarm.Message,
                 MessageNew = request.Message,
+                MessageFaOld = alarm.MessageFa,
+                MessageFaNew = request.MessageFa,
                 Value1Old = alarm.Value1,
                 Value1New = request.Value1,
                 Value2Old = alarm.Value2,
@@ -2437,46 +2531,92 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 TimeoutNew = request.Timeout,
             };
 
-            var logValueJson = JsonConvert.SerializeObject(logValue, Formatting.Indented);
-
+            // Update alarm properties
             alarm.IsDisabled = request.IsDisabled;
             alarm.AlarmDelay = request.AlarmDelay;
             alarm.Message = request.Message;
+            alarm.MessageFa = request.MessageFa;
             alarm.Value1 = request.Value1;
             alarm.Value2 = request.Value2;
             alarm.Timeout = request.Timeout;
 
+            _logger.LogInformation("EditAlarm: Updating alarm in database, AlarmId={AlarmId}", request.Id);
+            var result = await Core.Alarms.EditAlarm(alarm);
+
+            if (!result)
+            {
+                _logger.LogError("EditAlarm: Database update failed for AlarmId={AlarmId}", request.Id);
+                return StatusCode(500, new EditAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Failed to update alarm in database",
+                    Error = EditAlarmResponseDto.EditAlarmErrorType.DatabaseError
+                });
+            }
+
+            // Create audit log entry
+            var logValueJson = JsonConvert.SerializeObject(logValue, Formatting.Indented);
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
             DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
             long epochTime = currentTimeUtc.ToUnixTimeSeconds();
 
-            var result = await Core.Alarms.EditAlarm(alarm);
-
-            if (result)
+            await _context.AuditLogs.AddAsync(new AuditLog()
             {
-                response.IsSuccessful = true;
-                var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+                IsUser = true,
+                UserId = userGuid,
+                ItemId = request.ItemId,
+                ActionType = LogType.EditAlarm,
+                IpAddress = ipAddress,
+                LogValue = logValueJson,
+                Time = epochTime,
+            });
+            await _context.SaveChangesAsync();
 
-                await _context.AuditLogs.AddAsync(new AuditLog()
-                {
-                    IsUser = true,
-                    UserId = userGuid,
-                    ItemId = request.ItemId,
-                    ActionType = LogType.EditAlarm,
-                    IpAddress = ipAddress,
-                    LogValue = logValueJson,
-                    Time = epochTime,
-                });
-                await _context.SaveChangesAsync();
-            }
+            _logger.LogInformation("EditAlarm completed successfully: AlarmId={AlarmId}, User={UserId}", 
+                request.Id, userId);
 
-            return Ok(response);
+            return Ok(new EditAlarmResponseDto
+            {
+                Success = true,
+                Message = "Alarm configuration updated successfully"
+            });
         }
-        catch (Exception e)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogWarning(ex, "EditAlarm: Validation error for AlarmId={AlarmId}", request.Id);
+            return BadRequest(new EditAlarmResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                Error = EditAlarmResponseDto.EditAlarmErrorType.ValidationError
+            });
         }
-
-        return BadRequest(ModelState);
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "EditAlarm: Resource not found for AlarmId={AlarmId}", request.Id);
+            return NotFound(new EditAlarmResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                Error = EditAlarmResponseDto.EditAlarmErrorType.AlarmNotFound
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "EditAlarm: Unauthorized access attempt for AlarmId={AlarmId}", request.Id);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "EditAlarm: Error updating alarm, AlarmId={AlarmId}, Error={Message}", 
+                request.Id, ex.Message);
+            return StatusCode(500, new EditAlarmResponseDto
+            {
+                Success = false,
+                Message = "Internal server error",
+                Error = EditAlarmResponseDto.EditAlarmErrorType.UnknownError
+            });
+        }
     }
 
     /// <summary>
