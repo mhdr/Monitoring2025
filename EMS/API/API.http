@@ -857,6 +857,179 @@ Content-Type: application/json
 
 ###
 
+### Add Alarm - Critical High Temperature (Greater Than) - HTTP
+POST {{API_HostAddress}}/api/monitoring/AddAlarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440000",
+  "isDisabled": false,
+  "alarmDelay": 5,
+  "message": "High temperature detected - immediate action required",
+  "value1": "80.0",
+  "value2": null,
+  "timeout": 3600,
+  "alarmType": 1,
+  "alarmPriority": 0,
+  "compareType": 2
+}
+
+###
+
+### Add Alarm - Critical High Temperature (Greater Than) - HTTPS
+POST {{API_HostAddress}}/api/monitoring/AddAlarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440000",
+  "isDisabled": false,
+  "alarmDelay": 5,
+  "message": "High temperature detected - immediate action required",
+  "value1": "80.0",
+  "value2": null,
+  "timeout": 3600,
+  "alarmType": 1,
+  "alarmPriority": 0,
+  "compareType": 2
+}
+
+###
+
+### Add Alarm - Medium Priority Pressure Range (Between) - HTTP
+POST {{API_HostAddress}}/api/monitoring/AddAlarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440001",
+  "isDisabled": false,
+  "alarmDelay": 10,
+  "message": "Pressure within normal operating range",
+  "value1": "50.0",
+  "value2": "100.0",
+  "timeout": null,
+  "alarmType": 1,
+  "alarmPriority": 2,
+  "compareType": 6
+}
+
+###
+
+### Add Alarm - Digital Alarm (Equal) - HTTP
+POST {{API_HostAddress}}/api/monitoring/AddAlarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440002",
+  "isDisabled": false,
+  "alarmDelay": 0,
+  "message": "Door opened",
+  "value1": "true",
+  "value2": null,
+  "timeout": 300,
+  "alarmType": 0,
+  "alarmPriority": 3,
+  "compareType": 0
+}
+
+###
+
+### Add Alarm - Low Priority Out of Range - HTTP
+POST {{API_HostAddress}}/api/monitoring/AddAlarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440003",
+  "isDisabled": false,
+  "alarmDelay": 30,
+  "message": "Value outside acceptable range",
+  "value1": "0.0",
+  "value2": "200.0",
+  "timeout": 7200,
+  "alarmType": 1,
+  "alarmPriority": 3,
+  "compareType": 7
+}
+
+###
+
+### Add Alarm - Disabled Alarm (won't trigger) - HTTP
+POST {{API_HostAddress}}/api/monitoring/AddAlarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440004",
+  "isDisabled": true,
+  "alarmDelay": 5,
+  "message": "This alarm is currently disabled for testing",
+  "value1": "100.0",
+  "value2": null,
+  "timeout": null,
+  "alarmType": 1,
+  "alarmPriority": 1,
+  "compareType": 2
+}
+
+###
+
+### Add Alarm - Validation Error (missing itemId) - should return 400
+POST {{API_HostAddress}}/api/monitoring/AddAlarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "isDisabled": false,
+  "alarmDelay": 5,
+  "message": "This should fail validation",
+  "value1": "80.0",
+  "alarmType": 1,
+  "alarmPriority": 0,
+  "compareType": 2
+}
+
+###
+
+### Add Alarm - Validation Error (excessive alarm delay) - should return 400
+POST {{API_HostAddress}}/api/monitoring/AddAlarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440000",
+  "isDisabled": false,
+  "alarmDelay": 5000,
+  "message": "Alarm delay exceeds maximum allowed value",
+  "value1": "80.0",
+  "alarmType": 1,
+  "alarmPriority": 0,
+  "compareType": 2
+}
+
+###
+
+### Add Alarm - Non-existent Item - should return 404
+POST {{API_HostAddress}}/api/monitoring/AddAlarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemId": "00000000-0000-0000-0000-000000000000",
+  "isDisabled": false,
+  "alarmDelay": 5,
+  "message": "This item does not exist",
+  "value1": "80.0",
+  "alarmType": 1,
+  "alarmPriority": 0,
+  "compareType": 2
+}
+
+###
+
 ### Get Alarm History (all items, last 24 hours) - HTTP
 POST {{API_HostAddress}}/api/monitoring/historyalarms
 Content-Type: application/json

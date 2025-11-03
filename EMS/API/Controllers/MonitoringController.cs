@@ -4326,27 +4326,141 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <summary>
     /// Add a new alarm configuration for a monitoring item
     /// </summary>
-    /// <param name="request">Add alarm request containing alarm configuration details</param>
-    /// <returns>Result indicating success or failure of alarm creation</returns>
-    /// <response code="200">Returns success status of the alarm creation</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <param name="request">Add alarm request containing alarm configuration details including thresholds, comparison type, and priority</param>
+    /// <returns>Result indicating success or failure of alarm creation with created alarm ID</returns>
+    /// <remarks>
+    /// Creates a new alarm configuration for a monitoring item. Alarms monitor item values and trigger notifications 
+    /// when specified conditions are met based on the comparison type and threshold values.
+    /// 
+    /// **Alarm Types:**
+    /// - Digital: For boolean/binary values
+    /// - Analog: For numeric values with threshold comparisons
+    /// 
+    /// **Comparison Types:**
+    /// - Equal: Value equals Value1
+    /// - NotEqual: Value does not equal Value1
+    /// - Greater: Value is greater than Value1
+    /// - GreaterOrEqual: Value is greater than or equal to Value1
+    /// - Less: Value is less than Value1
+    /// - LessOrEqual: Value is less than or equal to Value1
+    /// - Between: Value is between Value1 and Value2 (inclusive)
+    /// - OutOfRange: Value is outside the range Value1 to Value2
+    /// 
+    /// **Priority Levels:**
+    /// - Critical (0): Highest priority - immediate attention required
+    /// - High (1): High priority - prompt response needed
+    /// - Medium (2): Medium priority - normal response time
+    /// - Low (3): Low priority - informational
+    /// 
+    /// **AlarmDelay:** Number of seconds the condition must persist before triggering (prevents false alarms from transient conditions)
+    /// 
+    /// **Timeout:** Optional automatic acknowledgment timeout in seconds (alarm auto-acknowledges after this duration)
+    /// 
+    /// Sample request for a critical high-temperature alarm:
+    /// 
+    ///     POST /api/monitoring/addalarm
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "isDisabled": false,
+    ///        "alarmDelay": 5,
+    ///        "message": "High temperature detected - immediate action required",
+    ///        "value1": "80.0",
+    ///        "value2": null,
+    ///        "timeout": 3600,
+    ///        "alarmType": 1,
+    ///        "alarmPriority": 0,
+    ///        "compareType": 2
+    ///     }
+    ///     
+    /// Sample request for a pressure range alarm:
+    /// 
+    ///     POST /api/monitoring/addalarm
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440001",
+    ///        "isDisabled": false,
+    ///        "alarmDelay": 10,
+    ///        "message": "Pressure out of normal range",
+    ///        "value1": "50.0",
+    ///        "value2": "100.0",
+    ///        "timeout": null,
+    ///        "alarmType": 1,
+    ///        "alarmPriority": 2,
+    ///        "compareType": 6
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="201">Alarm created successfully with audit log entry</response>
+    /// <response code="400">Validation error - invalid request format, missing required fields, or invalid alarm configuration</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="404">Monitoring item not found - the specified item ID does not exist</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("AddAlarm")]
+    [ProducesResponseType(typeof(AddAlarmResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(AddAlarmResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(AddAlarmResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(AddAlarmResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AddAlarm([FromBody] AddAlarmRequestDto request)
     {
         try
         {
+            _logger.LogInformation("AddAlarm operation started: ItemId={ItemId}, AlarmType={AlarmType}, AlarmPriority={AlarmPriority}", 
+                request?.ItemId, request?.AlarmType, request?.AlarmPriority);
+
+            // Validate request is not null
+            if (request == null)
+            {
+                _logger.LogWarning("AddAlarm failed: Request is null");
+                return BadRequest(new AddAlarmResponseDto
+                {
+                    IsSuccessful = false,
+                    Message = "Request body is required"
+                });
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("AddAlarm failed: User not authenticated");
+                return Unauthorized(new { success = false, message = "Authentication required" });
+            }
+
+            // Check ModelState
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("AddAlarm validation failed: UserId={UserId}, ItemId={ItemId}, Errors={Errors}", 
+                    userId, request.ItemId, string.Join(", ", errors));
+
+                return BadRequest(new AddAlarmResponseDto
+                { 
+                    IsSuccessful = false,
+                    Message = $"Validation failed: {string.Join(", ", errors)}"
+                });
+            }
+
+            // Validate that the monitoring item exists
+            var item = await Core.Points.GetPoint(request.ItemId);
+            if (item == null)
+            {
+                _logger.LogWarning("AddAlarm failed: Item not found - ItemId={ItemId}, UserId={UserId}", 
+                    request.ItemId, userId);
+                
+                return NotFound(new AddAlarmResponseDto
+                { 
+                    IsSuccessful = false,
+                    Message = $"Monitoring item with ID {request.ItemId} not found"
+                });
             }
 
             var userGuid = Guid.Parse(userId);
 
-            var response = new AddAlarmResponseDto();
-
+            // Create alarm
             var result = await Core.Alarms.AddAlarm(new Alarm()
             {
                 ItemId = request.ItemId,
@@ -4362,8 +4476,19 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 HasExternalAlarm = false,
             });
 
-            // create log
+            if (result == Guid.Empty)
+            {
+                _logger.LogError("AddAlarm failed: Core.Alarms.AddAlarm returned null or empty GUID - ItemId={ItemId}, UserId={UserId}", 
+                    request.ItemId, userId);
+                
+                return StatusCode(StatusCodes.Status500InternalServerError, new AddAlarmResponseDto
+                {
+                    IsSuccessful = false,
+                    Message = "Failed to create alarm - internal error"
+                });
+            }
 
+            // Create audit log entry
             var logValue = new AddAlarmLog()
             {
                 ItemId = request.ItemId,
@@ -4383,33 +4508,56 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
 
             DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
             long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
 
-            if (result != null || result != Guid.Empty)
+            await _context.AuditLogs.AddAsync(new AuditLog()
             {
-                response.IsSuccessful = true;
-                var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+                IsUser = true,
+                UserId = userGuid,
+                ItemId = request.ItemId,
+                ActionType = LogType.AddAlarm,
+                IpAddress = ipAddress,
+                LogValue = logValueJson,
+                Time = epochTime,
+            });
+            await _context.SaveChangesAsync();
 
-                await _context.AuditLogs.AddAsync(new AuditLog()
-                {
-                    IsUser = true,
-                    UserId = userGuid,
-                    ItemId = request.ItemId,
-                    ActionType = LogType.AddAlarm,
-                    IpAddress = ipAddress,
-                    LogValue = logValueJson,
-                    Time = epochTime,
-                });
-                await _context.SaveChangesAsync();
-            }
+            _logger.LogInformation("AddAlarm operation completed successfully: AlarmId={AlarmId}, ItemId={ItemId}, UserId={UserId}", 
+                result, request.ItemId, userId);
 
-            return Ok(response);
+            var response = new AddAlarmResponseDto
+            {
+                IsSuccessful = true,
+                Message = "Alarm created successfully",
+                AlarmId = result
+            };
+
+            return CreatedAtAction(nameof(AddAlarm), new { id = result }, response);
         }
-        catch (Exception e)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogWarning(ex, "AddAlarm validation error: ItemId={ItemId}", request?.ItemId);
+            return BadRequest(new AddAlarmResponseDto
+            {
+                IsSuccessful = false,
+                Message = ex.Message
+            });
         }
-
-        return BadRequest(ModelState);
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "AddAlarm unauthorized access: ItemId={ItemId}", request?.ItemId);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in AddAlarm operation: ItemId={ItemId}, Message={Message}", 
+                request?.ItemId, ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, new AddAlarmResponseDto
+            {
+                IsSuccessful = false,
+                Message = "Internal server error"
+            });
+        }
     }
 
     /// <summary>
