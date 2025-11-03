@@ -908,5 +908,46 @@
       "added": "Alarm created successfully"
     }
   },
+  "editAlarmDialog": {
+    "title": "Edit Alarm",
+    "itemName": "Point Name",
+    "fields": {
+      "alarmType": "Alarm Type",
+      "alarmPriority": "Alarm Priority",
+      "compareType": "Comparison Type",
+      "value1": "Threshold Value",
+      "value2": "Upper Bound Value",
+      "alarmDelay": "Alarm Delay (seconds)",
+      "message": "Alarm Message (English)",
+      "messageFa": "Alarm Message (Farsi)",
+      "timeout": "Data Timeout (seconds)",
+      "isDisabled": "Disable Alarm"
+    },
+    "hints": {
+      "value1": "The threshold value to compare against",
+      "value2": "The upper bound for 'Between' comparison",
+      "alarmDelay": "Seconds the condition must persist before triggering (0-3600)",
+      "message": "Custom message to display when alarm triggers (optional, max 500 chars)",
+      "messageFa": "Custom Farsi message to display when alarm triggers (optional, max 500 chars)",
+      "timeout": "Required for Timeout alarms: Seconds without data before alarm triggers (1-86400)"
+    },
+    "validation": {
+      "messageTooLong": "Message must be 500 characters or less",
+      "messageFaTooLong": "Farsi message must be 500 characters or less",
+      "value1Required": "Threshold value is required",
+      "value1TooLong": "Value must be 100 characters or less",
+      "value2Required": "Upper bound value is required for Between comparison",
+      "value2TooLong": "Value must be 100 characters or less",
+      "alarmDelayRange": "Alarm delay must be between 0 and 3600 seconds",
+      "timeoutRequired": "Timeout is required for Timeout alarm type",
+      "timeoutRange": "Timeout must be between 1 and 86400 seconds (24 hours)"
+    },
+    "errors": {
+      "updateFailed": "Failed to update alarm. Please try again."
+    },
+    "success": {
+      "updated": "Alarm updated successfully"
+    }
+  },
   "saving": "Saving..."
 }

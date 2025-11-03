@@ -631,18 +631,24 @@ export interface EditAlarmRequestDto {
   itemId: string; // UUID
   /** Whether the alarm is disabled (won't trigger notifications) */
   isDisabled?: boolean;
-  /** Delay in seconds before the alarm triggers after condition is met (0-86400) */
-  alarmDelay?: number; // int32, range: 0-86400
+  /** Delay in seconds before the alarm triggers after condition is met (prevents false alarms from transient conditions, range: 0-3600) */
+  alarmDelay?: number; // int32, range: 0-3600
   /** Custom message to display when the alarm triggers (English) */
   message?: string | null; // maxLength: 500
   /** Custom message to display when the alarm triggers (Farsi) */
   messageFa?: string | null; // maxLength: 500
-  /** First comparison value for the alarm condition */
+  /** First comparison value for the alarm condition (threshold or lower bound) */
   value1?: string | null; // maxLength: 100
-  /** Second comparison value for range-based alarm conditions */
+  /** Second comparison value for range-based alarm conditions (upper bound for Between/OutOfRange comparisons) */
   value2?: string | null; // maxLength: 100
-  /** Optional timeout in seconds for alarm acknowledgment (0-86400) */
+  /** Timeout duration in seconds - required for AlarmType 2 (Timeout-based alarms). Specifies how long to wait without data updates before triggering. Not used for AlarmType 1 (Comparative). Range: 0-86400 */
   timeout?: number | null; // int32, range: 0-86400
+  /** Alarm type: Comparative (1) or Timeout (2) - REQUIRED */
+  alarmType: AlarmType;
+  /** Alarm priority: Warning (1) or Alarm (2) - REQUIRED */
+  alarmPriority: AlarmPriority;
+  /** Comparison type: Equal (1), NotEqual (2), Higher (3), Lower (4), Between (5) - REQUIRED */
+  compareType: CompareType;
 }
 
 /** Possible error types for alarm editing operations */

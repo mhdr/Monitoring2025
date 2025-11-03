@@ -45,6 +45,7 @@ import LazyAGGrid from '../LazyAGGrid';
 import { useAGGrid } from '../../hooks/useAGGrid';
 import type { AGGridApi, AGGridColumnApi, AGGridColumnDef } from '../../types/agGrid';
 import AddAlarmDialog from '../AddAlarmDialog';
+import EditAlarmDialog from '../EditAlarmDialog';
 import DeleteAlarmDialog from '../DeleteAlarmDialog';
 
 const logger = createLogger('AlarmsDetailPage');
@@ -70,7 +71,9 @@ const AlarmsDetailPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingExternalAlarms, setLoadingExternalAlarms] = useState<Set<string>>(new Set());
   const [addAlarmDialogOpen, setAddAlarmDialogOpen] = useState<boolean>(false);
+  const [editAlarmDialogOpen, setEditAlarmDialogOpen] = useState<boolean>(false);
   const [deleteAlarmDialogOpen, setDeleteAlarmDialogOpen] = useState<boolean>(false);
+  const [alarmToEdit, setAlarmToEdit] = useState<EnrichedAlarm | null>(null);
   const [alarmToDelete, setAlarmToDelete] = useState<EnrichedAlarm | null>(null);
   
   // Create items map from MonitoringContext
@@ -456,10 +459,22 @@ const AlarmsDetailPage: React.FC = () => {
 
   const handleEdit = useCallback(() => {
     if (selectedRows.length === 1) {
-      logger.log('Edit alarm:', selectedRows[0]);
-      // TODO: Implement edit dialog
+      logger.log('Opening edit dialog for alarm:', selectedRows[0]);
+      setAlarmToEdit(selectedRows[0]);
+      setEditAlarmDialogOpen(true);
     }
   }, [selectedRows]);
+
+  const handleEditAlarmSuccess = useCallback(() => {
+    logger.log('Alarm edited successfully, refreshing data');
+    setAlarmToEdit(null);
+    fetchAlarmsData();
+  }, [fetchAlarmsData]);
+
+  const handleEditAlarmClose = useCallback(() => {
+    setEditAlarmDialogOpen(false);
+    setAlarmToEdit(null);
+  }, []);
 
   const handleDelete = useCallback(() => {
     if (selectedRows.length === 1) {
@@ -832,6 +847,17 @@ const AlarmsDetailPage: React.FC = () => {
           itemId={itemId}
           itemName={itemId ? getItemName(itemsMap.get(itemId), itemId) : undefined}
           onSuccess={handleAddAlarmSuccess}
+        />
+      )}
+
+      {/* Edit Alarm Dialog */}
+      {alarmToEdit && (
+        <EditAlarmDialog
+          open={editAlarmDialogOpen}
+          onClose={handleEditAlarmClose}
+          alarm={alarmToEdit}
+          itemName={alarmToEdit.itemId ? getItemName(itemsMap.get(alarmToEdit.itemId), alarmToEdit.itemId) : undefined}
+          onSuccess={handleEditAlarmSuccess}
         />
       )}
 
