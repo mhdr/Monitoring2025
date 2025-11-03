@@ -530,19 +530,24 @@ const AlarmsDetailPage: React.FC = () => {
 
   // Main render
   return (
-    <Box sx={{ width: '100%', height: '100%' }} data-id-ref="alarms-detail-page">
+    <Box 
+      sx={{ 
+        width: '100%', 
+        p: isMobile ? 1 : 3,
+        boxSizing: 'border-box',
+      }} 
+      data-id-ref="alarms-detail-page"
+    >
       <Card 
         elevation={2} 
         data-id-ref="alarms-detail-card"
         sx={{ 
-          height: '100%', 
           display: 'flex', 
           flexDirection: 'column',
         }}
       >
         <CardContent 
           sx={{ 
-            flex: 1, 
             display: 'flex', 
             flexDirection: 'column', 
             p: { xs: 2, sm: 3 },
@@ -772,13 +777,17 @@ const AlarmsDetailPage: React.FC = () => {
 
           {/* AG Grid Table */}
           <Box 
-            sx={{ flex: 1, minHeight: 400 }} 
+            sx={{ 
+              width: '100%',
+              minWidth: 0,
+            }} 
             data-id-ref="alarms-detail-grid-container"
           >
             <LazyAGGrid
               columnDefs={columnDefs}
               rowData={alarmsData as never[]}
               onGridReady={onGridReadyInternal}
+              height={isMobile ? '400px' : '600px'}
               gridOptions={{
                 pagination: true,
                 paginationPageSize: 20,
