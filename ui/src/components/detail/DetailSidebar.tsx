@@ -30,6 +30,10 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useMonitoring } from '../../hooks/useMonitoring';
+import { getActiveAlarms } from '../../services/monitoringApi';
+import { createLogger } from '../../utils/logger';
+
+const logger = createLogger('DetailSidebar');
 
 interface DetailSidebarProps {
   isOpen: boolean;
@@ -68,7 +72,16 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ isOpen, onToggle }) => {
   const [searchParams] = useSearchParams();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const { state: monitoringState } = useMonitoring();
-  const { alarmCount, fetchError, isFetching, highestPriority } = monitoringState.activeAlarms;
+  const { alarmCount: globalAlarmCount, fetchError, isFetching, highestPriority } = monitoringState.activeAlarms;
+  
+  // Get itemId from URL query params
+  const itemId = searchParams.get('itemId');
+  
+  // State for item-specific alarm count
+  const [itemAlarmCount, setItemAlarmCount] = useState<number | null>(null);
+  
+  // Use item-specific count when viewing item details, otherwise use global count
+  const alarmCount = itemId !== null && itemAlarmCount !== null ? itemAlarmCount : globalAlarmCount;
   
   // Track previous alarm count to trigger animation on change
   const prevAlarmCountRef = useRef<number>(alarmCount);
@@ -104,8 +117,35 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ isOpen, onToggle }) => {
     prevAlarmCountRef.current = alarmCount;
   }, [alarmCount]);
 
-  // Get itemId from URL query string
-  const itemId = searchParams.get('itemId');
+  // Fetch item-specific alarm count when itemId changes
+  useEffect(() => {
+    const fetchItemAlarmCount = async () => {
+      if (!itemId) {
+        // No itemId, use global count
+        setItemAlarmCount(null);
+        return;
+      }
+
+      try {
+        logger.log('Fetching item-specific alarm count for itemId:', itemId);
+
+        const response = await getActiveAlarms({ itemIds: [itemId] });
+        // FIX: API returns nested structure {data: {data: ActiveAlarm[]}}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const alarmsData = (response as any).data?.data || [];
+        const count = alarmsData.length;
+
+        logger.log('Item-specific alarm count fetched:', { itemId, count });
+        setItemAlarmCount(count);
+      } catch (err) {
+        logger.error('Error fetching item-specific alarm count:', err);
+        // On error, fall back to global count
+        setItemAlarmCount(null);
+      }
+    };
+
+    fetchItemAlarmCount();
+  }, [itemId]);
 
   // Build full path with query string for each menu item
   const menuItemsWithQuery = useMemo(() => {
