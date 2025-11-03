@@ -388,12 +388,9 @@
     "condition": {
       "equal": "Equal to",
       "notEqual": "Not equal to",
-      "greaterThan": "Greater than",
-      "greaterOrEqual": "Greater than or equal to",
-      "lessThan": "Less than",
-      "lessOrEqual": "Less than or equal to",
-      "between": "Between",
-      "outOfRange": "Out of range"
+      "higher": "Higher than",
+      "lower": "Lower than",
+      "between": "Between"
     },
     "columns": {
       "itemName": "Point Name",
@@ -878,7 +875,7 @@
     },
     "hints": {
       "value1": "The threshold value to compare against",
-      "value2": "The upper bound for 'Between' or 'Out of range' comparisons",
+      "value2": "The upper bound for 'Between' comparison",
       "alarmDelay": "Seconds the condition must persist before triggering (0-3600)",
       "message": "Custom message to display when alarm triggers (optional, max 500 chars)",
       "timeout": "Required for Timeout alarms: Seconds without data before alarm triggers (1-86400)"
@@ -887,7 +884,7 @@
       "messageTooLong": "Message must be 500 characters or less",
       "value1Required": "Threshold value is required",
       "value1TooLong": "Value must be 100 characters or less",
-      "value2Required": "Upper bound value is required for Between/OutOfRange comparison",
+      "value2Required": "Upper bound value is required for Between comparison",
       "value2TooLong": "Value must be 100 characters or less",
       "alarmDelayRange": "Alarm delay must be between 0 and 3600 seconds",
       "timeoutRequired": "Timeout is required for Timeout alarm type",

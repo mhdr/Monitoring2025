@@ -46,14 +46,11 @@ const AlarmPriorityEnum = {
 } as const;
 
 const CompareTypeEnum = {
-  Equal: 0,
-  NotEqual: 1,
-  Greater: 2,
-  GreaterOrEqual: 3,
-  Less: 4,
-  LessOrEqual: 5,
-  Between: 6,
-  OutOfRange: 7,
+  Equal: 1,
+  NotEqual: 2,
+  Higher: 3,
+  Lower: 4,
+  Between: 5,
 } as const;
 
 interface AddAlarmDialogProps {
@@ -92,7 +89,7 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
   const [formData, setFormData] = useState<AddAlarmFormData>({
     alarmType: AlarmTypeEnum.Comparative,
     alarmPriority: AlarmPriorityEnum.Alarm,
-    compareType: CompareTypeEnum.Greater,
+    compareType: CompareTypeEnum.Higher,
     isDisabled: false,
     alarmDelay: 5,
     message: '',
@@ -101,9 +98,9 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
     timeout: null,
   });
 
-  // Check if value2 field should be shown (only for Between or OutOfRange comparison)
+  // Check if value2 field should be shown (only for Between comparison)
   const showValue2 = useMemo(() => {
-    return formData.compareType === CompareTypeEnum.Between || formData.compareType === CompareTypeEnum.OutOfRange;
+    return formData.compareType === CompareTypeEnum.Between;
   }, [formData.compareType]);
 
   // Check if timeout field should be shown (only for Timeout alarm type)
@@ -133,8 +130,8 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
         errors.value1 = t('addAlarmDialog.validation.value1TooLong');
       }
 
-      // Value2 validation (required for Between and OutOfRange comparison)
-      if (formData.compareType === CompareTypeEnum.Between || formData.compareType === CompareTypeEnum.OutOfRange) {
+      // Value2 validation (required for Between comparison)
+      if (formData.compareType === CompareTypeEnum.Between) {
         if (!formData.value2 || formData.value2.trim() === '') {
           errors.value2 = t('addAlarmDialog.validation.value2Required');
         } else if (formData.value2.length > 100) {
@@ -214,7 +211,7 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
       setFormData({
         alarmType: AlarmTypeEnum.Comparative,
         alarmPriority: AlarmPriorityEnum.Alarm,
-        compareType: CompareTypeEnum.Greater,
+        compareType: CompareTypeEnum.Higher,
         isDisabled: false,
         alarmDelay: 5,
         message: '',
@@ -320,12 +317,9 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
               >
                 <MenuItem value={CompareTypeEnum.Equal}>{t('alarms.condition.equal')}</MenuItem>
                 <MenuItem value={CompareTypeEnum.NotEqual}>{t('alarms.condition.notEqual')}</MenuItem>
-                <MenuItem value={CompareTypeEnum.Greater}>{t('alarms.condition.greaterThan')}</MenuItem>
-                <MenuItem value={CompareTypeEnum.GreaterOrEqual}>{t('alarms.condition.greaterOrEqual')}</MenuItem>
-                <MenuItem value={CompareTypeEnum.Less}>{t('alarms.condition.lessThan')}</MenuItem>
-                <MenuItem value={CompareTypeEnum.LessOrEqual}>{t('alarms.condition.lessOrEqual')}</MenuItem>
+                <MenuItem value={CompareTypeEnum.Higher}>{t('alarms.condition.higher')}</MenuItem>
+                <MenuItem value={CompareTypeEnum.Lower}>{t('alarms.condition.lower')}</MenuItem>
                 <MenuItem value={CompareTypeEnum.Between}>{t('alarms.condition.between')}</MenuItem>
-                <MenuItem value={CompareTypeEnum.OutOfRange}>{t('alarms.condition.outOfRange')}</MenuItem>
               </Select>
             </FormControl>
           )}
