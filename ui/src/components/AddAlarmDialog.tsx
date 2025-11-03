@@ -46,11 +46,14 @@ const AlarmPriorityEnum = {
 } as const;
 
 const CompareTypeEnum = {
-  Equal: 1,
-  NotEqual: 2,
-  Higher: 3,
-  Lower: 4,
-  Between: 5,
+  Equal: 0,
+  NotEqual: 1,
+  Greater: 2,
+  GreaterOrEqual: 3,
+  Less: 4,
+  LessOrEqual: 5,
+  Between: 6,
+  OutOfRange: 7,
 } as const;
 
 interface AddAlarmDialogProps {
@@ -89,7 +92,7 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
   const [formData, setFormData] = useState<AddAlarmFormData>({
     alarmType: AlarmTypeEnum.Comparative,
     alarmPriority: AlarmPriorityEnum.Alarm,
-    compareType: CompareTypeEnum.Higher,
+    compareType: CompareTypeEnum.Greater,
     isDisabled: false,
     alarmDelay: 5,
     message: '',
@@ -98,10 +101,20 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
     timeout: null,
   });
 
-  // Check if value2 field should be shown (only for Between comparison)
+  // Check if value2 field should be shown (only for Between or OutOfRange comparison)
   const showValue2 = useMemo(() => {
-    return formData.compareType === CompareTypeEnum.Between;
+    return formData.compareType === CompareTypeEnum.Between || formData.compareType === CompareTypeEnum.OutOfRange;
   }, [formData.compareType]);
+
+  // Check if timeout field should be shown (only for Timeout alarm type)
+  const showTimeout = useMemo(() => {
+    return formData.alarmType === AlarmTypeEnum.Timeout;
+  }, [formData.alarmType]);
+
+  // Check if comparison fields should be shown (only for Comparative alarm type)
+  const showComparisonFields = useMemo(() => {
+    return formData.alarmType === AlarmTypeEnum.Comparative;
+  }, [formData.alarmType]);
 
   // Validation
   const validateForm = (): boolean => {
@@ -120,13 +133,22 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
         errors.value1 = t('addAlarmDialog.validation.value1TooLong');
       }
 
-      // Value2 validation (required for Between comparison)
-      if (formData.compareType === CompareTypeEnum.Between) {
+      // Value2 validation (required for Between and OutOfRange comparison)
+      if (formData.compareType === CompareTypeEnum.Between || formData.compareType === CompareTypeEnum.OutOfRange) {
         if (!formData.value2 || formData.value2.trim() === '') {
           errors.value2 = t('addAlarmDialog.validation.value2Required');
         } else if (formData.value2.length > 100) {
           errors.value2 = t('addAlarmDialog.validation.value2TooLong');
         }
+      }
+    }
+
+    // Timeout validation (required for Timeout alarms)
+    if (formData.alarmType === AlarmTypeEnum.Timeout) {
+      if (formData.timeout === null || formData.timeout <= 0) {
+        errors.timeout = t('addAlarmDialog.validation.timeoutRequired');
+      } else if (formData.timeout > 86400) {
+        errors.timeout = t('addAlarmDialog.validation.timeoutRange');
       }
     }
 
@@ -192,7 +214,7 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
       setFormData({
         alarmType: AlarmTypeEnum.Comparative,
         alarmPriority: AlarmPriorityEnum.Alarm,
-        compareType: CompareTypeEnum.Higher,
+        compareType: CompareTypeEnum.Greater,
         isDisabled: false,
         alarmDelay: 5,
         message: '',
@@ -285,8 +307,8 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
             </Select>
           </FormControl>
 
-          {/* Compare Type */}
-          {formData.alarmType === AlarmTypeEnum.Comparative && (
+          {/* Compare Type (only for Comparative alarms) */}
+          {showComparisonFields && (
             <FormControl fullWidth data-id-ref="add-alarm-compare-type-field">
               <InputLabel id="compare-type-label">{t('addAlarmDialog.fields.compareType')}</InputLabel>
               <Select
@@ -298,15 +320,18 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
               >
                 <MenuItem value={CompareTypeEnum.Equal}>{t('alarms.condition.equal')}</MenuItem>
                 <MenuItem value={CompareTypeEnum.NotEqual}>{t('alarms.condition.notEqual')}</MenuItem>
-                <MenuItem value={CompareTypeEnum.Higher}>{t('alarms.condition.greaterThan')}</MenuItem>
-                <MenuItem value={CompareTypeEnum.Lower}>{t('alarms.condition.lessThan')}</MenuItem>
+                <MenuItem value={CompareTypeEnum.Greater}>{t('alarms.condition.greaterThan')}</MenuItem>
+                <MenuItem value={CompareTypeEnum.GreaterOrEqual}>{t('alarms.condition.greaterOrEqual')}</MenuItem>
+                <MenuItem value={CompareTypeEnum.Less}>{t('alarms.condition.lessThan')}</MenuItem>
+                <MenuItem value={CompareTypeEnum.LessOrEqual}>{t('alarms.condition.lessOrEqual')}</MenuItem>
                 <MenuItem value={CompareTypeEnum.Between}>{t('alarms.condition.between')}</MenuItem>
+                <MenuItem value={CompareTypeEnum.OutOfRange}>{t('alarms.condition.outOfRange')}</MenuItem>
               </Select>
             </FormControl>
           )}
 
-          {/* Value 1 */}
-          {formData.alarmType === AlarmTypeEnum.Comparative && (
+          {/* Value 1 (only for Comparative alarms) */}
+          {showComparisonFields && (
             <TextField
               fullWidth
               label={t('addAlarmDialog.fields.value1')}
@@ -319,8 +344,8 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
             />
           )}
 
-          {/* Value 2 (only for Between comparison) */}
-          {formData.alarmType === AlarmTypeEnum.Comparative && showValue2 && (
+          {/* Value 2 (only for Between/OutOfRange comparison) */}
+          {showComparisonFields && showValue2 && (
             <TextField
               fullWidth
               label={t('addAlarmDialog.fields.value2')}
@@ -361,19 +386,21 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
             data-id-ref="add-alarm-message-field"
           />
 
-          {/* Timeout */}
-          <TextField
-            fullWidth
-            type="number"
-            label={t('addAlarmDialog.fields.timeout')}
-            value={formData.timeout ?? ''}
-            onChange={(e) => setFormData({ ...formData, timeout: e.target.value ? parseInt(e.target.value) : null })}
-            error={Boolean(fieldErrors.timeout)}
-            helperText={fieldErrors.timeout || t('addAlarmDialog.hints.timeout')}
-            disabled={isSaving}
-            inputProps={{ min: 0, max: 86400 }}
-            data-id-ref="add-alarm-timeout-field"
-          />
+          {/* Timeout (only for Timeout alarm type) */}
+          {showTimeout && (
+            <TextField
+              fullWidth
+              type="number"
+              label={t('addAlarmDialog.fields.timeout')}
+              value={formData.timeout ?? ''}
+              onChange={(e) => setFormData({ ...formData, timeout: e.target.value ? parseInt(e.target.value) : null })}
+              error={Boolean(fieldErrors.timeout)}
+              helperText={fieldErrors.timeout || t('addAlarmDialog.hints.timeout')}
+              disabled={isSaving}
+              inputProps={{ min: 1, max: 86400 }}
+              data-id-ref="add-alarm-timeout-field"
+            />
+          )}
 
           {/* Is Disabled */}
           <FormControlLabel

@@ -358,19 +358,22 @@ export const AlarmPriorityEnum = {
   Alarm: 2,
 } as const;
 
-/** CompareType: 1 = Equal, 2 = NotEqual, 3 = Higher, 4 = Lower, 5 = Between */
-export type CompareType = 1 | 2 | 3 | 4 | 5;
+/** CompareType: 0 = Equal, 1 = NotEqual, 2 = Greater, 3 = GreaterOrEqual, 4 = Less, 5 = LessOrEqual, 6 = Between, 7 = OutOfRange */
+export type CompareType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 /**
  * CompareType enum values for better code readability
- * Backend uses Equal=1, NotEqual=2, Higher=3, Lower=4, Between=5 (range comparison)
+ * Backend uses Equal=0, NotEqual=1, Greater=2, GreaterOrEqual=3, Less=4, LessOrEqual=5, Between=6, OutOfRange=7
  */
 export const CompareTypeEnum = {
-  Equal: 1,
-  NotEqual: 2,
-  Higher: 3,
-  Lower: 4,
-  Between: 5,
+  Equal: 0,
+  NotEqual: 1,
+  Greater: 2,
+  GreaterOrEqual: 3,
+  Less: 4,
+  LessOrEqual: 5,
+  Between: 6,
+  OutOfRange: 7,
 } as const;
 
 /** ControllerType: 1 = Siemens */

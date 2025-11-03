@@ -389,8 +389,11 @@
       "equal": "Equal to",
       "notEqual": "Not equal to",
       "greaterThan": "Greater than",
+      "greaterOrEqual": "Greater than or equal to",
       "lessThan": "Less than",
-      "between": "Between"
+      "lessOrEqual": "Less than or equal to",
+      "between": "Between",
+      "outOfRange": "Out of range"
     },
     "columns": {
       "itemName": "Point Name",
@@ -875,19 +878,20 @@
     },
     "hints": {
       "value1": "The threshold value to compare against",
-      "value2": "The upper bound for 'Between' comparisons",
+      "value2": "The upper bound for 'Between' or 'Out of range' comparisons",
       "alarmDelay": "Seconds the condition must persist before triggering (0-3600)",
       "message": "Custom message to display when alarm triggers (optional, max 500 chars)",
-      "timeout": "Optional: Seconds until alarm auto-acknowledges (0-86400, leave empty for none)"
+      "timeout": "Required for Timeout alarms: Seconds without data before alarm triggers (1-86400)"
     },
     "validation": {
       "messageTooLong": "Message must be 500 characters or less",
       "value1Required": "Threshold value is required",
       "value1TooLong": "Value must be 100 characters or less",
-      "value2Required": "Upper bound value is required for Between comparison",
+      "value2Required": "Upper bound value is required for Between/OutOfRange comparison",
       "value2TooLong": "Value must be 100 characters or less",
       "alarmDelayRange": "Alarm delay must be between 0 and 3600 seconds",
-      "timeoutRange": "Timeout must be between 0 and 86400 seconds (24 hours)"
+      "timeoutRequired": "Timeout is required for Timeout alarm type",
+      "timeoutRange": "Timeout must be between 1 and 86400 seconds (24 hours)"
     },
     "errors": {
       "addFailed": "Failed to add alarm. Please try again."

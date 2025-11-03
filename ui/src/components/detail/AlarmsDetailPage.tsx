@@ -125,18 +125,24 @@ const AlarmsDetailPage: React.FC = () => {
     const value2 = alarm.value2 || '';
     const unit = language === 'fa' ? (item?.unitFa || item?.unit || '') : (item?.unit || '');
 
-    // CompareType: 1 = Equal, 2 = NotEqual, 3 = Higher, 4 = Lower, 5 = Between
+    // CompareType: 0 = Equal, 1 = NotEqual, 2 = Greater, 3 = GreaterOrEqual, 4 = Less, 5 = LessOrEqual, 6 = Between, 7 = OutOfRange
     switch (compareType) {
-      case 1: // Equal
+      case 0: // Equal
         return `${t('alarms.condition.equal')} ${value1} ${unit}`;
-      case 2: // NotEqual
+      case 1: // NotEqual
         return `${t('alarms.condition.notEqual')} ${value1} ${unit}`;
-      case 3: // Higher
+      case 2: // Greater
         return `${t('alarms.condition.greaterThan')} ${value1} ${unit}`;
-      case 4: // Lower
+      case 3: // GreaterOrEqual
+        return `${t('alarms.condition.greaterOrEqual')} ${value1} ${unit}`;
+      case 4: // Less
         return `${t('alarms.condition.lessThan')} ${value1} ${unit}`;
-      case 5: // Between
+      case 5: // LessOrEqual
+        return `${t('alarms.condition.lessOrEqual')} ${value1} ${unit}`;
+      case 6: // Between
         return `${t('alarms.condition.between')} ${value1} ${t('and')} ${value2} ${unit}`;
+      case 7: // OutOfRange
+        return `${t('alarms.condition.outOfRange')} ${value1} ${t('and')} ${value2} ${unit}`;
       default:
         return '';
     }
