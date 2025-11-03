@@ -857,7 +857,7 @@ Content-Type: application/json
 
 ###
 
-### Add Alarm - Critical High Temperature (Greater Than) - HTTP
+### Add Alarm - Critical High Temperature (Comparative, Greater Than) - HTTP
 POST {{API_HostAddress}}/api/monitoring/AddAlarm
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
@@ -869,7 +869,7 @@ Authorization: Bearer {{authTokenHTTP}}
   "message": "High temperature detected - immediate action required",
   "value1": "80.0",
   "value2": null,
-  "timeout": 3600,
+  "timeout": null,
   "alarmType": 1,
   "alarmPriority": 0,
   "compareType": 2
@@ -877,7 +877,7 @@ Authorization: Bearer {{authTokenHTTP}}
 
 ###
 
-### Add Alarm - Critical High Temperature (Greater Than) - HTTPS
+### Add Alarm - Critical High Temperature (Comparative, Greater Than) - HTTPS
 POST {{API_HostAddress}}/api/monitoring/AddAlarm
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTPS}}
@@ -889,7 +889,7 @@ Authorization: Bearer {{authTokenHTTPS}}
   "message": "High temperature detected - immediate action required",
   "value1": "80.0",
   "value2": null,
-  "timeout": 3600,
+  "timeout": null,
   "alarmType": 1,
   "alarmPriority": 0,
   "compareType": 2
@@ -897,7 +897,7 @@ Authorization: Bearer {{authTokenHTTPS}}
 
 ###
 
-### Add Alarm - Medium Priority Pressure Range (Between) - HTTP
+### Add Alarm - Medium Priority Pressure Range (Comparative, Between) - HTTP
 POST {{API_HostAddress}}/api/monitoring/AddAlarm
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
@@ -906,7 +906,7 @@ Authorization: Bearer {{authTokenHTTP}}
   "itemId": "550e8400-e29b-41d4-a716-446655440001",
   "isDisabled": false,
   "alarmDelay": 10,
-  "message": "Pressure within normal operating range",
+  "message": "Pressure out of acceptable range",
   "value1": "50.0",
   "value2": "100.0",
   "timeout": null,
@@ -917,7 +917,27 @@ Authorization: Bearer {{authTokenHTTP}}
 
 ###
 
-### Add Alarm - Digital Alarm (Equal) - HTTP
+### Add Alarm - Timeout Alarm (No Data Received) - HTTP
+POST {{API_HostAddress}}/api/monitoring/AddAlarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "itemId": "550e8400-e29b-41d4-a716-446655440005",
+  "isDisabled": false,
+  "alarmDelay": 0,
+  "message": "Communication timeout - no data received for 5 minutes",
+  "value1": null,
+  "value2": null,
+  "timeout": 300,
+  "alarmType": 2,
+  "alarmPriority": 1,
+  "compareType": 0
+}
+
+###
+
+### Add Alarm - Digital Alarm (Comparative, Equal) - HTTP
 POST {{API_HostAddress}}/api/monitoring/AddAlarm
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}
@@ -929,15 +949,15 @@ Authorization: Bearer {{authTokenHTTP}}
   "message": "Door opened",
   "value1": "true",
   "value2": null,
-  "timeout": 300,
-  "alarmType": 0,
+  "timeout": null,
+  "alarmType": 1,
   "alarmPriority": 3,
   "compareType": 0
 }
 
 ###
 
-### Add Alarm - Low Priority Out of Range - HTTP
+### Add Alarm - Low Priority Out of Range (Comparative, OutOfRange) - HTTP
 POST {{API_HostAddress}}/api/monitoring/AddAlarm
 Content-Type: application/json
 Authorization: Bearer {{authTokenHTTP}}

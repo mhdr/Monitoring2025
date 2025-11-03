@@ -4330,21 +4330,21 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <returns>Result indicating success or failure of alarm creation with created alarm ID</returns>
     /// <remarks>
     /// Creates a new alarm configuration for a monitoring item. Alarms monitor item values and trigger notifications 
-    /// when specified conditions are met based on the comparison type and threshold values.
+    /// when specified conditions are met based on the alarm type and configured parameters.
     /// 
     /// **Alarm Types:**
-    /// - Digital: For boolean/binary values
-    /// - Analog: For numeric values with threshold comparisons
+    /// - Comparative (1): For digital and analog values using comparison logic with thresholds (Value1/Value2) and comparison operators
+    /// - Timeout (2): Time-based alarm that triggers after a specified timeout duration without receiving data updates
     /// 
-    /// **Comparison Types:**
-    /// - Equal: Value equals Value1
-    /// - NotEqual: Value does not equal Value1
-    /// - Greater: Value is greater than Value1
-    /// - GreaterOrEqual: Value is greater than or equal to Value1
-    /// - Less: Value is less than Value1
-    /// - LessOrEqual: Value is less than or equal to Value1
-    /// - Between: Value is between Value1 and Value2 (inclusive)
-    /// - OutOfRange: Value is outside the range Value1 to Value2
+    /// **Comparison Types:** (Used only with Comparative alarm type)
+    /// - Equal (0): Value equals Value1
+    /// - NotEqual (1): Value does not equal Value1
+    /// - Greater (2): Value is greater than Value1
+    /// - GreaterOrEqual (3): Value is greater than or equal to Value1
+    /// - Less (4): Value is less than Value1
+    /// - LessOrEqual (5): Value is less than or equal to Value1
+    /// - Between (6): Value is between Value1 and Value2 (inclusive)
+    /// - OutOfRange (7): Value is outside the range Value1 to Value2
     /// 
     /// **Priority Levels:**
     /// - Critical (0): Highest priority - immediate attention required
@@ -4354,9 +4354,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// 
     /// **AlarmDelay:** Number of seconds the condition must persist before triggering (prevents false alarms from transient conditions)
     /// 
-    /// **Timeout:** Optional automatic acknowledgment timeout in seconds (alarm auto-acknowledges after this duration)
+    /// **Timeout:** Required for AlarmType 2 (Timeout-based alarms) - specifies the duration in seconds before the timeout alarm triggers. Not used for Comparative alarm type
     /// 
-    /// Sample request for a critical high-temperature alarm:
+    /// Sample request for a critical high-temperature alarm (Comparative with Greater Than):
     /// 
     ///     POST /api/monitoring/addalarm
     ///     {
@@ -4366,26 +4366,42 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///        "message": "High temperature detected - immediate action required",
     ///        "value1": "80.0",
     ///        "value2": null,
-    ///        "timeout": 3600,
+    ///        "timeout": null,
     ///        "alarmType": 1,
     ///        "alarmPriority": 0,
     ///        "compareType": 2
     ///     }
     ///     
-    /// Sample request for a pressure range alarm:
+    /// Sample request for a pressure range alarm (Analog with Between comparison):
     /// 
     ///     POST /api/monitoring/addalarm
     ///     {
     ///        "itemId": "550e8400-e29b-41d4-a716-446655440001",
     ///        "isDisabled": false,
     ///        "alarmDelay": 10,
-    ///        "message": "Pressure out of normal range",
+    ///        "message": "Pressure out of acceptable range",
     ///        "value1": "50.0",
     ///        "value2": "100.0",
     ///        "timeout": null,
     ///        "alarmType": 1,
     ///        "alarmPriority": 2,
     ///        "compareType": 6
+    ///     }
+    ///     
+    /// Sample request for a timeout-based alarm (AlarmType 2 - triggers when no data received):
+    /// 
+    ///     POST /api/monitoring/addalarm
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440002",
+    ///        "isDisabled": false,
+    ///        "alarmDelay": 0,
+    ///        "message": "Communication timeout - device not responding",
+    ///        "value1": null,
+    ///        "value2": null,
+    ///        "timeout": 300,
+    ///        "alarmType": 2,
+    ///        "alarmPriority": 1,
+    ///        "compareType": 0
     ///     }
     ///     
     /// </remarks>

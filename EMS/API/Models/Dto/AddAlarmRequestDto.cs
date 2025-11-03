@@ -51,14 +51,14 @@ public class AddAlarmRequestDto
     public string? Value2 { get; set; }
 
     /// <summary>
-    /// Optional timeout in seconds for automatic alarm acknowledgment
+    /// Timeout duration in seconds - required for AlarmType 2 (Timeout-based alarms). Specifies how long to wait without data updates before triggering. Not used for AlarmType 1 (Comparative)
     /// </summary>
-    /// <example>3600</example>
+    /// <example>300</example>
     [Range(0, 86400, ErrorMessage = "Timeout must be between 0 and 86400 seconds (24 hours)")]
     public int? Timeout { get; set; }
 
     /// <summary>
-    /// Type of alarm: Digital (0) for boolean/binary values, Analog (1) for numeric values
+    /// Type of alarm: Comparative (1) for digital/analog values using comparison logic, Timeout (2) for time-based alarms that trigger when no data is received
     /// </summary>
     /// <example>1</example>
     [Required(ErrorMessage = "AlarmType is required")]
