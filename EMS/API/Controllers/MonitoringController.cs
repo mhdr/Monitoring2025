@@ -4429,7 +4429,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 _logger.LogWarning("AddAlarm failed: Request is null");
                 return BadRequest(new AddAlarmResponseDto
                 {
-                    IsSuccessful = false,
+                    Success = false,
                     Message = "Request body is required"
                 });
             }
@@ -4439,7 +4439,11 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             if (string.IsNullOrEmpty(userId))
             {
                 _logger.LogWarning("AddAlarm failed: User not authenticated");
-                return Unauthorized(new { success = false, message = "Authentication required" });
+                return Unauthorized(new AddAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Authentication required"
+                });
             }
 
             // Check ModelState
@@ -4455,7 +4459,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
 
                 return BadRequest(new AddAlarmResponseDto
                 { 
-                    IsSuccessful = false,
+                    Success = false,
                     Message = $"Validation failed: {string.Join(", ", errors)}"
                 });
             }
@@ -4469,12 +4473,21 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 
                 return NotFound(new AddAlarmResponseDto
                 { 
-                    IsSuccessful = false,
+                    Success = false,
                     Message = $"Monitoring item with ID {request.ItemId} not found"
                 });
             }
 
-            var userGuid = Guid.Parse(userId);
+            // Parse user ID to GUID for audit log
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                _logger.LogError("AddAlarm failed: Invalid user ID format - UserId={UserId}", userId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new AddAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Internal server error"
+                });
+            }
 
             // Create alarm
             var result = await Core.Alarms.AddAlarm(new Alarm()
@@ -4494,13 +4507,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
 
             if (result == Guid.Empty)
             {
-                _logger.LogError("AddAlarm failed: Core.Alarms.AddAlarm returned null or empty GUID - ItemId={ItemId}, UserId={UserId}", 
+                _logger.LogError("AddAlarm failed: Unable to create alarm - ItemId={ItemId}, UserId={UserId}", 
                     request.ItemId, userId);
                 
                 return StatusCode(StatusCodes.Status500InternalServerError, new AddAlarmResponseDto
                 {
-                    IsSuccessful = false,
-                    Message = "Failed to create alarm - internal error"
+                    Success = false,
+                    Message = "Failed to create alarm"
                 });
             }
 
@@ -4541,21 +4554,19 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             _logger.LogInformation("AddAlarm operation completed successfully: AlarmId={AlarmId}, ItemId={ItemId}, UserId={UserId}", 
                 result, request.ItemId, userId);
 
-            var response = new AddAlarmResponseDto
+            return StatusCode(StatusCodes.Status201Created, new AddAlarmResponseDto
             {
-                IsSuccessful = true,
+                Success = true,
                 Message = "Alarm created successfully",
                 AlarmId = result
-            };
-
-            return CreatedAtAction(nameof(AddAlarm), new { id = result }, response);
+            });
         }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "AddAlarm validation error: ItemId={ItemId}", request?.ItemId);
             return BadRequest(new AddAlarmResponseDto
             {
-                IsSuccessful = false,
+                Success = false,
                 Message = ex.Message
             });
         }
@@ -4570,88 +4581,215 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 request?.ItemId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError, new AddAlarmResponseDto
             {
-                IsSuccessful = false,
+                Success = false,
                 Message = "Internal server error"
             });
         }
     }
 
     /// <summary>
-    /// Delete an existing alarm configuration
+    /// Delete an existing alarm configuration from a monitoring item
     /// </summary>
-    /// <param name="request">Delete alarm request containing the alarm ID</param>
-    /// <returns>Result indicating success or failure of alarm deletion</returns>
-    /// <response code="200">Returns success status of the alarm deletion</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request</response>
+    /// <param name="request">Delete alarm request containing the alarm ID to remove</param>
+    /// <returns>Result indicating success or failure of alarm deletion with audit trail</returns>
+    /// <remarks>
+    /// Permanently removes an alarm configuration from the system. This operation:
+    /// - Deletes the alarm record and its configuration (thresholds, comparison logic, priority)
+    /// - Creates an audit log entry capturing the deleted alarm details for compliance
+    /// - Records the user who performed the deletion and their IP address
+    /// - Cannot be undone - alarm data is preserved only in audit logs
+    /// 
+    /// **Important Notes:**
+    /// - Deleting an alarm does NOT delete associated external alarms (if any exist)
+    /// - External alarms must be managed separately via BatchEditExternalAlarms endpoint
+    /// - The monitoring item itself is not affected - only the alarm configuration is removed
+    /// - Active alarms will be cleared once the alarm condition is evaluated after deletion
+    /// 
+    /// **Use Cases:**
+    /// - Removing obsolete or incorrect alarm configurations
+    /// - Cleaning up test alarms during commissioning
+    /// - Reconfiguring monitoring points with new alarm strategies
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/deletealarm
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// Sample successful response:
+    /// 
+    ///     {
+    ///        "success": true,
+    ///        "message": "Alarm deleted successfully"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Alarm deleted successfully with audit log entry created</response>
+    /// <response code="400">Validation error - invalid request format, missing alarm ID, or alarm deletion failed</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="404">Alarm not found - the specified alarm ID does not exist</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("DeleteAlarm")]
+    [ProducesResponseType(typeof(DeleteAlarmResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DeleteAlarmResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(DeleteAlarmResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(DeleteAlarmResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteAlarm([FromBody] DeleteAlarmRequestDto request)
     {
         try
         {
+            _logger.LogInformation("DeleteAlarm operation started: AlarmId={AlarmId}", request?.Id);
+
+            // Validate request is not null
+            if (request == null)
+            {
+                _logger.LogWarning("DeleteAlarm failed: Request is null");
+                return BadRequest(new DeleteAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Request body is required"
+                });
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("DeleteAlarm failed: User not authenticated");
+                return Unauthorized(new DeleteAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Authentication required"
+                });
             }
 
-            var userGuid = Guid.Parse(userId);
+            // Check ModelState
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
 
-            var response = new DeleteAlarmResponseDto();
+                _logger.LogWarning("DeleteAlarm validation failed: UserId={UserId}, AlarmId={AlarmId}, Errors={Errors}",
+                    userId, request.Id, string.Join(", ", errors));
 
+                return BadRequest(new DeleteAlarmResponseDto
+                {
+                    Success = false,
+                    Message = $"Validation failed: {string.Join(", ", errors)}"
+                });
+            }
+
+            // Parse user ID to GUID for audit log
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                _logger.LogError("DeleteAlarm failed: Invalid user ID format - UserId={UserId}", userId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new DeleteAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Internal server error"
+                });
+            }
+
+            // Verify alarm exists before attempting deletion
+            var alarm = await Core.Alarms.GetAlarm(request.Id);
+            if (alarm == null)
+            {
+                _logger.LogWarning("DeleteAlarm failed: Alarm not found - AlarmId={AlarmId}, UserId={UserId}",
+                    request.Id, userId);
+
+                return NotFound(new DeleteAlarmResponseDto
+                {
+                    Success = false,
+                    Message = $"Alarm with ID {request.Id} not found"
+                });
+            }
+
+            // Store alarm details for audit log before deletion
+            var logValue = new DeleteAlarmLog()
+            {
+                Id = alarm.Id,
+                ItemId = alarm.ItemId,
+                IsDisabled = alarm.IsDisabled,
+                AlarmDelay = alarm.AlarmDelay,
+                Message = alarm.Message,
+                Value1 = alarm.Value1,
+                Value2 = alarm.Value2,
+                Timeout = alarm.Timeout,
+                AlarmType = (Share.Libs.AlarmType)alarm.AlarmType,
+                AlarmPriority = (Share.Libs.AlarmPriority)alarm.AlarmPriority,
+                CompareType = (Share.Libs.CompareType)alarm.CompareType,
+            };
+
+            // Delete the alarm
             var result = await Core.Alarms.DeleteAlarm(x => x.Id == request.Id);
 
-            if (result)
+            if (!result)
             {
-                DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
-                long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+                _logger.LogError("DeleteAlarm failed: Core.Alarms.DeleteAlarm returned false - AlarmId={AlarmId}, UserId={UserId}",
+                    request.Id, userId);
 
-                var alarm = await Core.Alarms.GetAlarm(request.Id);
-
-                // create log
-
-                var logValue = new DeleteAlarmLog()
+                return BadRequest(new DeleteAlarmResponseDto
                 {
-                    Id = alarm.Id,
-                    ItemId = alarm.ItemId,
-                    IsDisabled = alarm.IsDisabled,
-                    AlarmDelay = alarm.AlarmDelay,
-                    Message = alarm.Message,
-                    Value1 = alarm.Value1,
-                    Value2 = alarm.Value2,
-                    Timeout = alarm.Timeout,
-                    AlarmType = (Share.Libs.AlarmType)alarm.AlarmType,
-                    AlarmPriority = (Share.Libs.AlarmPriority)alarm.AlarmPriority,
-                    CompareType = (Share.Libs.CompareType)alarm.CompareType,
-                };
-
-                var logValueJson = JsonConvert.SerializeObject(logValue, Formatting.Indented);
-
-                response.IsSuccess = true;
-                var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-
-                await _context.AuditLogs.AddAsync(new AuditLog()
-                {
-                    IsUser = true,
-                    UserId = userGuid,
-                    ItemId = alarm.ItemId,
-                    ActionType = LogType.DeleteAlarm,
-                    IpAddress = ipAddress,
-                    LogValue = logValueJson,
-                    Time = epochTime,
+                    Success = false,
+                    Message = "Failed to delete alarm"
                 });
-                await _context.SaveChangesAsync();
             }
 
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-        }
+            // Create audit log entry
+            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
+            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+            var logValueJson = JsonConvert.SerializeObject(logValue, Formatting.Indented);
 
-        return BadRequest(ModelState);
+            await _context.AuditLogs.AddAsync(new AuditLog()
+            {
+                IsUser = true,
+                UserId = userGuid,
+                ItemId = alarm.ItemId,
+                ActionType = LogType.DeleteAlarm,
+                IpAddress = ipAddress,
+                LogValue = logValueJson,
+                Time = epochTime,
+            });
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("DeleteAlarm operation completed successfully: AlarmId={AlarmId}, ItemId={ItemId}, UserId={UserId}",
+                request.Id, alarm.ItemId, userId);
+
+            return Ok(new DeleteAlarmResponseDto
+            {
+                Success = true,
+                Message = "Alarm deleted successfully"
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "DeleteAlarm validation error: AlarmId={AlarmId}", request?.Id);
+            return BadRequest(new DeleteAlarmResponseDto
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "DeleteAlarm unauthorized access: AlarmId={AlarmId}", request?.Id);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in DeleteAlarm operation: AlarmId={AlarmId}, Message={Message}",
+                request?.Id, ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, new DeleteAlarmResponseDto
+            {
+                Success = false,
+                Message = "Internal server error"
+            });
+        }
     }
 
     /// <summary>
