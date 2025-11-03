@@ -350,9 +350,20 @@ const ActiveAlarmsDetailPage: React.FC = () => {
       setAlarms(alarmsData);
       setLastFetchTime(Date.now());
       
-      // Update the context's alarm count with the authoritative count from API
-      // This ensures the sidebar badge matches the actual filtered alarms for this user
-      updateActiveAlarms(alarmsData.length, Date.now());
+      // CRITICAL FIX: Only update global badge when fetching ALL alarms (no itemId filter)
+      // When itemId query param is present, we're viewing item-specific alarms,
+      // and should NOT update the global badge count (which represents ALL user's alarms)
+      // This prevents flickering: global polling (2 alarms) vs item-specific (1 alarm)
+      if (!itemId) {
+        // Update the context's alarm count with the authoritative count from API
+        // This ensures the sidebar badge matches the actual filtered alarms for this user
+        updateActiveAlarms(alarmsData.length, Date.now());
+      } else {
+        logger.log('Skipping global badge update - viewing item-specific alarms', {
+          itemId,
+          itemAlarmCount: alarmsData.length,
+        });
+      }
       
       // Fetch instantaneous values for alarmed items
       if (alarmsData.length > 0) {
