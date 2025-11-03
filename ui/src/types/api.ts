@@ -617,7 +617,7 @@ export interface AddAlarmRequestDto {
  */
 export interface AddAlarmResponseDto {
   /** Indicates whether the alarm was successfully added */
-  isSuccessful: boolean;
+  success: boolean;
   /** Descriptive message about the operation result */
   message?: string | null;
   /** The unique identifier of the newly created alarm (only present on successful creation) */

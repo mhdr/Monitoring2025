@@ -17,6 +17,7 @@ import {
   Alert,
   IconButton,
   Divider,
+  Snackbar,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -86,6 +87,11 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
   
   const [formData, setFormData] = useState<AddAlarmFormData>({
     alarmType: AlarmTypeEnum.Comparative,
@@ -197,10 +203,23 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
       logger.log('Adding alarm:', request);
       const response: AddAlarmResponseDto = await addAlarm(request);
 
-      if (response.isSuccessful) {
+      if (response.success) {
         logger.log('Alarm added successfully:', response);
+        
+        // Show success snackbar
+        setSnackbar({
+          open: true,
+          message: response.message || t('addAlarmDialog.success.added'),
+          severity: 'success',
+        });
+        
+        // Call onSuccess callback
         onSuccess?.();
-        handleClose();
+        
+        // Auto-close dialog after 1 second
+        setTimeout(() => {
+          handleClose();
+        }, 1000);
       } else {
         logger.error('Failed to add alarm:', response);
         setSaveError(response.message || t('addAlarmDialog.errors.addFailed'));
@@ -230,8 +249,13 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
       });
       setFieldErrors({});
       setSaveError(null);
+      setSnackbar({ open: false, message: '', severity: 'success' });
       onClose();
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -453,6 +477,24 @@ const AddAlarmDialog: React.FC<AddAlarmDialogProps> = ({
           {isSaving ? t('saving') : t('add')}
         </Button>
       </DialogActions>
+
+      {/* Snackbar for success/error feedback */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        data-id-ref="add-alarm-dialog-snackbar"
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+          data-id-ref="add-alarm-dialog-snackbar-alert"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

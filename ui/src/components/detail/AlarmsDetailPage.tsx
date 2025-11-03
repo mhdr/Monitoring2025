@@ -144,7 +144,7 @@ const AlarmsDetailPage: React.FC = () => {
   }, [language, t]);
 
   // Fetch alarms data
-  const fetchAlarmsData = async () => {
+  const fetchAlarmsData = useCallback(async () => {
     if (!itemId) {
       setError(t('noItemIdProvided'));
       return;
@@ -179,7 +179,7 @@ const AlarmsDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [itemId, itemsMap, getItemName, t]);
 
   // Fetch external alarms for a specific alarm
   const fetchExternalAlarms = useCallback(async (alarmId: string) => {
@@ -438,7 +438,7 @@ const AlarmsDetailPage: React.FC = () => {
   const handleAddAlarmSuccess = useCallback(() => {
     logger.log('Alarm added successfully, refreshing data');
     fetchAlarmsData();
-  }, [itemId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchAlarmsData]);
 
   const handleAddAlarmClose = useCallback(() => {
     setAddAlarmDialogOpen(false);
