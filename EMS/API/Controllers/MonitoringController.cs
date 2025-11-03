@@ -4703,9 +4703,21 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             _logger.LogInformation("Core.Alarms.AddAlarm returned: AlarmId={AlarmId}, ItemId={ItemId}", 
                 result, request.ItemId);
 
-            if (result == Guid.Empty)
+            // Query back the created alarm to get the actual ID
+            // Core.Alarms.AddAlarm may return Guid.Empty even on success, so we query to verify and get the real ID
+            var createdAlarms = await Core.Alarms.ListAlarms(new List<string> { request.ItemId.ToString() });
+            var createdAlarm = createdAlarms
+                .Where(a => a.ItemId == request.ItemId 
+                    && a.AlarmType == (Core.Libs.AlarmType)request.AlarmType
+                    && a.AlarmPriority == (Core.Libs.AlarmPriority)request.AlarmPriority
+                    && a.CompareType == (Core.Libs.CompareType)request.CompareType
+                    && (!a.IsDeleted.HasValue || !a.IsDeleted.Value))
+                .OrderByDescending(a => a.Id) // Get most recent
+                .FirstOrDefault();
+
+            if (createdAlarm == null)
             {
-                _logger.LogError("AddAlarm failed: Unable to create alarm - ItemId={ItemId}, UserId={UserId}", 
+                _logger.LogError("AddAlarm failed: Unable to verify alarm creation - ItemId={ItemId}, UserId={UserId}", 
                     request.ItemId, userId);
                 
                 return StatusCode(StatusCodes.Status500InternalServerError, new AddAlarmResponseDto
@@ -4714,6 +4726,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     Message = "Failed to create alarm"
                 });
             }
+
+            // Use the actual alarm ID from the query
+            result = createdAlarm.Id;
 
             // Create audit log entry
             var logValue = new AddAlarmLog()
