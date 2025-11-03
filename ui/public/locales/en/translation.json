@@ -858,5 +858,40 @@
       "asc": "Ascending",
       "desc": "Descending"
     }
-  }
+  },
+  "addAlarmDialog": {
+    "title": "Add New Alarm",
+    "itemName": "Point Name",
+    "fields": {
+      "alarmType": "Alarm Type",
+      "alarmPriority": "Alarm Priority",
+      "compareType": "Comparison Type",
+      "value1": "Threshold Value",
+      "value2": "Upper Bound Value",
+      "alarmDelay": "Alarm Delay (seconds)",
+      "message": "Alarm Message",
+      "timeout": "Auto-Acknowledge Timeout (seconds)",
+      "isDisabled": "Disable Alarm"
+    },
+    "hints": {
+      "value1": "The threshold value to compare against",
+      "value2": "The upper bound for 'Between' comparisons",
+      "alarmDelay": "Seconds the condition must persist before triggering (0-3600)",
+      "message": "Custom message to display when alarm triggers (optional, max 500 chars)",
+      "timeout": "Optional: Seconds until alarm auto-acknowledges (0-86400, leave empty for none)"
+    },
+    "validation": {
+      "messageTooLong": "Message must be 500 characters or less",
+      "value1Required": "Threshold value is required",
+      "value1TooLong": "Value must be 100 characters or less",
+      "value2Required": "Upper bound value is required for Between comparison",
+      "value2TooLong": "Value must be 100 characters or less",
+      "alarmDelayRange": "Alarm delay must be between 0 and 3600 seconds",
+      "timeoutRange": "Timeout must be between 0 and 86400 seconds (24 hours)"
+    },
+    "errors": {
+      "addFailed": "Failed to add alarm. Please try again."
+    }
+  },
+  "saving": "Saving..."
 }

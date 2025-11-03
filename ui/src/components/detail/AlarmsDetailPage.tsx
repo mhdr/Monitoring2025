@@ -44,6 +44,7 @@ import type {
 import LazyAGGrid from '../LazyAGGrid';
 import { useAGGrid } from '../../hooks/useAGGrid';
 import type { AGGridApi, AGGridColumnApi, AGGridColumnDef } from '../../types/agGrid';
+import AddAlarmDialog from '../AddAlarmDialog';
 
 const logger = createLogger('AlarmsDetailPage');
 
@@ -67,6 +68,7 @@ const AlarmsDetailPage: React.FC = () => {
   const [alarmsData, setAlarmsData] = useState<EnrichedAlarm[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingExternalAlarms, setLoadingExternalAlarms] = useState<Set<string>>(new Set());
+  const [addAlarmDialogOpen, setAddAlarmDialogOpen] = useState<boolean>(false);
   
   // Create items map from MonitoringContext
   const itemsMap = useMemo(() => {
@@ -429,8 +431,17 @@ const AlarmsDetailPage: React.FC = () => {
   // Handle action button clicks
   const handleAdd = useCallback(() => {
     logger.log('Add new alarm for itemId:', itemId);
-    // TODO: Implement add alarm dialog
+    setAddAlarmDialogOpen(true);
   }, [itemId]);
+
+  const handleAddAlarmSuccess = useCallback(() => {
+    logger.log('Alarm added successfully, refreshing data');
+    fetchAlarmsData();
+  }, [itemId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAddAlarmClose = useCallback(() => {
+    setAddAlarmDialogOpen(false);
+  }, []);
 
   const handleViewDetails = useCallback(() => {
     if (selectedRows.length === 1) {
@@ -774,6 +785,17 @@ const AlarmsDetailPage: React.FC = () => {
           </Box>
         </CardContent>
       </Card>
+
+      {/* Add Alarm Dialog */}
+      {itemId && (
+        <AddAlarmDialog
+          open={addAlarmDialogOpen}
+          onClose={handleAddAlarmClose}
+          itemId={itemId}
+          itemName={itemId ? getItemName(itemsMap.get(itemId), itemId) : undefined}
+          onSuccess={handleAddAlarmSuccess}
+        />
+      )}
     </Box>
   );
 };
