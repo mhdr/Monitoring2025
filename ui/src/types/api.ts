@@ -625,19 +625,44 @@ export interface AddAlarmResponseDto {
 }
 
 export interface EditAlarmRequestDto {
+  /** Unique identifier of the alarm to edit */
   id: string; // UUID
+  /** ID of the monitoring item this alarm belongs to */
   itemId: string; // UUID
-  isDisabled: boolean;
-  alarmDelay: number; // int32
-  message?: string | null;
-  messageFa?: string | null;
-  value1?: string | null;
-  value2?: string | null;
-  timeout?: number | null; // int32
+  /** Whether the alarm is disabled (won't trigger notifications) */
+  isDisabled?: boolean;
+  /** Delay in seconds before the alarm triggers after condition is met (0-86400) */
+  alarmDelay?: number; // int32, range: 0-86400
+  /** Custom message to display when the alarm triggers (English) */
+  message?: string | null; // maxLength: 500
+  /** Custom message to display when the alarm triggers (Farsi) */
+  messageFa?: string | null; // maxLength: 500
+  /** First comparison value for the alarm condition */
+  value1?: string | null; // maxLength: 100
+  /** Second comparison value for range-based alarm conditions */
+  value2?: string | null; // maxLength: 100
+  /** Optional timeout in seconds for alarm acknowledgment (0-86400) */
+  timeout?: number | null; // int32, range: 0-86400
 }
 
+/** Possible error types for alarm editing operations */
+export const EditAlarmErrorType = {
+  None: 0,
+  AlarmNotFound: 1,
+  ItemNotFound: 2,
+  InvalidParameters: 3,
+  InsufficientPermissions: 4,
+} as const;
+
+export type EditAlarmErrorType = typeof EditAlarmErrorType[keyof typeof EditAlarmErrorType];
+
 export interface EditAlarmResponseDto {
-  isSuccessful: boolean;
+  /** Indicates whether the alarm was successfully updated */
+  success: boolean;
+  /** Descriptive message about the operation result */
+  message?: string | null;
+  /** Error type if the operation failed */
+  error?: EditAlarmErrorType;
 }
 
 export interface DeleteAlarmRequestDto {

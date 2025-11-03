@@ -473,7 +473,7 @@ export const addAlarm = async (data: AddAlarmRequestDto): Promise<AddAlarmRespon
     const response = await apiClient.post<AddAlarmResponseDto>('/api/Monitoring/AddAlarm', data);
     
     logger.log('Alarm added successfully:', { 
-      isSuccessful: response.data.isSuccessful,
+      success: response.data.success,
       alarmId: response.data.alarmId,
       message: response.data.message,
     });
@@ -487,12 +487,54 @@ export const addAlarm = async (data: AddAlarmRequestDto): Promise<AddAlarmRespon
 
 /**
  * Edit an existing alarm configuration
+ * 
+ * Updates the complete configuration of an existing alarm including:
+ * - Enabled/disabled state
+ * - Alarm delay (time before triggering after condition is met)
+ * - Custom alarm message (English and Farsi)
+ * - Comparison values (Value1, Value2) for alarm conditions
+ * - Acknowledgment timeout
+ * 
+ * Validates:
+ * - The alarm exists in the system
+ * - The associated monitoring item exists
+ * - All input parameters are within valid ranges
+ * 
+ * Creates an audit log entry with before/after values for all changed properties.
+ * 
+ * @param data - Edit alarm request containing alarm ID and updated configuration properties
+ * @returns Promise<EditAlarmResponseDto> - Response with success flag, message, and error type
+ * @throws {ApiError} - Validation error, unauthorized, forbidden, not found, or server error
+ * 
+ * @example
+ * // Edit alarm with bilingual messages
+ * const result = await editAlarm({
+ *   id: "550e8400-e29b-41d4-a716-446655440000",
+ *   itemId: "550e8400-e29b-41d4-a716-446655440001",
+ *   isDisabled: false,
+ *   alarmDelay: 5,
+ *   message: "Temperature exceeded maximum threshold",
+ *   messageFa: "دمای محیط از حد مجاز بیشتر است",
+ *   value1: "75.5",
+ *   value2: "100.0",
+ *   timeout: 300
+ * });
+ * 
+ * @example
+ * // Disable an alarm
+ * const result = await editAlarm({
+ *   id: "550e8400-e29b-41d4-a716-446655440000",
+ *   itemId: "550e8400-e29b-41d4-a716-446655440001",
+ *   isDisabled: true
+ * });
  */
 export const editAlarm = async (data: EditAlarmRequestDto): Promise<EditAlarmResponseDto> => {
   try {
     const response = await apiClient.post<EditAlarmResponseDto>('/api/Monitoring/EditAlarm', data);
+    logger.log('Alarm edited successfully:', { alarmId: data.id, success: response.data.success });
     return response.data;
   } catch (error) {
+    logger.error('Failed to edit alarm:', { alarmId: data.id, error });
     handleApiError(error);
   }
 };
