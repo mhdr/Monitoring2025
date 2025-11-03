@@ -14,6 +14,7 @@ public class DeleteAlarmLog
     public bool IsDisabled { get; set; } = false;
     public int AlarmDelay { get; set; }
     public string? Message { get; set; }
+    public string? MessageFa { get; set; }
     public string? Value1 { get; set; }
     public string? Value2 { get; set; }
     public int? Timeout { get; set; }

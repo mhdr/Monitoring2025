@@ -37,6 +37,14 @@ public class AddAlarmRequestDto
     public string? Message { get; set; }
 
     /// <summary>
+    /// Custom message to display when the alarm triggers (Farsi version)
+    /// </summary>
+    /// <example>High temperature detected - immediate action required</example>
+    [StringLength(500, ErrorMessage = "Message cannot exceed 500 characters")]
+    public string? MessageFa { get; set; }
+
+
+    /// <summary>
     /// First comparison value for the alarm condition (threshold or lower bound)
     /// </summary>
     /// <example>80.0</example>
