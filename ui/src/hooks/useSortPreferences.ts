@@ -93,7 +93,7 @@ export const useSortPreferences = (
     const loadPreference = async () => {
       setIsLoading(true);
       try {
-        const savedConfig = await getSortPreference(groupId);
+        const savedConfig = await getSortPreference(groupId || 'root');
         
         if (isMounted) {
           setSortConfig(savedConfig);

@@ -566,11 +566,6 @@ const MonitoringPage: React.FC = () => {
               <Typography variant="body1" fontWeight="bold" data-id-ref="monitoring-page-groups-error-title">
                 {t('errorLoadingGroups')}
               </Typography>
-              {error.status && (
-                <Typography variant="body2" sx={{ mt: 0.5 }} data-id-ref="monitoring-page-groups-error-status">
-                  {`Error ${error.status}`}
-                </Typography>
-              )}
             </Alert>
           )}
 
@@ -746,15 +741,10 @@ const MonitoringPage: React.FC = () => {
 
           {/* Items Error State */}
           {itemsError && (
-            <Alert severity="warning" data-id-ref="monitoring-page-items-error-alert">
+            <Alert severity="error" data-id-ref="monitoring-page-items-error-alert">
               <Typography variant="body1" fontWeight="bold" data-id-ref="monitoring-page-items-error-title">
                 {t('errorLoadingItems')}
               </Typography>
-              {itemsError.status && (
-                <Typography variant="body2" sx={{ mt: 0.5 }} data-id-ref="monitoring-page-items-error-status">
-                  {`Error ${itemsError.status}`}
-                </Typography>
-              )}
             </Alert>
           )}
         </CardContent>

@@ -31,7 +31,6 @@ import type {
   GetSvgLayoutsRequestDto,
   AuditLogRequestDto,
   AuditLogResponseDto,
-  SettingsVersionResponseDto,
   EditPointResponseDto,
   PushUpdateRequestDto,
   PushUpdateResponseDto,
@@ -336,18 +335,6 @@ export const getSvgLayouts = async (params: GetSvgLayoutsRequestDto = {}): Promi
 export const getAuditLog = async (params: AuditLogRequestDto): Promise<AuditLogResponseDto> => {
   try {
     const response = await apiClient.post<AuditLogResponseDto>('/api/Monitoring/AuditLog', params);
-    return response.data;
-  } catch (error) {
-    handleApiError(error);
-  }
-};
-
-/**
- * Get system settings version
- */
-export const getSettingsVersion = async (): Promise<SettingsVersionResponseDto> => {
-  try {
-    const response = await apiClient.get<SettingsVersionResponseDto>('/api/Monitoring/SettingsVersion');
     return response.data;
   } catch (error) {
     handleApiError(error);

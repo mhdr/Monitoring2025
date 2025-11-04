@@ -40,7 +40,7 @@ export const createHighTemperatureAlarm = async (itemId: string): Promise<void> 
 
     const response: AddAlarmResponseDto = await addAlarm(request);
 
-    if (response.isSuccessful) {
+    if (response.success) {
       logger.log('High temperature alarm created successfully:', {
         alarmId: response.alarmId,
         message: response.message,
@@ -75,7 +75,7 @@ export const createTemperatureRangeAlarm = async (itemId: string): Promise<void>
 
     const response = await addAlarm(request);
 
-    if (response.isSuccessful) {
+    if (response.success) {
       logger.log('Temperature range alarm created:', response.alarmId);
     }
   } catch (error) {
@@ -105,7 +105,7 @@ export const createDoorOpenAlarm = async (itemId: string): Promise<void> => {
 
     const response = await addAlarm(request);
 
-    if (response.isSuccessful) {
+    if (response.success) {
       logger.log('Door open alarm created:', response.alarmId);
     }
   } catch (error) {
@@ -135,7 +135,7 @@ export const createDisabledLowPressureAlarm = async (itemId: string): Promise<vo
 
     const response = await addAlarm(request);
 
-    if (response.isSuccessful) {
+    if (response.success) {
       logger.log('Disabled low pressure alarm created:', response.alarmId);
       logger.log('Remember to enable this alarm when ready!');
     }
@@ -166,7 +166,7 @@ export const createTimeoutAlarm = async (itemId: string): Promise<void> => {
 
     const response = await addAlarm(request);
 
-    if (response.isSuccessful) {
+    if (response.success) {
       logger.log('Timeout alarm created:', response.alarmId);
     }
   } catch (error) {

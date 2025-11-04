@@ -24,7 +24,6 @@ import {
   Warning as ActiveAlarmsIcon,
   Description as AlarmLogIcon,
   History as AuditTrailIcon,
-  Settings as ManagementIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
