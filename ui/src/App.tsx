@@ -227,22 +227,25 @@ function App() {
   // Dynamically load Persian fonts only when needed (Persian language active)
   useFontLoader();
   
-  // SignalR real-time connection for active alarms
-  // Automatically connects when authenticated, disconnects on logout
-  // Handles all real-time updates via ReceiveActiveAlarmsUpdate
-  useSignalR(isAuthenticated, isAuthLoading);
-
-  // Initial active alarm count fetch (one-time only)
-  // - Fetches once on app start/page refresh to initialize sidebar badge
-  // - SignalR handles all subsequent real-time updates
-  useActiveAlarmPolling(isAuthenticated, isAuthLoading);
-
   // Background data synchronization with version checking
   // - Fetches settings version on app start/page refresh
   // - Compares with persisted version from localStorage
   // - Syncs Groups, Items, and Alarms in background if version changed
   // - Updates UI smoothly without showing SyncPage
-  useBackgroundSync({ isAuthenticated, isAuthLoading });
+  const { triggerManualSync } = useBackgroundSync({ isAuthenticated, isAuthLoading });
+
+  // SignalR real-time connection for active alarms and settings updates
+  // - Automatically connects when authenticated, disconnects on logout
+  // - Handles ReceiveActiveAlarmsUpdate for real-time alarm count updates
+  // - Handles ReceiveSettingsUpdate to trigger background sync when admin pushes updates
+  useSignalR(isAuthenticated, isAuthLoading, {
+    onSettingsUpdate: triggerManualSync,
+  });
+
+  // Initial active alarm count fetch (one-time only)
+  // - Fetches once on app start/page refresh to initialize sidebar badge
+  // - SignalR handles all subsequent real-time updates
+  useActiveAlarmPolling(isAuthenticated, isAuthLoading);
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {

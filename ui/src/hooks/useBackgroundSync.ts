@@ -44,6 +44,8 @@ interface SyncStatus {
   lastError: Error | null;
   /** Current sync phase */
   currentPhase: 'idle' | 'version-check' | 'groups' | 'items' | 'alarms' | 'complete';
+  /** Manually trigger a background sync (bypasses the once-per-session check) */
+  triggerManualSync: () => Promise<void>;
 }
 
 /**
@@ -177,10 +179,42 @@ export function useBackgroundSync({ isAuthenticated, isAuthLoading }: UseBackgro
     }
   }, [isAuthenticated, isAuthLoading, performBackgroundSync]);
 
+  /**
+   * Manually trigger background sync (used by SignalR ReceiveSettingsUpdate)
+   * This bypasses the hasSyncedRef check to force a sync
+   */
+  const triggerManualSync = useCallback(async () => {
+    logger.info('Manual background sync triggered (e.g., from SignalR ReceiveSettingsUpdate)');
+    
+    if (!isAuthenticated || isAuthLoading) {
+      logger.warn('Cannot trigger manual sync - user not authenticated or auth loading');
+      return;
+    }
+
+    if (isSyncing) {
+      logger.warn('Sync already in progress - ignoring manual trigger');
+      return;
+    }
+
+    // Temporarily reset the sync flag to allow immediate re-sync
+    const previousSyncState = hasSyncedRef.current;
+    hasSyncedRef.current = false;
+    
+    try {
+      await performBackgroundSync();
+    } finally {
+      // Restore the sync flag (will be set to true by performBackgroundSync if successful)
+      if (!hasSyncedRef.current) {
+        hasSyncedRef.current = previousSyncState;
+      }
+    }
+  }, [isAuthenticated, isAuthLoading, isSyncing, performBackgroundSync]);
+
   return {
     isSyncing,
     lastSyncTime,
     lastError,
     currentPhase,
+    triggerManualSync,
   };
 }

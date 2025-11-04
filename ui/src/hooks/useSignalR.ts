@@ -12,6 +12,11 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('useSignalR');
 
+interface UseSignalROptions {
+  /** Callback to trigger background sync when ReceiveSettingsUpdate is received */
+  onSettingsUpdate?: () => void | Promise<void>;
+}
+
 /**
  * Map SignalR connection state to our StreamStatus
  */
@@ -34,8 +39,16 @@ function mapConnectionState(state: HubConnectionState): StreamStatus {
 /**
  * Hook to manage SignalR connection for real-time active alarms
  * Automatically connects when authenticated and disconnects on unmount
+ * 
+ * @param isAuthenticated - Whether user is authenticated
+ * @param isAuthLoading - Whether authentication is still loading
+ * @param options - Optional configuration including onSettingsUpdate callback
  */
-export function useSignalR(isAuthenticated: boolean, isAuthLoading: boolean) {
+export function useSignalR(
+  isAuthenticated: boolean,
+  isAuthLoading: boolean,
+  options?: UseSignalROptions
+) {
   const {
     updateActiveAlarms,
     setActiveAlarmsStreamStatus,
@@ -55,6 +68,23 @@ export function useSignalR(isAuthenticated: boolean, isAuthLoading: boolean) {
     },
     [updateActiveAlarms]
   );
+
+  /**
+   * Handle settings update from SignalR
+   * Triggers background sync to refresh data
+   */
+  const handleSettingsUpdate = useCallback(() => {
+    logger.info('Settings update received - triggering background sync');
+    if (options?.onSettingsUpdate) {
+      const result = options.onSettingsUpdate();
+      // Handle both sync and async callbacks
+      if (result instanceof Promise) {
+        result.catch((error) => {
+          logger.error('Error in onSettingsUpdate callback:', error);
+        });
+      }
+    }
+  }, [options]);
 
   /**
    * Connect to SignalR hub
@@ -79,6 +109,9 @@ export function useSignalR(isAuthenticated: boolean, isAuthLoading: boolean) {
       // Subscribe to active alarms updates before connecting
       signalRManager.onActiveAlarmsUpdate(handleActiveAlarmsUpdate);
       
+      // Subscribe to settings updates before connecting
+      signalRManager.onSettingsUpdate(handleSettingsUpdate);
+      
       // Start the connection
       await signalRManager.start();
       
@@ -96,7 +129,7 @@ export function useSignalR(isAuthenticated: boolean, isAuthLoading: boolean) {
     } finally {
       isConnectingRef.current = false;
     }
-  }, [isAuthenticated, handleActiveAlarmsUpdate, setActiveAlarmsStreamStatus, setActiveAlarmsStreamError]);
+  }, [isAuthenticated, handleActiveAlarmsUpdate, handleSettingsUpdate, setActiveAlarmsStreamStatus, setActiveAlarmsStreamError]);
 
   /**
    * Disconnect from SignalR hub
@@ -107,6 +140,7 @@ export function useSignalR(isAuthenticated: boolean, isAuthLoading: boolean) {
       
       // Unsubscribe from updates
       signalRManager.offActiveAlarmsUpdate();
+      signalRManager.offSettingsUpdate();
       
       // Stop the connection
       await signalRManager.stop();

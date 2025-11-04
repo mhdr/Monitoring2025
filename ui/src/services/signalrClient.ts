@@ -22,6 +22,12 @@ export interface ActiveAlarmsUpdate {
 }
 
 /**
+ * Settings update callback type
+ * Invoked when server sends ReceiveSettingsUpdate (no parameters)
+ */
+export type SettingsUpdateCallback = () => void;
+
+/**
  * SignalR connection manager
  */
 class SignalRConnectionManager {
@@ -179,6 +185,30 @@ class SignalRConnectionManager {
     if (this.connection) {
       this.connection.off('ReceiveActiveAlarmsUpdate');
       logger.log('Unsubscribed from active alarms updates');
+    }
+  }
+
+  /**
+   * Subscribe to settings updates
+   * This is triggered when admin calls PushUpdate endpoint
+   * Clients should refresh their local data through background sync
+   */
+  onSettingsUpdate(callback: SettingsUpdateCallback): void {
+    const connection = this.getConnection();
+    
+    connection.on('ReceiveSettingsUpdate', () => {
+      logger.info('Received settings update notification - triggering background sync');
+      callback();
+    });
+  }
+
+  /**
+   * Unsubscribe from settings updates
+   */
+  offSettingsUpdate(): void {
+    if (this.connection) {
+      this.connection.off('ReceiveSettingsUpdate');
+      logger.log('Unsubscribed from settings updates');
     }
   }
 
