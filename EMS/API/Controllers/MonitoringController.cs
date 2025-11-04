@@ -5863,4 +5863,803 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
 
         return BadRequest(ModelState);
     }
+
+    /// <summary>
+    /// Get all external alarms linked to a parent alarm
+    /// </summary>
+    /// <param name="request">Get external alarms request containing the parent alarm ID</param>
+    /// <returns>List of external alarm configurations for the specified parent alarm</returns>
+    /// <remarks>
+    /// Retrieves all external alarm configurations that are linked to a parent alarm.
+    /// External alarms allow one alarm condition to trigger outputs on other monitoring items in the system.
+    /// 
+    /// When a parent alarm is triggered, all associated external alarms will automatically
+    /// write their configured values to their respective target items, enabling cascading
+    /// alarm actions across the monitoring system.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/getexternalalarms
+    ///     {
+    ///        "alarmId": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// Sample response:
+    /// 
+    ///     {
+    ///       "success": true,
+    ///       "message": "External alarms retrieved successfully",
+    ///       "externalAlarms": [
+    ///         {
+    ///           "id": "650e8400-e29b-41d4-a716-446655440001",
+    ///           "alarmId": "550e8400-e29b-41d4-a716-446655440000",
+    ///           "itemId": "750e8400-e29b-41d4-a716-446655440002",
+    ///           "value": true,
+    ///           "isDisabled": false
+    ///         }
+    ///       ]
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the list of external alarms for the parent alarm</response>
+    /// <response code="400">Validation error - invalid request format or alarm ID</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="404">Parent alarm not found - the specified alarm ID does not exist</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("GetExternalAlarms")]
+    [ProducesResponseType(typeof(GetExternalAlarmsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GetExternalAlarmsResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(GetExternalAlarmsResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(GetExternalAlarmsResponseDto), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetExternalAlarms([FromBody] GetExternalAlarmsRequestDto request)
+    {
+        try
+        {
+            _logger.LogInformation("GetExternalAlarms started: AlarmId={AlarmId}", request.AlarmId);
+
+            // Check ModelState first
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("GetExternalAlarms validation failed: AlarmId={AlarmId}, Errors={Errors}",
+                    request.AlarmId, string.Join(", ", errors));
+
+                return BadRequest(new GetExternalAlarmsResponseDto
+                {
+                    Success = false,
+                    Message = "Validation failed: " + string.Join(", ", errors),
+                    ExternalAlarms = null
+                });
+            }
+
+            // Get user ID from claims
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("GetExternalAlarms failed: Invalid user ID from token");
+                return Unauthorized();
+            }
+
+            // Verify parent alarm exists
+            var parentAlarm = await Core.Alarms.GetAlarm(request.AlarmId);
+            if (parentAlarm == null)
+            {
+                _logger.LogWarning("GetExternalAlarms failed: Parent alarm not found - AlarmId={AlarmId}, UserId={UserId}",
+                    request.AlarmId, userId);
+
+                return NotFound(new GetExternalAlarmsResponseDto
+                {
+                    Success = false,
+                    Message = "Parent alarm not found",
+                    ExternalAlarms = null
+                });
+            }
+
+            // Retrieve external alarms from Core using expression-based query
+            var externalAlarms = await Core.Alarms.GetExternalAlarms(ea => ea.AlarmId == request.AlarmId);
+
+            // Map to DTO
+            var externalAlarmsList = externalAlarms?.Select(ea => new GetExternalAlarmsResponseDto.ExternalAlarmInfo
+            {
+                Id = ea.Id,
+                AlarmId = ea.AlarmId,
+                ItemId = ea.ItemId,
+                Value = ea.Value,
+                IsDisabled = ea.IsDisabled
+            }).ToList() ?? new List<GetExternalAlarmsResponseDto.ExternalAlarmInfo>();
+
+            _logger.LogInformation("GetExternalAlarms completed successfully: AlarmId={AlarmId}, Count={Count}, UserId={UserId}",
+                request.AlarmId, externalAlarmsList.Count, userId);
+
+            return Ok(new GetExternalAlarmsResponseDto
+            {
+                Success = true,
+                Message = "External alarms retrieved successfully",
+                ExternalAlarms = externalAlarmsList
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "GetExternalAlarms validation failed: AlarmId={AlarmId}", request.AlarmId);
+            return BadRequest(new GetExternalAlarmsResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                ExternalAlarms = null
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "GetExternalAlarms resource not found: AlarmId={AlarmId}", request.AlarmId);
+            return NotFound(new GetExternalAlarmsResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                ExternalAlarms = null
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetExternalAlarms error: AlarmId={AlarmId}, Message={Message}",
+                request.AlarmId, ex.Message);
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new GetExternalAlarmsResponseDto
+            {
+                Success = false,
+                Message = "Internal server error",
+                ExternalAlarms = null
+            });
+        }
+    }
+
+    /// <summary>
+    /// Add a new external alarm to a parent alarm
+    /// </summary>
+    /// <param name="request">Add external alarm request containing parent alarm ID, target item ID, output value, and enabled state</param>
+    /// <returns>Result indicating success or failure with the new external alarm ID</returns>
+    /// <remarks>
+    /// Creates a new external alarm configuration linked to a parent alarm.
+    /// External alarms enable cascading alarm actions where one alarm can automatically
+    /// control other monitoring items in the system.
+    /// 
+    /// When the parent alarm is triggered, this external alarm will write the configured
+    /// value to the target item. This allows for automated responses such as:
+    /// - Triggering indicator lights or sirens
+    /// - Activating emergency shutdown procedures
+    /// - Setting digital outputs to safe states
+    /// - Controlling relays or actuators
+    /// 
+    /// The operation validates:
+    /// - Parent alarm exists in the system
+    /// - Target item exists and is valid for output
+    /// - No duplicate external alarm configurations
+    /// 
+    /// Creates an audit log entry for compliance and tracking.
+    /// 
+    /// Sample request to activate a siren when temperature alarm triggers:
+    /// 
+    ///     POST /api/monitoring/addexternalalarm
+    ///     {
+    ///        "alarmId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "itemId": "750e8400-e29b-41d4-a716-446655440002",
+    ///        "value": true,
+    ///        "isDisabled": false
+    ///     }
+    ///     
+    /// Sample request to deactivate a pump on low pressure alarm:
+    /// 
+    ///     POST /api/monitoring/addexternalalarm
+    ///     {
+    ///        "alarmId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "itemId": "850e8400-e29b-41d4-a716-446655440003",
+    ///        "value": false,
+    ///        "isDisabled": false
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="201">External alarm created successfully with the new ID</response>
+    /// <response code="400">Validation error - invalid request format, parent alarm not found, or target item not found</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - insufficient permissions to create external alarms</response>
+    /// <response code="409">Conflict - duplicate external alarm configuration already exists</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("AddExternalAlarm")]
+    [ProducesResponseType(typeof(AddExternalAlarmResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(AddExternalAlarmResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(AddExternalAlarmResponseDto), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(AddExternalAlarmResponseDto), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> AddExternalAlarm([FromBody] AddExternalAlarmRequestDto request)
+    {
+        try
+        {
+            _logger.LogInformation("AddExternalAlarm started: AlarmId={AlarmId}, ItemId={ItemId}, Value={Value}, IsDisabled={IsDisabled}",
+                request.AlarmId, request.ItemId, request.Value, request.IsDisabled);
+
+            // Check ModelState first
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("AddExternalAlarm validation failed: AlarmId={AlarmId}, ItemId={ItemId}, Errors={Errors}",
+                    request.AlarmId, request.ItemId, string.Join(", ", errors));
+
+                return BadRequest(new AddExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Validation failed: " + string.Join(", ", errors),
+                    ExternalAlarmId = null
+                });
+            }
+
+            // Get user ID from claims
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("AddExternalAlarm failed: Invalid user ID from token");
+                return Unauthorized();
+            }
+
+            // Parse user GUID for audit logging
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                _logger.LogError("AddExternalAlarm failed: Invalid user GUID format - UserId={UserId}", userId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new AddExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Internal server error",
+                    ExternalAlarmId = null
+                });
+            }
+
+            // Verify parent alarm exists
+            var parentAlarm = await Core.Alarms.GetAlarm(request.AlarmId);
+            if (parentAlarm == null)
+            {
+                _logger.LogWarning("AddExternalAlarm failed: Parent alarm not found - AlarmId={AlarmId}, UserId={UserId}",
+                    request.AlarmId, userId);
+
+                return BadRequest(new AddExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Parent alarm not found",
+                    ExternalAlarmId = null
+                });
+            }
+
+            // Verify target item exists
+            var targetItem = await Core.Points.GetPoint(request.ItemId);
+            if (targetItem == null)
+            {
+                _logger.LogWarning("AddExternalAlarm failed: Target item not found - ItemId={ItemId}, AlarmId={AlarmId}, UserId={UserId}",
+                    request.ItemId, request.AlarmId, userId);
+
+                return BadRequest(new AddExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Target item not found",
+                    ExternalAlarmId = null
+                });
+            }
+
+            // Create external alarm entity
+            var externalAlarmId = Guid.NewGuid();
+            var externalAlarm = new Core.Models.ExternalAlarm
+            {
+                Id = externalAlarmId,
+                AlarmId = request.AlarmId,
+                ItemId = request.ItemId,
+                Value = request.Value,
+                IsDisabled = request.IsDisabled
+            };
+
+            // Add external alarm via Core
+            var result = await Core.Alarms.AddExternalAlarm(externalAlarm);
+
+            if (!result)
+            {
+                _logger.LogError("AddExternalAlarm failed: Core.Alarms.AddExternalAlarm returned false - AlarmId={AlarmId}, ItemId={ItemId}, UserId={UserId}",
+                    request.AlarmId, request.ItemId, userId);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new AddExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Failed to create external alarm",
+                    ExternalAlarmId = null
+                });
+            }
+
+            // Create audit log entry using AuditService
+            await _auditService.LogAsync(
+                LogType.AddAlarm,
+                new
+                {
+                    ExternalAlarmId = externalAlarmId,
+                    AlarmId = request.AlarmId,
+                    ItemId = request.ItemId,
+                    Value = request.Value,
+                    IsDisabled = request.IsDisabled
+                },
+                itemId: request.ItemId,
+                userId: userGuid
+            );
+
+            _logger.LogInformation("AddExternalAlarm completed successfully: ExternalAlarmId={ExternalAlarmId}, AlarmId={AlarmId}, ItemId={ItemId}, UserId={UserId}",
+                externalAlarmId, request.AlarmId, request.ItemId, userId);
+
+            return StatusCode(StatusCodes.Status201Created, new AddExternalAlarmResponseDto
+            {
+                Success = true,
+                Message = "External alarm added successfully",
+                ExternalAlarmId = externalAlarmId
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "AddExternalAlarm validation failed: AlarmId={AlarmId}, ItemId={ItemId}",
+                request.AlarmId, request.ItemId);
+
+            return BadRequest(new AddExternalAlarmResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                ExternalAlarmId = null
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "AddExternalAlarm conflict: AlarmId={AlarmId}, ItemId={ItemId}",
+                request.AlarmId, request.ItemId);
+
+            return Conflict(new AddExternalAlarmResponseDto
+            {
+                Success = false,
+                Message = ex.Message,
+                ExternalAlarmId = null
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "AddExternalAlarm unauthorized: AlarmId={AlarmId}, ItemId={ItemId}",
+                request.AlarmId, request.ItemId);
+
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AddExternalAlarm error: AlarmId={AlarmId}, ItemId={ItemId}, Message={Message}",
+                request.AlarmId, request.ItemId, ex.Message);
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new AddExternalAlarmResponseDto
+            {
+                Success = false,
+                Message = "Internal server error",
+                ExternalAlarmId = null
+            });
+        }
+    }
+
+    /// <summary>
+    /// Update an existing external alarm configuration
+    /// </summary>
+    /// <param name="request">Update external alarm request containing external alarm ID and updated configuration</param>
+    /// <returns>Result indicating success or failure of the update operation</returns>
+    /// <remarks>
+    /// Updates the configuration of an existing external alarm including:
+    /// - Target item to control
+    /// - Output value to write when triggered
+    /// - Enabled/disabled state
+    /// 
+    /// This allows modification of external alarm behavior without recreating the configuration.
+    /// Use cases include:
+    /// - Changing which item is controlled
+    /// - Inverting the output value (true to false or vice versa)
+    /// - Temporarily disabling an external alarm
+    /// - Re-enabling a previously disabled external alarm
+    /// 
+    /// The operation validates:
+    /// - External alarm exists
+    /// - Target item exists and is valid
+    /// - User has appropriate permissions
+    /// 
+    /// Creates an audit log entry showing before/after values for all changed properties.
+    /// 
+    /// Sample request to change target item:
+    /// 
+    ///     POST /api/monitoring/updateexternalalarm
+    ///     {
+    ///        "id": "650e8400-e29b-41d4-a716-446655440001",
+    ///        "itemId": "850e8400-e29b-41d4-a716-446655440003",
+    ///        "value": true,
+    ///        "isDisabled": false
+    ///     }
+    ///     
+    /// Sample request to disable external alarm temporarily:
+    /// 
+    ///     POST /api/monitoring/updateexternalalarm
+    ///     {
+    ///        "id": "650e8400-e29b-41d4-a716-446655440001",
+    ///        "itemId": "750e8400-e29b-41d4-a716-446655440002",
+    ///        "value": true,
+    ///        "isDisabled": true
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">External alarm updated successfully</response>
+    /// <response code="400">Validation error - invalid request format or target item not found</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - insufficient permissions to update this external alarm</response>
+    /// <response code="404">External alarm not found - the specified external alarm ID does not exist</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("UpdateExternalAlarm")]
+    [ProducesResponseType(typeof(UpdateExternalAlarmResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UpdateExternalAlarmResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(UpdateExternalAlarmResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(UpdateExternalAlarmResponseDto), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> UpdateExternalAlarm([FromBody] UpdateExternalAlarmRequestDto request)
+    {
+        try
+        {
+            _logger.LogInformation("UpdateExternalAlarm started: Id={Id}, ItemId={ItemId}, Value={Value}, IsDisabled={IsDisabled}",
+                request.Id, request.ItemId, request.Value, request.IsDisabled);
+
+            // Check ModelState first
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("UpdateExternalAlarm validation failed: Id={Id}, Errors={Errors}",
+                    request.Id, string.Join(", ", errors));
+
+                return BadRequest(new UpdateExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Validation failed: " + string.Join(", ", errors)
+                });
+            }
+
+            // Get user ID from claims
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("UpdateExternalAlarm failed: Invalid user ID from token");
+                return Unauthorized();
+            }
+
+            // Parse user GUID for audit logging
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                _logger.LogError("UpdateExternalAlarm failed: Invalid user GUID format - UserId={UserId}", userId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new UpdateExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Internal server error"
+                });
+            }
+
+            // Retrieve existing external alarm for audit trail using expression-based query
+            var existingExternalAlarms = await Core.Alarms.GetExternalAlarms(ea => ea.Id == request.Id);
+            var existingExternalAlarm = existingExternalAlarms?.FirstOrDefault();
+
+            if (existingExternalAlarm == null)
+            {
+                _logger.LogWarning("UpdateExternalAlarm failed: External alarm not found - Id={Id}, UserId={UserId}",
+                    request.Id, userId);
+
+                return NotFound(new UpdateExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "External alarm not found"
+                });
+            }
+
+            // Verify target item exists
+            var targetItem = await Core.Points.GetPoint(request.ItemId);
+            if (targetItem == null)
+            {
+                _logger.LogWarning("UpdateExternalAlarm failed: Target item not found - ItemId={ItemId}, Id={Id}, UserId={UserId}",
+                    request.ItemId, request.Id, userId);
+
+                return BadRequest(new UpdateExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Target item not found"
+                });
+            }
+
+            // Store before values for audit log
+            var beforeValues = new
+            {
+                Id = existingExternalAlarm.Id,
+                AlarmId = existingExternalAlarm.AlarmId,
+                ItemId = existingExternalAlarm.ItemId,
+                Value = existingExternalAlarm.Value,
+                IsDisabled = existingExternalAlarm.IsDisabled
+            };
+
+            // Update external alarm properties
+            existingExternalAlarm.ItemId = request.ItemId;
+            existingExternalAlarm.Value = request.Value;
+            existingExternalAlarm.IsDisabled = request.IsDisabled;
+
+            // Update external alarm via Core
+            var result = await Core.Alarms.UpdateExternalAlarm(existingExternalAlarm);
+
+            if (!result)
+            {
+                _logger.LogError("UpdateExternalAlarm failed: Core.Alarms.UpdateExternalAlarm returned false - Id={Id}, UserId={UserId}",
+                    request.Id, userId);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new UpdateExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Failed to update external alarm"
+                });
+            }
+
+            // Store after values for audit log
+            var afterValues = new
+            {
+                Id = request.Id,
+                AlarmId = existingExternalAlarm.AlarmId,
+                ItemId = request.ItemId,
+                Value = request.Value,
+                IsDisabled = request.IsDisabled
+            };
+
+            // Create audit log entry with before/after comparison using AuditService
+            await _auditService.LogAsync(
+                LogType.EditAlarm,
+                new
+                {
+                    Before = beforeValues,
+                    After = afterValues
+                },
+                itemId: request.ItemId,
+                userId: userGuid
+            );
+
+            _logger.LogInformation("UpdateExternalAlarm completed successfully: Id={Id}, ItemId={ItemId}, UserId={UserId}",
+                request.Id, request.ItemId, userId);
+
+            return Ok(new UpdateExternalAlarmResponseDto
+            {
+                Success = true,
+                Message = "External alarm updated successfully"
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "UpdateExternalAlarm validation failed: Id={Id}", request.Id);
+            return BadRequest(new UpdateExternalAlarmResponseDto
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "UpdateExternalAlarm resource not found: Id={Id}", request.Id);
+            return NotFound(new UpdateExternalAlarmResponseDto
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "UpdateExternalAlarm unauthorized: Id={Id}", request.Id);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UpdateExternalAlarm error: Id={Id}, Message={Message}",
+                request.Id, ex.Message);
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new UpdateExternalAlarmResponseDto
+            {
+                Success = false,
+                Message = "Internal server error"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Remove an external alarm from a parent alarm
+    /// </summary>
+    /// <param name="request">Remove external alarm request containing the external alarm ID to remove</param>
+    /// <returns>Result indicating success or failure of the removal operation</returns>
+    /// <remarks>
+    /// Deletes an external alarm configuration from the system. This removes the link between
+    /// the parent alarm and the target item, preventing automatic control actions when the
+    /// parent alarm is triggered.
+    /// 
+    /// This operation is irreversible. Once removed, the external alarm configuration must be
+    /// recreated if needed again. Use the update endpoint to temporarily disable an external
+    /// alarm if you might need to re-enable it later.
+    /// 
+    /// Use cases for removal:
+    /// - Decommissioning a controlled item
+    /// - Simplifying alarm response actions
+    /// - Removing obsolete automation logic
+    /// - Cleaning up test configurations
+    /// 
+    /// The operation validates:
+    /// - External alarm exists
+    /// - User has appropriate permissions
+    /// 
+    /// Creates an audit log entry recording the deletion with full configuration details
+    /// for compliance and historical tracking.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/removeexternalalarm
+    ///     {
+    ///        "id": "650e8400-e29b-41d4-a716-446655440001"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">External alarm removed successfully</response>
+    /// <response code="400">Validation error - invalid request format or external alarm ID</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - insufficient permissions to remove this external alarm</response>
+    /// <response code="404">External alarm not found - the specified external alarm ID does not exist</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("RemoveExternalAlarm")]
+    [ProducesResponseType(typeof(RemoveExternalAlarmResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RemoveExternalAlarmResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(RemoveExternalAlarmResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(RemoveExternalAlarmResponseDto), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RemoveExternalAlarm([FromBody] RemoveExternalAlarmRequestDto request)
+    {
+        try
+        {
+            _logger.LogInformation("RemoveExternalAlarm started: Id={Id}", request.Id);
+
+            // Check ModelState first
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("RemoveExternalAlarm validation failed: Id={Id}, Errors={Errors}",
+                    request.Id, string.Join(", ", errors));
+
+                return BadRequest(new RemoveExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Validation failed: " + string.Join(", ", errors)
+                });
+            }
+
+            // Get user ID from claims
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("RemoveExternalAlarm failed: Invalid user ID from token");
+                return Unauthorized();
+            }
+
+            // Parse user GUID for audit logging
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                _logger.LogError("RemoveExternalAlarm failed: Invalid user GUID format - UserId={UserId}", userId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new RemoveExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Internal server error"
+                });
+            }
+
+            // Retrieve existing external alarm for audit trail before deletion using expression-based query
+            var existingExternalAlarms = await Core.Alarms.GetExternalAlarms(ea => ea.Id == request.Id);
+            var existingExternalAlarm = existingExternalAlarms?.FirstOrDefault();
+
+            if (existingExternalAlarm == null)
+            {
+                _logger.LogWarning("RemoveExternalAlarm failed: External alarm not found - Id={Id}, UserId={UserId}",
+                    request.Id, userId);
+
+                return NotFound(new RemoveExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "External alarm not found"
+                });
+            }
+
+            // Store values for audit log before deletion
+            var deletedValues = new
+            {
+                Id = existingExternalAlarm.Id,
+                AlarmId = existingExternalAlarm.AlarmId,
+                ItemId = existingExternalAlarm.ItemId,
+                Value = existingExternalAlarm.Value,
+                IsDisabled = existingExternalAlarm.IsDisabled
+            };
+
+            // Remove external alarm via Core
+            var result = await Core.Alarms.RemoveExternalAlarm(existingExternalAlarm);
+
+            if (!result)
+            {
+                _logger.LogError("RemoveExternalAlarm failed: Core.Alarms.RemoveExternalAlarm returned false - Id={Id}, UserId={UserId}",
+                    request.Id, userId);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new RemoveExternalAlarmResponseDto
+                {
+                    Success = false,
+                    Message = "Failed to remove external alarm"
+                });
+            }
+
+            // Create audit log entry with deleted configuration using AuditService
+            await _auditService.LogAsync(
+                LogType.DeleteAlarm,
+                deletedValues,
+                itemId: existingExternalAlarm.ItemId,
+                userId: userGuid
+            );
+
+            _logger.LogInformation("RemoveExternalAlarm completed successfully: Id={Id}, UserId={UserId}",
+                request.Id, userId);
+
+            return Ok(new RemoveExternalAlarmResponseDto
+            {
+                Success = true,
+                Message = "External alarm removed successfully"
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "RemoveExternalAlarm validation failed: Id={Id}", request.Id);
+            return BadRequest(new RemoveExternalAlarmResponseDto
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "RemoveExternalAlarm resource not found: Id={Id}", request.Id);
+            return NotFound(new RemoveExternalAlarmResponseDto
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "RemoveExternalAlarm unauthorized: Id={Id}", request.Id);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "RemoveExternalAlarm error: Id={Id}, Message={Message}",
+                request.Id, ex.Message);
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new RemoveExternalAlarmResponseDto
+            {
+                Success = false,
+                Message = "Internal server error"
+            });
+        }
+    }
 }

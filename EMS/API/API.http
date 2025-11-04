@@ -1229,6 +1229,249 @@ Content-Type: application/json
 
 ###
 
+### Add External Alarm - HTTP
+# Add a new external alarm to trigger an indicator light when parent alarm activates
+POST {{API_HostAddress}}/api/monitoring/addexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "alarmId": "550e8400-e29b-41d4-a716-446655440000",
+  "itemId": "750e8400-e29b-41d4-a716-446655440002",
+  "value": true,
+  "isDisabled": false
+}
+
+###
+
+### Add External Alarm - HTTPS
+POST {{API_HostAddress}}/api/monitoring/addexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "alarmId": "550e8400-e29b-41d4-a716-446655440000",
+  "itemId": "850e8400-e29b-41d4-a716-446655440003",
+  "value": false,
+  "isDisabled": false
+}
+
+###
+
+### Add External Alarm - Error Case (Invalid Alarm ID - Should Return 400)
+POST {{API_HostAddress}}/api/monitoring/addexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "alarmId": "00000000-0000-0000-0000-000000000000",
+  "itemId": "750e8400-e29b-41d4-a716-446655440002",
+  "value": true,
+  "isDisabled": false
+}
+
+###
+
+### Add External Alarm - Error Case (Invalid Item ID - Should Return 400)
+POST {{API_HostAddress}}/api/monitoring/addexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "alarmId": "550e8400-e29b-41d4-a716-446655440000",
+  "itemId": "00000000-0000-0000-0000-000000000000",
+  "value": true,
+  "isDisabled": false
+}
+
+###
+
+### Add External Alarm - Error Case (Missing Required Fields - Validation Failure)
+POST {{API_HostAddress}}/api/monitoring/addexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "alarmId": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+###
+
+### Add External Alarm - Error Case (Unauthorized - No Token)
+POST {{API_HostAddress}}/api/monitoring/addexternalalarm
+Content-Type: application/json
+
+{
+  "alarmId": "550e8400-e29b-41d4-a716-446655440000",
+  "itemId": "750e8400-e29b-41d4-a716-446655440002",
+  "value": true,
+  "isDisabled": false
+}
+
+###
+
+### Update External Alarm - HTTP
+# Update an existing external alarm configuration
+POST {{API_HostAddress}}/api/monitoring/updateexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001",
+  "itemId": "850e8400-e29b-41d4-a716-446655440003",
+  "value": true,
+  "isDisabled": false
+}
+
+###
+
+### Update External Alarm - HTTPS
+POST {{API_HostAddress}}/api/monitoring/updateexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001",
+  "itemId": "750e8400-e29b-41d4-a716-446655440002",
+  "value": false,
+  "isDisabled": true
+}
+
+###
+
+### Update External Alarm - Change Target Item
+POST {{API_HostAddress}}/api/monitoring/updateexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001",
+  "itemId": "950e8400-e29b-41d4-a716-446655440004",
+  "value": true,
+  "isDisabled": false
+}
+
+###
+
+### Update External Alarm - Disable Temporarily
+POST {{API_HostAddress}}/api/monitoring/updateexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001",
+  "itemId": "750e8400-e29b-41d4-a716-446655440002",
+  "value": true,
+  "isDisabled": true
+}
+
+###
+
+### Update External Alarm - Error Case (Not Found - Should Return 404)
+POST {{API_HostAddress}}/api/monitoring/updateexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "itemId": "750e8400-e29b-41d4-a716-446655440002",
+  "value": true,
+  "isDisabled": false
+}
+
+###
+
+### Update External Alarm - Error Case (Invalid Item ID - Should Return 400)
+POST {{API_HostAddress}}/api/monitoring/updateexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001",
+  "itemId": "00000000-0000-0000-0000-000000000000",
+  "value": true,
+  "isDisabled": false
+}
+
+###
+
+### Update External Alarm - Error Case (Missing Required Fields - Validation Failure)
+POST {{API_HostAddress}}/api/monitoring/updateexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001"
+}
+
+###
+
+### Update External Alarm - Error Case (Unauthorized - No Token)
+POST {{API_HostAddress}}/api/monitoring/updateexternalalarm
+Content-Type: application/json
+
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001",
+  "itemId": "750e8400-e29b-41d4-a716-446655440002",
+  "value": true,
+  "isDisabled": false
+}
+
+###
+
+### Remove External Alarm - HTTP
+POST {{API_HostAddress}}/api/monitoring/removeexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001"
+}
+
+###
+
+### Remove External Alarm - HTTPS
+POST {{API_HostAddress}}/api/monitoring/removeexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001"
+}
+
+###
+
+### Remove External Alarm - Error Case (Not Found - Should Return 404)
+POST {{API_HostAddress}}/api/monitoring/removeexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "id": "00000000-0000-0000-0000-000000000000"
+}
+
+###
+
+### Remove External Alarm - Error Case (Missing ID - Validation Failure)
+POST {{API_HostAddress}}/api/monitoring/removeexternalalarm
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+}
+
+###
+
+### Remove External Alarm - Error Case (Unauthorized - No Token)
+POST {{API_HostAddress}}/api/monitoring/removeexternalalarm
+Content-Type: application/json
+
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001"
+}
+
+###
+
 ### ========================================
 ### Audit Log Endpoints
 ### ========================================
