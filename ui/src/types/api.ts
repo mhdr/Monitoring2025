@@ -1548,3 +1548,27 @@ export interface EditItemResponseDto {
   /** Error type if the operation failed */
   error?: EditItemErrorType;
 }
+
+// ==================== Push Update ====================
+
+/**
+ * Request DTO for triggering a settings update notification to all connected clients
+ */
+export interface PushUpdateRequestDto {
+  /** Optional message describing the update reason for audit logging purposes */
+  message?: string | null;
+}
+
+/**
+ * Response DTO for settings update notification push operation
+ */
+export interface PushUpdateResponseDto {
+  /** Indicates whether the update notification was successfully broadcasted */
+  success: boolean;
+  /** Descriptive message about the operation result */
+  message?: string | null;
+  /** Number of connected clients that received the update notification */
+  clientsNotified: number;
+  /** Timestamp when the notification was sent (Unix timestamp in seconds) */
+  timestamp: number;
+}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { MouseEvent } from 'react';
-import { AppBar, Toolbar, IconButton, Typography, Menu, MenuItem, Divider, Box, Container } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Typography, Menu, MenuItem, Divider, Box, Container, Snackbar, Alert } from '@mui/material';
 import { 
   Menu as MenuIcon, 
   AccountCircle, 
@@ -15,6 +15,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
 import MonitoringLogo from './shared/MonitoringLogo';
 import { createLogger } from '../utils/logger';
+import { pushUpdate } from '../services/extendedApi';
 import './ResponsiveNavbar.css';
 
 const logger = createLogger('ResponsiveNavbar');
@@ -28,6 +29,12 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+  const [isPushingUpdate, setIsPushingUpdate] = useState(false);
 
   const handleMenuOpen = (event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -57,10 +64,61 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
     navigate(`/dashboard/sync?force=true&redirect=${encodeURIComponent(window.location.pathname)}`);
   };
 
-  const handlePushUpdateClick = () => {
+  const handlePushUpdateClick = async () => {
     handleMenuClose();
-    // TODO: Implement push update functionality
+    
+    // Prevent multiple concurrent requests
+    if (isPushingUpdate) {
+      return;
+    }
+    
+    setIsPushingUpdate(true);
     logger.info('Push Update clicked', { user: user?.userName, roles: user?.roles });
+    
+    try {
+      // Call API to push update to all clients via SignalR
+      const response = await pushUpdate({
+        message: `Manual push update triggered by ${user?.userName || 'administrator'}`,
+      });
+      
+      if (response.success) {
+        logger.log('Push update successful - all clients will start background sync', {
+          clientsNotified: response.clientsNotified,
+          timestamp: response.timestamp,
+        });
+        
+        // Create success message with client count
+        const successMessage = response.clientsNotified > 0
+          ? `${t('pushUpdateSuccess')} (${response.clientsNotified} ${t('pushUpdateClientsNotified')})`
+          : t('pushUpdateSuccessNoClients');
+        
+        setSnackbar({
+          open: true,
+          message: successMessage,
+          severity: 'success',
+        });
+      } else {
+        logger.warn('Push update returned unsuccessful response', { message: response.message });
+        setSnackbar({
+          open: true,
+          message: response.message || t('pushUpdateError') || 'Failed to send update notification',
+          severity: 'error',
+        });
+      }
+    } catch (error) {
+      logger.error('Push update failed', { error, user: user?.userName });
+      setSnackbar({
+        open: true,
+        message: t('pushUpdateError') || 'Failed to send update notification to clients',
+        severity: 'error',
+      });
+    } finally {
+      setIsPushingUpdate(false);
+    }
+  };
+  
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   const isAdmin = () => {
@@ -96,6 +154,7 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
   };
 
   return (
+    <>
     <AppBar 
       position="static" 
       className="custom-navbar shadow"
@@ -330,6 +389,25 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
         </Toolbar>
       </Container>
     </AppBar>
+    
+    {/* Snackbar for push update feedback */}
+    <Snackbar
+      open={snackbar.open}
+      autoHideDuration={6000}
+      onClose={handleCloseSnackbar}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      data-id-ref="responsive-navbar-push-update-snackbar"
+    >
+      <Alert
+        onClose={handleCloseSnackbar}
+        severity={snackbar.severity}
+        variant="filled"
+        data-id-ref="responsive-navbar-push-update-snackbar-alert"
+      >
+        {snackbar.message}
+      </Alert>
+    </Snackbar>
+  </>
   );
 };
 

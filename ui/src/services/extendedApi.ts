@@ -33,6 +33,8 @@ import type {
   AuditLogResponseDto,
   SettingsVersionResponseDto,
   EditPointResponseDto,
+  PushUpdateRequestDto,
+  PushUpdateResponseDto,
 } from '../types/api';
 
 /**
@@ -354,6 +356,36 @@ export const getSettingsVersion = async (): Promise<SettingsVersionResponseDto> 
 
 /**
  * Push update notification to all clients
+ * 
+ * **Admin-only endpoint** that broadcasts a settings update notification to all connected SignalR clients.
+ * This triggers the ReceiveSettingsUpdate client method, prompting clients to refresh their local data
+ * through their own background synchronization processes.
+ * 
+ * @param data - Optional request containing a message for audit logging
+ * @returns Promise<PushUpdateResponseDto> - Response with success status, client count, and timestamp
+ * 
+ * @example
+ * // Simple push update without message
+ * const result = await pushUpdate({});
+ * console.log(`Notified ${result.clientsNotified} clients`);
+ * 
+ * @example
+ * // Push update with audit message
+ * const result = await pushUpdate({
+ *   message: "Manual settings refresh after bulk configuration update"
+ * });
+ */
+export const pushUpdate = async (data: PushUpdateRequestDto = {}): Promise<PushUpdateResponseDto> => {
+  try {
+    const response = await apiClient.post<PushUpdateResponseDto>('/api/Monitoring/PushUpdate', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * @deprecated Use pushUpdate instead - this endpoint will be removed in a future version
  */
 export const pushUpdateAllClients = async (): Promise<EditPointResponseDto> => {
   try {
