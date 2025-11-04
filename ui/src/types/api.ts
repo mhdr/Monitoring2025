@@ -727,6 +727,84 @@ export interface BatchEditExternalAlarmsRequestDto {
   removed?: ExternalAlarm[] | null;
 }
 
+// ============================================================================
+// External Alarm Individual Operations (Future API Endpoints)
+// ============================================================================
+
+/**
+ * Request model for adding a new external alarm configuration
+ * External alarms allow one alarm to trigger outputs on other monitoring items
+ */
+export interface AddExternalAlarmRequestDto {
+  /** The parent alarm ID that will trigger this external alarm */
+  alarmId: string; // UUID - REQUIRED
+  /** The monitoring item ID to write to when the parent alarm triggers */
+  itemId: string; // UUID - REQUIRED
+  /** The value to write to the target item when alarm triggers */
+  value: boolean; // REQUIRED
+  /** Whether this external alarm is disabled (won't execute when parent alarm triggers) */
+  isDisabled?: boolean;
+}
+
+/**
+ * Response model for adding an external alarm
+ * Indicates success/failure and provides the new external alarm ID on success
+ */
+export interface AddExternalAlarmResponseDto {
+  /** Indicates whether the external alarm was successfully added */
+  success: boolean;
+  /** Descriptive message about the operation result */
+  message?: string | null;
+  /** The unique identifier of the newly created external alarm (only present on successful creation) */
+  externalAlarmId?: string | null; // UUID
+}
+
+/**
+ * Request model for updating an existing external alarm configuration
+ */
+export interface UpdateExternalAlarmRequestDto {
+  /** Unique identifier of the external alarm to update */
+  id: string; // UUID - REQUIRED
+  /** The parent alarm ID (optional - include if changing the parent) */
+  alarmId?: string | null; // UUID
+  /** The monitoring item ID to write to when alarm triggers */
+  itemId?: string | null; // UUID
+  /** The value to write to the target item when alarm triggers */
+  value?: boolean | null;
+  /** Whether this external alarm is disabled */
+  isDisabled?: boolean | null;
+}
+
+/**
+ * Response model for updating an external alarm
+ * Indicates success/failure of the update operation
+ */
+export interface UpdateExternalAlarmResponseDto {
+  /** Indicates whether the external alarm was successfully updated */
+  success: boolean;
+  /** Descriptive message about the operation result */
+  message?: string | null;
+}
+
+/**
+ * Request model for removing an external alarm configuration
+ */
+export interface RemoveExternalAlarmRequestDto {
+  /** Unique identifier of the external alarm to remove */
+  id: string; // UUID - REQUIRED
+}
+
+/**
+ * Response model for removing an external alarm
+ * Indicates success/failure of the removal operation
+ */
+export interface RemoveExternalAlarmResponseDto {
+  /** Indicates whether the external alarm was successfully removed */
+  success: boolean;
+  /** Descriptive message about the operation result */
+  message?: string | null;
+}
+
 export interface ActiveAlarm {
   id?: string | null;
   alarmId?: string | null;

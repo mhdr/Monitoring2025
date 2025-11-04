@@ -30,6 +30,12 @@ import type {
   GetExternalAlarmsRequestDto,
   GetExternalAlarmsResponseDto,
   BatchEditExternalAlarmsRequestDto,
+  AddExternalAlarmRequestDto,
+  AddExternalAlarmResponseDto,
+  UpdateExternalAlarmRequestDto,
+  UpdateExternalAlarmResponseDto,
+  RemoveExternalAlarmRequestDto,
+  RemoveExternalAlarmResponseDto,
   ActiveAlarmsRequestDto,
   ActiveAlarmsResponseDto,
   AlarmHistoryRequestDto,
@@ -584,6 +590,127 @@ export const batchEditExternalAlarms = async (data: BatchEditExternalAlarmsReque
     const response = await apiClient.post<EditPointResponseDto>('/api/Monitoring/BatchEditExternalAlarms', data);
     return response.data;
   } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new external alarm configuration
+ * 
+ * Creates a new external alarm that triggers when the parent alarm activates.
+ * External alarms allow cascading alarm actions to write values to other monitoring items.
+ * 
+ * @param data - AddExternalAlarmRequestDto with alarmId, itemId, value, and isDisabled flag
+ * @returns Promise<AddExternalAlarmResponseDto> - Success status, message, and new external alarm ID
+ * 
+ * @example
+ * const result = await addExternalAlarm({
+ *   alarmId: '550e8400-e29b-41d4-a716-446655440000',
+ *   itemId: '550e8400-e29b-41d4-a716-446655440001',
+ *   value: true,
+ *   isDisabled: false
+ * });
+ * 
+ * @note This endpoint is planned for future implementation. Currently use batchEditExternalAlarms.
+ */
+export const addExternalAlarm = async (data: AddExternalAlarmRequestDto): Promise<AddExternalAlarmResponseDto> => {
+  try {
+    logger.log('Adding new external alarm:', { 
+      alarmId: data.alarmId, 
+      itemId: data.itemId,
+      value: data.value,
+      isDisabled: data.isDisabled,
+    });
+    
+    const response = await apiClient.post<AddExternalAlarmResponseDto>('/api/Monitoring/AddExternalAlarm', data);
+    
+    logger.log('External alarm added successfully:', { 
+      success: response.data.success,
+      externalAlarmId: response.data.externalAlarmId,
+      message: response.data.message,
+    });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to add external alarm:', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Update an existing external alarm configuration
+ * 
+ * Updates the configuration of an existing external alarm including:
+ * - Target item ID
+ * - Output value to write
+ * - Enabled/disabled state
+ * 
+ * @param data - UpdateExternalAlarmRequestDto with external alarm ID and updated properties
+ * @returns Promise<UpdateExternalAlarmResponseDto> - Success status and message
+ * 
+ * @example
+ * const result = await updateExternalAlarm({
+ *   id: '550e8400-e29b-41d4-a716-446655440002',
+ *   itemId: '550e8400-e29b-41d4-a716-446655440003',
+ *   value: false,
+ *   isDisabled: true
+ * });
+ * 
+ * @note This endpoint is planned for future implementation. Currently use batchEditExternalAlarms.
+ */
+export const updateExternalAlarm = async (data: UpdateExternalAlarmRequestDto): Promise<UpdateExternalAlarmResponseDto> => {
+  try {
+    logger.log('Updating external alarm:', { 
+      id: data.id,
+      itemId: data.itemId,
+      value: data.value,
+      isDisabled: data.isDisabled,
+    });
+    
+    const response = await apiClient.post<UpdateExternalAlarmResponseDto>('/api/Monitoring/UpdateExternalAlarm', data);
+    
+    logger.log('External alarm updated successfully:', { 
+      success: response.data.success,
+      message: response.data.message,
+    });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to update external alarm:', { externalAlarmId: data.id, error });
+    handleApiError(error);
+  }
+};
+
+/**
+ * Remove an external alarm configuration
+ * 
+ * Permanently deletes an external alarm from the system.
+ * This operation cannot be undone.
+ * 
+ * @param data - RemoveExternalAlarmRequestDto containing the external alarm ID to remove
+ * @returns Promise<RemoveExternalAlarmResponseDto> - Success status and message
+ * 
+ * @example
+ * const result = await removeExternalAlarm({ 
+ *   id: '550e8400-e29b-41d4-a716-446655440002' 
+ * });
+ * 
+ * @note This endpoint is planned for future implementation. Currently use batchEditExternalAlarms.
+ */
+export const removeExternalAlarm = async (data: RemoveExternalAlarmRequestDto): Promise<RemoveExternalAlarmResponseDto> => {
+  try {
+    logger.log('Removing external alarm:', { id: data.id });
+    
+    const response = await apiClient.post<RemoveExternalAlarmResponseDto>('/api/Monitoring/RemoveExternalAlarm', data);
+    
+    logger.log('External alarm removed successfully:', { 
+      success: response.data.success,
+      message: response.data.message,
+    });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to remove external alarm:', { externalAlarmId: data.id, error });
     handleApiError(error);
   }
 };
