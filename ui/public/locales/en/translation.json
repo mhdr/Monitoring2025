@@ -435,6 +435,22 @@
     "noTimeout": "No timeout",
     "seconds": "s"
   },
+  "externalAlarms": {
+    "title": "Manage External Alarms",
+    "alarmMessage": "Alarm Message",
+    "item": "Output Item",
+    "selectItem": "Select an item",
+    "outputValue": "Output Value",
+    "addNew": "Add External Alarm",
+    "noExternalAlarms": "No external alarms configured for this alarm",
+    "errorLoading": "Failed to load external alarms",
+    "errorSaving": "Failed to save external alarms",
+    "confirmDiscard": "You have unsaved changes. Are you sure you want to discard them?",
+    "validation": {
+      "itemRequired": "Please select an output item",
+      "duplicateItem": "Duplicate output item selected. Each item can only be used once."
+    }
+  },
   "alarmBadgePopover": {
     "title": "Active Alarms",
     "noMessage": "No alarm message configured"

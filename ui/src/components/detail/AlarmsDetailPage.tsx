@@ -47,6 +47,7 @@ import type { AGGridApi, AGGridColumnApi, AGGridColumnDef } from '../../types/ag
 import AddAlarmDialog from '../AddAlarmDialog';
 import EditAlarmDialog from '../EditAlarmDialog';
 import DeleteAlarmDialog from '../DeleteAlarmDialog';
+import ManageExternalAlarmsDialog from '../ManageExternalAlarmsDialog';
 
 const logger = createLogger('AlarmsDetailPage');
 
@@ -75,6 +76,8 @@ const AlarmsDetailPage: React.FC = () => {
   const [deleteAlarmDialogOpen, setDeleteAlarmDialogOpen] = useState<boolean>(false);
   const [alarmToEdit, setAlarmToEdit] = useState<EnrichedAlarm | null>(null);
   const [alarmToDelete, setAlarmToDelete] = useState<EnrichedAlarm | null>(null);
+  const [manageExternalAlarmsDialogOpen, setManageExternalAlarmsDialogOpen] = useState<boolean>(false);
+  const [alarmForExternalAlarms, setAlarmForExternalAlarms] = useState<EnrichedAlarm | null>(null);
   
   // Create items map from MonitoringContext
   const itemsMap = useMemo(() => {
@@ -452,10 +455,22 @@ const AlarmsDetailPage: React.FC = () => {
 
   const handleViewAlarms = useCallback(() => {
     if (selectedRows.length === 1) {
-      logger.log('View alarms for selected alarm:', selectedRows[0]);
-      // TODO: Implement view alarms functionality
+      logger.log('View external alarms for selected alarm:', selectedRows[0]);
+      setAlarmForExternalAlarms(selectedRows[0]);
+      setManageExternalAlarmsDialogOpen(true);
     }
   }, [selectedRows]);
+
+  const handleManageExternalAlarmsSuccess = useCallback(() => {
+    logger.log('External alarms updated successfully, refreshing data');
+    setAlarmForExternalAlarms(null);
+    fetchAlarmsData();
+  }, [fetchAlarmsData]);
+
+  const handleManageExternalAlarmsClose = useCallback(() => {
+    setManageExternalAlarmsDialogOpen(false);
+    setAlarmForExternalAlarms(null);
+  }, []);
 
   const handleEdit = useCallback(() => {
     if (selectedRows.length === 1) {
@@ -869,6 +884,21 @@ const AlarmsDetailPage: React.FC = () => {
         itemName={alarmToDelete?.itemId ? getItemName(itemsMap.get(alarmToDelete.itemId), alarmToDelete.itemId) : undefined}
         onSuccess={handleDeleteAlarmSuccess}
       />
+
+      {/* Manage External Alarms Dialog */}
+      {alarmForExternalAlarms && alarmForExternalAlarms.id && (
+        <ManageExternalAlarmsDialog
+          open={manageExternalAlarmsDialogOpen}
+          onClose={handleManageExternalAlarmsClose}
+          alarmId={alarmForExternalAlarms.id}
+          alarmMessage={
+            language === 'fa'
+              ? alarmForExternalAlarms.messageFa || alarmForExternalAlarms.message || undefined
+              : alarmForExternalAlarms.message || alarmForExternalAlarms.messageFa || undefined
+          }
+          onSuccess={handleManageExternalAlarmsSuccess}
+        />
+      )}
     </Box>
   );
 };
