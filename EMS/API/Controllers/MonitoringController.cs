@@ -5049,38 +5049,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
-    /// Manually trigger a version update notification to all connected clients via gRPC
-    /// </summary>
-    /// <returns>Result indicating success or failure of the client update push</returns>
-    /// <response code="200">Returns success status of the update push operation</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's an error pushing updates to clients</response>
-    [HttpGet("PushUpdateAllClients")]
-    public async Task<IActionResult> PushUpdateAllClients()
-    {
-        try
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
-            var response = new PushUpdateAllClientsResponse();
-
-            response.Success = true;
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-        }
-
-        return BadRequest(ModelState);
-    }
-
-    /// <summary>
     /// Get all PID controller configurations in the system
     /// </summary>
     /// <param name="request">Get PID controllers request (currently unused but required for POST)</param>
