@@ -7,6 +7,7 @@ import { useRoutePreloader } from './hooks/useRoutePreloader';
 import { useAuth } from './hooks/useAuth';
 import { useSignalR } from './hooks/useSignalR';
 import { useActiveAlarmPolling } from './hooks/useActiveAlarmPolling';
+import { useBackgroundSync } from './hooks/useBackgroundSync';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -236,6 +237,13 @@ function App() {
   // - Stops polling after 1 minute if SignalR is connected
   // - Resumes polling if SignalR disconnects for more than 5 seconds
   useActiveAlarmPolling(isAuthenticated, isAuthLoading);
+
+  // Background data synchronization with version checking
+  // - Fetches settings version on app start/page refresh
+  // - Compares with persisted version from localStorage
+  // - Syncs Groups, Items, and Alarms in background if version changed
+  // - Updates UI smoothly without showing SyncPage
+  useBackgroundSync({ isAuthenticated, isAuthLoading });
 
   // Show loading screen during language changes
   if (isLoadingLanguage) {
