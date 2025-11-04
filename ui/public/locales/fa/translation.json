@@ -824,7 +824,14 @@
       "EditExternalAlarm": "ویرایش هشدار خارجی",
       "AddPoint": "افزودن نقطه",
       "DeletePoint": "حذف نقطه",
-      "DeleteGroup": "حذف گروه"
+      "DeleteGroup": "حذف گروه",
+      "AddGroup": "افزودن گروه",
+      "EditUser": "ویرایش کاربر",
+      "AddUser": "افزودن کاربر",
+      "DeleteUser": "حذف کاربر",
+      "EditRole": "ویرایش نقش",
+      "AddRole": "افزودن نقش",
+      "DeleteRole": "حذف نقش"
     },
     "systemUser": "سیستم",
     "userAction": "عملیات کاربر",

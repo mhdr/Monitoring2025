@@ -269,6 +269,20 @@ const AuditTrailPage: React.FC = () => {
           return t('auditTrailPage.logTypes.DeletePoint');
         case LogTypeEnum.DeleteGroup:
           return t('auditTrailPage.logTypes.DeleteGroup');
+        case LogTypeEnum.AddGroup:
+          return t('auditTrailPage.logTypes.AddGroup');
+        case LogTypeEnum.EditUser:
+          return t('auditTrailPage.logTypes.EditUser');
+        case LogTypeEnum.AddUser:
+          return t('auditTrailPage.logTypes.AddUser');
+        case LogTypeEnum.DeleteUser:
+          return t('auditTrailPage.logTypes.DeleteUser');
+        case LogTypeEnum.EditRole:
+          return t('auditTrailPage.logTypes.EditRole');
+        case LogTypeEnum.AddRole:
+          return t('auditTrailPage.logTypes.AddRole');
+        case LogTypeEnum.DeleteRole:
+          return t('auditTrailPage.logTypes.DeleteRole');
         default:
           return `Unknown (${logType})`;
       }

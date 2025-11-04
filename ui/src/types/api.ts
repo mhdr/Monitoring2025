@@ -442,8 +442,8 @@ export const ModbusDataTypeEnum = {
   Int: 2,
 } as const;
 
-// LogType: Based on backend enum - EditPoint=1, EditAlarm=2, Login=3, Logout=4, EditGroup=5, AddAlarm=6, DeleteAlarm=7, AddExternalAlarm=8, DeleteExternalAlarm=9, EditExternalAlarm=10, AddPoint=11, DeletePoint=12, DeleteGroup=13
-export type LogType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+// LogType: Based on backend enum - EditPoint=1, EditAlarm=2, Login=3, Logout=4, EditGroup=5, AddAlarm=6, DeleteAlarm=7, AddExternalAlarm=8, DeleteExternalAlarm=9, EditExternalAlarm=10, AddPoint=11, DeletePoint=12, DeleteGroup=13, AddGroup=14, EditUser=15, AddUser=16, DeleteUser=17, EditRole=18, AddRole=19, DeleteRole=20
+export type LogType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
 
 /**
  * LogType enum values for better code readability
@@ -463,6 +463,13 @@ export const LogTypeEnum = {
   AddPoint: 11,
   DeletePoint: 12,
   DeleteGroup: 13,
+  AddGroup: 14,
+  EditUser: 15,
+  AddUser: 16,
+  DeleteUser: 17,
+  EditRole: 18,
+  AddRole: 19,
+  DeleteRole: 20,
 } as const;
 
 // AddUserErrorType: 1 = UserAlreadyExists, 2 = ValidationError
