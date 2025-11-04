@@ -1556,3 +1556,25 @@ Authorization: Bearer {{access_token}}
 }
 
 ###
+
+#################################################################################
+# MONITORING CONTROLLER - SYSTEM SETTINGS & VERSION ENDPOINTS
+#################################################################################
+
+### Get system settings version - HTTP
+# Retrieves version information for cache invalidation
+# Version: Global system settings version
+# UserVersion: User-specific settings version
+GET {{API_HostAddress}}/api/monitoring/SettingsVersion
+Authorization: Bearer {{authTokenHTTP}}
+
+###
+
+### Get system settings version - HTTPS
+# Retrieves version information for cache invalidation
+# Version: Global system settings version
+# UserVersion: User-specific settings version
+GET {{API_HostAddress}}/api/monitoring/SettingsVersion
+Authorization: Bearer {{authTokenHTTPS}}
+
+###

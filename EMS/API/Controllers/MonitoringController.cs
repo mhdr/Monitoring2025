@@ -1041,43 +1041,98 @@ public class MonitoringController : ControllerBase
     /// <summary>
     /// Get system settings version information for the current user
     /// </summary>
-    /// <returns>System version and user-specific version information</returns>
-    /// <response code="200">Returns the version information</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's an error retrieving version information</response>
+    /// <returns>System version and user-specific version information used for client-side cache invalidation</returns>
+    /// <remarks>
+    /// Retrieves version information to help clients determine when to refresh cached settings data.
+    /// The Version field represents the global system settings version that changes when system-wide
+    /// configuration is updated. The UserVersion field is user-specific and changes when that user's
+    /// settings or permissions are modified.
+    /// 
+    /// Sample request:
+    /// 
+    ///     GET /api/monitoring/settingsversion
+    ///     
+    /// Sample response:
+    /// 
+    ///     {
+    ///       "version": "1.0.2024.01",
+    ///       "userVersion": "1.0.2024.01.user123"
+    ///     }
+    ///     
+    /// Clients should store these values and compare them on subsequent requests to detect changes.
+    /// </remarks>
+    /// <response code="200">Returns the version information successfully</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="500">Internal server error</response>
     [HttpGet("SettingsVersion")]
     [ProducesResponseType(typeof(SettingsVersionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> SettingsVersion()
     {
         try
         {
+            // Extract user ID from JWT token
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("SettingsVersion: Unauthorized access attempt (no user ID in token)");
+                return Unauthorized(new { success = false, message = "User not authenticated" });
             }
 
-            var userGuid = Guid.Parse(userId);
-            var version = (await Core.Settings.GetVersion()).ToString();
-            var userVersion = await _context.UserVersions.FirstOrDefaultAsync(x => x.UserId == userGuid);
+            _logger.LogInformation("SettingsVersion: Retrieving version info for user {UserId}", userId);
 
-            var response = new SettingsVersionResponseDto()
+            // Parse user GUID
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                _logger.LogWarning("SettingsVersion: Invalid user ID format {UserId}", userId);
+                return Unauthorized(new { success = false, message = "Invalid user ID format" });
+            }
+
+            // Retrieve system version
+            var systemVersion = await Core.Settings.GetVersion();
+            var version = systemVersion.ToString();
+            
+            _logger.LogDebug("SettingsVersion: System version is {Version}", version);
+
+            // Retrieve user-specific version
+            var userVersionRecord = await _context.UserVersions
+                .FirstOrDefaultAsync(x => x.UserId == userGuid);
+
+            var response = new SettingsVersionResponseDto
             {
                 Version = version,
-                UserVersion = userVersion?.Version,
+                UserVersion = userVersionRecord?.Version,
             };
+
+            _logger.LogInformation(
+                "SettingsVersion: Retrieved version info for user {UserId} - System: {SystemVersion}, User: {UserVersion}", 
+                userId, 
+                version, 
+                userVersionRecord?.Version ?? "none");
 
             return Ok(response);
         }
-        catch (Exception e)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(e, e.Message);
+            _logger.LogWarning(ex, "SettingsVersion: Validation error for user {UserId}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return BadRequest(new { success = false, message = ex.Message });
         }
-
-        return BadRequest(ModelState);
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "SettingsVersion: Unauthorized access attempt for user {UserId}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SettingsVersion: Error retrieving version info for user {UserId}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { success = false, message = "Internal server error" });
+        }
     }
 
     /// <summary>
