@@ -1473,6 +1473,274 @@ Content-Type: application/json
 ###
 
 ### ========================================
+### Batch Edit External Alarms (Add, Update, Delete in One Operation)
+### ========================================
+
+### Batch Edit External Alarms - Complete Operation (Add 2, Update 1, Delete 1) - HTTP
+POST {{API_HostAddress}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "alarmId": "650e8400-e29b-41d4-a716-446655440001",
+  "added": [
+    {
+      "itemId": "550e8400-e29b-41d4-a716-446655440010",
+      "value": true,
+      "isDisabled": false
+    },
+    {
+      "itemId": "550e8400-e29b-41d4-a716-446655440011",
+      "value": false,
+      "isDisabled": false
+    }
+  ],
+  "changed": [
+    {
+      "id": "750e8400-e29b-41d4-a716-446655440020",
+      "itemId": "550e8400-e29b-41d4-a716-446655440012",
+      "value": true,
+      "isDisabled": false
+    }
+  ],
+  "removed": [
+    {
+      "id": "750e8400-e29b-41d4-a716-446655440030"
+    }
+  ]
+}
+
+###
+
+### Batch Edit External Alarms - Complete Operation (Add 2, Update 1, Delete 1) - HTTPS
+POST {{API_HostAddressSSL}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "alarmId": "650e8400-e29b-41d4-a716-446655440001",
+  "added": [
+    {
+      "itemId": "550e8400-e29b-41d4-a716-446655440010",
+      "value": true,
+      "isDisabled": false
+    },
+    {
+      "itemId": "550e8400-e29b-41d4-a716-446655440011",
+      "value": false,
+      "isDisabled": false
+    }
+  ],
+  "changed": [
+    {
+      "id": "750e8400-e29b-41d4-a716-446655440020",
+      "itemId": "550e8400-e29b-41d4-a716-446655440012",
+      "value": true,
+      "isDisabled": false
+    }
+  ],
+  "removed": [
+    {
+      "id": "750e8400-e29b-41d4-a716-446655440030"
+    }
+  ]
+}
+
+###
+
+### Batch Edit External Alarms - Only Add Operations - HTTP
+POST {{API_HostAddress}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "alarmId": "650e8400-e29b-41d4-a716-446655440001",
+  "added": [
+    {
+      "itemId": "550e8400-e29b-41d4-a716-446655440010",
+      "value": true,
+      "isDisabled": false
+    },
+    {
+      "itemId": "550e8400-e29b-41d4-a716-446655440011",
+      "value": false,
+      "isDisabled": true
+    }
+  ],
+  "changed": [],
+  "removed": []
+}
+
+###
+
+### Batch Edit External Alarms - Only Update Operations - HTTP
+POST {{API_HostAddress}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "alarmId": "650e8400-e29b-41d4-a716-446655440001",
+  "added": [],
+  "changed": [
+    {
+      "id": "750e8400-e29b-41d4-a716-446655440020",
+      "itemId": "550e8400-e29b-41d4-a716-446655440012",
+      "value": false,
+      "isDisabled": true
+    },
+    {
+      "id": "750e8400-e29b-41d4-a716-446655440021",
+      "itemId": "550e8400-e29b-41d4-a716-446655440013",
+      "value": true,
+      "isDisabled": false
+    }
+  ],
+  "removed": []
+}
+
+###
+
+### Batch Edit External Alarms - Only Delete Operations - HTTP
+POST {{API_HostAddress}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "alarmId": "650e8400-e29b-41d4-a716-446655440001",
+  "added": [],
+  "changed": [],
+  "removed": [
+    {
+      "id": "750e8400-e29b-41d4-a716-446655440030"
+    },
+    {
+      "id": "750e8400-e29b-41d4-a716-446655440031"
+    }
+  ]
+}
+
+###
+
+### Batch Edit External Alarms - Error Case (Parent Alarm Not Found - Should Return 404)
+POST {{API_HostAddress}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "alarmId": "00000000-0000-0000-0000-000000000000",
+  "added": [
+    {
+      "itemId": "550e8400-e29b-41d4-a716-446655440010",
+      "value": true,
+      "isDisabled": false
+    }
+  ],
+  "changed": [],
+  "removed": []
+}
+
+###
+
+### Batch Edit External Alarms - Error Case (Target Item Not Found for Addition - Should Return 404)
+POST {{API_HostAddress}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "alarmId": "650e8400-e29b-41d4-a716-446655440001",
+  "added": [
+    {
+      "itemId": "00000000-0000-0000-0000-000000000000",
+      "value": true,
+      "isDisabled": false
+    }
+  ],
+  "changed": [],
+  "removed": []
+}
+
+###
+
+### Batch Edit External Alarms - Error Case (External Alarm Not Found for Update - Should Return 404)
+POST {{API_HostAddress}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "alarmId": "650e8400-e29b-41d4-a716-446655440001",
+  "added": [],
+  "changed": [
+    {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "itemId": "550e8400-e29b-41d4-a716-446655440012",
+      "value": true,
+      "isDisabled": false
+    }
+  ],
+  "removed": []
+}
+
+###
+
+### Batch Edit External Alarms - Error Case (Missing ID in Changed Item - Validation Failure)
+POST {{API_HostAddress}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "alarmId": "650e8400-e29b-41d4-a716-446655440001",
+  "added": [],
+  "changed": [
+    {
+      "itemId": "550e8400-e29b-41d4-a716-446655440012",
+      "value": true,
+      "isDisabled": false
+    }
+  ],
+  "removed": []
+}
+
+###
+
+### Batch Edit External Alarms - Error Case (Missing AlarmId - Validation Failure)
+POST {{API_HostAddress}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "added": [
+    {
+      "itemId": "550e8400-e29b-41d4-a716-446655440010",
+      "value": true,
+      "isDisabled": false
+    }
+  ],
+  "changed": [],
+  "removed": []
+}
+
+###
+
+### Batch Edit External Alarms - Error Case (Unauthorized - No Token)
+POST {{API_HostAddress}}/api/monitoring/batcheditexternalalarms
+Content-Type: application/json
+
+{
+  "alarmId": "650e8400-e29b-41d4-a716-446655440001",
+  "added": [
+    {
+      "itemId": "550e8400-e29b-41d4-a716-446655440010",
+      "value": true,
+      "isDisabled": false
+    }
+  ],
+  "changed": [],
+  "removed": []
+}
+
+###
+
+### ========================================
 ### Audit Log Endpoints
 ### ========================================
 

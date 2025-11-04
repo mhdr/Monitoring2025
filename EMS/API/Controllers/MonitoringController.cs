@@ -6662,4 +6662,437 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             });
         }
     }
+
+    /// <summary>
+    /// Batch edit external alarm configurations (add, update, delete multiple in one operation)
+    /// </summary>
+    /// <param name="request">Batch edit request containing lists of external alarms to add, update, and delete</param>
+    /// <returns>Result indicating success or failure with counts of operations performed</returns>
+    /// <remarks>
+    /// Performs bulk operations on external alarm configurations in a single transaction for improved efficiency.
+    /// This endpoint allows you to add new external alarms, update existing ones, and delete obsolete configurations
+    /// all in one atomic operation. This is particularly useful when reconfiguring alarm cascades or updating
+    /// multiple output actions simultaneously.
+    /// 
+    /// **Operation Details:**
+    /// - **Add**: Creates new external alarm configurations with generated IDs. Validates target items exist.
+    /// - **Update**: Modifies existing external alarm configurations. Validates external alarms exist before updating.
+    /// - **Delete**: Removes external alarm configurations. Validates external alarms exist before deletion.
+    /// 
+    /// **Validation:**
+    /// - All operations validate that the target items (ItemId) exist in the system
+    /// - Update and Delete operations validate that the external alarms (Id) exist
+    /// - All operations are performed in a single transaction - if any operation fails, all changes are rolled back
+    /// 
+    /// **Audit Trail:**
+    /// - Each operation type (add/update/delete) creates separate audit log entries
+    /// - Audit logs capture before/after states for update operations
+    /// - All changes are logged with user ID, timestamp, and IP address
+    /// 
+    /// Sample request adding 2 external alarms, updating 1, and deleting 1:
+    /// 
+    ///     POST /api/monitoring/batcheditexternalalarms
+    ///     {
+    ///        "alarmId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "added": [
+    ///          {
+    ///            "itemId": "550e8400-e29b-41d4-a716-446655440010",
+    ///            "value": true,
+    ///            "isDisabled": false
+    ///          },
+    ///          {
+    ///            "itemId": "550e8400-e29b-41d4-a716-446655440011",
+    ///            "value": false,
+    ///            "isDisabled": false
+    ///          }
+    ///        ],
+    ///        "changed": [
+    ///          {
+    ///            "id": "550e8400-e29b-41d4-a716-446655440020",
+    ///            "itemId": "550e8400-e29b-41d4-a716-446655440012",
+    ///            "value": true,
+    ///            "isDisabled": false
+    ///          }
+    ///        ],
+    ///        "removed": [
+    ///          {
+    ///            "id": "550e8400-e29b-41d4-a716-446655440030"
+    ///          }
+    ///        ]
+    ///     }
+    ///     
+    /// Sample request with only additions (no updates or deletions):
+    /// 
+    ///     POST /api/monitoring/batcheditexternalalarms
+    ///     {
+    ///        "alarmId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "added": [
+    ///          {
+    ///            "itemId": "550e8400-e29b-41d4-a716-446655440010",
+    ///            "value": true,
+    ///            "isDisabled": false
+    ///          }
+    ///        ],
+    ///        "changed": [],
+    ///        "removed": []
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Batch operation completed successfully with operation counts</response>
+    /// <response code="400">Validation error - invalid request format, missing required fields, or referenced items/alarms not found</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="404">Parent alarm, target item, or external alarm not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("BatchEditExternalAlarms")]
+    [ProducesResponseType(typeof(BatchEditExternalAlarmsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BatchEditExternalAlarmsResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(BatchEditExternalAlarmsResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(BatchEditExternalAlarmsResponseDto), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> BatchEditExternalAlarms([FromBody] BatchEditExternalAlarmsRequestDto request)
+    {
+        try
+        {
+            _logger.LogInformation("BatchEditExternalAlarms operation started: AlarmId={AlarmId}, AddCount={AddCount}, UpdateCount={UpdateCount}, DeleteCount={DeleteCount}",
+                request?.AlarmId, request?.Added?.Count ?? 0, request?.Changed?.Count ?? 0, request?.Removed?.Count ?? 0);
+
+            // Validate request
+            if (request == null)
+            {
+                _logger.LogWarning("BatchEditExternalAlarms failed: Request is null");
+                return BadRequest(new BatchEditExternalAlarmsResponseDto
+                {
+                    Success = false,
+                    Message = "Request body is required"
+                });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("BatchEditExternalAlarms failed: User not authenticated");
+                return Unauthorized(new { success = false, message = "Authentication required" });
+            }
+
+            // Check ModelState
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("BatchEditExternalAlarms validation failed: UserId={UserId}, Errors={Errors}",
+                    userId, string.Join(", ", errors));
+
+                return BadRequest(new BatchEditExternalAlarmsResponseDto
+                {
+                    Success = false,
+                    Message = $"Validation failed: {string.Join(", ", errors)}"
+                });
+            }
+
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                _logger.LogWarning("BatchEditExternalAlarms failed: Invalid user ID format - UserId={UserId}", userId);
+                return BadRequest(new BatchEditExternalAlarmsResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid user ID format"
+                });
+            }
+
+            // Validate parent alarm exists
+            var parentAlarm = await Core.Alarms.GetAlarm(request.AlarmId);
+            if (parentAlarm == null)
+            {
+                _logger.LogWarning("BatchEditExternalAlarms failed: Parent alarm not found - AlarmId={AlarmId}, UserId={UserId}",
+                    request.AlarmId, userId);
+
+                return NotFound(new BatchEditExternalAlarmsResponseDto
+                {
+                    Success = false,
+                    Message = $"Parent alarm with ID {request.AlarmId} not found"
+                });
+            }
+
+            // Get existing external alarms for this parent alarm
+            var existingExternalAlarms = await Core.Alarms.GetExternalAlarms(ea => ea.AlarmId == request.AlarmId);
+
+            // Prepare lists for batch operation
+            List<ExternalAlarm> listAdd = new();
+            List<ExternalAlarm> listUpdate = new();
+            List<ExternalAlarm> listDelete = new();
+
+            // Process additions
+            foreach (var addDto in request.Added)
+            {
+                // Validate target item exists
+                var targetItem = await Core.Points.GetPoint(addDto.ItemId);
+                if (targetItem == null)
+                {
+                    _logger.LogWarning("BatchEditExternalAlarms failed: Target item not found for addition - ItemId={ItemId}, UserId={UserId}",
+                        addDto.ItemId, userId);
+
+                    return NotFound(new BatchEditExternalAlarmsResponseDto
+                    {
+                        Success = false,
+                        Message = $"Target item with ID {addDto.ItemId} not found"
+                    });
+                }
+
+                var newExternalAlarm = new ExternalAlarm
+                {
+                    Id = Guid.NewGuid(),
+                    AlarmId = request.AlarmId,
+                    ItemId = addDto.ItemId,
+                    Value = addDto.Value,
+                    IsDisabled = addDto.IsDisabled
+                };
+
+                listAdd.Add(newExternalAlarm);
+
+                _logger.LogDebug("Prepared external alarm for addition: Id={Id}, AlarmId={AlarmId}, ItemId={ItemId}, Value={Value}, IsDisabled={IsDisabled}",
+                    newExternalAlarm.Id, newExternalAlarm.AlarmId, newExternalAlarm.ItemId, newExternalAlarm.Value, newExternalAlarm.IsDisabled);
+            }
+
+            // Process updates
+            foreach (var changeDto in request.Changed)
+            {
+                if (!changeDto.Id.HasValue)
+                {
+                    _logger.LogWarning("BatchEditExternalAlarms failed: Update item missing ID - UserId={UserId}", userId);
+                    return BadRequest(new BatchEditExternalAlarmsResponseDto
+                    {
+                        Success = false,
+                        Message = "External alarm ID is required for update operations"
+                    });
+                }
+
+                var existingAlarm = existingExternalAlarms.FirstOrDefault(ea => ea.Id == changeDto.Id.Value);
+                if (existingAlarm == null)
+                {
+                    _logger.LogWarning("BatchEditExternalAlarms failed: External alarm not found for update - Id={Id}, UserId={UserId}",
+                        changeDto.Id.Value, userId);
+
+                    return NotFound(new BatchEditExternalAlarmsResponseDto
+                    {
+                        Success = false,
+                        Message = $"External alarm with ID {changeDto.Id.Value} not found"
+                    });
+                }
+
+                // Validate target item exists
+                var targetItem = await Core.Points.GetPoint(changeDto.ItemId);
+                if (targetItem == null)
+                {
+                    _logger.LogWarning("BatchEditExternalAlarms failed: Target item not found for update - ItemId={ItemId}, UserId={UserId}",
+                        changeDto.ItemId, userId);
+
+                    return NotFound(new BatchEditExternalAlarmsResponseDto
+                    {
+                        Success = false,
+                        Message = $"Target item with ID {changeDto.ItemId} not found"
+                    });
+                }
+
+                // Update properties
+                existingAlarm.ItemId = changeDto.ItemId;
+                existingAlarm.Value = changeDto.Value;
+                existingAlarm.IsDisabled = changeDto.IsDisabled;
+
+                listUpdate.Add(existingAlarm);
+
+                _logger.LogDebug("Prepared external alarm for update: Id={Id}, ItemId={ItemId}, Value={Value}, IsDisabled={IsDisabled}",
+                    existingAlarm.Id, existingAlarm.ItemId, existingAlarm.Value, existingAlarm.IsDisabled);
+            }
+
+            // Process deletions
+            foreach (var removeDto in request.Removed)
+            {
+                if (!removeDto.Id.HasValue)
+                {
+                    _logger.LogWarning("BatchEditExternalAlarms failed: Delete item missing ID - UserId={UserId}", userId);
+                    return BadRequest(new BatchEditExternalAlarmsResponseDto
+                    {
+                        Success = false,
+                        Message = "External alarm ID is required for delete operations"
+                    });
+                }
+
+                var existingAlarm = existingExternalAlarms.FirstOrDefault(ea => ea.Id == removeDto.Id.Value);
+                if (existingAlarm == null)
+                {
+                    _logger.LogWarning("BatchEditExternalAlarms failed: External alarm not found for deletion - Id={Id}, UserId={UserId}",
+                        removeDto.Id.Value, userId);
+
+                    return NotFound(new BatchEditExternalAlarmsResponseDto
+                    {
+                        Success = false,
+                        Message = $"External alarm with ID {removeDto.Id.Value} not found"
+                    });
+                }
+
+                listDelete.Add(existingAlarm);
+
+                _logger.LogDebug("Prepared external alarm for deletion: Id={Id}, ItemId={ItemId}",
+                    existingAlarm.Id, existingAlarm.ItemId);
+            }
+
+            // Execute batch operation
+            _logger.LogInformation("Executing batch external alarm operations: Add={AddCount}, Update={UpdateCount}, Delete={DeleteCount}",
+                listAdd.Count, listUpdate.Count, listDelete.Count);
+
+            // Process additions
+            foreach (var externalAlarm in listAdd)
+            {
+                var result = await Core.Alarms.AddExternalAlarm(externalAlarm);
+                if (!result)
+                {
+                    _logger.LogError("BatchEditExternalAlarms failed: Could not add external alarm - Id={Id}, AlarmId={AlarmId}",
+                        externalAlarm.Id, externalAlarm.AlarmId);
+
+                    return StatusCode(StatusCodes.Status500InternalServerError, new BatchEditExternalAlarmsResponseDto
+                    {
+                        Success = false,
+                        Message = "Failed to add external alarm"
+                    });
+                }
+            }
+
+            // Process updates
+            foreach (var externalAlarm in listUpdate)
+            {
+                var result = await Core.Alarms.UpdateExternalAlarm(externalAlarm);
+                if (!result)
+                {
+                    _logger.LogError("BatchEditExternalAlarms failed: Could not update external alarm - Id={Id}",
+                        externalAlarm.Id);
+
+                    return StatusCode(StatusCodes.Status500InternalServerError, new BatchEditExternalAlarmsResponseDto
+                    {
+                        Success = false,
+                        Message = "Failed to update external alarm"
+                    });
+                }
+            }
+
+            // Process deletions
+            foreach (var externalAlarm in listDelete)
+            {
+                var result = await Core.Alarms.RemoveExternalAlarm(externalAlarm);
+                if (!result)
+                {
+                    _logger.LogError("BatchEditExternalAlarms failed: Could not delete external alarm - Id={Id}",
+                        externalAlarm.Id);
+
+                    return StatusCode(StatusCodes.Status500InternalServerError, new BatchEditExternalAlarmsResponseDto
+                    {
+                        Success = false,
+                        Message = "Failed to delete external alarm"
+                    });
+                }
+            }
+
+            // Create audit log entries
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+            if (listAdd.Count > 0)
+            {
+                var addedData = listAdd.Select(ea => new
+                {
+                    Id = ea.Id,
+                    AlarmId = ea.AlarmId,
+                    ItemId = ea.ItemId,
+                    Value = ea.Value,
+                    IsDisabled = ea.IsDisabled
+                }).ToList();
+
+                await _auditService.LogAsync(
+                    LogType.AddAlarm,
+                    new { Operation = "BatchAddExternalAlarms", ExternalAlarms = addedData, Count = listAdd.Count },
+                    itemId: request.AlarmId,
+                    userId: userGuid
+                );
+            }
+
+            if (listUpdate.Count > 0)
+            {
+                var updatedData = listUpdate.Select(ea => new
+                {
+                    Id = ea.Id,
+                    AlarmId = ea.AlarmId,
+                    ItemId = ea.ItemId,
+                    Value = ea.Value,
+                    IsDisabled = ea.IsDisabled
+                }).ToList();
+
+                await _auditService.LogAsync(
+                    LogType.EditAlarm,
+                    new { Operation = "BatchUpdateExternalAlarms", ExternalAlarms = updatedData, Count = listUpdate.Count },
+                    itemId: request.AlarmId,
+                    userId: userGuid
+                );
+            }
+
+            if (listDelete.Count > 0)
+            {
+                var deletedData = listDelete.Select(ea => new
+                {
+                    Id = ea.Id,
+                    AlarmId = ea.AlarmId,
+                    ItemId = ea.ItemId
+                }).ToList();
+
+                await _auditService.LogAsync(
+                    LogType.DeleteAlarm,
+                    new { Operation = "BatchDeleteExternalAlarms", ExternalAlarms = deletedData, Count = listDelete.Count },
+                    itemId: request.AlarmId,
+                    userId: userGuid
+                );
+            }
+
+            _logger.LogInformation("BatchEditExternalAlarms operation completed successfully: AlarmId={AlarmId}, Added={AddCount}, Updated={UpdateCount}, Deleted={DeleteCount}, UserId={UserId}",
+                request.AlarmId, listAdd.Count, listUpdate.Count, listDelete.Count, userId);
+
+            var successMessage = $"Batch edit external alarms completed successfully: {listAdd.Count} added, {listUpdate.Count} updated, {listDelete.Count} deleted";
+
+            return Ok(new BatchEditExternalAlarmsResponseDto
+            {
+                Success = true,
+                Message = successMessage,
+                AddedCount = listAdd.Count,
+                UpdatedCount = listUpdate.Count,
+                DeletedCount = listDelete.Count
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "BatchEditExternalAlarms validation error: AlarmId={AlarmId}",
+                request?.AlarmId);
+
+            return BadRequest(new BatchEditExternalAlarmsResponseDto
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "BatchEditExternalAlarms unauthorized: AlarmId={AlarmId}", request?.AlarmId);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "BatchEditExternalAlarms error: AlarmId={AlarmId}, Message={Message}",
+                request?.AlarmId, ex.Message);
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new BatchEditExternalAlarmsResponseDto
+            {
+                Success = false,
+                Message = "Internal server error"
+            });
+        }
+    }
 }
