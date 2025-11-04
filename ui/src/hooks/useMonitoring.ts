@@ -97,7 +97,36 @@ export function useMonitoring() {
   const fetchActiveAlarmCount = useCallback(async () => {
     try {
       setActiveAlarmsFetching(true);
-      const activeAlarmsResponse = await getActiveAlarms();
+      
+      // CRITICAL FIX: Get items from Zustand store and filter by itemIds
+      // This ensures badge count matches the filtered alarms the user can see
+      // Previously, we called getActiveAlarms() without parameters, which returned
+      // ALL active alarms (unfiltered), causing badge count to deviate from
+      // the displayed alarms on ActiveAlarmsPage
+      const currentState = useMonitoringStore.getState();
+      const storedItems = currentState.items;
+      
+      // Extract itemIds from stored items (same pattern as ActiveAlarmsPage)
+      const itemIds = storedItems
+        .map(item => item.id)
+        .filter((id): id is string => id !== null && id !== undefined);
+      
+      logger.log('Fetching active alarm count with itemIds filter:', { 
+        itemCount: storedItems.length,
+        itemIdsCount: itemIds.length 
+      });
+      
+      // Skip fetch if no items available (user has no items or not synced yet)
+      if (itemIds.length === 0) {
+        logger.warn('No itemIds available - skipping active alarm count fetch');
+        updateActiveAlarms(0, Date.now(), null);
+        setActiveAlarmsFetchError(null);
+        setActiveAlarmsFetching(false);
+        return;
+      }
+      
+      // Call API with itemIds filter (matches ActiveAlarmsPage behavior)
+      const activeAlarmsResponse = await getActiveAlarms({ itemIds });
       
       // FIX: API returns nested structure {data: {data: ActiveAlarm[]}}
       // TypeScript types don't match the actual API response
@@ -109,7 +138,6 @@ export function useMonitoring() {
       let highestPriority: 1 | 2 | null = null;
       if (activeAlarmsData.length > 0) {
         // Get current alarm configurations from Zustand store
-        const currentState = useMonitoringStore.getState();
         const storedAlarms = currentState.alarms;
         
         // Find the highest priority among active alarms by matching with alarm configs
@@ -131,9 +159,10 @@ export function useMonitoring() {
         }
       }
       
-      logger.log('Active alarm count fetched successfully:', {
+      logger.log('Active alarm count fetched successfully (filtered by itemIds):', {
         count: activeAlarmsData.length,
         highestPriority: highestPriority === 2 ? 'High' : highestPriority === 1 ? 'Low' : 'None',
+        itemIdsUsed: itemIds.length,
       });
       
       updateActiveAlarms(activeAlarmsData.length, Date.now(), highestPriority);
