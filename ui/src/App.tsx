@@ -229,13 +229,12 @@ function App() {
   
   // SignalR real-time connection for active alarms
   // Automatically connects when authenticated, disconnects on logout
+  // Handles all real-time updates via ReceiveActiveAlarmsUpdate
   useSignalR(isAuthenticated, isAuthLoading);
 
-  // Smart polling for active alarm count with SignalR fallback
-  // - Fetches on app start/refresh
-  // - Polls every 5 seconds
-  // - Stops polling after 1 minute if SignalR is connected
-  // - Resumes polling if SignalR disconnects for more than 5 seconds
+  // Initial active alarm count fetch (one-time only)
+  // - Fetches once on app start/page refresh to initialize sidebar badge
+  // - SignalR handles all subsequent real-time updates
   useActiveAlarmPolling(isAuthenticated, isAuthLoading);
 
   // Background data synchronization with version checking

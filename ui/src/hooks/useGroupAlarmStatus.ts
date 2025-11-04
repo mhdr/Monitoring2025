@@ -8,7 +8,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useMonitoring } from './useMonitoring';
 import { getActiveAlarms } from '../services/monitoringApi';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
-import { StreamStatus } from '../stores/monitoringStore';
 import type { Group, Item, ActiveAlarm, AlarmDto } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -57,7 +56,7 @@ interface GroupAlarmStatus {
  */
 export function useGroupAlarmStatus(groupId: string): GroupAlarmStatus {
   const { state } = useMonitoring();
-  const { groups, items, alarms, alarmRefreshTrigger, activeAlarms: { streamStatus } } = state;
+  const { groups, items, alarms, alarmRefreshTrigger } = state;
   
   const [activeAlarms, setActiveAlarms] = useState<ActiveAlarm[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -119,36 +118,9 @@ export function useGroupAlarmStatus(groupId: string): GroupAlarmStatus {
     }
   }, [alarmRefreshTrigger, fetchActiveAlarms, groupId]);
 
-  // Add periodic polling based on SignalR connection status
-  useEffect(() => {
-    let pollingInterval: ReturnType<typeof setInterval> | null = null;
-
-    // Determine polling interval based on SignalR status
-    let interval: number;
-    if (streamStatus === StreamStatus.CONNECTED) {
-      // SignalR is connected - poll every 1 minute
-      interval = 60000; // 1 minute
-    } else {
-      // SignalR is not connected - poll every 30 seconds as fallback
-      interval = 30000; // 30 seconds
-    }
-
-    logger.log(`Starting group alarm status polling for group ${groupId}`, { 
-      interval,
-      signalRStatus: streamStatus,
-      reason: streamStatus === StreamStatus.CONNECTED ? 'SignalR connected (1min)' : 'SignalR disconnected (fallback)'
-    });
-
-    pollingInterval = setInterval(() => {
-      fetchActiveAlarms();
-    }, interval);
-
-    return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
-    };
-  }, [streamStatus, fetchActiveAlarms, groupId]);
+  // No polling - SignalR handles real-time updates
+  // Initial fetch happens on mount via alarmRefreshTrigger dependency above
+  // SignalR ReceiveActiveAlarmsUpdate will trigger re-fetches when alarms change
 
   const status = useMemo(() => {
     // Default status
