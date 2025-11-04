@@ -33,6 +33,10 @@ namespace API.Hubs;
 /// <term>ReceiveActiveAlarmsUpdate(int activeAlarmsCount)</term>
 /// <description>Receives active alarm count updates from the server when alarms change state. Called automatically by the server's background worker.</description>
 /// </item>
+/// <item>
+/// <term>ReceiveSettingsUpdate()</term>
+/// <description>Receives notification that system settings have been updated and clients should refresh their local data. Triggered when an admin calls the PushUpdate endpoint.</description>
+/// </item>
 /// </list>
 /// 
 /// <para><strong>Connection Lifecycle:</strong></para>
@@ -64,6 +68,13 @@ namespace API.Hubs;
 ///     document.getElementById("alarmCount").textContent = activeAlarmsCount;
 /// });
 /// 
+/// // Register client method to receive settings update notifications
+/// connection.on("ReceiveSettingsUpdate", () => {
+///     console.log("Settings updated - refreshing data...");
+///     // Trigger your application's data refresh logic here
+///     refreshApplicationData();
+/// });
+/// 
 /// // Start connection
 /// await connection.start();
 /// console.log("SignalR Connected");
@@ -89,6 +100,14 @@ namespace API.Hubs;
 /// connection.On&lt;int&gt;("ReceiveActiveAlarmsUpdate", (activeAlarmsCount) =>
 /// {
 ///     Console.WriteLine($"Active alarms: {activeAlarmsCount}");
+/// });
+/// 
+/// // Register client method to receive settings update notifications
+/// connection.On("ReceiveSettingsUpdate", () =>
+/// {
+///     Console.WriteLine("Settings updated - refreshing data...");
+///     // Trigger your application's data refresh logic here
+///     RefreshApplicationData();
 /// });
 /// 
 /// // Start connection

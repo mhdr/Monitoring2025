@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using API.Hubs;
 using API.Models.Dto;
 using API.Models.ModelDto;
 using API.Services;
@@ -13,6 +14,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Share.Libs;
@@ -36,6 +38,8 @@ public class MonitoringController : ControllerBase
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IBus _bus;
     private readonly IAuditService _auditService;
+    private readonly IHubContext<MonitoringHub> _hubContext;
+    private readonly ConnectionTrackingService _connectionTracker;
 
     /// <summary>
     /// Initializes a new instance of the MonitoringController
@@ -46,13 +50,17 @@ public class MonitoringController : ControllerBase
     /// <param name="httpContextAccessor">The HTTP context accessor</param>
     /// <param name="bus">The MassTransit bus service</param>
     /// <param name="auditService">The audit service for logging operations</param>
+    /// <param name="hubContext">The SignalR hub context for broadcasting updates</param>
+    /// <param name="connectionTracker">The connection tracking service for monitoring connected clients</param>
     public MonitoringController(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
         ILogger<MonitoringController> logger,
         IHttpContextAccessor httpContextAccessor,
         IBus bus,
-        IAuditService auditService)
+        IAuditService auditService,
+        IHubContext<MonitoringHub> hubContext,
+        ConnectionTrackingService connectionTracker)
     {
         _userManager = userManager;
         _context = context;
@@ -60,6 +68,8 @@ public class MonitoringController : ControllerBase
         _httpContextAccessor = httpContextAccessor;
         _bus = bus;
         _auditService = auditService;
+        _hubContext = hubContext;
+        _connectionTracker = connectionTracker;
     }
 
     /// <summary>
@@ -1203,6 +1213,13 @@ public class MonitoringController : ControllerBase
                                 }
                             },
                             Returns = "void"
+                        },
+                        new SignalRMethodInfo
+                        {
+                            Name = "ReceiveSettingsUpdate",
+                            Description = "Receives notification that system settings have been updated. Triggered when an admin calls the PushUpdate endpoint. Clients should refresh their local data through their own background synchronization processes.",
+                            Parameters = new List<SignalRParameterInfo>(),
+                            Returns = "void"
                         }
                     },
                     
@@ -1220,10 +1237,16 @@ const connection = new signalR.HubConnectionBuilder()
     .configureLogging(signalR.LogLevel.Information)
     .build();
 
-// Register client method to receive updates
+// Register client methods to receive updates
 connection.on('ReceiveActiveAlarmsUpdate', (activeAlarmsCount) => {
     console.log(`Active alarms: ${activeAlarmsCount}`);
     document.getElementById('alarmCount').textContent = activeAlarmsCount;
+});
+
+connection.on('ReceiveSettingsUpdate', () => {
+    console.log('Settings updated - refreshing data...');
+    // Trigger your application's data refresh logic
+    refreshApplicationData();
 });
 
 // Handle connection events
@@ -1258,10 +1281,17 @@ var connection = new HubConnectionBuilder()
     .WithAutomaticReconnect()
     .Build();
 
-// Register client method to receive updates
+// Register client methods to receive updates
 connection.On<int>(""ReceiveActiveAlarmsUpdate"", (activeAlarmsCount) =>
 {
     Console.WriteLine($""Active alarms: {activeAlarmsCount}"");
+});
+
+connection.On(""ReceiveSettingsUpdate"", () =>
+{
+    Console.WriteLine(""Settings updated - refreshing data..."");
+    // Trigger your application's data refresh logic
+    RefreshApplicationData();
 });
 
 // Handle connection events
@@ -1309,9 +1339,12 @@ hub_connection = HubConnectionBuilder() \
     }) \
     .build()
 
-# Register client method to receive updates
+# Register client methods to receive updates
 hub_connection.on(""ReceiveActiveAlarmsUpdate"", lambda activeAlarmsCount: 
     print(f""Active alarms: {activeAlarmsCount}""))
+
+hub_connection.on(""ReceiveSettingsUpdate"", lambda: 
+    print(""Settings updated - refreshing data...""))
 
 # Handle connection events
 hub_connection.on_open(lambda: print(""Connection opened""))
@@ -1333,6 +1366,154 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
         {
             _logger.LogError(ex, "Error retrieving SignalR hub info");
             return StatusCode(500, new { success = false, message = "Internal server error" });
+        }
+    }
+
+    /// <summary>
+    /// Trigger a settings update notification to all connected clients via SignalR
+    /// </summary>
+    /// <param name="request">Push update request containing optional message for audit logging</param>
+    /// <returns>Result indicating success or failure with the number of clients notified</returns>
+    /// <remarks>
+    /// **Admin-only endpoint** that broadcasts a settings update notification to all connected SignalR clients.
+    /// This triggers the ReceiveSettingsUpdate client method, prompting clients to refresh their local data
+    /// through their own background synchronization processes.
+    /// 
+    /// **Use Cases:**
+    /// - After making bulk configuration changes that affect multiple users
+    /// - When critical system settings are updated and clients need immediate notification
+    /// - To force a data refresh across all connected clients without waiting for their polling intervals
+    /// - When troubleshooting client synchronization issues
+    /// 
+    /// **What happens when this endpoint is called:**
+    /// 1. Validates the requesting user has Admin role
+    /// 2. Increments the settings version in the database (Core.Settings.Init) - offline devices will detect this change on next startup
+    /// 3. Broadcasts ReceiveSettingsUpdate() to all connected SignalR clients
+    /// 4. Clients receive the notification and trigger their data refresh logic
+    /// 5. Creates an audit log entry for compliance tracking with the new version number
+    /// 6. Returns the count of connected clients that were notified
+    /// 
+    /// **Client Implementation:**
+    /// Clients must register a handler for the ReceiveSettingsUpdate method:
+    /// 
+    /// JavaScript/TypeScript:
+    /// ```javascript
+    /// connection.on("ReceiveSettingsUpdate", () => {
+    ///     console.log("Settings updated - refreshing data...");
+    ///     // Trigger your application's data refresh logic
+    ///     await refreshGroups();
+    ///     await refreshItems();
+    ///     await refreshAlarms();
+    /// });
+    /// ```
+    /// 
+    /// C#:
+    /// ```csharp
+    /// connection.On("ReceiveSettingsUpdate", () =>
+    /// {
+    ///     Console.WriteLine("Settings updated - refreshing data...");
+    ///     // Trigger your application's data refresh logic
+    ///     RefreshApplicationData();
+    /// });
+    /// ```
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/pushupdate
+    ///     {
+    ///        "message": "Manual settings refresh triggered after bulk configuration update"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Settings update notification successfully broadcasted to all connected clients</response>
+    /// <response code="400">Validation error - invalid request format</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - Admin role required</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("PushUpdate")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(PushUpdateResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PushUpdate([FromBody] PushUpdateRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userName = User.Identity?.Name ?? "Unknown";
+            
+            _logger.LogInformation("PushUpdate started: User {UserName} (ID: {UserId}), Message: {Message}", 
+                userName, userId, request.Message ?? "No message provided");
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("PushUpdate validation failed for user {UserName}", userName);
+                return BadRequest(new PushUpdateResponseDto 
+                { 
+                    Success = false, 
+                    Message = "Invalid request data" 
+                });
+            }
+
+            // Get count of connected clients
+            var connectedClientsCount = _connectionTracker.GetTotalConnectionCount();
+            var connectedUsersCount = _connectionTracker.GetOnlineUserCount();
+
+            _logger.LogInformation("Broadcasting settings update to {ClientCount} connections ({UserCount} unique users)", 
+                connectedClientsCount, connectedUsersCount);
+
+            // Update settings version in database so offline devices will detect change on next startup
+            _logger.LogDebug("PushUpdate: Incrementing settings version in database");
+            await Core.Settings.Init();
+            
+            var newVersion = await Core.Settings.GetVersion();
+            _logger.LogInformation("PushUpdate: Settings version updated to {Version}", newVersion);
+
+            // Broadcast settings update notification to all connected clients
+            await _hubContext.Clients.All.SendAsync("ReceiveSettingsUpdate");
+
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            // Create audit log entry using EditGroup as the closest existing log type for system configuration changes
+            await _auditService.LogAsync(
+                LogType.EditGroup,
+                new
+                {
+                    Action = "PushUpdate",
+                    UserName = userName,
+                    Message = request.Message ?? "No message provided",
+                    NewVersion = newVersion.ToString(),
+                    ClientsNotified = connectedClientsCount,
+                    ConnectedUsers = connectedUsersCount,
+                    Timestamp = timestamp
+                },
+                itemId: null,
+                userId: string.IsNullOrEmpty(userId) ? null : Guid.Parse(userId)
+            );
+
+            _logger.LogInformation("PushUpdate completed successfully: {ClientCount} clients notified", 
+                connectedClientsCount);
+
+            return Ok(new PushUpdateResponseDto
+            {
+                Success = true,
+                Message = "Settings update notification sent successfully",
+                ClientsNotified = connectedClientsCount,
+                Timestamp = timestamp
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "PushUpdate: Error broadcasting settings update for user {UserName}", 
+                User.Identity?.Name);
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new PushUpdateResponseDto 
+                { 
+                    Success = false, 
+                    Message = "Internal server error" 
+                });
         }
     }
 

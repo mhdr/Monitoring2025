@@ -2089,3 +2089,31 @@ GET {{API_HostAddress}}/api/monitoring/SettingsVersion
 Authorization: Bearer {{authTokenHTTPS}}
 
 ###
+
+### Push settings update notification - HTTP (Admin only)
+# Triggers a SignalR notification to all connected clients to refresh their data
+# Requires Admin role
+# Broadcasts ReceiveSettingsUpdate() to all connected SignalR clients
+POST {{API_HostAddress}}/api/monitoring/PushUpdate
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "message": "Manual settings refresh triggered after bulk configuration update"
+}
+
+###
+
+### Push settings update notification - HTTPS (Admin only)
+# Triggers a SignalR notification to all connected clients to refresh their data
+# Requires Admin role
+# Broadcasts ReceiveSettingsUpdate() to all connected SignalR clients
+POST {{API_HostAddress}}/api/monitoring/PushUpdate
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "message": "Manual settings refresh triggered after bulk configuration update"
+}
+
+###
