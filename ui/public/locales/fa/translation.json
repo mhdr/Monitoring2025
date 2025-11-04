@@ -411,7 +411,7 @@
       "count": "هشدار خارجی"
     },
     "actions": {
-      "viewDetails": "مشاهده جزئیات",
+      "viewAlarms": "آژیرها",
       "edit": "ویرایش",
       "delete": "حذف"
     },

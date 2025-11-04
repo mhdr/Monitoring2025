@@ -411,7 +411,7 @@
       "count": "External Alarm(s)"
     },
     "actions": {
-      "viewDetails": "View Details",
+      "viewAlarms": "Alarms",
       "edit": "Edit",
       "delete": "Delete"
     },

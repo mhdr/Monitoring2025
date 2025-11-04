@@ -22,7 +22,7 @@ import {
   NotificationsOff as NotificationsOffIcon,
   Link as LinkIcon,
   LinkOff as LinkOffIcon,
-  Info as InfoIcon,
+  Campaign as CampaignIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   FileDownload as FileDownloadIcon,
@@ -450,10 +450,10 @@ const AlarmsDetailPage: React.FC = () => {
     setAddAlarmDialogOpen(false);
   }, []);
 
-  const handleViewDetails = useCallback(() => {
+  const handleViewAlarms = useCallback(() => {
     if (selectedRows.length === 1) {
-      logger.log('View details for alarm:', selectedRows[0]);
-      // TODO: Implement view details dialog
+      logger.log('View alarms for selected alarm:', selectedRows[0]);
+      // TODO: Implement view alarms functionality
     }
   }, [selectedRows]);
 
@@ -701,12 +701,12 @@ const AlarmsDetailPage: React.FC = () => {
               
               <Button
                 variant="outlined"
-                color="info"
-                startIcon={<InfoIcon />}
-                onClick={handleViewDetails}
+                color="warning"
+                startIcon={<CampaignIcon />}
+                onClick={handleViewAlarms}
                 disabled={selectedRows.length !== 1}
                 size={isMobile ? 'small' : 'medium'}
-                data-id-ref="alarms-toolbar-view-btn"
+                data-id-ref="alarms-toolbar-alarms-btn"
                 sx={{
                   alignItems: 'center',
                   '& .MuiButton-startIcon': {
@@ -716,7 +716,7 @@ const AlarmsDetailPage: React.FC = () => {
                   },
                 }}
               >
-                {t('alarms.actions.viewDetails')}
+                {t('alarms.actions.viewAlarms')}
               </Button>
               
               <Button
