@@ -71,15 +71,16 @@ export function useBackgroundSync({ isAuthenticated, isAuthLoading }: UseBackgro
 
   /**
    * Perform background data synchronization
+   * @param forceSync - If true, skip version check and force sync
    */
-  const performBackgroundSync = useCallback(async () => {
+  const performBackgroundSync = useCallback(async (forceSync = false) => {
     if (!isAuthenticated || isAuthLoading) {
       logger.log('Skipping background sync - user not authenticated or auth loading');
       return;
     }
 
-    // Prevent duplicate syncs
-    if (hasSyncedRef.current) {
+    // Prevent duplicate syncs (unless forced)
+    if (!forceSync && hasSyncedRef.current) {
       logger.log('Background sync already performed this session');
       return;
     }
@@ -89,7 +90,7 @@ export function useBackgroundSync({ isAuthenticated, isAuthLoading }: UseBackgro
     setCurrentPhase('version-check');
 
     try {
-      logger.info('Starting background sync - checking version');
+      logger.info('Starting background sync - checking version', { forceSync });
       
       // Phase 1: Fetch current version from API
       const versionResponse = await getSettingsVersion();
@@ -97,8 +98,8 @@ export function useBackgroundSync({ isAuthenticated, isAuthLoading }: UseBackgro
       
       logger.log('Fetched version from API', { version, userVersion });
       
-      // Check if version has changed
-      const hasChanged = hasVersionChanged(version, userVersion);
+      // Check if version has changed (skip check if forcing sync)
+      const hasChanged = forceSync || hasVersionChanged(version, userVersion);
       
       if (!hasChanged) {
         logger.info('Version unchanged - skipping data sync');
@@ -108,7 +109,11 @@ export function useBackgroundSync({ isAuthenticated, isAuthLoading }: UseBackgro
         return;
       }
       
-      logger.info('Version changed - syncing data in background');
+      if (forceSync) {
+        logger.info('Force sync enabled - syncing data regardless of version');
+      } else {
+        logger.info('Version changed - syncing data in background');
+      }
       
       // Phase 2: Fetch Groups in background
       setCurrentPhase('groups');
@@ -181,7 +186,7 @@ export function useBackgroundSync({ isAuthenticated, isAuthLoading }: UseBackgro
 
   /**
    * Manually trigger background sync (used by SignalR ReceiveSettingsUpdate)
-   * This bypasses the hasSyncedRef check to force a sync
+   * This forces a sync regardless of version check and bypasses the hasSyncedRef check
    */
   const triggerManualSync = useCallback(async () => {
     logger.info('Manual background sync triggered (e.g., from SignalR ReceiveSettingsUpdate)');
@@ -196,17 +201,11 @@ export function useBackgroundSync({ isAuthenticated, isAuthLoading }: UseBackgro
       return;
     }
 
-    // Temporarily reset the sync flag to allow immediate re-sync
-    const previousSyncState = hasSyncedRef.current;
-    hasSyncedRef.current = false;
-    
+    // Force sync without version check - when admin pushes update, we always sync
     try {
-      await performBackgroundSync();
-    } finally {
-      // Restore the sync flag (will be set to true by performBackgroundSync if successful)
-      if (!hasSyncedRef.current) {
-        hasSyncedRef.current = previousSyncState;
-      }
+      await performBackgroundSync(true); // Pass forceSync=true
+    } catch (error) {
+      logger.error('Manual sync failed', error);
     }
   }, [isAuthenticated, isAuthLoading, isSyncing, performBackgroundSync]);
 
