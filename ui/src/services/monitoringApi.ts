@@ -54,6 +54,7 @@ import type {
   AddItemResponseDto,
   EditItemRequestDto,
   EditItemResponseDto,
+  SettingsVersionResponseDto,
 } from '../types/api';
 
 const logger = createLogger('MonitoringAPI');
@@ -800,6 +801,37 @@ export const addItem = async (data: AddItemRequestDto): Promise<AddItemResponseD
     return response.data;
   } catch (error) {
     logger.error('Failed to add item', { itemName: data.itemName, error });
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get system settings version information for the current user
+ * Retrieves version information to help clients determine when to refresh cached settings data.
+ * 
+ * The Version field represents the global system settings version that changes when system-wide
+ * configuration is updated. The UserVersion field is user-specific and changes when that user's
+ * settings or permissions are modified.
+ * 
+ * Clients should store these values and compare them on subsequent requests to detect changes.
+ * 
+ * @returns Promise<SettingsVersionResponseDto> - Version information for cache management
+ */
+export const getSettingsVersion = async (): Promise<SettingsVersionResponseDto> => {
+  const logger = createLogger('MonitoringAPI:getSettingsVersion');
+  try {
+    logger.log('Fetching settings version');
+    
+    const response = await apiClient.get<SettingsVersionResponseDto>('/api/Monitoring/SettingsVersion');
+    
+    logger.log('Settings version retrieved successfully', { 
+      version: response.data.version,
+      userVersion: response.data.userVersion
+    });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get settings version', error);
     handleApiError(error);
   }
 };

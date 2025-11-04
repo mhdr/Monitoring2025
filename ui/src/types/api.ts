@@ -769,6 +769,25 @@ export interface AlarmHistoryResponseDto {
   totalPages: number;
 }
 
+// ==================== Settings Version DTOs ====================
+
+/**
+ * Response DTO containing system settings version information.
+ * Used to determine when clients should refresh cached settings data.
+ */
+export interface SettingsVersionResponseDto {
+  /**
+   * Global system settings version that changes when system-wide configuration is updated.
+   * Example: "1.0.2024.01"
+   */
+  version?: string | null;
+  /**
+   * User-specific settings version that changes when that user's settings or permissions are modified.
+   * Example: "1.0.2024.01.user123"
+   */
+  userVersion?: string | null;
+}
+
 // ==================== User Management DTOs ====================
 
 export interface User {
