@@ -9,6 +9,7 @@
   "notificationsMenu": "Notifications",
   "profile": "Profile",
   "forceSync": "Force Sync",
+  "pushUpdate": "Push Update",
   "logout": "Logout",
   "login": "Login",
   "save": "Save",

@@ -7,13 +7,17 @@ import {
   Person as PersonIcon,
   Settings as SettingsIcon,
   Sync as SyncIcon,
+  Publish as PublishIcon,
   Logout as LogoutIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
 import MonitoringLogo from './shared/MonitoringLogo';
+import { createLogger } from '../utils/logger';
 import './ResponsiveNavbar.css';
+
+const logger = createLogger('ResponsiveNavbar');
 
 interface ResponsiveNavbarProps {
   onToggleSidebar?: () => void;
@@ -51,6 +55,16 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
   const handleForceSyncClick = () => {
     handleMenuClose();
     navigate(`/dashboard/sync?force=true&redirect=${encodeURIComponent(window.location.pathname)}`);
+  };
+
+  const handlePushUpdateClick = () => {
+    handleMenuClose();
+    // TODO: Implement push update functionality
+    logger.info('Push Update clicked', { user: user?.userName, roles: user?.roles });
+  };
+
+  const isAdmin = () => {
+    return user?.roles?.includes('admin') || user?.roles?.includes('Admin');
   };
 
   const getUserDisplayName = () => {
@@ -273,6 +287,25 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
                 />
                 {t('forceSync')}
               </MenuItem>
+              {isAdmin() && (
+                <MenuItem 
+                  onClick={handlePushUpdateClick}
+                  className="touch-target"
+                  sx={{
+                    minHeight: { xs: 48, sm: 44 },
+                    px: { xs: 2, sm: 2 },
+                    py: { xs: 1.5, sm: 1 },
+                  }}
+                  data-id-ref="responsive-navbar-user-push-update-link"
+                >
+                  <PublishIcon 
+                    sx={{ mr: 1.5, fontSize: 20 }} 
+                    aria-hidden="true" 
+                    data-id-ref="responsive-navbar-user-push-update-icon"
+                  />
+                  {t('pushUpdate')}
+                </MenuItem>
+              )}
               <Divider data-id-ref="responsive-navbar-user-divider-2" />
               <MenuItem 
                 onClick={handleLogout}
