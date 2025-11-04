@@ -53,7 +53,7 @@ const AppRoutes = () => {
         <Route path="/sync" element={
           <ProtectedRoute>
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <SyncPage />
               </Suspense>
             </LazyErrorBoundary>
@@ -62,7 +62,7 @@ const AppRoutes = () => {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <DashboardLayout />
               </Suspense>
             </LazyErrorBoundary>
@@ -71,77 +71,77 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="/dashboard/monitoring" replace />} />
           <Route path="monitoring" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <MonitoringPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="plots" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <PlotsPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="active-alarms" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ActiveAlarmsPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="alarm-log" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <AlarmLogPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="audit-trail" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <AuditTrailPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="disabled-alarms" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <DisabledAlarmsPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="scheduler" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <SchedulerPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="management" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ManagementPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="settings" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <SettingsPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="profile" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ProfilePage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="sync" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <SyncPage />
               </Suspense>
             </LazyErrorBoundary>
@@ -150,7 +150,7 @@ const AppRoutes = () => {
         <Route path="/item-detail" element={
           <ProtectedRoute>
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <DetailLayout />
               </Suspense>
             </LazyErrorBoundary>
@@ -159,56 +159,56 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="/item-detail/trend-analysis" replace />} />
           <Route path="trend-analysis" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <TrendAnalysisPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="data-table" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <DataTablePage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="live-monitoring" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <LiveMonitoringDetailPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="alarms" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <AlarmsDetailPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="active-alarms" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ActiveAlarmsDetailPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="alarm-log" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <AlarmLogDetailPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="audit-trail" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <AuditTrailDetailPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
           <Route path="management" element={
             <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} /> }>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ManagementDetailPage />
               </Suspense>
             </LazyErrorBoundary>
