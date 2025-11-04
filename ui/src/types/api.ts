@@ -687,6 +687,21 @@ export interface DeleteAlarmResponseDto {
   message?: string;
 }
 
+/**
+ * External alarm edit model for batch edit operations
+ * Used in BatchEditExternalAlarmsRequestDto for add, update, and delete operations
+ */
+export interface ExternalAlarmEdit {
+  id: string; // UUID - For new items use '00000000-0000-0000-0000-000000000000', backend will generate actual ID
+  itemId: string; // UUID - The monitoring item ID to write to when alarm triggers
+  value: boolean; // The value to write when this external alarm is triggered
+  isDisabled: boolean; // Whether this external alarm is disabled
+}
+
+/**
+ * Legacy external alarm model - deprecated in favor of ExternalAlarmEdit
+ * @deprecated Use ExternalAlarmEdit instead
+ */
 export interface ExternalAlarm {
   id: string; // UUID
   itemId: string; // UUID
@@ -720,11 +735,16 @@ export interface GetExternalAlarmsResponseDto {
   externalAlarms?: ExternalAlarmInfo[] | null; // List of external alarm configurations
 }
 
+/**
+ * Request model for batch editing external alarm configurations
+ * Supports adding, updating, and removing external alarms in a single operation
+ * All arrays are required - use empty arrays [] when no changes of that type exist
+ */
 export interface BatchEditExternalAlarmsRequestDto {
-  alarmId: string; // UUID
-  changed?: ExternalAlarm[] | null;
-  added?: ExternalAlarm[] | null;
-  removed?: ExternalAlarm[] | null;
+  alarmId: string; // UUID - The parent alarm ID for which external alarms are being edited
+  changed: ExternalAlarmEdit[]; // List of external alarms that have been modified (use [] if none)
+  added: ExternalAlarmEdit[]; // List of new external alarms to add (use [] if none)
+  removed: ExternalAlarmEdit[]; // List of external alarms to remove (use [] if none)
 }
 
 // ============================================================================

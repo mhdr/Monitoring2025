@@ -35,7 +35,7 @@ import { useMonitoring } from '../hooks/useMonitoring';
 import { createLogger } from '../utils/logger';
 import { getExternalAlarms, batchEditExternalAlarms } from '../services/monitoringApi';
 import type {
-  ExternalAlarm,
+  ExternalAlarmEdit,
   ExternalAlarmInfo,
   GetExternalAlarmsRequestDto,
   BatchEditExternalAlarmsRequestDto,
@@ -222,16 +222,16 @@ const ManageExternalAlarmsDialog: React.FC<ManageExternalAlarmsDialogProps> = ({
 
     try {
       // Prepare batch edit request
-      const added: ExternalAlarm[] = externalAlarms
+      const added: ExternalAlarmEdit[] = externalAlarms
         .filter((ea) => ea.isNew && !ea.isDeleted)
         .map((ea) => ({
-          id: '', // Backend will generate new ID
+          id: '00000000-0000-0000-0000-000000000000', // Backend will generate actual ID
           itemId: ea.itemId,
           value: ea.value,
           isDisabled: ea.isDisabled,
         }));
 
-      const changed: ExternalAlarm[] = externalAlarms
+      const changed: ExternalAlarmEdit[] = externalAlarms
         .filter((ea) => ea.isModified && !ea.isNew && !ea.isDeleted)
         .map((ea) => ({
           id: ea.id,
@@ -240,7 +240,7 @@ const ManageExternalAlarmsDialog: React.FC<ManageExternalAlarmsDialogProps> = ({
           isDisabled: ea.isDisabled,
         }));
 
-      const removed: ExternalAlarm[] = externalAlarms
+      const removed: ExternalAlarmEdit[] = externalAlarms
         .filter((ea) => ea.isDeleted && !ea.isNew)
         .map((ea) => ({
           id: ea.id,
@@ -253,9 +253,9 @@ const ManageExternalAlarmsDialog: React.FC<ManageExternalAlarmsDialogProps> = ({
 
       const request: BatchEditExternalAlarmsRequestDto = {
         alarmId,
-        added: added.length > 0 ? added : null,
-        changed: changed.length > 0 ? changed : null,
-        removed: removed.length > 0 ? removed : null,
+        added: added.length > 0 ? added : [],
+        changed: changed.length > 0 ? changed : [],
+        removed: removed.length > 0 ? removed : [],
       };
 
       await batchEditExternalAlarms(request);
