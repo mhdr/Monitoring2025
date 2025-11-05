@@ -300,6 +300,260 @@ Authorization: Bearer {{authTokenHTTPS}}
 }
 
 ###
+###
+### USER MANAGEMENT ENDPOINTS (Admin Only)
+###
+###
+
+### Get all users with pagination - HTTP
+POST {{API_HostAddress}}/api/auth/users
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "page": 1,
+  "pageSize": 50,
+  "includeDisabled": true
+}
+
+###
+
+### Get all users with pagination - HTTPS
+POST {{API_HostAddress}}/api/auth/users
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "page": 1,
+  "pageSize": 50,
+  "includeDisabled": true
+}
+
+###
+
+### Search users by name or username - HTTP
+POST {{API_HostAddress}}/api/auth/users
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "searchTerm": "john",
+  "page": 1,
+  "pageSize": 20,
+  "includeDisabled": true
+}
+
+###
+
+### Filter users by role - HTTP
+POST {{API_HostAddress}}/api/auth/users
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "role": "Admin",
+  "includeDisabled": false,
+  "page": 1,
+  "pageSize": 50
+}
+
+###
+
+### Get single user details by ID - HTTP
+POST {{API_HostAddress}}/api/auth/user
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "user_id_here"
+}
+
+###
+
+### Get single user details by ID - HTTPS
+POST {{API_HostAddress}}/api/auth/user
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": "user_id_here"
+}
+
+###
+
+### Edit user information - HTTP
+POST {{API_HostAddress}}/api/auth/edit-user
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "user_id_here",
+  "firstName": "John",
+  "lastName": "Doe",
+  "firstNameFa": "جان",
+  "lastNameFa": "دو",
+  "userName": "johndoe"
+}
+
+###
+
+### Edit user information - HTTPS
+POST {{API_HostAddress}}/api/auth/edit-user
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": "user_id_here",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "firstNameFa": "جین",
+  "lastNameFa": "اسمیت",
+  "userName": "janesmith"
+}
+
+###
+
+### Delete user - HTTP
+POST {{API_HostAddress}}/api/auth/delete-user
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "user_id_to_delete_here"
+}
+
+###
+
+### Delete user - HTTPS
+POST {{API_HostAddress}}/api/auth/delete-user
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": "user_id_to_delete_here"
+}
+
+###
+
+### Get all available roles - HTTP
+GET {{API_HostAddress}}/api/auth/roles
+Authorization: Bearer {{authTokenHTTP}}
+
+###
+
+### Get all available roles - HTTPS
+GET {{API_HostAddress}}/api/auth/roles
+Authorization: Bearer {{authTokenHTTPS}}
+
+###
+
+### Update user roles (replace all roles) - HTTP
+POST {{API_HostAddress}}/api/auth/update-user-roles
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "user_id_here",
+  "roles": ["Admin", "User"]
+}
+
+###
+
+### Update user roles (remove all roles) - HTTP
+POST {{API_HostAddress}}/api/auth/update-user-roles
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "user_id_here",
+  "roles": []
+}
+
+###
+
+### Update user roles - HTTPS
+POST {{API_HostAddress}}/api/auth/update-user-roles
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": "user_id_here",
+  "roles": ["User"]
+}
+
+###
+
+### Set user password (Admin reset) - HTTP
+POST {{API_HostAddress}}/api/auth/set-user-password
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "user_id_here",
+  "newPassword": "NewSecurePassword123!"
+}
+
+###
+
+### Set user password (Admin reset) - HTTPS
+POST {{API_HostAddress}}/api/auth/set-user-password
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": "user_id_here",
+  "newPassword": "NewSecurePassword123!"
+}
+
+###
+
+### Disable user account - HTTP
+POST {{API_HostAddress}}/api/auth/toggle-user-status
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "user_id_here",
+  "disable": true
+}
+
+###
+
+### Enable user account - HTTP
+POST {{API_HostAddress}}/api/auth/toggle-user-status
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "user_id_here",
+  "disable": false
+}
+
+###
+
+### Disable user account - HTTPS
+POST {{API_HostAddress}}/api/auth/toggle-user-status
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": "user_id_here",
+  "disable": true
+}
+
+###
+
+### Enable user account - HTTPS
+POST {{API_HostAddress}}/api/auth/toggle-user-status
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": "user_id_here",
+  "disable": false
+}
+
+###
 
 #################################################################################
 # MONITORING CONTROLLER - GROUPS ENDPOINTS
