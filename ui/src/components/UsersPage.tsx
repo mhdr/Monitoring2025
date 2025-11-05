@@ -34,7 +34,7 @@ import type { ColDef } from 'ag-grid-community';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
 import AGGridWrapper from './AGGridWrapper';
-import { getUsers, getRoles } from '../services/userApi';
+import { getUsers, getRoles, toggleUserStatus } from '../services/userApi';
 import type { UserInfoDto, RoleInfoDto } from '../types/api';
 import type { AGGridRowData } from '../types/agGrid';
 import { createLogger } from '../utils/logger';
@@ -148,9 +148,28 @@ const UsersPage: React.FC = () => {
     setAssignRolesDialogOpen(true);
   }, []);
 
-  const handleToggleStatus = useCallback((user: UserInfoDto) => {
-    logger.log('Toggle user status', { userId: user.id, currentStatus: user.isDisabled });
-  }, []);
+  const handleToggleStatus = useCallback(async (user: UserInfoDto) => {
+    if (!user.id) {
+      logger.error('Cannot toggle status: user ID is missing');
+      return;
+    }
+    
+    try {
+      logger.log('Toggle user status', { userId: user.id, currentStatus: user.isDisabled });
+      const disable = !user.isDisabled; // Toggle the current state
+      const response = await toggleUserStatus(user.id, disable);
+      
+      if (response.success) {
+        logger.log('User status toggled successfully', { userId: user.id, disabled: disable });
+        fetchUsers(); // Refresh the user list
+      } else {
+        setError(response.message || t('userManagement.errors.toggleStatusFailed'));
+      }
+    } catch (err) {
+      logger.error('Failed to toggle user status', { error: err, userId: user.id });
+      setError(t('userManagement.errors.toggleStatusFailed'));
+    }
+  }, [t, fetchUsers]);
 
   const handleDialogClose = (shouldRefresh: boolean) => {
     setAddEditDialogOpen(false);
@@ -241,7 +260,7 @@ const UsersPage: React.FC = () => {
           return (
             <Chip 
               data-id-ref={`user-status-${params.data?.id}`}
-              label={isDisabled ? t('userManagement.status.disabled') : t('userManagement.status.active')}
+              label={isDisabled ? t('userManagement.disabled') : t('userManagement.active')}
               color={isDisabled ? 'error' : 'success'}
               size="small"
             />

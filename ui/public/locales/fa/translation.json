@@ -1003,6 +1003,7 @@
     "totalUsers": "تعداد کل کاربران",
     "enabled": "فعال",
     "disabled": "غیرفعال",
+    "active": "فعال",
     "status": "وضعیت",
     "roles": "نقش‌ها",
     "firstName": "نام",
@@ -1065,10 +1066,14 @@
       "editTitle": "ویرایش کاربر",
       "editSubtitle": "به‌روزرسانی اطلاعات کاربر",
       "deleteTitle": "حذف کاربر",
+      "deleteUserTitle": "حذف کاربر",
       "deleteMessage": "آیا مطمئن هستید که می‌خواهید کاربر \"{{userName}}\" را حذف کنید؟ این عمل قابل بازگشت نیست.",
+      "deleteUserMessage": "آیا مطمئن هستید که می‌خواهید کاربر \"{{userName}}\" را حذف کنید؟ این عمل قابل بازگشت نیست.",
       "deleteWarning": "هشدار: این عمل حساب کاربری و تمام داده‌های مرتبط را به طور دائم حذف خواهد کرد.",
+      "deleteUserWarning": "هشدار: این عمل حساب کاربری و تمام داده‌های مرتبط را به طور دائم حذف خواهد کرد.",
       "assignRolesTitle": "تخصیص نقش‌ها",
       "assignRolesSubtitle": "نقش‌ها را برای کاربر \"{{userName}}\" انتخاب کنید",
+      "assignRolesMessage": "نقش‌ها را برای کاربر \"{{userName}}\" انتخاب کنید",
       "setPasswordTitle": "تنظیم رمز عبور جدید",
       "setPasswordSubtitle": "رمز عبور جدید برای کاربر \"{{userName}}\" تنظیم کنید",
       "toggleStatusTitle": "{{action}} کاربر",
@@ -1076,6 +1081,7 @@
       "enable": "فعال",
       "disable": "غیرفعال"
     },
+    "roleUserCount": "{{count}} کاربر",
     "actions": {
       "edit": "ویرایش",
       "delete": "حذف",
@@ -1087,6 +1093,7 @@
     },
     "errors": {
       "loadFailed": "بارگذاری کاربران ناموفق بود",
+      "fetchFailed": "بارگذاری کاربران ناموفق بود",
       "createFailed": "ایجاد کاربر ناموفق بود",
       "updateFailed": "به‌روزرسانی کاربر ناموفق بود",
       "deleteFailed": "حذف کاربر ناموفق بود",
@@ -1094,6 +1101,7 @@
       "setPasswordFailed": "تنظیم رمز عبور ناموفق بود",
       "toggleStatusFailed": "تغییر وضعیت کاربر ناموفق بود",
       "loadRolesFailed": "بارگذاری نقش‌ها ناموفق بود",
+      "noRolesAvailable": "نقشی موجود نیست",
       "userNotFound": "کاربر یافت نشد",
       "duplicateUsername": "نام کاربری از قبل وجود دارد",
       "cannotDeleteSelf": "نمی‌توانید حساب خود را حذف کنید",
@@ -1115,7 +1123,10 @@
       "enabled": "فقط فعال",
       "disabled": "فقط غیرفعال",
       "byRole": "بر اساس نقش",
-      "search": "جستجو بر اساس نام کاربری یا نام"
+      "search": "جستجو بر اساس نام کاربری یا نام",
+      "searchPlaceholder": "جستجوی کاربران...",
+      "role": "نقش",
+      "allRoles": "همه نقش‌ها"
     }
   }
 }

@@ -1003,6 +1003,7 @@
     "totalUsers": "Total Users",
     "enabled": "Enabled",
     "disabled": "Disabled",
+    "active": "Active",
     "status": "Status",
     "roles": "Roles",
     "firstName": "First Name",
@@ -1065,10 +1066,14 @@
       "editTitle": "Edit User",
       "editSubtitle": "Update user information",
       "deleteTitle": "Delete User",
+      "deleteUserTitle": "Delete User",
       "deleteMessage": "Are you sure you want to delete user \"{{userName}}\"? This action cannot be undone.",
+      "deleteUserMessage": "Are you sure you want to delete user \"{{userName}}\"? This action cannot be undone.",
       "deleteWarning": "Warning: This will permanently delete the user account and all associated data.",
+      "deleteUserWarning": "Warning: This will permanently delete the user account and all associated data.",
       "assignRolesTitle": "Assign Roles",
       "assignRolesSubtitle": "Select roles for user \"{{userName}}\"",
+      "assignRolesMessage": "Select roles for user \"{{userName}}\"",
       "setPasswordTitle": "Set New Password",
       "setPasswordSubtitle": "Set a new password for user \"{{userName}}\"",
       "toggleStatusTitle": "{{action}} User",
@@ -1076,6 +1081,7 @@
       "enable": "enable",
       "disable": "disable"
     },
+    "roleUserCount": "{{count}} users",
     "actions": {
       "edit": "Edit",
       "delete": "Delete",
@@ -1087,6 +1093,7 @@
     },
     "errors": {
       "loadFailed": "Failed to load users",
+      "fetchFailed": "Failed to load users",
       "createFailed": "Failed to create user",
       "updateFailed": "Failed to update user",
       "deleteFailed": "Failed to delete user",
@@ -1094,6 +1101,7 @@
       "setPasswordFailed": "Failed to set password",
       "toggleStatusFailed": "Failed to change user status",
       "loadRolesFailed": "Failed to load roles",
+      "noRolesAvailable": "No roles available",
       "userNotFound": "User not found",
       "duplicateUsername": "Username already exists",
       "cannotDeleteSelf": "Cannot delete your own account",
@@ -1115,7 +1123,10 @@
       "enabled": "Enabled Only",
       "disabled": "Disabled Only",
       "byRole": "By Role",
-      "search": "Search by username or name"
+      "search": "Search by username or name",
+      "searchPlaceholder": "Search users...",
+      "role": "Role",
+      "allRoles": "All Roles"
     }
   }
 }
