@@ -24,6 +24,7 @@ import {
   Warning as ActiveAlarmsIcon,
   Description as AlarmLogIcon,
   History as AuditTrailIcon,
+  Settings as ManagementIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -145,10 +146,16 @@ const pulseAnimation = keyframes`
     { path: '/dashboard/audit-trail', key: 'auditTrail', icon: <AuditTrailIcon /> },
     // { path: '/dashboard/disabled-alarms', key: 'disabledAlarms', icon: <DisabledAlarmsIcon /> },
     // { path: '/dashboard/scheduler', key: 'scheduler', icon: <SchedulerIcon /> },
-    // { path: '/dashboard/management', key: 'management', icon: <ManagementIcon /> },
+    { path: '/dashboard/management/users', key: 'management', icon: <ManagementIcon /> },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    // For management routes, check if current path starts with /dashboard/management
+    if (path === '/dashboard/management/users') {
+      return location.pathname.startsWith('/dashboard/management');
+    }
+    return location.pathname === path;
+  };
 
   const handleNavigation = (path: string) => {
     navigate(path);

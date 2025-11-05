@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Box, useTheme, useMediaQuery } from '@mui/material';
 import ResponsiveNavbar from './ResponsiveNavbar';
 import Sidebar from './Sidebar';
+import ManagementSidebar from './ManagementSidebar';
 import { useAuth } from '../hooks/useAuth';
 import { useGlobalDataInitialization } from '../hooks/useGlobalDataInitialization';
 
 const DashboardLayout: React.FC = () => {
   const theme = useTheme();
+  const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const { isAuthenticated } = useAuth();
+  
+  // Determine if we're on a management route
+  const isManagementRoute = location.pathname.startsWith('/dashboard/management');
   
   // Initialize global monitoring data (groups, items) when authenticated
   // This ensures data is available across all dashboard pages
@@ -34,11 +39,18 @@ const DashboardLayout: React.FC = () => {
       }}
       data-id-ref="dashboard-layout-root-container"
     >
-      {/* Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onToggle={toggleSidebar}
-      />
+      {/* Conditional Sidebar - Show ManagementSidebar for management routes, otherwise main Sidebar */}
+      {isManagementRoute ? (
+        <ManagementSidebar 
+          isOpen={sidebarOpen} 
+          onToggle={toggleSidebar}
+        />
+      ) : (
+        <Sidebar 
+          isOpen={sidebarOpen} 
+          onToggle={toggleSidebar}
+        />
+      )}
 
       {/* Main Content Area */}
       <Box
