@@ -471,6 +471,7 @@ const UsersPage: React.FC = () => {
                   paginationPageSize: 50,
                   paginationPageSizeSelector: [25, 50, 100, 200],
                   domLayout: 'normal',
+                  rowHeight: 56,
                 }}
               />
             </Box>
