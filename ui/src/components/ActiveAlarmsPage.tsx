@@ -48,12 +48,14 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useTranslation } from '../hooks/useTranslation';
 import { useMonitoring } from '../hooks/useMonitoring';
+import { useSignalRContext } from '../contexts/SignalRContext';
 import { getActiveAlarms } from '../services/monitoringApi';
 import { getValues } from '../services/monitoringApi';
 import type { ActiveAlarm, Item, AlarmDto, MultiValue } from '../types/api';
 import { createLogger } from '../utils/logger';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 import { formatDate } from '../utils/dateFormatting';
+import { StreamStatus } from '../stores/monitoringStore';
 import ValueHistoryChart from './ValueHistoryChart';
 
 const logger = createLogger('ActiveAlarmsPage');
@@ -62,6 +64,7 @@ const ActiveAlarmsPage: React.FC = () => {
   const { language } = useLanguage();
   const { t } = useTranslation();
   const { state, updateActiveAlarms } = useMonitoring();
+  const { reconnect } = useSignalRContext();
   const streamData = state.activeAlarms;
   const isRTL = language === 'fa';
   
@@ -69,6 +72,7 @@ const ActiveAlarmsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [reconnecting, setReconnecting] = useState<boolean>(false);
   const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
   const [storedItems, setStoredItems] = useState<Item[]>([]);
   const [storedAlarms, setStoredAlarms] = useState<AlarmDto[]>([]);
@@ -407,6 +411,23 @@ const ActiveAlarmsPage: React.FC = () => {
   };
 
   /**
+   * Manual reconnect handler
+   * Attempts to reconnect to SignalR when connection is lost
+   */
+  const handleReconnect = useCallback(async () => {
+    try {
+      setReconnecting(true);
+      logger.log('User initiated SignalR reconnection...');
+      await reconnect();
+      logger.log('SignalR reconnection successful');
+    } catch (error) {
+      logger.error('Failed to reconnect to SignalR:', error);
+    } finally {
+      setReconnecting(false);
+    }
+  }, [reconnect]);
+
+  /**
    * Format timestamp to readable format using global date formatting utility
    */
   const formatTimestamp = useCallback((timestamp: number): string => {
@@ -658,12 +679,13 @@ const ActiveAlarmsPage: React.FC = () => {
   };
 
   /**
-   * Render stream status indicator
+   * Render stream status indicator with optional reconnect button
    */
   const renderStreamStatus = () => {
     let icon: React.ReactNode;
     let label: string;
     let color: 'success' | 'error' | 'warning' | 'info';
+    let showReconnectButton = false;
 
     switch (streamData.streamStatus) {
       case 'connected':
@@ -680,6 +702,7 @@ const ActiveAlarmsPage: React.FC = () => {
         icon = <ErrorIcon />;
         label = t('activeAlarmsPage.streamError');
         color = 'error';
+        showReconnectButton = true;
         break;
       case 'disconnected':
       case 'idle':
@@ -687,18 +710,35 @@ const ActiveAlarmsPage: React.FC = () => {
         icon = <DisconnectedIcon />;
         label = t('activeAlarmsPage.streamDisconnected');
         color = 'warning';
+        showReconnectButton = true;
         break;
     }
 
     return (
-      <Chip
-        icon={icon}
-        label={label}
-        color={color}
-        size="small"
-        variant="outlined"
-        data-id-ref="active-alarms-stream-status-chip"
-      />
+      <Stack direction="row" spacing={0.5} alignItems="center" data-id-ref="active-alarms-stream-status-container">
+        <Chip
+          icon={icon}
+          label={label}
+          color={color}
+          size="small"
+          variant="outlined"
+          data-id-ref="active-alarms-stream-status-chip"
+        />
+        {showReconnectButton && (
+          <Tooltip title={t('activeAlarmsPage.reconnectTooltip')} data-id-ref="active-alarms-reconnect-tooltip">
+            <IconButton
+              size="small"
+              color={color}
+              onClick={handleReconnect}
+              disabled={reconnecting}
+              data-id-ref="active-alarms-reconnect-button"
+              aria-label={t('activeAlarmsPage.reconnect')}
+            >
+              {reconnecting ? <CircularProgress size={20} /> : <RefreshIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+        )}
+      </Stack>
     );
   };
 

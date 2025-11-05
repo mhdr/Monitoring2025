@@ -326,6 +326,8 @@
     "streamDisconnected": "Live updates disconnected",
     "streamConnecting": "Connecting to live updates...",
     "streamError": "Live update connection error",
+    "reconnect": "Reconnect",
+    "reconnectTooltip": "Reconnect to live updates",
     "noItemsAvailable": "No items available. Please synchronize data first.",
     "noItemIdProvided": "No item ID provided in the URL",
     "noItemIdProvidedTitle": "Missing Item ID",

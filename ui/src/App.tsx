@@ -8,6 +8,7 @@ import { useAuth } from './hooks/useAuth';
 import { useSignalR } from './hooks/useSignalR';
 import { useActiveAlarmPolling } from './hooks/useActiveAlarmPolling';
 import { useBackgroundSync } from './hooks/useBackgroundSync';
+import { SignalRProvider } from './contexts/SignalRContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -238,7 +239,7 @@ function App() {
   // - Automatically connects when authenticated, disconnects on logout
   // - Handles ReceiveActiveAlarmsUpdate for real-time alarm count updates
   // - Handles ReceiveSettingsUpdate to trigger background sync when admin pushes updates
-  useSignalR(isAuthenticated, isAuthLoading, {
+  const { reconnect } = useSignalR(isAuthenticated, isAuthLoading, {
     onSettingsUpdate: triggerManualSync,
   });
 
@@ -253,10 +254,12 @@ function App() {
   }
 
   return (
-    <Router>
-      <AppRoutes />
-      <ServiceWorkerPrompt />
-    </Router>
+    <SignalRProvider reconnect={reconnect}>
+      <Router>
+        <AppRoutes />
+        <ServiceWorkerPrompt />
+      </Router>
+    </SignalRProvider>
   );
 }
 

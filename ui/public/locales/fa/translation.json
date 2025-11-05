@@ -326,6 +326,8 @@
     "streamDisconnected": "به‌روزرسانی زنده قطع شد",
     "streamConnecting": "در حال اتصال به به‌روزرسانی زنده...",
     "streamError": "خطا در اتصال به‌روزرسانی زنده",
+    "reconnect": "اتصال مجدد",
+    "reconnectTooltip": "اتصال مجدد به به‌روزرسانی زنده",
     "noItemsAvailable": "هیچ پوینتی در دسترس نیست. لطفاً ابتدا داده‌ها را همگام‌سازی کنید.",
     "noItemIdProvided": "شناسه پوینت در آدرس URL وجود ندارد",
     "noItemIdProvidedTitle": "شناسه پوینت وجود ندارد",
