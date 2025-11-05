@@ -1076,6 +1076,10 @@
       "assignRolesMessage": "نقش‌ها را برای کاربر \"{{userName}}\" انتخاب کنید",
       "setPasswordTitle": "تنظیم رمز عبور جدید",
       "setPasswordSubtitle": "رمز عبور جدید برای کاربر \"{{userName}}\" تنظیم کنید",
+      "resetPasswordTitle": "بازنشانی رمز عبور",
+      "resetPasswordSubtitle": "بازنشانی رمز عبور برای کاربر \"{{userName}}\"",
+      "resetPasswordMessage": "آیا مطمئن هستید که می‌خواهید رمز عبور کاربر \"{{userName}}\" را به رمز عبور پیش‌فرض (۱۲۳۴۵) بازنشانی کنید؟",
+      "resetPasswordWarning": "کاربر باید با رمز عبور پیش‌فرض (۱۲۳۴۵) وارد شود.",
       "toggleStatusTitle": "{{action}} کاربر",
       "toggleStatusMessage": "آیا مطمئن هستید که می‌خواهید کاربر \"{{userName}}\" را {{action}} کنید؟",
       "enable": "فعال",
@@ -1087,6 +1091,7 @@
       "delete": "حذف",
       "assignRoles": "تخصیص نقش‌ها",
       "setPassword": "تنظیم رمز عبور",
+      "resetPassword": "بازنشانی رمز عبور",
       "enable": "فعال کردن",
       "disable": "غیرفعال کردن",
       "toggleStatus": "تغییر وضعیت"
@@ -1099,6 +1104,7 @@
       "deleteFailed": "حذف کاربر ناموفق بود",
       "assignRolesFailed": "تخصیص نقش‌ها ناموفق بود",
       "setPasswordFailed": "تنظیم رمز عبور ناموفق بود",
+      "resetPasswordFailed": "بازنشانی رمز عبور ناموفق بود",
       "toggleStatusFailed": "تغییر وضعیت کاربر ناموفق بود",
       "loadRolesFailed": "بارگذاری نقش‌ها ناموفق بود",
       "noRolesAvailable": "نقشی موجود نیست",
@@ -1106,7 +1112,8 @@
       "duplicateUsername": "نام کاربری از قبل وجود دارد",
       "cannotDeleteSelf": "نمی‌توانید حساب خود را حذف کنید",
       "cannotDisableSelf": "نمی‌توانید حساب خود را غیرفعال کنید",
-      "cannotEditSelf": "نمی‌توانید حساب خود را از این صفحه ویرایش کنید"
+      "cannotEditSelf": "نمی‌توانید حساب خود را از این صفحه ویرایش کنید",
+      "cannotResetOwnPassword": "نمی‌توانید رمز عبور خود را بازنشانی کنید"
     },
     "success": {
       "created": "کاربر با موفقیت ایجاد شد",
@@ -1114,6 +1121,7 @@
       "deleted": "کاربر با موفقیت حذف شد",
       "rolesAssigned": "نقش‌ها با موفقیت تخصیص داده شد",
       "passwordSet": "رمز عبور با موفقیت تنظیم شد",
+      "passwordReset": "رمز عبور با موفقیت به حالت پیش‌فرض (۱۲۳۴۵) بازنشانی شد",
       "statusChanged": "وضعیت کاربر با موفقیت تغییر کرد",
       "enabled": "کاربر با موفقیت فعال شد",
       "disabled": "کاربر با موفقیت غیرفعال شد"

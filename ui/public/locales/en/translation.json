@@ -1076,6 +1076,10 @@
       "assignRolesMessage": "Select roles for user \"{{userName}}\"",
       "setPasswordTitle": "Set New Password",
       "setPasswordSubtitle": "Set a new password for user \"{{userName}}\"",
+      "resetPasswordTitle": "Reset Password",
+      "resetPasswordSubtitle": "Reset password for user \"{{userName}}\"",
+      "resetPasswordMessage": "Are you sure you want to reset the password for user \"{{userName}}\" to the default password (12345)?",
+      "resetPasswordWarning": "The user will need to login with the default password (12345).",
       "toggleStatusTitle": "{{action}} User",
       "toggleStatusMessage": "Are you sure you want to {{action}} user \"{{userName}}\"?",
       "enable": "enable",
@@ -1087,6 +1091,7 @@
       "delete": "Delete",
       "assignRoles": "Assign Roles",
       "setPassword": "Set Password",
+      "resetPassword": "Reset Password",
       "enable": "Enable",
       "disable": "Disable",
       "toggleStatus": "Toggle Status"
@@ -1099,6 +1104,7 @@
       "deleteFailed": "Failed to delete user",
       "assignRolesFailed": "Failed to assign roles",
       "setPasswordFailed": "Failed to set password",
+      "resetPasswordFailed": "Failed to reset password",
       "toggleStatusFailed": "Failed to change user status",
       "loadRolesFailed": "Failed to load roles",
       "noRolesAvailable": "No roles available",
@@ -1106,7 +1112,8 @@
       "duplicateUsername": "Username already exists",
       "cannotDeleteSelf": "Cannot delete your own account",
       "cannotDisableSelf": "Cannot disable your own account",
-      "cannotEditSelf": "Cannot edit your own account through this page"
+      "cannotEditSelf": "Cannot edit your own account through this page",
+      "cannotResetOwnPassword": "Cannot reset your own password"
     },
     "success": {
       "created": "User created successfully",
@@ -1114,6 +1121,7 @@
       "deleted": "User deleted successfully",
       "rolesAssigned": "Roles assigned successfully",
       "passwordSet": "Password set successfully",
+      "passwordReset": "Password reset successfully to default (12345)",
       "statusChanged": "User status changed successfully",
       "enabled": "User enabled successfully",
       "disabled": "User disabled successfully"

@@ -18,6 +18,8 @@ import type {
   UpdateUserRolesResponseDto,
   SetUserPasswordRequestDto,
   SetUserPasswordResponseDto,
+  ResetPasswordRequestDto,
+  ResetPasswordResponseDto,
   ToggleUserStatusRequestDto,
   ToggleUserStatusResponseDto,
   GetRolesResponseDto,
@@ -150,6 +152,26 @@ export async function setUserPassword(
     return response.data;
   } catch (error) {
     logger.error('Failed to set user password:', error);
+    throw error;
+  }
+}
+
+/**
+ * Reset user password to default (12345)
+ * Admin only
+ */
+export async function resetPassword(userName: string): Promise<ResetPasswordResponseDto> {
+  try {
+    logger.log('Resetting user password:', userName);
+    const request: ResetPasswordRequestDto = { userName };
+    const response = await apiClient.post<ResetPasswordResponseDto>(
+      '/api/Auth/reset-password',
+      request
+    );
+    logger.log('User password reset successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to reset user password:', error);
     throw error;
   }
 }

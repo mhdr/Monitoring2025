@@ -1076,6 +1076,26 @@ export interface SetUserPasswordResponseDto {
 }
 
 /**
+ * Request DTO for resetting user password to default
+ */
+export interface ResetPasswordRequestDto {
+  /** Username of the account to reset password for */
+  userName: string;
+}
+
+/**
+ * Response DTO for resetting user password
+ */
+export interface ResetPasswordResponseDto {
+  /** Indicates whether the password reset operation succeeded */
+  isSuccessful: boolean;
+  /** Optional human-readable message describing the result */
+  message?: string | null;
+  /** Optional list of error details when the operation failed */
+  errors?: string[] | null;
+}
+
+/**
  * Request DTO for toggling user enabled/disabled status
  */
 export interface ToggleUserStatusRequestDto {
