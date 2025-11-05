@@ -179,7 +179,10 @@
   "common": {
     "buttons": {
       "close": "بستن",
-      "later": "بعداً"
+      "later": "بعداً",
+      "cancel": "انصراف",
+      "save": "ذخیره",
+      "delete": "حذف"
     },
     "retry": "تلاش مجدد",
     "error": "خطا",
@@ -194,7 +197,11 @@
     "delete": "حذف",
     "deleting": "در حال حذف...",
     "yes": "بله",
-    "no": "خیر"
+    "no": "خیر",
+    "loading": "در حال بارگذاری...",
+    "showPassword": "نمایش رمز عبور",
+    "hidePassword": "مخفی کردن رمز عبور",
+    "actions": "عملیات"
   },
   "settings": {
     "pageTitle": "تنظیمات",
@@ -980,5 +987,135 @@
       "updated": "هشدار با موفقیت به‌روزرسانی شد"
     }
   },
-  "saving": "در حال ذخیره..."
+  "saving": "در حال ذخیره...",
+  "userManagement": {
+    "title": "مدیریت کاربران",
+    "createUser": "ایجاد کاربر",
+    "editUser": "ویرایش کاربر",
+    "deleteUser": "حذف کاربر",
+    "assignRoles": "تخصیص نقش‌ها",
+    "setPassword": "تنظیم رمز عبور",
+    "enableUser": "فعال کردن کاربر",
+    "disableUser": "غیرفعال کردن کاربر",
+    "searchUsers": "جستجوی کاربران...",
+    "noUsersFound": "کاربری یافت نشد",
+    "loadingUsers": "در حال بارگذاری کاربران...",
+    "totalUsers": "تعداد کل کاربران",
+    "enabled": "فعال",
+    "disabled": "غیرفعال",
+    "status": "وضعیت",
+    "roles": "نقش‌ها",
+    "firstName": "نام",
+    "lastName": "نام خانوادگی",
+    "firstNameFa": "نام (فارسی)",
+    "lastNameFa": "نام خانوادگی (فارسی)",
+    "confirmPassword": "تکرار رمز عبور",
+    "newPassword": "رمز عبور جدید",
+    "userDetails": "جزئیات کاربر",
+    "noRoles": "بدون نقش",
+    "roleAdmin": "مدیر کل",
+    "roleManager": "مدیر",
+    "roleBMS": "BMS",
+    "roleEMS": "EMS",
+    "fields": {
+      "username": "نام کاربری",
+      "firstName": "نام",
+      "lastName": "نام خانوادگی",
+      "firstNameFa": "نام (فارسی)",
+      "lastNameFa": "نام خانوادگی (فارسی)",
+      "password": "رمز عبور",
+      "confirmPassword": "تکرار رمز عبور",
+      "newPassword": "رمز عبور جدید",
+      "roles": "نقش‌ها",
+      "status": "وضعیت",
+      "enabled": "فعال",
+      "disabled": "غیرفعال"
+    },
+    "hints": {
+      "username": "۳-۵۰ کاراکتر، شناسه منحصر به فرد برای ورود",
+      "firstName": "۱-۵۰ کاراکتر",
+      "lastName": "۱-۵۰ کاراکتر",
+      "firstNameFa": "اختیاری، ۱-۵۰ کاراکتر",
+      "lastNameFa": "اختیاری، ۱-۵۰ کاراکتر",
+      "password": "حداقل ۶ کاراکتر",
+      "confirmPassword": "باید با رمز عبور مطابقت داشته باشد",
+      "newPassword": "حداقل ۶ کاراکتر، برای نگه داشتن رمز فعلی خالی بگذارید",
+      "roles": "یک یا چند نقش برای این کاربر انتخاب کنید"
+    },
+    "validation": {
+      "usernameRequired": "نام کاربری الزامی است",
+      "usernameMinLength": "نام کاربری باید حداقل ۳ کاراکتر باشد",
+      "usernameMaxLength": "نام کاربری باید ۵۰ کاراکتر یا کمتر باشد",
+      "firstNameRequired": "نام الزامی است",
+      "firstNameMaxLength": "نام باید ۵۰ کاراکتر یا کمتر باشد",
+      "lastNameRequired": "نام خانوادگی الزامی است",
+      "lastNameMaxLength": "نام خانوادگی باید ۵۰ کاراکتر یا کمتر باشد",
+      "firstNameFaMaxLength": "نام فارسی باید ۵۰ کاراکتر یا کمتر باشد",
+      "lastNameFaMaxLength": "نام خانوادگی فارسی باید ۵۰ کاراکتر یا کمتر باشد",
+      "passwordRequired": "رمز عبور الزامی است",
+      "passwordMinLength": "رمز عبور باید حداقل ۶ کاراکتر باشد",
+      "passwordMaxLength": "رمز عبور باید ۱۰۰ کاراکتر یا کمتر باشد",
+      "confirmPasswordRequired": "تکرار رمز عبور الزامی است",
+      "passwordMismatch": "رمزهای عبور مطابقت ندارند",
+      "rolesRequired": "حداقل یک نقش باید انتخاب شود"
+    },
+    "dialogs": {
+      "createTitle": "ایجاد کاربر جدید",
+      "createSubtitle": "اطلاعات کاربر را وارد کنید",
+      "editTitle": "ویرایش کاربر",
+      "editSubtitle": "به‌روزرسانی اطلاعات کاربر",
+      "deleteTitle": "حذف کاربر",
+      "deleteMessage": "آیا مطمئن هستید که می‌خواهید کاربر \"{{userName}}\" را حذف کنید؟ این عمل قابل بازگشت نیست.",
+      "deleteWarning": "هشدار: این عمل حساب کاربری و تمام داده‌های مرتبط را به طور دائم حذف خواهد کرد.",
+      "assignRolesTitle": "تخصیص نقش‌ها",
+      "assignRolesSubtitle": "نقش‌ها را برای کاربر \"{{userName}}\" انتخاب کنید",
+      "setPasswordTitle": "تنظیم رمز عبور جدید",
+      "setPasswordSubtitle": "رمز عبور جدید برای کاربر \"{{userName}}\" تنظیم کنید",
+      "toggleStatusTitle": "{{action}} کاربر",
+      "toggleStatusMessage": "آیا مطمئن هستید که می‌خواهید کاربر \"{{userName}}\" را {{action}} کنید؟",
+      "enable": "فعال",
+      "disable": "غیرفعال"
+    },
+    "actions": {
+      "edit": "ویرایش",
+      "delete": "حذف",
+      "assignRoles": "تخصیص نقش‌ها",
+      "setPassword": "تنظیم رمز عبور",
+      "enable": "فعال کردن",
+      "disable": "غیرفعال کردن",
+      "toggleStatus": "تغییر وضعیت"
+    },
+    "errors": {
+      "loadFailed": "بارگذاری کاربران ناموفق بود",
+      "createFailed": "ایجاد کاربر ناموفق بود",
+      "updateFailed": "به‌روزرسانی کاربر ناموفق بود",
+      "deleteFailed": "حذف کاربر ناموفق بود",
+      "assignRolesFailed": "تخصیص نقش‌ها ناموفق بود",
+      "setPasswordFailed": "تنظیم رمز عبور ناموفق بود",
+      "toggleStatusFailed": "تغییر وضعیت کاربر ناموفق بود",
+      "loadRolesFailed": "بارگذاری نقش‌ها ناموفق بود",
+      "userNotFound": "کاربر یافت نشد",
+      "duplicateUsername": "نام کاربری از قبل وجود دارد",
+      "cannotDeleteSelf": "نمی‌توانید حساب خود را حذف کنید",
+      "cannotDisableSelf": "نمی‌توانید حساب خود را غیرفعال کنید",
+      "cannotEditSelf": "نمی‌توانید حساب خود را از این صفحه ویرایش کنید"
+    },
+    "success": {
+      "created": "کاربر با موفقیت ایجاد شد",
+      "updated": "کاربر با موفقیت به‌روزرسانی شد",
+      "deleted": "کاربر با موفقیت حذف شد",
+      "rolesAssigned": "نقش‌ها با موفقیت تخصیص داده شد",
+      "passwordSet": "رمز عبور با موفقیت تنظیم شد",
+      "statusChanged": "وضعیت کاربر با موفقیت تغییر کرد",
+      "enabled": "کاربر با موفقیت فعال شد",
+      "disabled": "کاربر با موفقیت غیرفعال شد"
+    },
+    "filters": {
+      "all": "همه کاربران",
+      "enabled": "فقط فعال",
+      "disabled": "فقط غیرفعال",
+      "byRole": "بر اساس نقش",
+      "search": "جستجو بر اساس نام کاربری یا نام"
+    }
+  }
 }

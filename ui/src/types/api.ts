@@ -895,78 +895,255 @@ export interface SettingsVersionResponseDto {
 
 // ==================== User Management DTOs ====================
 
-export interface User {
-  id: string; // UUID
+/**
+ * User information DTO
+ */
+export interface UserInfoDto {
+  /** User ID */
+  id?: string | null;
+  /** Username */
   userName?: string | null;
+  /** First name */
   firstName?: string | null;
+  /** Last name */
   lastName?: string | null;
+  /** First name in Farsi */
+  firstNameFa?: string | null;
+  /** Last name in Farsi */
+  lastNameFa?: string | null;
+  /** User roles */
   roles?: string[] | null;
+  /** Whether user account is disabled/locked */
+  isDisabled: boolean;
 }
 
+/**
+ * Role information DTO
+ */
+export interface RoleInfoDto {
+  /** Role ID */
+  id?: string | null;
+  /** Role name */
+  name?: string | null;
+  /** Number of users with this role */
+  userCount: number;
+}
+
+/**
+ * Request DTO for getting list of users with optional filtering
+ */
+export interface GetUsersRequestDto {
+  /** Optional search term to filter users by username or name */
+  searchTerm?: string | null;
+  /** Optional role filter to get users with specific role */
+  role?: string | null;
+  /** Include disabled/locked users in results (default: true) */
+  includeDisabled?: boolean;
+  /** Page number for pagination (1-based, default: 1) */
+  page?: number;
+  /** Page size for pagination (default: 50, max: 500) */
+  pageSize?: number;
+}
+
+/**
+ * Response DTO for getting list of users
+ */
 export interface GetUsersResponseDto {
-  data: User[];
+  /** Whether the operation was successful */
+  success: boolean;
+  /** List of users */
+  users?: UserInfoDto[] | null;
+  /** Total count of users (before pagination) */
+  totalCount: number;
+  /** Current page number */
+  page: number;
+  /** Page size */
+  pageSize: number;
+  /** Total number of pages */
+  totalPages: number;
+  /** Error message if operation failed */
+  errorMessage?: string | null;
 }
 
-export interface AddUserRequestDto {
-  userName: string; // 1-50 characters
-  firstName: string; // 1-50 characters
-  lastName: string; // 1-50 characters
-}
-
-export interface AddUserResponseDto {
-  isSuccessful: boolean;
-  error?: AddUserErrorType;
-}
-
-export interface EditUserRequestDto {
-  id: string; // UUID
-  userName?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
-}
-
-export interface EditUserResponseDto {
-  isSuccessful: boolean;
-  error?: EditUserErrorType;
-}
-
+/**
+ * Request DTO for getting a single user by ID
+ */
 export interface GetUserRequestDto {
-  userId?: string | null;
+  /** User ID to retrieve */
+  userId: string;
 }
 
+/**
+ * Response DTO for getting a single user
+ */
 export interface GetUserResponseDto {
-  id: string; // UUID
-  userName?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
+  /** Whether the operation was successful */
+  success: boolean;
+  /** User information */
+  user?: UserInfoDto | null;
+  /** Error message if operation failed */
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for editing a user's information
+ */
+export interface EditUserRequestDto {
+  /** User ID to edit */
+  userId: string;
+  /** User's first name */
+  firstName: string;
+  /** User's last name */
+  lastName: string;
+  /** User's first name in Farsi */
+  firstNameFa?: string | null;
+  /** User's last name in Farsi */
+  lastNameFa?: string | null;
+  /** Username (cannot be changed if already exists) */
+  userName: string;
+}
+
+/**
+ * Response DTO for editing a user
+ */
+export interface EditUserResponseDto {
+  /** Whether the operation was successful */
+  success: boolean;
+  /** Success or error message */
+  message?: string | null;
+  /** Updated user information */
+  user?: UserInfoDto | null;
+}
+
+/**
+ * Request DTO for deleting a user
+ */
+export interface DeleteUserRequestDto {
+  /** User ID to delete */
+  userId: string;
+}
+
+/**
+ * Response DTO for deleting a user
+ */
+export interface DeleteUserResponseDto {
+  /** Whether the operation was successful */
+  success: boolean;
+  /** Success or error message */
+  message?: string | null;
+}
+
+/**
+ * Request DTO for updating a user's roles
+ */
+export interface UpdateUserRolesRequestDto {
+  /** User ID to update roles for */
+  userId: string;
+  /** List of role names to assign to the user (replaces existing roles) */
+  roles: string[];
+}
+
+/**
+ * Response DTO for updating user roles
+ */
+export interface UpdateUserRolesResponseDto {
+  /** Whether the operation was successful */
+  success: boolean;
+  /** Success or error message */
+  message?: string | null;
+  /** Updated list of user's roles */
   roles?: string[] | null;
 }
 
-export interface Role {
-  id: string; // UUID
-  roleName?: string | null;
+/**
+ * Request DTO for setting a new password for a user (admin only)
+ */
+export interface SetUserPasswordRequestDto {
+  /** User ID to set password for */
+  userId: string;
+  /** New password */
+  newPassword: string;
 }
 
+/**
+ * Response DTO for setting user password
+ */
+export interface SetUserPasswordResponseDto {
+  /** Whether the operation was successful */
+  success: boolean;
+  /** Success or error message */
+  message?: string | null;
+}
+
+/**
+ * Request DTO for toggling user enabled/disabled status
+ */
+export interface ToggleUserStatusRequestDto {
+  /** User ID to toggle status for */
+  userId: string;
+  /** Whether to disable (true) or enable (false) the user */
+  disable: boolean;
+}
+
+/**
+ * Response DTO for toggling user status
+ */
+export interface ToggleUserStatusResponseDto {
+  /** Whether the operation was successful */
+  success: boolean;
+  /** Success or error message */
+  message?: string | null;
+  /** Current user status */
+  isDisabled: boolean;
+}
+
+/**
+ * Response DTO for getting all available roles
+ */
 export interface GetRolesResponseDto {
-  data: Role[];
+  /** Whether the operation was successful */
+  success: boolean;
+  /** List of available roles */
+  roles?: RoleInfoDto[] | null;
+  /** Error message if operation failed */
+  errorMessage?: string | null;
 }
 
-export interface SetRolesRequestDto {
-  userId: string; // UUID
-  userName?: string | null;
-  roles?: string[] | null;
+/**
+ * Request DTO for registering/creating a new user
+ */
+export interface RegisterRequestDto {
+  /** User's first name */
+  firstName: string;
+  /** User's last name */
+  lastName: string;
+  /** User's first name in Farsi */
+  firstNameFa: string;
+  /** User's last name in Farsi */
+  lastNameFa: string;
+  /** Username */
+  userName: string;
+  /** User's password */
+  password: string;
+  /** Confirm password */
+  confirmPassword: string;
 }
 
-export interface SetRolesResponseDto {
-  isSuccessful: boolean;
-}
-
+/**
+ * Request DTO for saving user permissions for monitoring items
+ */
 export interface SavePermissionsRequestDto {
+  /** User ID to save permissions for */
   userId?: string | null;
+  /** List of monitoring item IDs that the user should have access to */
   itemPermissions?: string[] | null;
 }
 
+/**
+ * Response DTO for saving permissions
+ */
 export interface SavePermissionsResponseDto {
+  /** Whether the operation was successful */
   isSuccessful: boolean;
 }
 

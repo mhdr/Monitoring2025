@@ -179,7 +179,10 @@
   "common": {
     "buttons": {
       "close": "Close",
-      "later": "Later"
+      "later": "Later",
+      "cancel": "Cancel",
+      "save": "Save",
+      "delete": "Delete"
     },
     "retry": "Retry",
     "error": "Error",
@@ -194,7 +197,11 @@
     "delete": "Delete",
     "deleting": "Deleting...",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "loading": "Loading...",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "actions": "Actions"
   },
   "settings": {
     "pageTitle": "Settings",
@@ -980,5 +987,135 @@
       "updated": "Alarm updated successfully"
     }
   },
-  "saving": "Saving..."
+  "saving": "Saving...",
+  "userManagement": {
+    "title": "User Management",
+    "createUser": "Create User",
+    "editUser": "Edit User",
+    "deleteUser": "Delete User",
+    "assignRoles": "Assign Roles",
+    "setPassword": "Set Password",
+    "enableUser": "Enable User",
+    "disableUser": "Disable User",
+    "searchUsers": "Search users...",
+    "noUsersFound": "No users found",
+    "loadingUsers": "Loading users...",
+    "totalUsers": "Total Users",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "status": "Status",
+    "roles": "Roles",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "firstNameFa": "First Name (Farsi)",
+    "lastNameFa": "Last Name (Farsi)",
+    "confirmPassword": "Confirm Password",
+    "newPassword": "New Password",
+    "userDetails": "User Details",
+    "noRoles": "No roles assigned",
+    "roleAdmin": "Admin",
+    "roleManager": "Manager",
+    "roleBMS": "BMS",
+    "roleEMS": "EMS",
+    "fields": {
+      "username": "Username",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "firstNameFa": "First Name (Farsi)",
+      "lastNameFa": "Last Name (Farsi)",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "newPassword": "New Password",
+      "roles": "Roles",
+      "status": "Status",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "hints": {
+      "username": "3-50 characters, unique identifier for login",
+      "firstName": "1-50 characters",
+      "lastName": "1-50 characters",
+      "firstNameFa": "Optional, 1-50 characters",
+      "lastNameFa": "Optional, 1-50 characters",
+      "password": "Minimum 6 characters",
+      "confirmPassword": "Must match password",
+      "newPassword": "Minimum 6 characters, leave empty to keep current password",
+      "roles": "Select one or more roles for this user"
+    },
+    "validation": {
+      "usernameRequired": "Username is required",
+      "usernameMinLength": "Username must be at least 3 characters",
+      "usernameMaxLength": "Username must be 50 characters or less",
+      "firstNameRequired": "First name is required",
+      "firstNameMaxLength": "First name must be 50 characters or less",
+      "lastNameRequired": "Last name is required",
+      "lastNameMaxLength": "Last name must be 50 characters or less",
+      "firstNameFaMaxLength": "Farsi first name must be 50 characters or less",
+      "lastNameFaMaxLength": "Farsi last name must be 50 characters or less",
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Password must be at least 6 characters",
+      "passwordMaxLength": "Password must be 100 characters or less",
+      "confirmPasswordRequired": "Confirm password is required",
+      "passwordMismatch": "Passwords do not match",
+      "rolesRequired": "At least one role must be selected"
+    },
+    "dialogs": {
+      "createTitle": "Create New User",
+      "createSubtitle": "Enter user information to create a new account",
+      "editTitle": "Edit User",
+      "editSubtitle": "Update user information",
+      "deleteTitle": "Delete User",
+      "deleteMessage": "Are you sure you want to delete user \"{{userName}}\"? This action cannot be undone.",
+      "deleteWarning": "Warning: This will permanently delete the user account and all associated data.",
+      "assignRolesTitle": "Assign Roles",
+      "assignRolesSubtitle": "Select roles for user \"{{userName}}\"",
+      "setPasswordTitle": "Set New Password",
+      "setPasswordSubtitle": "Set a new password for user \"{{userName}}\"",
+      "toggleStatusTitle": "{{action}} User",
+      "toggleStatusMessage": "Are you sure you want to {{action}} user \"{{userName}}\"?",
+      "enable": "enable",
+      "disable": "disable"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "assignRoles": "Assign Roles",
+      "setPassword": "Set Password",
+      "enable": "Enable",
+      "disable": "Disable",
+      "toggleStatus": "Toggle Status"
+    },
+    "errors": {
+      "loadFailed": "Failed to load users",
+      "createFailed": "Failed to create user",
+      "updateFailed": "Failed to update user",
+      "deleteFailed": "Failed to delete user",
+      "assignRolesFailed": "Failed to assign roles",
+      "setPasswordFailed": "Failed to set password",
+      "toggleStatusFailed": "Failed to change user status",
+      "loadRolesFailed": "Failed to load roles",
+      "userNotFound": "User not found",
+      "duplicateUsername": "Username already exists",
+      "cannotDeleteSelf": "Cannot delete your own account",
+      "cannotDisableSelf": "Cannot disable your own account",
+      "cannotEditSelf": "Cannot edit your own account through this page"
+    },
+    "success": {
+      "created": "User created successfully",
+      "updated": "User updated successfully",
+      "deleted": "User deleted successfully",
+      "rolesAssigned": "Roles assigned successfully",
+      "passwordSet": "Password set successfully",
+      "statusChanged": "User status changed successfully",
+      "enabled": "User enabled successfully",
+      "disabled": "User disabled successfully"
+    },
+    "filters": {
+      "all": "All Users",
+      "enabled": "Enabled Only",
+      "disabled": "Disabled Only",
+      "byRole": "By Role",
+      "search": "Search by username or name"
+    }
+  }
 }
