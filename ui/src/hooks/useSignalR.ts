@@ -50,7 +50,6 @@ export function useSignalR(
   options?: UseSignalROptions
 ) {
   const {
-    updateActiveAlarms,
     setActiveAlarmsStreamStatus,
     setActiveAlarmsStreamError,
     fetchActiveAlarmCount,
@@ -61,23 +60,28 @@ export function useSignalR(
 
   /**
    * Handle active alarms update from SignalR
-   * When we receive a broadcast, update the count immediately and fetch the full list
+   * 
+   * CRITICAL FIX: Don't update count immediately from SignalR broadcast
+   * SignalR broadcasts the system-wide alarm count (unfiltered), but users only
+   * see alarms they have permission for (filtered by itemIds). If we update the
+   * badge immediately with the unfiltered count, it will briefly mismatch with
+   * the filtered count shown on ActiveAlarmsPage, causing confusion.
+   * 
+   * Solution: Only fetch the filtered alarm list and let the API response update
+   * the count. This ensures badge and page always show the same filtered count.
    */
   const handleActiveAlarmsUpdate = useCallback(
     (update: ActiveAlarmsUpdate) => {
       logger.log('Received active alarms update via SignalR:', update);
+      logger.log('Fetching filtered active alarm list (will update count after fetch)...');
       
-      // Update count immediately from SignalR message
-      updateActiveAlarms(update.alarmCount, update.timestamp);
-      
-      // Fetch full active alarm list to refresh the detailed data
-      // This ensures ActiveAlarmsPage and other components have the latest alarm details
-      logger.log('Fetching full active alarm list after SignalR update...');
+      // Fetch full active alarm list with itemIds filter
+      // This will update the count with the filtered value, ensuring badge matches page
       fetchActiveAlarmCount().catch((error) => {
         logger.error('Failed to fetch active alarms after SignalR update:', error);
       });
     },
-    [updateActiveAlarms, fetchActiveAlarmCount]
+    [fetchActiveAlarmCount]
   );
 
   /**
