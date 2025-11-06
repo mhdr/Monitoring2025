@@ -51,7 +51,7 @@ public class ActiveAlarmsBackgroundWorker : BackgroundService, IDisposable
                         await _signalRBroadcastService.BroadcastActiveAlarmsUpdateAsync(alarms, stoppingToken);
                     }
 
-                    await Task.Delay(TimeSpan.FromSeconds(60), stoppingToken);
+                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
