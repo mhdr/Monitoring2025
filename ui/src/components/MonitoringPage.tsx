@@ -49,7 +49,6 @@ const MonitoringPage: React.FC = () => {
     fetchValues,
     fetchGroups,
     fetchItems,
-    fetchActiveAlarmCount
   } = useMonitoring();
   const [searchParams] = useSearchParams();
   const currentFolderId = searchParams.get('folderId');
@@ -228,28 +227,11 @@ const MonitoringPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentFolderItemIdsString]);
 
-  // Poll active alarms every 4 seconds (centralized - eliminates N+1 query problem)
-  // CRITICAL: This replaces individual API calls from each GroupCard and ItemCard
-  const activeAlarmsPollingIntervalRef = useRef<number | null>(null);
-  useEffect(() => {
-    // Fetch active alarms immediately on mount
-    fetchActiveAlarmCount();
-
-    // Set up polling interval (every 4 seconds, same as values)
-    activeAlarmsPollingIntervalRef.current = window.setInterval(() => {
-      fetchActiveAlarmCount();
-    }, 4000);
-
-    // Cleanup on unmount
-    return () => {
-      if (activeAlarmsPollingIntervalRef.current) {
-        clearInterval(activeAlarmsPollingIntervalRef.current);
-        activeAlarmsPollingIntervalRef.current = null;
-      }
-    };
-    // CRITICAL: fetchActiveAlarmCount is stable (useCallback), no need to include it
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps - poll continuously while page is mounted
+  // REMOVED: Active alarms polling interval (replaced by SignalR)
+  // Active alarms are now managed through:
+  // 1. Initial fetch on app start via useActiveAlarmPolling hook in App.tsx
+  // 2. Real-time updates via SignalR ReceiveActiveAlarmsUpdate broadcasts
+  // This eliminates continuous polling and reduces API calls to on-demand only
 
   // Manage refresh indicator visibility with minimum display time
   useEffect(() => {

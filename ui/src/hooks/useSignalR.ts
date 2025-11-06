@@ -53,6 +53,7 @@ export function useSignalR(
     updateActiveAlarms,
     setActiveAlarmsStreamStatus,
     setActiveAlarmsStreamError,
+    fetchActiveAlarmCount,
   } = useMonitoring();
 
   const connectionAttemptedRef = useRef(false);
@@ -60,13 +61,23 @@ export function useSignalR(
 
   /**
    * Handle active alarms update from SignalR
+   * When we receive a broadcast, update the count immediately and fetch the full list
    */
   const handleActiveAlarmsUpdate = useCallback(
     (update: ActiveAlarmsUpdate) => {
-      logger.log('Received active alarms update:', update);
+      logger.log('Received active alarms update via SignalR:', update);
+      
+      // Update count immediately from SignalR message
       updateActiveAlarms(update.alarmCount, update.timestamp);
+      
+      // Fetch full active alarm list to refresh the detailed data
+      // This ensures ActiveAlarmsPage and other components have the latest alarm details
+      logger.log('Fetching full active alarm list after SignalR update...');
+      fetchActiveAlarmCount().catch((error) => {
+        logger.error('Failed to fetch active alarms after SignalR update:', error);
+      });
     },
-    [updateActiveAlarms]
+    [updateActiveAlarms, fetchActiveAlarmCount]
   );
 
   /**
