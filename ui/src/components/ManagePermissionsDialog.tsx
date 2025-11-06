@@ -49,8 +49,8 @@ const ManagePermissionsDialog: React.FC<ManagePermissionsDialogProps> = ({
     try {
       logger.log('Fetching user permissions', { userId });
       const response = await getPermissions(userId);
-      setSelectedItemIds(response.itemPermissions || []);
-      logger.log('User permissions fetched', { count: response.itemPermissions?.length || 0 });
+      setSelectedItemIds(response.itemIds || []);
+      logger.log('User permissions fetched', { count: response.itemIds?.length || 0 });
     } catch (err) {
       logger.error('Failed to fetch user permissions', { error: err });
       setError(t('permissionsManagement.errors.fetchFailed'));
@@ -172,11 +172,15 @@ const ManagePermissionsDialog: React.FC<ManagePermissionsDialogProps> = ({
 
       const response = await savePermissions(user.id, selectedItemIds);
 
-      if (response.isSuccessful) {
-        logger.log('User permissions saved successfully', { userId: user.id });
+      if (response.success) {
+        logger.log('User permissions saved successfully', { 
+          userId: user.id,
+          message: response.message,
+          permissionsCount: response.permissionsCount,
+        });
         onClose(true);
       } else {
-        setError(t('permissionsManagement.errors.saveFailed'));
+        setError(response.message || t('permissionsManagement.errors.saveFailed'));
       }
     } catch (err) {
       logger.error('Failed to save user permissions', { error: err });

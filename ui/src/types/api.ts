@@ -1164,7 +1164,11 @@ export interface SavePermissionsRequestDto {
  */
 export interface SavePermissionsResponseDto {
   /** Whether the operation was successful */
-  isSuccessful: boolean;
+  success: boolean;
+  /** Success/error message from the server */
+  message: string;
+  /** Number of permissions saved */
+  permissionsCount: number;
 }
 
 /**
@@ -1179,8 +1183,18 @@ export interface GetPermissionsRequestDto {
  * Response DTO for getting permissions
  */
 export interface GetPermissionsResponseDto {
+  /** Whether the operation was successful */
+  success: boolean;
+  /** Response message */
+  message?: string | null;
+  /** User ID */
+  userId?: string | null;
+  /** Username */
+  userName?: string | null;
   /** List of monitoring item IDs that the user has access to */
-  itemPermissions?: string[] | null;
+  itemIds?: string[] | null;
+  /** Total count of permissions */
+  totalCount?: number;
 }
 
 // ==================== Group Management DTOs ====================
