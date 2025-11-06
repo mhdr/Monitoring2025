@@ -24,6 +24,10 @@ import type {
   ToggleUserStatusResponseDto,
   GetRolesResponseDto,
   RegisterRequestDto,
+  GetPermissionsRequestDto,
+  GetPermissionsResponseDto,
+  SavePermissionsRequestDto,
+  SavePermissionsResponseDto,
 } from '../types/api';
 
 const logger = createLogger('UserAPI');
@@ -211,6 +215,49 @@ export async function getRoles(): Promise<GetRolesResponseDto> {
     return response.data;
   } catch (error) {
     logger.error('Failed to fetch roles:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get user's monitoring item permissions
+ * Admin only
+ */
+export async function getPermissions(userId: string): Promise<GetPermissionsResponseDto> {
+  try {
+    logger.log('Fetching user permissions:', userId);
+    const request: GetPermissionsRequestDto = { userId };
+    const response = await apiClient.post<GetPermissionsResponseDto>(
+      '/api/Monitoring/GetPermissions',
+      request
+    );
+    logger.log('User permissions fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to fetch user permissions:', error);
+    throw error;
+  }
+}
+
+/**
+ * Save user's monitoring item permissions
+ * Admin only
+ */
+export async function savePermissions(
+  userId: string,
+  itemPermissions: string[]
+): Promise<SavePermissionsResponseDto> {
+  try {
+    logger.log('Saving user permissions:', { userId, itemCount: itemPermissions.length });
+    const request: SavePermissionsRequestDto = { userId, itemPermissions };
+    const response = await apiClient.post<SavePermissionsResponseDto>(
+      '/api/Monitoring/SavePermissions',
+      request
+    );
+    logger.log('User permissions saved successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to save user permissions:', error);
     throw error;
   }
 }

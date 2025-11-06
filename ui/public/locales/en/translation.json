@@ -1136,5 +1136,24 @@
       "role": "Role",
       "allRoles": "All Roles"
     }
+  },
+  "permissionsManagement": {
+    "managePermissions": "Manage Permissions",
+    "searchItems": "Search monitoring items...",
+    "selectAll": "Select All",
+    "noItemsSelected": "No items selected",
+    "itemsSelected": "{{count}} items selected",
+    "dialogs": {
+      "manageMessage": "Select monitoring items that user \"{{userName}}\" can access"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load user permissions",
+      "saveFailed": "Failed to save user permissions",
+      "noItemsAvailable": "No monitoring items available",
+      "noItemsMatchSearch": "No items match your search"
+    },
+    "success": {
+      "saved": "Permissions saved successfully"
+    }
   }
 }

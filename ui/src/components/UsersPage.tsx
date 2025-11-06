@@ -30,6 +30,7 @@ import {
   LockOpen as LockOpenIcon,
   LockReset as LockResetIcon,
   AssignmentInd as AssignmentIndIcon,
+  Security as SecurityIcon,
 } from '@mui/icons-material';
 import type { ColDef } from 'ag-grid-community';
 import { useLanguage } from '../hooks/useLanguage';
@@ -47,6 +48,7 @@ const AddEditUserDialog = lazy(() => import('./AddEditUserDialog'));
 const DeleteUserDialog = lazy(() => import('./DeleteUserDialog'));
 const AssignRolesDialog = lazy(() => import('./AssignRolesDialog'));
 const ResetPasswordDialog = lazy(() => import('./ResetPasswordDialog'));
+const ManagePermissionsDialog = lazy(() => import('./ManagePermissionsDialog'));
 
 const UsersPage: React.FC = () => {
   const { t, language } = useLanguage();
@@ -66,6 +68,7 @@ const UsersPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assignRolesDialogOpen, setAssignRolesDialogOpen] = useState(false);
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [managePermissionsDialogOpen, setManagePermissionsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserInfoDto | null>(null);
   const [editMode, setEditMode] = useState(false);
 
@@ -156,6 +159,11 @@ const UsersPage: React.FC = () => {
     setResetPasswordDialogOpen(true);
   }, []);
 
+  const handleManagePermissions = useCallback((user: UserInfoDto) => {
+    setSelectedUser(user);
+    setManagePermissionsDialogOpen(true);
+  }, []);
+
   const handleToggleStatus = useCallback(async (user: UserInfoDto) => {
     if (!user.id) {
       logger.error('Cannot toggle status: user ID is missing');
@@ -184,6 +192,7 @@ const UsersPage: React.FC = () => {
     setDeleteDialogOpen(false);
     setAssignRolesDialogOpen(false);
     setResetPasswordDialogOpen(false);
+    setManagePermissionsDialogOpen(false);
     setSelectedUser(null);
     setEditMode(false);
     
@@ -279,8 +288,8 @@ const UsersPage: React.FC = () => {
       {
         headerName: t('common.actions'),
         field: 'id',
-        flex: 1.8,
-        minWidth: 280,
+        flex: 2.0,
+        minWidth: 320,
         sortable: false,
         filter: false,
         cellRenderer: (params: { data?: UserInfoDto }) => {
@@ -313,6 +322,16 @@ const UsersPage: React.FC = () => {
                 disabled={isSelf}
               >
                 <AssignmentIndIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                data-id-ref={`manage-permissions-btn-${user.id}`}
+                size="small"
+                color="info"
+                onClick={() => handleManagePermissions(user)}
+                title={t('permissionsManagement.managePermissions')}
+                disabled={isSelf}
+              >
+                <SecurityIcon fontSize="small" />
               </IconButton>
               <IconButton
                 data-id-ref={`reset-password-btn-${user.id}`}
@@ -349,7 +368,7 @@ const UsersPage: React.FC = () => {
         },
       },
     ];
-  }, [language, t, currentUser, handleEditUser, handleAssignRoles, handleResetPassword, handleToggleStatus, handleDeleteUser]);
+  }, [language, t, currentUser, handleEditUser, handleAssignRoles, handleManagePermissions, handleResetPassword, handleToggleStatus, handleDeleteUser]);
 
   return (
     <Container 
@@ -532,6 +551,15 @@ const UsersPage: React.FC = () => {
         {resetPasswordDialogOpen && (
           <ResetPasswordDialog
             open={resetPasswordDialogOpen}
+            user={selectedUser}
+            onClose={handleDialogClose}
+          />
+        )}
+      </Suspense>
+      <Suspense fallback={null}>
+        {managePermissionsDialogOpen && (
+          <ManagePermissionsDialog
+            open={managePermissionsDialogOpen}
             user={selectedUser}
             onClose={handleDialogClose}
           />

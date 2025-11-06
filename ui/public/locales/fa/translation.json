@@ -1136,5 +1136,24 @@
       "role": "نقش",
       "allRoles": "همه نقش‌ها"
     }
+  },
+  "permissionsManagement": {
+    "managePermissions": "مدیریت مجوزها",
+    "searchItems": "جستجوی آیتم‌های مانیتورینگ...",
+    "selectAll": "انتخاب همه",
+    "noItemsSelected": "هیچ آیتمی انتخاب نشده",
+    "itemsSelected": "{{count}} آیتم انتخاب شده",
+    "dialogs": {
+      "manageMessage": "آیتم‌های مانیتورینگی که کاربر «{{userName}}» می‌تواند به آن‌ها دسترسی داشته باشد را انتخاب کنید"
+    },
+    "errors": {
+      "fetchFailed": "بارگذاری مجوزهای کاربر با خطا مواجه شد",
+      "saveFailed": "ذخیره مجوزهای کاربر با خطا مواجه شد",
+      "noItemsAvailable": "هیچ آیتم مانیتورینگی در دسترس نیست",
+      "noItemsMatchSearch": "هیچ آیتمی با جستجوی شما مطابقت ندارد"
+    },
+    "success": {
+      "saved": "مجوزها با موفقیت ذخیره شد"
+    }
   }
 }
