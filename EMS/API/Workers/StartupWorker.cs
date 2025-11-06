@@ -54,6 +54,18 @@ public class StartupWorker : BackgroundService
         }
     }
 
+    /// <summary>
+    /// Ensures the admin user has permissions for all existing monitoring items.
+    /// </summary>
+    /// <param name="cancellationToken">Token to observe while performing initialization; used to cancel the operation.</param>
+    /// <remarks>
+    /// This method:
+    /// - Resolves scoped services (UserManager and ApplicationDbContext) from the service provider.
+    /// - Finds the user with username "admin" and if present enumerates points from <c>Core.Points.ListPoints()</c>.
+    /// - Creates missing <see cref="ItemPermission"/> entries for the admin user and persists them.
+    /// 
+    /// The method honours <paramref name="cancellationToken"/> and logs progress and outcomes using the injected logger.
+    /// </remarks>
     private async Task ApplyAdminPermissions(CancellationToken cancellationToken)
     {
         using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
@@ -101,6 +113,15 @@ public class StartupWorker : BackgroundService
         }
     }
 
+    /// <summary>
+    /// Ensures required identity roles exist and creates any missing roles.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token to observe while creating roles.</param>
+    /// <remarks>
+    /// Resolves a scoped <see cref="RoleManager{IdentityRole}"/> from the service provider and iterates
+    /// the predefined <c>Roles</c> array. For each missing role it attempts creation and logs success
+    /// or details of any failure. The operation respects the provided cancellation token.
+    /// </remarks>
     private async Task CreateRoles(CancellationToken cancellationToken)
     {
         using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
@@ -124,6 +145,16 @@ public class StartupWorker : BackgroundService
         }
     }
 
+    /// <summary>
+    /// Ensures an administrator account exists. If no user with username "admin" is found,
+    /// this method creates a new <see cref="ApplicationUser"/> with a development placeholder password
+    /// and assigns the "Admin" role.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token to observe while performing user creation and role assignment.</param>
+    /// <remarks>
+    /// This method logs success, warnings or errors. In production you should replace the placeholder
+    /// password with a securely provisioned secret and enforce stronger password policies.
+    /// </remarks>
     private async Task CreateAdmin(CancellationToken cancellationToken)
     {
         using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
