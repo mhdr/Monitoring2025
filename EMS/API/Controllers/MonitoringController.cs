@@ -214,7 +214,7 @@ public class MonitoringController : ControllerBase
                             UnitFa = item.UnitFa,
                             CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
                             NumberOfSamples = item.NumberOfSamples,
-                            IsDisabled = item.IsDisabled,
+                            IsDisabled = item.IsDisabled ?? false,
                             NormMax = item.NormMax,
                             NormMin = item.NormMin,
                             PointNumber = item.PointNumber,
@@ -246,7 +246,7 @@ public class MonitoringController : ControllerBase
                                 UnitFa = item.UnitFa,
                                 CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
                                 NumberOfSamples = item.NumberOfSamples,
-                                IsDisabled = item.IsDisabled,
+                                IsDisabled = item.IsDisabled ?? false,
                                 NormMax = item.NormMax,
                                 NormMin = item.NormMin,
                                 PointNumber = item.PointNumber,
@@ -295,7 +295,7 @@ public class MonitoringController : ControllerBase
                                 UnitFa = item.UnitFa,
                                 CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
                                 NumberOfSamples = item.NumberOfSamples,
-                                IsDisabled = item.IsDisabled,
+                                IsDisabled = item.IsDisabled ?? false,
                                 NormMax = item.NormMax,
                                 NormMin = item.NormMin,
                                 PointNumber = item.PointNumber,
@@ -327,7 +327,7 @@ public class MonitoringController : ControllerBase
                                     UnitFa = item.UnitFa,
                                     CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
                                     NumberOfSamples = item.NumberOfSamples,
-                                    IsDisabled = item.IsDisabled,
+                                    IsDisabled = item.IsDisabled ?? false,
                                     NormMax = item.NormMax,
                                     NormMin = item.NormMin,
                                     PointNumber = item.PointNumber,
@@ -569,114 +569,6 @@ public class MonitoringController : ControllerBase
                 ErrorMessage = "Internal server error"
             });
         }
-    }
-
-    /// <summary>
-    /// Get all monitoring items with admin privileges (bypasses user permissions)
-    /// </summary>
-    /// <param name="request">Items request parameters including ShowOrphans flag to control orphaned items visibility</param>
-    /// <returns>List of all monitoring items in the system regardless of user permissions</returns>
-    /// <remarks>
-    /// This endpoint bypasses user group permissions and returns all items in the system.
-    /// The ShowOrphans parameter determines whether items not assigned to any group should be included.
-    /// </remarks>
-    /// <response code="200">Returns the complete list of monitoring items</response>
-    /// <response code="400">If there's a validation error with the request</response>
-    /// <response code="500">If an internal error occurs</response>
-    [HttpPost("ItemsAsAdmin")]
-    [ProducesResponseType(typeof(ItemsResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ItemsAsAdmin([FromBody] ItemsRequestDto request)
-    {
-        try
-        {
-            var items = (await Core.Points.ListPoints()).OrderBy(x => x.ItemName);
-            var groupItems = await _context.GroupItems.ToListAsync();
-
-            var permittedItems = new List<ItemsResponseDto.Item>();
-
-            foreach (var item in items)
-            {
-                var groupItem = groupItems.FirstOrDefault(x => x.ItemId == item.Id);
-
-                if (request.ShowOrphans)
-                {
-                    string groupId = "";
-
-                    if (groupItem != null)
-                    {
-                        groupId = groupItem.GroupId.ToString();
-                    }
-
-                    permittedItems.Add(new ItemsResponseDto.Item()
-                    {
-                        Id = item.Id.ToString(),
-                        Name = item.ItemName,
-                        ItemType = (Share.Libs.ItemType)item.ItemType,
-                        GroupId = groupId,
-                        OnText = item.OnText,
-                        OffText = item.OffText,
-                        Unit = item.Unit,
-                        CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
-                        NumberOfSamples = item.NumberOfSamples,
-                        IsDisabled = item.IsDisabled,
-                        NormMax = item.NormMax,
-                        NormMin = item.NormMin,
-                        PointNumber = item.PointNumber,
-                        ShouldScale = (Share.Libs.ShouldScaleType)item.ShouldScale,
-                        SaveInterval = item.SaveInterval,
-                        SaveHistoricalInterval = item.SaveHistoricalInterval,
-                        ScaleMax = item.ScaleMax,
-                        ScaleMin = item.ScaleMin,
-                        IsEditable = item.IsEditable,
-                        InterfaceType = (Share.Libs.InterfaceType)item.InterfaceType,
-                    });
-                }
-                else
-                {
-                    if (groupItem != null)
-                    {
-                        permittedItems.Add(new ItemsResponseDto.Item()
-                        {
-                            Id = item.Id.ToString(),
-                            Name = item.ItemName,
-                            ItemType = (Share.Libs.ItemType)item.ItemType,
-                            GroupId = groupItem.GroupId.ToString(),
-                            OnText = item.OnText,
-                            OffText = item.OffText,
-                            Unit = item.Unit,
-                            CalculationMethod = (Share.Libs.ValueCalculationMethod)item.CalculationMethod,
-                            NumberOfSamples = item.NumberOfSamples,
-                            IsDisabled = item.IsDisabled,
-                            NormMax = item.NormMax,
-                            NormMin = item.NormMin,
-                            PointNumber = item.PointNumber,
-                            ShouldScale = (Share.Libs.ShouldScaleType)item.ShouldScale,
-                            SaveInterval = item.SaveInterval,
-                            SaveHistoricalInterval = item.SaveHistoricalInterval,
-                            ScaleMax = item.ScaleMax,
-                            ScaleMin = item.ScaleMin,
-                            IsEditable = item.IsEditable,
-                            InterfaceType = (Share.Libs.InterfaceType)item.InterfaceType,
-                        });
-                    }
-                }
-            }
-
-            var response = new ItemsResponseDto()
-            {
-                Items = permittedItems,
-            };
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-        }
-
-        return BadRequest(ModelState);
     }
 
     /// <summary>
@@ -3323,8 +3215,19 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// <param name="request">Save permissions request containing user ID and list of item permissions</param>
     /// <returns>Result indicating success or failure of permission saving operation</returns>
     /// <remarks>
-    /// Updates the user's item permissions by replacing all existing permissions with the new set.
-    /// Groups are now accessible to all users, with client-side filtering based on item access.
+    /// **Admin-only endpoint** that updates the user's item permissions by replacing all existing permissions with the new set.
+    /// Groups are accessible to all users, with client-side filtering based on item access.
+    /// 
+    /// **Behavior:**
+    /// - Removes all existing item permissions for the specified user
+    /// - Adds new permissions based on the provided list
+    /// - Updates the user's version identifier to trigger client cache invalidation
+    /// - Creates an audit log entry for compliance tracking
+    /// 
+    /// **Item Permissions:**
+    /// - Each item ID must be a valid GUID format
+    /// - Duplicate item IDs are automatically deduplicated
+    /// - Empty list is allowed to revoke all permissions for the user
     /// 
     /// Sample request:
     /// 
@@ -3335,86 +3238,371 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     ///     }
     ///
     /// </remarks>
-    /// <response code="200">Returns success status of the permission save operation</response>
-    /// <response code="401">If user is not authenticated</response>
-    /// <response code="400">If there's a validation error with the request or user not found</response>
+    /// <response code="200">Permissions saved successfully with count of applied permissions</response>
+    /// <response code="400">Validation error - invalid request format, invalid GUID, or user not found</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - Admin role required</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("SavePermissions")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(SavePermissionsResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> SavePermissions([FromBody] SavePermissionsRequestDto request)
     {
         try
         {
+            _logger.LogInformation("SavePermissions operation started for user {TargetUserId}", request.UserId);
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("SavePermissions: Unauthorized access attempt");
+                return Unauthorized(new { success = false, message = "Authentication required" });
             }
 
-            var user = await _userManager.FindByIdAsync(request.UserId);
-            
-            if (user == null)
+            // Validate ModelState
+            if (!ModelState.IsValid)
             {
-                return BadRequest(new { success = false, message = "User not found" });
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("SavePermissions: Validation failed for user {TargetUserId}: {Errors}", 
+                    request.UserId, string.Join(", ", errors));
+
+                return BadRequest(new 
+                { 
+                    success = false, 
+                    message = "Validation failed", 
+                    errors = errors 
+                });
             }
+
+            // Validate UserId is a valid GUID
+            if (!Guid.TryParse(request.UserId, out var targetUserGuid))
+            {
+                _logger.LogWarning("SavePermissions: Invalid UserId format {UserId}", request.UserId);
+                return BadRequest(new SavePermissionsResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid user ID format. Must be a valid GUID."
+                });
+            }
+
+            var targetUser = await _userManager.FindByIdAsync(request.UserId);
+            
+            if (targetUser == null)
+            {
+                _logger.LogWarning("SavePermissions: User not found {UserId}", request.UserId);
+                return BadRequest(new SavePermissionsResponseDto
+                {
+                    Success = false,
+                    Message = "User not found"
+                });
+            }
+
+            // Validate all item IDs are valid GUIDs
+            var invalidItemIds = new List<string>();
+            var validItemGuids = new List<Guid>();
+
+            foreach (var itemId in request.ItemPermissions)
+            {
+                if (Guid.TryParse(itemId, out var itemGuid))
+                {
+                    validItemGuids.Add(itemGuid);
+                }
+                else
+                {
+                    invalidItemIds.Add(itemId);
+                }
+            }
+
+            if (invalidItemIds.Any())
+            {
+                _logger.LogWarning("SavePermissions: Invalid item ID formats {ItemIds}", 
+                    string.Join(", ", invalidItemIds));
+                return BadRequest(new SavePermissionsResponseDto
+                {
+                    Success = false,
+                    Message = $"Invalid item ID formats: {string.Join(", ", invalidItemIds)}"
+                });
+            }
+
+            // Deduplicate item IDs
+            validItemGuids = validItemGuids.Distinct().ToList();
 
             // Remove existing item permissions for the user
             var itemsToDelete = await _context.ItemPermissions
-                .Where(x => x.UserId == new Guid(user.Id))
+                .Where(x => x.UserId == targetUserGuid)
                 .ToListAsync();
+
+            _logger.LogInformation("SavePermissions: Removing {Count} existing permissions for user {UserId}", 
+                itemsToDelete.Count, request.UserId);
+
             _context.ItemPermissions.RemoveRange(itemsToDelete);
 
             // Add new item permissions
             List<ItemPermission> itemPermissions = new();
 
-            foreach (var i in request.ItemPermissions)
+            foreach (var itemGuid in validItemGuids)
             {
                 itemPermissions.Add(new ItemPermission()
                 {
-                    UserId = new Guid(user.Id),
-                    ItemId = new Guid(i),
+                    UserId = targetUserGuid,
+                    ItemId = itemGuid,
                 });
             }
 
-            await _context.ItemPermissions.AddRangeAsync(itemPermissions);
-
-            var response = new SavePermissionsResponseDto()
+            if (itemPermissions.Any())
             {
-                IsSuccessful = true,
-            };
-
-            if (user != null)
+                await _context.ItemPermissions.AddRangeAsync(itemPermissions);
+                _logger.LogInformation("SavePermissions: Adding {Count} new permissions for user {UserId}", 
+                    itemPermissions.Count, request.UserId);
+            }
+            else
             {
-                var userVersion = await _context.UserVersions.FirstOrDefaultAsync(x => x.UserId == new Guid(user.Id));
-
-                if (userVersion == null)
-                {
-                    userVersion = new UserVersion()
-                    {
-                        UserId = new Guid(user.Id),
-                        Version = Guid.NewGuid().ToString(),
-                    };
-
-                    await _context.UserVersions.AddAsync(userVersion);
-                }
-                else
-                {
-                    userVersion.Version = Guid.NewGuid().ToString();
-                }
-
-                await _context.SaveChangesAsync();
+                _logger.LogInformation("SavePermissions: No permissions to add for user {UserId} (all revoked)", 
+                    request.UserId);
             }
 
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-        }
+            // Update or create user version to trigger client cache invalidation
+            var userVersion = await _context.UserVersions.FirstOrDefaultAsync(x => x.UserId == targetUserGuid);
 
-        return BadRequest(ModelState);
+            if (userVersion == null)
+            {
+                userVersion = new UserVersion()
+                {
+                    UserId = targetUserGuid,
+                    Version = Guid.NewGuid().ToString(),
+                };
+
+                await _context.UserVersions.AddAsync(userVersion);
+                _logger.LogInformation("SavePermissions: Created new user version for {UserId}", request.UserId);
+            }
+            else
+            {
+                userVersion.Version = Guid.NewGuid().ToString();
+                _logger.LogInformation("SavePermissions: Updated user version for {UserId} to {Version}", 
+                    request.UserId, userVersion.Version);
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Create audit log entry using AuditService
+            var currentUserGuid = Guid.Parse(userId);
+            await _auditService.LogAsync(
+                LogType.EditGroup, // Using EditGroup as placeholder for user permission changes
+                new
+                {
+                    Action = "SaveUserPermissions",
+                    TargetUserId = request.UserId,
+                    TargetUserName = targetUser.UserName,
+                    PermissionsCount = itemPermissions.Count,
+                    RemovedCount = itemsToDelete.Count,
+                    AddedCount = itemPermissions.Count,
+                    ItemPermissions = validItemGuids.Select(g => g.ToString()).ToList()
+                },
+                itemId: null,
+                userId: currentUserGuid
+            );
+
+            _logger.LogInformation("SavePermissions: Successfully saved {Count} permissions for user {UserId} by admin {AdminId}", 
+                itemPermissions.Count, request.UserId, userId);
+
+            return Ok(new SavePermissionsResponseDto
+            {
+                Success = true,
+                Message = "User permissions saved successfully",
+                PermissionsCount = itemPermissions.Count
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "SavePermissions: Validation error for user {UserId}", request.UserId);
+            return BadRequest(new SavePermissionsResponseDto
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "SavePermissions: Unauthorized access attempt");
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SavePermissions: Error saving permissions for user {UserId}: {Message}", 
+                request.UserId, ex.Message);
+            return StatusCode(500, new SavePermissionsResponseDto
+            {
+                Success = false,
+                Message = "Internal server error"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Get user permissions for accessing monitoring items
+    /// </summary>
+    /// <param name="request">Get permissions request containing the user ID to query</param>
+    /// <returns>List of item IDs that the user has access to along with user details</returns>
+    /// <remarks>
+    /// **Admin-only endpoint** that retrieves all monitoring item permissions for a specific user.
+    /// Returns a list of item IDs (GUIDs) that the user is authorized to access.
+    /// 
+    /// **Use Cases:**
+    /// - Viewing current permissions for a user before editing
+    /// - Auditing user access rights
+    /// - Exporting user permission configuration
+    /// - Displaying user permissions in admin UI
+    /// 
+    /// **Response Details:**
+    /// - Returns empty list if user has no permissions
+    /// - Includes user information (ID and username) for verification
+    /// - Provides total count of accessible items
+    /// - Item IDs are returned as GUID strings
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/getpermissions
+    ///     {
+    ///        "userId": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// Sample response:
+    /// 
+    ///     {
+    ///        "success": true,
+    ///        "message": "User permissions retrieved successfully",
+    ///        "userId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "userName": "johndoe",
+    ///        "itemIds": [
+    ///            "550e8400-e29b-41d4-a716-446655440001",
+    ///            "550e8400-e29b-41d4-a716-446655440002",
+    ///            "550e8400-e29b-41d4-a716-446655440003"
+    ///        ],
+    ///        "totalCount": 3
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Permissions retrieved successfully with list of item IDs</response>
+    /// <response code="400">Validation error - invalid request format or invalid user ID</response>
+    /// <response code="401">Unauthorized - valid JWT token required</response>
+    /// <response code="403">Forbidden - Admin role required</response>
+    /// <response code="404">User not found - the specified user ID does not exist</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("GetPermissions")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(GetPermissionsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetPermissions([FromBody] GetPermissionsRequestDto request)
+    {
+        try
+        {
+            _logger.LogInformation("GetPermissions operation started for user {TargetUserId}", request.UserId);
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("GetPermissions: Unauthorized access attempt");
+                return Unauthorized(new { success = false, message = "Authentication required" });
+            }
+
+            // Validate ModelState
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("GetPermissions: Validation failed for user {TargetUserId}: {Errors}", 
+                    request.UserId, string.Join(", ", errors));
+
+                return BadRequest(new GetPermissionsResponseDto
+                {
+                    Success = false,
+                    Message = "Validation failed"
+                });
+            }
+
+            // Validate UserId is a valid GUID
+            if (!Guid.TryParse(request.UserId, out var targetUserGuid))
+            {
+                _logger.LogWarning("GetPermissions: Invalid UserId format {UserId}", request.UserId);
+                return BadRequest(new GetPermissionsResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid user ID format. Must be a valid GUID."
+                });
+            }
+
+            var targetUser = await _userManager.FindByIdAsync(request.UserId);
+            
+            if (targetUser == null)
+            {
+                _logger.LogWarning("GetPermissions: User not found {UserId}", request.UserId);
+                return NotFound(new GetPermissionsResponseDto
+                {
+                    Success = false,
+                    Message = "User not found"
+                });
+            }
+
+            // Retrieve item permissions for the user
+            var itemPermissions = await _context.ItemPermissions
+                .Where(x => x.UserId == targetUserGuid)
+                .Select(x => x.ItemId.ToString())
+                .ToListAsync();
+
+            _logger.LogInformation("GetPermissions: Retrieved {Count} permissions for user {UserId}", 
+                itemPermissions.Count, request.UserId);
+
+            return Ok(new GetPermissionsResponseDto
+            {
+                Success = true,
+                Message = "User permissions retrieved successfully",
+                UserId = request.UserId,
+                UserName = targetUser.UserName,
+                ItemIds = itemPermissions,
+                TotalCount = itemPermissions.Count
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "GetPermissions: Validation error for user {UserId}", request.UserId);
+            return BadRequest(new GetPermissionsResponseDto
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "GetPermissions: Unauthorized access attempt");
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetPermissions: Error retrieving permissions for user {UserId}: {Message}", 
+                request.UserId, ex.Message);
+            return StatusCode(500, new GetPermissionsResponseDto
+            {
+                Success = false,
+                Message = "Internal server error"
+            });
+        }
     }
 
     /// <summary>

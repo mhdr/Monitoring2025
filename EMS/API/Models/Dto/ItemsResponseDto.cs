@@ -151,20 +151,20 @@ public class ItemsResponseDto
         public string? UnitFa { get; set; }
 
         /// <summary>
-        /// Whether the item is disabled from data collection
+        /// Whether the item is currently disabled
         /// </summary>
         /// <example>false</example>
-        public bool? IsDisabled { get; set; } 
+        public bool IsDisabled { get; set; }
 
         /// <summary>
-        /// Communication interface type (Modbus, TCP, etc.)
+        /// Interface type for communication (Modbus, OPC, etc.)
         /// </summary>
         public InterfaceType InterfaceType { get; set; }
 
         /// <summary>
-        /// Whether the current user can edit this item
+        /// Whether the item can be edited by users
         /// </summary>
         /// <example>true</example>
-        public bool IsEditable { get; set; } = false;
+        public bool IsEditable { get; set; }
     }
 }

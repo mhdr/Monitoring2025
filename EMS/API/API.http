@@ -2371,3 +2371,84 @@ Authorization: Bearer {{authTokenHTTPS}}
 }
 
 ###
+
+#################################################################################
+# MONITORING CONTROLLER - USER PERMISSIONS ENDPOINTS
+#################################################################################
+
+### Save user permissions - HTTP (Admin only)
+# Updates item permissions for a specific user
+# Removes all existing permissions and replaces with new set
+# Empty itemPermissions array revokes all access
+POST {{API_HostAddress}}/api/monitoring/SavePermissions
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "itemPermissions": [
+    "550e8400-e29b-41d4-a716-446655440001",
+    "550e8400-e29b-41d4-a716-446655440002",
+    "550e8400-e29b-41d4-a716-446655440003"
+  ]
+}
+
+###
+
+### Save user permissions - HTTPS (Admin only)
+# Updates item permissions for a specific user
+# Removes all existing permissions and replaces with new set
+# Empty itemPermissions array revokes all access
+POST {{API_HostAddress}}/api/monitoring/SavePermissions
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "itemPermissions": [
+    "550e8400-e29b-41d4-a716-446655440001",
+    "550e8400-e29b-41d4-a716-446655440002",
+    "550e8400-e29b-41d4-a716-446655440003"
+  ]
+}
+
+###
+
+### Revoke all user permissions - HTTP (Admin only)
+# Removes all item permissions for a user by providing empty array
+POST {{API_HostAddress}}/api/monitoring/SavePermissions
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "itemPermissions": []
+}
+
+###
+
+### Get user permissions - HTTP (Admin only)
+# Retrieves all item IDs that a user has access to
+# Returns user details and complete list of permitted item IDs
+POST {{API_HostAddress}}/api/monitoring/GetPermissions
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTP}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+###
+
+### Get user permissions - HTTPS (Admin only)
+# Retrieves all item IDs that a user has access to
+# Returns user details and complete list of permitted item IDs
+POST {{API_HostAddress}}/api/monitoring/GetPermissions
+Content-Type: application/json
+Authorization: Bearer {{authTokenHTTPS}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+###
