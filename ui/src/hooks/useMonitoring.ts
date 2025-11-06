@@ -44,6 +44,7 @@ export function useMonitoring() {
   const setDataSynced = useMonitoringStore((state) => state.setDataSynced);
   const clearDataSyncStatus = useMonitoringStore((state) => state.clearDataSyncStatus);
   const updateActiveAlarms = useMonitoringStore((state) => state.updateActiveAlarms);
+  const setActiveAlarmsList = useMonitoringStore((state) => state.setActiveAlarmsList);
   const setActiveAlarmsStreamStatus = useMonitoringStore((state) => state.setActiveAlarmsStreamStatus);
   const setActiveAlarmsStreamError = useMonitoringStore((state) => state.setActiveAlarmsStreamError);
   const setActiveAlarmsFetching = useMonitoringStore((state) => state.setActiveAlarmsFetching);
@@ -165,6 +166,8 @@ export function useMonitoring() {
         itemIdsUsed: itemIds.length,
       });
       
+      // Store both the count AND the full list in Zustand store
+      setActiveAlarmsList(activeAlarmsData);
       updateActiveAlarms(activeAlarmsData.length, Date.now(), highestPriority);
       setActiveAlarmsFetchError(null);
     } catch (error) {
@@ -174,7 +177,7 @@ export function useMonitoring() {
     } finally {
       setActiveAlarmsFetching(false);
     }
-  }, [updateActiveAlarms, setActiveAlarmsFetching, setActiveAlarmsFetchError]);
+  }, [updateActiveAlarms, setActiveAlarmsList, setActiveAlarmsFetching, setActiveAlarmsFetchError]);
   
   // Fetch values for specific items
   const fetchValues = useCallback(async (itemIds: string[]) => {
@@ -228,6 +231,7 @@ export function useMonitoring() {
         fetchError: activeAlarms.fetchError,
         isFetching: activeAlarms.isFetching,
         highestPriority: activeAlarms.highestPriority,
+        list: activeAlarms.list,
       },
       backgroundRefresh: {
         enabled: backgroundRefresh.enabled,

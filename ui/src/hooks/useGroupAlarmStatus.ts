@@ -2,12 +2,12 @@
  * Custom hook to check if a group (folder) or any of its descendants have active alarms
  * Recursively checks all subgroups and items within the group hierarchy
  * Returns counts of unique items in alarm (priority 2) and warning (priority 1) states
+ * 
+ * OPTIMIZED: Reads active alarms from centralized Zustand store instead of making individual API calls
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import { useMonitoring } from './useMonitoring';
-import { getActiveAlarms } from '../services/monitoringApi';
-import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 import type { Group, Item, ActiveAlarm, AlarmDto } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -48,6 +48,8 @@ interface GroupAlarmStatus {
 /**
  * Hook to get alarm/warning status for a group and all its descendants
  * 
+ * OPTIMIZED: Reads active alarms from centralized Zustand store (no individual API calls)
+ * 
  * @param groupId - The ID of the group to check
  * @returns GroupAlarmStatus object with alarm and warning counts
  * 
@@ -56,71 +58,11 @@ interface GroupAlarmStatus {
  */
 export function useGroupAlarmStatus(groupId: string): GroupAlarmStatus {
   const { state } = useMonitoring();
-  const { groups, items, alarms, alarmRefreshTrigger } = state;
+  const { groups, items, alarms } = state;
   
-  const [activeAlarms, setActiveAlarms] = useState<ActiveAlarm[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  // Fetch active alarms function
-  const fetchActiveAlarms = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      
-      // Get items from Zustand store to build the request
-      const storedItems = await monitoringStorageHelpers.getStoredItems();
-      
-      if (!storedItems || storedItems.length === 0) {
-        logger.warn('No items in Zustand store, cannot fetch active alarms');
-        setActiveAlarms([]);
-        return;
-      }
-
-      // Extract all itemIds for API call
-      const itemIds = storedItems
-        .map(item => item.id)
-        .filter((id): id is string => id !== null && id !== undefined);
-
-      if (itemIds.length === 0) {
-        logger.warn('No valid itemIds found');
-        setActiveAlarms([]);
-        return;
-      }
-
-      // Fetch active alarms from API
-      const response = await getActiveAlarms({ itemIds });
-      
-      // Handle nested response structure
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const activeAlarmsData: ActiveAlarm[] = (response as any).data?.data || [];
-      
-      logger.log(`Fetched ${activeAlarmsData.length} active alarms for group alarm status`);
-      setActiveAlarms(activeAlarmsData);
-    } catch (err) {
-      logger.error('Error fetching active alarms for group status:', err);
-      setActiveAlarms([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Fetch active alarms when component mounts or when dependencies change
-  useEffect(() => {
-    fetchActiveAlarms();
-  }, [groupId, fetchActiveAlarms]); // Refetch when groupId changes
-
-  // Listen to SignalR alarm refresh trigger for real-time updates
-  useEffect(() => {
-    if (alarmRefreshTrigger > 0) {
-      logger.log(`Group alarm refresh triggered via SignalR for group ${groupId}`, { 
-        trigger: alarmRefreshTrigger 
-      });
-      fetchActiveAlarms();
-    }
-  }, [alarmRefreshTrigger, fetchActiveAlarms, groupId]);
-
-  // No polling - SignalR handles real-time updates
-  // Initial fetch happens on mount via alarmRefreshTrigger dependency above
-  // SignalR ReceiveActiveAlarmsUpdate will trigger re-fetches when alarms change
+  // Read active alarms from centralized Zustand store (no API call)
+  const activeAlarms = state.activeAlarms.list;
+  const isLoading = state.activeAlarms.isFetching;
 
   const status = useMemo(() => {
     // Default status

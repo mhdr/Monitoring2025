@@ -9,7 +9,7 @@
 
 import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
-import type { Group, Item, AlarmDto } from '../types/api';
+import type { Group, Item, AlarmDto, ActiveAlarm } from '../types/api';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('MonitoringStore');
@@ -51,6 +51,8 @@ interface TransientMonitoringState {
     fetchError: string | null;
     isFetching: boolean;
     highestPriority: 1 | 2 | null;
+    // NEW: Full list of active alarms (shared across all components)
+    list: ActiveAlarm[];
   };
   
   // Background refresh
@@ -91,6 +93,7 @@ interface MonitoringActions {
   
   // Active alarms (real-time)
   updateActiveAlarms: (alarmCount: number, timestamp: number, highestPriority?: 1 | 2 | null) => void;
+  setActiveAlarmsList: (alarms: ActiveAlarm[]) => void;
   setActiveAlarmsStreamStatus: (status: StreamStatus) => void;
   setActiveAlarmsStreamError: (error: string) => void;
   setActiveAlarmsFetching: (fetching: boolean) => void;
@@ -132,6 +135,7 @@ const initialTransientState: TransientMonitoringState = {
     fetchError: null,
     isFetching: false,
     highestPriority: null,
+    list: [],
   },
   backgroundRefresh: {
     enabled: true,
@@ -208,6 +212,18 @@ export const useMonitoringStore = create<MonitoringState & MonitoringActions>()(
             alarmCount,
             lastUpdate: timestamp,
             highestPriority: highestPriority ?? state.activeAlarms.highestPriority,
+          },
+        }));
+      },
+      
+      setActiveAlarmsList: (alarms: ActiveAlarm[]) => {
+        logger.log('Setting active alarms list:', { count: alarms.length });
+        set((state) => ({
+          activeAlarms: {
+            ...state.activeAlarms,
+            list: alarms,
+            alarmCount: alarms.length,
+            lastUpdate: Date.now(),
           },
         }));
       },
