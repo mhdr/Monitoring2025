@@ -237,36 +237,67 @@ const ActiveAlarmsPage: React.FC = () => {
       
       // Update value history using functional update (keep last 20 values per item)
       setValueHistory(prevHistory => {
-        // MEMORY LEAK FIX: Only keep history for items with active alarms
-        // Create new Map from scratch to avoid accumulating old references
+        // MEMORY LEAK FIX: Only update history when values actually change
         const activeAlarmItemIds = new Set(alarms.map(alarm => alarm.itemId).filter(Boolean));
+        let hasChanges = false;
         const newHistory = new Map<string, Array<{value: number; time: number}>>();
         
-        newValues.forEach(val => {
-          if (val.itemId && val.value !== null) {
-            // Skip items without active alarms
-            if (!activeAlarmItemIds.has(val.itemId)) {
-              return;
+        // Process each alarm's item
+        alarms.forEach(alarm => {
+          const itemId = alarm.itemId;
+          if (!itemId) return;
+          
+          const itemValue = newValues.find(v => v.itemId === itemId);
+          const existingHistory = prevHistory.get(itemId);
+          
+          if (!itemValue || itemValue.value === null) {
+            // No new value for this item, reuse existing history
+            if (existingHistory && existingHistory.length > 0) {
+              newHistory.set(itemId, existingHistory);
             }
-            
-            const numValue = parseFloat(val.value);
-            if (!isNaN(numValue)) {
-              // Get existing history from previous state (not from nextHistory)
-              const existingHistory = prevHistory.get(val.itemId) || [];
-              
-              // Create new array with new value, keep only last 20 (immutable operation)
-              const updatedHistory = [...existingHistory, { value: numValue, time: val.time }].slice(-20);
-              
-              newHistory.set(val.itemId, updatedHistory);
+            return;
+          }
+          
+          const numValue = parseFloat(itemValue.value);
+          if (isNaN(numValue)) {
+            // Invalid value, reuse existing history
+            if (existingHistory && existingHistory.length > 0) {
+              newHistory.set(itemId, existingHistory);
+            }
+            return;
+          }
+          
+          // Check if this value is different from the last recorded value
+          const lastValue = existingHistory && existingHistory.length > 0
+            ? existingHistory[existingHistory.length - 1]
+            : null;
+          
+          // Only create new array if value or time changed
+          if (!lastValue || lastValue.value !== numValue || lastValue.time !== itemValue.time) {
+            // Create new array with new value, keep only last 20
+            const updatedHistory = [...(existingHistory || []), { value: numValue, time: itemValue.time }].slice(-20);
+            newHistory.set(itemId, updatedHistory);
+            hasChanges = true;
+          } else {
+            // Value hasn't changed, reuse existing array reference (NO copy)
+            if (existingHistory && existingHistory.length > 0) {
+              newHistory.set(itemId, existingHistory);
             }
           }
         });
         
-        logger.log('Value history update', {
-          previousSize: prevHistory.size,
-          newSize: newHistory.size,
-          activeAlarmCount: activeAlarmItemIds.size,
-        });
+        // If nothing changed, return previous history to avoid re-render
+        if (!hasChanges && newHistory.size === prevHistory.size) {
+          return prevHistory;
+        }
+        
+        // Only log when there are actual changes
+        if (hasChanges) {
+          logger.log('Value history updated', {
+            historySize: newHistory.size,
+            activeAlarmCount: activeAlarmItemIds.size,
+          });
+        }
         
         return newHistory;
       });

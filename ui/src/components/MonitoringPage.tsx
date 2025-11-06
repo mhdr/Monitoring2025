@@ -267,16 +267,22 @@ const MonitoringPage: React.FC = () => {
     }
 
     setValueHistory((prevHistory) => {
-      // MEMORY LEAK FIX: Only keep history for currently visible items
-      // Create new Map from scratch to avoid accumulating old references
+      // MEMORY LEAK FIX: Only update history when values actually change
       const currentItemIds = new Set(currentFolderItems.map(item => item.id));
+      let hasChanges = false;
       const newHistory = new Map<string, Array<{value: number; time: number}>>();
       
-      itemValues.forEach((itemValue) => {
-        const itemId = itemValue.itemId;
+      // Process each current folder item
+      currentFolderItems.forEach((item) => {
+        const itemId = item.id;
+        const itemValue = itemValues.find(v => v.itemId === itemId);
+        const existingHistory = prevHistory.get(itemId);
         
-        // Skip items not in current folder
-        if (!currentItemIds.has(itemId)) {
+        if (!itemValue) {
+          // No new value for this item, reuse existing history
+          if (existingHistory && existingHistory.length > 0) {
+            newHistory.set(itemId, existingHistory);
+          }
           return;
         }
         
@@ -285,32 +291,45 @@ const MonitoringPage: React.FC = () => {
         
         // Parse value as number (skip if not a number)
         const numValue = parseFloat(value || '');
-        if (isNaN(numValue)) return;
-        
-        // Get existing history for this item (from previous state)
-        const existingHistory = prevHistory.get(itemId) || [];
+        if (isNaN(numValue)) {
+          // Invalid value, reuse existing history
+          if (existingHistory && existingHistory.length > 0) {
+            newHistory.set(itemId, existingHistory);
+          }
+          return;
+        }
         
         // Check if this value is different from the last recorded value
-        const lastValue = existingHistory.length > 0 ? existingHistory[existingHistory.length - 1] : null;
+        const lastValue = existingHistory && existingHistory.length > 0 
+          ? existingHistory[existingHistory.length - 1] 
+          : null;
         
-        // Only add if value or time changed
+        // Only create new array if value or time changed
         if (!lastValue || lastValue.value !== numValue || lastValue.time !== time) {
-          // Create new array with new value, keep only last 10 (immutable operation)
-          const trimmedHistory = [...existingHistory, { value: numValue, time }].slice(-10);
+          // Create new array with new value, keep only last 10
+          const trimmedHistory = [...(existingHistory || []), { value: numValue, time }].slice(-10);
           newHistory.set(itemId, trimmedHistory);
+          hasChanges = true;
         } else {
-          // Value hasn't changed, keep existing history
-          if (existingHistory.length > 0) {
+          // Value hasn't changed, reuse existing array reference (NO copy)
+          if (existingHistory && existingHistory.length > 0) {
             newHistory.set(itemId, existingHistory);
           }
         }
       });
       
-      logger.log('Value history update', {
-        previousSize: prevHistory.size,
-        newSize: newHistory.size,
-        currentFolderItemCount: currentItemIds.size,
-      });
+      // If nothing changed, return previous history to avoid re-render
+      if (!hasChanges && newHistory.size === prevHistory.size) {
+        return prevHistory;
+      }
+      
+      // Only log when there are actual changes
+      if (hasChanges) {
+        logger.log('Value history updated', {
+          historySize: newHistory.size,
+          currentFolderItemCount: currentItemIds.size,
+        });
+      }
       
       return newHistory;
     });
