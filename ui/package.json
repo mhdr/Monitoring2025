@@ -32,7 +32,7 @@
     "async-mutex": "^0.5.0",
     "axios": "^1.13.2",
     "compression": "^1.7.4",
-    "echarts": "^5.6.0",
+  "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.5",
     "express": "^4.21.2",
     "express-static-gzip": "^3.0.0",
