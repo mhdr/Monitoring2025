@@ -55,7 +55,6 @@ import type { ActiveAlarm, Item, AlarmDto, MultiValue } from '../types/api';
 import { createLogger } from '../utils/logger';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 import { formatDate } from '../utils/dateFormatting';
-import { StreamStatus } from '../stores/monitoringStore';
 import ValueHistoryChart from './ValueHistoryChart';
 
 const logger = createLogger('ActiveAlarmsPage');

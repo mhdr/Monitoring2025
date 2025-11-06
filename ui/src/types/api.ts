@@ -986,6 +986,36 @@ export interface GetUserResponseDto {
 }
 
 /**
+ * Request DTO for adding a new user
+ */
+export interface AddUserRequestDto {
+  /** Username for the new user */
+  userName: string;
+  /** User's first name */
+  firstName: string;
+  /** User's last name */
+  lastName: string;
+  /** User's first name in Farsi */
+  firstNameFa?: string | null;
+  /** User's last name in Farsi */
+  lastNameFa?: string | null;
+  /** Initial password for the user */
+  password: string;
+}
+
+/**
+ * Response DTO for adding a new user
+ */
+export interface AddUserResponseDto {
+  /** Whether the operation was successful */
+  success: boolean;
+  /** Success or error message */
+  message?: string | null;
+  /** Created user information */
+  user?: UserInfoDto | null;
+}
+
+/**
  * Request DTO for editing a user's information
  */
 export interface EditUserRequestDto {
@@ -1047,6 +1077,28 @@ export interface UpdateUserRolesRequestDto {
  * Response DTO for updating user roles
  */
 export interface UpdateUserRolesResponseDto {
+  /** Whether the operation was successful */
+  success: boolean;
+  /** Success or error message */
+  message?: string | null;
+  /** Updated list of user's roles */
+  roles?: string[] | null;
+}
+
+/**
+ * Request DTO for setting roles (alias for UpdateUserRolesRequestDto)
+ */
+export interface SetRolesRequestDto {
+  /** User ID to set roles for */
+  userId: string;
+  /** List of role names to assign to the user (replaces existing roles) */
+  roles: string[];
+}
+
+/**
+ * Response DTO for setting roles (alias for UpdateUserRolesResponseDto)
+ */
+export interface SetRolesResponseDto {
   /** Whether the operation was successful */
   success: boolean;
   /** Success or error message */

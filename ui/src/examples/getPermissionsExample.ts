@@ -41,11 +41,11 @@ export const fetchUserPermissions = async (userId?: string): Promise<string[]> =
 
     logger.log('Permissions fetched successfully:', {
       userId: userId ?? 'current user',
-      itemCount: response.itemPermissions?.length ?? 0,
-      itemIds: response.itemPermissions,
+      itemCount: response.itemIds?.length ?? 0,
+      itemIds: response.itemIds,
     });
 
-    return response.itemPermissions ?? [];
+    return response.itemIds ?? [];
   } catch (error) {
     logger.error('Error fetching user permissions:', error);
     throw error;
