@@ -26,7 +26,6 @@ const AuditTrailPage = lazy(() => import('./components/AuditTrailPage'));
 const DisabledAlarmsPage = lazy(() => import('./components/DisabledAlarmsPage'));
 const SchedulerPage = lazy(() => import('./components/SchedulerPage'));
 const UsersPage = lazy(() => import('./components/UsersPage'));
-const PermissionsPage = lazy(() => import('./components/PermissionsPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
@@ -124,13 +123,6 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <UsersPage />
-              </Suspense>
-            </LazyErrorBoundary>
-          } />
-          <Route path="management/permissions" element={
-            <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-                <PermissionsPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
