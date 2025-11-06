@@ -71,9 +71,6 @@ const MonitoringPage: React.FC = () => {
   const loadingTimeoutRef = useRef<number | null>(null);
   const pollingIntervalRef = useRef<number | null>(null);
   
-  // State for value history tracking
-  const [valueHistory, setValueHistory] = useState<Map<string, Array<{value: number; time: number}>>>(new Map());
-  
   // Get data from monitoring context
   const {
     groups: allGroups,
@@ -259,81 +256,6 @@ const MonitoringPage: React.FC = () => {
       }
     };
   }, [isRefreshing, showRefreshIndicator]);
-
-  // Track value history for trend indicators
-  useEffect(() => {
-    if (!itemValues || itemValues.length === 0) {
-      return;
-    }
-
-    setValueHistory((prevHistory) => {
-      // MEMORY LEAK FIX: Only update history when values actually change
-      const currentItemIds = new Set(currentFolderItems.map(item => item.id));
-      let hasChanges = false;
-      const newHistory = new Map<string, Array<{value: number; time: number}>>();
-      
-      // Process each current folder item
-      currentFolderItems.forEach((item) => {
-        const itemId = item.id;
-        const itemValue = itemValues.find(v => v.itemId === itemId);
-        const existingHistory = prevHistory.get(itemId);
-        
-        if (!itemValue) {
-          // No new value for this item, reuse existing history
-          if (existingHistory && existingHistory.length > 0) {
-            newHistory.set(itemId, existingHistory);
-          }
-          return;
-        }
-        
-        const value = itemValue.value;
-        const time = itemValue.time;
-        
-        // Parse value as number (skip if not a number)
-        const numValue = parseFloat(value || '');
-        if (isNaN(numValue)) {
-          // Invalid value, reuse existing history
-          if (existingHistory && existingHistory.length > 0) {
-            newHistory.set(itemId, existingHistory);
-          }
-          return;
-        }
-        
-        // Check if this value is different from the last recorded value
-        const lastValue = existingHistory && existingHistory.length > 0 
-          ? existingHistory[existingHistory.length - 1] 
-          : null;
-        
-        // Only create new array if value or time changed
-        if (!lastValue || lastValue.value !== numValue || lastValue.time !== time) {
-          // Create new array with new value, keep only last 10
-          const trimmedHistory = [...(existingHistory || []), { value: numValue, time }].slice(-10);
-          newHistory.set(itemId, trimmedHistory);
-          hasChanges = true;
-        } else {
-          // Value hasn't changed, reuse existing array reference (NO copy)
-          if (existingHistory && existingHistory.length > 0) {
-            newHistory.set(itemId, existingHistory);
-          }
-        }
-      });
-      
-      // If nothing changed, return previous history to avoid re-render
-      if (!hasChanges && newHistory.size === prevHistory.size) {
-        return prevHistory;
-      }
-      
-      // Only log when there are actual changes
-      if (hasChanges) {
-        logger.log('Value history updated', {
-          historySize: newHistory.size,
-          currentFolderItemCount: currentItemIds.size,
-        });
-      }
-      
-      return newHistory;
-    });
-  }, [itemValues, currentFolderItems]);
 
   // Helper function to get display name based on language
   const getDisplayName = (group: Group) => {
@@ -744,7 +666,6 @@ const MonitoringPage: React.FC = () => {
               >
                 {currentFolderItems.map((item: typeof currentFolderItems[0]) => {
                   const itemValue = getItemValue(item.id);
-                  const itemValueHistory = valueHistory.get(item.id);
                   return (
                     <ItemCard
                       key={item.id}
@@ -753,7 +674,7 @@ const MonitoringPage: React.FC = () => {
                       pointNumber={item.pointNumber}
                       value={itemValue ? formatItemValue(item, itemValue.value) : t('loadingValue')}
                       time={itemValue ? formatTimestamp(itemValue.time) : t('loadingValue')}
-                      valueHistory={itemValueHistory}
+                      valueHistory={undefined}
                       item={item}
                       data-id-ref={`monitoring-page-item-card-${item.id}`}
                     />

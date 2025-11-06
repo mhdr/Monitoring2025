@@ -23,10 +23,10 @@ import {
   Tooltip,
   Fade,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  // Dialog, // Disabled - history feature removed
+  // DialogTitle, // Disabled - history feature removed
+  // DialogContent, // Disabled - history feature removed
+  // DialogActions, // Disabled - history feature removed
   LinearProgress,
 } from '@mui/material';
 import {
@@ -36,11 +36,11 @@ import {
   Warning as WarningIcon,
   SignalCellularAlt as SignalIcon,
   SignalCellularConnectedNoInternet0Bar as DisconnectedIcon,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  TrendingFlat as TrendingFlatIcon,
-  Timeline as TimelineIcon,
-  Close as CloseIcon,
+  // TrendingUp as TrendingUpIcon, // Disabled - history feature removed
+  // TrendingDown as TrendingDownIcon, // Disabled - history feature removed
+  // TrendingFlat as TrendingFlatIcon, // Disabled - history feature removed
+  // Timeline as TimelineIcon, // Disabled - history feature removed
+  // Close as CloseIcon, // Disabled - history feature removed
   NotificationsActive as NotificationsActiveIcon,
   NotificationsOff as NotificationsOffIcon,
   AccessTime as AccessTimeIcon,
@@ -55,7 +55,7 @@ import type { ActiveAlarm, Item, AlarmDto, MultiValue } from '../types/api';
 import { createLogger } from '../utils/logger';
 import { monitoringStorageHelpers } from '../utils/monitoringStorage';
 import { formatDate } from '../utils/dateFormatting';
-import ValueHistoryChart from './ValueHistoryChart';
+// import ValueHistoryChart from './ValueHistoryChart'; // Disabled - history feature removed
 
 const logger = createLogger('ActiveAlarmsPage');
 
@@ -80,15 +80,6 @@ const ActiveAlarmsPage: React.FC = () => {
   const [itemValues, setItemValues] = useState<MultiValue[]>([]);
   const [changedValues, setChangedValues] = useState<Set<string>>(new Set());
   const [valuesRefreshing, setValuesRefreshing] = useState<boolean>(false);
-  const [valueHistory, setValueHistory] = useState<Map<string, Array<{value: number; time: number}>>>(new Map());
-  
-  // State for history modal
-  const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
-  const [selectedHistoryItem, setSelectedHistoryItem] = useState<{
-    item: Item;
-    alarm: ActiveAlarm;
-    history: Array<{value: number; time: number}>;
-  } | null>(null);
   
   // Ref for value refresh interval
   const valuesIntervalRef = useRef<number | null>(null);
@@ -235,73 +226,6 @@ const ActiveAlarmsPage: React.FC = () => {
         }, 2000);
       }
       
-      // Update value history using functional update (keep last 20 values per item)
-      setValueHistory(prevHistory => {
-        // MEMORY LEAK FIX: Only update history when values actually change
-        const activeAlarmItemIds = new Set(alarms.map(alarm => alarm.itemId).filter(Boolean));
-        let hasChanges = false;
-        const newHistory = new Map<string, Array<{value: number; time: number}>>();
-        
-        // Process each alarm's item
-        alarms.forEach(alarm => {
-          const itemId = alarm.itemId;
-          if (!itemId) return;
-          
-          const itemValue = newValues.find(v => v.itemId === itemId);
-          const existingHistory = prevHistory.get(itemId);
-          
-          if (!itemValue || itemValue.value === null) {
-            // No new value for this item, reuse existing history
-            if (existingHistory && existingHistory.length > 0) {
-              newHistory.set(itemId, existingHistory);
-            }
-            return;
-          }
-          
-          const numValue = parseFloat(itemValue.value);
-          if (isNaN(numValue)) {
-            // Invalid value, reuse existing history
-            if (existingHistory && existingHistory.length > 0) {
-              newHistory.set(itemId, existingHistory);
-            }
-            return;
-          }
-          
-          // Check if this value is different from the last recorded value
-          const lastValue = existingHistory && existingHistory.length > 0
-            ? existingHistory[existingHistory.length - 1]
-            : null;
-          
-          // Only create new array if value or time changed
-          if (!lastValue || lastValue.value !== numValue || lastValue.time !== itemValue.time) {
-            // Create new array with new value, keep only last 20
-            const updatedHistory = [...(existingHistory || []), { value: numValue, time: itemValue.time }].slice(-20);
-            newHistory.set(itemId, updatedHistory);
-            hasChanges = true;
-          } else {
-            // Value hasn't changed, reuse existing array reference (NO copy)
-            if (existingHistory && existingHistory.length > 0) {
-              newHistory.set(itemId, existingHistory);
-            }
-          }
-        });
-        
-        // If nothing changed, return previous history to avoid re-render
-        if (!hasChanges && newHistory.size === prevHistory.size) {
-          return prevHistory;
-        }
-        
-        // Only log when there are actual changes
-        if (hasChanges) {
-          logger.log('Value history updated', {
-            historySize: newHistory.size,
-            activeAlarmCount: activeAlarmItemIds.size,
-          });
-        }
-        
-        return newHistory;
-      });
-      
       setItemValues(newValues);
     } catch (err) {
       logger.error('Error fetching instantaneous values:', err);
@@ -310,7 +234,7 @@ const ActiveAlarmsPage: React.FC = () => {
     } finally {
       setValuesRefreshing(false);
     }
-  }, [itemValues, alarms]); // Include itemValues for change detection and alarms for history cleanup
+  }, [itemValues]); // Include itemValues for change detection
 
   /**
    * Fetch active alarms from API
@@ -525,23 +449,24 @@ const ActiveAlarmsPage: React.FC = () => {
   }, [t, isRTL]);
 
   /**
-   * Get trend indicator for value change
+   * Get trend indicator for value change - DISABLED to prevent memory leak
    */
-  const getValueTrend = useCallback((itemId: string, currentValue: string | null, history: Map<string, Array<{value: number; time: number}>>): 'up' | 'down' | 'stable' => {
-    if (!currentValue) return 'stable';
-    
-    const itemHistory = history.get(itemId);
-    if (!itemHistory || itemHistory.length < 2) return 'stable';
-    
-    const currentNum = parseFloat(currentValue);
-    if (isNaN(currentNum)) return 'stable';
-    
-    const prevNum = itemHistory[itemHistory.length - 2].value;
-    
-    if (currentNum > prevNum) return 'up';
-    if (currentNum < prevNum) return 'down';
-    return 'stable';
-  }, []);
+  // const getValueTrend = useCallback((itemId: string, currentValue: string | null, history: Map<string, Array<{value: number; time: number}>>): 'up' | 'down' | 'stable' => {
+  //   if (!currentValue) return 'stable';
+  //   
+  //   const itemHistory = history.get(itemId);
+  //   if (!itemHistory || itemHistory.length < 2) return 'stable';
+  //   
+  //   const currentNum = parseFloat(currentValue);
+  //   if (isNaN(currentNum)) return 'stable';
+  //   
+  //   const prevNum = itemHistory[itemHistory.length - 2].value;
+  //   
+  //   if (currentNum > prevNum) return 'up';
+  //   if (currentNum < prevNum) return 'down';
+  //   return 'stable';
+  // }, []);
+
 
   /**
    * Calculate threshold percentage for alarm visualization
@@ -704,23 +629,12 @@ const ActiveAlarmsPage: React.FC = () => {
   }, [alarms, fetchInstantaneousValues]);
 
   /**
-   * Handle history icon click
+   * Handle history icon click - DISABLED to prevent memory leak
    */
-  const handleHistoryClick = (alarm: ActiveAlarm) => {
-    const item = storedItems.find(i => i.id === alarm.itemId);
-    const history = valueHistory.get(alarm.itemId || '');
-    
-    if (item && history && history.length > 1) {
-      logger.log(`Opening history modal for item: ${item.name}`, { historyLength: history.length });
-      setSelectedHistoryItem({ item, alarm, history });
-      setHistoryModalOpen(true);
-    } else {
-      logger.warn('Cannot open history: insufficient data', { 
-        hasItem: !!item, 
-        historyLength: history?.length || 0 
-      });
-    }
-  };
+  // const handleHistoryClick = (alarm: ActiveAlarm) => {
+  //   // History feature disabled
+  //   logger.warn('History feature temporarily disabled');
+  // };
 
   /**
    * Render stream status indicator with optional reconnect button
@@ -1250,8 +1164,8 @@ const ActiveAlarmsPage: React.FC = () => {
                                           >
                                             {formatItemValue(item, itemValue.value)}
                                           </Typography>
-                                          {/* Trend indicator */}
-                                          {(() => {
+                                          {/* Trend indicator - DISABLED to prevent memory leak */}
+                                          {/* {(() => {
                                             const trend = getValueTrend(alarm.itemId || '', itemValue.value, valueHistory);
                                             if (trend === 'up') {
                                               return (
@@ -1273,9 +1187,9 @@ const ActiveAlarmsPage: React.FC = () => {
                                               );
                                             }
                                             return null;
-                                          })()}
-                                          {/* History chart icon */}
-                                          {valueHistory.get(alarm.itemId || '')?.length && valueHistory.get(alarm.itemId || '')!.length > 1 && (
+                                          })()} */}
+                                          {/* History chart icon - DISABLED to prevent memory leak */}
+                                          {/* {valueHistory.get(alarm.itemId || '')?.length && valueHistory.get(alarm.itemId || '')!.length > 1 && (
                                             <Tooltip title={t('activeAlarmsPage.viewHistory')} arrow>
                                               <IconButton 
                                                 size="small" 
@@ -1286,7 +1200,7 @@ const ActiveAlarmsPage: React.FC = () => {
                                                 <TimelineIcon sx={{ fontSize: 14, color: 'info.main' }} data-id-ref={`value-history-timeline-icon-${index}`} />
                                               </IconButton>
                                             </Tooltip>
-                                          )}
+                                          )} */}
                                         </Box>
                                       </Fade>
                                     </Box>
@@ -1382,8 +1296,8 @@ const ActiveAlarmsPage: React.FC = () => {
         </Card>
       </Box>
 
-      {/* History Modal */}
-      <Dialog
+      {/* History Modal - DISABLED to prevent memory leak */}
+      {/* <Dialog
         open={historyModalOpen}
         onClose={() => setHistoryModalOpen(false)}
         maxWidth="md"
@@ -1439,7 +1353,7 @@ const ActiveAlarmsPage: React.FC = () => {
             {t('common.buttons.close')}
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
     </Container>
   );
 };

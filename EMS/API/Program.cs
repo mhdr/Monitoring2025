@@ -368,11 +368,23 @@ builder.Services.AddHostedService<StartupWorker>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Read Swagger configuration from appsettings
+var enableSwaggerInProduction = builder.Configuration.GetValue<bool>("Swagger:EnableInProduction", false);
+
+if (app.Environment.IsDevelopment() || (app.Environment.IsProduction() && enableSwaggerInProduction))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
     app.MapOpenApi();
+    
+    if (app.Environment.IsProduction())
+    {
+        Console.WriteLine("[SWAGGER] Swagger UI enabled in Production mode (Swagger:EnableInProduction = true)");
+    }
+}
+else if (app.Environment.IsProduction())
+{
+    Console.WriteLine("[SWAGGER] Swagger UI disabled in Production mode (Swagger:EnableInProduction = false)");
 }
 
 // Enable CORS
