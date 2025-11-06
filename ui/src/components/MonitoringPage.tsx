@@ -267,10 +267,19 @@ const MonitoringPage: React.FC = () => {
     }
 
     setValueHistory((prevHistory) => {
-      const newHistory = new Map(prevHistory);
+      // MEMORY LEAK FIX: Only keep history for currently visible items
+      // Create new Map from scratch to avoid accumulating old references
+      const currentItemIds = new Set(currentFolderItems.map(item => item.id));
+      const newHistory = new Map<string, Array<{value: number; time: number}>>();
       
       itemValues.forEach((itemValue) => {
         const itemId = itemValue.itemId;
+        
+        // Skip items not in current folder
+        if (!currentItemIds.has(itemId)) {
+          return;
+        }
+        
         const value = itemValue.value;
         const time = itemValue.time;
         
@@ -278,29 +287,34 @@ const MonitoringPage: React.FC = () => {
         const numValue = parseFloat(value || '');
         if (isNaN(numValue)) return;
         
-        // Get existing history for this item
-        const existingHistory = newHistory.get(itemId) || [];
+        // Get existing history for this item (from previous state)
+        const existingHistory = prevHistory.get(itemId) || [];
         
         // Check if this value is different from the last recorded value
         const lastValue = existingHistory.length > 0 ? existingHistory[existingHistory.length - 1] : null;
         
         // Only add if value or time changed
         if (!lastValue || lastValue.value !== numValue || lastValue.time !== time) {
-          const updatedHistory = [
-            ...existingHistory,
-            { value: numValue, time }
-          ];
-          
-          // Keep only last 10 values to prevent memory bloat
-          const trimmedHistory = updatedHistory.slice(-10);
-          
+          // Create new array with new value, keep only last 10 (immutable operation)
+          const trimmedHistory = [...existingHistory, { value: numValue, time }].slice(-10);
           newHistory.set(itemId, trimmedHistory);
+        } else {
+          // Value hasn't changed, keep existing history
+          if (existingHistory.length > 0) {
+            newHistory.set(itemId, existingHistory);
+          }
         }
+      });
+      
+      logger.log('Value history update', {
+        previousSize: prevHistory.size,
+        newSize: newHistory.size,
+        currentFolderItemCount: currentItemIds.size,
       });
       
       return newHistory;
     });
-  }, [itemValues]);
+  }, [itemValues, currentFolderItems]);
 
   // Helper function to get display name based on language
   const getDisplayName = (group: Group) => {

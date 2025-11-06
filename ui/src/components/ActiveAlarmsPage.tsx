@@ -237,24 +237,38 @@ const ActiveAlarmsPage: React.FC = () => {
       
       // Update value history using functional update (keep last 20 values per item)
       setValueHistory(prevHistory => {
-        const nextHistory = new Map(prevHistory);
+        // MEMORY LEAK FIX: Only keep history for items with active alarms
+        // Create new Map from scratch to avoid accumulating old references
+        const activeAlarmItemIds = new Set(alarms.map(alarm => alarm.itemId).filter(Boolean));
+        const newHistory = new Map<string, Array<{value: number; time: number}>>();
         
         newValues.forEach(val => {
           if (val.itemId && val.value !== null) {
+            // Skip items without active alarms
+            if (!activeAlarmItemIds.has(val.itemId)) {
+              return;
+            }
+            
             const numValue = parseFloat(val.value);
             if (!isNaN(numValue)) {
-              const history = nextHistory.get(val.itemId) || [];
-              history.push({ value: numValue, time: val.time });
-              // Keep only last 20 values
-              if (history.length > 20) {
-                history.shift();
-              }
-              nextHistory.set(val.itemId, history);
+              // Get existing history from previous state (not from nextHistory)
+              const existingHistory = prevHistory.get(val.itemId) || [];
+              
+              // Create new array with new value, keep only last 20 (immutable operation)
+              const updatedHistory = [...existingHistory, { value: numValue, time: val.time }].slice(-20);
+              
+              newHistory.set(val.itemId, updatedHistory);
             }
           }
         });
         
-        return nextHistory;
+        logger.log('Value history update', {
+          previousSize: prevHistory.size,
+          newSize: newHistory.size,
+          activeAlarmCount: activeAlarmItemIds.size,
+        });
+        
+        return newHistory;
       });
       
       setItemValues(newValues);
@@ -265,7 +279,7 @@ const ActiveAlarmsPage: React.FC = () => {
     } finally {
       setValuesRefreshing(false);
     }
-  }, [itemValues]); // Include itemValues for change detection
+  }, [itemValues, alarms]); // Include itemValues for change detection and alarms for history cleanup
 
   /**
    * Fetch active alarms from API
