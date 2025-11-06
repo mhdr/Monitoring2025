@@ -12,6 +12,8 @@ import type {
   SetRolesResponseDto,
   SavePermissionsRequestDto,
   SavePermissionsResponseDto,
+  GetPermissionsRequestDto,
+  GetPermissionsResponseDto,
   GetControllersResponseDto,
   AddControllerRequestDto,
   AddControllerResponseDto,
@@ -121,6 +123,19 @@ export const setRoles = async (data: SetRolesRequestDto): Promise<SetRolesRespon
 export const savePermissions = async (data: SavePermissionsRequestDto): Promise<SavePermissionsResponseDto> => {
   try {
     const response = await apiClient.post<SavePermissionsResponseDto>('/api/Monitoring/SavePermissions', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get user permissions for accessing monitoring items
+ * Returns the list of item IDs that the specified user has access to
+ */
+export const getPermissions = async (data: GetPermissionsRequestDto): Promise<GetPermissionsResponseDto> => {
+  try {
+    const response = await apiClient.post<GetPermissionsResponseDto>('/api/Monitoring/GetPermissions', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

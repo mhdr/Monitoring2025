@@ -1167,6 +1167,22 @@ export interface SavePermissionsResponseDto {
   isSuccessful: boolean;
 }
 
+/**
+ * Request DTO for retrieving user permissions for monitoring items
+ */
+export interface GetPermissionsRequestDto {
+  /** User ID to retrieve permissions for */
+  userId?: string | null;
+}
+
+/**
+ * Response DTO for getting permissions
+ */
+export interface GetPermissionsResponseDto {
+  /** List of monitoring item IDs that the user has access to */
+  itemPermissions?: string[] | null;
+}
+
 // ==================== Group Management DTOs ====================
 
 /**
