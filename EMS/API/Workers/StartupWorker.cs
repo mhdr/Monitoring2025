@@ -42,6 +42,7 @@ public class StartupWorker : BackgroundService
             await CreateRoles(stoppingToken);
             await CreateAdmin(stoppingToken);
             await ApplyAdminPermissions(stoppingToken);
+            await MoveUngroupedItemsToNewFolder(stoppingToken);
             _logger.LogInformation("StartupWorker finished initialization tasks");
         }
         catch (OperationCanceledException)
@@ -183,6 +184,96 @@ public class StartupWorker : BackgroundService
                 _logger.LogInformation("Created admin user and assigned Admin role");
             }
         }
+    }
+
+    /// <summary>
+    /// Ensures all items/points are assigned to a group. Any ungrouped items are moved to a folder named "New".
+    /// If the "New" folder does not exist, it is created first.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token to observe while performing the operation.</param>
+    /// <remarks>
+    /// This method:
+    /// - Resolves scoped services (ApplicationDbContext) from the service provider
+    /// - Checks if a group named "New" exists at the root level (ParentId == null)
+    /// - Creates the "New" group if it doesn't exist
+    /// - Retrieves all items/points from Core.Points.ListPoints()
+    /// - Identifies items that don't have a GroupItem entry
+    /// - Assigns those items to the "New" group
+    /// 
+    /// The method honors <paramref name="cancellationToken"/> and logs progress and outcomes using the injected logger.
+    /// </remarks>
+    private async Task MoveUngroupedItemsToNewFolder(CancellationToken cancellationToken)
+    {
+        using var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        _logger.LogInformation("Checking for ungrouped items to move to 'New' folder");
+
+        // Step 1: Find or create the "New" folder
+        var newFolder = await context.Groups.FirstOrDefaultAsync(g => g.Name == "New" && g.ParentId == null, cancellationToken);
+
+        if (newFolder == null)
+        {
+            _logger.LogInformation("Creating 'New' folder for ungrouped items");
+            newFolder = new Group()
+            {
+                Name = "New",
+                NameFa = "جدید",
+                ParentId = null
+            };
+
+            await context.Groups.AddAsync(newFolder, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Created 'New' folder with ID {FolderId}", newFolder.Id);
+        }
+        else
+        {
+            _logger.LogInformation("'New' folder already exists with ID {FolderId}", newFolder.Id);
+        }
+
+        // Step 2: Get all items/points from Core
+        var allItems = await Core.Points.ListPoints();
+        _logger.LogInformation("Found {ItemCount} total items in Core", allItems.Count);
+
+        // Step 3: Get all currently grouped items
+        var groupedItemIds = await context.GroupItems
+            .Select(gi => gi.ItemId)
+            .ToListAsync(cancellationToken);
+
+        _logger.LogInformation("Found {GroupedCount} items already assigned to groups", groupedItemIds.Count);
+
+        // Step 4: Identify ungrouped items
+        var ungroupedItems = allItems.Where(item => !groupedItemIds.Contains(item.Id)).ToList();
+
+        if (ungroupedItems.Count == 0)
+        {
+            _logger.LogInformation("No ungrouped items found - all items are already assigned to groups");
+            return;
+        }
+
+        _logger.LogInformation("Found {UngroupedCount} ungrouped items to move to 'New' folder", ungroupedItems.Count);
+
+        // Step 5: Create GroupItem entries for ungrouped items
+        List<GroupItem> newGroupItems = new();
+
+        foreach (var item in ungroupedItems)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            newGroupItems.Add(new GroupItem()
+            {
+                ItemId = item.Id,
+                GroupId = newFolder.Id
+            });
+
+            _logger.LogDebug("Assigning item {ItemId} ({ItemName}) to 'New' folder", item.Id, item.ItemName);
+        }
+
+        // Step 6: Save all new group assignments
+        await context.GroupItems.AddRangeAsync(newGroupItems, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Successfully moved {ItemCount} ungrouped items to 'New' folder", newGroupItems.Count);
     }
 
     // BackgroundService already implements Dispose; no additional disposal required here.
