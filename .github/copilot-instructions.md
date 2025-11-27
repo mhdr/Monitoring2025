@@ -4,6 +4,22 @@
 
 This is a full-stack monitoring application with separate backend and frontend:
 
+### Core (Industrial Monitoring & Control)
+- **Location**: `Core`
+- **Technology**: .NET Worker Services
+- **Purpose**: Handles all monitoring and control operations for industrial controllers and PLCs
+- **Components**:
+  - `Core/` - Core library with data models, alarm processing, monitoring logic
+  - `CoreService/` - Main worker service for monitoring operations
+  - `JobsService/` - Background job processing service
+  - `DataGen/` - Data generation service
+  - `Contracts/` - Shared message contracts for inter-service communication
+  - **Protocol Interfaces**:
+    - `ModbusInterface/` - Modbus protocol communication
+    - `BACnetInterface/` - BACnet protocol communication
+    - `Sharp7Interface/` - Siemens S7 PLC communication
+    - `RabbitInterface/` - RabbitMQ messaging interface
+
 ### Backend (ASP.NET Web API)
 - **Location**: `EMS`
 - **Technology**: ASP.NET Core 9.0 Web API
