@@ -4,6 +4,9 @@
  * Zustand store for managing authentication state with localStorage persistence.
  * Stores JWT tokens, refresh tokens, user data, and expiration timestamps.
  * Provides synchronous access for API interceptors (critical requirement).
+ * 
+ * IMPORTANT: Uses hydration tracking to prevent race conditions on page load.
+ * Always check hasHydrated before making authenticated requests.
  */
 
 import { create } from 'zustand';
@@ -23,6 +26,8 @@ interface AuthState {
   refreshToken: string | null;
   user: User | null;
   expiration: number | null;
+  /** Whether the store has been hydrated from localStorage */
+  _hasHydrated: boolean;
 }
 
 /**
@@ -34,6 +39,8 @@ interface AuthActions {
   extendExpiration: () => void;
   isExpired: () => boolean;
   getTokenSync: () => string | null;
+  /** Set hydration status (internal use only) */
+  setHasHydrated: (state: boolean) => void;
 }
 
 /**
@@ -44,6 +51,7 @@ const initialState: AuthState = {
   refreshToken: null,
   user: null,
   expiration: null,
+  _hasHydrated: false,
 };
 
 /**
@@ -125,10 +133,40 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       getTokenSync: (): string | null => {
         return get().token;
       },
+      
+      /**
+       * Set hydration status
+       */
+      setHasHydrated: (state: boolean) => {
+        set({ _hasHydrated: state });
+      },
     }),
     {
       name: 'auth-storage', // localStorage key
       version: 1,
+      onRehydrateStorage: (state) => {
+        logger.info('Auth store rehydration starting...');
+        return (hydratedState, error) => {
+          if (error) {
+            logger.error('Error rehydrating auth state:', error);
+          } else {
+            logger.info('Auth state rehydrated from localStorage:', {
+              hasToken: !!hydratedState?.token,
+              hasUser: !!hydratedState?.user,
+            });
+          }
+          // Mark as hydrated after rehydration completes
+          // Use the state from outer closure which has the setHasHydrated method
+          state.setHasHydrated(true);
+        };
+      },
+      partialize: (state) => ({
+        // Don't persist _hasHydrated - it's a runtime flag
+        token: state.token,
+        refreshToken: state.refreshToken,
+        user: state.user,
+        expiration: state.expiration,
+      }),
     }
   )
 );
@@ -198,5 +236,31 @@ export const authStorageHelpers = {
    */
   clearAll: async (): Promise<void> => {
     useAuthStore.getState().clearAuth();
+  },
+  
+  /**
+   * Check if auth store has been hydrated from localStorage
+   */
+  hasHydrated: (): boolean => {
+    return useAuthStore.getState()._hasHydrated;
+  },
+
+  /**
+   * Wait for hydration to complete
+   * Use this before making authenticated API calls on app startup
+   */
+  waitForHydration: (): Promise<void> => {
+    return new Promise((resolve) => {
+      if (useAuthStore.getState()._hasHydrated) {
+        resolve();
+        return;
+      }
+      const unsubscribe = useAuthStore.subscribe((state) => {
+        if (state._hasHydrated) {
+          unsubscribe();
+          resolve();
+        }
+      });
+    });
   },
 };

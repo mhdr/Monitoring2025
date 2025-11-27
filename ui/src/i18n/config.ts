@@ -17,6 +17,13 @@ i18n
     fallbackLng: 'en',
     // lng removed - let LanguageDetector handle it from localStorage or default to fallbackLng
     
+    // Supported languages - only these languages have translation files
+    supportedLngs: ['en', 'fa'],
+    
+    // Allow non-explicit language codes to fall back to base language
+    // e.g., 'en-US' will fall back to 'en', 'fa-IR' will fall back to 'fa'
+    nonExplicitSupportedLngs: true,
+    
     // Debug mode for development
     debug: import.meta.env.DEV,
     

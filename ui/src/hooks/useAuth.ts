@@ -26,17 +26,24 @@ const logger = createLogger('useAuth');
 export const useAuth = () => {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
-  const [isLoading, setIsLoading] = useState(false);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const [isLoginLoading, setIsLoginLoading] = useState(false);
   const isAuthenticated = Boolean(token && user);
+  
+  // isLoading is true if:
+  // 1. Store hasn't hydrated from localStorage yet, OR
+  // 2. Login operation is in progress
+  const isLoading = !hasHydrated || isLoginLoading;
   
   // Initialize from store on mount
   useEffect(() => {
     logger.log('Auth state initialized:', { 
       hasToken: !!token, 
       hasUser: !!user,
-      isAuthenticated 
+      isAuthenticated,
+      hasHydrated,
     });
-  }, [token, user, isAuthenticated]);
+  }, [token, user, isAuthenticated, hasHydrated]);
   
   // Setup broadcast channel for cross-tab sync
   useEffect(() => {
@@ -98,20 +105,20 @@ export const useAuth = () => {
   
   const login = useCallback(async (credentials: LoginRequest): Promise<void> => {
     try {
-      setIsLoading(true);
+      setIsLoginLoading(true);
       const result = await apiLogin(credentials);
       
       // Store auth data in Zustand store (persisted to localStorage)
       await authStorageHelpers.setStoredAuth(result.accessToken, result.user, result.refreshToken);
       
-      setIsLoading(false);
+      setIsLoginLoading(false);
       
       // Broadcast login to other tabs
       if (result.refreshToken) {
         broadcastLogin(result.accessToken, result.refreshToken);
       }
     } catch (error) {
-      setIsLoading(false);
+      setIsLoginLoading(false);
       throw error as ApiError;
     }
   }, []);
