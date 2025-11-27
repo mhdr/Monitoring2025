@@ -430,16 +430,17 @@ export const BACnetObjectTypeEnum = {
   AnalogOutput: 2,
 } as const;
 
-/** ModbusDataType: 1 = Boolean, 2 = Int */
-export type ModbusDataType = 1 | 2;
+/** ModbusDataType: 1 = Boolean, 2 = Int, 3 = Float */
+export type ModbusDataType = 1 | 2 | 3;
 
 /**
  * ModbusDataType enum values for better code readability
- * Backend uses Boolean=1 (single bit), Int=2 (integer register) for Modbus protocol
+ * Backend uses Boolean=1 (single bit), Int=2 (integer register), Float=3 (floating point) for Modbus protocol
  */
 export const ModbusDataTypeEnum = {
   Boolean: 1,
   Int: 2,
+  Float: 3,
 } as const;
 
 // LogType: Based on backend enum - EditPoint=1, EditAlarm=2, Login=3, Logout=4, EditGroup=5, AddAlarm=6, DeleteAlarm=7, AddExternalAlarm=8, DeleteExternalAlarm=9, EditExternalAlarm=10, AddPoint=11, DeletePoint=12, DeleteGroup=13, AddGroup=14, EditUser=15, AddUser=16, DeleteUser=17, EditRole=18, AddRole=19, DeleteRole=20
