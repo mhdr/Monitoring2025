@@ -1,0 +1,979 @@
+using System.Linq.Expressions;
+using Core.Libs;
+using Core.Models;
+using Core.MongoModels;
+using Core.RedisModels;
+using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
+using Newtonsoft.Json;
+
+
+namespace Core;
+
+/// <summary>
+/// Provides methods for managing monitoring points, values, and related operations in the monitoring system.
+/// </summary>
+public static class Points
+{
+    private static Dictionary<string, bool> _anyTrueDictionary = new();
+    private static Dictionary<string, bool> _anyFalseDictionary = new();
+
+    /// <summary>
+    /// Adds a new monitoring point to the database.
+    /// Throws an exception if the point is a digital IO with a non-default calculation method.
+    /// Returns Guid.Empty if the point already exists.
+    /// </summary>
+    /// <param name="point">The monitoring item to add.</param>
+    /// <returns>The Guid of the added point, or Guid.Empty if it already exists.</returns>
+    public static async Task<Guid> AddPoint(MonitoringItem point)
+    {
+        if (point.CalculationMethod != ValueCalculationMethod.Default &&
+            (point.ItemType == ItemType.DigitalInput || point.ItemType == ItemType.DigitalOutput))
+        {
+            throw new InvalidDataException("Digital IO does not support calculated values.");
+        }
+
+        var context = new DataContext();
+
+        var found = await context.MonitoringItems.AnyAsync(x => x.Id == point.Id);
+
+        if (found)
+        {
+            return Guid.Empty;
+        }
+
+        context.MonitoringItems.Add(point);
+        await context.SaveChangesAsync();
+        await context.DisposeAsync();
+
+        var id = point.Id;
+        return id;
+    }
+
+    /// <summary>
+    /// Adds a raw value for a monitoring item to Redis.
+    /// </summary>
+    /// <param name="itemId">The ID of the item.</param>
+    /// <param name="value">The value to add.</param>
+    /// <param name="time">The timestamp for the value.</param>
+    /// <returns>True if successful, false otherwise.</returns>
+    public static async Task<bool> AddValue(Guid itemId, string value, long time)
+    {
+        try
+        {
+            MyLog.Debug("Adding raw value", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["Value"] = value,
+                ["Time"] = time
+            });
+
+            await SetRawItem(new RawItemRedis()
+            {
+                ItemId = itemId,
+                Value = value,
+                Time = time,
+            });
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to add value", e, new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["Value"] = value,
+                ["Time"] = time
+            });
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Retrieves a monitoring point by its Guid.
+    /// </summary>
+    /// <param name="id">The Guid of the point.</param>
+    /// <returns>The found MonitoringItem, or null if not found.</returns>
+    public static async Task<MonitoringItem?> GetPoint(Guid id)
+    {
+        var context = new DataContext();
+        var found = await context.MonitoringItems.FirstOrDefaultAsync(x => x.Id == id);
+        await context.DisposeAsync();
+        return found;
+    }
+
+    /// <summary>
+    /// Retrieves all enabled monitoring points from the database.
+    /// </summary>
+    /// <returns>List of enabled MonitoringItems.</returns>
+    public static async Task<List<MonitoringItem>> GetAllPoints()
+    {
+        var context = new DataContext();
+        var found = await context.MonitoringItems.Where(x => x.IsDisabled == false).ToListAsync();
+        await context.DisposeAsync();
+        return found;
+    }
+
+    /// <summary>
+    /// Retrieves a monitoring point matching the given predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to filter points.</param>
+    /// <returns>The found MonitoringItem, or null if not found.</returns>
+    public static async Task<MonitoringItem?> GetPoint(Expression<Func<MonitoringItem, bool>> predicate)
+    {
+        var context = new DataContext();
+        var found = await context.MonitoringItems.FirstOrDefaultAsync(predicate);
+        await context.DisposeAsync();
+        return found;
+    }
+
+    /// <summary>
+    /// Deletes a monitoring point matching the given predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to filter points.</param>
+    /// <returns>True if deleted, false otherwise.</returns>
+    public static async Task<bool> DeletePoint(Expression<Func<MonitoringItem, bool>> predicate)
+    {
+        var context = new DataContext();
+        var item = await context.MonitoringItems.FirstOrDefaultAsync(predicate);
+        var mapSharp7s = context.MapSharp7s.Where(x => x.ItemId == item!.Id);
+        var mapBACnets = context.MapBACnets.Where(x => x.ItemId == item!.Id);
+        var mapModbuses = context.MapModbuses.Where(x => x.ItemId == item!.Id);
+        var writeItems = context.WriteItems.Where(x => x.ItemId == item!.Id);
+        var activeAlarms = context.ActiveAlarms.Where(x => x.ItemId == item!.Id);
+        var alarms= context.Alarms.Where(x => x.ItemId == item!.Id);
+
+        if (item != null)
+        {
+            context.MonitoringItems.Remove(item);
+            
+            if (mapSharp7s != null)
+            {
+                context.MapSharp7s.RemoveRange(mapSharp7s);
+            }
+
+            if (mapBACnets != null)
+            {
+                context.MapBACnets.RemoveRange(mapBACnets);
+            }
+
+            if (mapModbuses != null)
+            {
+                context.MapModbuses.RemoveRange(mapModbuses);
+            }
+
+            if (writeItems != null)
+            {
+                context.WriteItems.RemoveRange(writeItems);
+            }
+            
+            if (activeAlarms != null)
+            {
+                context.ActiveAlarms.RemoveRange(activeAlarms);
+            }
+             if (alarms != null)
+            {
+                context.Alarms.RemoveRange(alarms);
+            }
+             
+            await context.SaveChangesAsync();
+            await context.DisposeAsync();
+            return true;
+        }
+
+        await context.DisposeAsync();
+        return false;
+    }
+
+    /// <summary>
+    /// Retrieves a raw item from Redis by item ID.
+    /// </summary>
+    /// <param name="itemId">The item ID.</param>
+    /// <returns>The RawItemRedis object, or null if not found.</returns>
+    public static async Task<RawItemRedis?> GetRawItem(string itemId)
+    {
+        var db = RedisConnection.Instance.GetDatabase();
+        var value = await db.StringGetAsync($"RawItem:{itemId}");
+
+        if (value.HasValue)
+        {
+            var json = value.ToString();
+            var result = JsonConvert.DeserializeObject<RawItemRedis>(json);
+            return result;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Retrieves a final item from Redis by item ID.
+    /// </summary>
+    /// <param name="itemId">The item ID.</param>
+    /// <returns>The FinalItemRedis object, or null if not found.</returns>
+    public static async Task<FinalItemRedis?> GetFinalItem(string itemId)
+    {
+        var db = RedisConnection.Instance.GetDatabase();
+        var value = await db.StringGetAsync($"FinalItem:{itemId}");
+
+        if (value.HasValue)
+        {
+            var json = value.ToString();
+            var result = JsonConvert.DeserializeObject<FinalItemRedis>(json);
+            return result;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Stores a raw item in Redis.
+    /// </summary>
+    /// <param name="rawItem">The RawItemRedis object to store.</param>
+    public static async Task SetRawItem(RawItemRedis rawItem)
+    {
+        var db = RedisConnection.Instance.GetDatabase();
+        await db.StringSetAsync($"RawItem:{rawItem.ItemId.ToString()}", JsonConvert.SerializeObject(rawItem));
+    }
+
+    /// <summary>
+    /// Stores a final item in Redis.
+    /// </summary>
+    /// <param name="finalItem">The FinalItemRedis object to store.</param>
+    public static async Task SetFinalItem(FinalItemRedis finalItem)
+    {
+        var db = RedisConnection.Instance.GetDatabase();
+        await db.StringSetAsync($"FinalItem:{finalItem.ItemId.ToString()}", JsonConvert.SerializeObject(finalItem));
+    }
+
+    /// <summary>
+    /// Retrieves all raw items from Redis.
+    /// </summary>
+    /// <returns>List of RawItemRedis objects.</returns>
+    public static async Task<List<RawItemRedis>> GetRawItems()
+    {
+        var db = RedisConnection.Instance.GetDatabase();
+        var server = RedisConnection.Instance.GetServer();
+
+        var keys = server.Keys(pattern: "RawItem:*");
+
+        List<RawItemRedis> result = new();
+
+        foreach (var key in keys)
+        {
+            var value = await db.StringGetAsync(key);
+            if (!value.HasValue || value.IsNullOrEmpty)
+                continue;
+                
+            string json = value.ToString();
+            var rawItem = JsonConvert.DeserializeObject<RawItemRedis>(json);
+            if (rawItem != null) result.Add(rawItem);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Retrieves all final items from Redis.
+    /// </summary>
+    /// <returns>List of FinalItemRedis objects.</returns>
+    public static async Task<List<FinalItemRedis>> GetFinalItems()
+    {
+        var db = RedisConnection.Instance.GetDatabase();
+        var server = RedisConnection.Instance.GetServer();
+
+        var keys = server.Keys(pattern: "FinalItem:*");
+
+        List<FinalItemRedis> result = new();
+
+        foreach (var key in keys)
+        {
+            var value = await db.StringGetAsync(key);
+            if (!value.HasValue || value.IsNullOrEmpty)
+                continue;
+                
+            string json = value.ToString();
+            var rawItem = JsonConvert.DeserializeObject<FinalItemRedis>(json);
+            if (rawItem != null) result.Add(rawItem);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Updates an existing monitoring point in the database.
+    /// Throws an exception if the point is a digital IO with a non-default calculation method.
+    /// </summary>
+    /// <param name="point">The monitoring item to update.</param>
+    /// <returns>True if successful, false otherwise.</returns>
+    public static async Task<bool> EditPoint(MonitoringItem point)
+    {
+        try
+        {
+            MyLog.Debug("Editing monitoring point", new Dictionary<string, object?>
+            {
+                ["PointId"] = point.Id,
+                ["PointName"] = point.ItemName,
+                ["ItemType"] = point.ItemType
+            });
+
+            var context = new DataContext();
+            context.MonitoringItems.Update(point);
+            await context.SaveChangesAsync();
+            await context.DisposeAsync();
+            
+            MyLog.Info("Successfully edited monitoring point", new Dictionary<string, object?>
+            {
+                ["PointId"] = point.Id
+            });
+            
+            return true;
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to edit monitoring point", e, new Dictionary<string, object?>
+            {
+                ["PointId"] = point.Id,
+                ["PointName"] = point.ItemName
+            });
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Lists monitoring points matching the given predicate, or all points if predicate is null.
+    /// </summary>
+    /// <param name="predicate">Optional predicate to filter points.</param>
+    /// <returns>List of MonitoringItems.</returns>
+    public static async Task<List<MonitoringItem>> ListPoints(Expression<Func<MonitoringItem, bool>>? predicate = null)
+    {
+        var context = new DataContext();
+        List<MonitoringItem> items = new();
+
+        if (predicate is null)
+        {
+            items = await context.MonitoringItems.ToListAsync();
+        }
+        else
+        {
+            items = await context.MonitoringItems.Where(predicate).ToListAsync();
+        }
+
+        await context.DisposeAsync();
+        return items;
+    }
+
+    /// <summary>
+    /// Retrieves final values for the specified item IDs from Redis.
+    /// </summary>
+    /// <param name="itemIds">List of item IDs.</param>
+    /// <returns>List of FinalItemRedis objects.</returns>
+    public static async Task<List<FinalItemRedis>> GetValues(List<string> itemIds)
+    {
+        var response = new List<FinalItemRedis>();
+
+        try
+        {
+            foreach (var itemId in itemIds)
+            {
+                var f = await GetFinalItem(itemId);
+                if (f != null) response.Add(f);
+            }
+        }
+        catch (Exception)
+        {
+            // ignore
+        }
+
+        return response;
+    }
+
+    /// <summary>
+    /// Retrieves final values for all enabled monitoring points from Redis.
+    /// </summary>
+    /// <returns>List of FinalItemRedis objects.</returns>
+    public static async Task<List<FinalItemRedis>> GetValues()
+    {
+        var points = await GetAllPoints();
+        var response = new List<FinalItemRedis>();
+
+        try
+        {
+            MyLog.Debug("Retrieving all values", new Dictionary<string, object?>
+            {
+                ["PointCount"] = points.Count
+            });
+
+            foreach (var point in points)
+            {
+                var f = await GetFinalItem(point.Id.ToString());
+                if (f != null) response.Add(f);
+            }
+            
+            MyLog.Debug("Retrieved all values", new Dictionary<string, object?>
+            {
+                ["ValueCount"] = response.Count
+            });
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to retrieve all values", e, new Dictionary<string, object?>
+            {
+                ["PointCount"] = points.Count,
+                ["RetrievedCount"] = response.Count
+            });
+        }
+
+        return response;
+    }
+
+    /// <summary>
+    /// Retrieves the final value for a specific item ID from Redis.
+    /// </summary>
+    /// <param name="itemId">The item ID.</param>
+    /// <returns>The FinalItemRedis object, or null if not found.</returns>
+    public static async Task<FinalItemRedis?> GetValue(string itemId)
+    {
+        var response = new FinalItemRedis();
+
+        try
+        {
+            var f = await Points.GetFinalItem(itemId);
+            if (f != null) response = f;
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to retrieve value", e, new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId
+            });
+        }
+
+        return response;
+    }
+
+    /// <summary>
+    /// Retrieves historical values for a monitoring item from MongoDB within a date range.
+    /// </summary>
+    /// <param name="itemId">The item ID.</param>
+    /// <param name="startDate">Start date (Unix timestamp).</param>
+    /// <param name="endDate">End date (Unix timestamp).</param>
+    /// <returns>List of ItemHistoryMongo objects.</returns>
+    public static async Task<List<ItemHistoryMongo>> GetHistory(string itemId, long startDate, long endDate)
+    {
+        var response = new List<ItemHistoryMongo>();
+        try
+        {
+            MyLog.Debug("Retrieving history", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["StartDate"] = startDate,
+                ["EndDate"] = endDate
+            });
+
+            var guid = Guid.Parse(itemId);
+            var collections = MongoHelper.FindCollections(guid, startDate, endDate);
+
+            MyLog.Debug("Found collections for history", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["CollectionCount"] = collections.Count
+            });
+
+            using (var mongoClient = new MongoClient("mongodb://localhost:27017"))
+            {
+                var mongoDatabase = mongoClient.GetDatabase("monitoring_core");
+
+                foreach (var collectionName in collections)
+                {
+                    var collection = mongoDatabase.GetCollection<BsonDocument>(collectionName);
+                    var filter = Builders<BsonDocument>.Filter.Gte("Time", startDate) &
+                                 Builders<BsonDocument>.Filter.Lte("Time", endDate);
+
+                    var cursor = await collection.FindAsync(filter);
+                    while (await cursor.MoveNextAsync())
+                    {
+                        var batch = cursor.Current;
+                        foreach (var document in batch)
+                        {
+                            var id = document["_id"].AsObjectId;
+                            string value = document["Value"].AsString;
+                            long time = document["Time"].AsInt64;
+
+                            response.Add(new ItemHistoryMongo()
+                            {
+                                Id = id.ToGuid(),
+                                ItemId = guid,
+                                Value = value,
+                                Time = time
+                            });
+                        }
+                    }
+                }
+            }
+
+            MyLog.Debug("Retrieved history successfully", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["RecordCount"] = response.Count
+            });
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to retrieve history", e, new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["StartDate"] = startDate,
+                ["EndDate"] = endDate,
+                ["RecordsRetrievedBeforeError"] = response.Count
+            });
+        }
+
+        return response;
+    }
+
+    /// <summary>
+    /// Retrieves write items matching the given predicate, or all write items if predicate is null.
+    /// </summary>
+    /// <param name="predicate">Optional predicate to filter write items.</param>
+    /// <returns>List of WriteItem objects.</returns>
+    public static async Task<List<WriteItem>> GetWriteItems(Expression<Func<WriteItem, bool>>? predicate = null)
+    {
+        var response = new List<WriteItem>();
+
+        try
+        {
+            var context = new DataContext();
+            if (predicate == null)
+            {
+                var result =
+                    await context.WriteItems
+                        .AsNoTracking()
+                        .ToListAsync();
+                await context.DisposeAsync();
+                response = result;
+            }
+            else
+            {
+                var result =
+                    await context.WriteItems
+                        .AsNoTracking()
+                        .Where(predicate)
+                        .ToListAsync();
+                await context.DisposeAsync();
+                response = result;
+            }
+
+            MyLog.Debug("Retrieved write items", new Dictionary<string, object?>
+            {
+                ["Count"] = response.Count,
+                ["HasPredicate"] = predicate != null
+            });
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to retrieve write items", e, new Dictionary<string, object?>
+            {
+                ["HasPredicate"] = predicate != null
+            });
+        }
+
+        return response;
+    }
+
+    /// <summary>
+    /// Writes or adds a value for a monitoring item, handling different interface types.
+    /// </summary>
+    /// <param name="itemId">The item ID.</param>
+    /// <param name="value">The value to write or add.</param>
+    /// <param name="time">Optional timestamp.</param>
+    /// <param name="duration"></param>
+    /// <returns>True if successful, false otherwise.</returns>
+    public static async Task<bool> WriteOrAddValue(Guid itemId, string value, long? time = null,long duration = 10)
+    {
+        try
+        {
+            MyLog.Debug("WriteOrAddValue started", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["Value"] = value,
+                ["Time"] = time,
+                ["Duration"] = duration
+            });
+
+            var context = new DataContext();
+            
+            var item= await context.MonitoringItems.FirstOrDefaultAsync(x => x.Id == itemId);
+            
+            if (item == null)
+            {
+                await context.DisposeAsync();
+                MyLog.Warning("Monitoring item not found", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId
+                });
+                return false;
+            }
+
+            MyLog.Debug("Processing write/add value", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["InterfaceType"] = item.InterfaceType,
+                ["ItemName"] = item.ItemName
+            });
+
+            if (item.InterfaceType == InterfaceType.None)
+            {
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+                if (time.HasValue)
+                {
+                    now = time.Value;
+                }
+
+                MyLog.Info("Adding value for non-interface item", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId,
+                    ["Value"] = value
+                });
+
+                return await AddValue(itemId, value, now);
+            }
+
+            if (item.InterfaceType == InterfaceType.Sharp7)
+            {
+                var map = await context.MapSharp7s.FirstOrDefaultAsync(x =>
+                    x.ItemId == itemId && x.OperationType == IoOperationType.Write);
+                
+                await context.DisposeAsync();
+
+                if (map != null)
+                {
+                    MyLog.Info("Writing value to Sharp7 controller", new Dictionary<string, object?>
+                    {
+                        ["ItemId"] = itemId,
+                        ["Value"] = value
+                    });
+                    return await WriteValueToController(itemId, value, time,duration);
+                }
+
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+                if (time.HasValue)
+                {
+                    now = time.Value;
+                }
+
+                MyLog.Info("No Sharp7 write map found, adding value directly", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId
+                });
+
+                return await AddValue(itemId, value, now);
+            }
+
+            if (item.InterfaceType == InterfaceType.BACnet)
+            {
+                // because for now we do not support write for bacnet
+                await context.DisposeAsync();
+                MyLog.Warning("BACnet write not supported", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId
+                });
+                return false;
+            }
+
+            if (item.InterfaceType == InterfaceType.Modbus)
+            {
+                var map = await context.MapModbuses.FirstOrDefaultAsync(x =>
+                    x.ItemId == itemId && x.OperationType == IoOperationType.Write);
+                
+                await context.DisposeAsync();
+
+                if (map != null)
+                {
+                    MyLog.Info("Writing value to Modbus controller", new Dictionary<string, object?>
+                    {
+                        ["ItemId"] = itemId,
+                        ["Value"] = value
+                    });
+                    return await WriteValueToController(itemId, value, time,duration);
+                }
+
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+                if (time.HasValue)
+                {
+                    now = time.Value;
+                }
+
+                MyLog.Info("No Modbus write map found, adding value directly", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId
+                });
+
+                return await AddValue(itemId, value, now);
+            }
+
+            await context.DisposeAsync();
+            MyLog.Warning("Unknown interface type", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["InterfaceType"] = item.InterfaceType
+            });
+            return false;
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to write or add value", e, new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["Value"] = value,
+                ["Time"] = time
+            });
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Applies interface types to monitoring items based on mapping tables.
+    /// </summary>
+    public static async Task ApplyInterfaceTypes()
+    {
+        var context = new DataContext();
+
+        var items = await context.MonitoringItems.ToListAsync();
+        var sharp7Maps = await context.MapSharp7s.ToListAsync();
+        var bacnetMaps=await context.MapBACnets.ToListAsync();
+        var modbusMaps=await context.MapModbuses.ToListAsync();
+
+        foreach (var map in sharp7Maps)
+        {
+            var item=items.FirstOrDefault(x=>x.Id == map.ItemId);
+            if (item != null)
+            {
+                item.InterfaceType = InterfaceType.Sharp7;
+            }
+        }
+        
+        foreach (var map in bacnetMaps)
+        {
+            var item=items.FirstOrDefault(x=>x.Id == map.ItemId);
+            if (item != null)
+            {
+                item.InterfaceType = InterfaceType.BACnet;
+            }
+        }
+
+        foreach (var map in modbusMaps)
+        {
+            var item=items.FirstOrDefault(x=>x.Id == map.ItemId);
+            if (item != null)
+            {
+                item.InterfaceType = InterfaceType.Modbus;
+            }
+        }
+        
+        await context.SaveChangesAsync();
+        
+        await context.DisposeAsync();
+    }
+
+    /// <summary>
+    /// Writes a value to the controller for a specific item, updating or adding the write item.
+    /// </summary>
+    /// <param name="itemId">The item ID.</param>
+    /// <param name="value">The value to write.</param>
+    /// <param name="time">Optional timestamp.</param>
+    /// <param name="duration"></param>
+    /// <returns>True if successful, false otherwise.</returns>
+    public static async Task<bool> WriteValueToController(Guid itemId, string value, long? time = null,long duration = 10)
+    {
+        try
+        {
+            MyLog.Debug("Writing value to controller", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["Value"] = value,
+                ["Time"] = time,
+                ["Duration"] = duration
+            });
+
+            var context = new DataContext();
+            var item = await context.WriteItems.FirstOrDefaultAsync(x => x.ItemId == itemId);
+
+            if (item == null)
+            {
+                item = new();
+                item.ItemId = itemId;
+                item.Value = value;
+                item.DurationSeconds = duration;
+
+                if (time == null)
+                {
+                    item.Time = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                }
+                else
+                {
+                    item.Time = time.Value;
+                }
+
+                await context.WriteItems.AddAsync(item);
+                
+                MyLog.Info("Created new write item", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId,
+                    ["Value"] = value
+                });
+            }
+            else
+            {
+                item.Value = value;
+
+                if (time == null)
+                {
+                    item.Time = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                }
+                else
+                {
+                    item.Time = time.Value;
+                }
+
+                context.WriteItems.Update(item);
+                
+                MyLog.Info("Updated existing write item", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId,
+                    ["Value"] = value
+                });
+            }
+
+            await context.SaveChangesAsync();
+            await context.DisposeAsync();
+            return true;
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to write value to controller", e, new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["Value"] = value,
+                ["Time"] = time
+            });
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Writes a value to the controller if any tracked value is true.
+    /// </summary>
+    /// <param name="itemId">The item ID.</param>
+    /// <param name="fromId">The source ID.</param>
+    /// <param name="value">The boolean value to track.</param>
+    /// <param name="time">Optional timestamp.</param>
+    /// <param name="duration"></param>
+    /// <returns>True if successful, false otherwise.</returns>
+    public static async Task<bool> WriteValueAnyTrue(Guid itemId, string fromId, bool value, long? time = null,long duration = 10)
+    {
+        try
+        {
+            MyLog.Debug("WriteValueAnyTrue processing", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["FromId"] = fromId,
+                ["Value"] = value,
+                ["Duration"] = duration
+            });
+
+            _anyTrueDictionary[fromId] = value;
+
+            if (_anyTrueDictionary.ContainsValue(true))
+            {
+                MyLog.Debug("AnyTrue condition met, writing 1", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId,
+                    ["TrueSourceCount"] = _anyTrueDictionary.Count(x => x.Value)
+                });
+                await WriteValueToController(itemId, "1", time,duration);
+            }
+            else
+            {
+                MyLog.Debug("AnyTrue condition not met, writing 0", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId
+                });
+                await WriteValueToController(itemId, "0", time,duration);
+            }
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed in WriteValueAnyTrue", e, new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["FromId"] = fromId,
+                ["Value"] = value
+            });
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Writes a value to the controller if any tracked value is false.
+    /// </summary>
+    /// <param name="itemId">The item ID.</param>
+    /// <param name="fromId">The source ID.</param>
+    /// <param name="value">The boolean value to track.</param>
+    /// <param name="time">Optional timestamp.</param>
+    /// <param name="duration"></param>
+    /// <returns>True if successful, false otherwise.</returns>
+    public static async Task<bool> WriteValueAnyFalse(Guid itemId, string fromId, bool value, long? time = null,long duration = 10)
+    {
+        try
+        {
+            MyLog.Debug("WriteValueAnyFalse processing", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["FromId"] = fromId,
+                ["Value"] = value,
+                ["Duration"] = duration
+            });
+
+            _anyFalseDictionary[fromId] = value;
+
+            if (_anyFalseDictionary.ContainsValue(false))
+            {
+                MyLog.Debug("AnyFalse condition met, writing 1", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId,
+                    ["FalseSourceCount"] = _anyFalseDictionary.Count(x => !x.Value)
+                });
+                await WriteValueToController(itemId, "1", time,duration);
+            }
+            else
+            {
+                MyLog.Debug("AnyFalse condition not met, writing 0", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId
+                });
+                await WriteValueToController(itemId, "0", time,duration);
+            }
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed in WriteValueAnyFalse", e, new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["FromId"] = fromId,
+                ["Value"] = value
+            });
+            return false;
+        }
+    }
+}

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Sharp7Interface-547c042b-0f79-4389-88c5-5de709523ba6</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MassTransit" Version="8.5.5" />
+    <PackageReference Include="MassTransit.AspNetCore" Version="7.3.1" />
+    <PackageReference Include="MassTransit.Newtonsoft" Version="8.5.5" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.10" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Sharp7" Version="1.1.84" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Contracts\Contracts.csproj" />
+    <ProjectReference Include="..\Core\Core.csproj" />
+  </ItemGroup>
+</Project>

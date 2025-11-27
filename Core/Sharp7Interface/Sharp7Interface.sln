@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sharp7Interface", "Sharp7Interface.csproj", "{EED3953F-60C6-BDB2-176E-C4DEA5539944}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EED3953F-60C6-BDB2-176E-C4DEA5539944}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EED3953F-60C6-BDB2-176E-C4DEA5539944}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EED3953F-60C6-BDB2-176E-C4DEA5539944}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EED3953F-60C6-BDB2-176E-C4DEA5539944}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F3C0447A-5317-4D24-BC05-7A8D995DBD6C}
+	EndGlobalSection
+EndGlobal

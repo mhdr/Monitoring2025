@@ -1,0 +1,7 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003ACronExpression_002Ecs_002Fl_003A_002E_002E_003F_002E_002E_003F_002E_002E_003F_002Econfig_003FJetBrains_003FRider2024_002E3_003Fresharper_002Dhost_003FSourcesCache_003F624838eed4928d5d98f486b37748ace7ea56e5ce9373e7fdc1a8061b8aea_003FCronExpression_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
+	
+	
+	<s:Boolean x:Key="/Default/Environment/UnitTesting/CreateUnitTestDialog/ShowAdvancedOptions/@EntryValue">True</s:Boolean>
+	<s:String x:Key="/Default/Environment/UnitTesting/CreateUnitTestDialog/TestProjectMapping/=8A3C6C1B_002DFFE3_002D4CD5_002DAA1A_002D296046B0BFC3/@EntryIndexedValue">Core.Tests</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/CreateUnitTestDialog/TestTemplateMapping/=MSTest/@EntryIndexedValue">d6790ab7-33c2-4425-b2c9-51480cd1a852</s:String></wpf:ResourceDictionary>

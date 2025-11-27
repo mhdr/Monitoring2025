@@ -1,0 +1,233 @@
+user: root
+password: Nn3CH^$BBZY6zP79DJP%*4^9q4c@g*mD
+
+apt install proxychains4
+
+proxychains apt install p7zip-full unzip coreutils
+# 7z x filename.7z
+
+proxychains add-apt-repository ppa:dotnet/backports
+proxychains apt install dotnet-sdk-9.0
+proxychains apt install clang zlib1g-dev
+dotnet dev-certs https --trust
+proxychains apt install dos2unix
+
+apt update
+proxychains apt install libnss3-tools -y
+proxychains apt install mkcert -y
+
+proxychains wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
+
+
+dotnet tool uninstall --global dotnet-ef
+proxychains dotnet tool install --global dotnet-ef
+
+proxychains dotnet workload install wasm-tools
+
+dotnet new tool-manifest
+dotnet tool uninstall --local dotnet-ef
+dotnet tool install --local dotnet-ef
+
+dotnet-ef database update
+
+################## chrony ###################################
+
+
+proxychains apt install -y chrony
+timedatectl set-ntp true
+systemctl enable chrony && systemctl restart chrony
+timedatectl set-timezone Asia/Tehran
+
+
+################## PostgreSQL ###################################
+
+proxychains apt install postgresql postgresql-contrib
+
+# create a new user in PostgreSQL
+
+sudo -i -u postgres
+psql
+CREATE USER monitoring WITH PASSWORD 'dbpassword';
+ALTER USER monitoring WITH SUPERUSER;
+\q
+
+################## END ###################################
+
+
+################## MongoDB ###################################
+
+proxychains apt install gnupg curl
+proxychains curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+proxychains apt update
+proxychains apt install -y mongodb-org
+systemctl enable mongod.service
+systemctl start mongod.service
+
+################## END ###################################
+
+
+
+################## Redis ###################################
+
+proxychains apt install redis-server
+nano /etc/redis/redis.conf
+# The supervised directive is set to no by default. Since you are running Ubuntu, which uses the systemd init system, change this to systemd
+
+################## END ###################################
+
+
+
+################## RabbitMQ ###################################
+
+proxychains apt install rabbitmq-server
+rabbitmq-plugins enable rabbitmq_management
+
+rabbitmqctl add_user pupli 7eAZvkUhviQ7ZKLSzJru
+rabbitmqctl set_user_tags pupli administrator
+rabbitmqctl set_permissions -p / pupli ".*" ".*" ".*"
+
+rabbitmqctl delete_user guest
+
+################## END ###################################
+
+
+
+################## Tunning Ubuntu ###################################
+
+nano /etc/sysctl.conf
+fs.file-max = 65535
+sysctl -p
+
+
+nano /etc/security/limits.conf
+
+# add following lines to it
+* soft     nproc          65535    
+* hard     nproc          65535   
+* soft     nofile         65535   
+* hard     nofile         65535
+root soft     nproc          65535    
+root hard     nproc          65535   
+root soft     nofile         65535   
+root hard     nofile         65535
+
+
+nano /etc/pam.d/common-session
+# add this line to it
+session required pam_limits.so
+
+sudo systemctl disable systemd-networkd-wait-online.service
+sudo systemctl mask systemd-networkd-wait-online.service
+
+################## END ###################################
+
+
+################## Swap Off ##############################
+
+sudo swapoff -a
+
+nano /etc/fstab
+
+Just add hash (#) to the beginning of the swap partition line, so the line looks as:
+#/host/ubuntu/disks/swap.disk none            swap    loop,sw         0       0
+
+
+################## END ###################################
+
+
+################## Prevent Log Growth ##############################
+
+# Limit Systemd Journal Size
+
+nano /etc/systemd/journald.conf
+
+Add these lines:
+
+SystemMaxUse=500M
+SystemKeepFree=1G
+
+
+systemctl restart systemd-journald
+
+# Enable Log Rotation
+
+cat /etc/logrotate.conf
+
+logrotate -f /etc/logrotate.conf
+
+
+# clear logs
+crontab -e 
+0 4 * * * > /var/log/syslog
+0 4 * * * > /var/log/syslog.1
+0 4 * * * journalctl --vacuum-size=500M
+0 4 * * * rm -rf /var/log/*.gz
+
+
+################## END ###################################
+
+
+
+
+
+################## Github ##############################
+
+mkdir -p -m 755 /etc/apt/keyrings
+proxychains curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/etc/apt/keyrings/githubcli-archive-keyring.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+
+proxychains apt update
+proxychains apt install gh -y
+
+proxychains gh auth login
+
+proxychains gh repo clone mhdr/MonitoringCore
+proxychains gh repo clone mhdr/Monitoring2024
+proxychains gh repo clone mhdr/Monitoring2025
+
+git clean -fd
+git reset --hard
+
+proxychains gh repo sync
+
+################## END ###################################
+
+################## NodeJS ##############################
+
+# https://nodejs.org/en/download
+
+# Download and install nvm:
+proxychains curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+# in lieu of restarting the shell
+\. "$HOME/.nvm/nvm.sh"
+# Download and install Node.js:
+nvm install 24
+
+nano ~/.bashrc
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
+
+source ~/.bashrc
+
+################## END ###################################
+
+
+################## Deploy ##############################
+
+# 7z a -t7z -mx=9 archive.7z file_or_folder
+# 7z x filename.7z
+
+dotnet-ef database update
+
+dos2unix dos2unix.sh;chmod +x dos2unix.sh;./dos2unix.sh;source ~/.bashrc;
+git clean -fd;git reset --hard;proxychains gh repo sync;dos2unix dos2unix.sh;chmod +x dos2unix.sh;./dos2unix.sh;
+
+dos2unix dos2unix.sh;chmod +x dos2unix.sh;./dos2unix.sh;./clean.sh;proxychains ./restore_pkgs.sh;
+dos2unix dos2unix.sh;chmod +x dos2unix.sh;./dos2unix.sh;./clean.sh;proxychains ./restore_pkgs.sh;./deploy.sh
+
+################## END ###################################
+

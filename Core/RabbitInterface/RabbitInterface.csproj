@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-RabbitInterface-ec831cd4-360f-4a67-9bd0-362878249f35</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MassTransit" Version="8.5.5" />
+        <PackageReference Include="MassTransit.AspNetCore" Version="7.3.1" />
+        <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1" />
+        <PackageReference Include="MassTransit.Newtonsoft" Version="8.5.5" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.5" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.10" />
+        <PackageReference Include="MongoDB.Driver" Version="3.5.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Contracts\Contracts.csproj" />
+      <ProjectReference Include="..\Core\Core.csproj" />
+    </ItemGroup>
+</Project>
