@@ -30,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\MonitoringCore\Core\Core\Core.csproj" />
+      <ProjectReference Include="..\..\Core\Core\Core.csproj" />
       <ProjectReference Include="..\Contracts\Contracts.csproj" />
       <ProjectReference Include="..\DB.User\DB.User.csproj" />
       <ProjectReference Include="..\Share\Share.csproj" />
