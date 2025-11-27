@@ -5,7 +5,7 @@
 This is a full-stack monitoring application with separate backend and frontend:
 
 ### Backend (ASP.NET Web API)
-- **Location**: `EMS/API`
+- **Location**: `EMS`
 - **Technology**: ASP.NET Core 9.0 Web API
 - **Database**: PostgreSQL with Entity Framework Core
 - **Authentication**: JWT with refresh token rotation
@@ -21,23 +21,47 @@ This is a full-stack monitoring application with separate backend and frontend:
 - **i18n**: Bilingual support (Persian/English) with RTL/LTR
 - **Port**: Development server on localhost:5173
 
-## 📝 Important Notes
+---
 
-- **Backend details**: See `EMS/API/.github/copilot-instructions.md`
-- **Frontend details**: See `ui/.github/copilot-instructions.md`
-- **Git commits**: NEVER commit to git automatically - manual control only
-- **Testing**: Use Chrome DevTools MCP for all testing and debugging
+## 🏷️ Element Identification
 
-## 🚀 Quick Start
+⚠️ **MANDATORY: ALL elements created by AI must have `data-id-ref` attribute**
 
-### Backend
-```bash
-cd EMS/API
-dotnet run
+### Scope
+Every HTML element that you create (divs, buttons, inputs, forms, cards, modals, etc.) must include a `data-id-ref` attribute for automated testing, debugging, and element identification.
+
+### Format
+```
+data-id-ref="component-element-purpose"
+```
+- Use **kebab-case** naming convention
+- Structure: `[component]-[element]-[purpose]`
+
+### Examples
+```tsx
+// Buttons
+<Button data-id-ref="login-form-submit-btn">Login</Button>
+<IconButton data-id-ref="navbar-menu-toggle">...</IconButton>
+
+// Inputs
+<TextField data-id-ref="user-settings-email-input" />
+<Select data-id-ref="alarm-filter-status-select">...</Select>
+
+// Containers
+<Card data-id-ref="dashboard-alarm-card">...</Card>
+<Modal data-id-ref="user-delete-confirm-modal">...</Modal>
+
+// Forms
+<form data-id-ref="device-config-form">...</form>
 ```
 
-### Frontend
-```bash
-cd ui
-npm run dev
-```
+### Naming Guidelines
+| Component Type | Pattern | Example |
+|---------------|---------|---------|
+| Buttons | `{context}-{action}-btn` | `alarm-dismiss-btn` |
+| Inputs | `{context}-{field}-input` | `login-password-input` |
+| Forms | `{context}-form` | `device-config-form` |
+| Modals | `{context}-modal` | `user-delete-modal` |
+| Cards | `{context}-card` | `dashboard-stats-card` |
+| Tables | `{context}-table` | `users-list-table` |
+| Rows | `{context}-row` | `alarm-item-row` |
