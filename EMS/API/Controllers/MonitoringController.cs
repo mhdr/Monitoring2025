@@ -3803,6 +3803,346 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
         return BadRequest(ModelState);
     }
 
+    // ==================== Modbus Controller CRUD ====================
+
+    /// <summary>
+    /// Get all Modbus controllers configured in the system
+    /// </summary>
+    /// <returns>List of all Modbus controllers with their configuration details</returns>
+    /// <response code="200">Returns the list of Modbus controllers</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's an error retrieving controllers</response>
+    [HttpPost("ModbusControllers")]
+    [ProducesResponseType(typeof(GetModbusControllersResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetModbusControllers()
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetModbusControllersResponseDto();
+            var controllers = await Core.Controllers.GetModbusControllers();
+
+            foreach (var controller in controllers)
+            {
+                response.Data.Add(new GetModbusControllersResponseDto.ModbusController
+                {
+                    Id = controller.Id,
+                    Name = controller.Name,
+                    IPAddress = controller.IPAddress,
+                    Port = controller.Port,
+                    StartAddress = controller.StartAddress,
+                    DataLength = controller.DataLength,
+                    DataType = controller.DataType,
+                    Endianness = controller.Endianness,
+                    ConnectionType = controller.ConnectionType,
+                    ModbusType = controller.ModbusType,
+                    UnitIdentifier = controller.UnitIdentifier,
+                    AddressBase = controller.AddressBase,
+                    IsDisabled = controller.IsDisabled ?? false,
+                });
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new Modbus controller configuration to the system
+    /// </summary>
+    /// <param name="request">Add Modbus controller request containing configuration details</param>
+    /// <returns>Result indicating success or failure with the new controller ID</returns>
+    /// <response code="200">Returns success status and new controller ID</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("AddModbusController")]
+    [ProducesResponseType(typeof(AddModbusControllerResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> AddModbusController([FromBody] AddModbusControllerRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var controller = new ControllerModbus
+            {
+                Name = request.Name,
+                IPAddress = request.IPAddress,
+                Port = request.Port,
+                StartAddress = request.StartAddress,
+                DataLength = request.DataLength,
+                DataType = (ModbusDataType)request.DataType,
+                Endianness = request.Endianness.HasValue ? (Endianness)request.Endianness.Value : Endianness.None,
+                ConnectionType = request.ConnectionType.HasValue ? (ModbusConnectionType)request.ConnectionType.Value : ModbusConnectionType.TCP,
+                ModbusType = request.ModbusType.HasValue ? (MyModbusType)request.ModbusType.Value : MyModbusType.None,
+                UnitIdentifier = request.UnitIdentifier ?? 1,
+                AddressBase = request.AddressBase.HasValue ? (ModbusAddressBase)request.AddressBase.Value : ModbusAddressBase.Base0,
+                IsDisabled = request.IsDisabled,
+            };
+
+            var controllerId = await Core.Controllers.AddModbusController(controller);
+
+            return Ok(new AddModbusControllerResponseDto
+            {
+                IsSuccessful = true,
+                ControllerId = controllerId,
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new AddModbusControllerResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = "An error occurred while adding the controller",
+            });
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing Modbus controller's configuration
+    /// </summary>
+    /// <param name="request">Edit Modbus controller request containing updated configuration</param>
+    /// <returns>Result indicating success or failure of the update operation</returns>
+    /// <response code="200">Returns success status of the update</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("EditModbusController")]
+    [ProducesResponseType(typeof(EditModbusControllerResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> EditModbusController([FromBody] EditModbusControllerRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var controller = new ControllerModbus
+            {
+                Id = request.Id,
+                Name = request.Name,
+                IPAddress = request.IPAddress,
+                Port = request.Port,
+                StartAddress = request.StartAddress,
+                DataLength = request.DataLength,
+                DataType = (ModbusDataType)request.DataType,
+                Endianness = request.Endianness.HasValue ? (Endianness)request.Endianness.Value : Endianness.None,
+                ConnectionType = request.ConnectionType.HasValue ? (ModbusConnectionType)request.ConnectionType.Value : ModbusConnectionType.TCP,
+                ModbusType = request.ModbusType.HasValue ? (MyModbusType)request.ModbusType.Value : MyModbusType.None,
+                UnitIdentifier = request.UnitIdentifier ?? 1,
+                AddressBase = request.AddressBase.HasValue ? (ModbusAddressBase)request.AddressBase.Value : ModbusAddressBase.Base0,
+                IsDisabled = request.IsDisabled,
+            };
+
+            var result = await Core.Controllers.EditModbusController(controller);
+
+            return Ok(new EditModbusControllerResponseDto
+            {
+                IsSuccessful = result,
+                ErrorMessage = result ? null : "Controller not found or update failed",
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new EditModbusControllerResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = "An error occurred while updating the controller",
+            });
+        }
+    }
+
+    /// <summary>
+    /// Delete a Modbus controller from the system
+    /// </summary>
+    /// <param name="request">Delete request containing the controller ID</param>
+    /// <returns>Result indicating success or failure with error details if controller has mappings</returns>
+    /// <response code="200">Returns success status or error if controller has mappings</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("DeleteModbusController")]
+    [ProducesResponseType(typeof(DeleteModbusControllerResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> DeleteModbusController([FromBody] DeleteModbusControllerRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, hasMappings) = await Core.Controllers.DeleteModbusController(request.Id);
+
+            if (success)
+            {
+                return Ok(new DeleteModbusControllerResponseDto { IsSuccessful = true });
+            }
+
+            return Ok(new DeleteModbusControllerResponseDto
+            {
+                IsSuccessful = false,
+                Error = hasMappings 
+                    ? DeleteModbusControllerResponseDto.DeleteModbusControllerErrorType.HasMappings 
+                    : DeleteModbusControllerResponseDto.DeleteModbusControllerErrorType.NotFound,
+                ErrorMessage = hasMappings 
+                    ? "Cannot delete controller with existing mappings" 
+                    : "Controller not found",
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return BadRequest(ModelState);
+        }
+    }
+
+    /// <summary>
+    /// Get Modbus mappings for a specific controller
+    /// </summary>
+    /// <param name="request">Request containing the controller ID</param>
+    /// <returns>List of mappings for the specified controller</returns>
+    /// <response code="200">Returns the list of Modbus mappings</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("GetModbusMaps")]
+    [ProducesResponseType(typeof(GetModbusMapsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetModbusMaps([FromBody] GetModbusMapsRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetModbusMapsResponseDto();
+            var maps = await Core.Controllers.GetModbusMaps(x => x.ControllerId == request.ControllerId);
+
+            foreach (var map in maps)
+            {
+                response.Data.Add(new GetModbusMapsResponseDto.ModbusMap
+                {
+                    Id = map.Id,
+                    ControllerId = map.ControllerId,
+                    Position = map.Position,
+                    ItemId = map.ItemId,
+                    OperationType = map.OperationType,
+                });
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return BadRequest(ModelState);
+        }
+    }
+
+    /// <summary>
+    /// Batch edit Modbus mappings (add, update, delete multiple mappings in one operation)
+    /// </summary>
+    /// <param name="request">Batch edit request containing lists of mappings to add, update, and delete</param>
+    /// <returns>Result indicating success or failure of the batch operation</returns>
+    /// <response code="200">Returns success status with counts of affected mappings</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("BatchEditModbusMaps")]
+    [ProducesResponseType(typeof(BatchEditModbusMapsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> BatchEditModbusMaps([FromBody] BatchEditModbusMapsRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Prepare added mappings
+            var added = request.Added.Select(m => new MapModbus
+            {
+                ControllerId = request.ControllerId,
+                Position = m.Position,
+                ItemId = m.ItemId,
+                OperationType = m.OperationType.HasValue ? (Core.Libs.IoOperationType)m.OperationType.Value : null,
+            }).ToList();
+
+            // Prepare updated mappings
+            var updated = request.Changed.Where(m => m.Id.HasValue).Select(m => new MapModbus
+            {
+                Id = m.Id!.Value,
+                ControllerId = request.ControllerId,
+                Position = m.Position,
+                ItemId = m.ItemId,
+                OperationType = m.OperationType.HasValue ? (Core.Libs.IoOperationType)m.OperationType.Value : null,
+            }).ToList();
+
+            // Prepare removed mappings - fetch full entities
+            var removed = new List<MapModbus>();
+            if (request.Removed.Count > 0)
+            {
+                removed = await Core.Controllers.GetModbusMaps(x => request.Removed.Contains(x.Id));
+            }
+
+            var result = await Core.Controllers.BatchEditModbusMaps(added, updated, removed);
+
+            return Ok(new BatchEditModbusMapsResponseDto
+            {
+                IsSuccessful = result,
+                AddedCount = added.Count,
+                ChangedCount = updated.Count,
+                RemovedCount = removed.Count,
+                ErrorMessage = result ? null : "Failed to save mappings",
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new BatchEditModbusMapsResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = "An error occurred while saving mappings",
+            });
+        }
+    }
+
     /// <summary>
     /// Delete a monitoring group from the system if it is empty
     /// </summary>

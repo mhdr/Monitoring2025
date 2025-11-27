@@ -1852,3 +1852,215 @@ export interface PushUpdateResponseDto {
   /** Timestamp when the notification was sent (Unix timestamp in seconds) */
   timestamp: number;
 }
+
+// ==================== Modbus Controller Management DTOs ====================
+
+/** Endianness: 0 = None, 1 = BigEndian, 2 = LittleEndian, 3 = MidBigEndian, 4 = MidLittleEndian */
+export type Endianness = 0 | 1 | 2 | 3 | 4;
+
+/**
+ * Endianness enum values for byte order in multi-byte Modbus registers
+ */
+export const EndiannessEnum = {
+  None: 0,
+  BigEndian: 1,
+  LittleEndian: 2,
+  MidBigEndian: 3,
+  MidLittleEndian: 4,
+} as const;
+
+/** ModbusConnectionType: 1 = TCP, 2 = TcpoverRTU */
+export type ModbusConnectionType = 1 | 2;
+
+/**
+ * ModbusConnectionType enum values
+ */
+export const ModbusConnectionTypeEnum = {
+  TCP: 1,
+  TcpoverRTU: 2,
+} as const;
+
+/** MyModbusType: 0 = None, 1 = ASCII, 2 = RTU */
+export type MyModbusType = 0 | 1 | 2;
+
+/**
+ * MyModbusType enum values for Modbus protocol type
+ */
+export const MyModbusTypeEnum = {
+  None: 0,
+  ASCII: 1,
+  RTU: 2,
+} as const;
+
+/** ModbusAddressBase: 0 = Base0, 1 = Base1, 2 = Base40001, 3 = Base40000 */
+export type ModbusAddressBase = 0 | 1 | 2 | 3;
+
+/**
+ * ModbusAddressBase enum values for register address conventions
+ */
+export const ModbusAddressBaseEnum = {
+  Base0: 0,
+  Base1: 1,
+  Base40001: 2,
+  Base40000: 3,
+} as const;
+
+/**
+ * Modbus controller configuration
+ */
+export interface ControllerModbus {
+  id: string;
+  name: string;
+  ipAddress: string;
+  port: number;
+  startAddress: number;
+  dataLength: number;
+  dataType: ModbusDataType;
+  endianness?: Endianness | null;
+  connectionType?: ModbusConnectionType | null;
+  modbusType?: MyModbusType | null;
+  unitIdentifier?: number | null;
+  addressBase?: ModbusAddressBase | null;
+  isDisabled: boolean;
+}
+
+/**
+ * Response DTO for getting Modbus controllers
+ */
+export interface GetModbusControllersResponseDto {
+  data: ControllerModbus[];
+}
+
+/**
+ * Request DTO for adding a new Modbus controller
+ */
+export interface AddModbusControllerRequestDto {
+  name: string;
+  ipAddress: string;
+  port: number;
+  startAddress: number;
+  dataLength: number;
+  dataType: number;
+  endianness?: number | null;
+  connectionType?: number | null;
+  modbusType?: number | null;
+  unitIdentifier?: number | null;
+  addressBase?: number | null;
+  isDisabled?: boolean;
+}
+
+/**
+ * Response DTO for adding a Modbus controller
+ */
+export interface AddModbusControllerResponseDto {
+  isSuccessful: boolean;
+  controllerId?: string | null;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for editing a Modbus controller
+ */
+export interface EditModbusControllerRequestDto {
+  id: string;
+  name: string;
+  ipAddress: string;
+  port: number;
+  startAddress: number;
+  dataLength: number;
+  dataType: number;
+  endianness?: number | null;
+  connectionType?: number | null;
+  modbusType?: number | null;
+  unitIdentifier?: number | null;
+  addressBase?: number | null;
+  isDisabled?: boolean;
+}
+
+/**
+ * Response DTO for editing a Modbus controller
+ */
+export interface EditModbusControllerResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a Modbus controller
+ */
+export interface DeleteModbusControllerRequestDto {
+  id: string;
+}
+
+/** DeleteModbusControllerErrorType: 1 = HasMappings, 2 = NotFound */
+export type DeleteModbusControllerErrorType = 1 | 2;
+
+export const DeleteModbusControllerErrorTypeEnum = {
+  HasMappings: 1,
+  NotFound: 2,
+} as const;
+
+/**
+ * Response DTO for deleting a Modbus controller
+ */
+export interface DeleteModbusControllerResponseDto {
+  isSuccessful: boolean;
+  error?: DeleteModbusControllerErrorType | null;
+  errorMessage?: string | null;
+}
+
+/**
+ * Modbus mapping between controller register and monitoring item
+ */
+export interface MapModbus {
+  id: string;
+  controllerId: string;
+  position: number;
+  itemId: string;
+  operationType?: IoOperationType | null;
+}
+
+/**
+ * Request DTO for getting Modbus mappings
+ */
+export interface GetModbusMapsRequestDto {
+  controllerId: string;
+}
+
+/**
+ * Response DTO for getting Modbus mappings
+ */
+export interface GetModbusMapsResponseDto {
+  data: MapModbus[];
+}
+
+/**
+ * Modbus map item for batch operations
+ */
+export interface ModbusMapItem {
+  id?: string | null;
+  position: number;
+  itemId: string;
+  operationType?: number | null;
+}
+
+/**
+ * Request DTO for batch editing Modbus mappings
+ */
+export interface BatchEditModbusMapsRequestDto {
+  controllerId: string;
+  changed: ModbusMapItem[];
+  added: ModbusMapItem[];
+  removed: string[];
+}
+
+/**
+ * Response DTO for batch editing Modbus mappings
+ */
+export interface BatchEditModbusMapsResponseDto {
+  isSuccessful: boolean;
+  addedCount: number;
+  changedCount: number;
+  removedCount: number;
+  errorMessage?: string | null;
+}

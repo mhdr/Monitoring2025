@@ -17,6 +17,7 @@ import {
 import {
   Close as CloseIcon,
   People as UsersIcon,
+  SettingsEthernet as SettingsEthernetIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -42,6 +43,7 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
 
   const menuItems: MenuItem[] = [
     { path: '/dashboard/management/users', key: 'users', icon: <UsersIcon /> },
+    { path: '/dashboard/management/modbus-controllers', key: 'modbusControllers.title', icon: <SettingsEthernetIcon /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;

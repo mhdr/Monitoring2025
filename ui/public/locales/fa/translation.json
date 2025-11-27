@@ -1154,5 +1154,114 @@
     "success": {
       "saved": "مجوزها با موفقیت ذخیره شد"
     }
+  },
+  "modbusControllers": {
+    "title": "کنترلرهای مادباس",
+    "addController": "افزودن کنترلر",
+    "editController": "ویرایش کنترلر",
+    "deleteController": "حذف کنترلر",
+    "searchPlaceholder": "جستجوی کنترلرها...",
+    "noControllersFound": "هیچ کنترلر مادباسی یافت نشد",
+    "addFirstController": "اولین کنترلر مادباس خود را اضافه کنید",
+    "fields": {
+      "name": "نام",
+      "ipAddress": "آدرس IP",
+      "port": "پورت",
+      "startAddress": "آدرس شروع",
+      "dataLength": "طول داده",
+      "dataType": "نوع داده",
+      "endianness": "ترتیب بایت",
+      "connectionType": "نوع اتصال",
+      "modbusType": "نوع مادباس",
+      "unitIdentifier": "شناسه واحد",
+      "addressBase": "پایه آدرس",
+      "isDisabled": "غیرفعال",
+      "status": "وضعیت",
+      "mappingsCount": "نگاشت‌ها"
+    },
+    "dataTypes": {
+      "boolean": "بولین",
+      "int": "عدد صحیح",
+      "float": "اعشاری"
+    },
+    "endianness": {
+      "none": "هیچ",
+      "bigEndian": "بزرگ‌انتها (AB CD)",
+      "littleEndian": "کوچک‌انتها (DC BA)",
+      "midBigEndian": "میانه-بزرگ (CD AB)",
+      "midLittleEndian": "میانه-کوچک (BA DC)"
+    },
+    "connectionTypes": {
+      "tcp": "TCP",
+      "tcpOverRtu": "TCP روی RTU"
+    },
+    "modbusTypes": {
+      "none": "هیچ",
+      "ascii": "ASCII",
+      "rtu": "RTU"
+    },
+    "addressBases": {
+      "base0": "پایه ۰ (۰ = رجیستر ۰)",
+      "base1": "پایه ۱ (۱ = رجیستر ۰)",
+      "base40001": "پایه ۴۰۰۰۱ (۴۰۰۰۱ = رجیستر ۰)",
+      "base40000": "پایه ۴۰۰۰۰ (۴۰۰۰۰ = رجیستر ۰)"
+    },
+    "status": {
+      "enabled": "فعال",
+      "disabled": "غیرفعال"
+    },
+    "mappings": {
+      "title": "نگاشت رجیسترها",
+      "addMapping": "افزودن نگاشت",
+      "saveChanges": "ذخیره تغییرات",
+      "discardChanges": "لغو تغییرات",
+      "noMappings": "نگاشتی پیکربندی نشده",
+      "position": "موقعیت",
+      "item": "آیتم مانیتورینگ",
+      "operationType": "عملیات",
+      "selectItem": "انتخاب آیتم...",
+      "read": "خواندن",
+      "write": "نوشتن",
+      "unsavedChanges": "تغییرات ذخیره نشده دارید",
+      "confirmDiscard": "آیا مطمئن هستید که می‌خواهید تغییرات را لغو کنید؟"
+    },
+    "dialogs": {
+      "addTitle": "افزودن کنترلر مادباس",
+      "editTitle": "ویرایش کنترلر مادباس",
+      "deleteTitle": "حذف کنترلر مادباس",
+      "deleteMessage": "آیا مطمئن هستید که می‌خواهید کنترلر «{{name}}» را حذف کنید؟",
+      "deleteWarning": "این عمل قابل بازگشت نیست. تمام نگاشت‌های مرتبط نیز حذف خواهند شد."
+    },
+    "validation": {
+      "nameRequired": "نام الزامی است",
+      "ipAddressRequired": "آدرس IP الزامی است",
+      "ipAddressInvalid": "فرمت آدرس IP نامعتبر است",
+      "portRequired": "پورت الزامی است",
+      "portRange": "پورت باید بین ۱ و ۶۵۵۳۵ باشد",
+      "startAddressRequired": "آدرس شروع الزامی است",
+      "startAddressMin": "آدرس شروع باید ۰ یا بیشتر باشد",
+      "dataLengthRequired": "طول داده الزامی است",
+      "dataLengthMin": "طول داده باید حداقل ۱ باشد",
+      "dataTypeRequired": "نوع داده الزامی است",
+      "unitIdentifierRange": "شناسه واحد باید بین ۰ و ۲۴۷ باشد",
+      "duplicatePosition": "موقعیت تکراری در نگاشت‌ها",
+      "itemRequired": "آیتم مانیتورینگ الزامی است"
+    },
+    "errors": {
+      "fetchFailed": "بارگذاری کنترلرهای مادباس ناموفق بود",
+      "createFailed": "ایجاد کنترلر ناموفق بود",
+      "updateFailed": "به‌روزرسانی کنترلر ناموفق بود",
+      "deleteFailed": "حذف کنترلر ناموفق بود",
+      "hasMappings": "نمی‌توان کنترلر دارای نگاشت را حذف کرد",
+      "notFound": "کنترلر یافت نشد",
+      "fetchMappingsFailed": "بارگذاری نگاشت‌ها ناموفق بود",
+      "saveMappingsFailed": "ذخیره نگاشت‌ها ناموفق بود"
+    },
+    "success": {
+      "created": "کنترلر با موفقیت ایجاد شد",
+      "updated": "کنترلر با موفقیت به‌روزرسانی شد",
+      "deleted": "کنترلر با موفقیت حذف شد",
+      "mappingsSaved": "نگاشت‌ها با موفقیت ذخیره شد"
+    }
   }
 }

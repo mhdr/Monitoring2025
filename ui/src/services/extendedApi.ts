@@ -36,6 +36,18 @@ import type {
   EditPointResponseDto,
   PushUpdateRequestDto,
   PushUpdateResponseDto,
+  // Modbus controller types
+  GetModbusControllersResponseDto,
+  AddModbusControllerRequestDto,
+  AddModbusControllerResponseDto,
+  EditModbusControllerRequestDto,
+  EditModbusControllerResponseDto,
+  DeleteModbusControllerRequestDto,
+  DeleteModbusControllerResponseDto,
+  GetModbusMapsRequestDto,
+  GetModbusMapsResponseDto,
+  BatchEditModbusMapsRequestDto,
+  BatchEditModbusMapsResponseDto,
 } from '../types/api';
 
 /**
@@ -392,6 +404,80 @@ export const pushUpdate = async (data: PushUpdateRequestDto = {}): Promise<PushU
 export const pushUpdateAllClients = async (): Promise<EditPointResponseDto> => {
   try {
     const response = await apiClient.get<EditPointResponseDto>('/api/Monitoring/PushUpdateAllClients');
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// ==================== Modbus Controller Management ====================
+
+/**
+ * Get all Modbus controllers
+ */
+export const getModbusControllers = async (): Promise<GetModbusControllersResponseDto> => {
+  try {
+    const response = await apiClient.post<GetModbusControllersResponseDto>('/api/Monitoring/ModbusControllers');
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new Modbus controller
+ */
+export const addModbusController = async (data: AddModbusControllerRequestDto): Promise<AddModbusControllerResponseDto> => {
+  try {
+    const response = await apiClient.post<AddModbusControllerResponseDto>('/api/Monitoring/AddModbusController', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing Modbus controller
+ */
+export const editModbusController = async (data: EditModbusControllerRequestDto): Promise<EditModbusControllerResponseDto> => {
+  try {
+    const response = await apiClient.post<EditModbusControllerResponseDto>('/api/Monitoring/EditModbusController', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a Modbus controller
+ */
+export const deleteModbusController = async (data: DeleteModbusControllerRequestDto): Promise<DeleteModbusControllerResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteModbusControllerResponseDto>('/api/Monitoring/DeleteModbusController', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get Modbus mappings for a specific controller
+ */
+export const getModbusMaps = async (data: GetModbusMapsRequestDto): Promise<GetModbusMapsResponseDto> => {
+  try {
+    const response = await apiClient.post<GetModbusMapsResponseDto>('/api/Monitoring/GetModbusMaps', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Batch edit Modbus mappings (add, update, delete)
+ */
+export const batchEditModbusMaps = async (data: BatchEditModbusMapsRequestDto): Promise<BatchEditModbusMapsResponseDto> => {
+  try {
+    const response = await apiClient.post<BatchEditModbusMapsResponseDto>('/api/Monitoring/BatchEditModbusMaps', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

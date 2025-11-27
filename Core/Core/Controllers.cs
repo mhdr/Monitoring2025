@@ -229,4 +229,117 @@ public static class Controllers
 
         return false;
     }
+
+    // ==================== Modbus Controller CRUD ====================
+
+    public static async Task<Guid> AddModbusController(ControllerModbus controller)
+    {
+        var context = new DataContext();
+        await context.ControllerModbuses.AddAsync(controller);
+        await context.SaveChangesAsync();
+        await context.DisposeAsync();
+
+        return controller.Id;
+    }
+
+    public static async Task<bool> EditModbusController(ControllerModbus controller)
+    {
+        if (controller.Id == Guid.Empty)
+        {
+            return false;
+        }
+
+        var context = new DataContext();
+        var matched = await context.ControllerModbuses.FirstOrDefaultAsync(x => x.Id == controller.Id);
+
+        if (matched == null)
+        {
+            await context.DisposeAsync();
+            return false;
+        }
+
+        matched.Name = controller.Name;
+        matched.IPAddress = controller.IPAddress;
+        matched.Port = controller.Port;
+        matched.StartAddress = controller.StartAddress;
+        matched.DataLength = controller.DataLength;
+        matched.DataType = controller.DataType;
+        matched.Endianness = controller.Endianness;
+        matched.ConnectionType = controller.ConnectionType;
+        matched.ModbusType = controller.ModbusType;
+        matched.UnitIdentifier = controller.UnitIdentifier;
+        matched.AddressBase = controller.AddressBase;
+        matched.IsDisabled = controller.IsDisabled;
+
+        context.ControllerModbuses.Update(matched);
+        var result = await context.SaveChangesAsync();
+        await context.DisposeAsync();
+
+        return result > 0;
+    }
+
+    public static async Task<(bool success, bool hasMappings)> DeleteModbusController(Guid controllerId)
+    {
+        var context = new DataContext();
+        var controller = await context.ControllerModbuses.FirstOrDefaultAsync(x => x.Id == controllerId);
+
+        if (controller == null)
+        {
+            await context.DisposeAsync();
+            return (false, false);
+        }
+
+        var anyMap = await context.MapModbuses.AnyAsync(x => x.ControllerId == controllerId);
+
+        if (anyMap)
+        {
+            await context.DisposeAsync();
+            return (false, true);
+        }
+
+        context.ControllerModbuses.Remove(controller);
+        await context.SaveChangesAsync();
+        await context.DisposeAsync();
+
+        return (true, false);
+    }
+
+    public static async Task<bool> BatchEditModbusMaps(List<MapModbus> added, List<MapModbus> updated,
+        List<MapModbus> removed)
+    {
+        await using (var context = new DataContext())
+        {
+            await using (var transaction = await context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    if (added.Count > 0)
+                    {
+                        await context.MapModbuses.AddRangeAsync(added);
+                    }
+
+                    if (updated.Count > 0)
+                    {
+                        context.MapModbuses.UpdateRange(updated);
+                    }
+
+                    if (removed.Count > 0)
+                    {
+                        context.MapModbuses.RemoveRange(removed);
+                    }
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    MyLog.LogJson(ex);
+                }
+            }
+        }
+
+        return false;
+    }
 }

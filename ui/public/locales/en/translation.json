@@ -1154,5 +1154,114 @@
     "success": {
       "saved": "Permissions saved successfully"
     }
+  },
+  "modbusControllers": {
+    "title": "Modbus Controllers",
+    "addController": "Add Controller",
+    "editController": "Edit Controller",
+    "deleteController": "Delete Controller",
+    "searchPlaceholder": "Search controllers...",
+    "noControllersFound": "No Modbus controllers found",
+    "addFirstController": "Add your first Modbus controller to get started",
+    "fields": {
+      "name": "Name",
+      "ipAddress": "IP Address",
+      "port": "Port",
+      "startAddress": "Start Address",
+      "dataLength": "Data Length",
+      "dataType": "Data Type",
+      "endianness": "Endianness",
+      "connectionType": "Connection Type",
+      "modbusType": "Modbus Type",
+      "unitIdentifier": "Unit Identifier",
+      "addressBase": "Address Base",
+      "isDisabled": "Disabled",
+      "status": "Status",
+      "mappingsCount": "Mappings"
+    },
+    "dataTypes": {
+      "boolean": "Boolean",
+      "int": "Integer",
+      "float": "Float"
+    },
+    "endianness": {
+      "none": "None",
+      "bigEndian": "Big Endian (AB CD)",
+      "littleEndian": "Little Endian (DC BA)",
+      "midBigEndian": "Mid-Big Endian (CD AB)",
+      "midLittleEndian": "Mid-Little Endian (BA DC)"
+    },
+    "connectionTypes": {
+      "tcp": "TCP",
+      "tcpOverRtu": "TCP over RTU"
+    },
+    "modbusTypes": {
+      "none": "None",
+      "ascii": "ASCII",
+      "rtu": "RTU"
+    },
+    "addressBases": {
+      "base0": "0-based (0 = register 0)",
+      "base1": "1-based (1 = register 0)",
+      "base40001": "40001-based (40001 = register 0)",
+      "base40000": "40000-based (40000 = register 0)"
+    },
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "mappings": {
+      "title": "Register Mappings",
+      "addMapping": "Add Mapping",
+      "saveChanges": "Save Changes",
+      "discardChanges": "Discard Changes",
+      "noMappings": "No mappings configured",
+      "position": "Position",
+      "item": "Monitoring Item",
+      "operationType": "Operation",
+      "selectItem": "Select item...",
+      "read": "Read",
+      "write": "Write",
+      "unsavedChanges": "You have unsaved changes",
+      "confirmDiscard": "Are you sure you want to discard changes?"
+    },
+    "dialogs": {
+      "addTitle": "Add Modbus Controller",
+      "editTitle": "Edit Modbus Controller",
+      "deleteTitle": "Delete Modbus Controller",
+      "deleteMessage": "Are you sure you want to delete controller \"{{name}}\"?",
+      "deleteWarning": "This action cannot be undone. All associated mappings will also be deleted."
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "ipAddressRequired": "IP address is required",
+      "ipAddressInvalid": "Invalid IP address format",
+      "portRequired": "Port is required",
+      "portRange": "Port must be between 1 and 65535",
+      "startAddressRequired": "Start address is required",
+      "startAddressMin": "Start address must be 0 or greater",
+      "dataLengthRequired": "Data length is required",
+      "dataLengthMin": "Data length must be at least 1",
+      "dataTypeRequired": "Data type is required",
+      "unitIdentifierRange": "Unit identifier must be between 0 and 247",
+      "duplicatePosition": "Duplicate position in mappings",
+      "itemRequired": "Monitoring item is required"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load Modbus controllers",
+      "createFailed": "Failed to create controller",
+      "updateFailed": "Failed to update controller",
+      "deleteFailed": "Failed to delete controller",
+      "hasMappings": "Cannot delete controller with existing mappings",
+      "notFound": "Controller not found",
+      "fetchMappingsFailed": "Failed to load mappings",
+      "saveMappingsFailed": "Failed to save mappings"
+    },
+    "success": {
+      "created": "Controller created successfully",
+      "updated": "Controller updated successfully",
+      "deleted": "Controller deleted successfully",
+      "mappingsSaved": "Mappings saved successfully"
+    }
   }
 }
