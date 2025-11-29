@@ -48,6 +48,8 @@ import type {
   GetModbusMapsResponseDto,
   BatchEditModbusMapsRequestDto,
   BatchEditModbusMapsResponseDto,
+  GetModbusMappingsByItemIdRequestDto,
+  GetModbusMappingsByItemIdResponseDto,
 } from '../types/api';
 
 /**
@@ -478,6 +480,18 @@ export const getModbusMaps = async (data: GetModbusMapsRequestDto): Promise<GetM
 export const batchEditModbusMaps = async (data: BatchEditModbusMapsRequestDto): Promise<BatchEditModbusMapsResponseDto> => {
   try {
     const response = await apiClient.post<BatchEditModbusMapsResponseDto>('/api/Monitoring/BatchEditModbusMaps', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get all Modbus mappings for a specific item (supports multiple mappings per item)
+ */
+export const getModbusMappingsByItemId = async (data: GetModbusMappingsByItemIdRequestDto): Promise<GetModbusMappingsByItemIdResponseDto> => {
+  try {
+    const response = await apiClient.post<GetModbusMappingsByItemIdResponseDto>('/api/Monitoring/GetModbusMappingsByItemId', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

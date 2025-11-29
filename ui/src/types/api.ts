@@ -2064,3 +2064,31 @@ export interface BatchEditModbusMapsResponseDto {
   removedCount: number;
   errorMessage?: string | null;
 }
+
+/**
+ * Request DTO for getting Modbus mappings by item ID
+ */
+export interface GetModbusMappingsByItemIdRequestDto {
+  itemId: string;
+}
+
+/**
+ * Modbus mapping with controller details (for item-centric view)
+ */
+export interface MapModbusWithController {
+  id: string;
+  controllerId: string;
+  controllerName: string;
+  ipAddress: string;
+  port: number;
+  position: number;
+  itemId: string;
+  operationType?: IoOperationType | null;
+}
+
+/**
+ * Response DTO for getting Modbus mappings by item ID
+ */
+export interface GetModbusMappingsByItemIdResponseDto {
+  data: MapModbusWithController[];
+}

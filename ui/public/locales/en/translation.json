@@ -513,12 +513,25 @@
       "moveItemToGroup": "Move Point to Folder",
       "editPoint": "Edit Point",
       "deletePoint": "Delete Point",
-      "userPermissions": "User Permissions"
+      "userPermissions": "User Permissions",
+      "manageModbusMappings": "Manage Modbus Mappings"
     },
     "deleteConfirm": {
       "title": "Confirm Delete Point",
       "message": "Are you sure you want to delete this point? This action cannot be undone.",
       "itemName": "Point Name"
+    }
+  },
+  "itemModbusMappings": {
+    "title": "Modbus Mappings",
+    "noMappings": "No mappings configured for this item",
+    "controllerName": "Controller",
+    "deleteMessage": "Are you sure you want to remove the mapping at position {{position}} from controller {{controller}}?",
+    "errors": {
+      "fetchMappingsFailed": "Failed to fetch Modbus mappings"
+    },
+    "validation": {
+      "controllerRequired": "Please select a controller"
     }
   },
   "monitoringPage": {

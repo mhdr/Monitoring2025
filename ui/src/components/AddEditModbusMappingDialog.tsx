@@ -67,7 +67,7 @@ const AddEditModbusMappingDialog: React.FC<AddEditModbusMappingDialogProps> = ({
   const [formData, setFormData] = useState<FormData>({
     position: 0,
     itemId: '',
-    operationType: 0 as IoOperationType,
+    operationType: 1 as IoOperationType,
   });
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -79,7 +79,7 @@ const AddEditModbusMappingDialog: React.FC<AddEditModbusMappingDialogProps> = ({
         setFormData({
           position: mapping.position,
           itemId: mapping.itemId,
-          operationType: mapping.operationType ?? (0 as IoOperationType),
+          operationType: mapping.operationType ?? (1 as IoOperationType),
         });
       } else {
         // For new mapping, suggest next available position
@@ -89,7 +89,7 @@ const AddEditModbusMappingDialog: React.FC<AddEditModbusMappingDialogProps> = ({
         setFormData({
           position: nextPosition,
           itemId: '',
-          operationType: 0 as IoOperationType,
+          operationType: 1 as IoOperationType,
         });
       }
       setFormErrors({});
@@ -293,8 +293,8 @@ const AddEditModbusMappingDialog: React.FC<AddEditModbusMappingDialogProps> = ({
             onChange={handleOperationTypeChange}
             label={t('modbusControllers.mappings.operationType')}
           >
-            <MenuItem value={0}>{t('modbusControllers.mappings.read')}</MenuItem>
-            <MenuItem value={1}>{t('modbusControllers.mappings.write')}</MenuItem>
+            <MenuItem value={1}>{t('modbusControllers.mappings.read')}</MenuItem>
+            <MenuItem value={2}>{t('modbusControllers.mappings.write')}</MenuItem>
           </Select>
         </FormControl>
       </DialogContent>

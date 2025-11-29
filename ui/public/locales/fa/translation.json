@@ -513,12 +513,25 @@
       "moveItemToGroup": "انتقال پوینت به پوشه",
       "editPoint": "ویرایش پوینت",
       "deletePoint": "حذف پوینت",
-      "userPermissions": "مجوزهای کاربر"
+      "userPermissions": "مجوزهای کاربر",
+      "manageModbusMappings": "مدیریت نقشه‌های مودباس"
     },
     "deleteConfirm": {
       "title": "تایید حذف پوینت",
       "message": "آیا از حذف این پوینت اطمینان دارید؟ این عملیات قابل بازگشت نیست.",
       "itemName": "نام پوینت"
+    }
+  },
+  "itemModbusMappings": {
+    "title": "نقشه‌های مودباس",
+    "noMappings": "نقشه‌ای برای این آیتم تنظیم نشده است",
+    "controllerName": "کنترلر",
+    "deleteMessage": "آیا از حذف نقشه در موقعیت {{position}} از کنترلر {{controller}} اطمینان دارید؟",
+    "errors": {
+      "fetchMappingsFailed": "دریافت نقشه‌های مودباس با خطا مواجه شد"
+    },
+    "validation": {
+      "controllerRequired": "لطفا یک کنترلر انتخاب کنید"
     }
   },
   "monitoringPage": {

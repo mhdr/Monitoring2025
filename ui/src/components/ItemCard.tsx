@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, lazy, Suspense } from 'react';
 import {
   Card,
   CardContent,
@@ -41,6 +41,7 @@ import {
   Settings as SettingsIcon,
   DriveFileMove as MoveItemIcon,
   Delete as DeleteIcon,
+  SettingsInputComponent as ModbusMappingIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
@@ -59,6 +60,9 @@ import AlarmBadgePopover from './AlarmBadgePopover';
 import { deletePoint } from '../services/monitoringApi';
 
 const logger = createLogger('ItemCard');
+
+// Lazy load ItemModbusMappingsDialog
+const ItemModbusMappingsDialog = lazy(() => import('./ItemModbusMappingsDialog'));
 
 /**
  * Get interface type display information with color coding
@@ -186,6 +190,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const [alarmBadgeAnchor, setAlarmBadgeAnchor] = useState<null | HTMLElement>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [modbusMappingsDialogOpen, setModbusMappingsDialogOpen] = useState<boolean>(false);
 
   // Check if user has admin role
   const isAdmin = useMemo(() => {
@@ -397,6 +402,12 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const handleDeleteConfirmClose = () => {
     logger.log('Delete confirmation dialog closed');
     setDeleteConfirmOpen(false);
+  };
+
+  const handleManageModbusMappings = () => {
+    logger.log('Opening Modbus mappings dialog', { itemId, itemName: name });
+    handleAdminMenuClose();
+    setModbusMappingsDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -1089,6 +1100,15 @@ const ItemCard: React.FC<ItemCardProps> = ({
         </ListItemIcon>
         <ListItemText primary={t('itemCard.adminMenu.deletePoint')} />
       </MenuItem>
+      {/* Show Modbus mapping option only for Modbus items */}
+      {item?.interfaceType === InterfaceTypeEnum.Modbus && (
+        <MenuItem onClick={handleManageModbusMappings} data-id-ref="item-card-admin-menu-modbus-mappings">
+          <ListItemIcon>
+            <ModbusMappingIcon fontSize="small" data-id-ref="item-card-admin-menu-modbus-mappings-icon" />
+          </ListItemIcon>
+          <ListItemText primary={t('itemCard.adminMenu.manageModbusMappings')} />
+        </MenuItem>
+      )}
     </Menu>
 
     {/* Move Item Dialog */}
@@ -1163,6 +1183,17 @@ const ItemCard: React.FC<ItemCardProps> = ({
         </Button>
       </DialogActions>
     </Dialog>
+
+    {/* Modbus Mappings Dialog */}
+    <Suspense fallback={null}>
+      {modbusMappingsDialogOpen && item && (
+        <ItemModbusMappingsDialog
+          open={modbusMappingsDialogOpen}
+          item={item}
+          onClose={() => setModbusMappingsDialogOpen(false)}
+        />
+      )}
+    </Suspense>
   </>
   );
 };

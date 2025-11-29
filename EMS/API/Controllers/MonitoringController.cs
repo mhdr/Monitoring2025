@@ -4073,6 +4073,64 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
+    /// Get all Modbus mappings for a specific item (allows multiple mappings per item)
+    /// </summary>
+    /// <param name="request">Request containing the item ID</param>
+    /// <returns>List of mappings for the specified item with controller details</returns>
+    /// <response code="200">Returns the list of Modbus mappings with controller info</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("GetModbusMappingsByItemId")]
+    [ProducesResponseType(typeof(GetModbusMappingsByItemIdResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetModbusMappingsByItemId([FromBody] GetModbusMappingsByItemIdRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetModbusMappingsByItemIdResponseDto();
+            
+            // Get all mappings for this item
+            var maps = await Core.Controllers.GetModbusMaps(x => x.ItemId == request.ItemId);
+            
+            // Get all Modbus controllers to join with mappings
+            var controllers = await Core.Controllers.GetModbusControllers();
+            var controllerDict = controllers.ToDictionary(c => c.Id);
+
+            foreach (var map in maps)
+            {
+                var controller = controllerDict.GetValueOrDefault(map.ControllerId);
+                
+                response.Data.Add(new GetModbusMappingsByItemIdResponseDto.ModbusMapWithController
+                {
+                    Id = map.Id,
+                    ControllerId = map.ControllerId,
+                    ControllerName = controller?.Name ?? string.Empty,
+                    IpAddress = controller?.IPAddress ?? string.Empty,
+                    Port = controller?.Port ?? 0,
+                    Position = map.Position,
+                    ItemId = map.ItemId,
+                    OperationType = map.OperationType,
+                });
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return BadRequest(ModelState);
+        }
+    }
+
+    /// <summary>
     /// Batch edit Modbus mappings (add, update, delete multiple mappings in one operation)
     /// </summary>
     /// <param name="request">Batch edit request containing lists of mappings to add, update, and delete</param>
