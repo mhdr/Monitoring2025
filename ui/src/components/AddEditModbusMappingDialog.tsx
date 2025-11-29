@@ -265,7 +265,7 @@ const AddEditModbusMappingDialog: React.FC<AddEditModbusMappingDialogProps> = ({
           options={modbusItems}
           value={selectedItem}
           onChange={handleItemChange}
-          getOptionLabel={(option) => option.name || ''}
+          getOptionLabel={(option) => `${option.pointNumber} - ${option.name}`}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           renderInput={(params) => (
             <TextField
