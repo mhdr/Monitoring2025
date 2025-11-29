@@ -22,24 +22,17 @@ import {
   Clear as ClearIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useLanguage } from '../hooks/useLanguage';
 import AGGridWrapper from './AGGridWrapper';
-import {
-  getModbusControllers,
-  getModbusMaps,
-} from '../services/extendedApi';
-import { getItems } from '../services/monitoringApi';
+import { getModbusControllers } from '../services/extendedApi';
 import type {
   ControllerModbus,
-  MapModbus,
   Endianness,
   ModbusConnectionType,
   MyModbusType,
-  Item,
 } from '../types/api';
 import type { AGGridRowData, AGGridApi } from '../types/agGrid';
 import { createLogger } from '../utils/logger';
@@ -49,8 +42,7 @@ const logger = createLogger('ModbusControllersPage');
 // Lazy load dialog components
 const AddEditModbusControllerDialog = lazy(() => import('./AddEditModbusControllerDialog'));
 const DeleteModbusControllerDialog = lazy(() => import('./DeleteModbusControllerDialog'));
-const AddEditModbusMappingDialog = lazy(() => import('./AddEditModbusMappingDialog'));
-const DeleteModbusMappingDialog = lazy(() => import('./DeleteModbusMappingDialog'));
+const ModbusMappingsDialog = lazy(() => import('./ModbusMappingsDialog'));
 
 // Extended row type for the grid
 interface ControllerRow extends ControllerModbus {
@@ -67,17 +59,8 @@ const ModbusControllersPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Modbus items for dropdown (interface type 3 = Modbus)
-  const [modbusItems, setModbusItems] = useState<Item[]>([]);
-  
-  // Detail grid state
-  const [expandedControllerId, setExpandedControllerId] = useState<string | null>(null);
-  const [mappings, setMappings] = useState<MapModbus[]>([]);
-  const [mappingsLoading, setMappingsLoading] = useState(false);
-  
-  // Grid refs
+  // Grid ref
   const mainGridRef = useRef<AGGridApi | null>(null);
-  const detailGridRef = useRef<AGGridApi | null>(null);
   
   // Controller dialog states
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
@@ -85,31 +68,9 @@ const ModbusControllersPage: React.FC = () => {
   const [selectedController, setSelectedController] = useState<ControllerModbus | null>(null);
   const [editMode, setEditMode] = useState(false);
 
-  // Mapping dialog states
-  const [addEditMappingDialogOpen, setAddEditMappingDialogOpen] = useState(false);
-  const [deleteMappingDialogOpen, setDeleteMappingDialogOpen] = useState(false);
-  const [selectedMapping, setSelectedMapping] = useState<MapModbus | null>(null);
-  const [mappingEditMode, setMappingEditMode] = useState(false);
-
-  // Fetch Modbus items on mount
-  useEffect(() => {
-    const fetchModbusItems = async () => {
-      try {
-        const response = await getItems();
-        if (response?.items) {
-          // Filter items by interface type 3 (Modbus)
-          const filteredItems = response.items.filter(
-            (item) => item.interfaceType === 3
-          );
-          setModbusItems(filteredItems);
-          logger.log('Modbus items fetched', { count: filteredItems.length });
-        }
-      } catch (err) {
-        logger.error('Failed to fetch items', { error: err });
-      }
-    };
-    fetchModbusItems();
-  }, []);
+  // Mappings dialog state
+  const [mappingsDialogOpen, setMappingsDialogOpen] = useState(false);
+  const [mappingsController, setMappingsController] = useState<ControllerModbus | null>(null);
 
   // Fetch controllers
   const fetchControllers = useCallback(async () => {
@@ -137,26 +98,6 @@ const ModbusControllersPage: React.FC = () => {
     fetchControllers();
   }, [fetchControllers]);
 
-  // Fetch mappings for expanded controller
-  const fetchMappings = useCallback(async (controllerId: string) => {
-    setMappingsLoading(true);
-    try {
-      logger.log('Fetching mappings', { controllerId });
-      const response = await getModbusMaps({ controllerId });
-
-      if (response?.data) {
-        const mapsData = response.data.map((m: MapModbus) => ({ ...m }));
-        setMappings(mapsData);
-        logger.log('Mappings fetched', { count: mapsData.length });
-      }
-    } catch (err) {
-      logger.error('Failed to fetch mappings', { error: err });
-      setError(t('modbusControllers.errors.fetchMappingsFailed'));
-    } finally {
-      setMappingsLoading(false);
-    }
-  }, [t]);
-
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
@@ -182,15 +123,10 @@ const ModbusControllersPage: React.FC = () => {
     setDeleteDialogOpen(true);
   }, []);
 
-  const handleToggleExpand = useCallback((controller: ControllerRow) => {
-    if (expandedControllerId === controller.id) {
-      setExpandedControllerId(null);
-      setMappings([]);
-    } else {
-      setExpandedControllerId(controller.id);
-      fetchMappings(controller.id);
-    }
-  }, [expandedControllerId, fetchMappings]);
+  const handleOpenMappings = useCallback((controller: ControllerModbus) => {
+    setMappingsController(controller);
+    setMappingsDialogOpen(true);
+  }, []);
 
   const handleDialogClose = (shouldRefresh: boolean) => {
     setAddEditDialogOpen(false);
@@ -206,40 +142,10 @@ const ModbusControllersPage: React.FC = () => {
     }
   };
 
-  // Mapping dialog handlers
-  const handleAddMapping = useCallback(() => {
-    if (expandedControllerId === null) return;
-    setSelectedMapping(null);
-    setMappingEditMode(false);
-    setAddEditMappingDialogOpen(true);
-  }, [expandedControllerId]);
-
-  const handleEditMapping = useCallback((mapping: MapModbus) => {
-    setSelectedMapping(mapping);
-    setMappingEditMode(true);
-    setAddEditMappingDialogOpen(true);
-  }, []);
-
-  const handleDeleteMapping = useCallback((mapping: MapModbus) => {
-    setSelectedMapping(mapping);
-    setDeleteMappingDialogOpen(true);
-  }, []);
-
-  const handleMappingDialogClose = (shouldRefresh: boolean) => {
-    setAddEditMappingDialogOpen(false);
-    setDeleteMappingDialogOpen(false);
-    setSelectedMapping(null);
-    setMappingEditMode(false);
-    
-    if (shouldRefresh && expandedControllerId) {
-      fetchMappings(expandedControllerId);
-    }
+  const handleMappingsDialogClose = () => {
+    setMappingsDialogOpen(false);
+    setMappingsController(null);
   };
-
-  // Get existing positions for validation
-  const existingPositions = useMemo(() => {
-    return mappings.map((m) => m.position);
-  }, [mappings]);
 
   // Helper functions for enum display
   const getEndiannessLabel = useCallback((value: Endianness | null | undefined): string => {
@@ -286,29 +192,6 @@ const ModbusControllersPage: React.FC = () => {
   // Main grid column definitions
   const columnDefs = useMemo<ColDef<ControllerRow>[]>(() => {
     return [
-      {
-        headerName: '',
-        field: 'id',
-        width: 50,
-        minWidth: 50,
-        maxWidth: 50,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: ICellRendererParams<ControllerRow>) => {
-          const controller = params.data;
-          if (!controller) return null;
-          const isExpanded = expandedControllerId === controller.id;
-          return (
-            <IconButton
-              data-id-ref={`modbus-expand-btn-${controller.id}`}
-              size="small"
-              onClick={() => handleToggleExpand(controller)}
-            >
-              {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </IconButton>
-          );
-        },
-      },
       {
         headerName: t('modbusControllers.fields.name'),
         field: 'name',
@@ -378,8 +261,8 @@ const ModbusControllersPage: React.FC = () => {
       {
         headerName: t('common.actions'),
         field: 'id',
-        flex: 1,
-        minWidth: 120,
+        width: 150,
+        minWidth: 150,
         sortable: false,
         filter: false,
         cellRenderer: (params: ICellRendererParams<ControllerRow>) => {
@@ -391,6 +274,16 @@ const ModbusControllersPage: React.FC = () => {
               data-id-ref={`modbus-actions-${controller.id}`}
               sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
             >
+              <Tooltip title={t('modbusControllers.mappings.title')}>
+                <IconButton
+                  data-id-ref={`modbus-mappings-btn-${controller.id}`}
+                  size="small"
+                  color="info"
+                  onClick={() => handleOpenMappings(controller)}
+                >
+                  <SettingsIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <Tooltip title={t('modbusControllers.editController')}>
                 <IconButton
                   data-id-ref={`modbus-edit-btn-${controller.id}`}
@@ -416,83 +309,7 @@ const ModbusControllersPage: React.FC = () => {
         },
       },
     ];
-  }, [t, expandedControllerId, handleToggleExpand, handleEditController, handleDeleteController, getConnectionTypeLabel, getModbusTypeLabel, getEndiannessLabel]);
-
-  // Detail grid (mappings) column definitions
-  const mappingColumnDefs = useMemo<ColDef<MapModbus>[]>(() => {
-    return [
-      {
-        headerName: t('modbusControllers.mappings.position'),
-        field: 'position',
-        width: 100,
-        minWidth: 80,
-        sortable: true,
-      },
-      {
-        headerName: t('modbusControllers.mappings.item'),
-        field: 'itemId',
-        flex: 2,
-        minWidth: 200,
-        valueFormatter: (params) => {
-          const item = modbusItems.find((i) => i.id === params.value);
-          return item?.name || params.value || '';
-        },
-        sortable: true,
-      },
-      {
-        headerName: t('modbusControllers.mappings.operationType'),
-        field: 'operationType',
-        width: 120,
-        minWidth: 100,
-        valueFormatter: (params) => {
-          return params.value === 0
-            ? t('modbusControllers.mappings.read')
-            : t('modbusControllers.mappings.write');
-        },
-        sortable: true,
-      },
-      {
-        headerName: t('common.actions'),
-        field: 'id',
-        width: 120,
-        minWidth: 120,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: ICellRendererParams<MapModbus>) => {
-          const mapping = params.data;
-          if (!mapping) return null;
-          
-          return (
-            <Box
-              data-id-ref={`mapping-actions-${mapping.id}`}
-              sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
-            >
-              <Tooltip title={t('common.buttons.edit')}>
-                <IconButton
-                  data-id-ref={`mapping-edit-btn-${mapping.id}`}
-                  size="small"
-                  color="primary"
-                  onClick={() => handleEditMapping(mapping)}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t('common.buttons.delete')}>
-                <IconButton
-                  data-id-ref={`mapping-delete-btn-${mapping.id}`}
-                  size="small"
-                  color="error"
-                  onClick={() => handleDeleteMapping(mapping)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          );
-        },
-      },
-    ];
-  }, [t, modbusItems, handleEditMapping, handleDeleteMapping]);
+  }, [t, handleOpenMappings, handleEditController, handleDeleteController, getConnectionTypeLabel, getModbusTypeLabel, getEndiannessLabel]);
 
   return (
     <Container
@@ -635,69 +452,10 @@ const ModbusControllersPage: React.FC = () => {
               />
             </Box>
           )}
-
-          {/* Expanded Mappings Section */}
-          {expandedControllerId !== null && (
-            <Card
-              data-id-ref="modbus-mappings-card"
-              variant="outlined"
-              sx={{ mt: 2 }}
-            >
-              <CardHeader
-                data-id-ref="modbus-mappings-header"
-                title={
-                  <Typography variant="h6" data-id-ref="modbus-mappings-title">
-                    {t('modbusControllers.mappings.title')}
-                  </Typography>
-                }
-                action={
-                  <Button
-                    data-id-ref="modbus-add-mapping-btn"
-                    variant="outlined"
-                    size="small"
-                    startIcon={<AddIcon />}
-                    onClick={handleAddMapping}
-                  >
-                    {t('modbusControllers.mappings.addMapping')}
-                  </Button>
-                }
-              />
-              <CardContent data-id-ref="modbus-mappings-content">
-                {mappingsLoading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress />
-                  </Box>
-                ) : mappings.length === 0 ? (
-                  <Typography
-                    data-id-ref="modbus-no-mappings"
-                    color="text.secondary"
-                    sx={{ textAlign: 'center', py: 4 }}
-                  >
-                    {t('modbusControllers.mappings.noMappings')}
-                  </Typography>
-                ) : (
-                  <Box sx={{ height: 300 }}>
-                    <AGGridWrapper
-                      idRef="modbus-mappings"
-                      rowData={mappings as unknown as AGGridRowData[]}
-                      columnDefs={mappingColumnDefs}
-                      onGridReady={(api) => { detailGridRef.current = api; }}
-                      height="100%"
-                      gridOptions={{
-                        domLayout: 'normal',
-                        rowHeight: 48,
-                        getRowId: (params) => String(params.data.id),
-                      }}
-                    />
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </CardContent>
       </Card>
 
-      {/* Controller Dialogs with Suspense for lazy loading */}
+      {/* Controller Dialogs */}
       <Suspense fallback={null}>
         {addEditDialogOpen && (
           <AddEditModbusControllerDialog
@@ -720,30 +478,13 @@ const ModbusControllersPage: React.FC = () => {
         )}
       </Suspense>
 
-      {/* Mapping Dialogs */}
+      {/* Mappings Dialog */}
       <Suspense fallback={null}>
-        {addEditMappingDialogOpen && expandedControllerId && (
-          <AddEditModbusMappingDialog
-            open={addEditMappingDialogOpen}
-            editMode={mappingEditMode}
-            mapping={selectedMapping}
-            controllerId={expandedControllerId}
-            modbusItems={modbusItems}
-            existingPositions={existingPositions}
-            onClose={handleMappingDialogClose}
-            onSuccess={(message: string) => setSuccessMessage(message)}
-          />
-        )}
-      </Suspense>
-      <Suspense fallback={null}>
-        {deleteMappingDialogOpen && expandedControllerId && (
-          <DeleteModbusMappingDialog
-            open={deleteMappingDialogOpen}
-            mapping={selectedMapping}
-            controllerId={expandedControllerId}
-            modbusItems={modbusItems}
-            onClose={handleMappingDialogClose}
-            onSuccess={(message: string) => setSuccessMessage(message)}
+        {mappingsDialogOpen && (
+          <ModbusMappingsDialog
+            open={mappingsDialogOpen}
+            controller={mappingsController}
+            onClose={handleMappingsDialogClose}
           />
         )}
       </Suspense>
