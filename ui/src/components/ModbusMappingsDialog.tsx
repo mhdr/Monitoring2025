@@ -24,6 +24,7 @@ import AGGridWrapper from './AGGridWrapper';
 import { getModbusMaps } from '../services/extendedApi';
 import { getItems } from '../services/monitoringApi';
 import type { ControllerModbus, MapModbus, Item } from '../types/api';
+import { IoOperationTypeEnum } from '../types/api';
 import type { AGGridRowData } from '../types/agGrid';
 import { createLogger } from '../utils/logger';
 
@@ -175,7 +176,7 @@ const ModbusMappingsDialog: React.FC<ModbusMappingsDialogProps> = ({
         width: 120,
         minWidth: 100,
         valueFormatter: (params) => {
-          return params.value === 0
+          return params.value === IoOperationTypeEnum.Read
             ? t('modbusControllers.mappings.read')
             : t('modbusControllers.mappings.write');
         },
