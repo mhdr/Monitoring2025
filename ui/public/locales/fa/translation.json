@@ -1223,7 +1223,13 @@
       "read": "خواندن",
       "write": "نوشتن",
       "unsavedChanges": "تغییرات ذخیره نشده دارید",
-      "confirmDiscard": "آیا مطمئن هستید که می‌خواهید تغییرات را لغو کنید؟"
+      "confirmDiscard": "آیا مطمئن هستید که می‌خواهید تغییرات را لغو کنید؟",
+      "dialogs": {
+        "addTitle": "افزودن نگاشت",
+        "editTitle": "ویرایش نگاشت",
+        "deleteTitle": "حذف نگاشت",
+        "deleteMessage": "آیا مطمئن هستید که می‌خواهید نگاشت در موقعیت {{position}} ({{item}}) را حذف کنید؟"
+      }
     },
     "dialogs": {
       "addTitle": "افزودن کنترلر مادباس",
@@ -1245,7 +1251,8 @@
       "dataTypeRequired": "نوع داده الزامی است",
       "unitIdentifierRange": "شناسه واحد باید بین ۰ و ۲۴۷ باشد",
       "duplicatePosition": "موقعیت تکراری در نگاشت‌ها",
-      "itemRequired": "آیتم مانیتورینگ الزامی است"
+      "itemRequired": "آیتم مانیتورینگ الزامی است",
+      "positionMin": "موقعیت باید ۰ یا بیشتر باشد"
     },
     "errors": {
       "fetchFailed": "بارگذاری کنترلرهای مادباس ناموفق بود",
@@ -1255,13 +1262,17 @@
       "hasMappings": "نمی‌توان کنترلر دارای نگاشت را حذف کرد",
       "notFound": "کنترلر یافت نشد",
       "fetchMappingsFailed": "بارگذاری نگاشت‌ها ناموفق بود",
-      "saveMappingsFailed": "ذخیره نگاشت‌ها ناموفق بود"
+      "saveMappingsFailed": "ذخیره نگاشت‌ها ناموفق بود",
+      "deleteMappingFailed": "حذف نگاشت ناموفق بود"
     },
     "success": {
       "created": "کنترلر با موفقیت ایجاد شد",
       "updated": "کنترلر با موفقیت به‌روزرسانی شد",
       "deleted": "کنترلر با موفقیت حذف شد",
-      "mappingsSaved": "نگاشت‌ها با موفقیت ذخیره شد"
+      "mappingsSaved": "نگاشت‌ها با موفقیت ذخیره شد",
+      "mappingCreated": "نگاشت با موفقیت ایجاد شد",
+      "mappingUpdated": "نگاشت با موفقیت به‌روزرسانی شد",
+      "mappingDeleted": "نگاشت با موفقیت حذف شد"
     }
   }
 }

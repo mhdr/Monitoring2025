@@ -1223,7 +1223,13 @@
       "read": "Read",
       "write": "Write",
       "unsavedChanges": "You have unsaved changes",
-      "confirmDiscard": "Are you sure you want to discard changes?"
+      "confirmDiscard": "Are you sure you want to discard changes?",
+      "dialogs": {
+        "addTitle": "Add Mapping",
+        "editTitle": "Edit Mapping",
+        "deleteTitle": "Delete Mapping",
+        "deleteMessage": "Are you sure you want to delete the mapping at position {{position}} ({{item}})?"
+      }
     },
     "dialogs": {
       "addTitle": "Add Modbus Controller",
@@ -1245,7 +1251,8 @@
       "dataTypeRequired": "Data type is required",
       "unitIdentifierRange": "Unit identifier must be between 0 and 247",
       "duplicatePosition": "Duplicate position in mappings",
-      "itemRequired": "Monitoring item is required"
+      "itemRequired": "Monitoring item is required",
+      "positionMin": "Position must be 0 or greater"
     },
     "errors": {
       "fetchFailed": "Failed to load Modbus controllers",
@@ -1255,13 +1262,17 @@
       "hasMappings": "Cannot delete controller with existing mappings",
       "notFound": "Controller not found",
       "fetchMappingsFailed": "Failed to load mappings",
-      "saveMappingsFailed": "Failed to save mappings"
+      "saveMappingsFailed": "Failed to save mappings",
+      "deleteMappingFailed": "Failed to delete mapping"
     },
     "success": {
       "created": "Controller created successfully",
       "updated": "Controller updated successfully",
       "deleted": "Controller deleted successfully",
-      "mappingsSaved": "Mappings saved successfully"
+      "mappingsSaved": "Mappings saved successfully",
+      "mappingCreated": "Mapping created successfully",
+      "mappingUpdated": "Mapping updated successfully",
+      "mappingDeleted": "Mapping deleted successfully"
     }
   }
 }
