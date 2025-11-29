@@ -76,6 +76,8 @@ const DashboardLayout: React.FC = () => {
             flexGrow: 1,
             overflow: 'auto',
             backgroundColor: 'background.default',
+            height: 0, // This forces the flex item to respect flexGrow and not expand based on content
+            minHeight: 0,
           }}
           data-id-ref="dashboard-layout-page-content-main"
         >

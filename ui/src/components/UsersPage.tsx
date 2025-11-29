@@ -504,6 +504,7 @@ const UsersPage: React.FC = () => {
               <AGGridWrapper
                 rowData={users as unknown as AGGridRowData[]}
                 columnDefs={columnDefs}
+                height="100%"
                 gridOptions={{
                   pagination: true,
                   paginationPageSize: 50,

@@ -711,6 +711,7 @@ const ModbusControllersPage: React.FC = () => {
                 rowData={filteredControllers as unknown as AGGridRowData[]}
                 columnDefs={columnDefs}
                 onGridReady={(api) => { mainGridRef.current = api; }}
+                height="100%"
                 gridOptions={{
                   pagination: true,
                   paginationPageSize: 25,
