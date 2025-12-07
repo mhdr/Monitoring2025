@@ -2092,3 +2092,111 @@ export interface MapModbusWithController {
 export interface GetModbusMappingsByItemIdResponseDto {
   data: MapModbusWithController[];
 }
+
+// ==================== Statistics API Types ====================
+
+/**
+ * Request DTO for point statistics by date range
+ */
+export interface PointStatsByDateRequestDto {
+  itemId: string; // Item identifier
+  startDate: number; // Start time as Unix seconds since epoch (UTC) (int64)
+  endDate: number; // End time as Unix seconds since epoch (UTC) (int64)
+}
+
+/**
+ * Response DTO for PointMeanByDate
+ */
+export interface PointMeanByDateResponseDto {
+  mean: number | null; // Mean value or null if no data
+}
+
+/**
+ * Response DTO for PointMinByDate
+ */
+export interface PointMinByDateResponseDto {
+  min: number | null; // Minimum value or null if no data
+}
+
+/**
+ * Response DTO for PointMaxByDate
+ */
+export interface PointMaxByDateResponseDto {
+  max: number | null; // Maximum value or null if no data
+}
+
+/**
+ * Response DTO for PointStdByDate
+ */
+export interface PointStdByDateResponseDto {
+  std: number | null; // Standard deviation or null if insufficient data
+}
+
+/**
+ * Response DTO for PointCountByDate
+ */
+export interface PointCountByDateResponseDto {
+  count: number; // Total number of data points
+}
+
+/**
+ * Request DTO for last 24 hours statistics
+ */
+export interface PointStatsLast24HoursRequestDto {
+  itemId: string; // Item identifier
+}
+
+/**
+ * Response DTO for PointMean (last 24 hours)
+ */
+export interface PointMeanResponseDto {
+  mean: number | null; // Mean value or null if no data
+}
+
+/**
+ * Response DTO for PointMin (last 24 hours)
+ */
+export interface PointMinResponseDto {
+  min: number | null; // Minimum value or null if no data
+}
+
+/**
+ * Response DTO for PointMax (last 24 hours)
+ */
+export interface PointMaxResponseDto {
+  max: number | null; // Maximum value or null if no data
+}
+
+/**
+ * Response DTO for PointStd (last 24 hours)
+ */
+export interface PointStdResponseDto {
+  std: number | null; // Standard deviation or null if insufficient data
+}
+
+/**
+ * Response DTO for PointCount (last 24 hours)
+ */
+export interface PointCountResponseDto {
+  count: number; // Total number of data points
+}
+
+/**
+ * Request DTO for CalculateStateDuration
+ */
+export interface CalculateStateDurationRequestDto {
+  itemId: string; // Item identifier (digital point only)
+  startDate: number; // Start time as Unix seconds since epoch (UTC) (int64)
+  endDate: number; // End time as Unix seconds since epoch (UTC) (int64)
+}
+
+/**
+ * Response DTO for CalculateStateDuration
+ */
+export interface CalculateStateDurationResponseDto {
+  onDuration: number; // Duration in seconds for ON state (state = 1)
+  offDuration: number; // Duration in seconds for OFF state (state = 0)
+  totalDuration: number; // Total duration in seconds (endDate - startDate)
+  onPercentage: number; // Percentage of time in ON state
+  offPercentage: number; // Percentage of time in OFF state
+}

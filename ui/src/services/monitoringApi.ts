@@ -61,6 +61,20 @@ import type {
   EditItemRequestDto,
   EditItemResponseDto,
   SettingsVersionResponseDto,
+  PointStatsByDateRequestDto,
+  PointMeanByDateResponseDto,
+  PointMinByDateResponseDto,
+  PointMaxByDateResponseDto,
+  PointStdByDateResponseDto,
+  PointCountByDateResponseDto,
+  PointStatsLast24HoursRequestDto,
+  PointMeanResponseDto,
+  PointMinResponseDto,
+  PointMaxResponseDto,
+  PointStdResponseDto,
+  PointCountResponseDto,
+  CalculateStateDurationRequestDto,
+  CalculateStateDurationResponseDto,
 } from '../types/api';
 
 const logger = createLogger('MonitoringAPI');
@@ -959,6 +973,232 @@ export const getSettingsVersion = async (): Promise<SettingsVersionResponseDto> 
     return response.data;
   } catch (error) {
     logger.error('Failed to get settings version', error);
+    handleApiError(error);
+  }
+};
+
+// ==================== Statistics API Functions ====================
+
+/**
+ * Get point mean by date range
+ * @param params - Request parameters with itemId, startDate, and endDate
+ * @returns Promise<PointMeanByDateResponseDto> - Mean value or null
+ */
+export const getPointMeanByDate = async (params: PointStatsByDateRequestDto): Promise<PointMeanByDateResponseDto> => {
+  try {
+    logger.log('Fetching point mean by date', params);
+    
+    const response = await apiClient.post<PointMeanByDateResponseDto>('/api/Monitoring/PointMeanByDate', params);
+    
+    logger.log('Point mean retrieved successfully', { mean: response.data.mean });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get point mean by date', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get point minimum by date range
+ * @param params - Request parameters with itemId, startDate, and endDate
+ * @returns Promise<PointMinByDateResponseDto> - Minimum value or null
+ */
+export const getPointMinByDate = async (params: PointStatsByDateRequestDto): Promise<PointMinByDateResponseDto> => {
+  try {
+    logger.log('Fetching point min by date', params);
+    
+    const response = await apiClient.post<PointMinByDateResponseDto>('/api/Monitoring/PointMinByDate', params);
+    
+    logger.log('Point min retrieved successfully', { min: response.data.min });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get point min by date', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get point maximum by date range
+ * @param params - Request parameters with itemId, startDate, and endDate
+ * @returns Promise<PointMaxByDateResponseDto> - Maximum value or null
+ */
+export const getPointMaxByDate = async (params: PointStatsByDateRequestDto): Promise<PointMaxByDateResponseDto> => {
+  try {
+    logger.log('Fetching point max by date', params);
+    
+    const response = await apiClient.post<PointMaxByDateResponseDto>('/api/Monitoring/PointMaxByDate', params);
+    
+    logger.log('Point max retrieved successfully', { max: response.data.max });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get point max by date', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get point standard deviation by date range
+ * @param params - Request parameters with itemId, startDate, and endDate
+ * @returns Promise<PointStdByDateResponseDto> - Standard deviation or null
+ */
+export const getPointStdByDate = async (params: PointStatsByDateRequestDto): Promise<PointStdByDateResponseDto> => {
+  try {
+    logger.log('Fetching point std by date', params);
+    
+    const response = await apiClient.post<PointStdByDateResponseDto>('/api/Monitoring/PointStdByDate', params);
+    
+    logger.log('Point std retrieved successfully', { std: response.data.std });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get point std by date', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get point count by date range
+ * @param params - Request parameters with itemId, startDate, and endDate
+ * @returns Promise<PointCountByDateResponseDto> - Total count
+ */
+export const getPointCountByDate = async (params: PointStatsByDateRequestDto): Promise<PointCountByDateResponseDto> => {
+  try {
+    logger.log('Fetching point count by date', params);
+    
+    const response = await apiClient.post<PointCountByDateResponseDto>('/api/Monitoring/PointCountByDate', params);
+    
+    logger.log('Point count retrieved successfully', { count: response.data.count });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get point count by date', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get point mean for last 24 hours
+ * @param params - Request parameters with itemId
+ * @returns Promise<PointMeanResponseDto> - Mean value or null
+ */
+export const getPointMean = async (params: PointStatsLast24HoursRequestDto): Promise<PointMeanResponseDto> => {
+  try {
+    logger.log('Fetching point mean (24h)', params);
+    
+    const response = await apiClient.post<PointMeanResponseDto>('/api/Monitoring/PointMean', params);
+    
+    logger.log('Point mean (24h) retrieved successfully', { mean: response.data.mean });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get point mean (24h)', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get point minimum for last 24 hours
+ * @param params - Request parameters with itemId
+ * @returns Promise<PointMinResponseDto> - Minimum value or null
+ */
+export const getPointMin = async (params: PointStatsLast24HoursRequestDto): Promise<PointMinResponseDto> => {
+  try {
+    logger.log('Fetching point min (24h)', params);
+    
+    const response = await apiClient.post<PointMinResponseDto>('/api/Monitoring/PointMin', params);
+    
+    logger.log('Point min (24h) retrieved successfully', { min: response.data.min });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get point min (24h)', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get point maximum for last 24 hours
+ * @param params - Request parameters with itemId
+ * @returns Promise<PointMaxResponseDto> - Maximum value or null
+ */
+export const getPointMax = async (params: PointStatsLast24HoursRequestDto): Promise<PointMaxResponseDto> => {
+  try {
+    logger.log('Fetching point max (24h)', params);
+    
+    const response = await apiClient.post<PointMaxResponseDto>('/api/Monitoring/PointMax', params);
+    
+    logger.log('Point max (24h) retrieved successfully', { max: response.data.max });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get point max (24h)', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get point standard deviation for last 24 hours
+ * @param params - Request parameters with itemId
+ * @returns Promise<PointStdResponseDto> - Standard deviation or null
+ */
+export const getPointStd = async (params: PointStatsLast24HoursRequestDto): Promise<PointStdResponseDto> => {
+  try {
+    logger.log('Fetching point std (24h)', params);
+    
+    const response = await apiClient.post<PointStdResponseDto>('/api/Monitoring/PointStd', params);
+    
+    logger.log('Point std (24h) retrieved successfully', { std: response.data.std });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get point std (24h)', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get point count for last 24 hours
+ * @param params - Request parameters with itemId
+ * @returns Promise<PointCountResponseDto> - Total count
+ */
+export const getPointCount = async (params: PointStatsLast24HoursRequestDto): Promise<PointCountResponseDto> => {
+  try {
+    logger.log('Fetching point count (24h)', params);
+    
+    const response = await apiClient.post<PointCountResponseDto>('/api/Monitoring/PointCount', params);
+    
+    logger.log('Point count (24h) retrieved successfully', { count: response.data.count });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get point count (24h)', error);
+    handleApiError(error);
+  }
+};
+
+/**
+ * Calculate state duration for digital points
+ * @param params - Request parameters with itemId, startDate, and endDate
+ * @returns Promise<CalculateStateDurationResponseDto> - State duration statistics
+ */
+export const calculateStateDuration = async (params: CalculateStateDurationRequestDto): Promise<CalculateStateDurationResponseDto> => {
+  try {
+    logger.log('Calculating state duration', params);
+    
+    const response = await apiClient.post<CalculateStateDurationResponseDto>('/api/Monitoring/CalculateStateDuration', params);
+    
+    logger.log('State duration calculated successfully', {
+      onDuration: response.data.onDuration,
+      offDuration: response.data.offDuration,
+      onPercentage: response.data.onPercentage,
+    });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to calculate state duration', error);
     handleApiError(error);
   }
 };

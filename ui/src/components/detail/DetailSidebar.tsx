@@ -27,6 +27,7 @@ import {
   Description as AlarmLogDetailIcon,
   Assessment as AuditTrailDetailIcon,
   NotificationsActive as AlarmsIcon,
+  BarChart as StatisticsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useMonitoring } from '../../hooks/useMonitoring';
@@ -153,6 +154,7 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ isOpen, onToggle }) => {
       { path: '/item-detail/trend-analysis', key: 'trendAnalysis', icon: <TrendAnalysisIcon /> },
       { path: '/item-detail/data-table', key: 'dataTable', icon: <DataTableIcon /> },
       { path: '/item-detail/live-monitoring', key: 'liveMonitoring', icon: <LiveMonitoringIcon /> },
+      { path: '/item-detail/statistics', key: 'statisticsDetail', icon: <StatisticsIcon /> },
       { path: '/item-detail/alarms', key: 'alarmsDetail', icon: <AlarmsIcon /> },
       { path: '/item-detail/active-alarms', key: 'activeAlarmsDetail', icon: <ActiveAlarmsDetailIcon /> },
       { path: '/item-detail/alarm-log', key: 'alarmLogDetail', icon: <AlarmLogDetailIcon /> },

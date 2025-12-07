@@ -32,6 +32,7 @@ const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
 const DataTablePage = lazy(() => import('./components/detail/DataTablePage'));
 const LiveMonitoringDetailPage = lazy(() => import('./components/detail/LiveMonitoringDetailPage'));
+const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
 const AlarmsDetailPage = lazy(() => import('./components/detail/AlarmsDetailPage'));
 const ActiveAlarmsDetailPage = lazy(() => import('./components/detail/ActiveAlarmsDetailPage'));
 const AlarmLogDetailPage = lazy(() => import('./components/detail/AlarmLogDetailPage'));
@@ -184,6 +185,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <LiveMonitoringDetailPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="statistics" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <StatisticsPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

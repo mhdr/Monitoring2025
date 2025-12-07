@@ -1287,5 +1287,42 @@
       "mappingUpdated": "نگاشت با موفقیت به‌روزرسانی شد",
       "mappingDeleted": "نگاشت با موفقیت حذف شد"
     }
-  }
+  },
+  "statistics": {
+    "title": "آمار و اطلاعات",
+    "summary": "خلاصه (۲۴ ساعت گذشته)",
+    "historical": "آمار تاریخی",
+    "visualizations": "نمایش بصری داده‌ها",
+    "mean": "میانگین",
+    "minimum": "حداقل",
+    "maximum": "حداکثر",
+    "standardDeviation": "انحراف معیار",
+    "count": "تعداد",
+    "dataPoints": "نقاط داده",
+    "stateDuration": "مدت زمان وضعیت",
+    "onDuration": "مدت روشن",
+    "offDuration": "مدت خاموش",
+    "onState": "وضعیت روشن",
+    "offState": "وضعیت خاموش",
+    "state": "وضعیت",
+    "stateChanges": "تغییرات وضعیت",
+    "totalDuration": "مدت کل",
+    "onPercentage": "درصد روشن",
+    "offPercentage": "درصد خاموش",
+    "comparisonChart": "نمودار مقایسه‌ای",
+    "distributionChart": "نمودار توزیع",
+    "trendChart": "نمودار روند",
+    "durationChart": "نمودار مدت زمان",
+    "stateDistribution": "توزیع وضعیت",
+    "noStatistics": "آماری موجود نیست",
+    "noStatisticsDescription": "هیچ داده‌ای برای بازه زمانی انتخابی موجود نیست",
+    "errorLoadingStatistics": "خطا در بارگذاری آمار",
+    "selectDateRange": "بازه زمانی را برای مشاهده آمار انتخاب کنید",
+    "digitalPoint": "نقطه دیجیتال",
+    "analogPoint": "نقطه آنالوگ",
+    "insufficientData": "داده کافی برای محاسبه موجود نیست",
+    "hours": "ساعت",
+    "minutes": "دقیقه"
+  },
+  "statisticsDetail": "آمار و اطلاعات"
 }

@@ -1287,5 +1287,42 @@
       "mappingUpdated": "Mapping updated successfully",
       "mappingDeleted": "Mapping deleted successfully"
     }
-  }
+  },
+  "statistics": {
+    "title": "Statistics",
+    "summary": "Summary (Last 24 Hours)",
+    "historical": "Historical Statistics",
+    "visualizations": "Data Visualizations",
+    "mean": "Mean",
+    "minimum": "Minimum",
+    "maximum": "Maximum",
+    "standardDeviation": "Standard Deviation",
+    "count": "Count",
+    "dataPoints": "Data Points",
+    "stateDuration": "State Duration",
+    "onDuration": "ON Duration",
+    "offDuration": "OFF Duration",
+    "onState": "ON State",
+    "offState": "OFF State",
+    "state": "State",
+    "stateChanges": "State Changes",
+    "totalDuration": "Total Duration",
+    "onPercentage": "ON Percentage",
+    "offPercentage": "OFF Percentage",
+    "comparisonChart": "Comparison Chart",
+    "distributionChart": "Distribution Chart",
+    "trendChart": "Trend Chart",
+    "durationChart": "Duration Chart",
+    "stateDistribution": "State Distribution",
+    "noStatistics": "No statistics available",
+    "noStatisticsDescription": "No data available for the selected date range",
+    "errorLoadingStatistics": "Error loading statistics",
+    "selectDateRange": "Select date range to view statistics",
+    "digitalPoint": "Digital Point",
+    "analogPoint": "Analog Point",
+    "insufficientData": "Insufficient data for calculation",
+    "hours": "hours",
+    "minutes": "minutes"
+  },
+  "statisticsDetail": "Statistics"
 }
