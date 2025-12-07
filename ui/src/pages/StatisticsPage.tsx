@@ -1057,7 +1057,7 @@ const StatisticsPage: React.FC = () => {
           {historicalStats && (
             <Box sx={{ mt: 3, pt: 3, borderTop: 1, borderColor: 'divider' }} data-id-ref="statistics-page-summary-statistics">
               <Typography variant="h6" gutterBottom data-id-ref="statistics-page-summary-title">
-                {t('statistics.summary')}
+                {t('statistics.overallSummary')}
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }} data-id-ref="statistics-page-summary-grid">
                 {isAnalog ? (

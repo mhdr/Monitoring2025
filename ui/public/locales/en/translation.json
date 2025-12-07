@@ -1291,6 +1291,7 @@
   "statistics": {
     "title": "Statistics",
     "summary": "Summary (Last 24 Hours)",
+    "overallSummary": "Overall Summary",
     "historical": "Historical Statistics",
     "visualizations": "Data Visualizations",
     "mean": "Mean",

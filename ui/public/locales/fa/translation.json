@@ -1291,6 +1291,7 @@
   "statistics": {
     "title": "آمار و اطلاعات",
     "summary": "خلاصه (۲۴ ساعت گذشته)",
+    "overallSummary": "خلاصه کلی",
     "historical": "آمار تاریخی",
     "visualizations": "نمایش بصری داده‌ها",
     "mean": "میانگین",
