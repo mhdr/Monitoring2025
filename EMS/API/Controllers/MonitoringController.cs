@@ -890,6 +890,623 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
+    /// Calculate the minimum value for an analog point within a specified date range
+    /// </summary>
+    /// <param name="request">Request containing item ID, start date, and end date (Unix timestamps in seconds)</param>
+    /// <returns>Minimum value for the specified analog point and time period</returns>
+    /// <remarks>
+    /// This endpoint only works for analog points (AnalogInput and AnalogOutput).
+    /// For digital points, it will return an error as min calculation is meaningless for binary values.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/pointmin
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "startDate": 1697587200,
+    ///        "endDate": 1697673600
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the minimum value and data point count</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If the point is not analog or validation fails</response>
+    /// <response code="404">If the point is not found</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpPost("PointMin")]
+    [ProducesResponseType(typeof(PointMinResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PointMin([FromBody] PointMinRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("Unauthorized access attempt to PointMin endpoint (no user id)");
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("Validation failed for PointMin request by {UserId}: {Errors}", userId, string.Join("; ", errors));
+
+                return BadRequest(new PointMinResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = $"Validation failed: {string.Join("; ", errors)}"
+                });
+            }
+
+            _logger.LogInformation("Calculating minimum for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
+                request.ItemId, request.StartDate, request.EndDate, userId);
+
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+
+            if (monitoringItem == null)
+            {
+                _logger.LogWarning("Point {ItemId} not found for min calculation", request.ItemId);
+                return NotFound(new PointMinResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Point not found",
+                    ItemId = request.ItemId
+                });
+            }
+
+            if (monitoringItem.ItemType != ItemType.AnalogInput && 
+                monitoringItem.ItemType != ItemType.AnalogOutput)
+            {
+                _logger.LogWarning("Attempted to calculate min for non-analog point {ItemId} of type {ItemType}", 
+                    request.ItemId, monitoringItem.ItemType);
+                
+                return BadRequest(new PointMinResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = $"Min calculation is only supported for analog points. This point is of type: {monitoringItem.ItemType}",
+                    ItemId = request.ItemId
+                });
+            }
+
+            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+
+            if (values == null || values.Count == 0)
+            {
+                _logger.LogInformation("No data found for point {ItemId} in the specified range", request.ItemId);
+                return Ok(new PointMinResponseDto
+                {
+                    Success = true,
+                    Min = null,
+                    Count = 0,
+                    ItemId = request.ItemId,
+                    ErrorMessage = "No data available for the specified time range"
+                });
+            }
+
+            var numericValues = new List<double>();
+            foreach (var v in values)
+            {
+                if (double.TryParse(v.Value, out double numericValue))
+                {
+                    numericValues.Add(numericValue);
+                }
+            }
+
+            if (numericValues.Count == 0)
+            {
+                _logger.LogWarning("No valid numeric values found for point {ItemId}", request.ItemId);
+                return Ok(new PointMinResponseDto
+                {
+                    Success = true,
+                    Min = null,
+                    Count = 0,
+                    ItemId = request.ItemId,
+                    ErrorMessage = "No valid numeric values found in the specified time range"
+                });
+            }
+
+            var min = numericValues.Min();
+
+            _logger.LogInformation("Successfully calculated min {Min} from {Count} values for point {ItemId}", 
+                min, numericValues.Count, request.ItemId);
+
+            return Ok(new PointMinResponseDto
+            {
+                Success = true,
+                Min = min,
+                Count = numericValues.Count,
+                ItemId = request.ItemId
+            });
+        }
+        catch (FormatException ex)
+        {
+            _logger.LogError(ex, "Invalid GUID format for ItemId: {ItemId}", request?.ItemId);
+            return BadRequest(new PointMinResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Invalid item ID format",
+                ItemId = request?.ItemId
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating min for point {ItemId}", request?.ItemId);
+            return StatusCode(500, new PointMinResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Internal server error while calculating min",
+                ItemId = request?.ItemId
+            });
+        }
+    }
+
+    /// <summary>
+    /// Calculate the maximum value for an analog point within a specified date range
+    /// </summary>
+    /// <param name="request">Request containing item ID, start date, and end date (Unix timestamps in seconds)</param>
+    /// <returns>Maximum value for the specified analog point and time period</returns>
+    /// <remarks>
+    /// This endpoint only works for analog points (AnalogInput and AnalogOutput).
+    /// For digital points, it will return an error as max calculation is meaningless for binary values.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/pointmax
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "startDate": 1697587200,
+    ///        "endDate": 1697673600
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the maximum value and data point count</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If the point is not analog or validation fails</response>
+    /// <response code="404">If the point is not found</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpPost("PointMax")]
+    [ProducesResponseType(typeof(PointMaxResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PointMax([FromBody] PointMaxRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("Unauthorized access attempt to PointMax endpoint (no user id)");
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("Validation failed for PointMax request by {UserId}: {Errors}", userId, string.Join("; ", errors));
+
+                return BadRequest(new PointMaxResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = $"Validation failed: {string.Join("; ", errors)}"
+                });
+            }
+
+            _logger.LogInformation("Calculating maximum for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
+                request.ItemId, request.StartDate, request.EndDate, userId);
+
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+
+            if (monitoringItem == null)
+            {
+                _logger.LogWarning("Point {ItemId} not found for max calculation", request.ItemId);
+                return NotFound(new PointMaxResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Point not found",
+                    ItemId = request.ItemId
+                });
+            }
+
+            if (monitoringItem.ItemType != ItemType.AnalogInput && 
+                monitoringItem.ItemType != ItemType.AnalogOutput)
+            {
+                _logger.LogWarning("Attempted to calculate max for non-analog point {ItemId} of type {ItemType}", 
+                    request.ItemId, monitoringItem.ItemType);
+                
+                return BadRequest(new PointMaxResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = $"Max calculation is only supported for analog points. This point is of type: {monitoringItem.ItemType}",
+                    ItemId = request.ItemId
+                });
+            }
+
+            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+
+            if (values == null || values.Count == 0)
+            {
+                _logger.LogInformation("No data found for point {ItemId} in the specified range", request.ItemId);
+                return Ok(new PointMaxResponseDto
+                {
+                    Success = true,
+                    Max = null,
+                    Count = 0,
+                    ItemId = request.ItemId,
+                    ErrorMessage = "No data available for the specified time range"
+                });
+            }
+
+            var numericValues = new List<double>();
+            foreach (var v in values)
+            {
+                if (double.TryParse(v.Value, out double numericValue))
+                {
+                    numericValues.Add(numericValue);
+                }
+            }
+
+            if (numericValues.Count == 0)
+            {
+                _logger.LogWarning("No valid numeric values found for point {ItemId}", request.ItemId);
+                return Ok(new PointMaxResponseDto
+                {
+                    Success = true,
+                    Max = null,
+                    Count = 0,
+                    ItemId = request.ItemId,
+                    ErrorMessage = "No valid numeric values found in the specified time range"
+                });
+            }
+
+            var max = numericValues.Max();
+
+            _logger.LogInformation("Successfully calculated max {Max} from {Count} values for point {ItemId}", 
+                max, numericValues.Count, request.ItemId);
+
+            return Ok(new PointMaxResponseDto
+            {
+                Success = true,
+                Max = max,
+                Count = numericValues.Count,
+                ItemId = request.ItemId
+            });
+        }
+        catch (FormatException ex)
+        {
+            _logger.LogError(ex, "Invalid GUID format for ItemId: {ItemId}", request?.ItemId);
+            return BadRequest(new PointMaxResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Invalid item ID format",
+                ItemId = request?.ItemId
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating max for point {ItemId}", request?.ItemId);
+            return StatusCode(500, new PointMaxResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Internal server error while calculating max",
+                ItemId = request?.ItemId
+            });
+        }
+    }
+
+    /// <summary>
+    /// Calculate the standard deviation for an analog point within a specified date range
+    /// </summary>
+    /// <param name="request">Request containing item ID, start date, and end date (Unix timestamps in seconds)</param>
+    /// <returns>Standard deviation for the specified analog point and time period</returns>
+    /// <remarks>
+    /// This endpoint only works for analog points (AnalogInput and AnalogOutput).
+    /// For digital points, it will return an error as standard deviation is meaningless for binary values.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/pointstd
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "startDate": 1697587200,
+    ///        "endDate": 1697673600
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the standard deviation and data point count</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If the point is not analog or validation fails</response>
+    /// <response code="404">If the point is not found</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpPost("PointStd")]
+    [ProducesResponseType(typeof(PointStdResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PointStd([FromBody] PointStdRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("Unauthorized access attempt to PointStd endpoint (no user id)");
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("Validation failed for PointStd request by {UserId}: {Errors}", userId, string.Join("; ", errors));
+
+                return BadRequest(new PointStdResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = $"Validation failed: {string.Join("; ", errors)}"
+                });
+            }
+
+            _logger.LogInformation("Calculating standard deviation for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
+                request.ItemId, request.StartDate, request.EndDate, userId);
+
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+
+            if (monitoringItem == null)
+            {
+                _logger.LogWarning("Point {ItemId} not found for std calculation", request.ItemId);
+                return NotFound(new PointStdResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Point not found",
+                    ItemId = request.ItemId
+                });
+            }
+
+            if (monitoringItem.ItemType != ItemType.AnalogInput && 
+                monitoringItem.ItemType != ItemType.AnalogOutput)
+            {
+                _logger.LogWarning("Attempted to calculate std for non-analog point {ItemId} of type {ItemType}", 
+                    request.ItemId, monitoringItem.ItemType);
+                
+                return BadRequest(new PointStdResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = $"Standard deviation calculation is only supported for analog points. This point is of type: {monitoringItem.ItemType}",
+                    ItemId = request.ItemId
+                });
+            }
+
+            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+
+            if (values == null || values.Count == 0)
+            {
+                _logger.LogInformation("No data found for point {ItemId} in the specified range", request.ItemId);
+                return Ok(new PointStdResponseDto
+                {
+                    Success = true,
+                    Std = null,
+                    Count = 0,
+                    ItemId = request.ItemId,
+                    ErrorMessage = "No data available for the specified time range"
+                });
+            }
+
+            var numericValues = new List<double>();
+            foreach (var v in values)
+            {
+                if (double.TryParse(v.Value, out double numericValue))
+                {
+                    numericValues.Add(numericValue);
+                }
+            }
+
+            if (numericValues.Count == 0)
+            {
+                _logger.LogWarning("No valid numeric values found for point {ItemId}", request.ItemId);
+                return Ok(new PointStdResponseDto
+                {
+                    Success = true,
+                    Std = null,
+                    Count = 0,
+                    ItemId = request.ItemId,
+                    ErrorMessage = "No valid numeric values found in the specified time range"
+                });
+            }
+
+            if (numericValues.Count < 2)
+            {
+                _logger.LogWarning("Insufficient data points for std calculation for point {ItemId}", request.ItemId);
+                return Ok(new PointStdResponseDto
+                {
+                    Success = true,
+                    Std = null,
+                    Count = numericValues.Count,
+                    ItemId = request.ItemId,
+                    ErrorMessage = "At least 2 data points are required for standard deviation calculation"
+                });
+            }
+
+            var mean = numericValues.Average();
+            var sumOfSquares = numericValues.Sum(val => Math.Pow(val - mean, 2));
+            var std = Math.Sqrt(sumOfSquares / numericValues.Count);
+
+            _logger.LogInformation("Successfully calculated std {Std} from {Count} values for point {ItemId}", 
+                std, numericValues.Count, request.ItemId);
+
+            return Ok(new PointStdResponseDto
+            {
+                Success = true,
+                Std = std,
+                Count = numericValues.Count,
+                ItemId = request.ItemId
+            });
+        }
+        catch (FormatException ex)
+        {
+            _logger.LogError(ex, "Invalid GUID format for ItemId: {ItemId}", request?.ItemId);
+            return BadRequest(new PointStdResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Invalid item ID format",
+                ItemId = request?.ItemId
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating std for point {ItemId}", request?.ItemId);
+            return StatusCode(500, new PointStdResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Internal server error while calculating std",
+                ItemId = request?.ItemId
+            });
+        }
+    }
+
+    /// <summary>
+    /// Count the number of data points for a monitoring point within a specified date range
+    /// </summary>
+    /// <param name="request">Request containing item ID, start date, and end date (Unix timestamps in seconds)</param>
+    /// <returns>Count of data points for the specified point and time period</returns>
+    /// <remarks>
+    /// This endpoint works for both analog and digital points.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/pointcount
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "startDate": 1697587200,
+    ///        "endDate": 1697673600
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the count of data points</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    /// <response code="404">If the point is not found</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpPost("PointCount")]
+    [ProducesResponseType(typeof(PointCountResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PointCount([FromBody] PointCountRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("Unauthorized access attempt to PointCount endpoint (no user id)");
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("Validation failed for PointCount request by {UserId}: {Errors}", userId, string.Join("; ", errors));
+
+                return BadRequest(new PointCountResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = $"Validation failed: {string.Join("; ", errors)}"
+                });
+            }
+
+            _logger.LogInformation("Counting data points for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
+                request.ItemId, request.StartDate, request.EndDate, userId);
+
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+
+            if (monitoringItem == null)
+            {
+                _logger.LogWarning("Point {ItemId} not found for count", request.ItemId);
+                return NotFound(new PointCountResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Point not found",
+                    ItemId = request.ItemId
+                });
+            }
+
+            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+
+            if (values == null || values.Count == 0)
+            {
+                _logger.LogInformation("No data found for point {ItemId} in the specified range", request.ItemId);
+                return Ok(new PointCountResponseDto
+                {
+                    Success = true,
+                    Count = 0,
+                    ItemId = request.ItemId
+                });
+            }
+
+            _logger.LogInformation("Successfully counted {Count} values for point {ItemId}", 
+                values.Count, request.ItemId);
+
+            return Ok(new PointCountResponseDto
+            {
+                Success = true,
+                Count = values.Count,
+                ItemId = request.ItemId
+            });
+        }
+        catch (FormatException ex)
+        {
+            _logger.LogError(ex, "Invalid GUID format for ItemId: {ItemId}", request?.ItemId);
+            return BadRequest(new PointCountResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Invalid item ID format",
+                ItemId = request?.ItemId
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error counting for point {ItemId}", request?.ItemId);
+            return StatusCode(500, new PointCountResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Internal server error while counting",
+                ItemId = request?.ItemId
+            });
+        }
+    }
+
+    /// <summary>
     /// Get configured alarms for specified monitoring items
     /// </summary>
     /// <param name="request">Alarms request containing list of item IDs to retrieve alarms for</param>
