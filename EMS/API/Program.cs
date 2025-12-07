@@ -290,26 +290,6 @@ builder.Services.AddSwaggerGen(c =>
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
 
-    // Add SignalR hub documentation generation
-    c.AddSignalRSwaggerGen(ssgOptions =>
-    {
-        // Scan the API assembly for SignalR hubs
-        ssgOptions.ScanAssembly(System.Reflection.Assembly.GetExecutingAssembly());
-        
-        // Use XML comments for SignalR hub documentation
-        ssgOptions.UseXmlComments(xmlPath);
-        
-        // Display SignalR hubs in the v1 document
-        ssgOptions.DisplayInDocument("v1");
-        
-        // Use hub XML comments summary as tag
-        ssgOptions.UseHubXmlCommentsSummaryAsTag = true;
-        
-        // Configure the hub path template (default is fine: /hubs/{hubName})
-        // We override it in the attribute per hub, so this is a fallback
-        ssgOptions.HubPathFunc = hubName => $"/hubs/{hubName.ToLowerInvariant()}";
-    });
-
     // Configure Swagger to use JWT Bearer token
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
