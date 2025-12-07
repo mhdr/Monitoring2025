@@ -238,12 +238,19 @@ const StatisticsPage: React.FC = () => {
           getPointCountByDate({ itemId, startDate, endDate }),
         ]);
 
+        // Calculate aggregated statistics from daily values
+        const meanValues = meanRes.dailyValues?.map(d => d.value) || [];
+        const minValues = minRes.dailyValues?.map(d => d.value) || [];
+        const maxValues = maxRes.dailyValues?.map(d => d.value) || [];
+        const stdValues = stdRes.dailyValues?.map(d => d.value) || [];
+        const totalCount = countRes.dailyCounts?.reduce((sum, d) => sum + d.count, 0) || 0;
+
         setHistoricalStats({
-          mean: meanRes.mean,
-          min: minRes.min,
-          max: maxRes.max,
-          std: stdRes.std,
-          count: countRes.count,
+          mean: meanValues.length > 0 ? meanValues.reduce((a, b) => a + b, 0) / meanValues.length : null,
+          min: minValues.length > 0 ? Math.min(...minValues) : null,
+          max: maxValues.length > 0 ? Math.max(...maxValues) : null,
+          std: stdValues.length > 0 ? stdValues.reduce((a, b) => a + b, 0) / stdValues.length : null,
+          count: totalCount,
         });
       } else {
         const [durationRes, countRes] = await Promise.all([
@@ -251,13 +258,15 @@ const StatisticsPage: React.FC = () => {
           getPointCountByDate({ itemId, startDate, endDate }),
         ]);
 
+        const totalCount = countRes.dailyCounts?.reduce((sum, d) => sum + d.count, 0) || 0;
+
         setHistoricalStats({
           onDuration: durationRes.onDuration,
           offDuration: durationRes.offDuration,
           totalDuration: durationRes.totalDuration,
           onPercentage: durationRes.onPercentage,
           offPercentage: durationRes.offPercentage,
-          count: countRes.count,
+          count: totalCount,
         });
       }
 

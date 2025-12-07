@@ -2105,38 +2105,97 @@ export interface PointStatsByDateRequestDto {
 }
 
 /**
+ * Daily mean value result
+ */
+export interface DailyMeanValue {
+  date: string; // Jalali date (e.g., "1404/09/16")
+  value: number; // Mean value for this date
+  count: number; // Number of data points
+}
+
+/**
  * Response DTO for PointMeanByDate
  */
 export interface PointMeanByDateResponseDto {
-  mean: number | null; // Mean value or null if no data
+  success: boolean;
+  dailyValues: DailyMeanValue[];
+  errorMessage: string | null;
+  itemId: string;
+}
+
+/**
+ * Daily minimum value result
+ */
+export interface DailyMinValue {
+  date: string;
+  value: number;
+  count: number;
 }
 
 /**
  * Response DTO for PointMinByDate
  */
 export interface PointMinByDateResponseDto {
-  min: number | null; // Minimum value or null if no data
+  success: boolean;
+  dailyValues: DailyMinValue[];
+  errorMessage: string | null;
+  itemId: string;
+}
+
+/**
+ * Daily maximum value result
+ */
+export interface DailyMaxValue {
+  date: string;
+  value: number;
+  count: number;
 }
 
 /**
  * Response DTO for PointMaxByDate
  */
 export interface PointMaxByDateResponseDto {
-  max: number | null; // Maximum value or null if no data
+  success: boolean;
+  dailyValues: DailyMaxValue[];
+  errorMessage: string | null;
+  itemId: string;
+}
+
+/**
+ * Daily standard deviation value result
+ */
+export interface DailyStdValue {
+  date: string;
+  value: number;
+  count: number;
 }
 
 /**
  * Response DTO for PointStdByDate
  */
 export interface PointStdByDateResponseDto {
-  std: number | null; // Standard deviation or null if insufficient data
+  success: boolean;
+  dailyValues: DailyStdValue[];
+  errorMessage: string | null;
+  itemId: string;
+}
+
+/**
+ * Daily count value result
+ */
+export interface DailyCountValue {
+  date: string;
+  count: number;
 }
 
 /**
  * Response DTO for PointCountByDate
  */
 export interface PointCountByDateResponseDto {
-  count: number; // Total number of data points
+  success: boolean;
+  dailyCounts: DailyCountValue[]; // Note: property name is dailyCounts, not dailyValues
+  errorMessage: string | null;
+  itemId: string;
 }
 
 /**
