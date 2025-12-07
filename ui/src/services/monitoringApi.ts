@@ -1187,8 +1187,15 @@ export const getPointCount = async (params: PointStatsLast24HoursRequestDto): Pr
 export const calculateStateDuration = async (params: CalculateStateDurationRequestDto): Promise<CalculateStateDurationResponseDto> => {
   try {
     logger.log('Calculating state duration', params);
-    
-    const response = await apiClient.post<CalculateStateDurationResponseDto>('/api/Monitoring/CalculateStateDuration', params);
+
+    // State-duration queries over long ranges (e.g., 30 days) scan two monthly Mongo collections
+    // and can legitimately take longer than the global 10s axios timeout. Give this endpoint a
+    // higher ceiling so the UI does not abort and leave the digital charts empty.
+    const response = await apiClient.post<CalculateStateDurationResponseDto>(
+      '/api/Monitoring/CalculateStateDuration',
+      params,
+      { timeout: 60000 }
+    );
     
     logger.log('State duration calculated successfully', {
       success: response.data.success,
