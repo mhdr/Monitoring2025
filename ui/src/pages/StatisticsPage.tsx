@@ -387,10 +387,16 @@ const StatisticsPage: React.FC = () => {
 
   // Render analog comparison chart
   const analogComparisonChart: EChartsOption = useMemo(() => {
-    if (!historicalStats || !isAnalog) return {};
+    if (!dailyHistoricalStats || !isAnalog) return {};
     
-    const stats = historicalStats as AnalogStats;
+    const dailyData = dailyHistoricalStats as DailyAnalogStats[];
     const isRTL = language === 'fa';
+
+    // Extract dates and values
+    const dates = dailyData.map(d => d.date);
+    const meanValues = dailyData.map(d => d.mean ?? 0);
+    const minValues = dailyData.map(d => d.min ?? 0);
+    const maxValues = dailyData.map(d => d.max ?? 0);
 
     return {
       tooltip: {
@@ -414,9 +420,10 @@ const StatisticsPage: React.FC = () => {
       },
       xAxis: {
         type: 'category',
-        data: [t('statistics.historical')],
+        data: dates,
         axisLabel: {
           fontFamily: isRTL ? 'Vazirmatn' : 'Inter',
+          rotate: 45,
         },
       },
       yAxis: {
@@ -432,31 +439,90 @@ const StatisticsPage: React.FC = () => {
       series: [
         {
           name: t('statistics.mean'),
-          type: 'bar',
-          data: [stats.mean ?? 0],
+          type: 'line',
+          data: meanValues,
           itemStyle: {
             color: theme.palette.primary.main,
           },
+          smooth: true,
         },
         {
           name: t('statistics.minimum'),
-          type: 'bar',
-          data: [stats.min ?? 0],
+          type: 'line',
+          data: minValues,
           itemStyle: {
             color: theme.palette.success.main,
           },
+          smooth: true,
         },
         {
           name: t('statistics.maximum'),
-          type: 'bar',
-          data: [stats.max ?? 0],
+          type: 'line',
+          data: maxValues,
           itemStyle: {
             color: theme.palette.error.main,
+          },
+          smooth: true,
+        },
+      ],
+    };
+  }, [dailyHistoricalStats, isAnalog, language, t, itemUnit, theme]);
+
+  // Render analog count trend chart
+  const analogCountChart: EChartsOption = useMemo(() => {
+    if (!dailyHistoricalStats || !isAnalog) return {};
+    
+    const dailyData = dailyHistoricalStats as DailyAnalogStats[];
+    const isRTL = language === 'fa';
+
+    // Extract dates and count values
+    const dates = dailyData.map(d => d.date);
+    const counts = dailyData.map(d => d.count);
+
+    return {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'line',
+        },
+      },
+      grid: {
+        left: isRTL ? '15%' : '10%',
+        right: isRTL ? '10%' : '15%',
+        bottom: '15%',
+        top: '10%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: dates,
+        axisLabel: {
+          fontFamily: isRTL ? 'Vazirmatn' : 'Inter',
+          rotate: 45,
+        },
+      },
+      yAxis: {
+        type: 'value',
+        name: t('statistics.count'),
+        axisLabel: {
+          fontFamily: isRTL ? 'Vazirmatn' : 'Inter',
+        },
+        nameTextStyle: {
+          fontFamily: isRTL ? 'Vazirmatn' : 'Inter',
+        },
+      },
+      series: [
+        {
+          name: t('statistics.count'),
+          type: 'bar',
+          data: counts,
+          itemStyle: {
+            color: theme.palette.info.main,
           },
         },
       ],
     };
-  }, [historicalStats, isAnalog, language, t, itemUnit, theme]);
+  }, [dailyHistoricalStats, isAnalog, language, t, theme]);
 
   // Render digital state distribution chart
   const digitalDistributionChart: EChartsOption = useMemo(() => {
@@ -508,6 +574,62 @@ const StatisticsPage: React.FC = () => {
       ],
     };
   }, [historicalStats, isAnalog, language, t, theme]);
+
+  // Render digital count trend chart
+  const digitalCountChart: EChartsOption = useMemo(() => {
+    if (!dailyHistoricalStats || isAnalog) return {};
+    
+    const dailyData = dailyHistoricalStats as DailyDigitalStats[];
+    const isRTL = language === 'fa';
+
+    // Extract dates and count values
+    const dates = dailyData.map(d => d.date);
+    const counts = dailyData.map(d => d.count);
+
+    return {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'line',
+        },
+      },
+      grid: {
+        left: isRTL ? '15%' : '10%',
+        right: isRTL ? '10%' : '15%',
+        bottom: '15%',
+        top: '10%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: dates,
+        axisLabel: {
+          fontFamily: isRTL ? 'Vazirmatn' : 'Inter',
+          rotate: 45,
+        },
+      },
+      yAxis: {
+        type: 'value',
+        name: t('statistics.count'),
+        axisLabel: {
+          fontFamily: isRTL ? 'Vazirmatn' : 'Inter',
+        },
+        nameTextStyle: {
+          fontFamily: isRTL ? 'Vazirmatn' : 'Inter',
+        },
+      },
+      series: [
+        {
+          name: t('statistics.count'),
+          type: 'bar',
+          data: counts,
+          itemStyle: {
+            color: theme.palette.info.main,
+          },
+        },
+      ],
+    };
+  }, [dailyHistoricalStats, isAnalog, language, t, theme]);
 
   // Render digital duration bar chart
   const digitalDurationChart: EChartsOption = useMemo(() => {
@@ -1077,6 +1199,23 @@ const StatisticsPage: React.FC = () => {
                   </CardContent>
                 </Card>
               </Box>
+              <Box sx={{ flex: '1 1 100%', minWidth: '100%' }} data-id-ref="statistics-page-analog-count-chart-container">
+                <Card>
+                  <CardHeader
+                    title={t('statistics.dailyCountTrend')}
+                    dataIdRef="statistics-page-analog-count-chart-header"
+                  />
+                  <CardContent>
+                    <EChartsWrapper
+                      option={analogCountChart}
+                      loading={loading}
+                      height="300px"
+                      onRetry={handleRefresh}
+                      dataIdRef="statistics-page-analog-count-chart"
+                    />
+                  </CardContent>
+                </Card>
+              </Box>
             </Box>
           ) : (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -1110,6 +1249,23 @@ const StatisticsPage: React.FC = () => {
                       height="400px"
                       onRetry={handleRefresh}
                       dataIdRef="statistics-page-digital-duration-chart"
+                    />
+                  </CardContent>
+                </Card>
+              </Box>
+              <Box sx={{ flex: '1 1 100%', minWidth: '100%' }} data-id-ref="statistics-page-digital-count-chart-container">
+                <Card>
+                  <CardHeader
+                    title={t('statistics.dailyCountTrend')}
+                    dataIdRef="statistics-page-digital-count-chart-header"
+                  />
+                  <CardContent>
+                    <EChartsWrapper
+                      option={digitalCountChart}
+                      loading={loading}
+                      height="300px"
+                      onRetry={handleRefresh}
+                      dataIdRef="statistics-page-digital-count-chart"
                     />
                   </CardContent>
                 </Card>
