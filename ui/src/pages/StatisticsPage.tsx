@@ -15,6 +15,13 @@ import {
   useMediaQuery,
   Divider,
   Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -73,6 +80,21 @@ interface DigitalStats {
   count: number;
 }
 
+// Daily statistics interfaces
+interface DailyAnalogStats {
+  date: string;
+  mean: number | null;
+  min: number | null;
+  max: number | null;
+  std: number | null;
+  count: number;
+}
+
+interface DailyDigitalStats {
+  date: string;
+  count: number;
+}
+
 const StatisticsPage: React.FC = () => {
   const { t, language } = useLanguage();
   const theme = useTheme();
@@ -102,6 +124,7 @@ const StatisticsPage: React.FC = () => {
   // Statistics data
   const [last24hStats, setLast24hStats] = useState<AnalogStats | DigitalStats | null>(null);
   const [historicalStats, setHistoricalStats] = useState<AnalogStats | DigitalStats | null>(null);
+  const [dailyHistoricalStats, setDailyHistoricalStats] = useState<DailyAnalogStats[] | DailyDigitalStats[] | null>(null);
 
   // Calculate Unix timestamps based on date range
   const getDateRange = useMemo(() => {
@@ -238,7 +261,38 @@ const StatisticsPage: React.FC = () => {
           getPointCountByDate({ itemId, startDate, endDate }),
         ]);
 
-        // Calculate aggregated statistics from daily values
+        // Store daily data for table display
+        const dailyData: DailyAnalogStats[] = [];
+        const dates = new Set<string>();
+        
+        // Collect all unique dates
+        meanRes.dailyValues?.forEach(d => dates.add(d.date));
+        minRes.dailyValues?.forEach(d => dates.add(d.date));
+        maxRes.dailyValues?.forEach(d => dates.add(d.date));
+        stdRes.dailyValues?.forEach(d => dates.add(d.date));
+        countRes.dailyCounts?.forEach(d => dates.add(d.date));
+        
+        // Build daily data array
+        Array.from(dates).sort().forEach(date => {
+          const meanValue = meanRes.dailyValues?.find(d => d.date === date);
+          const minValue = minRes.dailyValues?.find(d => d.date === date);
+          const maxValue = maxRes.dailyValues?.find(d => d.date === date);
+          const stdValue = stdRes.dailyValues?.find(d => d.date === date);
+          const countValue = countRes.dailyCounts?.find(d => d.date === date);
+          
+          dailyData.push({
+            date,
+            mean: meanValue?.value ?? null,
+            min: minValue?.value ?? null,
+            max: maxValue?.value ?? null,
+            std: stdValue?.value ?? null,
+            count: countValue?.count ?? 0,
+          });
+        });
+        
+        setDailyHistoricalStats(dailyData);
+
+        // Calculate aggregated statistics for summary
         const meanValues = meanRes.dailyValues?.map(d => d.value) || [];
         const minValues = minRes.dailyValues?.map(d => d.value) || [];
         const maxValues = maxRes.dailyValues?.map(d => d.value) || [];
@@ -257,6 +311,14 @@ const StatisticsPage: React.FC = () => {
           calculateStateDuration({ itemId, startDate, endDate }),
           getPointCountByDate({ itemId, startDate, endDate }),
         ]);
+
+        // Store daily data for table display
+        const dailyData: DailyDigitalStats[] = countRes.dailyCounts?.map(d => ({
+          date: d.date,
+          count: d.count,
+        })) || [];
+        
+        setDailyHistoricalStats(dailyData);
 
         const totalCount = countRes.dailyCounts?.reduce((sum, d) => sum + d.count, 0) || 0;
 
@@ -784,119 +846,206 @@ const StatisticsPage: React.FC = () => {
           dataIdRef="statistics-page-historical-card-header"
         />
         <CardContent data-id-ref="statistics-page-historical-content">
-          {historicalStats ? (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }} data-id-ref="statistics-page-historical-grid">
-              {isAnalog ? (
-                <>
-                  <Box sx={{ flex: '1 1 150px', minWidth: 150 }} data-id-ref="statistics-page-historical-mean">
-                    <Box textAlign="center">
-                      <FunctionsIcon color="primary" />
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        {t('statistics.mean')}
-                      </Typography>
-                      <Typography variant="h6">
-                        {(historicalStats as AnalogStats).mean != null
-                          ? `${(historicalStats as AnalogStats).mean.toFixed(2)} ${itemUnit}`
-                          : t('noData')}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ flex: '1 1 150px', minWidth: 150 }} data-id-ref="statistics-page-historical-min">
-                    <Box textAlign="center">
-                      <TrendingUpIcon color="success" sx={{ transform: 'rotate(180deg)' }} />
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        {t('statistics.minimum')}
-                      </Typography>
-                      <Typography variant="h6" color="success.main">
-                        {(historicalStats as AnalogStats).min != null
-                          ? `${(historicalStats as AnalogStats).min.toFixed(2)} ${itemUnit}`
-                          : t('noData')}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ flex: '1 1 150px', minWidth: 150 }} data-id-ref="statistics-page-historical-max">
-                    <Box textAlign="center">
-                      <TrendingUpIcon color="error" />
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        {t('statistics.maximum')}
-                      </Typography>
-                      <Typography variant="h6" color="error.main">
-                        {(historicalStats as AnalogStats).max != null
-                          ? `${(historicalStats as AnalogStats).max.toFixed(2)} ${itemUnit}`
-                          : t('noData')}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ flex: '1 1 150px', minWidth: 150 }} data-id-ref="statistics-page-historical-std">
-                    <Box textAlign="center">
-                      <ShowChartIcon color="primary" />
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        {t('statistics.standardDeviation')}
-                      </Typography>
-                      <Typography variant="h6">
-                        {(historicalStats as AnalogStats).std != null
-                          ? `${(historicalStats as AnalogStats).std.toFixed(2)} ${itemUnit}`
-                          : t('statistics.insufficientData')}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ flex: '1 1 150px', minWidth: 150 }} data-id-ref="statistics-page-historical-count">
-                    <Box textAlign="center">
-                      <DataUsageIcon color="primary" />
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        {t('statistics.count')}
-                      </Typography>
-                      <Typography variant="h6">
-                        {(historicalStats as AnalogStats).count}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </>
-              ) : (
-                <>
-                  <Box sx={{ flex: '1 1 250px', minWidth: 250 }} data-id-ref="statistics-page-historical-on-duration">
-                    <Box textAlign="center">
-                      <Typography variant="caption" color="text.secondary">
-                        {t('statistics.onDuration')}
-                      </Typography>
-                      <Typography variant="h5" color="success.main">
-                        {formatDuration((historicalStats as DigitalStats).onDuration)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {(historicalStats as DigitalStats).onPercentage.toFixed(1)}%
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ flex: '1 1 250px', minWidth: 250 }} data-id-ref="statistics-page-historical-off-duration">
-                    <Box textAlign="center">
-                      <Typography variant="caption" color="text.secondary">
-                        {t('statistics.offDuration')}
-                      </Typography>
-                      <Typography variant="h5">
-                        {formatDuration((historicalStats as DigitalStats).offDuration)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {(historicalStats as DigitalStats).offPercentage.toFixed(1)}%
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ flex: '1 1 250px', minWidth: 250 }} data-id-ref="statistics-page-historical-count">
-                    <Box textAlign="center">
-                      <Typography variant="caption" color="text.secondary">
-                        {t('statistics.count')}
-                      </Typography>
-                      <Typography variant="h5">
-                        {(historicalStats as DigitalStats).count}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </>
-              )}
-            </Box>
+          {dailyHistoricalStats && dailyHistoricalStats.length > 0 ? (
+            <TableContainer component={Paper} variant="outlined" data-id-ref="statistics-page-daily-table-container">
+              <Table size="small" data-id-ref="statistics-page-daily-table">
+                <TableHead>
+                  <TableRow data-id-ref="statistics-page-daily-table-header-row">
+                    <TableCell data-id-ref="statistics-page-daily-table-header-date">
+                      <strong>{t('date')}</strong>
+                    </TableCell>
+                    {isAnalog ? (
+                      <>
+                        <TableCell align="right" data-id-ref="statistics-page-daily-table-header-mean">
+                          <strong>{t('statistics.mean')}</strong>
+                        </TableCell>
+                        <TableCell align="right" data-id-ref="statistics-page-daily-table-header-min">
+                          <strong>{t('statistics.minimum')}</strong>
+                        </TableCell>
+                        <TableCell align="right" data-id-ref="statistics-page-daily-table-header-max">
+                          <strong>{t('statistics.maximum')}</strong>
+                        </TableCell>
+                        <TableCell align="right" data-id-ref="statistics-page-daily-table-header-std">
+                          <strong>{t('statistics.standardDeviation')}</strong>
+                        </TableCell>
+                        <TableCell align="right" data-id-ref="statistics-page-daily-table-header-count">
+                          <strong>{t('statistics.count')}</strong>
+                        </TableCell>
+                      </>
+                    ) : (
+                      <TableCell align="right" data-id-ref="statistics-page-daily-table-header-count">
+                        <strong>{t('statistics.count')}</strong>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {(dailyHistoricalStats as (DailyAnalogStats | DailyDigitalStats)[]).map((day, index) => (
+                    <TableRow 
+                      key={day.date} 
+                      hover
+                      data-id-ref={`statistics-page-daily-table-row-${index}`}
+                    >
+                      <TableCell data-id-ref={`statistics-page-daily-table-date-${index}`}>
+                        {day.date}
+                      </TableCell>
+                      {isAnalog ? (
+                        <>
+                          <TableCell align="right" data-id-ref={`statistics-page-daily-table-mean-${index}`}>
+                            {(day as DailyAnalogStats).mean != null 
+                              ? `${(day as DailyAnalogStats).mean.toFixed(2)} ${itemUnit}`
+                              : '-'}
+                          </TableCell>
+                          <TableCell align="right" data-id-ref={`statistics-page-daily-table-min-${index}`}>
+                            {(day as DailyAnalogStats).min != null 
+                              ? `${(day as DailyAnalogStats).min.toFixed(2)} ${itemUnit}`
+                              : '-'}
+                          </TableCell>
+                          <TableCell align="right" data-id-ref={`statistics-page-daily-table-max-${index}`}>
+                            {(day as DailyAnalogStats).max != null 
+                              ? `${(day as DailyAnalogStats).max.toFixed(2)} ${itemUnit}`
+                              : '-'}
+                          </TableCell>
+                          <TableCell align="right" data-id-ref={`statistics-page-daily-table-std-${index}`}>
+                            {(day as DailyAnalogStats).std != null 
+                              ? `${(day as DailyAnalogStats).std.toFixed(2)} ${itemUnit}`
+                              : '-'}
+                          </TableCell>
+                          <TableCell align="right" data-id-ref={`statistics-page-daily-table-count-${index}`}>
+                            {(day as DailyAnalogStats).count}
+                          </TableCell>
+                        </>
+                      ) : (
+                        <TableCell align="right" data-id-ref={`statistics-page-daily-table-count-${index}`}>
+                          {(day as DailyDigitalStats).count}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           ) : (
             <Typography color="text.secondary" data-id-ref="statistics-page-historical-loading">
               {loading ? t('loading') : t('noData')}
             </Typography>
+          )}
+          
+          {/* Summary Statistics */}
+          {historicalStats && (
+            <Box sx={{ mt: 3, pt: 3, borderTop: 1, borderColor: 'divider' }} data-id-ref="statistics-page-summary-statistics">
+              <Typography variant="h6" gutterBottom data-id-ref="statistics-page-summary-title">
+                {t('statistics.summary')}
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }} data-id-ref="statistics-page-summary-grid">
+                {isAnalog ? (
+                  <>
+                    <Box sx={{ flex: '1 1 150px', minWidth: 150 }} data-id-ref="statistics-page-summary-mean">
+                      <Box textAlign="center">
+                        <FunctionsIcon color="primary" />
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          {t('statistics.averageMean')}
+                        </Typography>
+                        <Typography variant="h6">
+                          {(historicalStats as AnalogStats).mean != null
+                            ? `${(historicalStats as AnalogStats).mean.toFixed(2)} ${itemUnit}`
+                            : t('noData')}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ flex: '1 1 150px', minWidth: 150 }} data-id-ref="statistics-page-summary-min">
+                      <Box textAlign="center">
+                        <TrendingUpIcon color="success" sx={{ transform: 'rotate(180deg)' }} />
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          {t('statistics.overallMinimum')}
+                        </Typography>
+                        <Typography variant="h6" color="success.main">
+                          {(historicalStats as AnalogStats).min != null
+                            ? `${(historicalStats as AnalogStats).min.toFixed(2)} ${itemUnit}`
+                            : t('noData')}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ flex: '1 1 150px', minWidth: 150 }} data-id-ref="statistics-page-summary-max">
+                      <Box textAlign="center">
+                        <TrendingUpIcon color="error" />
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          {t('statistics.overallMaximum')}
+                        </Typography>
+                        <Typography variant="h6" color="error.main">
+                          {(historicalStats as AnalogStats).max != null
+                            ? `${(historicalStats as AnalogStats).max.toFixed(2)} ${itemUnit}`
+                            : t('noData')}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ flex: '1 1 150px', minWidth: 150 }} data-id-ref="statistics-page-summary-std">
+                      <Box textAlign="center">
+                        <ShowChartIcon color="primary" />
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          {t('statistics.averageStdDev')}
+                        </Typography>
+                        <Typography variant="h6">
+                          {(historicalStats as AnalogStats).std != null
+                            ? `${(historicalStats as AnalogStats).std.toFixed(2)} ${itemUnit}`
+                            : t('statistics.insufficientData')}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ flex: '1 1 150px', minWidth: 150 }} data-id-ref="statistics-page-summary-count">
+                      <Box textAlign="center">
+                        <DataUsageIcon color="primary" />
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          {t('statistics.totalCount')}
+                        </Typography>
+                        <Typography variant="h6">
+                          {(historicalStats as AnalogStats).count}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </>
+                ) : (
+                  <>
+                    <Box sx={{ flex: '1 1 250px', minWidth: 250 }} data-id-ref="statistics-page-summary-on-duration">
+                      <Box textAlign="center">
+                        <Typography variant="caption" color="text.secondary">
+                          {t('statistics.onDuration')}
+                        </Typography>
+                        <Typography variant="h5" color="success.main">
+                          {formatDuration((historicalStats as DigitalStats).onDuration)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {(historicalStats as DigitalStats).onPercentage.toFixed(1)}%
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ flex: '1 1 250px', minWidth: 250 }} data-id-ref="statistics-page-summary-off-duration">
+                      <Box textAlign="center">
+                        <Typography variant="caption" color="text.secondary">
+                          {t('statistics.offDuration')}
+                        </Typography>
+                        <Typography variant="h5">
+                          {formatDuration((historicalStats as DigitalStats).offDuration)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {(historicalStats as DigitalStats).offPercentage.toFixed(1)}%
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ flex: '1 1 250px', minWidth: 250 }} data-id-ref="statistics-page-summary-count">
+                      <Box textAlign="center">
+                        <Typography variant="caption" color="text.secondary">
+                          {t('statistics.totalCount')}
+                        </Typography>
+                        <Typography variant="h5">
+                          {(historicalStats as DigitalStats).count}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </>
+                )}
+              </Box>
+            </Box>
           )}
         </CardContent>
       </Card>
