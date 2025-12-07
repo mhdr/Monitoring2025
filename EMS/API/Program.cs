@@ -290,6 +290,18 @@ builder.Services.AddSwaggerGen(c =>
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
 
+    // Custom schema ID selector to handle duplicate type names across different namespaces
+    c.CustomSchemaIds(type =>
+    {
+        // For types with duplicate names, include namespace to differentiate
+        var typeName = type.Name;
+        if (type.Namespace != null && (typeName == "IoOperationType" || type.FullName?.Contains("IoOperationType") == true))
+        {
+            return type.FullName?.Replace("+", ".").Replace(".", "_");
+        }
+        return typeName;
+    });
+
     // Configure Swagger to use JWT Bearer token
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
