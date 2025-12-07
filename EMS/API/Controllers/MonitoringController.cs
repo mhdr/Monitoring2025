@@ -1507,6 +1507,331 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
+    /// Calculate the minimum value grouped by Jalali date for an analog point within a time range
+    /// </summary>
+    /// <param name="request">Request containing point ID, start date, and end date (Unix epoch seconds)</param>
+    /// <returns>Daily minimum values in Jalali calendar format with Iran Standard Time</returns>
+    /// <remarks>
+    /// This endpoint groups data by Jalali (Persian) calendar dates using Iran Standard Time (UTC+3:30).
+    /// Only works for analog points (AnalogInput, AnalogOutput).
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/pointminbydate
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "startDate": 1697587200,
+    ///        "endDate": 1697673600
+    ///     }
+    ///     
+    /// Sample response:
+    /// 
+    ///     {
+    ///        "success": true,
+    ///        "dailyValues": [
+    ///          {
+    ///            "date": "1403/09/16",
+    ///            "value": 23.5,
+    ///            "count": 144
+    ///          }
+    ///        ]
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the daily minimum values</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails or point is not analog</response>
+    /// <response code="404">If the point is not found</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpPost("PointMinByDate")]
+    [ProducesResponseType(typeof(PointMinByDateResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PointMinByDate([FromBody] PointMinByDateRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("Unauthorized access attempt to PointMinByDate endpoint (no user id)");
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("Validation failed for PointMinByDate request by {UserId}: {Errors}", userId, string.Join("; ", errors));
+
+                return BadRequest(new PointMinByDateResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = $"Validation failed: {string.Join("; ", errors)}"
+                });
+            }
+
+            _logger.LogInformation("Calculating daily minimum for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
+                request.ItemId, request.StartDate, request.EndDate, userId);
+
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+
+            if (monitoringItem == null)
+            {
+                _logger.LogWarning("Point {ItemId} not found for daily minimum", request.ItemId);
+                return NotFound(new PointMinByDateResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Point not found",
+                    ItemId = request.ItemId
+                });
+            }
+
+            if (monitoringItem.ItemType != ItemType.AnalogInput && monitoringItem.ItemType != ItemType.AnalogOutput)
+            {
+                _logger.LogWarning("Point {ItemId} is not an analog point (type: {ItemType}), minimum by date calculation is not applicable", 
+                    request.ItemId, monitoringItem.ItemType);
+                return BadRequest(new PointMinByDateResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Minimum calculation is only meaningful for analog points",
+                    ItemId = request.ItemId
+                });
+            }
+
+            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+
+            if (values == null || values.Count == 0)
+            {
+                _logger.LogInformation("No data found for point {ItemId} in the specified range", request.ItemId);
+                return Ok(new PointMinByDateResponseDto
+                {
+                    Success = true,
+                    ItemId = request.ItemId,
+                    DailyValues = new List<DailyMinValue>()
+                });
+            }
+
+            var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+            var persianCalendar = new System.Globalization.PersianCalendar();
+
+            // Parse string values to doubles and group by date
+            var parsedValues = new List<(string Date, double Value)>();
+            foreach (var v in values)
+            {
+                if (double.TryParse(v.Value, out double numericValue))
+                {
+                    var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time);
+                    var iranTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone);
+                    var year = persianCalendar.GetYear(iranTime.DateTime);
+                    var month = persianCalendar.GetMonth(iranTime.DateTime);
+                    var day = persianCalendar.GetDayOfMonth(iranTime.DateTime);
+                    var dateStr = $"{year:D4}/{month:D2}/{day:D2}";
+                    parsedValues.Add((dateStr, numericValue));
+                }
+            }
+
+            if (parsedValues.Count == 0)
+            {
+                _logger.LogWarning("No valid numeric values found for point {ItemId}", request.ItemId);
+                return Ok(new PointMinByDateResponseDto
+                {
+                    Success = true,
+                    ItemId = request.ItemId,
+                    DailyValues = new List<DailyMinValue>(),
+                    ErrorMessage = "No valid numeric values found in the specified time range"
+                });
+            }
+
+            var dailyGroups = parsedValues
+                .GroupBy(v => v.Date)
+                .Select(g => new DailyMinValue
+                {
+                    Date = g.Key,
+                    Value = g.Min(v => v.Value),
+                    Count = g.Count()
+                })
+                .OrderBy(d => d.Date)
+                .ToList();
+
+            _logger.LogInformation("Successfully calculated daily minimums for point {ItemId} across {Days} days", 
+                request.ItemId, dailyGroups.Count);
+
+            return Ok(new PointMinByDateResponseDto
+            {
+                Success = true,
+                ItemId = request.ItemId,
+                DailyValues = dailyGroups
+            });
+        }
+        catch (FormatException ex)
+        {
+            _logger.LogError(ex, "Invalid GUID format for ItemId: {ItemId}", request?.ItemId);
+            return BadRequest(new PointMinByDateResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Invalid item ID format",
+                ItemId = request?.ItemId
+            });
+        }
+        catch (TimeZoneNotFoundException ex)
+        {
+            _logger.LogError(ex, "Iran Standard Time zone not found on this system");
+            return StatusCode(500, new PointMinByDateResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Time zone configuration error",
+                ItemId = request?.ItemId
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating daily minimum for point {ItemId}", request?.ItemId);
+            return StatusCode(500, new PointMinByDateResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Internal server error while calculating daily minimum",
+                ItemId = request?.ItemId
+            });
+        }
+    }
+
+    /// <summary>
+    /// Calculate the maximum value grouped by Jalali date for an analog point within a time range
+    /// </summary>
+    [HttpPost("PointMaxByDate")]
+    [ProducesResponseType(typeof(PointMaxByDateResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PointMaxByDate([FromBody] PointMaxByDateRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) { _logger.LogWarning("Unauthorized access attempt to PointMaxByDate endpoint"); return Unauthorized(); }
+            if (!ModelState.IsValid) { var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList(); return BadRequest(new PointMaxByDateResponseDto { Success = false, ErrorMessage = $"Validation failed: {string.Join("; ", errors)}" }); }
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+            if (monitoringItem == null) { return NotFound(new PointMaxByDateResponseDto { Success = false, ErrorMessage = "Point not found", ItemId = request.ItemId }); }
+            if (monitoringItem.ItemType != ItemType.AnalogInput && monitoringItem.ItemType != ItemType.AnalogOutput) { return BadRequest(new PointMaxByDateResponseDto { Success = false, ErrorMessage = "Maximum calculation is only meaningful for analog points", ItemId = request.ItemId }); }
+            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+            if (values == null || values.Count == 0) { return Ok(new PointMaxByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyMaxValue>() }); }
+            var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+            var persianCalendar = new System.Globalization.PersianCalendar();
+            var parsedValues = new List<(string Date, double Value)>();
+            foreach (var v in values) { if (double.TryParse(v.Value, out double numericValue)) { var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time); var iranTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone); var year = persianCalendar.GetYear(iranTime.DateTime); var month = persianCalendar.GetMonth(iranTime.DateTime); var day = persianCalendar.GetDayOfMonth(iranTime.DateTime); parsedValues.Add(($"{year:D4}/{month:D2}/{day:D2}", numericValue)); } }
+            if (parsedValues.Count == 0) { return Ok(new PointMaxByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyMaxValue>() }); }
+            var dailyGroups = parsedValues.GroupBy(v => v.Date).Select(g => new DailyMaxValue { Date = g.Key, Value = g.Max(v => v.Value), Count = g.Count() }).OrderBy(d => d.Date).ToList();
+            return Ok(new PointMaxByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = dailyGroups });
+        }
+        catch (Exception ex) { _logger.LogError(ex, "Error calculating daily maximum"); return StatusCode(500, new PointMaxByDateResponseDto { Success = false, ErrorMessage = "Internal server error", ItemId = request?.ItemId }); }
+    }
+
+    /// <summary>
+    /// Calculate the mean (average) value grouped by Jalali date for an analog point within a time range
+    /// </summary>
+    [HttpPost("PointMeanByDate")]
+    [ProducesResponseType(typeof(PointMeanByDateResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PointMeanByDate([FromBody] PointMeanByDateRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) { return Unauthorized(); }
+            if (!ModelState.IsValid) { var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList(); return BadRequest(new PointMeanByDateResponseDto { Success = false, ErrorMessage = $"Validation failed: {string.Join("; ", errors)}" }); }
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+            if (monitoringItem == null) { return NotFound(new PointMeanByDateResponseDto { Success = false, ErrorMessage = "Point not found", ItemId = request.ItemId }); }
+            if (monitoringItem.ItemType != ItemType.AnalogInput && monitoringItem.ItemType != ItemType.AnalogOutput) { return BadRequest(new PointMeanByDateResponseDto { Success = false, ErrorMessage = "Mean calculation is only meaningful for analog points", ItemId = request.ItemId }); }
+            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+            if (values == null || values.Count == 0) { return Ok(new PointMeanByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyMeanValue>() }); }
+            var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+            var persianCalendar = new System.Globalization.PersianCalendar();
+            var parsedValues = new List<(string Date, double Value)>();
+            foreach (var v in values) { if (double.TryParse(v.Value, out double numericValue)) { var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time); var iranTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone); var year = persianCalendar.GetYear(iranTime.DateTime); var month = persianCalendar.GetMonth(iranTime.DateTime); var day = persianCalendar.GetDayOfMonth(iranTime.DateTime); parsedValues.Add(($"{year:D4}/{month:D2}/{day:D2}", numericValue)); } }
+            if (parsedValues.Count == 0) { return Ok(new PointMeanByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyMeanValue>() }); }
+            var dailyGroups = parsedValues.GroupBy(v => v.Date).Select(g => new DailyMeanValue { Date = g.Key, Value = g.Average(v => v.Value), Count = g.Count() }).OrderBy(d => d.Date).ToList();
+            return Ok(new PointMeanByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = dailyGroups });
+        }
+        catch (Exception ex) { _logger.LogError(ex, "Error calculating daily mean"); return StatusCode(500, new PointMeanByDateResponseDto { Success = false, ErrorMessage = "Internal server error", ItemId = request?.ItemId }); }
+    }
+
+    /// <summary>
+    /// Calculate the standard deviation grouped by Jalali date for an analog point within a time range
+    /// </summary>
+    [HttpPost("PointStdByDate")]
+    [ProducesResponseType(typeof(PointStdByDateResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PointStdByDate([FromBody] PointStdByDateRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) { return Unauthorized(); }
+            if (!ModelState.IsValid) { var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList(); return BadRequest(new PointStdByDateResponseDto { Success = false, ErrorMessage = $"Validation failed: {string.Join("; ", errors)}" }); }
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+            if (monitoringItem == null) { return NotFound(new PointStdByDateResponseDto { Success = false, ErrorMessage = "Point not found", ItemId = request.ItemId }); }
+            if (monitoringItem.ItemType != ItemType.AnalogInput && monitoringItem.ItemType != ItemType.AnalogOutput) { return BadRequest(new PointStdByDateResponseDto { Success = false, ErrorMessage = "Standard deviation calculation is only meaningful for analog points", ItemId = request.ItemId }); }
+            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+            if (values == null || values.Count == 0) { return Ok(new PointStdByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyStdValue>() }); }
+            var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+            var persianCalendar = new System.Globalization.PersianCalendar();
+            var parsedValues = new List<(string Date, double Value)>();
+            foreach (var v in values) { if (double.TryParse(v.Value, out double numericValue)) { var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time); var iranTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone); var year = persianCalendar.GetYear(iranTime.DateTime); var month = persianCalendar.GetMonth(iranTime.DateTime); var day = persianCalendar.GetDayOfMonth(iranTime.DateTime); parsedValues.Add(($"{year:D4}/{month:D2}/{day:D2}", numericValue)); } }
+            if (parsedValues.Count == 0) { return Ok(new PointStdByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyStdValue>() }); }
+            var dailyGroups = parsedValues.GroupBy(v => v.Date).Where(g => g.Count() >= 2).Select(g => { var vals = g.Select(x => x.Value).ToList(); var mean = vals.Average(); var variance = vals.Sum(val => Math.Pow(val - mean, 2)) / vals.Count; return new DailyStdValue { Date = g.Key, Value = Math.Sqrt(variance), Count = vals.Count }; }).OrderBy(d => d.Date).ToList();
+            return Ok(new PointStdByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = dailyGroups });
+        }
+        catch (Exception ex) { _logger.LogError(ex, "Error calculating daily standard deviation"); return StatusCode(500, new PointStdByDateResponseDto { Success = false, ErrorMessage = "Internal server error", ItemId = request?.ItemId }); }
+    }
+
+    /// <summary>
+    /// Count data points grouped by Jalali date within a time range (works for both analog and digital points)
+    /// </summary>
+    [HttpPost("PointCountByDate")]
+    [ProducesResponseType(typeof(PointCountByDateResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PointCountByDate([FromBody] PointCountByDateRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) { return Unauthorized(); }
+            if (!ModelState.IsValid) { var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList(); return BadRequest(new PointCountByDateResponseDto { Success = false, ErrorMessage = $"Validation failed: {string.Join("; ", errors)}" }); }
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+            if (monitoringItem == null) { return NotFound(new PointCountByDateResponseDto { Success = false, ErrorMessage = "Point not found", ItemId = request.ItemId }); }
+            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+            if (values == null || values.Count == 0) { return Ok(new PointCountByDateResponseDto { Success = true, ItemId = request.ItemId, DailyCounts = new List<DailyCount>() }); }
+            var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+            var persianCalendar = new System.Globalization.PersianCalendar();
+            var dailyGroups = values.GroupBy(v => { var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time); var iranTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone); var year = persianCalendar.GetYear(iranTime.DateTime); var month = persianCalendar.GetMonth(iranTime.DateTime); var day = persianCalendar.GetDayOfMonth(iranTime.DateTime); return $"{year:D4}/{month:D2}/{day:D2}"; }).Select(g => new DailyCount { Date = g.Key, Count = g.Count() }).OrderBy(d => d.Date).ToList();
+            return Ok(new PointCountByDateResponseDto { Success = true, ItemId = request.ItemId, DailyCounts = dailyGroups });
+        }
+        catch (Exception ex) { _logger.LogError(ex, "Error counting by date"); return StatusCode(500, new PointCountByDateResponseDto { Success = false, ErrorMessage = "Internal server error", ItemId = request?.ItemId }); }
+    }
+
+    /// <summary>
     /// Get configured alarms for specified monitoring items
     /// </summary>
     /// <param name="request">Alarms request containing list of item IDs to retrieve alarms for</param>
