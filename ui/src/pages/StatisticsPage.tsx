@@ -265,6 +265,7 @@ const StatisticsPage: React.FC = () => {
 
     try {
       const { startDate, endDate } = getDateRange;
+      const calendar = language === 'fa' ? 'jalali' : 'gregorian';
 
       // Validate date range
       if (startDate >= endDate) {
@@ -275,11 +276,11 @@ const StatisticsPage: React.FC = () => {
 
       if (isAnalog) {
         const [meanRes, minRes, maxRes, stdRes, countRes] = await Promise.all([
-          getPointMeanByDate({ itemId, startDate, endDate }),
-          getPointMinByDate({ itemId, startDate, endDate }),
-          getPointMaxByDate({ itemId, startDate, endDate }),
-          getPointStdByDate({ itemId, startDate, endDate }),
-          getPointCountByDate({ itemId, startDate, endDate }),
+          getPointMeanByDate({ itemId, startDate, endDate, calendar }),
+          getPointMinByDate({ itemId, startDate, endDate, calendar }),
+          getPointMaxByDate({ itemId, startDate, endDate, calendar }),
+          getPointStdByDate({ itemId, startDate, endDate, calendar }),
+          getPointCountByDate({ itemId, startDate, endDate, calendar }),
         ]);
 
         // Store daily data for table display
@@ -333,7 +334,7 @@ const StatisticsPage: React.FC = () => {
         const results = await Promise.allSettled([
           calculateStateDuration({ itemId, startDate, endDate, value: "1" }),
           calculateStateDuration({ itemId, startDate, endDate, value: "0" }),
-          getPointCountByDate({ itemId, startDate, endDate }),
+          getPointCountByDate({ itemId, startDate, endDate, calendar }),
         ]);
 
         // Check if all requests succeeded or if some were cancelled
@@ -445,7 +446,7 @@ const StatisticsPage: React.FC = () => {
       clearTimeout(timeoutId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemId, selectedPreset, isAnalog]);
+  }, [itemId, selectedPreset, isAnalog, language]);
 
   // Handle preset change
   const handlePresetChange = (preset: DateRangePreset) => {

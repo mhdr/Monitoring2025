@@ -1686,12 +1686,12 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
-    /// Calculate the minimum value grouped by Jalali date for an analog point within a time range
+    /// Calculate the minimum value grouped by the requested calendar (Jalali or Gregorian) for an analog point within a time range
     /// </summary>
     /// <param name="request">Request containing point ID, start date, and end date (Unix epoch seconds)</param>
     /// <returns>Daily minimum values in Jalali calendar format with Iran Standard Time</returns>
     /// <remarks>
-    /// This endpoint groups data by Jalali (Persian) calendar dates using Iran Standard Time (UTC+3:30).
+    /// This endpoint groups data by the requested calendar using Iran Standard Time (UTC+3:30).
     /// Only works for analog points (AnalogInput, AnalogOutput).
     /// 
     /// Sample request:
@@ -1700,7 +1700,8 @@ public class MonitoringController : ControllerBase
     ///     {
     ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
     ///        "startDate": 1697587200,
-    ///        "endDate": 1697673600
+    ///        "endDate": 1697673600,
+    ///        "calendar": "jalali" // or "gregorian"
     ///     }
     ///     
     /// Sample response:
@@ -1800,6 +1801,21 @@ public class MonitoringController : ControllerBase
 
             var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
             var persianCalendar = new System.Globalization.PersianCalendar();
+            var calendar = (request.Calendar ?? "jalali").ToLowerInvariant();
+
+            string FormatDate(DateTimeOffset utcTime)
+            {
+                var localTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone);
+                if (calendar == "gregorian")
+                {
+                    return localTime.ToString("yyyy/MM/dd");
+                }
+
+                var year = persianCalendar.GetYear(localTime.DateTime);
+                var month = persianCalendar.GetMonth(localTime.DateTime);
+                var day = persianCalendar.GetDayOfMonth(localTime.DateTime);
+                return $"{year:D4}/{month:D2}/{day:D2}";
+            }
 
             // Parse string values to doubles and group by date
             var parsedValues = new List<(string Date, double Value)>();
@@ -1808,12 +1824,7 @@ public class MonitoringController : ControllerBase
                 if (double.TryParse(v.Value, out double numericValue))
                 {
                     var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time);
-                    var iranTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone);
-                    var year = persianCalendar.GetYear(iranTime.DateTime);
-                    var month = persianCalendar.GetMonth(iranTime.DateTime);
-                    var day = persianCalendar.GetDayOfMonth(iranTime.DateTime);
-                    var dateStr = $"{year:D4}/{month:D2}/{day:D2}";
-                    parsedValues.Add((dateStr, numericValue));
+                    parsedValues.Add((FormatDate(utcTime), numericValue));
                 }
             }
 
@@ -1883,7 +1894,7 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
-    /// Calculate the maximum value grouped by Jalali date for an analog point within a time range
+    /// Calculate the maximum value grouped by the requested calendar (Jalali or Gregorian) for an analog point within a time range
     /// </summary>
     [HttpPost("PointMaxByDate")]
     [ProducesResponseType(typeof(PointMaxByDateResponseDto), StatusCodes.Status200OK)]
@@ -1906,8 +1917,31 @@ public class MonitoringController : ControllerBase
             if (values == null || values.Count == 0) { return Ok(new PointMaxByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyMaxValue>() }); }
             var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
             var persianCalendar = new System.Globalization.PersianCalendar();
+            var calendar = (request.Calendar ?? "jalali").ToLowerInvariant();
+
+            string FormatDate(DateTimeOffset utcTime)
+            {
+                var localTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone);
+                if (calendar == "gregorian")
+                {
+                    return localTime.ToString("yyyy/MM/dd");
+                }
+
+                var year = persianCalendar.GetYear(localTime.DateTime);
+                var month = persianCalendar.GetMonth(localTime.DateTime);
+                var day = persianCalendar.GetDayOfMonth(localTime.DateTime);
+                return $"{year:D4}/{month:D2}/{day:D2}";
+            }
+
             var parsedValues = new List<(string Date, double Value)>();
-            foreach (var v in values) { if (double.TryParse(v.Value, out double numericValue)) { var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time); var iranTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone); var year = persianCalendar.GetYear(iranTime.DateTime); var month = persianCalendar.GetMonth(iranTime.DateTime); var day = persianCalendar.GetDayOfMonth(iranTime.DateTime); parsedValues.Add(($"{year:D4}/{month:D2}/{day:D2}", numericValue)); } }
+            foreach (var v in values)
+            {
+                if (double.TryParse(v.Value, out double numericValue))
+                {
+                    var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time);
+                    parsedValues.Add((FormatDate(utcTime), numericValue));
+                }
+            }
             if (parsedValues.Count == 0) { return Ok(new PointMaxByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyMaxValue>() }); }
             var dailyGroups = parsedValues.GroupBy(v => v.Date).Select(g => new DailyMaxValue { Date = g.Key, Value = g.Max(v => v.Value), Count = g.Count() }).OrderBy(d => d.Date).ToList();
             return Ok(new PointMaxByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = dailyGroups });
@@ -1916,7 +1950,7 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
-    /// Calculate the mean (average) value grouped by Jalali date for an analog point within a time range
+    /// Calculate the mean (average) value grouped by the requested calendar (Jalali or Gregorian) for an analog point within a time range
     /// </summary>
     [HttpPost("PointMeanByDate")]
     [ProducesResponseType(typeof(PointMeanByDateResponseDto), StatusCodes.Status200OK)]
@@ -1939,8 +1973,31 @@ public class MonitoringController : ControllerBase
             if (values == null || values.Count == 0) { return Ok(new PointMeanByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyMeanValue>() }); }
             var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
             var persianCalendar = new System.Globalization.PersianCalendar();
+            var calendar = (request.Calendar ?? "jalali").ToLowerInvariant();
+
+            string FormatDate(DateTimeOffset utcTime)
+            {
+                var localTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone);
+                if (calendar == "gregorian")
+                {
+                    return localTime.ToString("yyyy/MM/dd");
+                }
+
+                var year = persianCalendar.GetYear(localTime.DateTime);
+                var month = persianCalendar.GetMonth(localTime.DateTime);
+                var day = persianCalendar.GetDayOfMonth(localTime.DateTime);
+                return $"{year:D4}/{month:D2}/{day:D2}";
+            }
+
             var parsedValues = new List<(string Date, double Value)>();
-            foreach (var v in values) { if (double.TryParse(v.Value, out double numericValue)) { var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time); var iranTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone); var year = persianCalendar.GetYear(iranTime.DateTime); var month = persianCalendar.GetMonth(iranTime.DateTime); var day = persianCalendar.GetDayOfMonth(iranTime.DateTime); parsedValues.Add(($"{year:D4}/{month:D2}/{day:D2}", numericValue)); } }
+            foreach (var v in values)
+            {
+                if (double.TryParse(v.Value, out double numericValue))
+                {
+                    var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time);
+                    parsedValues.Add((FormatDate(utcTime), numericValue));
+                }
+            }
             if (parsedValues.Count == 0) { return Ok(new PointMeanByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyMeanValue>() }); }
             var dailyGroups = parsedValues.GroupBy(v => v.Date).Select(g => new DailyMeanValue { Date = g.Key, Value = g.Average(v => v.Value), Count = g.Count() }).OrderBy(d => d.Date).ToList();
             return Ok(new PointMeanByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = dailyGroups });
@@ -1949,7 +2006,7 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
-    /// Calculate the standard deviation grouped by Jalali date for an analog point within a time range
+    /// Calculate the standard deviation grouped by the requested calendar (Jalali or Gregorian) for an analog point within a time range
     /// </summary>
     [HttpPost("PointStdByDate")]
     [ProducesResponseType(typeof(PointStdByDateResponseDto), StatusCodes.Status200OK)]
@@ -1972,8 +2029,31 @@ public class MonitoringController : ControllerBase
             if (values == null || values.Count == 0) { return Ok(new PointStdByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyStdValue>() }); }
             var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
             var persianCalendar = new System.Globalization.PersianCalendar();
+            var calendar = (request.Calendar ?? "jalali").ToLowerInvariant();
+
+            string FormatDate(DateTimeOffset utcTime)
+            {
+                var localTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone);
+                if (calendar == "gregorian")
+                {
+                    return localTime.ToString("yyyy/MM/dd");
+                }
+
+                var year = persianCalendar.GetYear(localTime.DateTime);
+                var month = persianCalendar.GetMonth(localTime.DateTime);
+                var day = persianCalendar.GetDayOfMonth(localTime.DateTime);
+                return $"{year:D4}/{month:D2}/{day:D2}";
+            }
+
             var parsedValues = new List<(string Date, double Value)>();
-            foreach (var v in values) { if (double.TryParse(v.Value, out double numericValue)) { var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time); var iranTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone); var year = persianCalendar.GetYear(iranTime.DateTime); var month = persianCalendar.GetMonth(iranTime.DateTime); var day = persianCalendar.GetDayOfMonth(iranTime.DateTime); parsedValues.Add(($"{year:D4}/{month:D2}/{day:D2}", numericValue)); } }
+            foreach (var v in values)
+            {
+                if (double.TryParse(v.Value, out double numericValue))
+                {
+                    var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time);
+                    parsedValues.Add((FormatDate(utcTime), numericValue));
+                }
+            }
             if (parsedValues.Count == 0) { return Ok(new PointStdByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = new List<DailyStdValue>() }); }
             var dailyGroups = parsedValues.GroupBy(v => v.Date).Where(g => g.Count() >= 2).Select(g => { var vals = g.Select(x => x.Value).ToList(); var mean = vals.Average(); var variance = vals.Sum(val => Math.Pow(val - mean, 2)) / vals.Count; return new DailyStdValue { Date = g.Key, Value = Math.Sqrt(variance), Count = vals.Count }; }).OrderBy(d => d.Date).ToList();
             return Ok(new PointStdByDateResponseDto { Success = true, ItemId = request.ItemId, DailyValues = dailyGroups });
@@ -1982,7 +2062,7 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
-    /// Count data points grouped by Jalali date within a time range (works for both analog and digital points)
+    /// Count data points grouped by the requested calendar (Jalali or Gregorian) within a time range (works for both analog and digital points)
     /// </summary>
     [HttpPost("PointCountByDate")]
     [ProducesResponseType(typeof(PointCountByDateResponseDto), StatusCodes.Status200OK)]
@@ -2004,7 +2084,31 @@ public class MonitoringController : ControllerBase
             if (values == null || values.Count == 0) { return Ok(new PointCountByDateResponseDto { Success = true, ItemId = request.ItemId, DailyCounts = new List<DailyCount>() }); }
             var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
             var persianCalendar = new System.Globalization.PersianCalendar();
-            var dailyGroups = values.GroupBy(v => { var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time); var iranTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone); var year = persianCalendar.GetYear(iranTime.DateTime); var month = persianCalendar.GetMonth(iranTime.DateTime); var day = persianCalendar.GetDayOfMonth(iranTime.DateTime); return $"{year:D4}/{month:D2}/{day:D2}"; }).Select(g => new DailyCount { Date = g.Key, Count = g.Count() }).OrderBy(d => d.Date).ToList();
+            var calendar = (request.Calendar ?? "jalali").ToLowerInvariant();
+
+            string FormatDate(DateTimeOffset utcTime)
+            {
+                var localTime = TimeZoneInfo.ConvertTime(utcTime, iranTimeZone);
+                if (calendar == "gregorian")
+                {
+                    return localTime.ToString("yyyy/MM/dd");
+                }
+
+                var year = persianCalendar.GetYear(localTime.DateTime);
+                var month = persianCalendar.GetMonth(localTime.DateTime);
+                var day = persianCalendar.GetDayOfMonth(localTime.DateTime);
+                return $"{year:D4}/{month:D2}/{day:D2}";
+            }
+
+            var dailyGroups = values
+                .GroupBy(v =>
+                {
+                    var utcTime = DateTimeOffset.FromUnixTimeSeconds(v.Time);
+                    return FormatDate(utcTime);
+                })
+                .Select(g => new DailyCount { Date = g.Key, Count = g.Count() })
+                .OrderBy(d => d.Date)
+                .ToList();
             return Ok(new PointCountByDateResponseDto { Success = true, ItemId = request.ItemId, DailyCounts = dailyGroups });
         }
         catch (Exception ex) { _logger.LogError(ex, "Error counting by date"); return StatusCode(500, new PointCountByDateResponseDto { Success = false, ErrorMessage = "Internal server error", ItemId = request?.ItemId }); }

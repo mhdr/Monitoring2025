@@ -31,6 +31,12 @@ public class PointCountByDateRequestDto : IValidatableObject
     public long EndDate { get; set; }
 
     /// <summary>
+    /// Calendar system for grouping dates ("jalali" or "gregorian"), defaults to Jalali.
+    /// </summary>
+    [JsonPropertyName("calendar")]
+    public string Calendar { get; set; } = "jalali";
+
+    /// <summary>
     /// Performs custom validation that cannot be expressed with attributes alone.
     /// </summary>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -43,6 +49,15 @@ public class PointCountByDateRequestDto : IValidatableObject
         if (StartDate > EndDate)
         {
             yield return new ValidationResult("startDate must be less than or equal to endDate", new[] { nameof(StartDate), nameof(EndDate) });
+        }
+
+        if (!string.IsNullOrWhiteSpace(Calendar))
+        {
+            var calendarLower = Calendar.ToLowerInvariant();
+            if (calendarLower != "jalali" && calendarLower != "gregorian")
+            {
+                yield return new ValidationResult("calendar must be either 'jalali' or 'gregorian'", new[] { nameof(Calendar) });
+            }
         }
     }
 }

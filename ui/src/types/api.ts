@@ -2102,13 +2102,14 @@ export interface PointStatsByDateRequestDto {
   itemId: string; // Item identifier
   startDate: number; // Start time as Unix seconds since epoch (UTC) (int64)
   endDate: number; // End time as Unix seconds since epoch (UTC) (int64)
+  calendar?: 'jalali' | 'gregorian'; // Calendar to use for grouping daily results
 }
 
 /**
  * Daily mean value result
  */
 export interface DailyMeanValue {
-  date: string; // Jalali date (e.g., "1404/09/16")
+  date: string; // Date string in requested calendar (e.g., Jalali 1404/09/16 or Gregorian 2025/12/08)
   value: number; // Mean value for this date
   count: number; // Number of data points
 }
