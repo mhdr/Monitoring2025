@@ -2,8 +2,6 @@ using System.Security.Claims;
 using API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using SignalRSwaggerGen.Attributes;
-using SignalRSwaggerGen.Enums;
 
 namespace API.Hubs;
 
@@ -138,12 +136,6 @@ namespace API.Hubs;
 /// </code>
 /// </remarks>
 [Authorize]
-[SignalRHub(
-    path: "/hubs/monitoring",
-    autoDiscover: AutoDiscover.MethodsAndParams,
-    documentNames: new[] { "v1" },
-    tag: "SignalR - Monitoring Hub"
-)]
 public class MonitoringHub : Hub
 {
     private readonly ILogger<MonitoringHub> _logger;
@@ -231,11 +223,6 @@ public class MonitoringHub : Hub
     /// </code>
     /// </remarks>
     /// <returns>A task representing the asynchronous operation.</returns>
-    [SignalRMethod(
-        summary: "Subscribe to active alarms updates",
-        description: "Explicitly subscribe to receive real-time active alarm count updates. This is optional as the server automatically broadcasts updates to all connected clients.",
-        autoDiscover: AutoDiscover.Params
-    )]
     public async Task SubscribeToActiveAlarms()
     {
         var userId = Context.User?.Identity?.Name ?? "Unknown";
