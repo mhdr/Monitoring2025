@@ -18,17 +18,19 @@ public class PointMaxRequestDto : IValidatableObject
 
     /// <summary>
     /// Start time as Unix seconds since epoch (UTC).
+    /// If not provided, defaults to 24 hours before EndDate.
     /// </summary>
     [Range(0, long.MaxValue, ErrorMessage = "startDate must be a non-negative Unix timestamp in seconds")]
     [JsonPropertyName("startDate")]
-    public long StartDate { get; set; }
+    public long? StartDate { get; set; }
 
     /// <summary>
     /// End time as Unix seconds since epoch (UTC).
+    /// If not provided, defaults to current time.
     /// </summary>
     [Range(0, long.MaxValue, ErrorMessage = "endDate must be a non-negative Unix timestamp in seconds")]
     [JsonPropertyName("endDate")]
-    public long EndDate { get; set; }
+    public long? EndDate { get; set; }
 
     /// <summary>
     /// Performs custom validation that cannot be expressed with attributes alone.
@@ -41,7 +43,7 @@ public class PointMaxRequestDto : IValidatableObject
             yield return new ValidationResult("itemId must not be empty", new[] { nameof(ItemId) });
         }
 
-        if (StartDate > EndDate)
+        if (StartDate.HasValue && EndDate.HasValue && StartDate > EndDate)
         {
             yield return new ValidationResult("startDate must be less than or equal to endDate", new[] { nameof(StartDate), nameof(EndDate) });
         }

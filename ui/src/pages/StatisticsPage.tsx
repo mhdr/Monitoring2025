@@ -362,7 +362,7 @@ const StatisticsPage: React.FC = () => {
         {
           name: t('statistics.mean'),
           type: 'bar',
-          data: [stats.mean],
+          data: [stats.mean ?? 0],
           itemStyle: {
             color: theme.palette.primary.main,
           },
@@ -370,7 +370,7 @@ const StatisticsPage: React.FC = () => {
         {
           name: t('statistics.minimum'),
           type: 'bar',
-          data: [stats.min],
+          data: [stats.min ?? 0],
           itemStyle: {
             color: theme.palette.success.main,
           },
@@ -378,7 +378,7 @@ const StatisticsPage: React.FC = () => {
         {
           name: t('statistics.maximum'),
           type: 'bar',
-          data: [stats.max],
+          data: [stats.max ?? 0],
           itemStyle: {
             color: theme.palette.error.main,
           },
@@ -786,8 +786,8 @@ const StatisticsPage: React.FC = () => {
                         {t('statistics.mean')}
                       </Typography>
                       <Typography variant="h6">
-                        {(historicalStats as AnalogStats).mean !== null 
-                          ? `${(historicalStats as AnalogStats).mean?.toFixed(2)} ${itemUnit}`
+                        {(historicalStats as AnalogStats).mean != null
+                          ? `${(historicalStats as AnalogStats).mean.toFixed(2)} ${itemUnit}`
                           : t('noData')}
                       </Typography>
                     </Box>
@@ -799,8 +799,8 @@ const StatisticsPage: React.FC = () => {
                         {t('statistics.minimum')}
                       </Typography>
                       <Typography variant="h6" color="success.main">
-                        {(historicalStats as AnalogStats).min !== null 
-                          ? `${(historicalStats as AnalogStats).min?.toFixed(2)} ${itemUnit}`
+                        {(historicalStats as AnalogStats).min != null
+                          ? `${(historicalStats as AnalogStats).min.toFixed(2)} ${itemUnit}`
                           : t('noData')}
                       </Typography>
                     </Box>
@@ -812,8 +812,8 @@ const StatisticsPage: React.FC = () => {
                         {t('statistics.maximum')}
                       </Typography>
                       <Typography variant="h6" color="error.main">
-                        {(historicalStats as AnalogStats).max !== null 
-                          ? `${(historicalStats as AnalogStats).max?.toFixed(2)} ${itemUnit}`
+                        {(historicalStats as AnalogStats).max != null
+                          ? `${(historicalStats as AnalogStats).max.toFixed(2)} ${itemUnit}`
                           : t('noData')}
                       </Typography>
                     </Box>
@@ -825,8 +825,8 @@ const StatisticsPage: React.FC = () => {
                         {t('statistics.standardDeviation')}
                       </Typography>
                       <Typography variant="h6">
-                        {(historicalStats as AnalogStats).std !== null 
-                          ? `${(historicalStats as AnalogStats).std?.toFixed(2)} ${itemUnit}`
+                        {(historicalStats as AnalogStats).std != null
+                          ? `${(historicalStats as AnalogStats).std.toFixed(2)} ${itemUnit}`
                           : t('statistics.insufficientData')}
                       </Typography>
                     </Box>

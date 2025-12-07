@@ -936,8 +936,13 @@ public class MonitoringController : ControllerBase
                 });
             }
 
+            // Default to last 24 hours if dates not provided
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var startDate = request.StartDate ?? now - (24 * 60 * 60); // 24 hours ago
+            var endDate = request.EndDate ?? now;
+
             _logger.LogInformation("Calculating mean for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
-                request.ItemId, request.StartDate, request.EndDate, userId);
+                request.ItemId, startDate, endDate, userId);
 
             // Get the monitoring item to check if it's analog
             var itemGuid = Guid.Parse(request.ItemId!);
@@ -970,7 +975,7 @@ public class MonitoringController : ControllerBase
             }
 
             // Get historical data
-            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+            var values = await Core.Points.GetHistory(request.ItemId!, startDate, endDate);
 
             if (values == null || values.Count == 0)
             {
@@ -1101,8 +1106,13 @@ public class MonitoringController : ControllerBase
                 });
             }
 
+            // Default to last 24 hours if dates not provided
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var startDate = request.StartDate ?? now - (24 * 60 * 60); // 24 hours ago
+            var endDate = request.EndDate ?? now;
+
             _logger.LogInformation("Calculating minimum for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
-                request.ItemId, request.StartDate, request.EndDate, userId);
+                request.ItemId, startDate, endDate, userId);
 
             var itemGuid = Guid.Parse(request.ItemId!);
             var monitoringItem = await Core.Points.GetPoint(itemGuid);
@@ -1132,7 +1142,7 @@ public class MonitoringController : ControllerBase
                 });
             }
 
-            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+            var values = await Core.Points.GetHistory(request.ItemId!, startDate, endDate);
 
             if (values == null || values.Count == 0)
             {
@@ -1262,8 +1272,13 @@ public class MonitoringController : ControllerBase
                 });
             }
 
+            // Default to last 24 hours if dates not provided
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var startDate = request.StartDate ?? now - (24 * 60 * 60); // 24 hours ago
+            var endDate = request.EndDate ?? now;
+
             _logger.LogInformation("Calculating maximum for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
-                request.ItemId, request.StartDate, request.EndDate, userId);
+                request.ItemId, startDate, endDate, userId);
 
             var itemGuid = Guid.Parse(request.ItemId!);
             var monitoringItem = await Core.Points.GetPoint(itemGuid);
@@ -1293,7 +1308,7 @@ public class MonitoringController : ControllerBase
                 });
             }
 
-            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+            var values = await Core.Points.GetHistory(request.ItemId!, startDate, endDate);
 
             if (values == null || values.Count == 0)
             {
@@ -1423,8 +1438,13 @@ public class MonitoringController : ControllerBase
                 });
             }
 
+            // Default to last 24 hours if dates not provided
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var startDate = request.StartDate ?? now - (24 * 60 * 60); // 24 hours ago
+            var endDate = request.EndDate ?? now;
+
             _logger.LogInformation("Calculating standard deviation for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
-                request.ItemId, request.StartDate, request.EndDate, userId);
+                request.ItemId, startDate, endDate, userId);
 
             var itemGuid = Guid.Parse(request.ItemId!);
             var monitoringItem = await Core.Points.GetPoint(itemGuid);
@@ -1454,7 +1474,7 @@ public class MonitoringController : ControllerBase
                 });
             }
 
-            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+            var values = await Core.Points.GetHistory(request.ItemId!, startDate, endDate);
 
             if (values == null || values.Count == 0)
             {
@@ -1598,8 +1618,13 @@ public class MonitoringController : ControllerBase
                 });
             }
 
+            // Default to last 24 hours if dates not provided
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var startDate = request.StartDate ?? now - (24 * 60 * 60); // 24 hours ago
+            var endDate = request.EndDate ?? now;
+
             _logger.LogInformation("Counting data points for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
-                request.ItemId, request.StartDate, request.EndDate, userId);
+                request.ItemId, startDate, endDate, userId);
 
             var itemGuid = Guid.Parse(request.ItemId!);
             var monitoringItem = await Core.Points.GetPoint(itemGuid);
@@ -1615,7 +1640,7 @@ public class MonitoringController : ControllerBase
                 });
             }
 
-            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+            var values = await Core.Points.GetHistory(request.ItemId!, startDate, endDate);
 
             if (values == null || values.Count == 0)
             {
