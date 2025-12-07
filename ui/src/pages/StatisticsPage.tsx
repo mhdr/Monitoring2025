@@ -212,17 +212,23 @@ const StatisticsPage: React.FC = () => {
         const now = Math.floor(Date.now() / 1000);
         const startDate = now - 24 * 60 * 60;
         
-        const [durationRes, countRes] = await Promise.all([
-          calculateStateDuration({ itemId, startDate, endDate: now }),
+        // Call API for both ON (value: "1") and OFF (value: "0") states
+        const [onDurationRes, offDurationRes, countRes] = await Promise.all([
+          calculateStateDuration({ itemId, startDate, endDate: now, value: "1" }),
+          calculateStateDuration({ itemId, startDate, endDate: now, value: "0" }),
           getPointCount({ itemId }),
         ]);
 
+        const totalDuration = now - startDate;
+        const onDuration = onDurationRes.success ? onDurationRes.totalDurationSeconds : 0;
+        const offDuration = offDurationRes.success ? offDurationRes.totalDurationSeconds : 0;
+
         setLast24hStats({
-          onDuration: durationRes.onDuration,
-          offDuration: durationRes.offDuration,
-          totalDuration: durationRes.totalDuration,
-          onPercentage: durationRes.onPercentage,
-          offPercentage: durationRes.offPercentage,
+          onDuration,
+          offDuration,
+          totalDuration,
+          onPercentage: totalDuration > 0 ? (onDuration / totalDuration) * 100 : 0,
+          offPercentage: totalDuration > 0 ? (offDuration / totalDuration) * 100 : 0,
           count: countRes.count,
         });
       }
@@ -307,8 +313,10 @@ const StatisticsPage: React.FC = () => {
           count: totalCount,
         });
       } else {
-        const [durationRes, countRes] = await Promise.all([
-          calculateStateDuration({ itemId, startDate, endDate }),
+        // Digital point - call API for both ON and OFF states
+        const [onDurationRes, offDurationRes, countRes] = await Promise.all([
+          calculateStateDuration({ itemId, startDate, endDate, value: "1" }),
+          calculateStateDuration({ itemId, startDate, endDate, value: "0" }),
           getPointCountByDate({ itemId, startDate, endDate }),
         ]);
 
@@ -321,13 +329,16 @@ const StatisticsPage: React.FC = () => {
         setDailyHistoricalStats(dailyData);
 
         const totalCount = countRes.dailyCounts?.reduce((sum, d) => sum + d.count, 0) || 0;
+        const totalDuration = endDate - startDate;
+        const onDuration = onDurationRes.success ? onDurationRes.totalDurationSeconds : 0;
+        const offDuration = offDurationRes.success ? offDurationRes.totalDurationSeconds : 0;
 
         setHistoricalStats({
-          onDuration: durationRes.onDuration,
-          offDuration: durationRes.offDuration,
-          totalDuration: durationRes.totalDuration,
-          onPercentage: durationRes.onPercentage,
-          offPercentage: durationRes.offPercentage,
+          onDuration,
+          offDuration,
+          totalDuration,
+          onPercentage: totalDuration > 0 ? (onDuration / totalDuration) * 100 : 0,
+          offPercentage: totalDuration > 0 ? (offDuration / totalDuration) * 100 : 0,
           count: totalCount,
         });
       }

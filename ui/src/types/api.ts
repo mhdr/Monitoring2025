@@ -2247,15 +2247,18 @@ export interface CalculateStateDurationRequestDto {
   itemId: string; // Item identifier (digital point only)
   startDate: number; // Start time as Unix seconds since epoch (UTC) (int64)
   endDate: number; // End time as Unix seconds since epoch (UTC) (int64)
+  value: string; // The digital value to calculate duration for ("0" or "1")
 }
 
 /**
  * Response DTO for CalculateStateDuration
  */
 export interface CalculateStateDurationResponseDto {
-  onDuration: number; // Duration in seconds for ON state (state = 1)
-  offDuration: number; // Duration in seconds for OFF state (state = 0)
-  totalDuration: number; // Total duration in seconds (endDate - startDate)
-  onPercentage: number; // Percentage of time in ON state
-  offPercentage: number; // Percentage of time in OFF state
+  success: boolean; // Indicates whether the operation was successful
+  error: string | null; // Error message if the operation failed
+  matchedValue: string; // The value that was matched ("0" or "1")
+  totalDurationSeconds: number; // Total duration in seconds that the point held the specified value (int64)
+  formattedDuration: string; // Human-readable formatted duration string (e.g., "2h 15m 30s")
+  stateChangeCount: number; // Number of state changes found in the time range (int32)
+  usedLastKnownState: boolean; // Indicates whether the last known state before the start date was used
 }
