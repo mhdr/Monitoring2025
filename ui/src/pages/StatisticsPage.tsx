@@ -661,12 +661,12 @@ const StatisticsPage: React.FC = () => {
           radius: '50%',
           data: [
             { 
-              value: stats.onPercentage, 
+              value: Number(stats.onPercentage.toFixed(2)), 
               name: t('statistics.onState'),
               itemStyle: { color: theme.palette.success.main },
             },
             { 
-              value: stats.offPercentage, 
+              value: Number(stats.offPercentage.toFixed(2)), 
               name: t('statistics.offState'),
               itemStyle: { color: theme.palette.grey[400] },
             },
