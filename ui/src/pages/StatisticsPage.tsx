@@ -642,7 +642,10 @@ const StatisticsPage: React.FC = () => {
     return {
       tooltip: {
         trigger: 'item',
-        formatter: '{b}: {c} ({d}%)',
+        formatter: (params: any) => {
+          const percentage = typeof params.percent === 'number' ? params.percent.toFixed(2) : params.percent;
+          return `${params.name}: ${params.value} (${percentage}%)`;
+        },
       },
       legend: {
         orient: 'vertical',
