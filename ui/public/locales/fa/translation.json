@@ -1322,7 +1322,13 @@
     "analogPoint": "نقطه آنالوگ",
     "insufficientData": "داده کافی برای محاسبه موجود نیست",
     "hours": "ساعت",
-    "minutes": "دقیقه"
+    "minutes": "دقیقه",
+    "averageMean": "میانگین کلی",
+    "overallMinimum": "حداقل کلی",
+    "overallMaximum": "حداکثر کلی",
+    "averageStdDev": "میانگین انحراف معیار",
+    "totalCount": "تعداد کل",
+    "dailyCountTrend": "روند روزانه تعداد"
   },
   "statisticsDetail": "آمار و اطلاعات"
 }

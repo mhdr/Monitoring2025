@@ -1322,7 +1322,13 @@
     "analogPoint": "Analog Point",
     "insufficientData": "Insufficient data for calculation",
     "hours": "hours",
-    "minutes": "minutes"
+    "minutes": "minutes",
+    "averageMean": "Average Mean",
+    "overallMinimum": "Overall Minimum",
+    "overallMaximum": "Overall Maximum",
+    "averageStdDev": "Average Std. Dev.",
+    "totalCount": "Total Count",
+    "dailyCountTrend": "Daily Count Trend"
   },
   "statisticsDetail": "Statistics"
 }
