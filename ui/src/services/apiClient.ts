@@ -162,6 +162,13 @@ export function handleApiError(error: unknown): never {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
     
+    // Check if request was cancelled (by axios or browser)
+    if (axios.isCancel(error) || axiosError.code === 'ERR_CANCELED') {
+      const cancelError = new Error('Request was cancelled') as Error & { cancelled: boolean };
+      cancelError.cancelled = true;
+      throw cancelError;
+    }
+    
     if (axiosError.code === 'ECONNABORTED') {
       throw new Error('Request timeout - please try again');
     }

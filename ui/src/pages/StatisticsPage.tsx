@@ -1,3 +1,4 @@
+// StatisticsPage.tsx - Updated to handle Promise.allSettled cancellations
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { EChartsOption } from 'echarts';
@@ -56,6 +57,8 @@ import { ItemTypeEnum } from '../types/api';
 import SeparatedDateTimePicker from '../components/SeparatedDateTimePicker';
 import { EChartsWrapper } from '../components/shared/EChartsWrapper';
 import { CardHeader } from '../components/shared/CardHeader';
+
+console.log('[MODULE LOAD] StatisticsPage.tsx loaded at', new Date().toISOString());
 
 const logger = createLogger('StatisticsPage');
 
@@ -247,6 +250,7 @@ const StatisticsPage: React.FC = () => {
 
     setError(null);
     setLoading(true);
+    console.log('[DEBUG] fetchHistoricalStats started, isAnalog:', isAnalog);
 
     try {
       const { startDate, endDate } = getDateRange;
@@ -314,11 +318,77 @@ const StatisticsPage: React.FC = () => {
         });
       } else {
         // Digital point - call API for both ON and OFF states
-        const [onDurationRes, offDurationRes, countRes] = await Promise.all([
+        // Use Promise.allSettled to handle potential cancellations gracefully
+        const results = await Promise.allSettled([
           calculateStateDuration({ itemId, startDate, endDate, value: "1" }),
           calculateStateDuration({ itemId, startDate, endDate, value: "0" }),
           getPointCountByDate({ itemId, startDate, endDate }),
         ]);
+
+        // Check if all requests succeeded or if some were cancelled
+        const [onDurationResult, offDurationResult, countResult] = results;
+        
+        logger.log('Promise.allSettled results:', {
+          onDuration: onDurationResult.status,
+          offDuration: offDurationResult.status,
+          count: countResult.status,
+        });
+        console.log('[DEBUG] Promise.allSettled results:', onDurationResult.status, offDurationResult.status, countResult.status);
+        
+        // Check if ALL requests were cancelled (component unmounting)
+        const allCancelled = results.every(r => 
+          r.status === 'rejected' && (r.reason?.cancelled || r.reason?.message?.includes('cancel'))
+        );
+        
+        if (allCancelled) {
+          logger.log('All requests were cancelled, component unmounting');
+          setLoading(false);
+          return;
+        }
+        
+        // Check for real errors (not cancellations) and throw them
+        const realErrors = results.filter(r => {
+          if (r.status === 'rejected') {
+            const isCancelled = r.reason?.cancelled || r.reason?.message?.includes('cancel');
+            logger.log('Checking rejection:', { isCancelled, reason: r.reason });
+            return !isCancelled; // Return true if it's a real error
+          }
+          return false;
+        });
+        
+        if (realErrors.length > 0) {
+          logger.error('Real errors found:', realErrors[0]);
+          throw (realErrors[0] as PromiseRejectedResult).reason;
+        }
+        
+        // Extract values from fulfilled results only
+        // If a request was cancelled but others succeeded, use the successful ones
+        const onDurationRes = onDurationResult.status === 'fulfilled' ? onDurationResult.value : null;
+        const offDurationRes = offDurationResult.status === 'fulfilled' ? offDurationResult.value : null;
+        const countRes = countResult.status === 'fulfilled' ? countResult.value : null;
+        
+        logger.log('Extracted responses:', {
+          onDurationRes: !!onDurationRes,
+          offDurationRes: !!offDurationRes,
+          countRes: !!countRes,
+        });
+        
+        // If critical data is missing, show partial results or error
+        if (!countRes || (!onDurationRes && !offDurationRes)) {
+          logger.warn('Insufficient data to display statistics');
+          // Don't set error - just use default values
+          setHistoricalStats({
+            onDuration: 0,
+            offDuration: 0,
+            totalDuration: endDate - startDate,
+            onPercentage: 0,
+            offPercentage: 0,
+            count: 0,
+          });
+          setDailyHistoricalStats([]);
+          setLoading(false);
+          return;
+        }
 
         // Store daily data for table display
         const dailyData: DailyDigitalStats[] = countRes.dailyCounts?.map(d => ({
@@ -330,8 +400,8 @@ const StatisticsPage: React.FC = () => {
 
         const totalCount = countRes.dailyCounts?.reduce((sum, d) => sum + d.count, 0) || 0;
         const totalDuration = endDate - startDate;
-        const onDuration = onDurationRes.success ? onDurationRes.totalDurationSeconds : 0;
-        const offDuration = offDurationRes.success ? offDurationRes.totalDurationSeconds : 0;
+        const onDuration = onDurationRes?.success ? onDurationRes.totalDurationSeconds : 0;
+        const offDuration = offDurationRes?.success ? offDurationRes.totalDurationSeconds : 0;
 
         setHistoricalStats({
           onDuration,
@@ -345,7 +415,17 @@ const StatisticsPage: React.FC = () => {
 
       setError(null);
       setLoading(false);
-    } catch (err) {
+    } catch (err: any) {
+      console.log('[DEBUG CATCH] Error caught:', err);
+      // Ignore errors from cancelled requests
+      if (err?.cancelled || err?.code === 'ERR_CANCELED' || err?.message?.includes('cancel')) {
+        console.log('[DEBUG CATCH] Request was cancelled');
+        logger.log('Request was cancelled, ignoring error');
+        setLoading(false); // Still need to clear loading state
+        return;
+      }
+      
+      console.log('[DEBUG CATCH] Real error, setting error state');
       logger.error('Error fetching historical statistics:', err);
       setError(t('statistics.errorLoadingStatistics'));
       setLoading(false);
@@ -354,12 +434,41 @@ const StatisticsPage: React.FC = () => {
 
   // Fetch data on mount and when dependencies change
   useEffect(() => {
-    fetchLast24hStats();
+    let isMounted = true;
+    
+    const fetchData = async () => {
+      if (isMounted) {
+        await fetchLast24hStats();
+      }
+    };
+    
+    fetchData();
+    
+    return () => {
+      isMounted = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId, isAnalog]);
 
   useEffect(() => {
-    fetchHistoricalStats();
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+    
+    const fetchData = async () => {
+      if (isMounted) {
+        await fetchHistoricalStats();
+      }
+    };
+    
+    // Add a small delay to prevent rapid successive calls when preset changes
+    timeoutId = setTimeout(() => {
+      fetchData();
+    }, 100);
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId, selectedPreset, isAnalog]);
 
