@@ -724,6 +724,160 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
+    /// Calculate the total duration (in seconds) that a digital point held a specific value within a time range
+    /// </summary>
+    /// <param name="request">Request containing item ID, start date, end date, and target value ("0" or "1")</param>
+    /// <returns>Total duration in seconds that the point held the specified value</returns>
+    /// <remarks>
+    /// This endpoint only works for digital points (DigitalInput and DigitalOutput).
+    /// It calculates the cumulative time the point was in the specified state.
+    /// 
+    /// The calculation handles edge cases:
+    /// - If no state changes occur in the range, it looks back up to 90 days for the last known state
+    /// - States that persist across the time boundary are handled correctly
+    /// - Returns both raw seconds and a human-readable formatted duration
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/calculatestateduration
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "startDate": 1697587200,
+    ///        "endDate": 1697673600,
+    ///        "value": "1"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the calculated duration and metadata</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If the point is not digital or validation fails</response>
+    /// <response code="404">If the point is not found</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpPost("CalculateStateDuration")]
+    [ProducesResponseType(typeof(CalculateStateDurationResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CalculateStateDuration([FromBody] CalculateStateDurationRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("Unauthorized access attempt to CalculateStateDuration endpoint (no user id)");
+                return Unauthorized();
+            }
+
+            // Validate model state
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("Validation failed for CalculateStateDuration request by {UserId}: {Errors}", userId, string.Join("; ", errors));
+
+                return BadRequest(new CalculateStateDurationResponseDto
+                {
+                    Success = false,
+                    Error = $"Validation failed: {string.Join("; ", errors)}"
+                });
+            }
+
+            _logger.LogInformation("Calculating state duration for point {ItemId} from {StartDate} to {EndDate} for value {Value} by user {UserId}", 
+                request.ItemId, request.StartDate, request.EndDate, request.Value, userId);
+
+            // Get the monitoring item to check if it's digital
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+
+            if (monitoringItem == null)
+            {
+                _logger.LogWarning("Point {ItemId} not found for state duration calculation", request.ItemId);
+                return NotFound(new CalculateStateDurationResponseDto
+                {
+                    Success = false,
+                    Error = "Point not found"
+                });
+            }
+
+            // Check if the point is digital (DigitalInput or DigitalOutput)
+            if (monitoringItem.ItemType != ItemType.DigitalInput && 
+                monitoringItem.ItemType != ItemType.DigitalOutput)
+            {
+                _logger.LogWarning("Attempted to calculate state duration for non-digital point {ItemId} of type {ItemType}", 
+                    request.ItemId, monitoringItem.ItemType);
+                
+                return BadRequest(new CalculateStateDurationResponseDto
+                {
+                    Success = false,
+                    Error = $"State duration calculation is only supported for digital points. This point is of type: {monitoringItem.ItemType}"
+                });
+            }
+
+            // Calculate the state duration
+            var (totalDurationSeconds, stateChangeCount, usedLastKnownState) = 
+                await Core.Points.CalculateStateDuration(request.ItemId!, request.StartDate, request.EndDate, request.Value!);
+
+            // Format the duration as human-readable string
+            var formattedDuration = FormatDuration(totalDurationSeconds);
+
+            _logger.LogInformation("State duration calculated successfully for point {ItemId}: {Duration} seconds ({Formatted})", 
+                request.ItemId, totalDurationSeconds, formattedDuration);
+
+            return Ok(new CalculateStateDurationResponseDto
+            {
+                Success = true,
+                MatchedValue = request.Value!,
+                TotalDurationSeconds = totalDurationSeconds,
+                FormattedDuration = formattedDuration,
+                StateChangeCount = stateChangeCount,
+                UsedLastKnownState = usedLastKnownState
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error calculating state duration for point {ItemId}", request?.ItemId);
+            return StatusCode(StatusCodes.Status500InternalServerError, new CalculateStateDurationResponseDto
+            {
+                Success = false,
+                Error = $"Internal server error: {e.Message}"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Formats a duration in seconds to a human-readable string
+    /// </summary>
+    /// <param name="totalSeconds">Total duration in seconds</param>
+    /// <returns>Formatted string like "2d 5h 30m 15s" or "0s" if zero</returns>
+    private static string FormatDuration(long totalSeconds)
+    {
+        if (totalSeconds == 0)
+        {
+            return "0s";
+        }
+
+        var days = totalSeconds / 86400;
+        var hours = (totalSeconds % 86400) / 3600;
+        var minutes = (totalSeconds % 3600) / 60;
+        var seconds = totalSeconds % 60;
+
+        var parts = new List<string>();
+        
+        if (days > 0) parts.Add($"{days}d");
+        if (hours > 0) parts.Add($"{hours}h");
+        if (minutes > 0) parts.Add($"{minutes}m");
+        if (seconds > 0) parts.Add($"{seconds}s");
+
+        return string.Join(" ", parts);
+    }
+
+    /// <summary>
     /// Calculate the mean (average) value for an analog point within a specified date range
     /// </summary>
     /// <param name="request">Request containing item ID, start date, and end date (Unix timestamps in seconds)</param>

@@ -976,4 +976,191 @@ public static class Points
             return false;
         }
     }
+
+    /// <summary>
+    /// Calculates the total duration (in seconds) that a digital point held a specific value within a time range.
+    /// Handles edge cases where no state changes occur by fetching the last known state before the start date.
+    /// </summary>
+    /// <param name="itemId">The item ID.</param>
+    /// <param name="startDate">Start date (Unix timestamp in seconds).</param>
+    /// <param name="endDate">End date (Unix timestamp in seconds).</param>
+    /// <param name="targetValue">The value to match ("0" or "1").</param>
+    /// <returns>Tuple containing: (totalDurationSeconds, stateChangeCount, usedLastKnownState)</returns>
+    public static async Task<(long totalDurationSeconds, int stateChangeCount, bool usedLastKnownState)> CalculateStateDuration(
+        string itemId, long startDate, long endDate, string targetValue)
+    {
+        try
+        {
+            MyLog.Debug("Calculating state duration", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["StartDate"] = startDate,
+                ["EndDate"] = endDate,
+                ["TargetValue"] = targetValue
+            });
+
+            // Get history for the requested time range
+            var history = await GetHistory(itemId, startDate, endDate);
+            
+            // Sort by time to ensure correct order
+            history = history.OrderBy(h => h.Time).ToList();
+
+            MyLog.Debug("Retrieved history records", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["RecordCount"] = history.Count
+            });
+
+            long totalDuration = 0;
+            bool usedLastKnownState = false;
+            string? currentValue = null;
+            long? currentStartTime = null;
+
+            // If no records exist in the range, try to get the last known state before startDate
+            if (history.Count == 0)
+            {
+                MyLog.Debug("No history records in range, checking for last known state", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId
+                });
+
+                // Look back up to 90 days for the last known state
+                long lookbackStartDate = startDate - (90 * 24 * 60 * 60);
+                var priorHistory = await GetHistory(itemId, lookbackStartDate, startDate - 1);
+                
+                if (priorHistory.Count > 0)
+                {
+                    // Get the most recent state before our start date
+                    var lastKnownState = priorHistory.OrderByDescending(h => h.Time).First();
+                    currentValue = lastKnownState.Value;
+                    currentStartTime = startDate;
+                    usedLastKnownState = true;
+
+                    MyLog.Debug("Found last known state", new Dictionary<string, object?>
+                    {
+                        ["ItemId"] = itemId,
+                        ["LastKnownValue"] = currentValue,
+                        ["LastKnownTime"] = lastKnownState.Time
+                    });
+
+                    // If the last known state matches our target value, calculate duration
+                    if (currentValue == targetValue)
+                    {
+                        totalDuration = endDate - startDate;
+                        MyLog.Debug("Last known state matches target, entire range duration", new Dictionary<string, object?>
+                        {
+                            ["ItemId"] = itemId,
+                            ["Duration"] = totalDuration
+                        });
+                    }
+                }
+                else
+                {
+                    MyLog.Debug("No prior history found", new Dictionary<string, object?>
+                    {
+                        ["ItemId"] = itemId
+                    });
+                }
+
+                return (totalDuration, 0, usedLastKnownState);
+            }
+
+            // Check if we need to get the initial state (before the first record in our range)
+            var firstRecord = history.First();
+            if (firstRecord.Time > startDate)
+            {
+                MyLog.Debug("First record after start date, checking for initial state", new Dictionary<string, object?>
+                {
+                    ["ItemId"] = itemId,
+                    ["FirstRecordTime"] = firstRecord.Time
+                });
+
+                // Look back up to 90 days for the last known state
+                long lookbackStartDate = startDate - (90 * 24 * 60 * 60);
+                var priorHistory = await GetHistory(itemId, lookbackStartDate, startDate - 1);
+                
+                if (priorHistory.Count > 0)
+                {
+                    var lastKnownState = priorHistory.OrderByDescending(h => h.Time).First();
+                    currentValue = lastKnownState.Value;
+                    currentStartTime = startDate;
+                    usedLastKnownState = true;
+
+                    MyLog.Debug("Found initial state before range", new Dictionary<string, object?>
+                    {
+                        ["ItemId"] = itemId,
+                        ["InitialValue"] = currentValue,
+                        ["InitialStateTime"] = lastKnownState.Time
+                    });
+                }
+            }
+
+            // Process each state change in the history
+            foreach (var record in history)
+            {
+                // If we have a current value being tracked
+                if (currentValue != null && currentStartTime.HasValue)
+                {
+                    // Calculate duration for the current state
+                    long stateDuration = record.Time - currentStartTime.Value;
+                    
+                    // If the current state matches our target value, add to total
+                    if (currentValue == targetValue && stateDuration > 0)
+                    {
+                        totalDuration += stateDuration;
+                        MyLog.Debug("Added duration for matching state", new Dictionary<string, object?>
+                        {
+                            ["ItemId"] = itemId,
+                            ["Value"] = currentValue,
+                            ["Duration"] = stateDuration,
+                            ["TotalSoFar"] = totalDuration
+                        });
+                    }
+                }
+
+                // Update to the new state
+                currentValue = record.Value;
+                currentStartTime = record.Time;
+            }
+
+            // Handle the final state from the last record to endDate
+            if (currentValue != null && currentStartTime.HasValue && currentStartTime.Value < endDate)
+            {
+                long finalDuration = endDate - currentStartTime.Value;
+                
+                if (currentValue == targetValue && finalDuration > 0)
+                {
+                    totalDuration += finalDuration;
+                    MyLog.Debug("Added duration for final state", new Dictionary<string, object?>
+                    {
+                        ["ItemId"] = itemId,
+                        ["Value"] = currentValue,
+                        ["Duration"] = finalDuration,
+                        ["TotalFinal"] = totalDuration
+                    });
+                }
+            }
+
+            MyLog.Debug("State duration calculation completed", new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["TotalDuration"] = totalDuration,
+                ["StateChangeCount"] = history.Count,
+                ["UsedLastKnownState"] = usedLastKnownState
+            });
+
+            return (totalDuration, history.Count, usedLastKnownState);
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to calculate state duration", e, new Dictionary<string, object?>
+            {
+                ["ItemId"] = itemId,
+                ["StartDate"] = startDate,
+                ["EndDate"] = endDate,
+                ["TargetValue"] = targetValue
+            });
+            throw;
+        }
+    }
 }
