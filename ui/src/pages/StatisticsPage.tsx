@@ -187,6 +187,19 @@ const StatisticsPage: React.FC = () => {
     return item.unit ?? '';
   }, [item, language]);
 
+  // Treat aborted/cancelled axios requests as non-fatal so we can still render partial data
+  const isCancelledError = useCallback((reason: any) => {
+    if (!reason) return false;
+    const message = (reason.message || '').toString().toLowerCase();
+    return Boolean(
+      reason.cancelled ||
+      reason.code === 'ERR_CANCELED' ||
+      reason.name === 'CanceledError' ||
+      message.includes('cancel') ||
+      message.includes('abort')
+    );
+  }, []);
+
   // Fetch last 24 hours statistics
   const fetchLast24hStats = async () => {
     if (!itemId) return;
@@ -328,7 +341,7 @@ const StatisticsPage: React.FC = () => {
         
         // Check if ALL requests were cancelled (component unmounting)
         const allCancelled = results.every(r => 
-          r.status === 'rejected' && (r.reason?.cancelled || r.reason?.message?.includes('cancel'))
+          r.status === 'rejected' && isCancelledError(r.reason)
         );
         
         if (allCancelled) {
@@ -340,51 +353,33 @@ const StatisticsPage: React.FC = () => {
         // Check for real errors (not cancellations) and throw them
         const realErrors = results.filter(r => {
           if (r.status === 'rejected') {
-            const isCancelled = r.reason?.cancelled || r.reason?.message?.includes('cancel');
+            const isCancelled = isCancelledError(r.reason);
             return !isCancelled; // Return true if it's a real error
           }
           return false;
         });
         
         if (realErrors.length > 0) {
-          throw (realErrors[0] as PromiseRejectedResult).reason;
+          logger.warn('Some digital statistics requests failed, continuing with partial data', { realErrors });
         }
         
-        // Extract values from fulfilled results only
-        // If a request was cancelled but others succeeded, use the successful ones
+        // Extract values from fulfilled results only; use defaults when missing
         const onDurationRes = onDurationResult.status === 'fulfilled' ? onDurationResult.value : null;
         const offDurationRes = offDurationResult.status === 'fulfilled' ? offDurationResult.value : null;
         const countRes = countResult.status === 'fulfilled' ? countResult.value : null;
-        
-        // If critical data is missing, show partial results or error
-        if (!countRes || (!onDurationRes && !offDurationRes)) {
-          logger.warn('Insufficient data to display statistics');
-          // Don't set error - just use default values
-          setHistoricalStats({
-            onDuration: 0,
-            offDuration: 0,
-            totalDuration: endDate - startDate,
-            onPercentage: 0,
-            offPercentage: 0,
-            count: 0,
-          });
-          setDailyHistoricalStats([]);
-          setLoading(false);
-          return;
-        }
 
-        // Store daily data for table display
-        const dailyData: DailyDigitalStats[] = countRes.dailyCounts?.map(d => ({
-          date: d.date,
-          count: d.count,
-        })) || [];
-        
-        setDailyHistoricalStats(dailyData);
-
-        const totalCount = countRes.dailyCounts?.reduce((sum, d) => sum + d.count, 0) || 0;
         const totalDuration = endDate - startDate;
         const onDuration = onDurationRes?.success ? onDurationRes.totalDurationSeconds : 0;
         const offDuration = offDurationRes?.success ? offDurationRes.totalDurationSeconds : 0;
+
+        // Build daily data even if duration calls failed so table still renders
+        const dailyData: DailyDigitalStats[] = countRes?.dailyCounts?.map(d => ({
+          date: d.date,
+          count: d.count,
+        })) || [];
+        setDailyHistoricalStats(dailyData);
+
+        const totalCount = countRes?.dailyCounts?.reduce((sum, d) => sum + d.count, 0) || 0;
 
         setHistoricalStats({
           onDuration,
@@ -400,7 +395,7 @@ const StatisticsPage: React.FC = () => {
       setLoading(false);
     } catch (err: any) {
       // Ignore errors from cancelled requests
-      if (err?.cancelled || err?.code === 'ERR_CANCELED' || err?.message?.includes('cancel')) {
+      if (isCancelledError(err)) {
         logger.log('Request was cancelled, ignoring error');
         setLoading(false); // Still need to clear loading state
         return;
