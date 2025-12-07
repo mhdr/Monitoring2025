@@ -404,6 +404,14 @@ const StatisticsPage: React.FC = () => {
         axisPointer: {
           type: 'shadow',
         },
+        formatter: (params: any) => {
+          let result = `${params[0].axisValue}<br/>`;
+          params.forEach((param: any) => {
+            const value = typeof param.value === 'number' ? param.value.toFixed(2) : param.value;
+            result += `${param.marker} ${param.seriesName}: ${value} ${itemUnit}<br/>`;
+          });
+          return result;
+        },
       },
       legend: {
         data: [t('statistics.mean'), t('statistics.minimum'), t('statistics.maximum')],
@@ -484,6 +492,10 @@ const StatisticsPage: React.FC = () => {
         trigger: 'axis',
         axisPointer: {
           type: 'line',
+        },
+        formatter: (params: any) => {
+          const value = typeof params[0].value === 'number' ? params[0].value.toLocaleString() : params[0].value;
+          return `${params[0].axisValue}<br/>${params[0].marker} ${params[0].seriesName}: ${value}`;
         },
       },
       grid: {
@@ -591,6 +603,10 @@ const StatisticsPage: React.FC = () => {
         trigger: 'axis',
         axisPointer: {
           type: 'line',
+        },
+        formatter: (params: any) => {
+          const value = typeof params[0].value === 'number' ? params[0].value.toLocaleString() : params[0].value;
+          return `${params[0].axisValue}<br/>${params[0].marker} ${params[0].seriesName}: ${value}`;
         },
       },
       grid: {
