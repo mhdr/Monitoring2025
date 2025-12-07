@@ -58,8 +58,6 @@ import SeparatedDateTimePicker from '../components/SeparatedDateTimePicker';
 import { EChartsWrapper } from '../components/shared/EChartsWrapper';
 import { CardHeader } from '../components/shared/CardHeader';
 
-console.log('[MODULE LOAD] StatisticsPage.tsx loaded at', new Date().toISOString());
-
 const logger = createLogger('StatisticsPage');
 
 // Date range preset types
@@ -328,13 +326,6 @@ const StatisticsPage: React.FC = () => {
         // Check if all requests succeeded or if some were cancelled
         const [onDurationResult, offDurationResult, countResult] = results;
         
-        logger.log('Promise.allSettled results:', {
-          onDuration: onDurationResult.status,
-          offDuration: offDurationResult.status,
-          count: countResult.status,
-        });
-        console.log('[DEBUG] Promise.allSettled results:', onDurationResult.status, offDurationResult.status, countResult.status);
-        
         // Check if ALL requests were cancelled (component unmounting)
         const allCancelled = results.every(r => 
           r.status === 'rejected' && (r.reason?.cancelled || r.reason?.message?.includes('cancel'))
@@ -350,14 +341,12 @@ const StatisticsPage: React.FC = () => {
         const realErrors = results.filter(r => {
           if (r.status === 'rejected') {
             const isCancelled = r.reason?.cancelled || r.reason?.message?.includes('cancel');
-            logger.log('Checking rejection:', { isCancelled, reason: r.reason });
             return !isCancelled; // Return true if it's a real error
           }
           return false;
         });
         
         if (realErrors.length > 0) {
-          logger.error('Real errors found:', realErrors[0]);
           throw (realErrors[0] as PromiseRejectedResult).reason;
         }
         
@@ -366,12 +355,6 @@ const StatisticsPage: React.FC = () => {
         const onDurationRes = onDurationResult.status === 'fulfilled' ? onDurationResult.value : null;
         const offDurationRes = offDurationResult.status === 'fulfilled' ? offDurationResult.value : null;
         const countRes = countResult.status === 'fulfilled' ? countResult.value : null;
-        
-        logger.log('Extracted responses:', {
-          onDurationRes: !!onDurationRes,
-          offDurationRes: !!offDurationRes,
-          countRes: !!countRes,
-        });
         
         // If critical data is missing, show partial results or error
         if (!countRes || (!onDurationRes && !offDurationRes)) {
@@ -416,16 +399,13 @@ const StatisticsPage: React.FC = () => {
       setError(null);
       setLoading(false);
     } catch (err: any) {
-      console.log('[DEBUG CATCH] Error caught:', err);
       // Ignore errors from cancelled requests
       if (err?.cancelled || err?.code === 'ERR_CANCELED' || err?.message?.includes('cancel')) {
-        console.log('[DEBUG CATCH] Request was cancelled');
         logger.log('Request was cancelled, ignoring error');
         setLoading(false); // Still need to clear loading state
         return;
       }
       
-      console.log('[DEBUG CATCH] Real error, setting error state');
       logger.error('Error fetching historical statistics:', err);
       setError(t('statistics.errorLoadingStatistics'));
       setLoading(false);
@@ -452,7 +432,7 @@ const StatisticsPage: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     
     const fetchData = async () => {
       if (isMounted) {
@@ -1151,22 +1131,22 @@ const StatisticsPage: React.FC = () => {
                         <>
                           <TableCell align="right" data-id-ref={`statistics-page-daily-table-mean-${index}`}>
                             {(day as DailyAnalogStats).mean != null 
-                              ? `${(day as DailyAnalogStats).mean.toFixed(2)} ${itemUnit}`
+                              ? `${(day as DailyAnalogStats).mean!.toFixed(2)} ${itemUnit}`
                               : '-'}
                           </TableCell>
                           <TableCell align="right" data-id-ref={`statistics-page-daily-table-min-${index}`}>
                             {(day as DailyAnalogStats).min != null 
-                              ? `${(day as DailyAnalogStats).min.toFixed(2)} ${itemUnit}`
+                              ? `${(day as DailyAnalogStats).min!.toFixed(2)} ${itemUnit}`
                               : '-'}
                           </TableCell>
                           <TableCell align="right" data-id-ref={`statistics-page-daily-table-max-${index}`}>
                             {(day as DailyAnalogStats).max != null 
-                              ? `${(day as DailyAnalogStats).max.toFixed(2)} ${itemUnit}`
+                              ? `${(day as DailyAnalogStats).max!.toFixed(2)} ${itemUnit}`
                               : '-'}
                           </TableCell>
                           <TableCell align="right" data-id-ref={`statistics-page-daily-table-std-${index}`}>
                             {(day as DailyAnalogStats).std != null 
-                              ? `${(day as DailyAnalogStats).std.toFixed(2)} ${itemUnit}`
+                              ? `${(day as DailyAnalogStats).std!.toFixed(2)} ${itemUnit}`
                               : '-'}
                           </TableCell>
                           <TableCell align="right" data-id-ref={`statistics-page-daily-table-count-${index}`}>
@@ -1206,7 +1186,7 @@ const StatisticsPage: React.FC = () => {
                         </Typography>
                         <Typography variant="h6">
                           {(historicalStats as AnalogStats).mean != null
-                            ? `${(historicalStats as AnalogStats).mean.toFixed(2)} ${itemUnit}`
+                            ? `${(historicalStats as AnalogStats).mean!.toFixed(2)} ${itemUnit}`
                             : t('noData')}
                         </Typography>
                       </Box>
@@ -1219,7 +1199,7 @@ const StatisticsPage: React.FC = () => {
                         </Typography>
                         <Typography variant="h6" color="success.main">
                           {(historicalStats as AnalogStats).min != null
-                            ? `${(historicalStats as AnalogStats).min.toFixed(2)} ${itemUnit}`
+                            ? `${(historicalStats as AnalogStats).min!.toFixed(2)} ${itemUnit}`
                             : t('noData')}
                         </Typography>
                       </Box>
@@ -1232,7 +1212,7 @@ const StatisticsPage: React.FC = () => {
                         </Typography>
                         <Typography variant="h6" color="error.main">
                           {(historicalStats as AnalogStats).max != null
-                            ? `${(historicalStats as AnalogStats).max.toFixed(2)} ${itemUnit}`
+                            ? `${(historicalStats as AnalogStats).max!.toFixed(2)} ${itemUnit}`
                             : t('noData')}
                         </Typography>
                       </Box>
@@ -1245,7 +1225,7 @@ const StatisticsPage: React.FC = () => {
                         </Typography>
                         <Typography variant="h6">
                           {(historicalStats as AnalogStats).std != null
-                            ? `${(historicalStats as AnalogStats).std.toFixed(2)} ${itemUnit}`
+                            ? `${(historicalStats as AnalogStats).std!.toFixed(2)} ${itemUnit}`
                             : t('statistics.insufficientData')}
                         </Typography>
                       </Box>

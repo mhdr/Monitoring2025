@@ -990,7 +990,7 @@ export const getPointMeanByDate = async (params: PointStatsByDateRequestDto): Pr
     
     const response = await apiClient.post<PointMeanByDateResponseDto>('/api/Monitoring/PointMeanByDate', params);
     
-    logger.log('Point mean retrieved successfully', { mean: response.data.mean });
+    logger.log('Point mean retrieved successfully', { success: response.data.success, count: response.data.dailyValues?.length });
     
     return response.data;
   } catch (error) {
@@ -1010,7 +1010,7 @@ export const getPointMinByDate = async (params: PointStatsByDateRequestDto): Pro
     
     const response = await apiClient.post<PointMinByDateResponseDto>('/api/Monitoring/PointMinByDate', params);
     
-    logger.log('Point min retrieved successfully', { min: response.data.min });
+    logger.log('Point min retrieved successfully', { success: response.data.success, count: response.data.dailyValues?.length });
     
     return response.data;
   } catch (error) {
@@ -1030,7 +1030,7 @@ export const getPointMaxByDate = async (params: PointStatsByDateRequestDto): Pro
     
     const response = await apiClient.post<PointMaxByDateResponseDto>('/api/Monitoring/PointMaxByDate', params);
     
-    logger.log('Point max retrieved successfully', { max: response.data.max });
+    logger.log('Point max retrieved successfully', { success: response.data.success, count: response.data.dailyValues?.length });
     
     return response.data;
   } catch (error) {
@@ -1050,7 +1050,7 @@ export const getPointStdByDate = async (params: PointStatsByDateRequestDto): Pro
     
     const response = await apiClient.post<PointStdByDateResponseDto>('/api/Monitoring/PointStdByDate', params);
     
-    logger.log('Point std retrieved successfully', { std: response.data.std });
+    logger.log('Point std retrieved successfully', { success: response.data.success, count: response.data.dailyValues?.length });
     
     return response.data;
   } catch (error) {
@@ -1070,7 +1070,7 @@ export const getPointCountByDate = async (params: PointStatsByDateRequestDto): P
     
     const response = await apiClient.post<PointCountByDateResponseDto>('/api/Monitoring/PointCountByDate', params);
     
-    logger.log('Point count retrieved successfully', { count: response.data.count });
+    logger.log('Point count retrieved successfully', { success: response.data.success, count: response.data.dailyCounts?.length });
     
     return response.data;
   } catch (error) {
@@ -1191,9 +1191,9 @@ export const calculateStateDuration = async (params: CalculateStateDurationReque
     const response = await apiClient.post<CalculateStateDurationResponseDto>('/api/Monitoring/CalculateStateDuration', params);
     
     logger.log('State duration calculated successfully', {
-      onDuration: response.data.onDuration,
-      offDuration: response.data.offDuration,
-      onPercentage: response.data.onPercentage,
+      success: response.data.success,
+      totalDurationSeconds: response.data.totalDurationSeconds,
+      matchedValue: response.data.matchedValue,
     });
     
     return response.data;
