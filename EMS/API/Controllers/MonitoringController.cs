@@ -724,6 +724,172 @@ public class MonitoringController : ControllerBase
     }
 
     /// <summary>
+    /// Calculate the mean (average) value for an analog point within a specified date range
+    /// </summary>
+    /// <param name="request">Request containing item ID, start date, and end date (Unix timestamps in seconds)</param>
+    /// <returns>Mean value for the specified analog point and time period</returns>
+    /// <remarks>
+    /// This endpoint only works for analog points (AnalogInput and AnalogOutput).
+    /// For digital points, it will return an error as mean calculation is meaningless for binary values.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/pointmean
+    ///     {
+    ///        "itemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "startDate": 1697587200,
+    ///        "endDate": 1697673600
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the calculated mean value and data point count</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If the point is not analog or validation fails</response>
+    /// <response code="404">If the point is not found</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpPost("PointMean")]
+    [ProducesResponseType(typeof(PointMeanResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PointMean([FromBody] PointMeanRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("Unauthorized access attempt to PointMean endpoint (no user id)");
+                return Unauthorized();
+            }
+
+            // Validate model state
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.LogWarning("Validation failed for PointMean request by {UserId}: {Errors}", userId, string.Join("; ", errors));
+
+                return BadRequest(new PointMeanResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = $"Validation failed: {string.Join("; ", errors)}"
+                });
+            }
+
+            _logger.LogInformation("Calculating mean for point {ItemId} from {StartDate} to {EndDate} by user {UserId}", 
+                request.ItemId, request.StartDate, request.EndDate, userId);
+
+            // Get the monitoring item to check if it's analog
+            var itemGuid = Guid.Parse(request.ItemId!);
+            var monitoringItem = await Core.Points.GetPoint(itemGuid);
+
+            if (monitoringItem == null)
+            {
+                _logger.LogWarning("Point {ItemId} not found for mean calculation", request.ItemId);
+                return NotFound(new PointMeanResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = "Point not found",
+                    ItemId = request.ItemId
+                });
+            }
+
+            // Check if the point is analog (AnalogInput or AnalogOutput)
+            if (monitoringItem.ItemType != ItemType.AnalogInput && 
+                monitoringItem.ItemType != ItemType.AnalogOutput)
+            {
+                _logger.LogWarning("Attempted to calculate mean for non-analog point {ItemId} of type {ItemType}", 
+                    request.ItemId, monitoringItem.ItemType);
+                
+                return BadRequest(new PointMeanResponseDto
+                {
+                    Success = false,
+                    ErrorMessage = $"Mean calculation is only supported for analog points. This point is of type: {monitoringItem.ItemType}",
+                    ItemId = request.ItemId
+                });
+            }
+
+            // Get historical data
+            var values = await Core.Points.GetHistory(request.ItemId!, request.StartDate, request.EndDate);
+
+            if (values == null || values.Count == 0)
+            {
+                _logger.LogInformation("No data found for point {ItemId} in the specified range", request.ItemId);
+                return Ok(new PointMeanResponseDto
+                {
+                    Success = true,
+                    Mean = null,
+                    Count = 0,
+                    ItemId = request.ItemId,
+                    ErrorMessage = "No data available for the specified time range"
+                });
+            }
+
+            // Parse values and calculate mean
+            var numericValues = new List<double>();
+            foreach (var v in values)
+            {
+                if (double.TryParse(v.Value, out double numericValue))
+                {
+                    numericValues.Add(numericValue);
+                }
+            }
+
+            if (numericValues.Count == 0)
+            {
+                _logger.LogWarning("No valid numeric values found for point {ItemId}", request.ItemId);
+                return Ok(new PointMeanResponseDto
+                {
+                    Success = true,
+                    Mean = null,
+                    Count = 0,
+                    ItemId = request.ItemId,
+                    ErrorMessage = "No valid numeric values found in the specified time range"
+                });
+            }
+
+            var mean = numericValues.Average();
+
+            _logger.LogInformation("Successfully calculated mean {Mean} from {Count} values for point {ItemId}", 
+                mean, numericValues.Count, request.ItemId);
+
+            return Ok(new PointMeanResponseDto
+            {
+                Success = true,
+                Mean = mean,
+                Count = numericValues.Count,
+                ItemId = request.ItemId
+            });
+        }
+        catch (FormatException ex)
+        {
+            _logger.LogError(ex, "Invalid GUID format for ItemId: {ItemId}", request?.ItemId);
+            return BadRequest(new PointMeanResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Invalid item ID format",
+                ItemId = request?.ItemId
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating mean for point {ItemId}", request?.ItemId);
+            return StatusCode(500, new PointMeanResponseDto
+            {
+                Success = false,
+                ErrorMessage = "Internal server error while calculating mean",
+                ItemId = request?.ItemId
+            });
+        }
+    }
+
+    /// <summary>
     /// Get configured alarms for specified monitoring items
     /// </summary>
     /// <param name="request">Alarms request containing list of item IDs to retrieve alarms for</param>
