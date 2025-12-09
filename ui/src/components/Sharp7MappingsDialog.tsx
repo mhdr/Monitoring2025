@@ -398,7 +398,7 @@ const Sharp7MappingsDialog: React.FC<Sharp7MappingsDialogProps> = ({
               color="text.secondary"
               component="div"
             >
-              {controller.name} - {controller.ipAddress}
+              {controller.name} ({controller.ipAddress} - DB{controller.dbAddress})
             </Typography>
           )}
         </Box>

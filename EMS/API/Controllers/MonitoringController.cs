@@ -6224,6 +6224,68 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
+    /// Get Sharp7 mappings by item ID
+    /// </summary>
+    /// <param name="request">Request containing the item ID to get mappings for</param>
+    /// <returns>List of Sharp7 mappings for the specified item, including controller details</returns>
+    /// <response code="200">Returns the Sharp7 mappings with controller information</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("GetSharp7MappingsByItemId")]
+    [ProducesResponseType(typeof(GetSharp7MappingsByItemIdResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetSharp7MappingsByItemId([FromBody] GetSharp7MappingsByItemIdRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetSharp7MappingsByItemIdResponseDto();
+            
+            // Get all mappings for this item
+            var maps = await Core.Controllers.GetSharp7Maps(x => x.ItemId == request.ItemId);
+            
+            // Get all Sharp7 controllers to join with mappings
+            var controllers = await Core.Controllers.GetSharp7Controllers();
+            var controllerDict = controllers.ToDictionary(c => c.Id);
+
+            foreach (var map in maps)
+            {
+                var controller = controllerDict.GetValueOrDefault(map.ControllerId);
+                
+                response.Data.Add(new GetSharp7MappingsByItemIdResponseDto.Sharp7MapWithController
+                {
+                    Id = map.Id,
+                    ControllerId = map.ControllerId,
+                    ControllerName = controller?.Name ?? string.Empty,
+                    IpAddress = controller?.IPAddress ?? string.Empty,
+                    DbAddress = controller?.DBAddress ?? 0,
+                    DbStartData = controller?.DBStartData ?? 0,
+                    DbSizeData = controller?.DBSizeData ?? 0,
+                    DataType = controller?.DataType ?? Core.Libs.DataType.Bit,
+                    Position = map.Position,
+                    Bit = map.Bit,
+                    ItemId = map.ItemId,
+                    OperationType = map.OperationType,
+                });
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return BadRequest(ModelState);
+        }
+    }
+
+    /// <summary>
     /// Get controller mappings for I/O operations
     /// </summary>
     /// <param name="request">Get mappings request containing controller ID and operation type filters</param>

@@ -514,7 +514,8 @@
       "editPoint": "ویرایش پوینت",
       "deletePoint": "حذف پوینت",
       "userPermissions": "مجوزهای کاربر",
-      "manageModbusMappings": "مدیریت نقشه‌های مودباس"
+      "manageModbusMappings": "مدیریت نقشه‌های مودباس",
+      "manageSharp7Mappings": "مدیریت نقشه‌های Sharp7"
     },
     "deleteConfirm": {
       "title": "تایید حذف پوینت",
@@ -532,6 +533,22 @@
     },
     "validation": {
       "controllerRequired": "لطفا یک کنترلر انتخاب کنید"
+    }
+  },
+  "itemSharp7Mappings": {
+    "title": "نقشه‌های Sharp7",
+    "noMappings": "نقشه‌ای برای این آیتم تنظیم نشده است",
+    "controllerName": "کنترلر",
+    "dataType": "نوع داده",
+    "bit": "بیت",
+    "bitHelperText": "موقعیت بیت 0-7 برای نوع داده بولین/بیت",
+    "deleteMessage": "آیا از حذف نقشه در موقعیت {{position}} از کنترلر {{controller}} اطمینان دارید؟",
+    "errors": {
+      "fetchMappingsFailed": "دریافت نقشه‌های Sharp7 با خطا مواجه شد"
+    },
+    "validation": {
+      "controllerRequired": "لطفا یک کنترلر انتخاب کنید",
+      "bitRange": "بیت باید بین 0 تا 7 باشد"
     }
   },
   "monitoringPage": {
@@ -1316,8 +1333,11 @@
     },
     "dataTypes": {
       "boolean": "بولین",
+      "bit": "بیت/بولین",
       "int": "عدد صحیح",
-      "float": "اعشاری"
+      "integer": "عدد صحیح",
+      "float": "اعشاری",
+      "real": "اعشاری"
     },
     "status": {
       "enabled": "فعال",
@@ -1358,6 +1378,8 @@
       "dataTypeRequired": "نوع داده الزامی است",
       "bitRange": "بیت باید بین ۰ و ۷ باشد",
       "positionRequired": "موقعیت الزامی است",
+      "positionMin": "موقعیت باید ۰ یا بیشتر باشد",
+      "duplicatePosition": "این موقعیت قبلاً نگاشت شده است",
       "positionExists": "ترکیب موقعیت و بیت قبلاً وجود دارد",
       "itemRequired": "آیتم مانیتورینگ الزامی است"
     },
@@ -1377,6 +1399,7 @@
       "updated": "کنترلر با موفقیت به‌روزرسانی شد",
       "deleted": "کنترلر با موفقیت حذف شد",
       "mappingAdded": "نگاشت با موفقیت افزوده شد",
+      "mappingCreated": "نگاشت با موفقیت ایجاد شد",
       "mappingUpdated": "نگاشت با موفقیت به‌روزرسانی شد",
       "mappingDeleted": "نگاشت با موفقیت حذف شد"
     }

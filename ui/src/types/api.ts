@@ -2239,6 +2239,38 @@ export interface BatchEditSharp7MapsResponseDto {
   errorMessage?: string | null;
 }
 
+/**
+ * Sharp7 mapping with controller details (for item-centric view)
+ */
+export interface MapSharp7WithController {
+  id: string;
+  controllerId: string;
+  controllerName: string;
+  ipAddress: string;
+  dbAddress: number;
+  dbStartData: number;
+  dbSizeData: number;
+  dataType: DataType;
+  position: number;
+  bit?: number | null;
+  itemId: string;
+  operationType?: IoOperationType | null;
+}
+
+/**
+ * Request DTO for getting Sharp7 mappings by item ID
+ */
+export interface GetSharp7MappingsByItemIdRequestDto {
+  itemId: string;
+}
+
+/**
+ * Response DTO for getting Sharp7 mappings by item ID
+ */
+export interface GetSharp7MappingsByItemIdResponseDto {
+  data: MapSharp7WithController[];
+}
+
 // ==================== Statistics API Types ====================
 
 /**

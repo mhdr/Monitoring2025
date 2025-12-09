@@ -514,7 +514,8 @@
       "editPoint": "Edit Point",
       "deletePoint": "Delete Point",
       "userPermissions": "User Permissions",
-      "manageModbusMappings": "Manage Modbus Mappings"
+      "manageModbusMappings": "Manage Modbus Mappings",
+      "manageSharp7Mappings": "Manage Sharp7 Mappings"
     },
     "deleteConfirm": {
       "title": "Confirm Delete Point",
@@ -532,6 +533,22 @@
     },
     "validation": {
       "controllerRequired": "Please select a controller"
+    }
+  },
+  "itemSharp7Mappings": {
+    "title": "Sharp7 Mappings",
+    "noMappings": "No mappings configured for this item",
+    "controllerName": "Controller",
+    "dataType": "Data Type",
+    "bit": "Bit",
+    "bitHelperText": "Bit position 0-7 for Boolean/Bit data type",
+    "deleteMessage": "Are you sure you want to remove the mapping at position {{position}} from controller {{controller}}?",
+    "errors": {
+      "fetchMappingsFailed": "Failed to fetch Sharp7 mappings"
+    },
+    "validation": {
+      "controllerRequired": "Please select a controller",
+      "bitRange": "Bit must be between 0 and 7"
     }
   },
   "monitoringPage": {
@@ -1316,8 +1333,11 @@
     },
     "dataTypes": {
       "boolean": "Boolean",
+      "bit": "Bit/Boolean",
       "int": "Integer",
-      "float": "Float"
+      "integer": "Integer",
+      "float": "Float",
+      "real": "Real/Float"
     },
     "status": {
       "enabled": "Enabled",
@@ -1358,6 +1378,8 @@
       "dataTypeRequired": "Data type is required",
       "bitRange": "Bit must be between 0 and 7",
       "positionRequired": "Position is required",
+      "positionMin": "Position must be 0 or greater",
+      "duplicatePosition": "This position is already mapped",
       "positionExists": "Position and bit combination already exists",
       "itemRequired": "Monitoring item is required"
     },
@@ -1377,6 +1399,7 @@
       "updated": "Controller updated successfully",
       "deleted": "Controller deleted successfully",
       "mappingAdded": "Mapping added successfully",
+      "mappingCreated": "Mapping created successfully",
       "mappingUpdated": "Mapping updated successfully",
       "mappingDeleted": "Mapping deleted successfully"
     }

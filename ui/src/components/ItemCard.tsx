@@ -42,6 +42,7 @@ import {
   DriveFileMove as MoveItemIcon,
   Delete as DeleteIcon,
   SettingsInputComponent as ModbusMappingIcon,
+  DeveloperBoard as Sharp7MappingIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../hooks/useTranslation';
 import { useUrlPrefetch } from '../hooks/useUrlPrefetch';
@@ -63,6 +64,8 @@ const logger = createLogger('ItemCard');
 
 // Lazy load ItemModbusMappingsDialog
 const ItemModbusMappingsDialog = lazy(() => import('./ItemModbusMappingsDialog'));
+// Lazy load ItemSharp7MappingsDialog
+const ItemSharp7MappingsDialog = lazy(() => import('./ItemSharp7MappingsDialog'));
 
 /**
  * Get interface type display information with color coding
@@ -191,6 +194,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [modbusMappingsDialogOpen, setModbusMappingsDialogOpen] = useState<boolean>(false);
+  const [sharp7MappingsDialogOpen, setSharp7MappingsDialogOpen] = useState<boolean>(false);
 
   // Check if user has admin role
   const isAdmin = useMemo(() => {
@@ -408,6 +412,12 @@ const ItemCard: React.FC<ItemCardProps> = ({
     logger.log('Opening Modbus mappings dialog', { itemId, itemName: name });
     handleAdminMenuClose();
     setModbusMappingsDialogOpen(true);
+  };
+
+  const handleManageSharp7Mappings = () => {
+    logger.log('Opening Sharp7 mappings dialog', { itemId, itemName: name });
+    handleAdminMenuClose();
+    setSharp7MappingsDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -1109,6 +1119,15 @@ const ItemCard: React.FC<ItemCardProps> = ({
           <ListItemText primary={t('itemCard.adminMenu.manageModbusMappings')} />
         </MenuItem>
       )}
+      {/* Show Sharp7 mapping option only for Sharp7 items */}
+      {item?.interfaceType === InterfaceTypeEnum.Sharp7 && (
+        <MenuItem onClick={handleManageSharp7Mappings} data-id-ref="item-card-admin-menu-sharp7-mappings">
+          <ListItemIcon>
+            <Sharp7MappingIcon fontSize="small" data-id-ref="item-card-admin-menu-sharp7-mappings-icon" />
+          </ListItemIcon>
+          <ListItemText primary={t('itemCard.adminMenu.manageSharp7Mappings')} />
+        </MenuItem>
+      )}
     </Menu>
 
     {/* Move Item Dialog */}
@@ -1191,6 +1210,17 @@ const ItemCard: React.FC<ItemCardProps> = ({
           open={modbusMappingsDialogOpen}
           item={item}
           onClose={() => setModbusMappingsDialogOpen(false)}
+        />
+      )}
+    </Suspense>
+
+    {/* Sharp7 Mappings Dialog */}
+    <Suspense fallback={null}>
+      {sharp7MappingsDialogOpen && item && (
+        <ItemSharp7MappingsDialog
+          open={sharp7MappingsDialogOpen}
+          item={item}
+          onClose={() => setSharp7MappingsDialogOpen(false)}
         />
       )}
     </Suspense>

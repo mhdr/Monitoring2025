@@ -62,6 +62,8 @@ import type {
   GetSharp7MapsResponseDto,
   BatchEditSharp7MapsRequestDto,
   BatchEditSharp7MapsResponseDto,
+  GetSharp7MappingsByItemIdRequestDto,
+  GetSharp7MappingsByItemIdResponseDto,
 } from '../types/api';
 
 /**
@@ -595,6 +597,18 @@ export const batchEditSharp7Maps = async (data: BatchEditSharp7MapsRequestDto): 
       ...data,
       controllerType: 2 // Sharp7 controller type
     });
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get Sharp7 mappings by item ID
+ */
+export const getSharp7MappingsByItemId = async (data: GetSharp7MappingsByItemIdRequestDto): Promise<GetSharp7MappingsByItemIdResponseDto> => {
+  try {
+    const response = await apiClient.post<GetSharp7MappingsByItemIdResponseDto>('/api/Monitoring/GetSharp7MappingsByItemId', data);
     return response.data;
   } catch (error) {
     handleApiError(error);
