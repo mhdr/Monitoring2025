@@ -275,32 +275,78 @@ const StatisticsPage: React.FC = () => {
       }
 
       if (isAnalog) {
-        const [meanRes, minRes, maxRes, stdRes, countRes] = await Promise.all([
-          getPointMeanByDate({ itemId, startDate, endDate, calendar }),
-          getPointMinByDate({ itemId, startDate, endDate, calendar }),
-          getPointMaxByDate({ itemId, startDate, endDate, calendar }),
-          getPointStdByDate({ itemId, startDate, endDate, calendar }),
-          getPointCountByDate({ itemId, startDate, endDate, calendar }),
-        ]);
+        // Call APIs sequentially with small delays to prevent connection flooding
+        // This prevents ERR_ABORTED errors caused by too many concurrent requests
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        let meanRes: any = null;
+        let minRes: any = null;
+        let maxRes: any = null;
+        let stdRes: any = null;
+        let countRes: any = null;
+        
+        try {
+          meanRes = await getPointMeanByDate({ itemId, startDate, endDate, calendar });
+          await delay(50);
+        } catch (err) {
+          if (!isCancelledError(err)) {
+            logger.warn('PointMeanByDate failed:', err);
+          }
+        }
+        
+        try {
+          minRes = await getPointMinByDate({ itemId, startDate, endDate, calendar });
+          await delay(50);
+        } catch (err) {
+          if (!isCancelledError(err)) {
+            logger.warn('PointMinByDate failed:', err);
+          }
+        }
+        
+        try {
+          maxRes = await getPointMaxByDate({ itemId, startDate, endDate, calendar });
+          await delay(50);
+        } catch (err) {
+          if (!isCancelledError(err)) {
+            logger.warn('PointMaxByDate failed:', err);
+          }
+        }
+        
+        try {
+          stdRes = await getPointStdByDate({ itemId, startDate, endDate, calendar });
+          await delay(50);
+        } catch (err) {
+          if (!isCancelledError(err)) {
+            logger.warn('PointStdByDate failed:', err);
+          }
+        }
+        
+        try {
+          countRes = await getPointCountByDate({ itemId, startDate, endDate, calendar });
+        } catch (err) {
+          if (!isCancelledError(err)) {
+            logger.warn('PointCountByDate failed:', err);
+          }
+        }
 
         // Store daily data for table display
         const dailyData: DailyAnalogStats[] = [];
         const dates = new Set<string>();
         
-        // Collect all unique dates
-        meanRes.dailyValues?.forEach(d => dates.add(d.date));
-        minRes.dailyValues?.forEach(d => dates.add(d.date));
-        maxRes.dailyValues?.forEach(d => dates.add(d.date));
-        stdRes.dailyValues?.forEach(d => dates.add(d.date));
-        countRes.dailyCounts?.forEach(d => dates.add(d.date));
+        // Collect all unique dates from successful responses
+        meanRes?.dailyValues?.forEach(d => dates.add(d.date));
+        minRes?.dailyValues?.forEach(d => dates.add(d.date));
+        maxRes?.dailyValues?.forEach(d => dates.add(d.date));
+        stdRes?.dailyValues?.forEach(d => dates.add(d.date));
+        countRes?.dailyCounts?.forEach(d => dates.add(d.date));
         
         // Build daily data array
         Array.from(dates).sort().forEach(date => {
-          const meanValue = meanRes.dailyValues?.find(d => d.date === date);
-          const minValue = minRes.dailyValues?.find(d => d.date === date);
-          const maxValue = maxRes.dailyValues?.find(d => d.date === date);
-          const stdValue = stdRes.dailyValues?.find(d => d.date === date);
-          const countValue = countRes.dailyCounts?.find(d => d.date === date);
+          const meanValue = meanRes?.dailyValues?.find(d => d.date === date);
+          const minValue = minRes?.dailyValues?.find(d => d.date === date);
+          const maxValue = maxRes?.dailyValues?.find(d => d.date === date);
+          const stdValue = stdRes?.dailyValues?.find(d => d.date === date);
+          const countValue = countRes?.dailyCounts?.find(d => d.date === date);
           
           dailyData.push({
             date,
@@ -315,11 +361,11 @@ const StatisticsPage: React.FC = () => {
         setDailyHistoricalStats(dailyData);
 
         // Calculate aggregated statistics for summary
-        const meanValues = meanRes.dailyValues?.map(d => d.value) || [];
-        const minValues = minRes.dailyValues?.map(d => d.value) || [];
-        const maxValues = maxRes.dailyValues?.map(d => d.value) || [];
-        const stdValues = stdRes.dailyValues?.map(d => d.value) || [];
-        const totalCount = countRes.dailyCounts?.reduce((sum, d) => sum + d.count, 0) || 0;
+        const meanValues = meanRes?.dailyValues?.map(d => d.value) || [];
+        const minValues = minRes?.dailyValues?.map(d => d.value) || [];
+        const maxValues = maxRes?.dailyValues?.map(d => d.value) || [];
+        const stdValues = stdRes?.dailyValues?.map(d => d.value) || [];
+        const totalCount = countRes?.dailyCounts?.reduce((sum, d) => sum + d.count, 0) || 0;
 
         setHistoricalStats({
           mean: meanValues.length > 0 ? meanValues.reduce((a, b) => a + b, 0) / meanValues.length : null,
@@ -436,10 +482,11 @@ const StatisticsPage: React.FC = () => {
       }
     };
     
-    // Add a small delay to prevent rapid successive calls when preset changes
+    // Add a longer delay to prevent rapid successive calls when preset changes
+    // Increased from 100ms to 300ms to reduce request cancellations
     timeoutId = setTimeout(() => {
       fetchData();
-    }, 100);
+    }, 300);
     
     return () => {
       isMounted = false;
