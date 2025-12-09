@@ -1028,11 +1028,19 @@ const StatisticsPage: React.FC = () => {
         />
         <Collapse in={!dateRangeCollapsed} timeout="auto" unmountOnExit>
           <CardContent data-id-ref="statistics-page-date-range-content">
-            <Box mb={2}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                alignItems: { xs: 'stretch', md: 'flex-end' },
+                gap: 2,
+              }}
+            >
+              {/* Preset Buttons */}
               <ButtonGroup 
-                fullWidth 
                 variant="outlined" 
                 size="small"
+                sx={{ flexWrap: 'wrap' }}
                 data-id-ref="statistics-page-date-range-preset-group"
               >
                 <Button
@@ -1064,43 +1072,40 @@ const StatisticsPage: React.FC = () => {
                   {t('customRange')}
                 </Button>
               </ButtonGroup>
-            </Box>
 
-            {selectedPreset === 'custom' && (
-              <Box data-id-ref="statistics-page-custom-date-container">
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-                  <Box sx={{ flex: '1 1 300px', minWidth: 300 }}>
-                    <SeparatedDateTimePicker
-                      id="start-datetime"
-                      value={customStartDate}
-                      onChange={setCustomStartDate}
-                      dateLabel={t('startDate')}
-                      timeLabel={t('startTime')}
-                      data-id-ref="statistics-page-start-datetime-picker"
-                    />
-                  </Box>
-                  <Box sx={{ flex: '1 1 300px', minWidth: 300 }}>
-                    <SeparatedDateTimePicker
-                      id="end-datetime"
-                      value={customEndDate}
-                      onChange={setCustomEndDate}
-                      dateLabel={t('endDate')}
-                      timeLabel={t('endTime')}
-                      data-id-ref="statistics-page-end-datetime-picker"
-                    />
-                  </Box>
-                </Box>
-                <Button
-                  variant="contained"
-                  onClick={handleCustomDateApply}
-                  disabled={!customStartDate || !customEndDate}
-                  fullWidth
-                  data-id-ref="statistics-page-apply-custom-date-btn"
-                >
-                  {t('apply')}
-                </Button>
-              </Box>
-            )}
+              {/* Custom Date Inputs (shown only when custom is selected) */}
+              {selectedPreset === 'custom' && (
+                <>
+                  <SeparatedDateTimePicker
+                    id="startDate"
+                    value={customStartDate}
+                    onChange={setCustomStartDate}
+                    data-id-ref="statistics-start-date"
+                    className=""
+                    dateLabel={t('startDate')}
+                    timeLabel={t('startTime')}
+                  />
+                  <SeparatedDateTimePicker
+                    id="endDate"
+                    value={customEndDate}
+                    onChange={setCustomEndDate}
+                    data-id-ref="statistics-end-date"
+                    className=""
+                    dateLabel={t('endDate')}
+                    timeLabel={t('endTime')}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={handleCustomDateApply}
+                    disabled={!customStartDate || !customEndDate}
+                    sx={{ ml: { md: 'auto' }, minWidth: { xs: '100%', md: 'auto' } }}
+                    data-id-ref="statistics-page-apply-custom-date-btn"
+                  >
+                    {t('apply')}
+                  </Button>
+                </>
+              )}
+            </Box>
           </CardContent>
         </Collapse>
       </Card>
