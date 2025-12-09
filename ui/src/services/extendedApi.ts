@@ -50,6 +50,18 @@ import type {
   BatchEditModbusMapsResponseDto,
   GetModbusMappingsByItemIdRequestDto,
   GetModbusMappingsByItemIdResponseDto,
+  // Sharp7 controller types
+  GetSharp7ControllersResponseDto,
+  AddSharp7ControllerRequestDto,
+  AddSharp7ControllerResponseDto,
+  EditSharp7ControllerRequestDto,
+  EditSharp7ControllerResponseDto,
+  DeleteSharp7ControllerRequestDto,
+  DeleteSharp7ControllerResponseDto,
+  GetSharp7MapsRequestDto,
+  GetSharp7MapsResponseDto,
+  BatchEditSharp7MapsRequestDto,
+  BatchEditSharp7MapsResponseDto,
 } from '../types/api';
 
 /**
@@ -497,3 +509,95 @@ export const getModbusMappingsByItemId = async (data: GetModbusMappingsByItemIdR
     handleApiError(error);
   }
 };
+
+// ==================== Sharp7 Controller Management ====================
+
+/**
+ * Get all Sharp7 (Siemens S7) controllers
+ */
+export const getSharp7Controllers = async (): Promise<GetSharp7ControllersResponseDto> => {
+  try {
+    const response = await apiClient.post<GetSharp7ControllersResponseDto>('/api/Monitoring/GetControllers', {
+      controllerType: 2 // Sharp7 controller type
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new Sharp7 controller
+ */
+export const addSharp7Controller = async (data: AddSharp7ControllerRequestDto): Promise<AddSharp7ControllerResponseDto> => {
+  try {
+    const response = await apiClient.post<AddSharp7ControllerResponseDto>('/api/Monitoring/AddController', {
+      ...data,
+      controllerType: 2 // Sharp7 controller type
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing Sharp7 controller
+ */
+export const editSharp7Controller = async (data: EditSharp7ControllerRequestDto): Promise<EditSharp7ControllerResponseDto> => {
+  try {
+    const response = await apiClient.post<EditSharp7ControllerResponseDto>('/api/Monitoring/EditController', {
+      ...data,
+      controllerType: 2 // Sharp7 controller type
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a Sharp7 controller
+ */
+export const deleteSharp7Controller = async (data: DeleteSharp7ControllerRequestDto): Promise<DeleteSharp7ControllerResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteSharp7ControllerResponseDto>('/api/Monitoring/DeleteController', {
+      ...data,
+      controllerType: 2 // Sharp7 controller type
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get Sharp7 mappings for a specific controller
+ */
+export const getSharp7Maps = async (data: GetSharp7MapsRequestDto): Promise<GetSharp7MapsResponseDto> => {
+  try {
+    const response = await apiClient.post<GetSharp7MapsResponseDto>('/api/Monitoring/GetMappings', {
+      ...data,
+      controllerType: 2 // Sharp7 controller type
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Batch edit Sharp7 mappings (add, update, delete)
+ */
+export const batchEditSharp7Maps = async (data: BatchEditSharp7MapsRequestDto): Promise<BatchEditSharp7MapsResponseDto> => {
+  try {
+    const response = await apiClient.post<BatchEditSharp7MapsResponseDto>('/api/Monitoring/BatchEditMappings', {
+      ...data,
+      controllerType: 2 // Sharp7 controller type
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+

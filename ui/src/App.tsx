@@ -27,6 +27,7 @@ const DisabledAlarmsPage = lazy(() => import('./components/DisabledAlarmsPage'))
 const SchedulerPage = lazy(() => import('./components/SchedulerPage'));
 const UsersPage = lazy(() => import('./components/UsersPage'));
 const ModbusControllersPage = lazy(() => import('./components/ModbusControllersPage'));
+const Sharp7ControllersPage = lazy(() => import('./components/Sharp7ControllersPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
@@ -132,6 +133,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ModbusControllersPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="management/sharp7-controllers" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <Sharp7ControllersPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

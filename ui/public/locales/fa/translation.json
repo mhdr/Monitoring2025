@@ -1288,6 +1288,99 @@
       "mappingDeleted": "نگاشت با موفقیت حذف شد"
     }
   },
+  "sharp7Controllers": {
+    "title": "کنترلرهای Sharp7 (زیمنس S7)",
+    "addController": "افزودن کنترلر",
+    "editController": "ویرایش کنترلر",
+    "deleteController": "حذف کنترلر",
+    "searchPlaceholder": "جستجوی کنترلرها...",
+    "noControllersFound": "هیچ کنترلر Sharp7 یافت نشد",
+    "addFirstController": "اولین کنترلر Sharp7 خود را اضافه کنید",
+    "fields": {
+      "name": "نام",
+      "ipAddress": "آدرس IP",
+      "dbAddress": "آدرس DB",
+      "dbAddressHelper": "شماره بلوک داده",
+      "dbStartData": "شروع DB",
+      "dbStartDataHelper": "بایت شروع در بلوک داده",
+      "dbSizeData": "اندازه DB",
+      "dbSizeDataHelper": "تعداد بایت برای خواندن",
+      "dataType": "نوع داده",
+      "username": "نام کاربری",
+      "usernameHelper": "نام کاربری احراز هویت (اختیاری)",
+      "password": "رمز عبور",
+      "passwordHelper": "رمز عبور احراز هویت (اختیاری)",
+      "passwordHelperEdit": "برای حفظ رمز فعلی خالی بگذارید",
+      "isDisabled": "غیرفعال",
+      "status": "وضعیت"
+    },
+    "dataTypes": {
+      "boolean": "بولین",
+      "int": "عدد صحیح",
+      "float": "اعشاری"
+    },
+    "status": {
+      "enabled": "فعال",
+      "disabled": "غیرفعال"
+    },
+    "mappings": {
+      "title": "نگاشت بلوک داده",
+      "addMapping": "افزودن نگاشت",
+      "editMapping": "ویرایش نگاشت",
+      "noMappings": "نگاشتی پیکربندی نشده",
+      "position": "موقعیت",
+      "bit": "بیت",
+      "bitHelper": "اختیاری: موقعیت بیت (۰-۷) برای مقادیر بولین",
+      "item": "آیتم مانیتورینگ",
+      "operationType": "عملیات",
+      "selectItem": "انتخاب آیتم...",
+      "read": "خواندن",
+      "write": "نوشتن"
+    },
+    "dialogs": {
+      "addTitle": "افزودن کنترلر Sharp7",
+      "editTitle": "ویرایش کنترلر Sharp7",
+      "deleteTitle": "حذف کنترلر Sharp7",
+      "deleteMessage": "آیا مطمئن هستید که می‌خواهید کنترلر «{{name}}» را حذف کنید؟",
+      "deleteWarning": "این عمل قابل بازگشت نیست. تمام نگاشت‌های مرتبط نیز حذف خواهند شد.",
+      "deleteMappingConfirm": "آیا مطمئن هستید که می‌خواهید این نگاشت را حذف کنید؟"
+    },
+    "validation": {
+      "nameRequired": "نام الزامی است",
+      "ipAddressRequired": "آدرس IP الزامی است",
+      "ipAddressInvalid": "فرمت آدرس IP نامعتبر است",
+      "dbAddressRequired": "آدرس DB الزامی است",
+      "dbAddressMin": "آدرس DB باید ۰ یا بیشتر باشد",
+      "dbStartDataRequired": "شروع DB الزامی است",
+      "dbStartDataMin": "شروع DB باید ۰ یا بیشتر باشد",
+      "dbSizeDataRequired": "اندازه DB الزامی است",
+      "dbSizeDataMin": "اندازه DB باید حداقل ۱ باشد",
+      "dataTypeRequired": "نوع داده الزامی است",
+      "bitRange": "بیت باید بین ۰ و ۷ باشد",
+      "positionRequired": "موقعیت الزامی است",
+      "positionExists": "ترکیب موقعیت و بیت قبلاً وجود دارد",
+      "itemRequired": "آیتم مانیتورینگ الزامی است"
+    },
+    "errors": {
+      "fetchFailed": "بارگذاری کنترلرهای Sharp7 ناموفق بود",
+      "createFailed": "ایجاد کنترلر ناموفق بود",
+      "updateFailed": "به‌روزرسانی کنترلر ناموفق بود",
+      "deleteFailed": "حذف کنترلر ناموفق بود",
+      "fetchMappingsFailed": "بارگذاری نگاشت‌ها ناموفق بود",
+      "saveMappingsFailed": "ذخیره نگاشت‌ها ناموفق بود",
+      "addMappingFailed": "افزودن نگاشت ناموفق بود",
+      "updateMappingFailed": "به‌روزرسانی نگاشت ناموفق بود",
+      "deleteMappingFailed": "حذف نگاشت ناموفق بود"
+    },
+    "success": {
+      "created": "کنترلر با موفقیت ایجاد شد",
+      "updated": "کنترلر با موفقیت به‌روزرسانی شد",
+      "deleted": "کنترلر با موفقیت حذف شد",
+      "mappingAdded": "نگاشت با موفقیت افزوده شد",
+      "mappingUpdated": "نگاشت با موفقیت به‌روزرسانی شد",
+      "mappingDeleted": "نگاشت با موفقیت حذف شد"
+    }
+  },
   "statistics": {
     "title": "آمار و اطلاعات",
     "summary": "خلاصه (۲۴ ساعت گذشته)",

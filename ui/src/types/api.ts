@@ -2093,6 +2093,152 @@ export interface GetModbusMappingsByItemIdResponseDto {
   data: MapModbusWithController[];
 }
 
+// ==================== Sharp7 API Types ====================
+
+/**
+ * Sharp7 (Siemens S7) controller configuration
+ */
+export interface ControllerSharp7 {
+  id: string;
+  name: string;
+  ipAddress: string;
+  dbAddress: number;
+  dbStartData: number;
+  dbSizeData: number;
+  dataType: DataType;
+  isDisabled: boolean;
+  username?: string | null;
+  password?: string | null;
+}
+
+/**
+ * Response DTO for getting Sharp7 controllers
+ */
+export interface GetSharp7ControllersResponseDto {
+  data: ControllerSharp7[];
+}
+
+/**
+ * Request DTO for adding a new Sharp7 controller
+ */
+export interface AddSharp7ControllerRequestDto {
+  name: string;
+  ipAddress: string;
+  dbAddress: number;
+  dbStartData: number;
+  dbSizeData: number;
+  dataType: number;
+  isDisabled?: boolean;
+  username?: string | null;
+  password?: string | null;
+}
+
+/**
+ * Response DTO for adding a Sharp7 controller
+ */
+export interface AddSharp7ControllerResponseDto {
+  isSuccessful: boolean;
+  controllerId?: string | null;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for editing a Sharp7 controller
+ */
+export interface EditSharp7ControllerRequestDto {
+  id: string;
+  name: string;
+  ipAddress: string;
+  dbAddress: number;
+  dbStartData: number;
+  dbSizeData: number;
+  dataType: number;
+  isDisabled?: boolean;
+  username?: string | null;
+  password?: string | null;
+}
+
+/**
+ * Response DTO for editing a Sharp7 controller
+ */
+export interface EditSharp7ControllerResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a Sharp7 controller
+ */
+export interface DeleteSharp7ControllerRequestDto {
+  id: string;
+}
+
+/**
+ * Response DTO for deleting a Sharp7 controller
+ */
+export interface DeleteSharp7ControllerResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Sharp7 mapping between controller data block and monitoring item
+ */
+export interface MapSharp7 {
+  id: string;
+  controllerId: string;
+  position: number;
+  bit?: number | null;
+  itemId: string;
+  operationType?: IoOperationType | null;
+}
+
+/**
+ * Request DTO for getting Sharp7 mappings
+ */
+export interface GetSharp7MapsRequestDto {
+  controllerId: string;
+}
+
+/**
+ * Response DTO for getting Sharp7 mappings
+ */
+export interface GetSharp7MapsResponseDto {
+  data: MapSharp7[];
+}
+
+/**
+ * Sharp7 map item for batch operations
+ */
+export interface Sharp7MapItem {
+  id?: string | null;
+  position: number;
+  bit?: number | null;
+  itemId: string;
+  operationType?: number | null;
+}
+
+/**
+ * Request DTO for batch editing Sharp7 mappings
+ */
+export interface BatchEditSharp7MapsRequestDto {
+  controllerId: string;
+  changed: Sharp7MapItem[];
+  added: Sharp7MapItem[];
+  removed: string[];
+}
+
+/**
+ * Response DTO for batch editing Sharp7 mappings
+ */
+export interface BatchEditSharp7MapsResponseDto {
+  isSuccessful: boolean;
+  addedCount: number;
+  changedCount: number;
+  removedCount: number;
+  errorMessage?: string | null;
+}
+
 // ==================== Statistics API Types ====================
 
 /**
