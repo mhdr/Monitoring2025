@@ -334,19 +334,19 @@ const StatisticsPage: React.FC = () => {
         const dates = new Set<string>();
         
         // Collect all unique dates from successful responses
-        meanRes?.dailyValues?.forEach(d => dates.add(d.date));
-        minRes?.dailyValues?.forEach(d => dates.add(d.date));
-        maxRes?.dailyValues?.forEach(d => dates.add(d.date));
-        stdRes?.dailyValues?.forEach(d => dates.add(d.date));
-        countRes?.dailyCounts?.forEach(d => dates.add(d.date));
+        meanRes?.dailyValues?.forEach((d: { date: string }) => dates.add(d.date));
+        minRes?.dailyValues?.forEach((d: { date: string }) => dates.add(d.date));
+        maxRes?.dailyValues?.forEach((d: { date: string }) => dates.add(d.date));
+        stdRes?.dailyValues?.forEach((d: { date: string }) => dates.add(d.date));
+        countRes?.dailyCounts?.forEach((d: { date: string }) => dates.add(d.date));
         
         // Build daily data array
         Array.from(dates).sort().forEach(date => {
-          const meanValue = meanRes?.dailyValues?.find(d => d.date === date);
-          const minValue = minRes?.dailyValues?.find(d => d.date === date);
-          const maxValue = maxRes?.dailyValues?.find(d => d.date === date);
-          const stdValue = stdRes?.dailyValues?.find(d => d.date === date);
-          const countValue = countRes?.dailyCounts?.find(d => d.date === date);
+          const meanValue = meanRes?.dailyValues?.find((d: { date: string }) => d.date === date);
+          const minValue = minRes?.dailyValues?.find((d: { date: string }) => d.date === date);
+          const maxValue = maxRes?.dailyValues?.find((d: { date: string }) => d.date === date);
+          const stdValue = stdRes?.dailyValues?.find((d: { date: string }) => d.date === date);
+          const countValue = countRes?.dailyCounts?.find((d: { date: string }) => d.date === date);
           
           dailyData.push({
             date,
@@ -361,17 +361,17 @@ const StatisticsPage: React.FC = () => {
         setDailyHistoricalStats(dailyData);
 
         // Calculate aggregated statistics for summary
-        const meanValues = meanRes?.dailyValues?.map(d => d.value) || [];
-        const minValues = minRes?.dailyValues?.map(d => d.value) || [];
-        const maxValues = maxRes?.dailyValues?.map(d => d.value) || [];
-        const stdValues = stdRes?.dailyValues?.map(d => d.value) || [];
-        const totalCount = countRes?.dailyCounts?.reduce((sum, d) => sum + d.count, 0) || 0;
+        const meanValues = meanRes?.dailyValues?.map((d: { value: number }) => d.value) || [];
+        const minValues = minRes?.dailyValues?.map((d: { value: number }) => d.value) || [];
+        const maxValues = maxRes?.dailyValues?.map((d: { value: number }) => d.value) || [];
+        const stdValues = stdRes?.dailyValues?.map((d: { value: number }) => d.value) || [];
+        const totalCount = countRes?.dailyCounts?.reduce((sum: number, d: { count: number }) => sum + d.count, 0) || 0;
 
         setHistoricalStats({
-          mean: meanValues.length > 0 ? meanValues.reduce((a, b) => a + b, 0) / meanValues.length : null,
+          mean: meanValues.length > 0 ? meanValues.reduce((a: number, b: number) => a + b, 0) / meanValues.length : null,
           min: minValues.length > 0 ? Math.min(...minValues) : null,
           max: maxValues.length > 0 ? Math.max(...maxValues) : null,
-          std: stdValues.length > 0 ? stdValues.reduce((a, b) => a + b, 0) / stdValues.length : null,
+          std: stdValues.length > 0 ? stdValues.reduce((a: number, b: number) => a + b, 0) / stdValues.length : null,
           count: totalCount,
         });
       } else {
