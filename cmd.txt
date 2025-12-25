@@ -21,6 +21,7 @@ proxychains wget https://github.com/mikefarah/yq/releases/latest/download/yq_lin
 
 dotnet tool uninstall --global dotnet-ef
 proxychains dotnet tool install --global dotnet-ef
+proxychains dotnet tool install -g dotnet-ef --version 9.*
 
 proxychains dotnet workload install wasm-tools
 
