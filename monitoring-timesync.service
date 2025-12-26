@@ -1,0 +1,37 @@
+[Unit]
+Description=HTTP Time Sync via Proxychains4
+Documentation=https://github.com/your-org/Monitoring2025
+After=network-online.target chronyd.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/monitoring
+ExecStart=/bin/bash /opt/monitoring/sync-time-proxy.sh
+
+# Timeout settings
+TimeoutStartSec=60
+TimeoutStopSec=10
+
+# Restart on failure
+Restart=on-failure
+RestartSec=30
+
+# Resource limits
+MemoryMax=256M
+CPUQuota=50%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=timesync-proxy
+
+# Security settings
+PrivateTmp=yes
+NoNewPrivileges=no
+ProtectSystem=no
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

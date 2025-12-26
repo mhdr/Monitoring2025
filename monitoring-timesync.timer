@@ -1,0 +1,20 @@
+[Unit]
+Description=HTTP Time Sync Timer (Hourly)
+Documentation=https://github.com/your-org/Monitoring2025
+Requires=monitoring-timesync.service
+
+[Timer]
+# Run every hour
+OnCalendar=hourly
+
+# Run 2 minutes after boot (when NTP fails)
+OnBootSec=2min
+
+# If system was offline, catch up on missed runs
+Persistent=true
+
+# Randomize start time by up to 5 minutes to avoid load spikes
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
