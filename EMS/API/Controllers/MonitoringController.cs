@@ -8930,4 +8930,472 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             });
         }
     }
+
+    // ==================== Modbus Gateway API Endpoints ====================
+
+    /// <summary>
+    /// Get all Modbus gateway configurations with their status
+    /// </summary>
+    /// <returns>List of all Modbus gateway configurations</returns>
+    /// <response code="200">Returns the list of gateways</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetModbusGateways")]
+    [ProducesResponseType(typeof(GetModbusGatewaysResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetModbusGateways()
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var gateways = await Core.Controllers.GetModbusGatewayConfigs();
+            var response = new GetModbusGatewaysResponseDto();
+
+            foreach (var gateway in gateways)
+            {
+                var mappingCount = (await Core.Controllers.GetModbusGatewayMappings(gateway.Id)).Count;
+                
+                response.Data.Add(new GetModbusGatewaysResponseDto.ModbusGateway
+                {
+                    Id = gateway.Id,
+                    Name = gateway.Name,
+                    ListenIP = gateway.ListenIP,
+                    Port = gateway.Port,
+                    UnitId = gateway.UnitId,
+                    IsEnabled = gateway.IsEnabled,
+                    ConnectedClients = gateway.ConnectedClients,
+                    LastReadTime = gateway.LastReadTime,
+                    LastWriteTime = gateway.LastWriteTime,
+                    MappingCount = mappingCount
+                });
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error getting Modbus gateways");
+            return BadRequest(new { success = false, errorMessage = "An error occurred while getting gateways" });
+        }
+    }
+
+    /// <summary>
+    /// Add a new Modbus gateway configuration
+    /// </summary>
+    /// <param name="request">Gateway configuration to add</param>
+    /// <returns>Result with the new gateway ID or validation errors</returns>
+    /// <response code="200">Returns success status and gateway ID</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("AddModbusGateway")]
+    [ProducesResponseType(typeof(AddModbusGatewayResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> AddModbusGateway([FromBody] AddModbusGatewayRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var validationErrors = new List<GatewayValidationError>();
+
+            // Check if port is available in database
+            var isPortAvailableInDb = await Core.Controllers.IsPortAvailableInDb(request.Port);
+            if (!isPortAvailableInDb)
+            {
+                validationErrors.Add(GatewayValidationError.PortConflictInDb(request.Port));
+            }
+
+            // Check if port is available on the system
+            if (isPortAvailableInDb && !GatewayValidationHelper.IsPortAvailableOnSystem(request.Port, request.ListenIP))
+            {
+                validationErrors.Add(GatewayValidationError.PortInUseOnSystem(request.Port));
+            }
+
+            if (validationErrors.Count > 0)
+            {
+                return Ok(new AddModbusGatewayResponseDto
+                {
+                    IsSuccessful = false,
+                    ErrorMessage = "Validation failed",
+                    ValidationErrors = validationErrors
+                });
+            }
+
+            var gatewayConfig = new Core.Models.ModbusGatewayConfig
+            {
+                Name = request.Name,
+                ListenIP = request.ListenIP,
+                Port = request.Port,
+                UnitId = request.UnitId,
+                IsEnabled = request.IsEnabled
+            };
+
+            var gatewayId = await Core.Controllers.AddModbusGatewayConfig(gatewayConfig);
+
+            // Publish config changed message
+            await _bus.Publish(new GatewayConfigChangedMessage(gatewayId, GatewayConfigChangeType.Added));
+
+            _logger.LogInformation("Modbus gateway added: {GatewayId}, Name={Name}, Port={Port}, by UserId={UserId}",
+                gatewayId, request.Name, request.Port, userId);
+
+            return Ok(new AddModbusGatewayResponseDto
+            {
+                IsSuccessful = true,
+                GatewayId = gatewayId
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error adding Modbus gateway");
+            return Ok(new AddModbusGatewayResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = "An error occurred while adding the gateway"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing Modbus gateway configuration
+    /// </summary>
+    /// <param name="request">Updated gateway configuration</param>
+    /// <returns>Result indicating success or validation errors</returns>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("EditModbusGateway")]
+    [ProducesResponseType(typeof(EditModbusGatewayResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> EditModbusGateway([FromBody] EditModbusGatewayRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var validationErrors = new List<GatewayValidationError>();
+
+            // Get existing gateway to check for port changes
+            var existingGateway = await Core.Controllers.GetModbusGatewayConfig(request.Id);
+            if (existingGateway == null)
+            {
+                return Ok(new EditModbusGatewayResponseDto
+                {
+                    IsSuccessful = false,
+                    ErrorMessage = "Gateway not found"
+                });
+            }
+
+            // Only validate port if it changed
+            if (existingGateway.Port != request.Port)
+            {
+                var isPortAvailableInDb = await Core.Controllers.IsPortAvailableInDb(request.Port, request.Id);
+                if (!isPortAvailableInDb)
+                {
+                    validationErrors.Add(GatewayValidationError.PortConflictInDb(request.Port));
+                }
+
+                if (isPortAvailableInDb && !GatewayValidationHelper.IsPortAvailableOnSystem(request.Port, request.ListenIP))
+                {
+                    validationErrors.Add(GatewayValidationError.PortInUseOnSystem(request.Port));
+                }
+            }
+
+            if (validationErrors.Count > 0)
+            {
+                return Ok(new EditModbusGatewayResponseDto
+                {
+                    IsSuccessful = false,
+                    ErrorMessage = "Validation failed",
+                    ValidationErrors = validationErrors
+                });
+            }
+
+            var gatewayConfig = new Core.Models.ModbusGatewayConfig
+            {
+                Id = request.Id,
+                Name = request.Name,
+                ListenIP = request.ListenIP,
+                Port = request.Port,
+                UnitId = request.UnitId,
+                IsEnabled = request.IsEnabled
+            };
+
+            var result = await Core.Controllers.EditModbusGatewayConfig(gatewayConfig);
+
+            if (result)
+            {
+                // Publish config changed message
+                await _bus.Publish(new GatewayConfigChangedMessage(request.Id, GatewayConfigChangeType.Updated));
+
+                _logger.LogInformation("Modbus gateway edited: {GatewayId}, by UserId={UserId}", request.Id, userId);
+            }
+
+            return Ok(new EditModbusGatewayResponseDto
+            {
+                IsSuccessful = result,
+                ErrorMessage = result ? null : "Failed to update gateway"
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error editing Modbus gateway");
+            return Ok(new EditModbusGatewayResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = "An error occurred while editing the gateway"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Delete a Modbus gateway configuration
+    /// </summary>
+    /// <param name="request">Request containing the gateway ID to delete</param>
+    /// <returns>Result indicating success or failure</returns>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("DeleteModbusGateway")]
+    [ProducesResponseType(typeof(DeleteModbusGatewayResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DeleteModbusGateway([FromBody] DeleteModbusGatewayRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await Core.Controllers.DeleteModbusGatewayConfig(request.Id);
+
+            if (result)
+            {
+                // Publish config changed message
+                await _bus.Publish(new GatewayConfigChangedMessage(request.Id, GatewayConfigChangeType.Deleted));
+
+                _logger.LogInformation("Modbus gateway deleted: {GatewayId}, by UserId={UserId}", request.Id, userId);
+            }
+
+            return Ok(new DeleteModbusGatewayResponseDto
+            {
+                IsSuccessful = result,
+                ErrorMessage = result ? null : "Gateway not found or could not be deleted"
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error deleting Modbus gateway");
+            return Ok(new DeleteModbusGatewayResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = "An error occurred while deleting the gateway"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Get all mappings for a specific Modbus gateway
+    /// </summary>
+    /// <param name="request">Request containing the gateway ID</param>
+    /// <returns>List of mappings with item details</returns>
+    /// <response code="200">Returns the list of mappings</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetModbusGatewayMappings")]
+    [ProducesResponseType(typeof(GetModbusGatewayMappingsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetModbusGatewayMappings([FromBody] GetModbusGatewayMappingsRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var mappings = await Core.Controllers.GetGatewayMappingsWithItems(request.GatewayId);
+            var response = new GetModbusGatewayMappingsResponseDto
+            {
+                IsSuccessful = true,
+                Mappings = mappings.Select(m => new ModbusGatewayMappingDto
+                {
+                    Id = m.Id,
+                    GatewayId = m.GatewayId,
+                    ModbusAddress = m.ModbusAddress,
+                    RegisterType = (int)m.RegisterType,
+                    ItemId = m.ItemId,
+                    ItemName = m.Item?.ItemName,
+                    ItemNameFa = m.Item?.ItemNameFa,
+                    IsEditable = m.Item?.IsEditable ?? false,
+                    RegisterCount = m.RegisterCount,
+                    DataRepresentation = (int)m.DataRepresentation,
+                    Endianness = (int)m.Endianness,
+                    ScaleMin = m.ScaleMin,
+                    ScaleMax = m.ScaleMax
+                }).ToList()
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error getting Modbus gateway mappings");
+            return Ok(new GetModbusGatewayMappingsResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = "An error occurred while getting mappings"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Batch edit mappings for a Modbus gateway (add, update, remove in single transaction)
+    /// </summary>
+    /// <param name="request">Batch edit request with added, updated, and removed mappings</param>
+    /// <returns>Result indicating success or validation errors for overlaps</returns>
+    /// <response code="200">Returns success status or validation errors</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("BatchEditModbusGatewayMappings")]
+    [ProducesResponseType(typeof(BatchEditModbusGatewayMappingsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> BatchEditModbusGatewayMappings([FromBody] BatchEditModbusGatewayMappingsRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Get existing mappings
+            var existingMappings = await Core.Controllers.GetModbusGatewayMappings(request.GatewayId);
+            
+            // Build the complete set of mappings after changes for overlap validation
+            var allMappingsAfterEdit = new List<MappingRange>();
+
+            // Add existing mappings that are not being removed or updated
+            var removedIds = new HashSet<Guid>(request.RemovedIds);
+            var updatedIds = new HashSet<Guid>(request.Updated.Where(u => u.Id.HasValue).Select(u => u.Id!.Value));
+            
+            foreach (var existing in existingMappings)
+            {
+                if (!removedIds.Contains(existing.Id) && !updatedIds.Contains(existing.Id))
+                {
+                    allMappingsAfterEdit.Add(new MappingRange
+                    {
+                        MappingId = existing.Id,
+                        StartAddress = existing.ModbusAddress,
+                        RegisterCount = existing.RegisterCount,
+                        RegisterType = (int)existing.RegisterType
+                    });
+                }
+            }
+
+            // Add new mappings
+            foreach (var added in request.Added)
+            {
+                var registerCount = GatewayValidationHelper.CalculateRegisterCount((Core.Libs.ModbusDataRepresentation)added.DataRepresentation);
+                allMappingsAfterEdit.Add(new MappingRange
+                {
+                    MappingId = Guid.NewGuid(),
+                    StartAddress = added.ModbusAddress,
+                    RegisterCount = registerCount,
+                    RegisterType = added.RegisterType
+                });
+            }
+
+            // Add updated mappings
+            foreach (var updated in request.Updated)
+            {
+                var registerCount = GatewayValidationHelper.CalculateRegisterCount((Core.Libs.ModbusDataRepresentation)updated.DataRepresentation);
+                allMappingsAfterEdit.Add(new MappingRange
+                {
+                    MappingId = updated.Id ?? Guid.NewGuid(),
+                    StartAddress = updated.ModbusAddress,
+                    RegisterCount = registerCount,
+                    RegisterType = updated.RegisterType
+                });
+            }
+
+            // Validate for overlaps
+            var validationErrors = GatewayValidationHelper.ValidateMappingOverlaps(allMappingsAfterEdit);
+            if (validationErrors.Count > 0)
+            {
+                return Ok(new BatchEditModbusGatewayMappingsResponseDto
+                {
+                    IsSuccessful = false,
+                    ErrorMessage = "Mapping address ranges overlap",
+                    ValidationErrors = validationErrors
+                });
+            }
+
+            // Convert DTOs to entities
+            var listAdd = request.Added.Select(m => new Core.Models.ModbusGatewayMapping
+            {
+                GatewayId = request.GatewayId,
+                ModbusAddress = m.ModbusAddress,
+                RegisterType = (Core.Libs.ModbusRegisterType)m.RegisterType,
+                ItemId = m.ItemId,
+                RegisterCount = GatewayValidationHelper.CalculateRegisterCount((Core.Libs.ModbusDataRepresentation)m.DataRepresentation),
+                DataRepresentation = (Core.Libs.ModbusDataRepresentation)m.DataRepresentation,
+                Endianness = (Core.Libs.Endianness)m.Endianness,
+                ScaleMin = m.ScaleMin,
+                ScaleMax = m.ScaleMax
+            }).ToList();
+
+            var listUpdate = request.Updated.Where(m => m.Id.HasValue).Select(m => new Core.Models.ModbusGatewayMapping
+            {
+                Id = m.Id!.Value,
+                GatewayId = request.GatewayId,
+                ModbusAddress = m.ModbusAddress,
+                RegisterType = (Core.Libs.ModbusRegisterType)m.RegisterType,
+                ItemId = m.ItemId,
+                RegisterCount = GatewayValidationHelper.CalculateRegisterCount((Core.Libs.ModbusDataRepresentation)m.DataRepresentation),
+                DataRepresentation = (Core.Libs.ModbusDataRepresentation)m.DataRepresentation,
+                Endianness = (Core.Libs.Endianness)m.Endianness,
+                ScaleMin = m.ScaleMin,
+                ScaleMax = m.ScaleMax
+            }).ToList();
+
+            var listRemove = existingMappings.Where(m => removedIds.Contains(m.Id)).ToList();
+
+            var result = await Core.Controllers.BatchEditModbusGatewayMappings(listAdd, listUpdate, listRemove);
+
+            if (result)
+            {
+                // Publish config changed message to reload mappings in worker
+                await _bus.Publish(new GatewayConfigChangedMessage(request.GatewayId, GatewayConfigChangeType.Updated));
+
+                _logger.LogInformation("Modbus gateway mappings batch edited: GatewayId={GatewayId}, Added={AddCount}, Updated={UpdateCount}, Removed={RemoveCount}, by UserId={UserId}",
+                    request.GatewayId, listAdd.Count, listUpdate.Count, listRemove.Count, userId);
+            }
+
+            return Ok(new BatchEditModbusGatewayMappingsResponseDto
+            {
+                IsSuccessful = result,
+                ErrorMessage = result ? null : "Failed to update mappings"
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error batch editing Modbus gateway mappings");
+            return Ok(new BatchEditModbusGatewayMappingsResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = "An error occurred while updating mappings"
+            });
+        }
+    }
 }

@@ -344,6 +344,9 @@ EndpointConvention.Map<ReadValuesMessage>(new Uri("queue:core-read-values"));
 
 builder.Services.AddMassTransit(x =>
 {
+    // Register consumers
+    x.AddConsumer<API.Consumers.GatewayStatusConsumer>();
+
     x.UsingRabbitMq((context2, cfg) =>
     {
         cfg.Host("localhost", "/", h =>

@@ -198,4 +198,56 @@ public class SignalRBroadcastService
             };
         }
     }
+
+    /// <summary>
+    /// Broadcasts gateway status update to all connected SignalR clients.
+    /// This includes connected clients count and last activity timestamps.
+    /// </summary>
+    /// <param name="gatewayId">The gateway ID</param>
+    /// <param name="name">The gateway display name</param>
+    /// <param name="connectedClients">Number of connected Modbus clients</param>
+    /// <param name="lastReadTime">Last read request timestamp</param>
+    /// <param name="lastWriteTime">Last write request timestamp</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Task completing when broadcast is done</returns>
+    public async Task BroadcastGatewayStatusAsync(
+        Guid gatewayId,
+        string name,
+        int connectedClients,
+        DateTime? lastReadTime,
+        DateTime? lastWriteTime,
+        CancellationToken cancellationToken = default)
+    {
+        const string operation = nameof(BroadcastGatewayStatusAsync);
+
+        try
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            await _hubContext.Clients.All.SendAsync(
+                "ReceiveGatewayStatusUpdate",
+                new
+                {
+                    gatewayId = gatewayId,
+                    name = name,
+                    connectedClients = connectedClients,
+                    lastReadTime = lastReadTime,
+                    lastWriteTime = lastWriteTime,
+                    timestamp = timestamp
+                },
+                cancellationToken);
+
+            _logger.LogDebug(
+                "{Operation}: Broadcasted gateway status for {GatewayId} ({Name}): {ConnectedClients} clients",
+                operation, gatewayId, name, connectedClients);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning("{Operation}: Broadcast cancelled for gateway {GatewayId}", operation, gatewayId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Operation}: Error broadcasting gateway status for {GatewayId}", operation, gatewayId);
+        }
+    }
 }
