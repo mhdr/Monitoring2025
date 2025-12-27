@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModbusInterface", "ModbusIn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataGen", "DataGen\DataGen.csproj", "{585084D0-BA02-41EC-A775-670454485F4A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModbusGateway", "ModbusGateway\ModbusGateway.csproj", "{EBE5A43B-D742-45A0-B860-4D7428F75600}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{585084D0-BA02-41EC-A775-670454485F4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{585084D0-BA02-41EC-A775-670454485F4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{585084D0-BA02-41EC-A775-670454485F4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBE5A43B-D742-45A0-B860-4D7428F75600}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBE5A43B-D742-45A0-B860-4D7428F75600}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBE5A43B-D742-45A0-B860-4D7428F75600}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBE5A43B-D742-45A0-B860-4D7428F75600}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

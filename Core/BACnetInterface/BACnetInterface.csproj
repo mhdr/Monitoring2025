@@ -1,19 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-BACnetInterface-fd4e6826-1dc3-4bf6-9e24-76ae802877b5</UserSecretsId>
+        <LangVersion>14</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="BACnet" Version="3.0.1" />
-        <PackageReference Include="MassTransit" Version="8.5.5" />
+        <PackageReference Include="MassTransit" Version="8.5.7" />
         <PackageReference Include="MassTransit.AspNetCore" Version="7.3.1" />
-        <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.5" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.10" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.7" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="10.0.1" />
     </ItemGroup>
 
     <ItemGroup>
