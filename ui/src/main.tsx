@@ -5,12 +5,20 @@ import './linux-fonts.css'
 import './iransansx-features.css'
 import './styles/mobile.css' // Mobile enhancements
 
-// Syncfusion Grid CSS
+// Syncfusion Grid CSS - Material theme
 import '@syncfusion/ej2-base/styles/material.css';
 import '@syncfusion/ej2-grids/styles/material.css';
+import '@syncfusion/ej2-buttons/styles/material.css';
+import '@syncfusion/ej2-popups/styles/material.css';
+import '@syncfusion/ej2-navigations/styles/material.css';
+import '@syncfusion/ej2-dropdowns/styles/material.css';
+import '@syncfusion/ej2-inputs/styles/material.css';
+import '@syncfusion/ej2-calendars/styles/material.css';
+import '@syncfusion/ej2-splitbuttons/styles/material.css';
 
-// Initialize Syncfusion license (auto-registers on import)
+// Initialize Syncfusion license and locale (auto-registers on import)
 import './config/syncfusionConfig';
+import './config/syncfusionLocale';
 
 import { MuiThemeWrapper } from './contexts/MuiThemeProvider'
 import { initLanguage } from './stores/languageStore'

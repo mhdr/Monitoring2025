@@ -5,7 +5,7 @@
  * and integration with the project's theming system.
  */
 
-import { useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
+import { useMemo, forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
 import {
   GridComponent,
   ColumnsDirective,
@@ -25,11 +25,11 @@ import {
   type GridComponent as GridComponentType,
 } from '@syncfusion/ej2-react-grids';
 import { useLanguage } from '../hooks/useLanguage';
+import { useThemeStore } from '../stores/themeStore';
+import { MUI_THEME_PRESETS } from '../types/muiThemes';
+import { setSyncfusionLocale } from '../config/syncfusionLocale';
 import './SyncfusionGridWrapper.css';
 import { createLogger } from '../utils/logger';
-
-// Import locale configuration (registers Persian locale on import)
-import '../config/syncfusionLocale';
 
 const logger = createLogger('SyncfusionGridWrapper');
 
@@ -150,8 +150,21 @@ export const SyncfusionGridWrapper = forwardRef<GridComponentType | null, Syncfu
     ref
   ) => {
     const { language } = useLanguage();
+    const currentTheme = useThemeStore((state) => state.currentTheme);
     const gridRef = useRef<GridComponentType | null>(null);
     const isRTL = language === 'fa';
+    
+    // Get theme mode (light/dark) from current theme preset
+    const themeMode = useMemo(() => {
+      const themeConfig = MUI_THEME_PRESETS.find(t => t.id === currentTheme);
+      return themeConfig?.mode || 'light';
+    }, [currentTheme]);
+
+    // Set Syncfusion locale when language changes
+    useEffect(() => {
+      setSyncfusionLocale(language as 'fa' | 'en');
+      logger.log('Syncfusion locale set to:', language);
+    }, [language]);
 
     // Expose grid instance via ref
     useImperativeHandle(ref, () => gridRef.current!, []);
@@ -183,8 +196,9 @@ export const SyncfusionGridWrapper = forwardRef<GridComponentType | null, Syncfu
 
     return (
       <div
-        className={`syncfusion-grid-wrapper ${isRTL ? 'rtl' : 'ltr'} ${className}`}
+        className={`syncfusion-grid-wrapper ${isRTL ? 'rtl' : 'ltr'} ${themeMode === 'dark' ? 'dark-mode' : 'light-mode'} ${className}`}
         data-id-ref={idRef || 'syncfusion-grid-container'}
+        data-theme-mode={themeMode}
         style={{ width, height: height === 'auto' ? undefined : height }}
       >
         <GridComponent
