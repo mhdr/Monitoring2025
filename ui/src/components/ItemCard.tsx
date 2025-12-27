@@ -165,6 +165,7 @@ interface ItemCardProps {
   time: string;
   valueHistory?: Array<{value: number; time: number}>;
   item?: Item;
+  isLoadingValue?: boolean;
 }
 
 const ItemCard: React.FC<ItemCardProps> = ({ 
@@ -174,7 +175,8 @@ const ItemCard: React.FC<ItemCardProps> = ({
   value, 
   time, 
   valueHistory = [],
-  item 
+  item,
+  isLoadingValue = false
 }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -860,6 +862,18 @@ const ItemCard: React.FC<ItemCardProps> = ({
                     color: 'text.secondary',
                     wordBreak: 'break-word',
                     fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                    // Add subtle pulsing animation when loading
+                    ...(isLoadingValue && {
+                      animation: 'value-loading-pulse 1.5s ease-in-out infinite',
+                      '@keyframes value-loading-pulse': {
+                        '0%, 100%': {
+                          opacity: 0.4,
+                        },
+                        '50%': {
+                          opacity: 1,
+                        },
+                      },
+                    }),
                   }}
                   data-id-ref="item-card-value-value"
                 >

@@ -268,12 +268,23 @@ const MonitoringPage: React.FC = () => {
   };
 
   // Helper function to get value for an item
+  // Returns loading state if value not yet fetched (optimistic UI)
   const getItemValue = (itemId: string) => {
-    return itemValues.find((v) => v.itemId === itemId);
+    const value = itemValues.find((v) => v.itemId === itemId);
+    // Return loading state if value not available yet
+    if (!value) {
+      return { itemId, value: null, time: 0, isLoading: true };
+    }
+    return { ...value, isLoading: false };
   };
 
   // Helper function to format value based on item type
-  const formatItemValue = (item: typeof currentFolderItems[0], value: string | null) => {
+  const formatItemValue = (item: typeof currentFolderItems[0], value: string | null, isLoading?: boolean) => {
+    // Show loading state for optimistic UI
+    if (isLoading) {
+      return '...';
+    }
+    
     if (value === null || value === undefined) {
       return t('noValue');
     }
@@ -302,7 +313,11 @@ const MonitoringPage: React.FC = () => {
   };
 
   // Helper function to format timestamp using global date formatting utility
-  const formatTimestamp = (time: number) => {
+  const formatTimestamp = (time: number, isLoading?: boolean) => {
+    // Show loading state for optimistic UI
+    if (isLoading || time === 0) {
+      return '...';
+    }
     return formatDate(time, language, 'long');
   };
 
@@ -672,10 +687,11 @@ const MonitoringPage: React.FC = () => {
                       itemId={item.id}
                       name={getItemDisplayName(item)}
                       pointNumber={item.pointNumber}
-                      value={itemValue ? formatItemValue(item, itemValue.value) : t('loadingValue')}
-                      time={itemValue ? formatTimestamp(itemValue.time) : t('loadingValue')}
+                      value={formatItemValue(item, itemValue.value, itemValue.isLoading)}
+                      time={formatTimestamp(itemValue.time, itemValue.isLoading)}
                       valueHistory={undefined}
                       item={item}
+                      isLoadingValue={itemValue.isLoading}
                       data-id-ref={`monitoring-page-item-card-${item.id}`}
                     />
                   );
