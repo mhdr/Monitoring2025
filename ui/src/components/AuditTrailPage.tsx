@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import { useLanguage } from '../hooks/useLanguage';
-import { useMonitoring } from '../hooks/useMonitoring';
+// import { useMonitoring } from '../hooks/useMonitoring'; // Removed - not used
 import type { GridComponent as GridComponentType } from '@syncfusion/ej2-react-grids';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import AuditTrailDetailDialog from './AuditTrailDetailDialog';
@@ -29,7 +29,6 @@ import SeparatedDateTimePicker from './SeparatedDateTimePicker';
 import type { AuditLogRequestDto, AuditLogResponseDto, DataDto, LogType } from '../types/api';
 import { LogTypeEnum } from '../types/api';
 import apiClient, { handleApiError } from '../services/apiClient';
-import { formatDate } from '../utils/dateFormatting';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('AuditTrailPage');
@@ -38,12 +37,10 @@ const logger = createLogger('AuditTrailPage');
 type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
 
 const AuditTrailPage: React.FC = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const theme = useTheme();
-  const isRTL = language === 'fa';
   const gridRef = useRef<GridComponentType | null>(null);
-  const { state: monitoringState } = useMonitoring();
-  const items = monitoringState.items;
+  // const { state: monitoringState } = useMonitoring(); // Removed - not used
 
   // Filter state
   const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>('last7Days');
@@ -217,9 +214,9 @@ const AuditTrailPage: React.FC = () => {
   }, []);
 
   /**
-   * Get point name translation
+   * Get point name translation (currently unused but kept for future use)
    */
-  const getPointName = useCallback(
+  /* const getPointName = useCallback(
     (itemId: string | null | undefined): string => {
       if (!itemId) {
         return '-';
@@ -234,7 +231,7 @@ const AuditTrailPage: React.FC = () => {
       return language === 'fa' ? (item.nameFa || item.name) : item.name;
     },
     [items, language]
-  );
+  ); */
 
   /**
    * Get log type translation

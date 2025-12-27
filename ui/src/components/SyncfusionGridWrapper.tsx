@@ -25,6 +25,9 @@ import {
   type GridComponent as GridComponentType,
   type FilterSettingsModel,
 } from '@syncfusion/ej2-react-grids';
+
+// Export GridComponentType for external use
+export type { GridComponentType };
 import { useLanguage } from '../hooks/useLanguage';
 import { useThemeStore } from '../stores/themeStore';
 import { MUI_THEME_PRESETS } from '../types/muiThemes';
@@ -53,8 +56,8 @@ export interface SyncfusionColumnDef {
   allowResizing?: boolean;
   allowReordering?: boolean;
   isPrimaryKey?: boolean;
-  template?: React.ReactNode | ((props: unknown) => React.ReactNode);
-  headerTemplate?: React.ReactNode | ((props: unknown) => React.ReactNode);
+  template?: React.ReactNode | ((props: any) => React.ReactNode);  // eslint-disable-line @typescript-eslint/no-explicit-any
+  headerTemplate?: React.ReactNode | ((props: any) => React.ReactNode);  // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 /**
@@ -63,8 +66,10 @@ export interface SyncfusionColumnDef {
 export interface SyncfusionGridWrapperProps {
   /** Column definitions */
   columns: SyncfusionColumnDef[];
-  /** Row data */
-  data: object[];
+  /** Row data (alias: dataSource) */
+  data?: object[];
+  /** Row data (alias: data) */
+  dataSource?: object[];
   /** Enable pagination */
   allowPaging?: boolean;
   /** Page settings */
@@ -128,6 +133,7 @@ export const SyncfusionGridWrapper = forwardRef<GridComponentType | null, Syncfu
     {
       columns,
       data,
+      dataSource,
       allowPaging = true,
       pageSettings = { pageSize: 10, pageSizes: [10, 25, 50, 100] },
       allowSorting = true,
@@ -157,6 +163,9 @@ export const SyncfusionGridWrapper = forwardRef<GridComponentType | null, Syncfu
     const currentTheme = useThemeStore((state) => state.currentTheme);
     const gridRef = useRef<GridComponentType | null>(null);
     const isRTL = language === 'fa';
+    
+    // Use dataSource if provided, otherwise use data
+    const gridData = dataSource || data || [];
     
     // Get theme mode (light/dark) from current theme preset
     const themeMode = useMemo(() => {
@@ -207,7 +216,7 @@ export const SyncfusionGridWrapper = forwardRef<GridComponentType | null, Syncfu
       >
         <GridComponent
           ref={gridRef}
-          dataSource={data}
+          dataSource={gridData}
           allowPaging={allowPaging}
           pageSettings={pageSettings}
           allowSorting={allowSorting}

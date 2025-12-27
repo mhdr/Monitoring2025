@@ -38,7 +38,7 @@ import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from '../SyncfusionGridWrapper';
 import type { GridComponent as GridComponentType } from '@syncfusion/ej2-react-grids';
 import { formatDate } from '../../utils/dateFormatting';
-import { formatNumber } from '../../utils/numberFormatting';
+import { formatNumberByLanguage } from '../../utils/numberFormatting';
 
 // Date range preset types
 type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
@@ -182,7 +182,7 @@ const DataTablePage: React.FC = () => {
 
     return sorted.map((point, index) => {
       const timeFormatted = formatDate(point.time, language, 'short');
-      const valueFormatted = formatNumber(point.value, language, {
+      const valueFormatted = formatNumberByLanguage(point.value, language, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });

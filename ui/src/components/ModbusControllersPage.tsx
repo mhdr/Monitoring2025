@@ -30,9 +30,10 @@ import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGri
 import { getModbusControllers } from '../services/extendedApi';
 import type {
   ControllerModbus,
-  Endianness,
-  ModbusConnectionType,
-  MyModbusType,
+  // Unused imports kept for reference:
+  // Endianness,
+  // ModbusConnectionType,
+  // MyModbusType,
 } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -146,8 +147,8 @@ const ModbusControllersPage: React.FC = () => {
     setMappingsController(null);
   };
 
-  // Helper functions for enum display
-  const getEndiannessLabel = useCallback((value: Endianness | null | undefined): string => {
+  // Helper functions for enum display (currently unused but kept for future use)
+  /* const getEndiannessLabel = useCallback((value: Endianness | null | undefined): string => {
     if (value === null || value === undefined) return t('modbusControllers.endianness.none');
     const labels: Record<number, string> = {
       0: t('modbusControllers.endianness.none'),
@@ -157,18 +158,18 @@ const ModbusControllersPage: React.FC = () => {
       4: t('modbusControllers.endianness.midLittleEndian'),
     };
     return labels[value] || String(value);
-  }, [t]);
+  }, [t]); */
 
-  const getConnectionTypeLabel = useCallback((value: ModbusConnectionType | null | undefined): string => {
+  /* const getConnectionTypeLabel = useCallback((value: ModbusConnectionType | null | undefined): string => {
     if (value === null || value === undefined) return '';
     const labels: Record<number, string> = {
       1: t('modbusControllers.connectionTypes.tcp'),
       2: t('modbusControllers.connectionTypes.tcpOverRtu'),
     };
     return labels[value] || String(value);
-  }, [t]);
+  }, [t]); */
 
-  const getModbusTypeLabel = useCallback((value: MyModbusType | null | undefined): string => {
+  /* const getModbusTypeLabel = useCallback((value: MyModbusType | null | undefined): string => {
     if (value === null || value === undefined) return t('modbusControllers.modbusTypes.none');
     const labels: Record<number, string> = {
       0: t('modbusControllers.modbusTypes.none'),
@@ -176,7 +177,7 @@ const ModbusControllersPage: React.FC = () => {
       2: t('modbusControllers.modbusTypes.rtu'),
     };
     return labels[value] || String(value);
-  }, [t]);
+  }, [t]); */
 
   // Filter controllers by search term
   const filteredControllers = useMemo(() => {
