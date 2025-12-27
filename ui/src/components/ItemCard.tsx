@@ -243,7 +243,7 @@ const ItemCard: React.FC<ItemCardProps> = React.memo(({
     return 'stable';
   }, [valueHistory]);
 
-  const handleOpenNewTab = () => {
+  const handleOpenNewTab = React.useCallback(() => {
     // On mobile (xs/sm), navigate in current tab for better UX
     // On desktop (md+), open in new tab
     try {
@@ -261,18 +261,15 @@ const ItemCard: React.FC<ItemCardProps> = React.memo(({
       // keep silent to avoid breaking UI; log warning in dev
       logger.warn('Could not open tab', e);
     }
-  };
+  }, [isMobile, detailUrl, navigate]);
 
-  const handlePrefetch = () => {
+  const handlePrefetch = React.useCallback(() => {
     // Start prefetching the detail page when user hovers
     // This loads resources BEFORE the click, significantly improving perceived performance
     prefetchUrl(detailUrl);
-  };
+  }, [prefetchUrl, detailUrl]);
 
-  /**
-   * Handle history icon click
-   */
-  const handleHistoryClick = () => {
+  const handleHistoryClick = React.useCallback(() => {
     if (valueHistory && valueHistory.length > 1) {
       logger.log(`Opening history modal for item: ${name}`, { historyLength: valueHistory.length });
       setHistoryModalOpen(true);
@@ -281,7 +278,7 @@ const ItemCard: React.FC<ItemCardProps> = React.memo(({
         historyLength: valueHistory?.length || 0 
       });
     }
-  };
+  }, [valueHistory, name]);
 
   /**
    * Handle command button click - opens command dialog
@@ -1240,7 +1237,7 @@ const ItemCard: React.FC<ItemCardProps> = React.memo(({
     </Suspense>
   </>
   );
-};
+});
 
 // Export memoized component to prevent unnecessary re-renders
 export default ItemCard;

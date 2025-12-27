@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Container,
@@ -262,28 +262,28 @@ const MonitoringPage: React.FC = () => {
   }, [isRefreshing, showRefreshIndicator]);
 
   // Helper function to get display name based on language
-  const getDisplayName = (group: Group) => {
+  const getDisplayName = useCallback((group: Group) => {
     return (language === 'fa' && group.nameFa) ? group.nameFa : group.name;
-  };
+  }, [language]);
 
   // Helper function to get item display name based on language
-  const getItemDisplayName = (item: typeof currentFolderItems[0]) => {
+  const getItemDisplayName = useCallback((item: typeof currentFolderItems[0]) => {
     return (language === 'fa' && item.nameFa) ? item.nameFa : item.name;
-  };
+  }, [language]);
 
   // Helper function to get value for an item
   // Returns loading state if value not yet fetched (optimistic UI)
-  const getItemValue = (itemId: string) => {
+  const getItemValue = useCallback((itemId: string) => {
     const value = itemValues.find((v) => v.itemId === itemId);
     // Return loading state if value not available yet
     if (!value) {
       return { itemId, value: null, time: 0, isLoading: true };
     }
     return { ...value, isLoading: false };
-  };
+  }, [itemValues]);
 
   // Helper function to format value based on item type
-  const formatItemValue = (item: typeof currentFolderItems[0], value: string | null, isLoading?: boolean) => {
+  const formatItemValue = useCallback((item: typeof currentFolderItems[0], value: string | null, isLoading?: boolean) => {
     // Show loading state for optimistic UI
     if (isLoading) {
       return '...';
@@ -314,16 +314,16 @@ const MonitoringPage: React.FC = () => {
     }
 
     return value;
-  };
+  }, [language, t]);
 
   // Helper function to format timestamp using global date formatting utility
-  const formatTimestamp = (time: number, isLoading?: boolean) => {
+  const formatTimestamp = useCallback((time: number, isLoading?: boolean) => {
     // Show loading state for optimistic UI
     if (isLoading || time === 0) {
       return '...';
     }
     return formatDate(time, language, 'long');
-  };
+  }, [language]);
 
   const handleFolderClick = (folderId: string) => {
     navigate(`/dashboard/monitoring?folderId=${folderId}`);
@@ -684,15 +684,20 @@ const MonitoringPage: React.FC = () => {
                 data-id-ref="monitoring-page-items-grid"
               >
                 {currentFolderItems.map((item: typeof currentFolderItems[0]) => {
+                  // Pre-calculate all values outside JSX for better performance
                   const itemValue = getItemValue(item.id);
+                  const displayName = getItemDisplayName(item);
+                  const formattedValue = formatItemValue(item, itemValue.value, itemValue.isLoading);
+                  const formattedTime = formatTimestamp(itemValue.time, itemValue.isLoading);
+                  
                   return (
                     <ItemCard
                       key={item.id}
                       itemId={item.id}
-                      name={getItemDisplayName(item)}
+                      name={displayName}
                       pointNumber={item.pointNumber}
-                      value={formatItemValue(item, itemValue.value, itemValue.isLoading)}
-                      time={formatTimestamp(itemValue.time, itemValue.isLoading)}
+                      value={formattedValue}
+                      time={formattedTime}
                       valueHistory={undefined}
                       item={item}
                       isLoadingValue={itemValue.isLoading}
