@@ -168,7 +168,7 @@ interface ItemCardProps {
   isLoadingValue?: boolean;
 }
 
-const ItemCard: React.FC<ItemCardProps> = ({ 
+const ItemCard: React.FC<ItemCardProps> = React.memo(({ 
   itemId, 
   name, 
   pointNumber, 
@@ -208,8 +208,8 @@ const ItemCard: React.FC<ItemCardProps> = ({
   // Check if this item has active alarms
   const { hasAlarm, alarmPriority, alarms, isChecking } = useItemAlarmStatus({
     itemId,
-    enablePolling: true,
-    pollingInterval: 30000, // Re-check every 30 seconds
+    enablePolling: false, // Disabled - alarms are updated via SignalR
+    pollingInterval: 0,
   });
 
   logger.log('ItemCard render', { 
@@ -1242,4 +1242,5 @@ const ItemCard: React.FC<ItemCardProps> = ({
   );
 };
 
+// Export memoized component to prevent unnecessary re-renders
 export default ItemCard;

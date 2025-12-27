@@ -204,8 +204,11 @@ const MonitoringPage: React.FC = () => {
       return;
     }
 
-    // Fetch values immediately
-    fetchValues(currentFolderItemIds);
+    // Debounce initial fetch to allow UI to render first (optimistic UI)
+    // This gives users immediate visual feedback before the API call
+    const initialFetchTimeout = setTimeout(() => {
+      fetchValues(currentFolderItemIds);
+    }, 150); // 150ms delay - UI renders instantly, then data loads
 
     // Set up polling interval (every 4 seconds as per requirement)
     pollingIntervalRef.current = window.setInterval(() => {
@@ -214,6 +217,7 @@ const MonitoringPage: React.FC = () => {
 
     // Cleanup on unmount or when item IDs change
     return () => {
+      clearTimeout(initialFetchTimeout);
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
