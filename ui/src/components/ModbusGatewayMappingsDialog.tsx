@@ -86,7 +86,7 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
 
   // State
   const [mappings, setMappings] = useState<EditableMapping[]>([]);
-  const [outputItems, setOutputItems] = useState<Item[]>([]);
+  const [monitoringItems, setMonitoringItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,25 +105,33 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
     scaleMax: 100,
   });
 
-  // Fetch output items for autocomplete
+  // Fetch all monitoring items for autocomplete (inputs and outputs)
   useEffect(() => {
-    const fetchOutputItems = async () => {
+    const fetchMonitoringItems = async () => {
       try {
         const response = await getItems();
         if (response?.items) {
-          // Filter items to only include outputs (DigitalOutput=2, AnalogOutput=4)
-          const outputs = response.items.filter(
-            (item) => item.itemType === ItemTypeEnum.DigitalOutput || item.itemType === ItemTypeEnum.AnalogOutput
+          // Include all item types for Modbus gateway mappings:
+          // - DigitalInput (1) -> can be mapped to DiscreteInput (1x) or Coil (0x)
+          // - DigitalOutput (2) -> can be mapped to Coil (0x) or DiscreteInput (1x)
+          // - AnalogInput (3) -> can be mapped to InputRegister (3x) or HoldingRegister (4x)
+          // - AnalogOutput (4) -> can be mapped to HoldingRegister (4x) or InputRegister (3x)
+          const items = response.items.filter(
+            (item) => 
+              item.itemType === ItemTypeEnum.DigitalInput ||
+              item.itemType === ItemTypeEnum.DigitalOutput ||
+              item.itemType === ItemTypeEnum.AnalogInput ||
+              item.itemType === ItemTypeEnum.AnalogOutput
           );
-          setOutputItems(outputs);
-          logger.log('Output items fetched', { count: outputs.length });
+          setMonitoringItems(items);
+          logger.log('Monitoring items fetched', { count: items.length });
         }
       } catch (err) {
         logger.error('Failed to fetch items', { error: err });
       }
     };
     if (open) {
-      fetchOutputItems();
+      fetchMonitoringItems();
     }
   }, [open]);
 
@@ -225,7 +233,7 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
   const handleAddMapping = () => {
     if (!addFormData.itemId) return;
 
-    const selectedItem = outputItems.find(i => i.id === addFormData.itemId);
+    const selectedItem = monitoringItems.find(i => i.id === addFormData.itemId);
     const newMapping: EditableMapping = {
       id: `new-${Date.now()}`,
       gatewayId: gateway.id,
@@ -453,8 +461,8 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
   // Get available items (not already mapped)
   const availableItems = useMemo(() => {
     const mappedItemIds = new Set(displayMappings.map(m => m.itemId));
-    return outputItems.filter(item => !mappedItemIds.has(item.id));
-  }, [outputItems, displayMappings]);
+    return monitoringItems.filter(item => !mappedItemIds.has(item.id));
+  }, [monitoringItems, displayMappings]);
 
   return (
     <Dialog
