@@ -1345,6 +1345,8 @@
       "title": "Gateway Mappings",
       "subtitle": "Configure Modbus register mappings for gateway \"{{name}}\"",
       "addMapping": "Add Mapping",
+      "addAllItems": "Add All Items",
+      "addAllItemsTooltip": "Add all unmapped monitoring items with default configurations",
       "saveChanges": "Save Changes",
       "discardChanges": "Discard Changes",
       "noMappings": "No mappings configured",

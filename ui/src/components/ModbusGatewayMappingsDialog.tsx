@@ -26,6 +26,7 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Save as SaveIcon,
+  PlaylistAdd as PlaylistAddIcon,
 } from '@mui/icons-material';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useLanguage } from '../hooks/useLanguage';
@@ -511,6 +512,39 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
     return monitoringItems.filter(item => !mappedItemIds.has(item.id));
   }, [monitoringItems, displayMappings]);
 
+  // Handle adding all available items with default configurations
+  const handleAddAllItems = useCallback(() => {
+    if (availableItems.length === 0) return;
+
+    const newMappings: EditableMapping[] = availableItems.map((item, index) => {
+      const defaults = getDefaultMappingFromItem(item);
+      const dataRep = defaults.dataRepresentation ?? ModbusDataRepresentationEnum.Float32;
+      
+      return {
+        id: `new-${Date.now()}-${index}`,
+        gatewayId: gateway.id,
+        modbusAddress: defaults.modbusAddress ?? item.pointNumber,
+        registerType: defaults.registerType ?? ModbusRegisterTypeEnum.HoldingRegister,
+        itemId: item.id,
+        itemName: item.name,
+        itemNameFa: item.nameFa || null,
+        isEditable: item.isEditable,
+        registerCount: getRegisterCount(dataRep),
+        dataRepresentation: dataRep,
+        endianness: defaults.endianness ?? EndiannessTypeEnum.BigEndian,
+        scaleMin: null,
+        scaleMax: null,
+        isNew: true,
+        isModified: false,
+        isDeleted: false,
+      };
+    });
+
+    setMappings(prev => [...prev, ...newMappings]);
+    setHasChanges(true);
+    setShowAddForm(false);
+  }, [availableItems, gateway.id]);
+
   return (
     <Dialog
       open={open}
@@ -782,6 +816,21 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
               >
                 {t('modbusGateway.mappings.addMapping')}
               </Button>
+
+              <Tooltip title={t('modbusGateway.mappings.addAllItemsTooltip')}>
+                <span>
+                  <Button
+                    data-id-ref="mappings-add-all-btn"
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<PlaylistAddIcon />}
+                    onClick={handleAddAllItems}
+                    disabled={showAddForm || saving || availableItems.length === 0}
+                  >
+                    {t('modbusGateway.mappings.addAllItems')}
+                  </Button>
+                </span>
+              </Tooltip>
               
               {hasChanges && (
                 <Chip
