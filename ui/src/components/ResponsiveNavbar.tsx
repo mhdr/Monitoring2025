@@ -47,7 +47,9 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
   const handleLogout = async () => {
     handleMenuClose();
     await logout();
-    // Navigate to login page after logout
+    // Wait a moment for auth store to fully clear before navigating
+    // This prevents the login page from showing loading state
+    await new Promise(resolve => setTimeout(resolve, 50));
     navigate('/login', { replace: true });
   };
 

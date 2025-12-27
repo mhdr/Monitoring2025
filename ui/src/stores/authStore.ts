@@ -90,7 +90,12 @@ export const useAuthStore = create<AuthState & AuthActions>()(
        */
       clearAuth: () => {
         logger.info('Clearing auth data');
-        set(initialState);
+        // Preserve hasHydrated flag to prevent loading state issues after logout
+        const hasHydrated = get()._hasHydrated;
+        set({
+          ...initialState,
+          _hasHydrated: hasHydrated,
+        });
       },
       
       /**
