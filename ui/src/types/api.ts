@@ -2096,7 +2096,7 @@ export interface GetModbusMappingsByItemIdResponseDto {
 // ==================== Sharp7 API Types ====================
 
 /**
- * Sharp7 (Siemens S7) controller configuration
+ * Sharp7 controller configuration
  */
 export interface ControllerSharp7 {
   id: string;

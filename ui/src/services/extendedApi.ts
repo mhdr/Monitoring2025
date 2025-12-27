@@ -527,7 +527,7 @@ export const getModbusMappingsByItemId = async (data: GetModbusMappingsByItemIdR
 // ==================== Sharp7 Controller Management ====================
 
 /**
- * Get all Sharp7 (Siemens S7) controllers
+ * Get all Sharp7 controllers
  */
 export const getSharp7Controllers = async (): Promise<GetSharp7ControllersResponseDto> => {
   try {

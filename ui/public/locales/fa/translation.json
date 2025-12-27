@@ -675,7 +675,7 @@
     },
     "interfaceTypes": {
       "none": "هیچ",
-      "sharp7": "Sharp7 (زیمنس S7)",
+      "sharp7": "Sharp7",
       "bacnet": "BACnet",
       "modbus": "Modbus"
     },
@@ -747,7 +747,7 @@
     },
     "interfaceTypes": {
       "none": "هیچ",
-      "sharp7": "Sharp7 (زیمنس S7)",
+      "sharp7": "Sharp7",
       "bacnet": "BACnet",
       "modbus": "Modbus"
     },
@@ -1431,7 +1431,7 @@
     }
   },
   "sharp7Controllers": {
-    "title": "کنترلرهای Sharp7 (زیمنس S7)",
+    "title": "کنترلرهای Sharp7",
     "addController": "افزودن کنترلر",
     "editController": "ویرایش کنترلر",
     "deleteController": "حذف کنترلر",

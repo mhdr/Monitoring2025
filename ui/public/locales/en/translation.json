@@ -675,7 +675,7 @@
     },
     "interfaceTypes": {
       "none": "None",
-      "sharp7": "Sharp7 (Siemens S7)",
+      "sharp7": "Sharp7",
       "bacnet": "BACnet",
       "modbus": "Modbus"
     },
@@ -747,7 +747,7 @@
     },
     "interfaceTypes": {
       "none": "None",
-      "sharp7": "Sharp7 (Siemens S7)",
+      "sharp7": "Sharp7",
       "bacnet": "BACnet",
       "modbus": "Modbus"
     },
@@ -1431,7 +1431,7 @@
     }
   },
   "sharp7Controllers": {
-    "title": "Sharp7 (Siemens S7) Controllers",
+    "title": "Sharp7 Controllers",
     "addController": "Add Controller",
     "editController": "Edit Controller",
     "deleteController": "Delete Controller",

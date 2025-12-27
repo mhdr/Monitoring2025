@@ -17,7 +17,7 @@ This is a full-stack monitoring application with separate backend and frontend:
   - **Protocol Interfaces**:
     - `ModbusInterface/` - Modbus protocol communication
     - `BACnetInterface/` - BACnet protocol communication
-    - `Sharp7Interface/` - Siemens S7 PLC communication
+    - `Sharp7Interface/` - Sharp7 PLC communication
     - `RabbitInterface/` - RabbitMQ messaging interface
 
 ### Backend (ASP.NET Web API)
