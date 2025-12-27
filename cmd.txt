@@ -7,7 +7,8 @@ proxychains apt install p7zip-full unzip coreutils
 # 7z x filename.7z
 
 proxychains add-apt-repository ppa:dotnet/backports
-proxychains apt install dotnet-sdk-9.0
+# proxychains apt install dotnet-sdk-9.0
+proxychains apt install dotnet-sdk-10.0
 proxychains apt install clang zlib1g-dev
 dotnet dev-certs https --trust
 proxychains apt install dos2unix
