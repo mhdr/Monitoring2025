@@ -1329,7 +1329,11 @@
       "lastReadTime": "Last Read",
       "lastWriteTime": "Last Write",
       "lastActivity": "Last Activity",
-      "mappingCount": "Mappings"
+      "mappingCount": "Mappings",
+      "coilCount": "Coils (0x)",
+      "discreteInputCount": "Digital Inputs (1x)",
+      "holdingRegisterCount": "Holding Regs (4x)",
+      "inputRegisterCount": "Analog Inputs (3x)"
     },
     "status": {
       "enabled": "Enabled",

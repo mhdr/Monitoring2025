@@ -302,6 +302,82 @@ const ModbusGatewayPage: React.FC = () => {
         },
       },
       {
+        headerName: t('modbusGateway.fields.coilCount'),
+        field: 'coilCount',
+        width: 100,
+        minWidth: 100,
+        sortable: true,
+        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
+          const count = params.value || 0;
+          return (
+            <Chip
+              data-id-ref={`gateway-coil-count-chip-${params.data?.id}`}
+              label={count}
+              color={count > 0 ? 'secondary' : 'default'}
+              size="small"
+              variant={count > 0 ? 'filled' : 'outlined'}
+            />
+          );
+        },
+      },
+      {
+        headerName: t('modbusGateway.fields.discreteInputCount'),
+        field: 'discreteInputCount',
+        width: 100,
+        minWidth: 100,
+        sortable: true,
+        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
+          const count = params.value || 0;
+          return (
+            <Chip
+              data-id-ref={`gateway-di-count-chip-${params.data?.id}`}
+              label={count}
+              color={count > 0 ? 'info' : 'default'}
+              size="small"
+              variant={count > 0 ? 'filled' : 'outlined'}
+            />
+          );
+        },
+      },
+      {
+        headerName: t('modbusGateway.fields.holdingRegisterCount'),
+        field: 'holdingRegisterCount',
+        width: 100,
+        minWidth: 100,
+        sortable: true,
+        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
+          const count = params.value || 0;
+          return (
+            <Chip
+              data-id-ref={`gateway-hr-count-chip-${params.data?.id}`}
+              label={count}
+              color={count > 0 ? 'warning' : 'default'}
+              size="small"
+              variant={count > 0 ? 'filled' : 'outlined'}
+            />
+          );
+        },
+      },
+      {
+        headerName: t('modbusGateway.fields.inputRegisterCount'),
+        field: 'inputRegisterCount',
+        width: 100,
+        minWidth: 100,
+        sortable: true,
+        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
+          const count = params.value || 0;
+          return (
+            <Chip
+              data-id-ref={`gateway-ir-count-chip-${params.data?.id}`}
+              label={count}
+              color={count > 0 ? 'success' : 'default'}
+              size="small"
+              variant={count > 0 ? 'filled' : 'outlined'}
+            />
+          );
+        },
+      },
+      {
         headerName: t('modbusGateway.fields.mappingCount'),
         field: 'mappingCount',
         width: 100,

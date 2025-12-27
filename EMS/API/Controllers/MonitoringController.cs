@@ -8957,7 +8957,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
 
             foreach (var gateway in gateways)
             {
-                var mappingCount = (await Core.Controllers.GetModbusGatewayMappings(gateway.Id)).Count;
+                var mappings = await Core.Controllers.GetModbusGatewayMappings(gateway.Id);
                 
                 response.Data.Add(new GetModbusGatewaysResponseDto.ModbusGateway
                 {
@@ -8970,7 +8970,11 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     ConnectedClients = gateway.ConnectedClients,
                     LastReadTime = gateway.LastReadTime,
                     LastWriteTime = gateway.LastWriteTime,
-                    MappingCount = mappingCount
+                    MappingCount = mappings.Count,
+                    CoilCount = mappings.Count(m => m.RegisterType == ModbusRegisterType.Coil),
+                    DiscreteInputCount = mappings.Count(m => m.RegisterType == ModbusRegisterType.DiscreteInput),
+                    HoldingRegisterCount = mappings.Count(m => m.RegisterType == ModbusRegisterType.HoldingRegister),
+                    InputRegisterCount = mappings.Count(m => m.RegisterType == ModbusRegisterType.InputRegister)
                 });
             }
 

@@ -66,5 +66,25 @@ public class GetModbusGatewaysResponseDto
         /// Number of mappings configured for this gateway
         /// </summary>
         public int MappingCount { get; set; }
+
+        /// <summary>
+        /// Number of Coil (0x) mappings
+        /// </summary>
+        public int CoilCount { get; set; }
+
+        /// <summary>
+        /// Number of Discrete Input (1x) mappings
+        /// </summary>
+        public int DiscreteInputCount { get; set; }
+
+        /// <summary>
+        /// Number of Holding Register (4x) mappings
+        /// </summary>
+        public int HoldingRegisterCount { get; set; }
+
+        /// <summary>
+        /// Number of Input Register (3x) mappings
+        /// </summary>
+        public int InputRegisterCount { get; set; }
     }
 }

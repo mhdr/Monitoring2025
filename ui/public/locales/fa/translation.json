@@ -1329,7 +1329,11 @@
       "lastReadTime": "آخرین خواندن",
       "lastWriteTime": "آخرین نوشتن",
       "lastActivity": "آخرین فعالیت",
-      "mappingCount": "نگاشت‌ها"
+      "mappingCount": "نگاشت‌ها",
+      "coilCount": "کویل‌ها (0x)",
+      "discreteInputCount": "ورودی دیجیتال (1x)",
+      "holdingRegisterCount": "رجیستر نگهداری (4x)",
+      "inputRegisterCount": "ورودی آنالوگ (3x)"
     },
     "status": {
       "enabled": "فعال",

@@ -2507,6 +2507,14 @@ export interface ModbusGatewayConfig {
   lastWriteTime: string | null;
   /** Number of mappings configured */
   mappingCount: number;
+  /** Number of Coil (0x) mappings */
+  coilCount: number;
+  /** Number of Discrete Input (1x) mappings */
+  discreteInputCount: number;
+  /** Number of Holding Register (4x) mappings */
+  holdingRegisterCount: number;
+  /** Number of Input Register (3x) mappings */
+  inputRegisterCount: number;
 }
 
 /**
