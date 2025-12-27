@@ -53,6 +53,53 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ModbusGatewayMappingsDialog');
 
+/**
+ * Helper function to derive default mapping values based on selected monitoring item.
+ * This auto-populates form fields when user selects an item to help with correct configuration.
+ * 
+ * Mapping rules:
+ * - Modbus address: Uses item's pointNumber as the default address
+ * - Register type: Based on item type direction (input/output) and data type (digital/analog)
+ * - Data representation: Digital items use Int16, Analog items use Float32
+ * - Endianness: Only relevant for Float32 (multi-register), uses BigEndian as default
+ */
+const getDefaultMappingFromItem = (item: Item): Partial<AddMappingFormData> => {
+  const isDigital = item.itemType === ItemTypeEnum.DigitalInput || item.itemType === ItemTypeEnum.DigitalOutput;
+  const isOutput = item.itemType === ItemTypeEnum.DigitalOutput || item.itemType === ItemTypeEnum.AnalogOutput;
+  
+  // Determine register type based on item type:
+  // - DigitalInput → DiscreteInput (read-only bit, function code 02)
+  // - DigitalOutput → Coil (read/write bit, function codes 01, 05, 15)
+  // - AnalogInput → InputRegister (read-only register, function code 04)
+  // - AnalogOutput → HoldingRegister (read/write register, function codes 03, 06, 16)
+  let registerType: ModbusRegisterType;
+  if (isDigital) {
+    registerType = isOutput ? ModbusRegisterTypeEnum.Coil : ModbusRegisterTypeEnum.DiscreteInput;
+  } else {
+    registerType = isOutput ? ModbusRegisterTypeEnum.HoldingRegister : ModbusRegisterTypeEnum.InputRegister;
+  }
+  
+  // Determine data representation based on item type:
+  // - Digital items use Int16 (single register for boolean-like values)
+  // - Analog items use Float32 (two registers for floating point values)
+  const dataRepresentation: ModbusDataRepresentation = isDigital 
+    ? ModbusDataRepresentationEnum.Int16 
+    : ModbusDataRepresentationEnum.Float32;
+  
+  // Endianness is only relevant for Float32 (multi-register values)
+  // For digital items, we use None as it doesn't apply
+  const endianness: EndiannessType = isDigital 
+    ? EndiannessTypeEnum.None 
+    : EndiannessTypeEnum.BigEndian;
+  
+  return {
+    modbusAddress: item.pointNumber,
+    registerType,
+    dataRepresentation,
+    endianness,
+  };
+};
+
 interface ModbusGatewayMappingsDialogProps {
   open: boolean;
   gateway: ModbusGatewayConfig;
@@ -558,7 +605,20 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
                     getOptionLabel={(item) => getItemDisplayName(item)}
                     value={availableItems.find(i => i.id === addFormData.itemId) || null}
                     onChange={(_, newValue) => {
-                      setAddFormData(prev => ({ ...prev, itemId: newValue?.id || '' }));
+                      if (newValue) {
+                        // Auto-populate form fields based on selected item
+                        const defaults = getDefaultMappingFromItem(newValue);
+                        setAddFormData(prev => ({ 
+                          ...prev, 
+                          itemId: newValue.id,
+                          modbusAddress: defaults.modbusAddress ?? prev.modbusAddress,
+                          registerType: defaults.registerType ?? prev.registerType,
+                          dataRepresentation: defaults.dataRepresentation ?? prev.dataRepresentation,
+                          endianness: defaults.endianness ?? prev.endianness,
+                        }));
+                      } else {
+                        setAddFormData(prev => ({ ...prev, itemId: '' }));
+                      }
                     }}
                     renderInput={(params) => (
                       <TextField
