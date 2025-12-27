@@ -27,6 +27,7 @@ import {
   Delete as DeleteIcon,
   Save as SaveIcon,
   PlaylistAdd as PlaylistAddIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useLanguage } from '../hooks/useLanguage';
@@ -144,6 +145,18 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
   // Add mapping form state
   const [showAddForm, setShowAddForm] = useState(false);
   const [addFormData, setAddFormData] = useState<AddMappingFormData>({
+    itemId: '',
+    modbusAddress: 0,
+    registerType: ModbusRegisterTypeEnum.HoldingRegister,
+    dataRepresentation: ModbusDataRepresentationEnum.Float32,
+    endianness: EndiannessTypeEnum.BigEndian,
+    scaleMin: 0,
+    scaleMax: 100,
+  });
+
+  // Edit mapping state
+  const [editingMapping, setEditingMapping] = useState<EditableMapping | null>(null);
+  const [editFormData, setEditFormData] = useState<AddMappingFormData>({
     itemId: '',
     modbusAddress: 0,
     registerType: ModbusRegisterTypeEnum.HoldingRegister,
@@ -335,6 +348,53 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
     setHasChanges(true);
   }, []);
 
+  // Handle starting edit of a mapping
+  const handleStartEditMapping = useCallback((mapping: EditableMapping) => {
+    setEditingMapping(mapping);
+    setEditFormData({
+      itemId: mapping.itemId,
+      modbusAddress: mapping.modbusAddress,
+      registerType: mapping.registerType,
+      dataRepresentation: mapping.dataRepresentation,
+      endianness: mapping.endianness,
+      scaleMin: mapping.scaleMin ?? 0,
+      scaleMax: mapping.scaleMax ?? 100,
+    });
+    setShowAddForm(false);
+  }, []);
+
+  // Handle saving edit of a mapping
+  const handleSaveEditMapping = useCallback(() => {
+    if (!editingMapping) return;
+
+    const updatedMapping: EditableMapping = {
+      ...editingMapping,
+      modbusAddress: editFormData.modbusAddress,
+      registerType: editFormData.registerType,
+      dataRepresentation: editFormData.dataRepresentation,
+      endianness: editFormData.endianness,
+      registerCount: getRegisterCount(editFormData.dataRepresentation),
+      scaleMin: editFormData.dataRepresentation === ModbusDataRepresentationEnum.ScaledInteger
+        ? (editFormData.scaleMin === '' ? 0 : editFormData.scaleMin)
+        : null,
+      scaleMax: editFormData.dataRepresentation === ModbusDataRepresentationEnum.ScaledInteger
+        ? (editFormData.scaleMax === '' ? 100 : editFormData.scaleMax)
+        : null,
+      isModified: !editingMapping.isNew, // Only mark as modified if not a new mapping
+    };
+
+    setMappings(prev => prev.map(m => 
+      m.id === editingMapping.id ? updatedMapping : m
+    ));
+    setHasChanges(true);
+    setEditingMapping(null);
+  }, [editingMapping, editFormData]);
+
+  // Handle canceling edit
+  const handleCancelEdit = useCallback(() => {
+    setEditingMapping(null);
+  }, []);
+
   // Handle saving changes
   const handleSaveChanges = async () => {
     setSaving(true);
@@ -476,8 +536,8 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
       {
         headerName: t('common.actions'),
         field: 'id',
-        width: 80,
-        minWidth: 80,
+        width: 110,
+        minWidth: 110,
         sortable: false,
         filter: false,
         cellRenderer: (params: ICellRendererParams<EditableMapping>) => {
@@ -489,6 +549,16 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
               data-id-ref={`mapping-actions-${mapping.id}`}
               sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
             >
+              <Tooltip title={t('edit')}>
+                <IconButton
+                  data-id-ref={`mapping-edit-btn-${mapping.id}`}
+                  size="small"
+                  color="primary"
+                  onClick={() => handleStartEditMapping(mapping)}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <Tooltip title={t('delete')}>
                 <IconButton
                   data-id-ref={`mapping-delete-btn-${mapping.id}`}
@@ -504,7 +574,7 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
         },
       },
     ];
-  }, [t, language, getRegisterTypeLabel, getDataRepLabel, getEndiannessLabel, handleDeleteMapping]);
+  }, [t, language, getRegisterTypeLabel, getDataRepLabel, getEndiannessLabel, handleDeleteMapping, handleStartEditMapping]);
 
   // Get available items (not already mapped)
   const availableItems = useMemo(() => {
@@ -802,6 +872,159 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
               </Box>
             )}
 
+            {/* Edit Mapping Form */}
+            {editingMapping && (
+              <Box
+                data-id-ref="edit-mapping-form"
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  border: 1,
+                  borderColor: 'primary.main',
+                  borderRadius: 1,
+                  backgroundColor: 'action.hover',
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                  {t('modbusGateway.mappings.editMapping')} - {language === 'fa' && editingMapping.itemNameFa ? editingMapping.itemNameFa : editingMapping.itemName}
+                </Typography>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} flexWrap="wrap">
+                  <TextField
+                    data-id-ref="edit-mapping-address-input"
+                    label={t('modbusGateway.mappings.modbusAddress')}
+                    type="number"
+                    size="small"
+                    value={editFormData.modbusAddress}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, modbusAddress: Number(e.target.value) }))}
+                    inputProps={{ min: 0 }}
+                    sx={{ width: 120 }}
+                  />
+
+                  <FormControl size="small" sx={{ minWidth: 180 }}>
+                    <InputLabel>{t('modbusGateway.mappings.registerType')}</InputLabel>
+                    <Select
+                      data-id-ref="edit-mapping-regtype-select"
+                      value={editFormData.registerType}
+                      label={t('modbusGateway.mappings.registerType')}
+                      onChange={(e: SelectChangeEvent<number>) => 
+                        setEditFormData(prev => ({ ...prev, registerType: e.target.value as ModbusRegisterType }))
+                      }
+                    >
+                      <MenuItem value={ModbusRegisterTypeEnum.Coil}>
+                        {t('modbusGateway.registerTypes.coil')}
+                      </MenuItem>
+                      <MenuItem value={ModbusRegisterTypeEnum.DiscreteInput}>
+                        {t('modbusGateway.registerTypes.discreteInput')}
+                      </MenuItem>
+                      <MenuItem value={ModbusRegisterTypeEnum.HoldingRegister}>
+                        {t('modbusGateway.registerTypes.holdingRegister')}
+                      </MenuItem>
+                      <MenuItem value={ModbusRegisterTypeEnum.InputRegister}>
+                        {t('modbusGateway.registerTypes.inputRegister')}
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl size="small" sx={{ minWidth: 180 }}>
+                    <InputLabel>{t('modbusGateway.mappings.dataRepresentation')}</InputLabel>
+                    <Select
+                      data-id-ref="edit-mapping-datarep-select"
+                      value={editFormData.dataRepresentation}
+                      label={t('modbusGateway.mappings.dataRepresentation')}
+                      onChange={(e: SelectChangeEvent<number>) => 
+                        setEditFormData(prev => ({ ...prev, dataRepresentation: e.target.value as ModbusDataRepresentation }))
+                      }
+                    >
+                      <MenuItem value={ModbusDataRepresentationEnum.Int16}>
+                        {t('modbusGateway.dataRepresentations.int16')}
+                      </MenuItem>
+                      <MenuItem value={ModbusDataRepresentationEnum.Float32}>
+                        {t('modbusGateway.dataRepresentations.float32')}
+                      </MenuItem>
+                      <MenuItem value={ModbusDataRepresentationEnum.ScaledInteger}>
+                        {t('modbusGateway.dataRepresentations.scaledInteger')}
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  {editFormData.dataRepresentation === ModbusDataRepresentationEnum.Float32 && (
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                      <InputLabel>{t('modbusGateway.mappings.endianness')}</InputLabel>
+                      <Select
+                        data-id-ref="edit-mapping-endian-select"
+                        value={editFormData.endianness}
+                        label={t('modbusGateway.mappings.endianness')}
+                        onChange={(e: SelectChangeEvent<number>) => 
+                          setEditFormData(prev => ({ ...prev, endianness: e.target.value as EndiannessType }))
+                        }
+                      >
+                        <MenuItem value={EndiannessTypeEnum.BigEndian}>
+                          {t('modbusGateway.endianness.bigEndian')}
+                        </MenuItem>
+                        <MenuItem value={EndiannessTypeEnum.LittleEndian}>
+                          {t('modbusGateway.endianness.littleEndian')}
+                        </MenuItem>
+                        <MenuItem value={EndiannessTypeEnum.MidBigEndian}>
+                          {t('modbusGateway.endianness.midBigEndian')}
+                        </MenuItem>
+                        <MenuItem value={EndiannessTypeEnum.MidLittleEndian}>
+                          {t('modbusGateway.endianness.midLittleEndian')}
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+
+                  {editFormData.dataRepresentation === ModbusDataRepresentationEnum.ScaledInteger && (
+                    <>
+                      <TextField
+                        data-id-ref="edit-mapping-scalemin-input"
+                        label={t('modbusGateway.mappings.scaleMin')}
+                        type="number"
+                        size="small"
+                        value={editFormData.scaleMin}
+                        onChange={(e) => setEditFormData(prev => ({ 
+                          ...prev, 
+                          scaleMin: e.target.value === '' ? '' : Number(e.target.value) 
+                        }))}
+                        sx={{ width: 100 }}
+                      />
+                      <TextField
+                        data-id-ref="edit-mapping-scalemax-input"
+                        label={t('modbusGateway.mappings.scaleMax')}
+                        type="number"
+                        size="small"
+                        value={editFormData.scaleMax}
+                        onChange={(e) => setEditFormData(prev => ({ 
+                          ...prev, 
+                          scaleMax: e.target.value === '' ? '' : Number(e.target.value) 
+                        }))}
+                        sx={{ width: 100 }}
+                      />
+                    </>
+                  )}
+
+                  <Button
+                    data-id-ref="edit-mapping-save-btn"
+                    variant="contained"
+                    size="small"
+                    onClick={handleSaveEditMapping}
+                    sx={{ height: 40 }}
+                  >
+                    {t('save')}
+                  </Button>
+                  <Button
+                    data-id-ref="edit-mapping-cancel-btn"
+                    variant="outlined"
+                    size="small"
+                    onClick={handleCancelEdit}
+                    sx={{ height: 40 }}
+                  >
+                    {t('cancel')}
+                  </Button>
+                </Stack>
+              </Box>
+            )}
+
             {/* Toolbar */}
             <Box
               data-id-ref="mappings-toolbar"
@@ -812,7 +1035,7 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
                 variant="outlined"
                 startIcon={<AddIcon />}
                 onClick={() => setShowAddForm(true)}
-                disabled={showAddForm || saving}
+                disabled={showAddForm || saving || !!editingMapping}
               >
                 {t('modbusGateway.mappings.addMapping')}
               </Button>
@@ -825,7 +1048,7 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
                     color="secondary"
                     startIcon={<PlaylistAddIcon />}
                     onClick={handleAddAllItems}
-                    disabled={showAddForm || saving || availableItems.length === 0}
+                    disabled={showAddForm || saving || availableItems.length === 0 || !!editingMapping}
                   >
                     {t('modbusGateway.mappings.addAllItems')}
                   </Button>
