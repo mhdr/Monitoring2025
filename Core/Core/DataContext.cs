@@ -51,6 +51,9 @@ public class DataContext : DbContext
     
     public DbSet<ControllerModbus> ControllerModbuses { get; set; }
     public DbSet<MapModbus> MapModbuses { get; set; }
+    
+    public DbSet<ModbusGatewayConfig> ModbusGatewayConfigs { get; set; }
+    public DbSet<ModbusGatewayMapping> ModbusGatewayMappings { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -135,6 +138,14 @@ public class DataContext : DbContext
             .HasDefaultValueSql("gen_random_uuid()");
         
         modelBuilder.Entity<MapModbus>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<ModbusGatewayConfig>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<ModbusGatewayMapping>()
             .Property(e => e.Id)
             .HasDefaultValueSql("gen_random_uuid()");
 
@@ -273,6 +284,36 @@ public class DataContext : DbContext
             .Property(e => e.IsDisabled)
             .HasDefaultValue(false);
 
+        // ModbusGatewayConfig defaults
+        modelBuilder.Entity<ModbusGatewayConfig>()
+            .Property(e => e.IsEnabled)
+            .HasDefaultValue(true);
+
+        modelBuilder.Entity<ModbusGatewayConfig>()
+            .Property(e => e.ConnectedClients)
+            .HasDefaultValue(0);
+
+        modelBuilder.Entity<ModbusGatewayConfig>()
+            .Property(e => e.UnitId)
+            .HasDefaultValue((byte)1);
+
+        modelBuilder.Entity<ModbusGatewayConfig>()
+            .Property(e => e.ListenIP)
+            .HasDefaultValue("0.0.0.0");
+
+        // ModbusGatewayMapping defaults
+        modelBuilder.Entity<ModbusGatewayMapping>()
+            .Property(e => e.DataRepresentation)
+            .HasDefaultValue(ModbusDataRepresentation.Float32);
+
+        modelBuilder.Entity<ModbusGatewayMapping>()
+            .Property(e => e.Endianness)
+            .HasDefaultValue(Endianness.BigEndian);
+
+        modelBuilder.Entity<ModbusGatewayMapping>()
+            .Property(e => e.RegisterCount)
+            .HasDefaultValue(1);
+
 
         // ensure the enum is stored as an integer in the database. 
         modelBuilder.Entity<MonitoringItem>()
@@ -317,6 +358,19 @@ public class DataContext : DbContext
 
         modelBuilder.Entity<MapBACnet>()
             .Property(u => u.OperationType)
+            .HasConversion<int>();
+
+        // ModbusGatewayMapping enum conversions
+        modelBuilder.Entity<ModbusGatewayMapping>()
+            .Property(u => u.RegisterType)
+            .HasConversion<int>();
+
+        modelBuilder.Entity<ModbusGatewayMapping>()
+            .Property(u => u.DataRepresentation)
+            .HasConversion<int>();
+
+        modelBuilder.Entity<ModbusGatewayMapping>()
+            .Property(u => u.Endianness)
             .HasConversion<int>();
 
         // keys

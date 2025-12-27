@@ -342,4 +342,250 @@ public static class Controllers
 
         return false;
     }
+
+    // ==================== Modbus Gateway CRUD ====================
+
+    /// <summary>
+    /// Retrieves all Modbus gateway configurations.
+    /// </summary>
+    public static async Task<List<ModbusGatewayConfig>> GetModbusGatewayConfigs(
+        Expression<Func<ModbusGatewayConfig, bool>>? predicate = null)
+    {
+        List<ModbusGatewayConfig> result;
+
+        var context = new DataContext();
+        if (predicate != null)
+        {
+            result = await context.ModbusGatewayConfigs.Where(predicate).ToListAsync();
+        }
+        else
+        {
+            result = await context.ModbusGatewayConfigs.ToListAsync();
+        }
+
+        await context.DisposeAsync();
+        return result;
+    }
+
+    /// <summary>
+    /// Gets a single Modbus gateway configuration by ID.
+    /// </summary>
+    public static async Task<ModbusGatewayConfig?> GetModbusGatewayConfig(Guid id)
+    {
+        var context = new DataContext();
+        var result = await context.ModbusGatewayConfigs.FirstOrDefaultAsync(x => x.Id == id);
+        await context.DisposeAsync();
+        return result;
+    }
+
+    /// <summary>
+    /// Adds a new Modbus gateway configuration.
+    /// </summary>
+    public static async Task<Guid> AddModbusGatewayConfig(ModbusGatewayConfig config)
+    {
+        var context = new DataContext();
+        await context.ModbusGatewayConfigs.AddAsync(config);
+        await context.SaveChangesAsync();
+        await context.DisposeAsync();
+        return config.Id;
+    }
+
+    /// <summary>
+    /// Updates an existing Modbus gateway configuration.
+    /// </summary>
+    public static async Task<bool> EditModbusGatewayConfig(ModbusGatewayConfig config)
+    {
+        if (config.Id == Guid.Empty)
+        {
+            return false;
+        }
+
+        var context = new DataContext();
+        var matched = await context.ModbusGatewayConfigs.FirstOrDefaultAsync(x => x.Id == config.Id);
+
+        if (matched == null)
+        {
+            await context.DisposeAsync();
+            return false;
+        }
+
+        matched.Name = config.Name;
+        matched.ListenIP = config.ListenIP;
+        matched.Port = config.Port;
+        matched.UnitId = config.UnitId;
+        matched.IsEnabled = config.IsEnabled;
+
+        context.ModbusGatewayConfigs.Update(matched);
+        var result = await context.SaveChangesAsync();
+        await context.DisposeAsync();
+
+        return result > 0;
+    }
+
+    /// <summary>
+    /// Deletes a Modbus gateway configuration and all its mappings.
+    /// </summary>
+    public static async Task<bool> DeleteModbusGatewayConfig(Guid gatewayId)
+    {
+        var context = new DataContext();
+        var gateway = await context.ModbusGatewayConfigs
+            .Include(g => g.Mappings)
+            .FirstOrDefaultAsync(x => x.Id == gatewayId);
+
+        if (gateway == null)
+        {
+            await context.DisposeAsync();
+            return false;
+        }
+
+        // Cascading delete will handle mappings due to FK constraint
+        context.ModbusGatewayConfigs.Remove(gateway);
+        await context.SaveChangesAsync();
+        await context.DisposeAsync();
+
+        return true;
+    }
+
+    /// <summary>
+    /// Retrieves all mappings for a specific gateway.
+    /// </summary>
+    public static async Task<List<ModbusGatewayMapping>> GetModbusGatewayMappings(Guid gatewayId)
+    {
+        var context = new DataContext();
+        var result = await context.ModbusGatewayMappings
+            .Where(m => m.GatewayId == gatewayId)
+            .ToListAsync();
+        await context.DisposeAsync();
+        return result;
+    }
+
+    /// <summary>
+    /// Retrieves all mappings for a specific gateway with MonitoringItem details included.
+    /// </summary>
+    public static async Task<List<ModbusGatewayMapping>> GetGatewayMappingsWithItems(Guid gatewayId)
+    {
+        var context = new DataContext();
+        var result = await context.ModbusGatewayMappings
+            .Include(m => m.Item)
+            .Where(m => m.GatewayId == gatewayId)
+            .ToListAsync();
+        await context.DisposeAsync();
+        return result;
+    }
+
+    /// <summary>
+    /// Batch edit gateway mappings (add, update, remove in a single transaction).
+    /// </summary>
+    public static async Task<bool> BatchEditModbusGatewayMappings(
+        List<ModbusGatewayMapping> added, 
+        List<ModbusGatewayMapping> updated,
+        List<ModbusGatewayMapping> removed)
+    {
+        await using (var context = new DataContext())
+        {
+            await using (var transaction = await context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    if (added.Count > 0)
+                    {
+                        await context.ModbusGatewayMappings.AddRangeAsync(added);
+                    }
+
+                    if (updated.Count > 0)
+                    {
+                        context.ModbusGatewayMappings.UpdateRange(updated);
+                    }
+
+                    if (removed.Count > 0)
+                    {
+                        context.ModbusGatewayMappings.RemoveRange(removed);
+                    }
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    MyLog.LogJson(ex);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Updates the gateway status (connected clients and timestamps).
+    /// </summary>
+    public static async Task<bool> UpdateGatewayStatus(
+        Guid gatewayId, 
+        int connectedClients, 
+        DateTime? lastReadTime = null, 
+        DateTime? lastWriteTime = null)
+    {
+        var context = new DataContext();
+        var gateway = await context.ModbusGatewayConfigs.FirstOrDefaultAsync(x => x.Id == gatewayId);
+
+        if (gateway == null)
+        {
+            await context.DisposeAsync();
+            return false;
+        }
+
+        gateway.ConnectedClients = connectedClients;
+        
+        if (lastReadTime.HasValue)
+        {
+            gateway.LastReadTime = lastReadTime.Value;
+        }
+        
+        if (lastWriteTime.HasValue)
+        {
+            gateway.LastWriteTime = lastWriteTime.Value;
+        }
+
+        var result = await context.SaveChangesAsync();
+        await context.DisposeAsync();
+
+        return result > 0;
+    }
+
+    /// <summary>
+    /// Checks if a port is already in use by another gateway in the database.
+    /// </summary>
+    public static async Task<bool> IsPortAvailableInDb(int port, Guid? excludeGatewayId = null)
+    {
+        var context = new DataContext();
+        
+        bool exists;
+        if (excludeGatewayId.HasValue)
+        {
+            exists = await context.ModbusGatewayConfigs
+                .AnyAsync(g => g.Port == port && g.Id != excludeGatewayId.Value);
+        }
+        else
+        {
+            exists = await context.ModbusGatewayConfigs.AnyAsync(g => g.Port == port);
+        }
+
+        await context.DisposeAsync();
+        return !exists;
+    }
+
+    /// <summary>
+    /// Gets all enabled gateways for the worker service to start.
+    /// </summary>
+    public static async Task<List<ModbusGatewayConfig>> GetEnabledGateways()
+    {
+        var context = new DataContext();
+        var result = await context.ModbusGatewayConfigs
+            .Where(g => g.IsEnabled)
+            .Include(g => g.Mappings)
+            .ToListAsync();
+        await context.DisposeAsync();
+        return result;
+    }
 }

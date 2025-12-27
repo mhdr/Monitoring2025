@@ -141,3 +141,31 @@ public enum ModbusAddressBase
     /// <summary>Alternative: 40000 = register 0. Protocol address = entered - 40000.</summary>
     Base40000 = 3,
 }
+
+/// <summary>
+/// Specifies the Modbus register type for gateway mappings.
+/// </summary>
+public enum ModbusRegisterType
+{
+    /// <summary>Single bit read/write (function codes 01, 05, 15)</summary>
+    Coil = 1,
+    /// <summary>Single bit read-only (function code 02)</summary>
+    DiscreteInput = 2,
+    /// <summary>16-bit register read/write (function codes 03, 06, 16)</summary>
+    HoldingRegister = 3,
+    /// <summary>16-bit register read-only (function code 04)</summary>
+    InputRegister = 4,
+}
+
+/// <summary>
+/// Specifies the data representation format for Modbus gateway register mappings.
+/// </summary>
+public enum ModbusDataRepresentation
+{
+    /// <summary>16-bit signed integer. Uses 1 register.</summary>
+    Int16 = 1,
+    /// <summary>32-bit floating point IEEE 754. Uses 2 registers.</summary>
+    Float32 = 2,
+    /// <summary>Scaled integer: value mapped to 0-65535 range using ScaleMin/ScaleMax. Uses 1 register.</summary>
+    ScaledInteger = 3,
+}
