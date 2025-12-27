@@ -24,13 +24,12 @@ import {
   Delete as DeleteIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import type { GridComponent as GridComponentType } from '@syncfusion/ej2-react-grids';
 import { useLanguage } from '../hooks/useLanguage';
 import { useGatewayStatus } from '../hooks/useGatewayStatus';
-import AGGridWrapper from './AGGridWrapper';
+import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getModbusGateways, deleteModbusGateway } from '../services/extendedApi';
 import type { ModbusGatewayConfig } from '../types/api';
-import type { AGGridRowData, AGGridApi } from '../types/agGrid';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ModbusGatewayPage');
@@ -53,7 +52,7 @@ const ModbusGatewayPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Grid ref
-  const mainGridRef = useRef<AGGridApi | null>(null);
+  const mainGridRef = useRef<GridComponentType | null>(null);
   
   // Gateway dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -212,230 +211,276 @@ const ModbusGatewayPage: React.FC = () => {
     );
   }, [gatewaysWithStatus, searchTerm]);
 
-  // Main grid column definitions
-  const columnDefs = useMemo<ColDef<GatewayRow>[]>(() => {
+  // Status cell template for Syncfusion Grid
+  const statusTemplate = useCallback((data: unknown): React.ReactNode => {
+    const props = data as GatewayRow;
+    const isEnabled = props.isEnabled;
+    return (
+      <Chip
+        data-id-ref={`gateway-status-chip-${props.id}`}
+        label={isEnabled ? t('modbusGateway.status.enabled') : t('modbusGateway.status.disabled')}
+        color={isEnabled ? 'success' : 'default'}
+        size="small"
+      />
+    );
+  }, [t]);
+
+  // Connected clients cell template
+  const connectedClientsTemplate = useCallback((data: unknown): React.ReactNode => {
+    const props = data as GatewayRow;
+    const count = props.connectedClients || 0;
+    return (
+      <Chip
+        data-id-ref={`gateway-clients-chip-${props.id}`}
+        label={count}
+        color={count > 0 ? 'primary' : 'default'}
+        size="small"
+        variant={count > 0 ? 'filled' : 'outlined'}
+      />
+    );
+  }, []);
+
+  // Last activity cell template
+  const lastActivityTemplate = useCallback((data: unknown): React.ReactNode => {
+    const props = data as GatewayRow;
+    const lastRead = props.lastReadTime;
+    const lastWrite = props.lastWriteTime;
+    if (!lastRead && !lastWrite) return <span>{t('modbusGateway.realtime.neverRead')}</span>;
+    const lastActivity = [lastRead, lastWrite]
+      .filter(Boolean)
+      .map(d => new Date(d!).getTime())
+      .sort((a, b) => b - a)[0];
+    return <span>{formatRelativeTime(new Date(lastActivity).toISOString())}</span>;
+  }, [t, formatRelativeTime]);
+
+  // Coil count cell template
+  const coilCountTemplate = useCallback((data: unknown): React.ReactNode => {
+    const props = data as GatewayRow;
+    const count = props.coilCount || 0;
+    return (
+      <Chip
+        data-id-ref={`gateway-coil-count-chip-${props.id}`}
+        label={count}
+        color={count > 0 ? 'secondary' : 'default'}
+        size="small"
+        variant={count > 0 ? 'filled' : 'outlined'}
+      />
+    );
+  }, []);
+
+  // Discrete input count cell template
+  const discreteInputCountTemplate = useCallback((data: unknown): React.ReactNode => {
+    const props = data as GatewayRow;
+    const count = props.discreteInputCount || 0;
+    return (
+      <Chip
+        data-id-ref={`gateway-di-count-chip-${props.id}`}
+        label={count}
+        color={count > 0 ? 'info' : 'default'}
+        size="small"
+        variant={count > 0 ? 'filled' : 'outlined'}
+      />
+    );
+  }, []);
+
+  // Holding register count cell template
+  const holdingRegisterCountTemplate = useCallback((data: unknown): React.ReactNode => {
+    const props = data as GatewayRow;
+    const count = props.holdingRegisterCount || 0;
+    return (
+      <Chip
+        data-id-ref={`gateway-hr-count-chip-${props.id}`}
+        label={count}
+        color={count > 0 ? 'warning' : 'default'}
+        size="small"
+        variant={count > 0 ? 'filled' : 'outlined'}
+      />
+    );
+  }, []);
+
+  // Input register count cell template
+  const inputRegisterCountTemplate = useCallback((data: unknown): React.ReactNode => {
+    const props = data as GatewayRow;
+    const count = props.inputRegisterCount || 0;
+    return (
+      <Chip
+        data-id-ref={`gateway-ir-count-chip-${props.id}`}
+        label={count}
+        color={count > 0 ? 'success' : 'default'}
+        size="small"
+        variant={count > 0 ? 'filled' : 'outlined'}
+      />
+    );
+  }, []);
+
+  // Actions cell template
+  const actionsTemplate = useCallback((data: unknown): React.ReactNode => {
+    const props = data as GatewayRow;
+    return (
+      <Box
+        data-id-ref={`gateway-actions-${props.id}`}
+        sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
+      >
+        <Tooltip title={t('modbusGateway.manageMappings')}>
+          <IconButton
+            data-id-ref={`gateway-mappings-btn-${props.id}`}
+            size="small"
+            color="info"
+            onClick={() => handleOpenMappings(props)}
+          >
+            <SettingsIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('modbusGateway.editGateway')}>
+          <IconButton
+            data-id-ref={`gateway-edit-btn-${props.id}`}
+            size="small"
+            color="primary"
+            onClick={() => handleEditGateway(props)}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('modbusGateway.deleteGateway')}>
+          <IconButton
+            data-id-ref={`gateway-delete-btn-${props.id}`}
+            size="small"
+            color="error"
+            onClick={() => handleDeleteGateway(props)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    );
+  }, [t, handleOpenMappings, handleEditGateway, handleDeleteGateway]);
+
+  // Main grid column definitions for Syncfusion Grid
+  const columnDefs = useMemo<SyncfusionColumnDef[]>(() => {
     return [
       {
-        headerName: t('modbusGateway.fields.name'),
+        headerText: t('modbusGateway.fields.name'),
         field: 'name',
-        flex: 1.5,
+        width: 150,
         minWidth: 150,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusGateway.fields.listenIP'),
+        headerText: t('modbusGateway.fields.listenIP'),
         field: 'listenIP',
-        flex: 1,
+        width: 120,
         minWidth: 120,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusGateway.fields.port'),
+        headerText: t('modbusGateway.fields.port'),
         field: 'port',
         width: 90,
         minWidth: 90,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
+        type: 'number',
       },
       {
-        headerName: t('modbusGateway.fields.unitId'),
+        headerText: t('modbusGateway.fields.unitId'),
         field: 'unitId',
         width: 80,
         minWidth: 80,
-        sortable: true,
+        allowSorting: true,
+        type: 'number',
       },
       {
-        headerName: t('modbusGateway.fields.status'),
+        headerText: t('modbusGateway.fields.status'),
         field: 'isEnabled',
         width: 100,
         minWidth: 100,
-        sortable: true,
-        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
-          const isEnabled = params.value;
-          return (
-            <Chip
-              data-id-ref={`gateway-status-chip-${params.data?.id}`}
-              label={isEnabled ? t('modbusGateway.status.enabled') : t('modbusGateway.status.disabled')}
-              color={isEnabled ? 'success' : 'default'}
-              size="small"
-            />
-          );
-        },
+        allowSorting: true,
+        template: statusTemplate,
       },
       {
-        headerName: t('modbusGateway.fields.connectedClients'),
+        headerText: t('modbusGateway.fields.connectedClients'),
         field: 'connectedClients',
         width: 110,
         minWidth: 110,
-        sortable: true,
-        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
-          const count = params.value || 0;
-          return (
-            <Chip
-              data-id-ref={`gateway-clients-chip-${params.data?.id}`}
-              label={count}
-              color={count > 0 ? 'primary' : 'default'}
-              size="small"
-              variant={count > 0 ? 'filled' : 'outlined'}
-            />
-          );
-        },
+        allowSorting: true,
+        type: 'number',
+        template: connectedClientsTemplate,
       },
       {
-        headerName: t('modbusGateway.fields.lastActivity'),
+        headerText: t('modbusGateway.fields.lastActivity'),
         field: 'lastReadTime',
-        flex: 1,
+        width: 130,
         minWidth: 130,
-        sortable: true,
-        valueFormatter: (params) => {
-          const lastRead = params.data?.lastReadTime;
-          const lastWrite = params.data?.lastWriteTime;
-          // Show the most recent activity
-          if (!lastRead && !lastWrite) return t('modbusGateway.realtime.neverRead');
-          const lastActivity = [lastRead, lastWrite]
-            .filter(Boolean)
-            .map(d => new Date(d!).getTime())
-            .sort((a, b) => b - a)[0];
-          return formatRelativeTime(new Date(lastActivity).toISOString());
-        },
+        allowSorting: true,
+        template: lastActivityTemplate,
       },
       {
-        headerName: t('modbusGateway.fields.coilCount'),
+        headerText: t('modbusGateway.fields.coilCount'),
         field: 'coilCount',
         width: 100,
         minWidth: 100,
-        sortable: true,
-        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
-          const count = params.value || 0;
-          return (
-            <Chip
-              data-id-ref={`gateway-coil-count-chip-${params.data?.id}`}
-              label={count}
-              color={count > 0 ? 'secondary' : 'default'}
-              size="small"
-              variant={count > 0 ? 'filled' : 'outlined'}
-            />
-          );
-        },
+        allowSorting: true,
+        type: 'number',
+        template: coilCountTemplate,
       },
       {
-        headerName: t('modbusGateway.fields.discreteInputCount'),
+        headerText: t('modbusGateway.fields.discreteInputCount'),
         field: 'discreteInputCount',
         width: 100,
         minWidth: 100,
-        sortable: true,
-        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
-          const count = params.value || 0;
-          return (
-            <Chip
-              data-id-ref={`gateway-di-count-chip-${params.data?.id}`}
-              label={count}
-              color={count > 0 ? 'info' : 'default'}
-              size="small"
-              variant={count > 0 ? 'filled' : 'outlined'}
-            />
-          );
-        },
+        allowSorting: true,
+        type: 'number',
+        template: discreteInputCountTemplate,
       },
       {
-        headerName: t('modbusGateway.fields.holdingRegisterCount'),
+        headerText: t('modbusGateway.fields.holdingRegisterCount'),
         field: 'holdingRegisterCount',
         width: 100,
         minWidth: 100,
-        sortable: true,
-        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
-          const count = params.value || 0;
-          return (
-            <Chip
-              data-id-ref={`gateway-hr-count-chip-${params.data?.id}`}
-              label={count}
-              color={count > 0 ? 'warning' : 'default'}
-              size="small"
-              variant={count > 0 ? 'filled' : 'outlined'}
-            />
-          );
-        },
+        allowSorting: true,
+        type: 'number',
+        template: holdingRegisterCountTemplate,
       },
       {
-        headerName: t('modbusGateway.fields.inputRegisterCount'),
+        headerText: t('modbusGateway.fields.inputRegisterCount'),
         field: 'inputRegisterCount',
         width: 100,
         minWidth: 100,
-        sortable: true,
-        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
-          const count = params.value || 0;
-          return (
-            <Chip
-              data-id-ref={`gateway-ir-count-chip-${params.data?.id}`}
-              label={count}
-              color={count > 0 ? 'success' : 'default'}
-              size="small"
-              variant={count > 0 ? 'filled' : 'outlined'}
-            />
-          );
-        },
+        allowSorting: true,
+        type: 'number',
+        template: inputRegisterCountTemplate,
       },
       {
-        headerName: t('modbusGateway.fields.mappingCount'),
+        headerText: t('modbusGateway.fields.mappingCount'),
         field: 'mappingCount',
         width: 100,
         minWidth: 100,
-        sortable: true,
+        allowSorting: true,
+        type: 'number',
       },
       {
-        headerName: t('common.actions'),
+        headerText: t('common.actions'),
         field: 'id',
         width: 150,
         minWidth: 150,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: ICellRendererParams<GatewayRow>) => {
-          const gateway = params.data;
-          if (!gateway) return null;
-          
-          return (
-            <Box
-              data-id-ref={`gateway-actions-${gateway.id}`}
-              sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
-            >
-              <Tooltip title={t('modbusGateway.manageMappings')}>
-                <IconButton
-                  data-id-ref={`gateway-mappings-btn-${gateway.id}`}
-                  size="small"
-                  color="info"
-                  onClick={() => handleOpenMappings(gateway)}
-                >
-                  <SettingsIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t('modbusGateway.editGateway')}>
-                <IconButton
-                  data-id-ref={`gateway-edit-btn-${gateway.id}`}
-                  size="small"
-                  color="primary"
-                  onClick={() => handleEditGateway(gateway)}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t('modbusGateway.deleteGateway')}>
-                <IconButton
-                  data-id-ref={`gateway-delete-btn-${gateway.id}`}
-                  size="small"
-                  color="error"
-                  onClick={() => handleDeleteGateway(gateway)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          );
-        },
+        allowSorting: false,
+        allowFiltering: false,
+        template: actionsTemplate,
       },
     ];
-  }, [t, formatRelativeTime, handleOpenMappings, handleEditGateway, handleDeleteGateway]);
+  }, [
+    t,
+    statusTemplate,
+    connectedClientsTemplate,
+    lastActivityTemplate,
+    coilCountTemplate,
+    discreteInputCountTemplate,
+    holdingRegisterCountTemplate,
+    inputRegisterCountTemplate,
+    actionsTemplate,
+  ]);
 
   return (
     <Container
@@ -609,20 +654,20 @@ const ModbusGatewayPage: React.FC = () => {
               data-id-ref="gateway-grid-container"
               sx={{ flex: 1, minHeight: 400 }}
             >
-              <AGGridWrapper
+              <SyncfusionGridWrapper
                 idRef="modbus-gateways"
-                rowData={filteredGateways as unknown as AGGridRowData[]}
-                columnDefs={columnDefs}
-                onGridReady={(api) => { mainGridRef.current = api; }}
+                data={filteredGateways}
+                columns={columnDefs}
+                onGridReady={(grid) => { mainGridRef.current = grid; }}
                 height="100%"
-                gridOptions={{
-                  pagination: true,
-                  paginationPageSize: 25,
-                  paginationPageSizeSelector: [10, 25, 50, 100],
-                  domLayout: 'normal',
-                  rowHeight: 52,
-                  getRowId: (params) => String(params.data.id),
+                allowPaging={true}
+                pageSettings={{
+                  pageSize: 25,
+                  pageSizes: [10, 25, 50, 100],
                 }}
+                allowSorting={true}
+                allowFiltering={true}
+                allowResizing={true}
               />
             </Box>
           )}
