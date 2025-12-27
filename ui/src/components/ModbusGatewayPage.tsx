@@ -39,10 +39,8 @@ const logger = createLogger('ModbusGatewayPage');
 const ModbusGatewayDialog = lazy(() => import('./ModbusGatewayDialog'));
 const ModbusGatewayMappingsDialog = lazy(() => import('./ModbusGatewayMappingsDialog'));
 
-// Extended row type for the grid with real-time status
-interface GatewayRow extends ModbusGatewayConfig {
-  // Additional computed fields can be added here
-}
+// Use ModbusGatewayConfig directly for grid rows
+type GatewayRow = ModbusGatewayConfig;
 
 const ModbusGatewayPage: React.FC = () => {
   const { t, language } = useLanguage();
