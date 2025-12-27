@@ -4,6 +4,14 @@ import './index.css'
 import './linux-fonts.css'
 import './iransansx-features.css'
 import './styles/mobile.css' // Mobile enhancements
+
+// Syncfusion Grid CSS
+import '@syncfusion/ej2-base/styles/material.css';
+import '@syncfusion/ej2-grids/styles/material.css';
+
+// Initialize Syncfusion license (auto-registers on import)
+import './config/syncfusionConfig';
+
 import { MuiThemeWrapper } from './contexts/MuiThemeProvider'
 import { initLanguage } from './stores/languageStore'
 import { createLogger } from './utils/logger'
