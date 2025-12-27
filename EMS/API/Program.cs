@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using API.Models;
 using API.Services;
 using API.Workers;
@@ -268,18 +269,18 @@ builder.Services.AddSingleton<API.Services.SignalRBroadcastService>();
 
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "v1",
         Title = "EMS Monitoring API",
         Description = "Environmental Monitoring System API with JWT Authentication",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        Contact = new OpenApiContact
         {
             Name = "EMS Development Team",
             Email = "support@ems-monitoring.com",
             Url = new Uri("https://github.com/mhdr/Monitoring2025")
         },
-        License = new Microsoft.OpenApi.Models.OpenApiLicense
+        License = new OpenApiLicense
         {
             Name = "MIT License",
             Url = new Uri("https://opensource.org/licenses/MIT")
@@ -303,24 +304,24 @@ builder.Services.AddSwaggerGen(c =>
     });
 
     // Configure Swagger to use JWT Bearer token
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Type = SecuritySchemeType.Http,
         Scheme = "Bearer",
         BearerFormat = "JWT",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        In = ParameterLocation.Header,
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
     });
 
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new OpenApiSecurityScheme
             {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                Reference = new OpenApiReference
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
             },
@@ -329,13 +330,13 @@ builder.Services.AddSwaggerGen(c =>
     });
 
     // Add HTTP server only
-    c.AddServer(new Microsoft.OpenApi.Models.OpenApiServer
+    c.AddServer(new OpenApiServer
     {
         Url = "http://localhost:5030",
         Description = "HTTP Development Server"
     });
 });
-builder.Services.AddOpenApi();
+// builder.Services.AddOpenApi(); // Not needed with Swashbuckle
 
 // configure the endpoints for mass transit
 
@@ -367,7 +368,7 @@ if (app.Environment.IsDevelopment() || (app.Environment.IsProduction() && enable
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.MapOpenApi();
+    // app.MapOpenApi(); // Not needed with Swashbuckle
     
     if (app.Environment.IsProduction())
     {
