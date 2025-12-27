@@ -19,6 +19,7 @@ import {
   People as UsersIcon,
   SettingsEthernet as SettingsEthernetIcon,
   Memory as MemoryIcon,
+  DeviceHub as DeviceHubIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -46,6 +47,7 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
     { path: '/dashboard/management/users', key: 'users', icon: <UsersIcon /> },
     { path: '/dashboard/management/modbus-controllers', key: 'modbusControllers.title', icon: <SettingsEthernetIcon /> },
     { path: '/dashboard/management/sharp7-controllers', key: 'sharp7Controllers.title', icon: <MemoryIcon /> },
+    { path: '/dashboard/management/modbus-gateway', key: 'modbusGateway.title', icon: <DeviceHubIcon /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;

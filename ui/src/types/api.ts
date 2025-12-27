@@ -2441,3 +2441,222 @@ export interface CalculateStateDurationResponseDto {
   stateChangeCount: number; // Number of state changes found in the time range (int32)
   usedLastKnownState: boolean; // Indicates whether the last known state before the start date was used
 }
+
+// ==================== Modbus Gateway Types ====================
+
+/** ModbusRegisterType: Coil=1, DiscreteInput=2, HoldingRegister=3, InputRegister=4 */
+export type ModbusRegisterType = 1 | 2 | 3 | 4;
+
+/**
+ * ModbusRegisterType enum values for better code readability
+ */
+export const ModbusRegisterTypeEnum = {
+  Coil: 1,
+  DiscreteInput: 2,
+  HoldingRegister: 3,
+  InputRegister: 4,
+} as const;
+
+/** ModbusDataRepresentation: Int16=1, Float32=2, ScaledInteger=3 */
+export type ModbusDataRepresentation = 1 | 2 | 3;
+
+/**
+ * ModbusDataRepresentation enum values for better code readability
+ */
+export const ModbusDataRepresentationEnum = {
+  Int16: 1,
+  Float32: 2,
+  ScaledInteger: 3,
+} as const;
+
+/** Endianness: None=0, BigEndian=1, LittleEndian=2, MidBigEndian=3, MidLittleEndian=4 */
+export type EndiannessType = 0 | 1 | 2 | 3 | 4;
+
+/**
+ * Endianness enum values for better code readability
+ */
+export const EndiannessTypeEnum = {
+  None: 0,
+  BigEndian: 1,
+  LittleEndian: 2,
+  MidBigEndian: 3,
+  MidLittleEndian: 4,
+} as const;
+
+/**
+ * Modbus Gateway configuration with status
+ */
+export interface ModbusGatewayConfig {
+  /** Unique identifier for the gateway */
+  id: string;
+  /** Display name of the gateway */
+  name: string;
+  /** IP address to listen on */
+  listenIP: string;
+  /** TCP port to listen on */
+  port: number;
+  /** Modbus unit/slave identifier (1-247) */
+  unitId: number;
+  /** Whether the gateway is enabled */
+  isEnabled: boolean;
+  /** Number of currently connected clients */
+  connectedClients: number;
+  /** Timestamp of the last read request */
+  lastReadTime: string | null;
+  /** Timestamp of the last write request */
+  lastWriteTime: string | null;
+  /** Number of mappings configured */
+  mappingCount: number;
+}
+
+/**
+ * Response DTO for getting all Modbus gateways
+ */
+export interface GetModbusGatewaysResponseDto {
+  data: ModbusGatewayConfig[];
+}
+
+/**
+ * Request DTO for adding a new Modbus gateway
+ */
+export interface AddModbusGatewayRequestDto {
+  name: string;
+  listenIP: string;
+  port: number;
+  unitId: number;
+  isEnabled: boolean;
+}
+
+/**
+ * Response DTO for adding a Modbus gateway
+ */
+export interface AddModbusGatewayResponseDto {
+  isSuccessful: boolean;
+  gatewayId: string | null;
+  validationErrors: GatewayValidationError[];
+}
+
+/**
+ * Gateway validation error
+ */
+export interface GatewayValidationError {
+  field: string;
+  errorCode: string;
+  message: string;
+}
+
+/**
+ * Request DTO for editing a Modbus gateway
+ */
+export interface EditModbusGatewayRequestDto {
+  id: string;
+  name: string;
+  listenIP: string;
+  port: number;
+  unitId: number;
+  isEnabled: boolean;
+}
+
+/**
+ * Response DTO for editing a Modbus gateway
+ */
+export interface EditModbusGatewayResponseDto {
+  isSuccessful: boolean;
+  validationErrors: GatewayValidationError[];
+}
+
+/**
+ * Request DTO for deleting a Modbus gateway
+ */
+export interface DeleteModbusGatewayRequestDto {
+  gatewayId: string;
+}
+
+/**
+ * Response DTO for deleting a Modbus gateway
+ */
+export interface DeleteModbusGatewayResponseDto {
+  isSuccessful: boolean;
+  errorMessage: string | null;
+}
+
+/**
+ * Request DTO for getting gateway mappings
+ */
+export interface GetModbusGatewayMappingsRequestDto {
+  gatewayId: string;
+}
+
+/**
+ * Modbus gateway mapping with item details
+ */
+export interface ModbusGatewayMapping {
+  id: string;
+  gatewayId: string;
+  modbusAddress: number;
+  registerType: ModbusRegisterType;
+  itemId: string;
+  itemName: string | null;
+  itemNameFa: string | null;
+  isEditable: boolean;
+  registerCount: number;
+  dataRepresentation: ModbusDataRepresentation;
+  endianness: EndiannessType;
+  scaleMin: number | null;
+  scaleMax: number | null;
+}
+
+/**
+ * Response DTO for getting gateway mappings
+ */
+export interface GetModbusGatewayMappingsResponseDto {
+  isSuccessful: boolean;
+  errorMessage: string | null;
+  mappings: ModbusGatewayMapping[];
+}
+
+/**
+ * Mapping edit DTO (for add/update operations)
+ */
+export interface ModbusGatewayMappingEdit {
+  id?: string | null;
+  modbusAddress: number;
+  registerType: ModbusRegisterType;
+  itemId: string;
+  dataRepresentation: ModbusDataRepresentation;
+  endianness: EndiannessType;
+  scaleMin?: number | null;
+  scaleMax?: number | null;
+}
+
+/**
+ * Request DTO for batch editing gateway mappings
+ */
+export interface BatchEditModbusGatewayMappingsRequestDto {
+  gatewayId: string;
+  added: ModbusGatewayMappingEdit[];
+  updated: ModbusGatewayMappingEdit[];
+  removedIds: string[];
+}
+
+/**
+ * Response DTO for batch editing gateway mappings
+ */
+export interface BatchEditModbusGatewayMappingsResponseDto {
+  isSuccessful: boolean;
+  validationErrors: GatewayValidationError[];
+  addedCount: number;
+  updatedCount: number;
+  removedCount: number;
+}
+
+/**
+ * Gateway status update from SignalR
+ */
+export interface GatewayStatusUpdate {
+  gatewayId: string;
+  name: string;
+  connectedClients: number;
+  lastReadTime: string | null;
+  lastWriteTime: string | null;
+}

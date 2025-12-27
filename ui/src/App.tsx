@@ -28,6 +28,7 @@ const SchedulerPage = lazy(() => import('./components/SchedulerPage'));
 const UsersPage = lazy(() => import('./components/UsersPage'));
 const ModbusControllersPage = lazy(() => import('./components/ModbusControllersPage'));
 const Sharp7ControllersPage = lazy(() => import('./components/Sharp7ControllersPage'));
+const ModbusGatewayPage = lazy(() => import('./components/ModbusGatewayPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
@@ -140,6 +141,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <Sharp7ControllersPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="management/modbus-gateway" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <ModbusGatewayPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

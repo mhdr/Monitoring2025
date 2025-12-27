@@ -1305,6 +1305,124 @@
       "mappingDeleted": "نگاشت با موفقیت حذف شد"
     }
   },
+  "modbusGateway": {
+    "title": "درگاه مادباس",
+    "subtitle": "پیکربندی درگاه‌های سرور TCP مادباس برای نمایش داده‌های مانیتورینگ به کلاینت‌های خارجی",
+    "addGateway": "افزودن درگاه",
+    "editGateway": "ویرایش درگاه",
+    "deleteGateway": "حذف درگاه",
+    "manageMappings": "مدیریت نگاشت‌ها",
+    "searchPlaceholder": "جستجو درگاه‌ها...",
+    "noGatewaysFound": "هیچ درگاه مادباسی یافت نشد",
+    "addFirstGateway": "اولین درگاه مادباس خود را اضافه کنید تا داده‌های مانیتورینگ از طریق TCP مادباس در دسترس قرار گیرد",
+    "fields": {
+      "name": "نام",
+      "listenIP": "آدرس IP",
+      "listenIPHelper": "آدرس IP برای اتصال (0.0.0.0 برای همه رابط‌ها)",
+      "port": "پورت",
+      "portHelper": "پورت TCP برای ارتباط مادباس",
+      "unitId": "شناسه واحد",
+      "unitIdHelper": "شناسه اسلیو/واحد مادباس (۱-۲۴۷)",
+      "isEnabled": "فعال",
+      "status": "وضعیت",
+      "connectedClients": "کلاینت‌های متصل",
+      "lastReadTime": "آخرین خواندن",
+      "lastWriteTime": "آخرین نوشتن",
+      "lastActivity": "آخرین فعالیت",
+      "mappingCount": "نگاشت‌ها"
+    },
+    "status": {
+      "enabled": "فعال",
+      "disabled": "غیرفعال",
+      "running": "در حال اجرا",
+      "stopped": "متوقف"
+    },
+    "mappings": {
+      "title": "نگاشت‌های درگاه",
+      "subtitle": "پیکربندی نگاشت‌های رجیستر مادباس برای درگاه «{{name}}»",
+      "addMapping": "افزودن نگاشت",
+      "saveChanges": "ذخیره تغییرات",
+      "discardChanges": "لغو تغییرات",
+      "noMappings": "هیچ نگاشتی پیکربندی نشده است",
+      "addFirstMapping": "اولین نگاشت را اضافه کنید تا یک آیتم مانیتورینگ نمایش داده شود",
+      "modbusAddress": "آدرس مادباس",
+      "modbusAddressHelper": "آدرس شروع رجیستر (مبنای صفر)",
+      "registerType": "نوع رجیستر",
+      "dataRepresentation": "فرمت داده",
+      "endianness": "ترتیب بایت",
+      "scaleMin": "حداقل مقیاس",
+      "scaleMax": "حداکثر مقیاس",
+      "scaleHelper": "محدوده مقدار برای تبدیل عدد صحیح مقیاس‌شده",
+      "item": "آیتم مانیتورینگ",
+      "selectItem": "انتخاب آیتم...",
+      "registerCount": "رجیسترها",
+      "isEditable": "قابل نوشتن",
+      "unsavedChanges": "شما تغییرات ذخیره نشده دارید",
+      "confirmDiscard": "آیا مطمئن هستید که می‌خواهید تغییرات را لغو کنید؟"
+    },
+    "registerTypes": {
+      "coil": "کویل (0x)",
+      "discreteInput": "ورودی گسسته (1x)",
+      "holdingRegister": "رجیستر نگهدارنده (4x)",
+      "inputRegister": "رجیستر ورودی (3x)"
+    },
+    "dataRepresentations": {
+      "int16": "Int16 (۱ رجیستر)",
+      "float32": "Float32 (۲ رجیستر)",
+      "scaledInteger": "عدد صحیح مقیاس‌شده (۱ رجیستر)"
+    },
+    "endianness": {
+      "none": "هیچ",
+      "bigEndian": "بزرگ‌پایان (AB CD)",
+      "littleEndian": "کوچک‌پایان (DC BA)",
+      "midBigEndian": "میانه-بزرگ‌پایان (CD AB)",
+      "midLittleEndian": "میانه-کوچک‌پایان (BA DC)"
+    },
+    "dialogs": {
+      "addTitle": "افزودن درگاه مادباس",
+      "editTitle": "ویرایش درگاه مادباس",
+      "deleteTitle": "حذف درگاه مادباس",
+      "deleteMessage": "آیا مطمئن هستید که می‌خواهید درگاه «{{name}}» را حذف کنید؟",
+      "deleteWarning": "این عمل قابل بازگشت نیست. تمام نگاشت‌های مرتبط نیز حذف خواهند شد."
+    },
+    "validation": {
+      "nameRequired": "نام الزامی است",
+      "listenIPRequired": "آدرس IP الزامی است",
+      "listenIPInvalid": "فرمت آدرس IP نامعتبر است",
+      "portRequired": "پورت الزامی است",
+      "portRange": "پورت باید بین ۱ و ۶۵۵۳۵ باشد",
+      "portInUseDb": "این پورت توسط درگاه دیگری استفاده می‌شود",
+      "portInUseSystem": "این پورت توسط برنامه دیگری در حال استفاده است",
+      "unitIdRange": "شناسه واحد باید بین ۱ و ۲۴۷ باشد",
+      "addressRequired": "آدرس مادباس الزامی است",
+      "addressMin": "آدرس باید ۰ یا بیشتر باشد",
+      "addressOverlap": "محدوده آدرس با نگاشت دیگری همپوشانی دارد",
+      "itemRequired": "آیتم مانیتورینگ الزامی است",
+      "scaleMinRequired": "حداقل مقیاس برای عدد صحیح مقیاس‌شده الزامی است",
+      "scaleMaxRequired": "حداکثر مقیاس برای عدد صحیح مقیاس‌شده الزامی است",
+      "scaleRangeInvalid": "حداکثر مقیاس باید بزرگتر از حداقل مقیاس باشد"
+    },
+    "errors": {
+      "fetchFailed": "بارگذاری درگاه‌های مادباس ناموفق بود",
+      "createFailed": "ایجاد درگاه ناموفق بود",
+      "updateFailed": "به‌روزرسانی درگاه ناموفق بود",
+      "deleteFailed": "حذف درگاه ناموفق بود",
+      "fetchMappingsFailed": "بارگذاری نگاشت‌ها ناموفق بود",
+      "saveMappingsFailed": "ذخیره نگاشت‌ها ناموفق بود"
+    },
+    "success": {
+      "created": "درگاه با موفقیت ایجاد شد",
+      "updated": "درگاه با موفقیت به‌روزرسانی شد",
+      "deleted": "درگاه با موفقیت حذف شد",
+      "mappingsSaved": "نگاشت‌ها با موفقیت ذخیره شد"
+    },
+    "realtime": {
+      "connected": "{{count}} کلاینت متصل",
+      "noClients": "هیچ کلاینتی متصل نیست",
+      "neverRead": "هرگز",
+      "neverWritten": "هرگز"
+    }
+  },
   "sharp7Controllers": {
     "title": "کنترلرهای Sharp7 (زیمنس S7)",
     "addController": "افزودن کنترلر",

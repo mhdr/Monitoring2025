@@ -1305,6 +1305,124 @@
       "mappingDeleted": "Mapping deleted successfully"
     }
   },
+  "modbusGateway": {
+    "title": "Modbus Gateway",
+    "subtitle": "Configure Modbus TCP server gateways to expose monitoring data to external clients",
+    "addGateway": "Add Gateway",
+    "editGateway": "Edit Gateway",
+    "deleteGateway": "Delete Gateway",
+    "manageMappings": "Manage Mappings",
+    "searchPlaceholder": "Search gateways...",
+    "noGatewaysFound": "No Modbus gateways found",
+    "addFirstGateway": "Add your first Modbus gateway to expose monitoring data via Modbus TCP",
+    "fields": {
+      "name": "Name",
+      "listenIP": "Listen IP",
+      "listenIPHelper": "IP address to bind (0.0.0.0 for all interfaces)",
+      "port": "Port",
+      "portHelper": "TCP port for Modbus communication",
+      "unitId": "Unit ID",
+      "unitIdHelper": "Modbus slave/unit identifier (1-247)",
+      "isEnabled": "Enabled",
+      "status": "Status",
+      "connectedClients": "Connected Clients",
+      "lastReadTime": "Last Read",
+      "lastWriteTime": "Last Write",
+      "lastActivity": "Last Activity",
+      "mappingCount": "Mappings"
+    },
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "running": "Running",
+      "stopped": "Stopped"
+    },
+    "mappings": {
+      "title": "Gateway Mappings",
+      "subtitle": "Configure Modbus register mappings for gateway \"{{name}}\"",
+      "addMapping": "Add Mapping",
+      "saveChanges": "Save Changes",
+      "discardChanges": "Discard Changes",
+      "noMappings": "No mappings configured",
+      "addFirstMapping": "Add your first mapping to expose a monitoring item",
+      "modbusAddress": "Modbus Address",
+      "modbusAddressHelper": "Starting register address (0-based)",
+      "registerType": "Register Type",
+      "dataRepresentation": "Data Format",
+      "endianness": "Byte Order",
+      "scaleMin": "Scale Min",
+      "scaleMax": "Scale Max",
+      "scaleHelper": "Value range for ScaledInteger conversion",
+      "item": "Monitoring Item",
+      "selectItem": "Select item...",
+      "registerCount": "Registers",
+      "isEditable": "Writable",
+      "unsavedChanges": "You have unsaved changes",
+      "confirmDiscard": "Are you sure you want to discard changes?"
+    },
+    "registerTypes": {
+      "coil": "Coil (0x)",
+      "discreteInput": "Discrete Input (1x)",
+      "holdingRegister": "Holding Register (4x)",
+      "inputRegister": "Input Register (3x)"
+    },
+    "dataRepresentations": {
+      "int16": "Int16 (1 register)",
+      "float32": "Float32 (2 registers)",
+      "scaledInteger": "Scaled Integer (1 register)"
+    },
+    "endianness": {
+      "none": "None",
+      "bigEndian": "Big Endian (AB CD)",
+      "littleEndian": "Little Endian (DC BA)",
+      "midBigEndian": "Mid-Big Endian (CD AB)",
+      "midLittleEndian": "Mid-Little Endian (BA DC)"
+    },
+    "dialogs": {
+      "addTitle": "Add Modbus Gateway",
+      "editTitle": "Edit Modbus Gateway",
+      "deleteTitle": "Delete Modbus Gateway",
+      "deleteMessage": "Are you sure you want to delete gateway \"{{name}}\"?",
+      "deleteWarning": "This action cannot be undone. All associated mappings will also be deleted."
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "listenIPRequired": "Listen IP is required",
+      "listenIPInvalid": "Invalid IP address format",
+      "portRequired": "Port is required",
+      "portRange": "Port must be between 1 and 65535",
+      "portInUseDb": "This port is already used by another gateway",
+      "portInUseSystem": "This port is in use by another application",
+      "unitIdRange": "Unit ID must be between 1 and 247",
+      "addressRequired": "Modbus address is required",
+      "addressMin": "Address must be 0 or greater",
+      "addressOverlap": "Address range overlaps with another mapping",
+      "itemRequired": "Monitoring item is required",
+      "scaleMinRequired": "Scale min is required for ScaledInteger",
+      "scaleMaxRequired": "Scale max is required for ScaledInteger",
+      "scaleRangeInvalid": "Scale max must be greater than scale min"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load Modbus gateways",
+      "createFailed": "Failed to create gateway",
+      "updateFailed": "Failed to update gateway",
+      "deleteFailed": "Failed to delete gateway",
+      "fetchMappingsFailed": "Failed to load mappings",
+      "saveMappingsFailed": "Failed to save mappings"
+    },
+    "success": {
+      "created": "Gateway created successfully",
+      "updated": "Gateway updated successfully",
+      "deleted": "Gateway deleted successfully",
+      "mappingsSaved": "Mappings saved successfully"
+    },
+    "realtime": {
+      "connected": "{{count}} client(s) connected",
+      "noClients": "No clients connected",
+      "neverRead": "Never",
+      "neverWritten": "Never"
+    }
+  },
   "sharp7Controllers": {
     "title": "Sharp7 (Siemens S7) Controllers",
     "addController": "Add Controller",

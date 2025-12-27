@@ -64,6 +64,18 @@ import type {
   BatchEditSharp7MapsResponseDto,
   GetSharp7MappingsByItemIdRequestDto,
   GetSharp7MappingsByItemIdResponseDto,
+  // Modbus Gateway types
+  GetModbusGatewaysResponseDto,
+  AddModbusGatewayRequestDto,
+  AddModbusGatewayResponseDto,
+  EditModbusGatewayRequestDto,
+  EditModbusGatewayResponseDto,
+  DeleteModbusGatewayRequestDto,
+  DeleteModbusGatewayResponseDto,
+  GetModbusGatewayMappingsRequestDto,
+  GetModbusGatewayMappingsResponseDto,
+  BatchEditModbusGatewayMappingsRequestDto,
+  BatchEditModbusGatewayMappingsResponseDto,
 } from '../types/api';
 
 /**
@@ -615,3 +627,76 @@ export const getSharp7MappingsByItemId = async (data: GetSharp7MappingsByItemIdR
   }
 };
 
+// ==================== Modbus Gateway ====================
+
+/**
+ * Get all Modbus gateway configurations with status
+ */
+export const getModbusGateways = async (): Promise<GetModbusGatewaysResponseDto> => {
+  try {
+    const response = await apiClient.post<GetModbusGatewaysResponseDto>('/api/Monitoring/GetModbusGateways', {});
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new Modbus gateway configuration
+ */
+export const addModbusGateway = async (data: AddModbusGatewayRequestDto): Promise<AddModbusGatewayResponseDto> => {
+  try {
+    const response = await apiClient.post<AddModbusGatewayResponseDto>('/api/Monitoring/AddModbusGateway', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing Modbus gateway configuration
+ */
+export const editModbusGateway = async (data: EditModbusGatewayRequestDto): Promise<EditModbusGatewayResponseDto> => {
+  try {
+    const response = await apiClient.post<EditModbusGatewayResponseDto>('/api/Monitoring/EditModbusGateway', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a Modbus gateway configuration
+ */
+export const deleteModbusGateway = async (data: DeleteModbusGatewayRequestDto): Promise<DeleteModbusGatewayResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteModbusGatewayResponseDto>('/api/Monitoring/DeleteModbusGateway', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get mappings for a specific Modbus gateway
+ */
+export const getModbusGatewayMappings = async (data: GetModbusGatewayMappingsRequestDto): Promise<GetModbusGatewayMappingsResponseDto> => {
+  try {
+    const response = await apiClient.post<GetModbusGatewayMappingsResponseDto>('/api/Monitoring/GetModbusGatewayMappings', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Batch edit Modbus gateway mappings (add, update, delete)
+ */
+export const batchEditModbusGatewayMappings = async (data: BatchEditModbusGatewayMappingsRequestDto): Promise<BatchEditModbusGatewayMappingsResponseDto> => {
+  try {
+    const response = await apiClient.post<BatchEditModbusGatewayMappingsResponseDto>('/api/Monitoring/BatchEditModbusGatewayMappings', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};

@@ -7,6 +7,7 @@ import * as signalR from '@microsoft/signalr';
 import { authStorageHelpers } from '../utils/authStorage';
 import { createLogger } from '../utils/logger';
 import { apiConfig } from '../config/apiConfig';
+import type { GatewayStatusUpdate } from '../types/api';
 
 const logger = createLogger('SignalRClient');
 
@@ -26,6 +27,11 @@ export interface ActiveAlarmsUpdate {
  * Invoked when server sends ReceiveSettingsUpdate (no parameters)
  */
 export type SettingsUpdateCallback = () => void;
+
+/**
+ * Gateway status update callback type
+ */
+export type GatewayStatusUpdateCallback = (update: GatewayStatusUpdate) => void;
 
 /**
  * SignalR connection manager
@@ -209,6 +215,29 @@ class SignalRConnectionManager {
     if (this.connection) {
       this.connection.off('ReceiveSettingsUpdate');
       logger.log('Unsubscribed from settings updates');
+    }
+  }
+
+  /**
+   * Subscribe to gateway status updates
+   * This is triggered when ModbusGateway worker publishes status updates
+   */
+  onGatewayStatusUpdate(callback: (update: GatewayStatusUpdate) => void): void {
+    const connection = this.getConnection();
+    
+    connection.on('ReceiveGatewayStatusUpdate', (data: GatewayStatusUpdate) => {
+      logger.log('Received gateway status update:', data);
+      callback(data);
+    });
+  }
+
+  /**
+   * Unsubscribe from gateway status updates
+   */
+  offGatewayStatusUpdate(): void {
+    if (this.connection) {
+      this.connection.off('ReceiveGatewayStatusUpdate');
+      logger.log('Unsubscribed from gateway status updates');
     }
   }
 
