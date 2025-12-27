@@ -24,9 +24,9 @@ import {
   Delete as DeleteIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import type { GridComponent as GridComponentType } from '@syncfusion/ej2-react-grids';
 import { useLanguage } from '../hooks/useLanguage';
-import AGGridWrapper from './AGGridWrapper';
+import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getModbusControllers } from '../services/extendedApi';
 import type {
   ControllerModbus,
@@ -34,7 +34,6 @@ import type {
   ModbusConnectionType,
   MyModbusType,
 } from '../types/api';
-import type { AGGridRowData, AGGridApi } from '../types/agGrid';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ModbusControllersPage');
@@ -60,7 +59,7 @@ const ModbusControllersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Grid ref
-  const mainGridRef = useRef<AGGridApi | null>(null);
+  const mainGridRef = useRef<GridComponentType | null>(null);
   
   // Controller dialog states
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
@@ -189,127 +188,132 @@ const ModbusControllersPage: React.FC = () => {
     );
   }, [controllers, searchTerm]);
 
-  // Main grid column definitions
-  const columnDefs = useMemo<ColDef<ControllerRow>[]>(() => {
+  // Status cell template for Syncfusion Grid
+  const statusTemplate = useCallback((data: unknown): React.ReactNode => {
+    const props = data as ControllerRow;
+    const isDisabled = props.isDisabled || false;
+    return (
+      <Chip
+        data-id-ref={`modbus-status-${props.id}`}
+        label={isDisabled ? t('modbusControllers.status.disabled') : t('modbusControllers.status.enabled')}
+        color={isDisabled ? 'error' : 'success'}
+        size="small"
+      />
+    );
+  }, [t]);
+
+  // Actions cell template
+  const actionsTemplate = useCallback((data: unknown): React.ReactNode => {
+    const controller = data as ControllerRow;
+    if (!controller) return null;
+    
+    return (
+      <Box
+        data-id-ref={`modbus-actions-${controller.id}`}
+        sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
+      >
+        <Tooltip title={t('modbusControllers.mappings.title')}>
+          <IconButton
+            data-id-ref={`modbus-mappings-btn-${controller.id}`}
+            size="small"
+            color="info"
+            onClick={() => handleOpenMappings(controller)}
+          >
+            <SettingsIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('modbusControllers.editController')}>
+          <IconButton
+            data-id-ref={`modbus-edit-btn-${controller.id}`}
+            size="small"
+            color="primary"
+            onClick={() => handleEditController(controller)}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('modbusControllers.deleteController')}>
+          <IconButton
+            data-id-ref={`modbus-delete-btn-${controller.id}`}
+            size="small"
+            color="error"
+            onClick={() => handleDeleteController(controller)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    );
+  }, [t, handleOpenMappings, handleEditController, handleDeleteController]);
+
+  // Main grid column definitions for Syncfusion Grid
+  const columnDefs = useMemo<SyncfusionColumnDef[]>(() => {
     return [
       {
-        headerName: t('modbusControllers.fields.name'),
+        headerText: t('modbusControllers.fields.name'),
         field: 'name',
-        flex: 1.5,
+        width: 150,
         minWidth: 150,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusControllers.fields.ipAddress'),
+        headerText: t('modbusControllers.fields.ipAddress'),
         field: 'ipAddress',
-        flex: 1,
+        width: 130,
         minWidth: 130,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusControllers.fields.port'),
+        headerText: t('modbusControllers.fields.port'),
         field: 'port',
         width: 80,
         minWidth: 80,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
+        type: 'number',
       },
       {
-        headerName: t('modbusControllers.fields.connectionType'),
+        headerText: t('modbusControllers.fields.connectionType'),
         field: 'connectionType',
-        flex: 1,
+        width: 120,
         minWidth: 120,
-        sortable: true,
-        valueFormatter: (params) => getConnectionTypeLabel(params.value),
+        allowSorting: true,
       },
       {
-        headerName: t('modbusControllers.fields.modbusType'),
+        headerText: t('modbusControllers.fields.modbusType'),
         field: 'modbusType',
-        flex: 1,
+        width: 100,
         minWidth: 100,
-        sortable: true,
-        valueFormatter: (params) => getModbusTypeLabel(params.value),
+        allowSorting: true,
       },
       {
-        headerName: t('modbusControllers.fields.endianness'),
+        headerText: t('modbusControllers.fields.endianness'),
         field: 'endianness',
-        flex: 1.2,
+        width: 140,
         minWidth: 140,
-        sortable: true,
-        valueFormatter: (params) => getEndiannessLabel(params.value),
+        allowSorting: true,
       },
       {
-        headerName: t('modbusControllers.fields.status'),
+        headerText: t('modbusControllers.fields.status'),
         field: 'isDisabled',
         width: 100,
         minWidth: 100,
-        sortable: true,
-        cellRenderer: (params: ICellRendererParams<ControllerRow>) => {
-          const isDisabled = params.value || false;
-          return (
-            <Chip
-              data-id-ref={`modbus-status-${params.data?.id}`}
-              label={isDisabled ? t('modbusControllers.status.disabled') : t('modbusControllers.status.enabled')}
-              color={isDisabled ? 'error' : 'success'}
-              size="small"
-            />
-          );
-        },
+        allowSorting: true,
+        template: statusTemplate,
       },
       {
-        headerName: t('common.actions'),
+        headerText: t('common.actions'),
         field: 'id',
         width: 150,
         minWidth: 150,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: ICellRendererParams<ControllerRow>) => {
-          const controller = params.data;
-          if (!controller) return null;
-          
-          return (
-            <Box
-              data-id-ref={`modbus-actions-${controller.id}`}
-              sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
-            >
-              <Tooltip title={t('modbusControllers.mappings.title')}>
-                <IconButton
-                  data-id-ref={`modbus-mappings-btn-${controller.id}`}
-                  size="small"
-                  color="info"
-                  onClick={() => handleOpenMappings(controller)}
-                >
-                  <SettingsIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t('modbusControllers.editController')}>
-                <IconButton
-                  data-id-ref={`modbus-edit-btn-${controller.id}`}
-                  size="small"
-                  color="primary"
-                  onClick={() => handleEditController(controller)}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t('modbusControllers.deleteController')}>
-                <IconButton
-                  data-id-ref={`modbus-delete-btn-${controller.id}`}
-                  size="small"
-                  color="error"
-                  onClick={() => handleDeleteController(controller)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          );
-        },
+        allowSorting: false,
+        allowFiltering: false,
+        template: actionsTemplate,
       },
     ];
-  }, [t, handleOpenMappings, handleEditController, handleDeleteController, getConnectionTypeLabel, getModbusTypeLabel, getEndiannessLabel]);
+  }, [t, statusTemplate, actionsTemplate]);
 
   return (
     <Container
@@ -435,20 +439,20 @@ const ModbusControllersPage: React.FC = () => {
               data-id-ref="modbus-grid-container"
               sx={{ flex: 1, minHeight: 400 }}
             >
-              <AGGridWrapper
+              <SyncfusionGridWrapper
                 idRef="modbus-controllers"
-                rowData={filteredControllers as unknown as AGGridRowData[]}
-                columnDefs={columnDefs}
-                onGridReady={(api) => { mainGridRef.current = api; }}
+                data={filteredControllers}
+                columns={columnDefs}
+                onGridReady={(grid) => { mainGridRef.current = grid; }}
                 height="100%"
-                gridOptions={{
-                  pagination: true,
-                  paginationPageSize: 25,
-                  paginationPageSizeSelector: [10, 25, 50, 100],
-                  domLayout: 'normal',
-                  rowHeight: 52,
-                  getRowId: (params) => String(params.data.id),
+                allowPaging={true}
+                pageSettings={{
+                  pageSize: 25,
+                  pageSizes: [10, 25, 50, 100],
                 }}
+                allowSorting={true}
+                allowFiltering={true}
+                allowResizing={true}
               />
             </Box>
           )}

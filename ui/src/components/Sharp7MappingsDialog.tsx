@@ -25,14 +25,12 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useLanguage } from '../hooks/useLanguage';
-import AGGridWrapper from './AGGridWrapper';
+import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getSharp7Maps, batchEditSharp7Maps } from '../services/extendedApi';
 import { getItems } from '../services/monitoringApi';
 import type { ControllerSharp7, MapSharp7, Item, Sharp7MapItem } from '../types/api';
 import { IoOperationTypeEnum } from '../types/api';
-import type { AGGridRowData } from '../types/agGrid';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Sharp7MappingsDialog');
@@ -281,89 +279,94 @@ const Sharp7MappingsDialog: React.FC<Sharp7MappingsDialogProps> = ({
     }
   };
 
-  // Mapping column definitions
-  const mappingColumnDefs = useMemo<ColDef<MapSharp7>[]>(() => {
+  // Actions template for Syncfusion Grid
+  const actionsTemplate = useCallback((props: MapSharp7) => {
+    return (
+      <Box
+        data-id-ref={`sharp7-mapping-actions-${props.id}`}
+        sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
+      >
+        <Tooltip title={t('common.buttons.edit')}>
+          <IconButton
+            data-id-ref={`sharp7-mapping-edit-btn-${props.id}`}
+            size="small"
+            color="primary"
+            onClick={() => handleEdit(props)}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('common.buttons.delete')}>
+          <IconButton
+            data-id-ref={`sharp7-mapping-delete-btn-${props.id}`}
+            size="small"
+            color="error"
+            onClick={() => handleDelete(props)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    );
+  }, [t, handleDelete]);
+
+  // Prepare row data with derived fields for Syncfusion Grid
+  const rowData = useMemo(() => {
+    return mappings.map((mapping) => {
+      const item = sharp7Items.find((i) => i.id === mapping.itemId);
+      return {
+        ...mapping,
+        bitDisplay: mapping.bit !== null && mapping.bit !== undefined ? String(mapping.bit) : '-',
+        itemName: item?.name || mapping.itemId || '',
+        operationTypeName: mapping.operationType === IoOperationTypeEnum.Read
+          ? t('sharp7Controllers.mappings.read')
+          : t('sharp7Controllers.mappings.write'),
+      };
+    });
+  }, [mappings, sharp7Items, t]);
+
+  // Mapping column definitions for Syncfusion Grid
+  const mappingColumnDefs = useMemo<SyncfusionColumnDef[]>(() => {
     return [
       {
-        headerName: t('sharp7Controllers.mappings.position'),
         field: 'position',
+        headerText: t('sharp7Controllers.mappings.position'),
         width: 100,
         minWidth: 80,
-        sortable: true,
+        allowSorting: true,
       },
       {
-        headerName: t('sharp7Controllers.mappings.bit'),
-        field: 'bit',
+        field: 'bitDisplay',
+        headerText: t('sharp7Controllers.mappings.bit'),
         width: 80,
         minWidth: 60,
-        sortable: true,
-        valueFormatter: (params) => (params.value !== null && params.value !== undefined ? String(params.value) : '-'),
+        allowSorting: true,
       },
       {
-        headerName: t('sharp7Controllers.mappings.item'),
-        field: 'itemId',
-        flex: 2,
-        minWidth: 200,
-        valueFormatter: (params) => {
-          const item = sharp7Items.find((i) => i.id === params.value);
-          return item?.name || params.value || '';
-        },
-        sortable: true,
+        field: 'itemName',
+        headerText: t('sharp7Controllers.mappings.item'),
+        width: 200,
+        minWidth: 150,
+        allowSorting: true,
       },
       {
-        headerName: t('sharp7Controllers.mappings.operationType'),
-        field: 'operationType',
+        field: 'operationTypeName',
+        headerText: t('sharp7Controllers.mappings.operationType'),
         width: 120,
         minWidth: 100,
-        valueFormatter: (params) => {
-          return params.value === IoOperationTypeEnum.Read
-            ? t('sharp7Controllers.mappings.read')
-            : t('sharp7Controllers.mappings.write');
-        },
-        sortable: true,
+        allowSorting: true,
       },
       {
-        headerName: t('common.actions'),
         field: 'id',
+        headerText: t('common.actions'),
         width: 120,
         minWidth: 120,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: ICellRendererParams<MapSharp7>) => {
-          const mapping = params.data;
-          if (!mapping) return null;
-
-          return (
-            <Box
-              data-id-ref={`sharp7-mapping-actions-${mapping.id}`}
-              sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
-            >
-              <Tooltip title={t('common.buttons.edit')}>
-                <IconButton
-                  data-id-ref={`sharp7-mapping-edit-btn-${mapping.id}`}
-                  size="small"
-                  color="primary"
-                  onClick={() => handleEdit(mapping)}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t('common.buttons.delete')}>
-                <IconButton
-                  data-id-ref={`sharp7-mapping-delete-btn-${mapping.id}`}
-                  size="small"
-                  color="error"
-                  onClick={() => handleDelete(mapping)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          );
-        },
+        allowSorting: false,
+        allowFiltering: false,
+        template: actionsTemplate,
       },
     ];
-  }, [t, sharp7Items, handleDelete]);
+  }, [t, actionsTemplate]);
 
   return (
     <Dialog
@@ -568,16 +571,14 @@ const Sharp7MappingsDialog: React.FC<Sharp7MappingsDialogProps> = ({
           </Box>
         ) : (
           <Box sx={{ flex: 1, minHeight: 300 }}>
-            <AGGridWrapper
-              idRef="sharp7-mappings"
-              rowData={mappings as unknown as AGGridRowData[]}
-              columnDefs={mappingColumnDefs}
+            <SyncfusionGridWrapper
+              dataSource={rowData}
+              columns={mappingColumnDefs}
               height="100%"
-              gridOptions={{
-                domLayout: 'normal',
-                rowHeight: 48,
-                getRowId: (params) => String(params.data.id),
-              }}
+              allowPaging={false}
+              allowSorting={true}
+              allowResizing={true}
+              data-id-ref="sharp7-mappings-grid"
             />
           </Box>
         )}

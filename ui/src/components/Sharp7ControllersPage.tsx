@@ -24,12 +24,11 @@ import {
   Delete as DeleteIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import type { GridComponent as GridComponentType } from '@syncfusion/ej2-react-grids';
 import { useLanguage } from '../hooks/useLanguage';
-import AGGridWrapper from './AGGridWrapper';
+import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getSharp7Controllers } from '../services/extendedApi';
 import type { ControllerSharp7 } from '../types/api';
-import type { AGGridRowData, AGGridApi } from '../types/agGrid';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Sharp7ControllersPage');
@@ -55,7 +54,7 @@ const Sharp7ControllersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Grid ref
-  const mainGridRef = useRef<AGGridApi | null>(null);
+  const mainGridRef = useRef<GridComponentType | null>(null);
   
   // Controller dialog states
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
@@ -153,128 +152,137 @@ const Sharp7ControllersPage: React.FC = () => {
     );
   }, [controllers, searchTerm]);
 
-  // Main grid column definitions
-  const columnDefs = useMemo<ColDef<ControllerRow>[]>(() => {
+  // Status cell template for Syncfusion Grid
+  const statusTemplate = useCallback((data: unknown): React.ReactNode => {
+    const props = data as ControllerRow;
+    const isDisabled = props.isDisabled || false;
+    return (
+      <Chip
+        data-id-ref={`sharp7-status-${props.id}`}
+        label={isDisabled ? t('sharp7Controllers.status.disabled') : t('sharp7Controllers.status.enabled')}
+        color={isDisabled ? 'error' : 'success'}
+        size="small"
+      />
+    );
+  }, [t]);
+
+  // Actions cell template
+  const actionsTemplate = useCallback((data: unknown): React.ReactNode => {
+    const controller = data as ControllerRow;
+    if (!controller) return null;
+    
+    return (
+      <Box
+        data-id-ref={`sharp7-actions-${controller.id}`}
+        sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
+      >
+        <Tooltip title={t('sharp7Controllers.mappings.title')}>
+          <IconButton
+            data-id-ref={`sharp7-mappings-btn-${controller.id}`}
+            size="small"
+            color="info"
+            onClick={() => handleOpenMappings(controller)}
+          >
+            <SettingsIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('sharp7Controllers.editController')}>
+          <IconButton
+            data-id-ref={`sharp7-edit-btn-${controller.id}`}
+            size="small"
+            color="primary"
+            onClick={() => handleEditController(controller)}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('sharp7Controllers.deleteController')}>
+          <IconButton
+            data-id-ref={`sharp7-delete-btn-${controller.id}`}
+            size="small"
+            color="error"
+            onClick={() => handleDeleteController(controller)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    );
+  }, [t, handleOpenMappings, handleEditController, handleDeleteController]);
+
+  // Main grid column definitions for Syncfusion Grid
+  const columnDefs = useMemo<SyncfusionColumnDef[]>(() => {
     return [
       {
-        headerName: t('sharp7Controllers.fields.name'),
+        headerText: t('sharp7Controllers.fields.name'),
         field: 'name',
-        flex: 1.5,
+        width: 150,
         minWidth: 150,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
       },
       {
-        headerName: t('sharp7Controllers.fields.ipAddress'),
+        headerText: t('sharp7Controllers.fields.ipAddress'),
         field: 'ipAddress',
-        flex: 1,
+        width: 130,
         minWidth: 130,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
       },
       {
-        headerName: t('sharp7Controllers.fields.dbAddress'),
+        headerText: t('sharp7Controllers.fields.dbAddress'),
         field: 'dbAddress',
         width: 100,
         minWidth: 100,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
+        type: 'number',
       },
       {
-        headerName: t('sharp7Controllers.fields.dbStartData'),
+        headerText: t('sharp7Controllers.fields.dbStartData'),
         field: 'dbStartData',
         width: 110,
         minWidth: 110,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
+        type: 'number',
       },
       {
-        headerName: t('sharp7Controllers.fields.dbSizeData'),
+        headerText: t('sharp7Controllers.fields.dbSizeData'),
         field: 'dbSizeData',
         width: 110,
         minWidth: 110,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
+        type: 'number',
       },
       {
-        headerName: t('sharp7Controllers.fields.username'),
+        headerText: t('sharp7Controllers.fields.username'),
         field: 'username',
-        flex: 1,
+        width: 100,
         minWidth: 100,
-        filter: true,
-        sortable: true,
-        valueFormatter: (params) => params.value || '-',
+        allowFiltering: true,
+        allowSorting: true,
       },
       {
-        headerName: t('sharp7Controllers.fields.status'),
+        headerText: t('sharp7Controllers.fields.status'),
         field: 'isDisabled',
         width: 100,
         minWidth: 100,
-        sortable: true,
-        cellRenderer: (params: ICellRendererParams<ControllerRow>) => {
-          const isDisabled = params.value || false;
-          return (
-            <Chip
-              data-id-ref={`sharp7-status-${params.data?.id}`}
-              label={isDisabled ? t('sharp7Controllers.status.disabled') : t('sharp7Controllers.status.enabled')}
-              color={isDisabled ? 'error' : 'success'}
-              size="small"
-            />
-          );
-        },
+        allowSorting: true,
+        template: statusTemplate,
       },
       {
-        headerName: t('common.actions'),
+        headerText: t('common.actions'),
         field: 'id',
         width: 150,
         minWidth: 150,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: ICellRendererParams<ControllerRow>) => {
-          const controller = params.data;
-          if (!controller) return null;
-          
-          return (
-            <Box
-              data-id-ref={`sharp7-actions-${controller.id}`}
-              sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
-            >
-              <Tooltip title={t('sharp7Controllers.mappings.title')}>
-                <IconButton
-                  data-id-ref={`sharp7-mappings-btn-${controller.id}`}
-                  size="small"
-                  color="info"
-                  onClick={() => handleOpenMappings(controller)}
-                >
-                  <SettingsIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t('sharp7Controllers.editController')}>
-                <IconButton
-                  data-id-ref={`sharp7-edit-btn-${controller.id}`}
-                  size="small"
-                  color="primary"
-                  onClick={() => handleEditController(controller)}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t('sharp7Controllers.deleteController')}>
-                <IconButton
-                  data-id-ref={`sharp7-delete-btn-${controller.id}`}
-                  size="small"
-                  color="error"
-                  onClick={() => handleDeleteController(controller)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          );
-        },
+        allowSorting: false,
+        allowFiltering: false,
+        template: actionsTemplate,
       },
     ];
-  }, [t, handleOpenMappings, handleEditController, handleDeleteController]);
+  }, [t, statusTemplate, actionsTemplate]);
 
   return (
     <Container
@@ -400,20 +408,20 @@ const Sharp7ControllersPage: React.FC = () => {
               data-id-ref="sharp7-grid-container"
               sx={{ flex: 1, minHeight: 400 }}
             >
-              <AGGridWrapper
+              <SyncfusionGridWrapper
                 idRef="sharp7-controllers"
-                rowData={filteredControllers as unknown as AGGridRowData[]}
-                columnDefs={columnDefs}
-                onGridReady={(api) => { mainGridRef.current = api; }}
+                data={filteredControllers}
+                columns={columnDefs}
+                onGridReady={(grid) => { mainGridRef.current = grid; }}
                 height="100%"
-                gridOptions={{
-                  pagination: true,
-                  paginationPageSize: 25,
-                  paginationPageSizeSelector: [10, 25, 50, 100],
-                  domLayout: 'normal',
-                  rowHeight: 52,
-                  getRowId: (params) => String(params.data.id),
+                allowPaging={true}
+                pageSettings={{
+                  pageSize: 25,
+                  pageSizes: [10, 25, 50, 100],
                 }}
+                allowSorting={true}
+                allowFiltering={true}
+                allowResizing={true}
               />
             </Box>
           )}

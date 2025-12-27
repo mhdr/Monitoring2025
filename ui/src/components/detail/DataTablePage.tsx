@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Box,
@@ -34,14 +34,11 @@ const logger = createLogger('DataTablePage');
 import type { HistoryRequestDto, HistoricalDataPoint, Item } from '../../types/api';
 import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
 
-// Use LazyAGGrid component for optimized AG Grid loading
-import LazyAGGrid from '../LazyAGGrid';
-import { useAGGrid } from '../../hooks/useAGGrid';
-import type { AGGridApi, AGGridColumnApi } from '../../types/agGrid';
-import { useRef, useCallback } from 'react';
-import type { AGGridColumnDef } from '../../types/agGrid';
+// Use SyncfusionGridWrapper component
+import SyncfusionGridWrapper, { type SyncfusionColumnDef } from '../SyncfusionGridWrapper';
+import type { GridComponent as GridComponentType } from '@syncfusion/ej2-react-grids';
 import { formatDate } from '../../utils/dateFormatting';
-import { createAGGridNumberFormatter } from '../../utils/numberFormatting';
+import { formatNumber } from '../../utils/numberFormatting';
 
 // Date range preset types
 type DateRangePreset = 'last24Hours' | 'last7Days' | 'last30Days' | 'custom';
@@ -67,15 +64,8 @@ const DataTablePage: React.FC = () => {
   // Collapsed state for the Date Range card on mobile
   const [dateRangeCollapsed, setDateRangeCollapsed] = useState<boolean>(isMobile);
 
-  // AG Grid integration
-  const { exportToCsv, exportToExcel, handleGridReady } = useAGGrid();
-  const gridRef = useRef<AGGridApi | null>(null);
-  const columnApiRef = useRef<AGGridColumnApi | null>(null);
-  const onGridReadyInternal = useCallback((api: AGGridApi, colApi: AGGridColumnApi) => {
-    gridRef.current = api;
-    columnApiRef.current = colApi;
-    handleGridReady(api, colApi);
-  }, [handleGridReady]);
+  // Syncfusion Grid ref
+  const gridRef = useRef<GridComponentType | null>(null);
 
   // Calculate Unix timestamps based on date range
   const getDateRange = useMemo(() => {
@@ -163,45 +153,46 @@ const DataTablePage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId, selectedPreset]);
 
-  // Prepare AG Grid column definitions
-  const columnDefs = useMemo<AGGridColumnDef[]>(() => {
+  // Prepare Syncfusion Grid column definitions
+  const columnDefs = useMemo<SyncfusionColumnDef[]>(() => {
     return [
       {
-        field: 'value',
-        headerName: itemUnit ? `${t('value')} (${itemUnit})` : t('value'),
-        flex: 1,
-        sortable: true,
-        filter: 'agNumberColumnFilter',
-        resizable: true,
-        valueFormatter: createAGGridNumberFormatter(language, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }),
+        field: 'valueFormatted',
+        headerText: itemUnit ? `${t('value')} (${itemUnit})` : t('value'),
+        width: 150,
+        minWidth: 120,
+        allowSorting: true,
+        allowFiltering: true,
       },
       {
         field: 'timeFormatted',
-        headerName: t('time'),
-        flex: 2,
-        sortable: true,
-        filter: 'agTextColumnFilter',
-        resizable: true,
+        headerText: t('time'),
+        width: 200,
+        minWidth: 150,
+        allowSorting: true,
+        allowFiltering: true,
       },
     ];
-  }, [language, t, itemUnit]);
+  }, [t, itemUnit]);
 
-  // Prepare AG Grid row data
+  // Prepare row data with pre-formatted values
   const rowData = useMemo(() => {
     // Create a shallow copy and sort by time descending (newest first)
     const sorted = [...historyData].sort((a, b) => b.time - a.time);
 
     return sorted.map((point, index) => {
       const timeFormatted = formatDate(point.time, language, 'short');
+      const valueFormatted = formatNumber(point.value, language, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
       
       return {
         id: index,
         time: point.time,
         timeFormatted,
         value: point.value,
+        valueFormatted,
       };
     });
   }, [historyData, language]);
@@ -462,7 +453,7 @@ const DataTablePage: React.FC = () => {
                     <IconButton
                       size="small"
                       color="primary"
-                      onClick={() => exportToCsv('historical-data.csv')}
+                      onClick={() => gridRef.current?.csvExport({ fileName: 'historical-data.csv' })}
                       data-id-ref="data-table-export-csv-button"
                       title={t('export') + ' CSV'}
                     >
@@ -471,7 +462,7 @@ const DataTablePage: React.FC = () => {
                     <IconButton
                       size="small"
                       color="success"
-                      onClick={() => exportToExcel('historical-data.xlsx')}
+                      onClick={() => gridRef.current?.excelExport({ fileName: 'historical-data.xlsx' })}
                       data-id-ref="data-table-export-excel-button"
                       title={t('export') + ' Excel'}
                     >
@@ -517,52 +508,19 @@ const DataTablePage: React.FC = () => {
             </Box>
           ) : (
             <Box sx={{ width: '100%', height: '100%', minHeight: isMobile ? '300px' : '400px' }}>
-              <LazyAGGrid
-                  ref={gridRef as React.Ref<AGGridApi>}
-                  columnDefs={columnDefs}
-                  rowData={rowData}
-                  theme="quartz"
-                  height="100%"
-                  width="100%"
-                  onGridReady={onGridReadyInternal}
-                  gridOptions={{
-                    enableRtl: language === 'fa',
-                    pagination: true,
-                    paginationPageSize: isMobile ? 20 : 50,
-                    paginationAutoPageSize: false,
-                    suppressMenuHide: true,
-                    enableCellTextSelection: true,
-                    animateRows: true,
-                    cellSelection: true, // v32.2+ replaces enableRangeSelection
-                    rowHeight: 50,
-                    headerHeight: 50,
-                    sideBar: false,
-                    statusBar: {
-                      statusPanels: [
-                        { statusPanel: 'agTotalRowCountComponent', align: 'left' },
-                        { statusPanel: 'agFilteredRowCountComponent' },
-                        { statusPanel: 'agAggregationComponent' }
-                      ]
-                    },
-                    // Explicitly disable checkbox selection for columns in this table
-                    // and use single row selection without checkboxes so the selection
-                    // column (checkbox column) does not appear.
-                    rowSelection: {
-                      mode: 'singleRow',
-                      checkboxes: false,
-                    },
-
-                    defaultColDef: {
-                      resizable: true,
-                      sortable: true,
-                      filter: true,
-                      flex: 1,
-                      minWidth: 120,
-                    },
-                    
-                  }}
-                  data-id-ref="data-table-grid"
-                />
+              <SyncfusionGridWrapper
+                ref={gridRef}
+                columns={columnDefs}
+                data={rowData}
+                height="100%"
+                allowPaging={true}
+                pageSettings={{ pageSize: isMobile ? 20 : 50 }}
+                allowSorting={true}
+                allowFiltering={true}
+                allowResizing={true}
+                allowExcelExport={true}
+                data-id-ref="data-table-grid"
+              />
             </Box>
           )}
         </CardContent>

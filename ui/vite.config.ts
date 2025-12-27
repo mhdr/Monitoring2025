@@ -64,11 +64,11 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         // Exclude stats files and SW message handler from precache
-  globIgnores: ['**/stats.html', '**/sw-message-handler.js', '**/ag-grid-*.js', '**/echarts-*.js', '**/index-*.js'],
+  globIgnores: ['**/stats.html', '**/sw-message-handler.js', '**/syncfusion-*.js', '**/echarts-*.js', '**/index-*.js'],
         // Import custom message handler for cache invalidation
         importScripts: ['sw-message-handler.js'],
   // Increase maximum file size to accommodate larger vendor chunks (no JS minification)
-  // AG Grid and ECharts can exceed 2MB without minification
+  // Syncfusion Grid and ECharts can exceed 2MB without minification
   maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
           // Cache ALL JavaScript chunks - CacheFirst strategy with long expiration
@@ -284,9 +284,9 @@ export default defineConfig({
               return 'i18n';
             }
 
-            // AG Grid
-            if (id.includes('ag-grid-enterprise') || id.includes('ag-grid-community') || id.includes('ag-grid-react')) {
-              return 'ag-grid';
+            // Syncfusion Grid
+            if (id.includes('@syncfusion/ej2') || id.includes('syncfusion')) {
+              return 'syncfusion';
             }
 
             // ECharts
@@ -421,8 +421,8 @@ export default defineConfig({
     ],
     // Exclude large dependencies that should be loaded on-demand
     exclude: [
-      'ag-grid-enterprise',
-      'ag-grid-community',
+      '@syncfusion/ej2-react-grids',
+      '@syncfusion/ej2-grids',
       'echarts',
     ],
   },

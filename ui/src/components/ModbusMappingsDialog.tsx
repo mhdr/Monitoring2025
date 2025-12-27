@@ -18,14 +18,12 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useLanguage } from '../hooks/useLanguage';
-import AGGridWrapper from './AGGridWrapper';
+import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getModbusMaps } from '../services/extendedApi';
 import { getItems } from '../services/monitoringApi';
 import type { ControllerModbus, MapModbus, Item } from '../types/api';
 import { IoOperationTypeEnum } from '../types/api';
-import type { AGGridRowData } from '../types/agGrid';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ModbusMappingsDialog');
@@ -149,81 +147,86 @@ const ModbusMappingsDialog: React.FC<ModbusMappingsDialogProps> = ({
     return mappings.map((m) => m.position);
   }, [mappings]);
 
-  // Mapping column definitions
-  const mappingColumnDefs = useMemo<ColDef<MapModbus>[]>(() => {
+  // Actions template for Syncfusion Grid
+  const actionsTemplate = useCallback((props: MapModbus) => {
+    return (
+      <Box
+        data-id-ref={`mapping-actions-${props.id}`}
+        sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
+      >
+        <Tooltip title={t('common.buttons.edit')}>
+          <IconButton
+            data-id-ref={`mapping-edit-btn-${props.id}`}
+            size="small"
+            color="primary"
+            onClick={() => handleEditMapping(props)}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('common.buttons.delete')}>
+          <IconButton
+            data-id-ref={`mapping-delete-btn-${props.id}`}
+            size="small"
+            color="error"
+            onClick={() => handleDeleteMapping(props)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    );
+  }, [t, handleEditMapping, handleDeleteMapping]);
+
+  // Prepare row data with derived fields for Syncfusion Grid
+  const rowData = useMemo(() => {
+    return mappings.map((mapping) => {
+      const item = modbusItems.find((i) => i.id === mapping.itemId);
+      return {
+        ...mapping,
+        itemName: item?.name || mapping.itemId || '',
+        operationTypeName: mapping.operationType === IoOperationTypeEnum.Read
+          ? t('modbusControllers.mappings.read')
+          : t('modbusControllers.mappings.write'),
+      };
+    });
+  }, [mappings, modbusItems, t]);
+
+  // Mapping column definitions for Syncfusion Grid
+  const mappingColumnDefs = useMemo<SyncfusionColumnDef[]>(() => {
     return [
       {
-        headerName: t('modbusControllers.mappings.position'),
         field: 'position',
+        headerText: t('modbusControllers.mappings.position'),
         width: 100,
         minWidth: 80,
-        sortable: true,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusControllers.mappings.item'),
-        field: 'itemId',
-        flex: 2,
-        minWidth: 200,
-        valueFormatter: (params) => {
-          const item = modbusItems.find((i) => i.id === params.value);
-          return item?.name || params.value || '';
-        },
-        sortable: true,
+        field: 'itemName',
+        headerText: t('modbusControllers.mappings.item'),
+        width: 200,
+        minWidth: 150,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusControllers.mappings.operationType'),
-        field: 'operationType',
+        field: 'operationTypeName',
+        headerText: t('modbusControllers.mappings.operationType'),
         width: 120,
         minWidth: 100,
-        valueFormatter: (params) => {
-          return params.value === IoOperationTypeEnum.Read
-            ? t('modbusControllers.mappings.read')
-            : t('modbusControllers.mappings.write');
-        },
-        sortable: true,
+        allowSorting: true,
       },
       {
-        headerName: t('common.actions'),
         field: 'id',
+        headerText: t('common.actions'),
         width: 120,
         minWidth: 120,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: ICellRendererParams<MapModbus>) => {
-          const mapping = params.data;
-          if (!mapping) return null;
-
-          return (
-            <Box
-              data-id-ref={`mapping-actions-${mapping.id}`}
-              sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
-            >
-              <Tooltip title={t('common.buttons.edit')}>
-                <IconButton
-                  data-id-ref={`mapping-edit-btn-${mapping.id}`}
-                  size="small"
-                  color="primary"
-                  onClick={() => handleEditMapping(mapping)}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t('common.buttons.delete')}>
-                <IconButton
-                  data-id-ref={`mapping-delete-btn-${mapping.id}`}
-                  size="small"
-                  color="error"
-                  onClick={() => handleDeleteMapping(mapping)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          );
-        },
+        allowSorting: false,
+        allowFiltering: false,
+        template: actionsTemplate,
       },
     ];
-  }, [t, modbusItems, handleEditMapping, handleDeleteMapping]);
+  }, [t, actionsTemplate]);
 
   return (
     <>
@@ -345,16 +348,14 @@ const ModbusMappingsDialog: React.FC<ModbusMappingsDialogProps> = ({
             </Box>
           ) : (
             <Box sx={{ flex: 1, minHeight: 300 }}>
-              <AGGridWrapper
-                idRef="modbus-mappings"
-                rowData={mappings as unknown as AGGridRowData[]}
-                columnDefs={mappingColumnDefs}
+              <SyncfusionGridWrapper
+                dataSource={rowData}
+                columns={mappingColumnDefs}
                 height="100%"
-                gridOptions={{
-                  domLayout: 'normal',
-                  rowHeight: 48,
-                  getRowId: (params) => String(params.data.id),
-                }}
+                allowPaging={false}
+                allowSorting={true}
+                allowResizing={true}
+                data-id-ref="modbus-mappings-grid"
               />
             </Box>
           )}

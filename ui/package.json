@@ -17,7 +17,6 @@
     "delete:pm2": "pm2 delete ems3-ui"
   },
   "dependencies": {
-    "@ag-grid-community/locale": "^34.3.1",
     "@bufbuild/protobuf": "^2.9.0",
     "@emotion/cache": "^11.13.5",
     "@emotion/react": "^11.13.5",
@@ -31,8 +30,6 @@
     "@syncfusion/ej2-data": "^32.1.19",
     "@syncfusion/ej2-grids": "^32.1.20",
     "@syncfusion/ej2-react-grids": "^32.1.20",
-    "ag-grid-enterprise": "^34.3.1",
-    "ag-grid-react": "^34.3.1",
     "async-mutex": "^0.5.0",
     "axios": "^1.13.2",
     "compression": "^1.7.4",

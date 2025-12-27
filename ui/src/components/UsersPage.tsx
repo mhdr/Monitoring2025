@@ -32,13 +32,11 @@ import {
   AssignmentInd as AssignmentIndIcon,
   Security as SecurityIcon,
 } from '@mui/icons-material';
-import type { ColDef } from 'ag-grid-community';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
-import AGGridWrapper from './AGGridWrapper';
+import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getUsers, getRoles, toggleUserStatus } from '../services/userApi';
 import type { UserInfoDto, RoleInfoDto } from '../types/api';
-import type { AGGridRowData } from '../types/agGrid';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('UsersPage');
@@ -201,174 +199,173 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  const columnDefs = useMemo<ColDef<UserInfoDto>[]>(() => {
-    const isRTL = language === 'fa';
+  const isRTL = language === 'fa';
+
+  // Roles cell template for Syncfusion Grid
+  const rolesTemplate = useCallback((data: unknown): React.ReactNode => {
+    const user = data as UserInfoDto;
+    const userRoles = user.roles || [];
+    return (
+      <Box 
+        data-id-ref={`user-roles-${user.id}`}
+        sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', py: 0.5 }}
+      >
+        {userRoles.map((role) => (
+          <Chip 
+            key={role} 
+            label={role} 
+            size="small" 
+            color="primary" 
+            variant="outlined"
+          />
+        ))}
+      </Box>
+    );
+  }, []);
+
+  // Status cell template for Syncfusion Grid
+  const statusTemplate = useCallback((data: unknown): React.ReactNode => {
+    const user = data as UserInfoDto;
+    const isDisabled = user.isDisabled || false;
+    return (
+      <Chip 
+        data-id-ref={`user-status-${user.id}`}
+        label={isDisabled ? t('userManagement.disabled') : t('userManagement.active')}
+        color={isDisabled ? 'error' : 'success'}
+        size="small"
+      />
+    );
+  }, [t]);
+
+  // Actions cell template
+  const actionsTemplate = useCallback((data: unknown): React.ReactNode => {
+    const user = data as UserInfoDto;
+    if (!user) return null;
     
+    const isSelf = user.id === currentUser?.id;
+    
+    return (
+      <Box 
+        data-id-ref={`user-actions-${user.id}`}
+        sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
+      >
+        <IconButton
+          data-id-ref={`edit-user-btn-${user.id}`}
+          size="small"
+          color="primary"
+          onClick={() => handleEditUser(user)}
+          title={t('userManagement.editUser')}
+          disabled={isSelf}
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
+        <IconButton
+          data-id-ref={`assign-roles-btn-${user.id}`}
+          size="small"
+          color="secondary"
+          onClick={() => handleAssignRoles(user)}
+          title={t('userManagement.assignRoles')}
+          disabled={isSelf}
+        >
+          <AssignmentIndIcon fontSize="small" />
+        </IconButton>
+        <IconButton
+          data-id-ref={`manage-permissions-btn-${user.id}`}
+          size="small"
+          color="info"
+          onClick={() => handleManagePermissions(user)}
+          title={t('permissionsManagement.managePermissions')}
+          disabled={isSelf}
+        >
+          <SecurityIcon fontSize="small" />
+        </IconButton>
+        <IconButton
+          data-id-ref={`reset-password-btn-${user.id}`}
+          size="small"
+          color="warning"
+          onClick={() => handleResetPassword(user)}
+          title={t('userManagement.actions.resetPassword')}
+          disabled={isSelf}
+        >
+          <LockResetIcon fontSize="small" />
+        </IconButton>
+        <IconButton
+          data-id-ref={`toggle-status-btn-${user.id}`}
+          size="small"
+          color={user.isDisabled ? 'success' : 'warning'}
+          onClick={() => handleToggleStatus(user)}
+          title={user.isDisabled ? t('userManagement.actions.enable') : t('userManagement.actions.disable')}
+          disabled={isSelf}
+        >
+          {user.isDisabled ? <LockOpenIcon fontSize="small" /> : <LockIcon fontSize="small" />}
+        </IconButton>
+        <IconButton
+          data-id-ref={`delete-user-btn-${user.id}`}
+          size="small"
+          color="error"
+          onClick={() => handleDeleteUser(user)}
+          title={t('userManagement.deleteUser')}
+          disabled={isSelf}
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Box>
+    );
+  }, [currentUser, t, handleEditUser, handleAssignRoles, handleManagePermissions, handleResetPassword, handleToggleStatus, handleDeleteUser]);
+
+  const columnDefs = useMemo<SyncfusionColumnDef[]>(() => {
     return [
       {
-        headerName: t('userManagement.fields.username'),
+        headerText: t('userManagement.fields.username'),
         field: 'userName',
-        flex: 1,
+        width: 150,
         minWidth: 150,
-        filter: true,
-        sortable: true,
+        allowFiltering: true,
+        allowSorting: true,
       },
       {
-        headerName: t('userManagement.fields.firstName'),
+        headerText: t('userManagement.fields.firstName'),
         field: isRTL ? 'firstNameFa' : 'firstName',
-        flex: 1,
+        width: 150,
         minWidth: 150,
-        filter: true,
-        sortable: true,
-        valueGetter: (params) => {
-          if (isRTL) {
-            return params.data?.firstNameFa || params.data?.firstName || '';
-          }
-          return params.data?.firstName || params.data?.firstNameFa || '';
-        },
+        allowFiltering: true,
+        allowSorting: true,
       },
       {
-        headerName: t('userManagement.fields.lastName'),
+        headerText: t('userManagement.fields.lastName'),
         field: isRTL ? 'lastNameFa' : 'lastName',
-        flex: 1,
+        width: 150,
         minWidth: 150,
-        filter: true,
-        sortable: true,
-        valueGetter: (params) => {
-          if (isRTL) {
-            return params.data?.lastNameFa || params.data?.lastName || '';
-          }
-          return params.data?.lastName || params.data?.lastNameFa || '';
-        },
+        allowFiltering: true,
+        allowSorting: true,
       },
       {
-        headerName: t('userManagement.fields.roles'),
+        headerText: t('userManagement.fields.roles'),
         field: 'roles',
-        flex: 1.2,
+        width: 200,
         minWidth: 200,
-        sortable: true,
-        cellRenderer: (params: { value?: string[]; data?: UserInfoDto }) => {
-          const userRoles = params.value || [];
-          return (
-            <Box 
-              data-id-ref={`user-roles-${params.data?.id}`}
-              sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', py: 0.5 }}
-            >
-              {userRoles.map((role) => (
-                <Chip 
-                  key={role} 
-                  label={role} 
-                  size="small" 
-                  color="primary" 
-                  variant="outlined"
-                />
-              ))}
-            </Box>
-          );
-        },
+        allowSorting: true,
+        template: rolesTemplate,
       },
       {
-        headerName: t('userManagement.fields.status'),
+        headerText: t('userManagement.fields.status'),
         field: 'isDisabled',
-        flex: 0.8,
+        width: 120,
         minWidth: 120,
-        sortable: true,
-        cellRenderer: (params: { value?: boolean; data?: UserInfoDto }) => {
-          const isDisabled = params.value || false;
-          return (
-            <Chip 
-              data-id-ref={`user-status-${params.data?.id}`}
-              label={isDisabled ? t('userManagement.disabled') : t('userManagement.active')}
-              color={isDisabled ? 'error' : 'success'}
-              size="small"
-            />
-          );
-        },
+        allowSorting: true,
+        template: statusTemplate,
       },
       {
-        headerName: t('common.actions'),
+        headerText: t('common.actions'),
         field: 'id',
-        flex: 2.0,
+        width: 320,
         minWidth: 320,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: { data?: UserInfoDto }) => {
-          const user = params.data;
-          if (!user) return null;
-          
-          const isSelf = user.id === currentUser?.id;
-          
-          return (
-            <Box 
-              data-id-ref={`user-actions-${user.id}`}
-              sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
-            >
-              <IconButton
-                data-id-ref={`edit-user-btn-${user.id}`}
-                size="small"
-                color="primary"
-                onClick={() => handleEditUser(user)}
-                title={t('userManagement.editUser')}
-                disabled={isSelf}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                data-id-ref={`assign-roles-btn-${user.id}`}
-                size="small"
-                color="secondary"
-                onClick={() => handleAssignRoles(user)}
-                title={t('userManagement.assignRoles')}
-                disabled={isSelf}
-              >
-                <AssignmentIndIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                data-id-ref={`manage-permissions-btn-${user.id}`}
-                size="small"
-                color="info"
-                onClick={() => handleManagePermissions(user)}
-                title={t('permissionsManagement.managePermissions')}
-                disabled={isSelf}
-              >
-                <SecurityIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                data-id-ref={`reset-password-btn-${user.id}`}
-                size="small"
-                color="warning"
-                onClick={() => handleResetPassword(user)}
-                title={t('userManagement.actions.resetPassword')}
-                disabled={isSelf}
-              >
-                <LockResetIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                data-id-ref={`toggle-status-btn-${user.id}`}
-                size="small"
-                color={user.isDisabled ? 'success' : 'warning'}
-                onClick={() => handleToggleStatus(user)}
-                title={user.isDisabled ? t('userManagement.actions.enable') : t('userManagement.actions.disable')}
-                disabled={isSelf}
-              >
-                {user.isDisabled ? <LockOpenIcon fontSize="small" /> : <LockIcon fontSize="small" />}
-              </IconButton>
-              <IconButton
-                data-id-ref={`delete-user-btn-${user.id}`}
-                size="small"
-                color="error"
-                onClick={() => handleDeleteUser(user)}
-                title={t('userManagement.deleteUser')}
-                disabled={isSelf}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          );
-        },
+        allowSorting: false,
+        allowFiltering: false,
+        template: actionsTemplate,
       },
     ];
-  }, [language, t, currentUser, handleEditUser, handleAssignRoles, handleManagePermissions, handleResetPassword, handleToggleStatus, handleDeleteUser]);
+  }, [t, isRTL, rolesTemplate, statusTemplate, actionsTemplate]);
 
   return (
     <Container 
@@ -501,17 +498,19 @@ const UsersPage: React.FC = () => {
               data-id-ref="users-grid-container"
               sx={{ flex: 1, minHeight: 400 }}
             >
-              <AGGridWrapper
-                rowData={users as unknown as AGGridRowData[]}
-                columnDefs={columnDefs}
+              <SyncfusionGridWrapper
+                idRef="users-grid"
+                data={users}
+                columns={columnDefs}
                 height="100%"
-                gridOptions={{
-                  pagination: true,
-                  paginationPageSize: 50,
-                  paginationPageSizeSelector: [25, 50, 100, 200],
-                  domLayout: 'normal',
-                  rowHeight: 56,
+                allowPaging={true}
+                pageSettings={{
+                  pageSize: 50,
+                  pageSizes: [25, 50, 100, 200],
                 }}
+                allowSorting={true}
+                allowFiltering={true}
+                allowResizing={true}
               />
             </Box>
           )}

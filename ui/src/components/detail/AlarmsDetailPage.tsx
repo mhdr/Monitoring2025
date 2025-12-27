@@ -40,10 +40,9 @@ import type {
   Item,
 } from '../../types/api';
 
-// Use LazyAGGrid component for optimized AG Grid loading
-import LazyAGGrid from '../LazyAGGrid';
-import { useAGGrid } from '../../hooks/useAGGrid';
-import type { AGGridApi, AGGridColumnApi, AGGridColumnDef } from '../../types/agGrid';
+// Use SyncfusionGridWrapper component
+import SyncfusionGridWrapper, { type SyncfusionColumnDef } from '../SyncfusionGridWrapper';
+import type { GridComponent as GridComponentType } from '@syncfusion/ej2-react-grids';
 import AddAlarmDialog from '../AddAlarmDialog';
 import EditAlarmDialog from '../EditAlarmDialog';
 import DeleteAlarmDialog from '../DeleteAlarmDialog';
@@ -91,24 +90,18 @@ const AlarmsDetailPage: React.FC = () => {
     return map;
   }, [state.items]);
 
-  // AG Grid integration
-  const { exportToCsv, exportToExcel, handleGridReady } = useAGGrid();
-  const gridRef = useRef<AGGridApi | null>(null);
-  const columnApiRef = useRef<AGGridColumnApi | null>(null);
+  // Syncfusion Grid ref
+  const gridRef = useRef<GridComponentType | null>(null);
   const [selectedRows, setSelectedRows] = useState<EnrichedAlarm[]>([]);
   
-  const onGridReadyInternal = useCallback((api: AGGridApi, colApi: AGGridColumnApi) => {
-    gridRef.current = api;
-    columnApiRef.current = colApi;
-    handleGridReady(api, colApi);
-  }, [handleGridReady]);
-
   // Handle row selection changes
-  const onSelectionChanged = useCallback(() => {
-    if (gridRef.current) {
-      const selected = gridRef.current.getSelectedRows() as EnrichedAlarm[];
-      setSelectedRows(selected);
-      logger.log('Row selection changed:', { count: selected.length });
+  const onRowSelected = useCallback((args: unknown) => {
+    const rowArgs = args as { data?: EnrichedAlarm };
+    if (rowArgs.data) {
+      setSelectedRows([rowArgs.data]);
+      logger.log('Row selection changed:', { count: 1 });
+    } else {
+      setSelectedRows([]);
     }
   }, []);
 
@@ -239,204 +232,196 @@ const AlarmsDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId, itemsMap]); // Fetch alarms when itemId is available or items change
 
-  // Column definitions for AG Grid
-  const columnDefs = useMemo<AGGridColumnDef[]>(() => [
+  // Template functions for Syncfusion Grid
+  const priorityTemplate = useCallback((props: unknown) => {
+    const alarm = props as EnrichedAlarm;
+    const priority = alarm.alarmPriority;
+    const label = priority === 2 ? t('alarms.priority.high') : t('alarms.priority.medium');
+    const color = priority === 2 ? 'error' : 'warning';
+    return (
+      <Chip 
+        label={label} 
+        color={color} 
+        size="small" 
+        data-id-ref={`alarm-priority-chip-${alarm.id}`}
+        sx={{ fontWeight: 600 }}
+      />
+    );
+  }, [t]);
+
+  const statusTemplate = useCallback((props: unknown) => {
+    const alarm = props as EnrichedAlarm;
+    const isDisabled = alarm.isDisabled;
+    const label = isDisabled ? t('alarms.status.disabled') : t('alarms.status.enabled');
+    const color = isDisabled ? 'default' : 'success';
+    const icon = isDisabled ? <NotificationsOffIcon fontSize="small" /> : <NotificationsActiveIcon fontSize="small" />;
+    return (
+      <Chip 
+        label={label} 
+        color={color} 
+        size="small" 
+        icon={icon}
+        data-id-ref={`alarm-status-chip-${alarm.id}`}
+        sx={{ fontWeight: 600 }}
+      />
+    );
+  }, [t]);
+
+  const externalAlarmsTemplate = useCallback((props: unknown) => {
+    const alarm = props as EnrichedAlarm;
+    const alarmId = alarm.id;
+    const hasExternal = alarm.hasExternalAlarm;
+    const hasData = alarm.hasExternalAlarmsData;
+    const count = alarm.externalAlarmsCount || 0;
+    const isLoading = alarmId ? loadingExternalAlarms.has(alarmId) : false;
+
+    if (!hasExternal) {
+      return (
+        <Chip 
+          label={t('alarms.externalAlarms.none')} 
+          size="small" 
+          icon={<LinkOffIcon fontSize="small" />}
+          data-id-ref={`alarm-external-chip-none-${alarmId}`}
+        />
+      );
+    }
+
+    if (!hasData && !isLoading) {
+      return (
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<LinkIcon />}
+          onClick={() => alarmId && fetchExternalAlarms(alarmId)}
+          data-id-ref={`alarm-external-btn-load-${alarmId}`}
+          sx={{ textTransform: 'none' }}
+        >
+          {t('alarms.externalAlarms.load')}
+        </Button>
+      );
+    }
+
+    if (isLoading) {
+      return <CircularProgress size={20} data-id-ref={`alarm-external-spinner-${alarmId}`} />;
+    }
+
+    return (
+      <Chip 
+        label={`${count} ${t('alarms.externalAlarms.count')}`}
+        size="small" 
+        color="info"
+        icon={<LinkIcon fontSize="small" />}
+        data-id-ref={`alarm-external-chip-count-${alarmId}`}
+        sx={{ fontWeight: 600 }}
+      />
+    );
+  }, [t, loadingExternalAlarms, fetchExternalAlarms]);
+
+  // Prepare row data with derived fields for Syncfusion Grid
+  const rowData = useMemo(() => {
+    return alarmsData.map((alarm) => {
+      const item = alarm.itemId ? itemsMap.get(alarm.itemId) : undefined;
+      const message = language === 'fa' 
+        ? (alarm.messageFa || alarm.message)
+        : (alarm.message || alarm.messageFa);
+      return {
+        ...alarm,
+        messageDisplay: message || t('alarms.noMessage'),
+        conditionDisplay: formatCondition(alarm, item),
+        alarmTypeDisplay: alarm.alarmType === 1 ? t('alarms.type.comparative') : t('alarms.type.timeout'),
+        delayDisplay: alarm.alarmDelay ? `${alarm.alarmDelay}${t('alarms.seconds')}` : `0${t('alarms.seconds')}`,
+        timeoutDisplay: alarm.timeout ? `${alarm.timeout}${t('alarms.seconds')}` : t('alarms.noTimeout'),
+      };
+    });
+  }, [alarmsData, itemsMap, language, t, formatCondition]);
+
+  // Column definitions for Syncfusion Grid
+  const columnDefs = useMemo<SyncfusionColumnDef[]>(() => [
     {
-      headerName: t('alarms.columns.itemName'),
       field: 'itemName',
-      flex: 1,
+      headerText: t('alarms.columns.itemName'),
+      width: 200,
+      minWidth: 150,
+      allowSorting: true,
+      allowFiltering: true,
+    },
+    {
+      field: 'messageDisplay',
+      headerText: t('alarms.columns.message'),
+      width: 250,
       minWidth: 200,
-      sortable: true,
-      filter: true,
-      cellDataType: 'text',
+      allowSorting: true,
+      allowFiltering: true,
     },
     {
-      headerName: t('alarms.columns.message'),
-      field: language === 'fa' ? 'messageFa' : 'message',
-      flex: 2,
-      minWidth: 250,
-      sortable: true,
-      filter: true,
-      cellDataType: 'text',
-      valueGetter: (params: { data: EnrichedAlarm }) => {
-        const message = language === 'fa' 
-          ? (params.data.messageFa || params.data.message)
-          : (params.data.message || params.data.messageFa);
-        return message || t('alarms.noMessage');
-      },
+      field: 'conditionDisplay',
+      headerText: t('alarms.columns.condition'),
+      width: 200,
+      minWidth: 150,
+      allowSorting: true,
+      allowFiltering: true,
     },
     {
-      headerName: t('alarms.columns.condition'),
-      field: 'condition',
-      flex: 1.5,
-      minWidth: 200,
-      sortable: true,
-      filter: true,
-      cellDataType: 'text',
-      valueGetter: (params: { data: EnrichedAlarm }) => {
-        const item = params.data.itemId ? itemsMap.get(params.data.itemId) : undefined;
-        return formatCondition(params.data, item);
-      },
+      field: 'alarmTypeDisplay',
+      headerText: t('alarms.columns.type'),
+      width: 140,
+      minWidth: 120,
+      allowSorting: true,
+      allowFiltering: true,
     },
     {
-      headerName: t('alarms.columns.type'),
-      field: 'alarmType',
-      flex: 0.8,
-      minWidth: 140,
-      sortable: true,
-      filter: true,
-      cellDataType: 'text',
-      valueGetter: (params: { data: EnrichedAlarm }) => {
-        // AlarmType: 1 = Comparative, 2 = Timeout
-        return params.data.alarmType === 1 
-          ? t('alarms.type.comparative') 
-          : t('alarms.type.timeout');
-      },
-    },
-    {
-      headerName: t('alarms.columns.priority'),
       field: 'alarmPriority',
-      flex: 0.8,
-      minWidth: 140,
-      sortable: true,
-      filter: true,
-      cellDataType: 'text',
-      cellRenderer: (params: { data: EnrichedAlarm }) => {
-        // AlarmPriority: 1 = Warning, 2 = Alarm
-        const priority = params.data.alarmPriority;
-        const label = priority === 2 ? t('alarms.priority.high') : t('alarms.priority.medium');
-        const color = priority === 2 ? 'error' : 'warning';
-        
-        return (
-          <Chip 
-            label={label} 
-            color={color} 
-            size="small" 
-            data-id-ref={`alarm-priority-chip-${params.data.id}`}
-            sx={{ fontWeight: 600 }}
-          />
-        );
-      },
+      headerText: t('alarms.columns.priority'),
+      width: 140,
+      minWidth: 120,
+      allowSorting: true,
+      allowFiltering: true,
+      template: priorityTemplate,
     },
     {
-      headerName: t('alarms.columns.delay'),
-      field: 'alarmDelay',
-      flex: 0.6,
-      minWidth: 110,
-      sortable: true,
-      filter: 'agNumberColumnFilter',
-      cellDataType: 'number',
-      valueFormatter: (params: { value: number }) => {
-        return params.value ? `${params.value}${t('alarms.seconds')}` : '0' + t('alarms.seconds');
-      },
+      field: 'delayDisplay',
+      headerText: t('alarms.columns.delay'),
+      width: 110,
+      minWidth: 90,
+      allowSorting: true,
     },
     {
-      headerName: t('alarms.columns.timeout'),
-      field: 'timeout',
-      flex: 0.6,
-      minWidth: 130,
-      sortable: true,
-      filter: 'agNumberColumnFilter',
-      cellDataType: 'number',
-      valueFormatter: (params: { value: number | null }) => {
-        return params.value ? `${params.value}${t('alarms.seconds')}` : t('alarms.noTimeout');
-      },
+      field: 'timeoutDisplay',
+      headerText: t('alarms.columns.timeout'),
+      width: 130,
+      minWidth: 100,
+      allowSorting: true,
     },
     {
-      headerName: t('alarms.columns.status'),
       field: 'isDisabled',
-      flex: 0.8,
-      minWidth: 140,
-      sortable: true,
-      filter: true,
-      cellDataType: 'text',
-      cellRenderer: (params: { data: EnrichedAlarm }) => {
-        const isDisabled = params.data.isDisabled;
-        const label = isDisabled ? t('alarms.status.disabled') : t('alarms.status.enabled');
-        const color = isDisabled ? 'default' : 'success';
-        const icon = isDisabled ? <NotificationsOffIcon fontSize="small" /> : <NotificationsActiveIcon fontSize="small" />;
-        
-        return (
-          <Chip 
-            label={label} 
-            color={color} 
-            size="small" 
-            icon={icon}
-            data-id-ref={`alarm-status-chip-${params.data.id}`}
-            sx={{ fontWeight: 600 }}
-          />
-        );
-      },
+      headerText: t('alarms.columns.status'),
+      width: 140,
+      minWidth: 120,
+      allowSorting: true,
+      allowFiltering: true,
+      template: statusTemplate,
     },
     {
-      headerName: t('alarms.columns.externalAlarms'),
       field: 'hasExternalAlarm',
-      flex: 1,
-      minWidth: 180,
-      sortable: true,
-      filter: true,
-      cellDataType: 'text',
-      cellRenderer: (params: { data: EnrichedAlarm }) => {
-        const alarmId = params.data.id;
-        const hasExternal = params.data.hasExternalAlarm;
-        const hasData = params.data.hasExternalAlarmsData;
-        const count = params.data.externalAlarmsCount || 0;
-        const isLoading = alarmId ? loadingExternalAlarms.has(alarmId) : false;
-
-        if (!hasExternal) {
-          return (
-            <Chip 
-              label={t('alarms.externalAlarms.none')} 
-              size="small" 
-              icon={<LinkOffIcon fontSize="small" />}
-              data-id-ref={`alarm-external-chip-none-${alarmId}`}
-            />
-          );
-        }
-
-        if (!hasData && !isLoading) {
-          return (
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<LinkIcon />}
-              onClick={() => alarmId && fetchExternalAlarms(alarmId)}
-              data-id-ref={`alarm-external-btn-load-${alarmId}`}
-              sx={{ textTransform: 'none' }}
-            >
-              {t('alarms.externalAlarms.load')}
-            </Button>
-          );
-        }
-
-        if (isLoading) {
-          return <CircularProgress size={20} data-id-ref={`alarm-external-spinner-${alarmId}`} />;
-        }
-
-        return (
-          <Chip 
-            label={`${count} ${t('alarms.externalAlarms.count')}`}
-            size="small" 
-            color="info"
-            icon={<LinkIcon fontSize="small" />}
-            data-id-ref={`alarm-external-chip-count-${alarmId}`}
-            sx={{ fontWeight: 600 }}
-          />
-        );
-      },
+      headerText: t('alarms.columns.externalAlarms'),
+      width: 180,
+      minWidth: 150,
+      allowSorting: true,
+      allowFiltering: true,
+      template: externalAlarmsTemplate,
     },
-  ], [t, language, itemsMap, formatCondition, loadingExternalAlarms, fetchExternalAlarms]);
+  ], [t, priorityTemplate, statusTemplate, externalAlarmsTemplate]);
 
   // Handle export actions
   const handleExportCsv = useCallback(() => {
-    exportToCsv('alarms-export');
+    gridRef.current?.csvExport({ fileName: 'alarms-export.csv' });
     logger.log('Exporting alarms data to CSV');
-  }, [exportToCsv]);
+  }, []);
 
   const handleExportExcel = useCallback(() => {
-    exportToExcel('alarms-export');
+    gridRef.current?.excelExport({ fileName: 'alarms-export.xlsx' });
     logger.log('Exporting alarms data to Excel');
-  }, [exportToExcel]);
+  }, []);
 
   // Handle action button clicks
   const handleAdd = useCallback(() => {
@@ -824,7 +809,7 @@ const AlarmsDetailPage: React.FC = () => {
             </Stack>
           </Paper>
 
-          {/* AG Grid Table */}
+          {/* Syncfusion Grid Table */}
           <Box 
             sx={{ 
               width: '100%',
@@ -836,19 +821,18 @@ const AlarmsDetailPage: React.FC = () => {
             }} 
             data-id-ref="alarms-detail-grid-container"
           >
-            <LazyAGGrid
-              columnDefs={columnDefs}
-              rowData={alarmsData as never[]}
-              onGridReady={onGridReadyInternal}
+            <SyncfusionGridWrapper
+              ref={gridRef}
+              data={rowData}
+              columns={columnDefs}
               height="100%"
-              gridOptions={{
-                pagination: true,
-                paginationPageSize: 20,
-                paginationPageSizeSelector: [10, 20, 50, 100],
-                suppressColumnVirtualisation: true,
-                rowSelection: { mode: 'singleRow' },
-                onSelectionChanged: onSelectionChanged,
-              }}
+              allowPaging={true}
+              allowSorting={true}
+              allowFiltering={true}
+              allowResizing={true}
+              allowExcelExport={true}
+              pageSettings={{ pageSize: 20, pageSizes: [10, 20, 50, 100] }}
+              onRowSelected={onRowSelected}
             />
           </Box>
         </CardContent>

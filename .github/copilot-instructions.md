@@ -22,7 +22,7 @@ This is a full-stack monitoring application with separate backend and frontend:
 
 ### Backend (ASP.NET Web API)
 - **Location**: `EMS`
-- **Technology**: ASP.NET Core 9.0 Web API
+- **Technology**: ASP.NET Core 10 Web API
 - **Database**: PostgreSQL with Entity Framework Core
 - **Authentication**: JWT with refresh token rotation
 - **Real-time**: SignalR for live updates

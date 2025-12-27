@@ -57,9 +57,9 @@ export const useRoutePreloader = () => {
    * This eliminates loading animations when switching between tabs
    */
   const preloadAllDetailTabs = useCallback(() => {
-    // Preload AG Grid and ECharts (heavy dependencies used by detail pages)
+    // Preload Syncfusion Grid and ECharts (heavy dependencies used by detail pages)
     preloadRoutesDelayed([
-      { name: 'AGGridWrapper', loader: () => import('../components/AGGridWrapper') },
+      { name: 'SyncfusionGridWrapper', loader: () => import('../components/SyncfusionGridWrapper') },
     ], 500);
 
     // Preload all detail tab components

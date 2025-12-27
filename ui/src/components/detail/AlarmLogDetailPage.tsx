@@ -31,10 +31,9 @@ import type { AlarmHistoryRequestDto, AlarmHistory, Item, AlarmDto } from '../..
 import SeparatedDateTimePicker from '../SeparatedDateTimePicker';
 import { monitoringStorageHelpers } from '../../utils/monitoringStorage';
 
-// Use LazyAGGrid component for optimized AG Grid loading
-import LazyAGGrid from '../LazyAGGrid';
-import { useAGGrid } from '../../hooks/useAGGrid';
-import type { AGGridApi, AGGridColumnApi, AGGridColumnDef } from '../../types/agGrid';
+// Use SyncfusionGridWrapper for grid functionality
+import SyncfusionGridWrapper from '../SyncfusionGridWrapper';
+import type { SyncfusionColumnDef, GridComponentType } from '../SyncfusionGridWrapper';
 import { formatDate } from '../../utils/dateFormatting';
 
 const logger = createLogger('AlarmLogDetailPage');
@@ -63,15 +62,8 @@ const AlarmLogDetailPage: React.FC = () => {
   const [itemsMap, setItemsMap] = useState<Map<string, Item>>(new Map());
   const [alarmsMap, setAlarmsMap] = useState<Map<string, AlarmDto>>(new Map());
 
-  // AG Grid integration
-  const { exportToCsv, exportToExcel, handleGridReady } = useAGGrid();
-  const gridRef = useRef<AGGridApi | null>(null);
-  const columnApiRef = useRef<AGGridColumnApi | null>(null);
-  const onGridReadyInternal = useCallback((api: AGGridApi, colApi: AGGridColumnApi) => {
-    gridRef.current = api;
-    columnApiRef.current = colApi;
-    handleGridReady(api, colApi);
-  }, [handleGridReady]);
+  // Syncfusion Grid ref
+  const gridRef = useRef<GridComponentType | null>(null);
 
   // Helper function to format condition string based on alarm and item data
   const formatCondition = useCallback((alarm: AlarmDto | undefined, item: Item | undefined): string => {
@@ -266,63 +258,66 @@ const AlarmLogDetailPage: React.FC = () => {
     }
   }, [selectedPreset, customStartDate, customEndDate, getDateRange]);
 
-  // Prepare AG Grid column definitions
-  const columnDefs = useMemo<AGGridColumnDef[]>(() => {
+  // Template for alarm status chip
+  const statusTemplate = useCallback((props: unknown) => {
+    const data = props as { isActive: boolean };
+    const isActive = data.isActive;
+    return (
+      <Chip
+        label={isActive ? t('active') : t('inactive')}
+        color={isActive ? 'error' : 'default'}
+        size="small"
+        data-id-ref={`alarm-status-chip-${isActive ? 'active' : 'inactive'}`}
+      />
+    );
+  }, [t]);
+
+  // Prepare Syncfusion Grid column definitions
+  const columnDefs = useMemo<SyncfusionColumnDef[]>(() => {
     return [
       {
         field: 'itemName',
-        headerName: t('activeAlarmsPage.itemName'),
-        flex: 2,
-        sortable: true,
-        filter: 'agTextColumnFilter',
-        resizable: true,
+        headerText: t('activeAlarmsPage.itemName'),
+        width: 200,
+        minWidth: 150,
+        allowSorting: true,
+        allowFiltering: true,
       },
       {
         field: 'alarmLog',
-        headerName: t('alarmMessage'),
-        flex: 3,
-        sortable: true,
-        filter: 'agTextColumnFilter',
-        resizable: true,
+        headerText: t('alarmMessage'),
+        width: 300,
+        minWidth: 200,
+        allowSorting: true,
+        allowFiltering: true,
       },
       {
         field: 'isActive',
-        headerName: t('alarmStatus'),
-        flex: 1,
-        sortable: true,
-        filter: true,
-        resizable: true,
-        cellRenderer: (params: { value: boolean }) => {
-          const isActive = params.value;
-          return (
-            <Chip
-              label={isActive ? t('active') : t('inactive')}
-              color={isActive ? 'error' : 'default'}
-              size="small"
-              data-id-ref={`alarm-status-chip-${isActive ? 'active' : 'inactive'}`}
-            />
-          );
-        },
+        headerText: t('alarmStatus'),
+        width: 120,
+        minWidth: 100,
+        allowSorting: true,
+        allowFiltering: true,
+        template: statusTemplate,
       },
       {
         field: 'condition',
-        headerName: t('activeAlarmsPage.condition'),
-        flex: 2,
-        sortable: true,
-        filter: 'agTextColumnFilter',
-        resizable: true,
+        headerText: t('activeAlarmsPage.condition'),
+        width: 200,
+        minWidth: 150,
+        allowSorting: true,
+        allowFiltering: true,
       },
       {
         field: 'timeFormatted',
-        headerName: t('time'),
-        flex: 2,
-        sortable: true,
-        filter: 'agTextColumnFilter',
-        resizable: true,
-        sort: 'desc', // Default sort by time descending (newest first)
+        headerText: t('time'),
+        width: 180,
+        minWidth: 140,
+        allowSorting: true,
+        allowFiltering: true,
       },
     ];
-  }, [t]);
+  }, [t, statusTemplate]);
 
   // Prepare AG Grid row data
   const rowData = useMemo(() => {
@@ -553,7 +548,7 @@ const AlarmLogDetailPage: React.FC = () => {
             {/* Export Buttons */}
             <ButtonGroup variant="outlined" size="small" data-id-ref="alarm-log-detail-export-buttons">
               <Button
-                onClick={() => exportToCsv(`alarm-log-${Date.now()}.csv`)}
+                onClick={() => gridRef.current?.csvExport({ fileName: `alarm-log-${Date.now()}.csv` })}
                 disabled={loading || alarmHistoryData.length === 0}
                 startIcon={<DescriptionIcon />}
                 data-id-ref="alarm-log-detail-export-csv-button"
@@ -561,7 +556,7 @@ const AlarmLogDetailPage: React.FC = () => {
                 {t('exportCsv')}
               </Button>
               <Button
-                onClick={() => exportToExcel(`alarm-log-${Date.now()}.xlsx`)}
+                onClick={() => gridRef.current?.excelExport({ fileName: `alarm-log-${Date.now()}.xlsx` })}
                 disabled={loading || alarmHistoryData.length === 0}
                 startIcon={<FileDownloadIcon />}
                 data-id-ref="alarm-log-detail-export-excel-button"
@@ -627,48 +622,20 @@ const AlarmLogDetailPage: React.FC = () => {
             </Box>
           )}
 
-          {/* AG Grid */}
+          {/* Syncfusion Grid */}
           {!loading && !error && alarmHistoryData.length > 0 && (
-            <Box sx={{ flex: 1, minHeight: 0 }} data-id-ref="alarm-log-detail-ag-grid-container">
-              <LazyAGGrid
-                columnDefs={columnDefs}
-                rowData={rowData}
-                theme="quartz"
+            <Box sx={{ flex: 1, minHeight: 0 }} data-id-ref="alarm-log-detail-grid-container">
+              <SyncfusionGridWrapper
+                ref={gridRef}
+                data={rowData}
+                columns={columnDefs}
                 height="100%"
-                width="100%"
-                onGridReady={onGridReadyInternal}
-                gridOptions={{
-                  enableRtl: language === 'fa',
-                  pagination: true,
-                  paginationPageSize: isMobile ? 20 : 50,
-                  paginationAutoPageSize: false,
-                  suppressMenuHide: true,
-                  enableCellTextSelection: true,
-                  animateRows: true,
-                  cellSelection: true,
-                  rowHeight: 50,
-                  headerHeight: 50,
-                  sideBar: false,
-                  statusBar: {
-                    statusPanels: [
-                      { statusPanel: 'agTotalRowCountComponent', align: 'left' },
-                      { statusPanel: 'agFilteredRowCountComponent' },
-                      { statusPanel: 'agAggregationComponent' }
-                    ]
-                  },
-                  rowSelection: {
-                    mode: 'singleRow',
-                    checkboxes: false,
-                  },
-                  defaultColDef: {
-                    resizable: true,
-                    sortable: true,
-                    filter: true,
-                    flex: 1,
-                    minWidth: 120,
-                  },
-                }}
-                data-id-ref="alarm-log-detail-ag-grid"
+                allowPaging={true}
+                allowSorting={true}
+                allowFiltering={true}
+                allowResizing={true}
+                allowExcelExport={true}
+                pageSettings={{ pageSize: isMobile ? 20 : 50, pageSizes: [10, 20, 50, 100] }}
               />
             </Box>
           )}

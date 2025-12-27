@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   Container,
   Card,
@@ -21,14 +21,12 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import { useLanguage } from '../hooks/useLanguage';
-import { useAGGrid } from '../hooks/useAGGrid';
 import { useMonitoring } from '../hooks/useMonitoring';
-import AGGridWrapper from './AGGridWrapper';
+import type { GridComponent as GridComponentType } from '@syncfusion/ej2-react-grids';
+import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import AuditTrailDetailDialog from './AuditTrailDetailDialog';
 import SeparatedDateTimePicker from './SeparatedDateTimePicker';
-import type { ColDef, RowClickedEvent } from 'ag-grid-community';
 import type { AuditLogRequestDto, AuditLogResponseDto, DataDto, LogType } from '../types/api';
-import type { AGGridRowData } from '../types/agGrid';
 import { LogTypeEnum } from '../types/api';
 import apiClient, { handleApiError } from '../services/apiClient';
 import { formatDate } from '../utils/dateFormatting';
@@ -43,6 +41,7 @@ const AuditTrailPage: React.FC = () => {
   const { t, language } = useLanguage();
   const theme = useTheme();
   const isRTL = language === 'fa';
+  const gridRef = useRef<GridComponentType | null>(null);
   const { state: monitoringState } = useMonitoring();
   const items = monitoringState.items;
 
@@ -290,116 +289,107 @@ const AuditTrailPage: React.FC = () => {
     [t]
   );
 
+  // Details cell template for Syncfusion Grid
+  const detailsTemplate = useCallback((data: unknown): React.ReactNode => {
+    const row = data as DataDto;
+    if (!row.logValue) {
+      return '-';
+    }
+    
+    try {
+      // Try to parse and format JSON
+      const parsed = JSON.parse(row.logValue);
+      return (
+        <pre
+          style={{
+            margin: 0,
+            padding: '8px',
+            fontSize: '12px',
+            fontFamily: 'monospace',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+            borderRadius: '4px',
+            maxHeight: '300px',
+            overflow: 'auto',
+          }}
+        >
+          {JSON.stringify(parsed, null, 2)}
+        </pre>
+      );
+    } catch {
+      // If not JSON, return as-is in a pre tag
+      return (
+        <pre
+          style={{
+            margin: 0,
+            padding: '8px',
+            fontSize: '12px',
+            fontFamily: 'monospace',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          {row.logValue}
+        </pre>
+      );
+    }
+  }, [theme.palette.mode]);
+
   /**
-   * AG Grid column definitions
+   * Syncfusion Grid column definitions
    */
-  const columnDefs = useMemo<ColDef<DataDto>[]>(
+  const columnDefs = useMemo<SyncfusionColumnDef[]>(
     () => [
       {
         field: 'userName',
-        headerName: t('auditTrailPage.columns.userName'),
+        headerText: t('auditTrailPage.columns.userName'),
         width: 180,
-        valueGetter: (params) => {
-          if (params.data?.isUser) {
-            return params.data.userName || '-';
-          }
-          return t('auditTrailPage.systemUser');
-        },
+        allowSorting: true,
+        allowFiltering: true,
       },
       {
         field: 'actionType',
-        headerName: t('auditTrailPage.columns.actionType'),
+        headerText: t('auditTrailPage.columns.actionType'),
         width: 200,
-        valueGetter: (params) => {
-          if (params.data?.actionType) {
-            return getLogTypeLabel(params.data.actionType);
-          }
-          return '';
-        },
+        allowSorting: true,
+        allowFiltering: true,
       },
       {
-        headerName: t('auditTrailPage.columns.point'),
+        field: 'itemId',
+        headerText: t('auditTrailPage.columns.point'),
         width: 280,
-        valueGetter: (params) => getPointName(params.data?.itemId),
+        allowSorting: true,
       },
       {
-        field: 'dateTime',
-        headerName: t('auditTrailPage.columns.dateTime'),
+        field: 'time',
+        headerText: t('auditTrailPage.columns.dateTime'),
         width: 250,
-        valueGetter: (params) => {
-          if (params.data?.time) {
-            return formatDate(params.data.time, language, 'long');
-          }
-          return '';
-        },
-        sort: 'desc',
-        sortIndex: 0,
+        allowSorting: true,
+        type: 'number',
       },
       {
         field: 'ipAddress',
-        headerName: t('auditTrailPage.columns.ipAddress'),
+        headerText: t('auditTrailPage.columns.ipAddress'),
         width: 160,
-        valueGetter: (params) => params.data?.ipAddress || '-',
+        allowSorting: true,
       },
       {
         field: 'logValue',
-        headerName: t('auditTrailPage.columns.details'),
-        flex: 1,
+        headerText: t('auditTrailPage.columns.details'),
+        width: 300,
         minWidth: 300,
-        cellRenderer: (params: { data?: DataDto }) => {
-          if (!params.data?.logValue) {
-            return '-';
-          }
-          
-          try {
-            // Try to parse and format JSON
-            const parsed = JSON.parse(params.data.logValue);
-            return (
-              <pre
-                style={{
-                  margin: 0,
-                  padding: '8px',
-                  fontSize: '12px',
-                  fontFamily: 'monospace',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-                  borderRadius: '4px',
-                  maxHeight: '300px',
-                  overflow: 'auto',
-                }}
-              >
-                {JSON.stringify(parsed, null, 2)}
-              </pre>
-            );
-          } catch {
-            // If not JSON, return as-is in a pre tag
-            return (
-              <pre
-                style={{
-                  margin: 0,
-                  padding: '8px',
-                  fontSize: '12px',
-                  fontFamily: 'monospace',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {params.data.logValue}
-              </pre>
-            );
-          }
-        },
-        autoHeight: true,
+        template: detailsTemplate,
       },
     ],
-    [t, language, getLogTypeLabel, getPointName, theme.palette.mode]
+    [t, detailsTemplate]
   );
 
   /**
    * Handle row click - open detail dialog
    */
-  const handleRowClick = useCallback((event: RowClickedEvent<DataDto>) => {
+  const handleRowClick = useCallback((args: unknown) => {
+    const event = args as { data?: DataDto };
     if (event.data) {
       logger.log('Row clicked:', event.data);
       setSelectedRow(event.data);
@@ -414,11 +404,6 @@ const AuditTrailPage: React.FC = () => {
     setDialogOpen(false);
     setSelectedRow(null);
   }, []);
-
-  /**
-   * AG Grid setup
-   */
-  const { handleGridReady } = useAGGrid({});
 
   // Fetch data on mount and when preset changes (not when custom dates change)
   // Reset to page 1 when date range changes
@@ -585,25 +570,17 @@ const AuditTrailPage: React.FC = () => {
           {/* AG Grid */}
           {!loading && (
             <Box sx={{ flex: 1, minHeight: 0 }} data-id-ref="audit-trail-grid-container">
-              <AGGridWrapper
-                rowData={auditLogs as unknown as AGGridRowData[]}
-                columnDefs={columnDefs}
-                onGridReady={handleGridReady}
-                theme="quartz"
-                height="100%"
+              <SyncfusionGridWrapper
                 idRef="audit-trail-grid"
-                gridOptions={{
-                  defaultColDef: {
-                    sortable: true,
-                    filter: true,
-                    resizable: true,
-                  },
-                  enableRtl: isRTL,
-                  pagination: false,
-                  suppressContextMenu: true,
-                  onRowClicked: handleRowClick,
-                  headerHeight: 50,
-                }}
+                data={auditLogs}
+                columns={columnDefs}
+                onGridReady={(grid) => { gridRef.current = grid; }}
+                onRecordClick={handleRowClick}
+                height="100%"
+                allowPaging={false}
+                allowSorting={true}
+                allowFiltering={true}
+                allowResizing={true}
               />
             </Box>
           )}

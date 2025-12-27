@@ -29,9 +29,8 @@ import {
   PlaylistAdd as PlaylistAddIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useLanguage } from '../hooks/useLanguage';
-import AGGridWrapper from './AGGridWrapper';
+import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getModbusGatewayMappings, batchEditModbusGatewayMappings } from '../services/extendedApi';
 import { getItems } from '../services/monitoringApi';
 import type {
@@ -50,7 +49,6 @@ import {
   EndiannessTypeEnum,
   ItemTypeEnum,
 } from '../types/api';
-import type { AGGridRowData } from '../types/agGrid';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ModbusGatewayMappingsDialog');
@@ -463,118 +461,126 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
     return mappings.filter(m => !m.isDeleted);
   }, [mappings]);
 
-  // Mapping column definitions
-  const columnDefs = useMemo<ColDef<EditableMapping>[]>(() => {
+  // Editable chip template for Syncfusion Grid
+  const editableTemplate = useCallback((props: unknown) => {
+    const mapping = props as EditableMapping;
+    return (
+      <Chip
+        data-id-ref={`mapping-editable-chip-${mapping.id}`}
+        label={mapping.isEditable ? t('common.yes') : t('common.no')}
+        color={mapping.isEditable ? 'success' : 'default'}
+        size="small"
+        variant="outlined"
+      />
+    );
+  }, [t]);
+
+  // Actions template for Syncfusion Grid
+  const actionsTemplate = useCallback((props: unknown) => {
+    const mapping = props as EditableMapping;
+    return (
+      <Box
+        data-id-ref={`mapping-actions-${mapping.id}`}
+        sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
+      >
+        <Tooltip title={t('edit')}>
+          <IconButton
+            data-id-ref={`mapping-edit-btn-${mapping.id}`}
+            size="small"
+            color="primary"
+            onClick={() => handleStartEditMapping(mapping)}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('delete')}>
+          <IconButton
+            data-id-ref={`mapping-delete-btn-${mapping.id}`}
+            size="small"
+            color="error"
+            onClick={() => handleDeleteMapping(mapping)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    );
+  }, [t, handleDeleteMapping, handleStartEditMapping]);
+
+  // Prepare row data with derived fields for Syncfusion Grid
+  const rowData = useMemo(() => {
+    return displayMappings.map((mapping) => ({
+      ...mapping,
+      registerTypeName: getRegisterTypeLabel(mapping.registerType),
+      itemDisplay: language === 'fa' && mapping.itemNameFa ? mapping.itemNameFa : (mapping.itemName || mapping.itemId || ''),
+      dataRepName: getDataRepLabel(mapping.dataRepresentation),
+      endiannessName: getEndiannessLabel(mapping.endianness),
+    }));
+  }, [displayMappings, language, getRegisterTypeLabel, getDataRepLabel, getEndiannessLabel]);
+
+  // Mapping column definitions for Syncfusion Grid
+  const columnDefs = useMemo<SyncfusionColumnDef[]>(() => {
     return [
       {
-        headerName: t('modbusGateway.mappings.modbusAddress'),
         field: 'modbusAddress',
+        headerText: t('modbusGateway.mappings.modbusAddress'),
         width: 130,
         minWidth: 100,
-        sortable: true,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusGateway.mappings.registerType'),
-        field: 'registerType',
+        field: 'registerTypeName',
+        headerText: t('modbusGateway.mappings.registerType'),
         width: 160,
         minWidth: 140,
-        valueFormatter: (params) => getRegisterTypeLabel(params.value),
-        sortable: true,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusGateway.mappings.item'),
-        field: 'itemId',
-        flex: 2,
-        minWidth: 200,
-        valueFormatter: (params) => {
-          const mapping = params.data;
-          if (language === 'fa' && mapping?.itemNameFa) {
-            return mapping.itemNameFa;
-          }
-          return mapping?.itemName || params.value || '';
-        },
-        sortable: true,
+        field: 'itemDisplay',
+        headerText: t('modbusGateway.mappings.item'),
+        width: 200,
+        minWidth: 150,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusGateway.mappings.dataRepresentation'),
-        field: 'dataRepresentation',
+        field: 'dataRepName',
+        headerText: t('modbusGateway.mappings.dataRepresentation'),
         width: 160,
         minWidth: 140,
-        valueFormatter: (params) => getDataRepLabel(params.value),
-        sortable: true,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusGateway.mappings.endianness'),
-        field: 'endianness',
+        field: 'endiannessName',
+        headerText: t('modbusGateway.mappings.endianness'),
         width: 160,
         minWidth: 140,
-        valueFormatter: (params) => getEndiannessLabel(params.value),
-        sortable: true,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusGateway.mappings.registerCount'),
         field: 'registerCount',
+        headerText: t('modbusGateway.mappings.registerCount'),
         width: 100,
         minWidth: 80,
-        sortable: true,
+        allowSorting: true,
       },
       {
-        headerName: t('modbusGateway.mappings.isEditable'),
         field: 'isEditable',
+        headerText: t('modbusGateway.mappings.isEditable'),
         width: 100,
         minWidth: 80,
-        cellRenderer: (params: ICellRendererParams<EditableMapping>) => (
-          <Chip
-            data-id-ref={`mapping-editable-chip-${params.data?.id}`}
-            label={params.value ? t('common.yes') : t('common.no')}
-            color={params.value ? 'success' : 'default'}
-            size="small"
-            variant="outlined"
-          />
-        ),
+        template: editableTemplate,
       },
       {
-        headerName: t('common.actions'),
         field: 'id',
+        headerText: t('common.actions'),
         width: 110,
         minWidth: 110,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: ICellRendererParams<EditableMapping>) => {
-          const mapping = params.data;
-          if (!mapping) return null;
-
-          return (
-            <Box
-              data-id-ref={`mapping-actions-${mapping.id}`}
-              sx={{ display: 'flex', gap: 0.5, py: 0.5 }}
-            >
-              <Tooltip title={t('edit')}>
-                <IconButton
-                  data-id-ref={`mapping-edit-btn-${mapping.id}`}
-                  size="small"
-                  color="primary"
-                  onClick={() => handleStartEditMapping(mapping)}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t('delete')}>
-                <IconButton
-                  data-id-ref={`mapping-delete-btn-${mapping.id}`}
-                  size="small"
-                  color="error"
-                  onClick={() => handleDeleteMapping(mapping)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          );
-        },
+        allowSorting: false,
+        allowFiltering: false,
+        template: actionsTemplate,
       },
     ];
-  }, [t, language, getRegisterTypeLabel, getDataRepLabel, getEndiannessLabel, handleDeleteMapping, handleStartEditMapping]);
+  }, [t, editableTemplate, actionsTemplate]);
 
   // Get available items (not already mapped)
   const availableItems = useMemo(() => {
@@ -1089,21 +1095,14 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
                 data-id-ref="mappings-grid-container"
                 sx={{ height: 400 }}
               >
-                <AGGridWrapper
-                  idRef="gateway-mappings"
-                  rowData={displayMappings as unknown as AGGridRowData[]}
-                  columnDefs={columnDefs}
+                <SyncfusionGridWrapper
+                  data={rowData}
+                  columns={columnDefs}
                   height="100%"
-                  gridOptions={{
-                    pagination: false,
-                    domLayout: 'normal',
-                    rowHeight: 48,
-                    getRowId: (params) => String(params.data.id),
-                    getRowClass: (params) => {
-                      if (params.data?.isNew) return 'ag-row-new';
-                      return undefined;
-                    },
-                  }}
+                  allowPaging={false}
+                  allowSorting={true}
+                  allowResizing={true}
+                  data-id-ref="gateway-mappings-grid"
                 />
               </Box>
             )}

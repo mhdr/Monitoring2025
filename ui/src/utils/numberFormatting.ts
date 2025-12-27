@@ -1,5 +1,3 @@
-import type { AGGridValueFormatterParams } from '../types/agGrid';
-
 // ... existing imports if any
 /**
  * Number Formatting Utilities
@@ -122,17 +120,24 @@ export function formatNumberByLanguage(
 }
 
 /**
- * Creates a value formatter function for AG Grid that formats numbers
+ * Value formatter params interface (grid-agnostic)
+ */
+interface ValueFormatterParams {
+  value: unknown;
+}
+
+/**
+ * Creates a value formatter function for grid components that formats numbers
  * based on the current language
  * @param language - Current language ('fa' or 'en')
  * @param options - Intl.NumberFormat options
- * @returns AG Grid value formatter function
+ * @returns Grid value formatter function
  */
-export function createAGGridNumberFormatter(
+export function createGridNumberFormatter(
   language: 'fa' | 'en',
   options?: Intl.NumberFormatOptions
 ) {
-  return (params: AGGridValueFormatterParams): string => {
+  return (params: ValueFormatterParams): string => {
     const rawValue = params.value;
     
     if (rawValue === null || rawValue === undefined || rawValue === '') {
