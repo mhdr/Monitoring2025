@@ -128,8 +128,40 @@ const persianGridLocale = {
   'SortLargestToSmallest': 'مرتب‌سازی از بزرگ به کوچک',
   'FilterDescription': 'برای باز کردن منوی فیلتر Alt+Down را فشار دهید',
   
+  // Excel Filter Specific (non-duplicate keys only)
+  'OK': 'تایید',
+  'Reset': 'بازنشانی',
+  'Done': 'انجام شد',
+  'CheckAll': 'انتخاب همه',
+  'UncheckAll': 'لغو انتخاب همه',
+  'FilterOkButton': 'تایید',
+  'FilterCancelButton': 'انصراف',
+  'FilterClearButton': 'پاک کردن',
+  'ApplyButton': 'اعمال',
+  'TextFilterMenu': 'فیلتر متنی',
+  'DateFilterMenu': 'فیلتر تاریخ',
+  'NumberFilterMenu': 'فیلتر عددی',
+  'BooleanFilterMenu': 'فیلتر بولین',
+  'SelectAllFilterCheckboxes': 'انتخاب همه فیلترها',
+  'FilterCheckboxes': 'چک‌باکس‌های فیلتر',
+  'FilterBy': 'فیلتر بر اساس',
+  'Operator': 'عملگر',
+  'Value': 'مقدار',
+  'Column': 'ستون',
+  'ShowItemsThat': 'نمایش موارد که',
+  'Null': 'خالی',
+  
+  // Excel Filter Dialog Sections
+  'AddCurrent': 'افزودن انتخاب فعلی',
+  'SortingAndFiltering': 'مرتب‌سازی و فیلتر',
+  'ClearAllFilters': 'پاک کردن همه فیلترها',
+  'AdvancedFilter': 'فیلتر پیشرفته',
+  'BooleanFilter': 'فیلتر بولین',
+  'FilterByValue': 'فیلتر بر اساس مقدار',
+  'FilterByColor': 'فیلتر بر اساس رنگ',
+  'Loading': 'در حال بارگذاری...',
+  
   // Searching
-  'Search': 'جستجو',
   'Clear': 'پاک کردن',
   
   // Sorting

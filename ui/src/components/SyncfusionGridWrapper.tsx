@@ -23,6 +23,7 @@ import {
   Reorder,
   Inject,
   type GridComponent as GridComponentType,
+  type FilterSettingsModel,
 } from '@syncfusion/ej2-react-grids';
 import { useLanguage } from '../hooks/useLanguage';
 import { useThemeStore } from '../stores/themeStore';
@@ -76,6 +77,8 @@ export interface SyncfusionGridWrapperProps {
   allowSorting?: boolean;
   /** Enable filtering */
   allowFiltering?: boolean;
+  /** Filter settings - supports 'Excel', 'Menu', 'CheckBox', 'FilterBar' types */
+  filterSettings?: FilterSettingsModel;
   /** Enable grouping */
   allowGrouping?: boolean;
   /** Enable selection */
@@ -129,6 +132,7 @@ export const SyncfusionGridWrapper = forwardRef<GridComponentType | null, Syncfu
       pageSettings = { pageSize: 10, pageSizes: [10, 25, 50, 100] },
       allowSorting = true,
       allowFiltering = true,
+      filterSettings = { type: 'Excel', enableCaseSensitivity: false, ignoreAccent: true },
       allowGrouping = false,
       allowSelection = true,
       selectionSettings = { mode: 'Row', type: 'Single' },
@@ -208,6 +212,7 @@ export const SyncfusionGridWrapper = forwardRef<GridComponentType | null, Syncfu
           pageSettings={pageSettings}
           allowSorting={allowSorting}
           allowFiltering={allowFiltering}
+          filterSettings={filterSettings}
           allowGrouping={allowGrouping}
           allowSelection={allowSelection}
           selectionSettings={selectionSettings}
