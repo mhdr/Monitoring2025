@@ -47,6 +47,8 @@ const ResponsiveNavbar: React.FC<ResponsiveNavbarProps> = ({ onToggleSidebar }) 
   const handleLogout = async () => {
     handleMenuClose();
     await logout();
+    // Navigate to login page after logout
+    navigate('/login', { replace: true });
   };
 
   const handleProfileClick = () => {

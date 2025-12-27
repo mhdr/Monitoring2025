@@ -140,3 +140,16 @@ export const updateUser = async (userId: string, data: UpdateUserRequestDto): Pr
     handleApiError(error);
   }
 };
+
+/**
+ * Logout user (invalidate session on server)
+ */
+export const logout = async (): Promise<void> => {
+  try {
+    await apiClient.post('/api/Auth/logout');
+  } catch (error) {
+    // Even if logout API fails, we should still clear local auth
+    // The error will be logged by handleApiError
+    handleApiError(error);
+  }
+};

@@ -7,7 +7,7 @@
 
 import { useAuthStore } from '../stores/authStore';
 import { useCallback, useEffect, useState } from 'react';
-import { login as apiLogin } from '../services/api';
+import { login as apiLogin, logout as apiLogout } from '../services/authApi';
 import { authStorageHelpers } from '../utils/authStorage';
 import { monitoringStorageHelpers } from '../stores/monitoringStore';
 import type { LoginRequest, ApiError } from '../types/auth';
@@ -124,6 +124,14 @@ export const useAuth = () => {
   }, []);
   
   const logout = useCallback(async () => {
+    try {
+      // Call logout API to invalidate session on server
+      await apiLogout();
+    } catch (error) {
+      // Continue with logout even if API call fails
+      logger.error('Logout API call failed, but continuing with local cleanup:', error);
+    }
+    
     // Clear auth data from Zustand store
     await authStorageHelpers.clearAll();
     
