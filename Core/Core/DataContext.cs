@@ -59,8 +59,8 @@ public class DataContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseNpgsql(
-            $"Host={Host};Database={DatabaseName};Username={UserName};Password={Password}",
-            options => options.CommandTimeout(300));
+            $"Host={Host};Database={DatabaseName};Username={UserName};Password={Password};Pooling=true;Minimum Pool Size=5;Maximum Pool Size=50;Connection Idle Lifetime=300;Connection Pruning Interval=10",
+            options => options.CommandTimeout(30)); // Reduced from 300s to 30s for monitoring operations
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

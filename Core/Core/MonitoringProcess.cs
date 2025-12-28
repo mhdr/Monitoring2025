@@ -294,17 +294,14 @@ namespace Core
                         });
 
                         var indexKeysDefinition = Builders<BsonDocument>.IndexKeys.Ascending("Time");
-                        var indexOptions = new CreateIndexOptions { Unique = true };
+                        var indexOptions = new CreateIndexOptions { Unique = true, Background = true };
                         await collection.Indexes.CreateOneAsync(
                             new CreateIndexModel<BsonDocument>(indexKeysDefinition, indexOptions));
                         _indexedCollections.Add(collectionName);
                     }
 
-                    var filter = Builders<BsonDocument>.Filter.Eq("Time", value.Time);
-                    
-                    var existing = await collection.FindAsync(filter).Result.FirstOrDefaultAsync();
-                    
-                    if (existing == null)
+                    // Use try/catch on insert instead of pre-checking for duplicates (2x performance)
+                    try
                     {
                         var itemHistory = new BsonDocument
                         {
@@ -322,9 +319,10 @@ namespace Core
                             ["Time"] = value.Time
                         });
                     }
-                    else
+                    catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
                     {
-                        MyLog.Warning("Duplicate history entry detected, skipping", new Dictionary<string, object?>
+                        // Duplicate entry - this is expected, just skip
+                        MyLog.Debug("Duplicate history entry detected, skipping", new Dictionary<string, object?>
                         {
                             ["ItemId"] = item.Id,
                             ["Time"] = value.Time

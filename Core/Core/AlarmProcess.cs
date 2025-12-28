@@ -67,6 +67,10 @@ namespace Core
                                     long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                                     var activeAlarms = await _context.ActiveAlarms.ToListAsync();
 
+                                    // Convert to dictionaries for O(1) lookups instead of O(N) FirstOrDefault
+                                    var finalsDict = finals.ToDictionary(x => x.ItemId, x => x);
+                                    var activeAlarmsDict = activeAlarms.ToDictionary(x => x.AlarmId, x => x);
+
                                     MyLog.Debug("Starting alarm check cycle", new Dictionary<string, object?>
                                     {
                                         ["AlarmCount"] = alarms.Count,
@@ -99,7 +103,10 @@ namespace Core
                                                 _monitorAlarms[a.Id] = monitorAlarm;
                                             }
 
-                                            var f = finals.FirstOrDefault(x => x.ItemId == a.ItemId);
+                                            if (!finalsDict.TryGetValue(a.ItemId, out var f))
+                                            {
+                                                continue;
+                                            }
 
                                             if (f == null)
                                             {
@@ -172,8 +179,7 @@ namespace Core
                                                     monitorAlarm.Status = AlarmStatus.NoAlarm;
                                                     monitorAlarm.Time = now;
 
-                                                    var activeAlarm =
-                                                        activeAlarms.FirstOrDefault(x => x.AlarmId == a.Id);
+                                                    activeAlarmsDict.TryGetValue(a.Id, out var activeAlarm);
 
                                                     if (activeAlarm != null)
                                                     {
@@ -207,7 +213,7 @@ namespace Core
                                                 }
                                                 else
                                                 {
-                                                    var match = activeAlarms.FirstOrDefault(x => x.AlarmId == a.Id);
+                                                    activeAlarmsDict.TryGetValue(a.Id, out var match);
                                                     if (match != null)
                                                     {
                                                         monitorAlarm.Status = AlarmStatus.NoAlarm;
@@ -222,8 +228,7 @@ namespace Core
                                                 if (monitorAlarm.Status == AlarmStatus.HasAlarm)
                                                 {
                                                     alarmsTriggered++;
-                                                    var activeAlarm =
-                                                        activeAlarms.FirstOrDefault(x => x.AlarmId == a.Id);
+                                                    activeAlarmsDict.TryGetValue(a.Id, out var activeAlarm);
 
                                                     if (activeAlarm == null)
                                                     {
@@ -234,6 +239,7 @@ namespace Core
                                                             Time = now,
                                                         };
                                                         await _context.ActiveAlarms.AddAsync(activeAlarm);
+                                                        activeAlarmsDict[a.Id] = activeAlarm; // Update dict for future lookups
                                                     }
                                                     else
                                                     {
@@ -251,7 +257,7 @@ namespace Core
                                                         AlarmLog = alarmLog,
                                                     });
 
-                                                    await _context.SaveChangesAsync();
+                                                    // Removed SaveChangesAsync - will batch save after loop
 
                                                     MyLog.Warning("Alarm triggered", new Dictionary<string, object?>
                                                     {
@@ -272,11 +278,11 @@ namespace Core
                                                 else if (monitorAlarm.Status == AlarmStatus.NoAlarm)
                                                 {
                                                     alarmsCleared++;
-                                                    var activeAlarm =
-                                                        activeAlarms.FirstOrDefault(x => x.AlarmId == a.Id);
+                                                    activeAlarmsDict.TryGetValue(a.Id, out var activeAlarm);
                                                     if (activeAlarm != null)
                                                     {
                                                         _context.ActiveAlarms.Remove(activeAlarm);
+                                                        activeAlarmsDict.Remove(a.Id); // Update dict
 
                                                         var alarmLog = JsonConvert.SerializeObject(a);
 
@@ -289,7 +295,7 @@ namespace Core
                                                             AlarmLog = alarmLog,
                                                         });
 
-                                                        await _context.SaveChangesAsync();
+                                                        // Removed SaveChangesAsync - will batch save after loop
 
                                                         MyLog.Info("Alarm cleared", new Dictionary<string, object?>
                                                         {
@@ -317,6 +323,12 @@ namespace Core
                                                 ["AlarmType"] = a.AlarmType
                                             });
                                         }
+                                    }
+
+                                    // Batch save all alarm changes in a single database operation
+                                    if (_context.ChangeTracker.HasChanges())
+                                    {
+                                        await _context.SaveChangesAsync();
                                     }
 
                                     MyLog.Debug("Completed alarm check cycle", new Dictionary<string, object?>
