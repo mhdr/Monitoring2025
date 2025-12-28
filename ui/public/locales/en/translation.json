@@ -290,7 +290,7 @@
       "error": "Failed to load groups"
     },
     "items": {
-      "title": "Loading Items", 
+      "title": "Loading Items",
       "description": "Synchronizing monitoring points...",
       "success": "Items loaded successfully",
       "error": "Failed to load items"
@@ -1644,7 +1644,8 @@
       "basic": "Basic Configuration",
       "tuning": "PID Tuning",
       "advanced": "Advanced Settings",
-      "hysteresis": "Hysteresis Control"
+      "hysteresis": "Hysteresis Control",
+      "cascade": "Cascade Control"
     },
     "validation": {
       "inputItemRequired": "Input item is required",
@@ -1657,7 +1658,12 @@
       "deadZoneMin": "Dead zone must be non-negative",
       "hysteresisLowLessThanHigh": "Low threshold must be less than high threshold",
       "hysteresisLowOutOfRange": "Low threshold must be >= Output Min",
-      "hysteresisHighOutOfRange": "High threshold must be <= Output Max"
+      "hysteresisHighOutOfRange": "High threshold must be <= Output Max",
+      "cascadeLevelInvalid": "Cascade level must be between 0 and 2",
+      "parentRequired": "Parent PID is required when cascade level > 0",
+      "setpointItemRequired": "Setpoint item is required for cascaded control",
+      "parentPIDRequired": "Parent PID is required when using cascade control",
+      "cascadeRequiresSetpointItem": "Cascade control requires a dynamic setpoint (setpoint item must be selected)"
     },
     "errors": {
       "fetchFailed": "Failed to load PID memories",
@@ -1665,6 +1671,24 @@
       "updateFailed": "Failed to update PID memory",
       "deleteFailed": "Failed to delete PID memory",
       "unknownError": "An unknown error occurred"
+    },
+    "cascadeControl": {
+      "title": "Cascade Control",
+      "parentPID": "Parent PID",
+      "parentPIDHelp": "Select parent PID controller for cascaded control",
+      "cascadeLevel": "Cascade Level",
+      "cascadeLevelHelp": "Execution order: 0=standalone, 1=outer, 2=inner",
+      "useParentPID": "Use Cascaded Control",
+      "noParentPID": "Standalone (no parent)",
+      "selectParent": "Select Parent PID...",
+      "level0": "Level 0 - Standalone/Outer",
+      "level1": "Level 1 - Outer in Cascade",
+      "level2": "Level 2 - Inner in Cascade",
+      "parentRequired": "Parent PID is required for cascade levels > 0",
+      "parentOutput": "Parent Output",
+      "cascadeInfo": "In cascade control, parent PID's output becomes this PID's setpoint",
+      "level": "Level",
+      "standalone": "Standalone"
     }
   },
   "statistics": {

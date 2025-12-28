@@ -28,8 +28,8 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addPIDMemory, editPIDMemory } from '../services/extendedApi';
-import type { PIDMemoryWithItems, MonitoringItem, ItemType, AddPIDMemoryRequestDto, EditPIDMemoryRequestDto } from '../types/api';
+import { addPIDMemory, editPIDMemory, getPotentialParentPIDs } from '../services/extendedApi';
+import type { PIDMemoryWithItems, MonitoringItem, ItemType, AddPIDMemoryRequestDto, EditPIDMemoryRequestDto, PotentialParentPID } from '../types/api';
 import { ItemTypeEnum } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -71,6 +71,10 @@ interface FormData {
   digitalOutputItemId: string;
   hysteresisHighThreshold: number;
   hysteresisLowThreshold: number;
+  // Cascade Control
+  useParentPID: boolean;
+  parentPIDId: string;
+  cascadeLevel: number;
   // Advanced
   derivativeFilterAlpha: number;
   maxOutputSlewRate: number;
@@ -129,8 +133,13 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   // Section expansion states
   const [basicExpanded, setBasicExpanded] = useState(true);
   const [tuningExpanded, setTuningExpanded] = useState(true);
+  const [cascadeExpanded, setCascadeExpanded] = useState(false);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [hysteresisExpanded, setHysteresisExpanded] = useState(false);
+
+  // Potential parent PIDs for cascade control
+  const [potentialParents, setPotentialParents] = useState<PotentialParentPID[]>([]);
+  const [loadingParents, setLoadingParents] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -160,6 +169,9 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
     digitalOutputItemId: '',
     hysteresisHighThreshold: 75.0,
     hysteresisLowThreshold: 25.0,
+    useParentPID: false,
+    parentPIDId: '',
+    cascadeLevel: 0,
     derivativeFilterAlpha: 1.0,
     maxOutputSlewRate: 100.0,
     deadZone: 0.0,
@@ -201,6 +213,9 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           digitalOutputItemId: pidMemory.digitalOutputItemId ?? '',
           hysteresisHighThreshold: pidMemory.hysteresisHighThreshold,
           hysteresisLowThreshold: pidMemory.hysteresisLowThreshold,
+          useParentPID: !!pidMemory.parentPIDId,
+          parentPIDId: pidMemory.parentPIDId ?? '',
+          cascadeLevel: pidMemory.cascadeLevel ?? 0,
           derivativeFilterAlpha: pidMemory.derivativeFilterAlpha,
           maxOutputSlewRate: pidMemory.maxOutputSlewRate,
           deadZone: pidMemory.deadZone,
@@ -235,6 +250,9 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           digitalOutputItemId: '',
           hysteresisHighThreshold: 75.0,
           hysteresisLowThreshold: 25.0,
+          useParentPID: false,
+          parentPIDId: '',
+          cascadeLevel: 0,
           derivativeFilterAlpha: 1.0,
           maxOutputSlewRate: 100.0,
           deadZone: 0.0,
@@ -245,6 +263,32 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
       setSaveError(null);
     }
   }, [open, editMode, pidMemory]);
+
+  // Fetch potential parent PIDs when cascade level changes
+  useEffect(() => {
+    const fetchParents = async () => {
+      if (!open || formData.cascadeLevel === 0) {
+        setPotentialParents([]);
+        return;
+      }
+
+      setLoadingParents(true);
+      try {
+        const response = await getPotentialParentPIDs({
+          currentPidId: editMode && pidMemory ? pidMemory.id : null,
+          desiredCascadeLevel: formData.cascadeLevel,
+        });
+        setPotentialParents(response.potentialParents);
+      } catch (error) {
+        logger.error('Failed to fetch potential parent PIDs', error);
+        setPotentialParents([]);
+      } finally {
+        setLoadingParents(false);
+      }
+    };
+
+    fetchParents();
+  }, [open, formData.cascadeLevel, editMode, pidMemory]);
 
   // Filter items by type
   const analogInputItems = useMemo(() => items.filter((item) => item.itemType === ItemTypeEnum.AnalogInput), [items]);
@@ -307,6 +351,16 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
       errors.hysteresisHighThreshold = t('pidMemory.validation.hysteresisHighOutOfRange');
     }
 
+    // Cascade validation
+    if (formData.useParentPID) {
+      if (!formData.parentPIDId) {
+        errors.parentPIDId = t('pidMemory.validation.parentPIDRequired');
+      }
+      if (!formData.useSetPointItem || !formData.setPointId) {
+        errors.setPointId = t('pidMemory.validation.cascadeRequiresSetpointItem');
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -349,6 +403,8 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           digitalOutputItemId: formData.useDigitalOutputItem ? (formData.digitalOutputItemId || null) : null,
           hysteresisHighThreshold: formData.hysteresisHighThreshold,
           hysteresisLowThreshold: formData.hysteresisLowThreshold,
+          parentPIDId: formData.useParentPID ? (formData.parentPIDId || null) : null,
+          cascadeLevel: formData.useParentPID ? formData.cascadeLevel : 0,
         };
 
         const response = await editPIDMemory(requestData);
@@ -387,6 +443,8 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           digitalOutputItemId: formData.useDigitalOutputItem ? (formData.digitalOutputItemId || null) : null,
           hysteresisHighThreshold: formData.hysteresisHighThreshold,
           hysteresisLowThreshold: formData.hysteresisLowThreshold,
+          parentPIDId: formData.useParentPID ? (formData.parentPIDId || null) : null,
+          cascadeLevel: formData.useParentPID ? formData.cascadeLevel : 0,
         };
 
         const response = await addPIDMemory(requestData);
@@ -973,6 +1031,119 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     />
                   )}
                 </Box>
+              </Box>
+            </CardContent>
+          </Collapse>
+        </Card>
+
+        {/* Cascade Control Section */}
+        <Card data-id-ref="pid-memory-cascade-section">
+          <CardHeader
+            title={t('pidMemory.cascadeControl.title')}
+            action={
+              <IconButton
+                onClick={() => setCascadeExpanded(!cascadeExpanded)}
+                sx={{
+                  transform: cascadeExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.3s',
+                }}
+                data-id-ref="pid-memory-cascade-expand-btn"
+              >
+                <ExpandMoreIcon />
+              </IconButton>
+            }
+          />
+          <Collapse in={cascadeExpanded} timeout="auto" unmountOnExit>
+            <CardContent>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {t('pidMemory.cascadeControl.info')}
+              </Alert>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.useParentPID}
+                      onChange={(e) => {
+                        const useParent = e.target.checked;
+                        handleFieldChange('useParentPID', useParent);
+                        if (!useParent) {
+                          handleFieldChange('parentPIDId', '');
+                          handleFieldChange('cascadeLevel', 0);
+                        } else {
+                          // Default to level 2 (inner PID) when enabling cascade
+                          handleFieldChange('cascadeLevel', 2);
+                        }
+                      }}
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-use-parent-pid-switch"
+                    />
+                  }
+                  label={t('pidMemory.cascadeControl.useParentPID')}
+                  data-id-ref="pid-memory-use-parent-pid-field"
+                />
+
+                {formData.useParentPID && (
+                  <>
+                    <TextField
+                      fullWidth
+                      label={t('pidMemory.cascadeControl.cascadeLevel')}
+                      value={formData.cascadeLevel}
+                      disabled
+                      helperText={t('pidMemory.cascadeControl.cascadeLevelHelp')}
+                      data-id-ref="pid-memory-cascade-level-display"
+                    />
+
+                    <Autocomplete
+                      options={potentialParents}
+                      getOptionLabel={(option) => option.name || option.id}
+                      value={potentialParents.find((p) => p.id === formData.parentPIDId) || null}
+                      onChange={(_, newValue) => handleFieldChange('parentPIDId', newValue?.id || '')}
+                      disabled={isSaving || loadingParents}
+                      loading={loadingParents}
+                      data-id-ref="pid-memory-parent-pid-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('pidMemory.cascadeControl.parentPID')}
+                          helperText={t('pidMemory.cascadeControl.parentPIDHelp')}
+                          error={!!formErrors.parentPIDId}
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {loadingParents ? <CircularProgress color="inherit" size={20} /> : null}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {option.name}
+                            </Typography>
+                            <Chip
+                              label={`Level ${option.cascadeLevel}`}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                    />
+
+                    {formData.parentPIDId && (
+                      <Alert severity="warning" sx={{ mt: 1 }}>
+                        {t('pidMemory.cascadeControl.setpointWarning')}
+                      </Alert>
+                    )}
+                  </>
+                )}
               </Box>
             </CardContent>
           </Collapse>

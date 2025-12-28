@@ -305,6 +305,37 @@ const PIDMemoryManagementPage: React.FC = () => {
         ),
       },
       {
+        field: 'cascadeLevel',
+        headerText: t('pidMemory.cascadeControl.title'),
+        width: 160,
+        template: (rowData: PIDMemoryWithItems) => (
+          <Box data-id-ref="pid-memory-cascade-cell">
+            {rowData.cascadeLevel > 0 ? (
+              <Box>
+                <Chip
+                  label={`${t('pidMemory.cascadeControl.level')} ${rowData.cascadeLevel}`}
+                  size="small"
+                  color="info"
+                  sx={{ height: 20, fontSize: '0.7rem', mb: 0.5 }}
+                />
+                {rowData.parentPIDName && (
+                  <Typography variant="caption" color="text.secondary" noWrap display="block">
+                    {rowData.parentPIDName}
+                  </Typography>
+                )}
+              </Box>
+            ) : (
+              <Chip
+                label={t('pidMemory.cascadeControl.standalone')}
+                size="small"
+                variant="outlined"
+                sx={{ height: 20, fontSize: '0.7rem' }}
+              />
+            )}
+          </Box>
+        ),
+      },
+      {
         field: 'actions',
         headerText: t('common.actions'),
         width: 120,

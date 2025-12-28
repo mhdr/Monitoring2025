@@ -47,6 +47,8 @@ import type {
   EditPIDMemoryResponseDto,
   DeletePIDMemoryRequestDto,
   DeletePIDMemoryResponseDto,
+  GetPotentialParentPIDsRequestDto,
+  GetPotentialParentPIDsResponseDto,
   GetSvgLayoutRequestDto,
   GetSvgLayoutsRequestDto,
   AuditLogRequestDto,
@@ -468,6 +470,18 @@ export const editPIDMemory = async (data: EditPIDMemoryRequestDto): Promise<Edit
 export const deletePIDMemory = async (data: DeletePIDMemoryRequestDto): Promise<DeletePIDMemoryResponseDto> => {
   try {
     const response = await apiClient.post<DeletePIDMemoryResponseDto>('/api/Monitoring/DeletePIDMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get potential parent PIDs for cascade control configuration
+ */
+export const getPotentialParentPIDs = async (data: GetPotentialParentPIDsRequestDto): Promise<GetPotentialParentPIDsResponseDto> => {
+  try {
+    const response = await apiClient.post<GetPotentialParentPIDsResponseDto>('/api/Monitoring/GetPotentialParentPIDs', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

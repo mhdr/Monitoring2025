@@ -2791,6 +2791,8 @@ export interface PIDMemory {
   digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control (DigitalOutput)
   hysteresisHighThreshold: number; // double - High threshold for hysteresis (turn ON)
   hysteresisLowThreshold: number; // double - Low threshold for hysteresis (turn OFF)
+  parentPIDId?: string | null; // UUID - Parent PID for cascaded control
+  cascadeLevel: number; // int - Cascade level (0=standalone, 1=outer, 2=inner)
 }
 
 /**
@@ -2818,6 +2820,7 @@ export interface PIDMemoryWithItems extends PIDMemory {
   digitalOutputItemName?: string;
   digitalOutputItemNameFa?: string;
   digitalOutputItemType?: ItemType;
+  parentPIDName?: string; // Name of parent PID
 }
 
 /**
@@ -2864,6 +2867,8 @@ export interface AddPIDMemoryRequestDto {
   digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control
   hysteresisHighThreshold: number; // double - High threshold (default 75.0)
   hysteresisLowThreshold: number; // double - Low threshold (default 25.0)
+  parentPIDId?: string | null; // UUID - Parent PID for cascaded control
+  cascadeLevel: number; // int - Cascade level (0=standalone, 1=outer, 2=inner)
 }
 
 /**
@@ -2905,6 +2910,8 @@ export interface EditPIDMemoryRequestDto {
   digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control
   hysteresisHighThreshold: number; // double - High threshold
   hysteresisLowThreshold: number; // double - Low threshold
+  parentPIDId?: string | null; // UUID - Parent PID for cascaded control
+  cascadeLevel: number; // int - Cascade level (0=standalone, 1=outer, 2=inner)
 }
 
 /**
@@ -2928,4 +2935,30 @@ export interface DeletePIDMemoryRequestDto {
 export interface DeletePIDMemoryResponseDto {
   isSuccessful: boolean;
   errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for getting potential parent PIDs for cascade control
+ */
+export interface GetPotentialParentPIDsRequestDto {
+  currentPidId?: string | null; // UUID - Current PID ID (to exclude self)
+  desiredCascadeLevel: number; // int - Desired cascade level (1 or 2)
+}
+
+/**
+ * Response DTO containing list of potential parent PIDs
+ */
+export interface GetPotentialParentPIDsResponseDto {
+  potentialParents: PotentialParentPID[];
+}
+
+/**
+ * Potential parent PID for cascade control
+ */
+export interface PotentialParentPID {
+  id: string; // UUID
+  name?: string | null;
+  outputItemId: string; // UUID - Output item (will become setpoint for child)
+  cascadeLevel: number; // int - Cascade level of this PID
+  isDisabled: boolean; // bool
 }

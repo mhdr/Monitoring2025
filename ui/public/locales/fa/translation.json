@@ -1644,7 +1644,8 @@
       "basic": "پیکربندی اولیه",
       "tuning": "تنظیم PID",
       "advanced": "تنظیمات پیشرفته",
-      "hysteresis": "کنترل هیسترزیس"
+      "hysteresis": "کنترل هیسترزیس",
+      "cascade": "کنترل آبشاری"
     },
     "validation": {
       "inputItemRequired": "آیتم ورودی الزامی است",
@@ -1657,7 +1658,12 @@
       "deadZoneMin": "ناحیه مرده باید غیرمنفی باشد",
       "hysteresisLowLessThanHigh": "آستانه پایین باید کمتر از آستانه بالا باشد",
       "hysteresisLowOutOfRange": "آستانه پایین باید >= حداقل خروجی باشد",
-      "hysteresisHighOutOfRange": "آستانه بالا باید <= حداکثر خروجی باشد"
+      "hysteresisHighOutOfRange": "آستانه بالا باید <= حداکثر خروجی باشد",
+      "cascadeLevelInvalid": "سطح آبشار باید بین 0 تا 2 باشد",
+      "parentRequired": "PID والد برای سطح آبشار > 0 الزامی است",
+      "setpointItemRequired": "آیتم نقطه تنظیم برای کنترل آبشاری الزامی است",
+      "parentPIDRequired": "PID والد هنگام استفاده از کنترل آبشاری الزامی است",
+      "cascadeRequiresSetpointItem": "کنترل آبشاری نیاز به نقطه تنظیم دینامیک دارد (باید آیتم نقطه تنظیم انتخاب شود)"
     },
     "errors": {
       "fetchFailed": "بارگذاری حافظه‌های PID ناموفق بود",
@@ -1665,6 +1671,24 @@
       "updateFailed": "به‌روزرسانی حافظه PID ناموفق بود",
       "deleteFailed": "حذف حافظه PID ناموفق بود",
       "unknownError": "خطای ناشناخته‌ای رخ داد"
+    },
+    "cascadeControl": {
+      "title": "کنترل آبشاری",
+      "parentPID": "PID والد",
+      "parentPIDHelp": "کنترلر PID والد را برای کنترل آبشاری انتخاب کنید",
+      "cascadeLevel": "سطح آبشار",
+      "cascadeLevelHelp": "ترتیب اجرا: 0=مستقل، 1=خارجی، 2=داخلی",
+      "useParentPID": "استفاده از کنترل آبشاری",
+      "noParentPID": "مستقل (بدون والد)",
+      "selectParent": "انتخاب PID والد...",
+      "level0": "سطح 0 - مستقل/خارجی",
+      "level1": "سطح 1 - خارجی در آبشار",
+      "level2": "سطح 2 - داخلی در آبشار",
+      "parentRequired": "PID والد برای سطوح آبشار > 0 الزامی است",
+      "parentOutput": "خروجی والد",
+      "cascadeInfo": "در کنترل آبشاری، خروجی PID والد به نقطه تنظیم این PID تبدیل می‌شود",
+      "level": "سطح",
+      "standalone": "مستقل"
     }
   },
   "statistics": {
