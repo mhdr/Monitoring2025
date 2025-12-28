@@ -109,8 +109,7 @@ public class TimeoutMemoryProcess
         {
             try
             {
-                // var input = await _context.FinalItems.FirstOrDefaultAsync(x => x.ItemId == memory.InputItemId);
-                
+                // Get the input item to check its last update time
                 var input = await Points.GetFinalItem(memory.InputItemId.ToString()); 
                 var output = await Points.GetRawItem(memory.OutputItemId.ToString());
 
@@ -121,8 +120,7 @@ public class TimeoutMemoryProcess
 
                 if (output == null)
                 {
-                    // just create a new raw item and continue
-
+                    // Create a new raw item if it doesn't exist
                     output = new RawItemRedis()
                     {
                         ItemId = memory.OutputItemId,
@@ -132,13 +130,16 @@ public class TimeoutMemoryProcess
                 DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
                 long epochTime = currentTimeUtc.ToUnixTimeSeconds();
 
+                // Check if input item has timed out
+                // If timeout exceeded: set output to "1" (fault/communication lost)
+                // If input is fresh: set output to "0" (healthy/communication active)
                 if (epochTime - input.Time > memory.Timeout)
                 {
-                    output.Value = "1";
+                    output.Value = "1";  // Timeout exceeded - fault condition
                 }
                 else
                 {
-                    output.Value = "0";
+                    output.Value = "0";  // Input is updating regularly - healthy
                 }
 
                 output.Time = epochTime;
