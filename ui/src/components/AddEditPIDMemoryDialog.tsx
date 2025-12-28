@@ -640,6 +640,19 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                 </Box>
 
                 {/* SetPoint - Dual Mode */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {t('pidMemory.setpointConfiguration')}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.setpointMode')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="pid-memory-setpoint-mode-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
                 <Box>
                   <FormControlLabel
                     control={
@@ -724,6 +737,20 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           <Collapse in={tuningExpanded} timeout="auto" unmountOnExit>
             <CardContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* PID Gains with Help */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {t('pidMemory.sections.tuning')} (Kp, Ki, Kd)
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.pidGains')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="pid-memory-pid-gains-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <TextField
                     fullWidth
@@ -763,6 +790,20 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   />
                 </Box>
 
+                {/* Output Range with Help */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {t('pidMemory.outputRange')}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.outputRange')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="pid-memory-output-range-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <TextField
                     fullWidth
@@ -791,18 +832,29 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   />
                 </Box>
 
-                <TextField
-                  fullWidth
-                  label={t('pidMemory.deadZone')}
-                  type="number"
-                  value={formData.deadZone}
-                  onChange={(e) => handleFieldChange('deadZone', parseFloat(e.target.value) || 0)}
-                  disabled={isSaving}
-                  error={!!formErrors.deadZone}
-                  helperText={formErrors.deadZone || t('pidMemory.deadZoneHelp')}
-                  inputProps={{ min: 0, step: 0.1 }}
-                  data-id-ref="pid-memory-dead-zone-input"
-                />
+                {/* Dead Zone with Help */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+                  <TextField
+                    fullWidth
+                    label={t('pidMemory.deadZone')}
+                    type="number"
+                    value={formData.deadZone}
+                    onChange={(e) => handleFieldChange('deadZone', parseFloat(e.target.value) || 0)}
+                    disabled={isSaving}
+                    error={!!formErrors.deadZone}
+                    helperText={formErrors.deadZone || t('pidMemory.deadZoneHelp')}
+                    inputProps={{ min: 0, step: 0.1 }}
+                    data-id-ref="pid-memory-dead-zone-input"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.deadZone')}
+                    sx={{ p: 0.25, mt: -3 }}
+                    data-id-ref="pid-memory-dead-zone-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
                 {/* IsAuto - Dual Mode */}
                 <Divider sx={{ my: 1 }} />
@@ -881,6 +933,19 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                 </Box>
 
                 {/* ManualValue - Dual Mode */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {t('pidMemory.manualModeConfiguration')}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.manualMode')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="pid-memory-manual-mode-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
                 <Box>
                   <FormControlLabel
                     control={
@@ -965,31 +1030,53 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           <Collapse in={advancedExpanded} timeout="auto" unmountOnExit>
             <CardContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  fullWidth
-                  label={t('pidMemory.derivativeFilterAlpha')}
-                  type="number"
-                  value={formData.derivativeFilterAlpha}
-                  onChange={(e) => handleFieldChange('derivativeFilterAlpha', parseFloat(e.target.value) || 0)}
-                  disabled={isSaving}
-                  error={!!formErrors.derivativeFilterAlpha}
-                  helperText={formErrors.derivativeFilterAlpha || t('pidMemory.derivativeFilterAlphaHelp')}
-                  inputProps={{ min: 0, max: 1, step: 0.1 }}
-                  data-id-ref="pid-memory-derivative-filter-alpha-input"
-                />
+                {/* Derivative Filter with Help */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <TextField
+                    fullWidth
+                    label={t('pidMemory.derivativeFilterAlpha')}
+                    type="number"
+                    value={formData.derivativeFilterAlpha}
+                    onChange={(e) => handleFieldChange('derivativeFilterAlpha', parseFloat(e.target.value) || 0)}
+                    disabled={isSaving}
+                    error={!!formErrors.derivativeFilterAlpha}
+                    helperText={formErrors.derivativeFilterAlpha || t('pidMemory.derivativeFilterAlphaHelp')}
+                    inputProps={{ min: 0, max: 1, step: 0.1 }}
+                    data-id-ref="pid-memory-derivative-filter-alpha-input"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.derivativeFilter')}
+                    sx={{ p: 0.25, mt: -3 }}
+                    data-id-ref="pid-memory-derivative-filter-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
-                <TextField
-                  fullWidth
-                  label={t('pidMemory.maxOutputSlewRate')}
-                  type="number"
-                  value={formData.maxOutputSlewRate}
-                  onChange={(e) => handleFieldChange('maxOutputSlewRate', parseFloat(e.target.value) || 0)}
-                  disabled={isSaving}
-                  error={!!formErrors.maxOutputSlewRate}
-                  helperText={formErrors.maxOutputSlewRate || t('pidMemory.maxOutputSlewRateHelp')}
-                  inputProps={{ min: 0, step: 0.1 }}
-                  data-id-ref="pid-memory-max-output-slew-rate-input"
-                />
+                {/* Max Output Slew Rate with Help */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <TextField
+                    fullWidth
+                    label={t('pidMemory.maxOutputSlewRate')}
+                    type="number"
+                    value={formData.maxOutputSlewRate}
+                    onChange={(e) => handleFieldChange('maxOutputSlewRate', parseFloat(e.target.value) || 0)}
+                    disabled={isSaving}
+                    error={!!formErrors.maxOutputSlewRate}
+                    helperText={formErrors.maxOutputSlewRate || t('pidMemory.maxOutputSlewRateHelp')}
+                    inputProps={{ min: 0, step: 0.1 }}
+                    data-id-ref="pid-memory-max-output-slew-rate-input"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.slewRate')}
+                    sx={{ p: 0.25, mt: -3 }}
+                    data-id-ref="pid-memory-slew-rate-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
@@ -1300,6 +1387,21 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                       isOptionEqualToValue={(option, value) => option.id === value.id}
                     />
 
+                    {/* Hysteresis Thresholds with Help */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        {t('pidMemory.hysteresisThresholds')}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={handleHelpOpen('pidMemory.help.hysteresisThresholds')}
+                        sx={{ p: 0.25 }}
+                        data-id-ref="pid-memory-hysteresis-thresholds-help-btn"
+                      >
+                        <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                      </IconButton>
+                    </Box>
+
                     <TextField
                       fullWidth
                       label={t('pidMemory.hysteresisHighThreshold')}
@@ -1427,6 +1529,42 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
         open={Boolean(helpAnchorEl['pidMemory.help.dualMode'])}
         onClose={handleHelpClose('pidMemory.help.dualMode')}
         fieldKey="pidMemory.help.dualMode"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.pidGains']}
+        open={Boolean(helpAnchorEl['pidMemory.help.pidGains'])}
+        onClose={handleHelpClose('pidMemory.help.pidGains')}
+        fieldKey="pidMemory.help.pidGains"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.derivativeFilter']}
+        open={Boolean(helpAnchorEl['pidMemory.help.derivativeFilter'])}
+        onClose={handleHelpClose('pidMemory.help.derivativeFilter')}
+        fieldKey="pidMemory.help.derivativeFilter"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.slewRate']}
+        open={Boolean(helpAnchorEl['pidMemory.help.slewRate'])}
+        onClose={handleHelpClose('pidMemory.help.slewRate')}
+        fieldKey="pidMemory.help.slewRate"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.setpointMode']}
+        open={Boolean(helpAnchorEl['pidMemory.help.setpointMode'])}
+        onClose={handleHelpClose('pidMemory.help.setpointMode')}
+        fieldKey="pidMemory.help.setpointMode"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.manualMode']}
+        open={Boolean(helpAnchorEl['pidMemory.help.manualMode'])}
+        onClose={handleHelpClose('pidMemory.help.manualMode')}
+        fieldKey="pidMemory.help.manualMode"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.hysteresisThresholds']}
+        open={Boolean(helpAnchorEl['pidMemory.help.hysteresisThresholds'])}
+        onClose={handleHelpClose('pidMemory.help.hysteresisThresholds')}
+        fieldKey="pidMemory.help.hysteresisThresholds"
       />
     </Dialog>
   );

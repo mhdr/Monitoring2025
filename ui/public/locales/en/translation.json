@@ -1626,8 +1626,12 @@
     "outputMinHelp": "Minimum allowed output value. Defines control range (e.g., 0-100% for valve position, 4-20mA for analog signal). Protects equipment and defines control authority.",
     "outputMax": "Output Maximum",
     "outputMaxHelp": "Maximum allowed output value. Defines control range (e.g., 0-100% for valve position, 4-20mA for analog signal). Protects equipment and defines control authority.",
+    "outputRange": "Output Range",
     "setPoint": "SetPoint",
     "setPointHelp": "Static target value for the process variable",
+    "setpointConfiguration": "Setpoint Configuration",
+    "manualModeConfiguration": "Manual Mode Configuration",
+    "hysteresisThresholds": "Hysteresis Thresholds",
     "setPointItem": "SetPoint Item",
     "setPointItemHelp": "Dynamic setpoint from another item (Analog Input/Output)",
     "useSetPointItem": "Use SetPoint Item",
@@ -2071,6 +2075,233 @@
             "type": "tip",
             "title": "Best Practice",
             "content": "Use hysteresis for equipment with:\n• Limited switching cycles (compressors, contactors)\n• ON/OFF operation only (relays, solenoids)\n• Staging requirements (multiple units)"
+          }
+        ]
+      },
+      "pidGains": {
+        "title": "PID Gains (Kp, Ki, Kd)",
+        "sections": [
+          {
+            "title": "What are PID Gains?",
+            "content": "PID gains (Proportional, Integral, Derivative) determine how the controller responds to errors. Tuning these values is critical for stable, responsive control."
+          },
+          {
+            "title": "Proportional Gain (Kp)",
+            "content": [
+              "Responds immediately to current error",
+              "Higher Kp = faster response, but can cause overshoot",
+              "Lower Kp = slower response, more stable",
+              "Primary tuning parameter - start here"
+            ]
+          },
+          {
+            "title": "Integral Gain (Ki)",
+            "content": [
+              "Eliminates steady-state error over time",
+              "Accumulates error history",
+              "Higher Ki = faster elimination of offset, risk of oscillation",
+              "Lower Ki = slower convergence, more stable",
+              "Set to 0 for pure PD control"
+            ]
+          },
+          {
+            "title": "Derivative Gain (Kd)",
+            "content": [
+              "Predicts future error based on rate of change",
+              "Dampens oscillations and overshoot",
+              "Higher Kd = more damping, sensitive to noise",
+              "Lower Kd = less damping, cleaner response",
+              "Often set to 0 for noisy processes"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Tuning Starting Points",
+            "content": "Temperature Control:\n• Kp: 2-10, Ki: 0.05-0.2, Kd: 0.5-2\n\nFlow Control:\n• Kp: 0.5-2, Ki: 0.1-0.5, Kd: 0-0.1\n\nLevel Control:\n• Kp: 1-5, Ki: 0.01-0.1, Kd: 0-0.5\n\nPressure Control:\n• Kp: 0.5-5, Ki: 0.05-0.3, Kd: 0.1-1"
+          },
+          {
+            "type": "tip",
+            "title": "Tuning Method",
+            "content": "1. Start with all gains at 0\n2. Increase Kp until steady oscillation occurs\n3. Reduce Kp to 50-60% of oscillation point\n4. Add Ki slowly to eliminate offset\n5. Add Kd if needed to reduce overshoot\n6. Or use Auto-Tuning for automatic calculation"
+          },
+          {
+            "type": "warning",
+            "title": "Common Mistakes",
+            "content": "Too high Kp: System oscillates or becomes unstable\nToo high Ki: Integral windup, slow recovery\nToo high Kd: Amplifies noise, erratic behavior\nAll gains too low: Sluggish response, won't reach setpoint"
+          }
+        ]
+      },
+      "derivativeFilter": {
+        "title": "Derivative Filter (Alpha)",
+        "sections": [
+          {
+            "title": "What is Derivative Filtering?",
+            "content": "The derivative term is sensitive to measurement noise. A low-pass filter smooths the derivative calculation to reduce noise amplification while preserving damping benefits."
+          },
+          {
+            "title": "Filter Coefficient (0-1)",
+            "content": [
+              "Alpha = 0: Maximum filtering (heavily smoothed)",
+              "Alpha = 1: No filtering (raw derivative)",
+              "Typical range: 0.1-0.3 for noisy signals",
+              "Higher alpha = more responsive but noisier"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Application Examples",
+            "content": "Clean Sensor (RTD, high-quality transmitter):\n• Alpha: 0.7-1.0 (minimal filtering needed)\n\nNoisy Sensor (thermocouple, low-resolution):\n• Alpha: 0.1-0.3 (heavy filtering)\n\nModerate Noise:\n• Alpha: 0.3-0.7 (balanced approach)"
+          },
+          {
+            "type": "tip",
+            "title": "When to Adjust",
+            "content": "Start with Alpha = 1.0 (no filtering). If derivative term causes erratic output or noise amplification, gradually decrease alpha until output smooths out."
+          },
+          {
+            "type": "warning",
+            "title": "Trade-off",
+            "content": "More filtering (lower alpha): Smoother output but slower derivative response\nLess filtering (higher alpha): Faster response but amplifies noise"
+          }
+        ]
+      },
+      "slewRate": {
+        "title": "Max Output Slew Rate",
+        "sections": [
+          {
+            "title": "What is Slew Rate Limiting?",
+            "content": "Limits the maximum rate of change of the controller output per second. Prevents sudden jumps that could damage actuators or destabilize the process."
+          },
+          {
+            "title": "Why Limit Output Rate?",
+            "content": [
+              "Protects mechanical actuators (valves, dampers, motors)",
+              "Prevents thermal shock in heating/cooling systems",
+              "Reduces wear and extends equipment life",
+              "Smooths transitions during setpoint changes",
+              "Improves process stability"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Typical Values",
+            "content": "Fast Actuators (electric valves, VFDs):\n• 50-100 units/second (allows quick response)\n\nMechanical Valves (pneumatic, motor-operated):\n• 5-20 units/second (smooth movement)\n\nThermal Processes (heaters, furnaces):\n• 1-10 units/second (prevents thermal shock)\n\nNo Limit:\n• Set to very high value (e.g., 1000) or max output range"
+          },
+          {
+            "type": "warning",
+            "title": "Setting Guidelines",
+            "content": "Too low: System becomes sluggish, can't respond to disturbances\nToo high: Defeats the purpose, allows sudden changes\nRule of thumb: Output should be able to change from min to max in 10-30 seconds"
+          }
+        ]
+      },
+      "setpointMode": {
+        "title": "Setpoint Configuration",
+        "sections": [
+          {
+            "title": "What is Setpoint?",
+            "content": "The target value the PID controller tries to maintain. The controller adjusts output to keep the process variable (PV) at this value."
+          },
+          {
+            "title": "Static Setpoint",
+            "content": [
+              "Fixed value entered in configuration",
+              "Remains constant during operation",
+              "Simple and predictable",
+              "Good for steady-state processes"
+            ]
+          },
+          {
+            "title": "Dynamic Setpoint (Setpoint Item)",
+            "content": [
+              "Value comes from another monitoring item",
+              "Can change during operation",
+              "Enables remote control via HMI/SCADA",
+              "Required for cascade control",
+              "Useful for scheduling and ramping"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Use Cases",
+            "content": "Static Setpoint:\n• Maintain room at 22°C\n• Keep pressure at 5 bar\n• Fixed production rate\n\nDynamic Setpoint:\n• Operator adjusts temperature via HMI\n• Scheduled temperature profile (night setback)\n• Cascade control (outer loop sets inner setpoint)\n• Load-following applications"
+          },
+          {
+            "type": "tip",
+            "title": "Best Practice",
+            "content": "Use static setpoint for simple, unchanging processes. Switch to dynamic when you need operational flexibility or integration with supervisory control systems."
+          }
+        ]
+      },
+      "manualMode": {
+        "title": "Manual Mode & Manual Value",
+        "sections": [
+          {
+            "title": "What is Manual Mode?",
+            "content": "In manual mode, the PID controller is bypassed and output is set to a fixed value. This is essential for testing, commissioning, and emergency situations."
+          },
+          {
+            "title": "When to Use Manual Mode",
+            "content": [
+              "Equipment testing and commissioning",
+              "Troubleshooting control issues",
+              "Emergency override situations",
+              "Startup and shutdown procedures",
+              "Maintenance operations"
+            ]
+          },
+          {
+            "title": "Manual Value Options",
+            "content": [
+              "Static: Fixed percentage entered in configuration",
+              "Dynamic: Value from monitoring item (operator control)",
+              "Allows smooth transition between modes (bumpless transfer)"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Typical Scenarios",
+            "content": "Commissioning:\n• Manual Mode, Manual Value = 50%\n• Test actuator response without PID\n\nEmergency:\n• Switch to Manual Mode\n• Operator controls output via HMI (dynamic manual value)\n\nStartup:\n• Manual Mode during warmup\n• Switch to Auto once process stabilizes"
+          },
+          {
+            "type": "warning",
+            "title": "Important Notes",
+            "content": "Always verify process stability before switching from Manual to Auto. Use bumpless transfer to prevent output jumps. Document manual mode usage for safety and compliance."
+          }
+        ]
+      },
+      "hysteresisThresholds": {
+        "title": "Hysteresis Thresholds",
+        "sections": [
+          {
+            "title": "What are Thresholds?",
+            "content": "Two setpoints that control when digital output turns ON (high threshold) and OFF (low threshold). The gap between them prevents rapid cycling."
+          },
+          {
+            "title": "High Threshold (Turn ON)",
+            "content": [
+              "Output turns ON when PID output ≥ this value",
+              "Set based on desired activation point",
+              "Typical: 60-80% of output range",
+              "Must be greater than low threshold"
+            ]
+          },
+          {
+            "title": "Low Threshold (Turn OFF)",
+            "content": [
+              "Output turns OFF when PID output ≤ this value",
+              "Creates deadband to prevent chatter",
+              "Typical: 20-40% of output range",
+              "Must be less than high threshold"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Sizing the Gap",
+            "content": "Narrow Gap (10-20%):\n• More precise control\n• More frequent switching\n• Suitable for: Low-inertia loads, robust equipment\n\nMedium Gap (20-40%):\n• Balanced approach\n• Moderate switching frequency\n• Suitable for: Most applications\n\nWide Gap (40-60%):\n• Very stable switching\n• Less precise control\n• Suitable for: High-inertia loads, limited-cycle equipment"
+          },
+          {
+            "type": "warning",
+            "title": "Equipment Limitations",
+            "content": "Consider equipment switching limits:\n• Compressors: 3-6 starts/hour maximum\n• Contactors: 10-20 operations/hour\n• Solenoid valves: Higher frequency acceptable\n\nSize gap to keep switching within limits!"
           }
         ]
       },
