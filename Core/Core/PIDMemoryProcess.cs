@@ -128,253 +128,275 @@ public class PIDMemoryProcess
     {
         await FetchPidMemories();
 
-        foreach (var memory in _memories)
+        // Process all PID controllers in parallel with error isolation
+        var tasks = _memories
+            .Where(m => !m.IsDisabled)
+            .Select(memory => ProcessSinglePID(memory))
+            .ToList();
+
+        // Execute all PID processing tasks concurrently
+        await Task.WhenAll(tasks);
+    }
+
+    /// <summary>
+    /// Process a single PID controller with full error isolation
+    /// </summary>
+    private async Task ProcessSinglePID(PIDMemory memory)
+    {
+        try
         {
-            try
+            // var input = await _context.FinalItems.FirstOrDefaultAsync(x => x.ItemId == memory.InputItemId);
+
+            var input = await Points.GetFinalItem(memory.InputItemId.ToString());
+            var output = await Points.GetRawItem(memory.OutputItemId.ToString());
+
+            if (input == null)
             {
-                if (memory.IsDisabled)
+                return;
+            }
+
+            // SetPoint
+
+            FinalItemRedis? setPointItem = null;
+            double? setPoint = null;
+
+            if (memory.SetPointId.HasValue)
+            {
+                if (memory.SetPointId.Value != Guid.Empty)
                 {
-                    continue;
+                    setPointItem = await Points.GetFinalItem(memory.SetPointId.Value.ToString());
                 }
+            }
 
-                // var input = await _context.FinalItems.FirstOrDefaultAsync(x => x.ItemId == memory.InputItemId);
+            if (setPointItem != null)
+            {
+                setPoint = double.Parse(setPointItem.Value);
+            }
+            else
+            {
+                setPoint = memory.SetPoint;
+            }
 
-                var input = await Points.GetFinalItem(memory.InputItemId.ToString());
-                var output = await Points.GetRawItem(memory.OutputItemId.ToString());
+            // IsAuto
 
-                if (input == null)
+            FinalItemRedis? isAutoItem = null;
+            bool? isAuto = null;
+
+            if (memory.IsAutoId.HasValue)
+            {
+                if (memory.IsAutoId.Value != Guid.Empty)
                 {
-                    continue;
+                    isAutoItem = await Points.GetFinalItem(memory.IsAutoId.Value.ToString());
                 }
+            }
 
-                // SetPoint
+            if (isAutoItem != null)
+            {
+                bool auto = isAutoItem.Value == "1";
+                isAuto = auto;
+            }
+            else
+            {
+                isAuto = memory.IsAuto;
+            }
 
-                FinalItemRedis? setPointItem = null;
-                double? setPoint = null;
+            // ManualValue
 
-                if (memory.SetPointId.HasValue)
+            FinalItemRedis? manualValueItem = null;
+            double? manualValue = null;
+
+            if (memory.ManualValueId.HasValue)
+            {
+                if (memory.ManualValueId.Value != Guid.Empty)
                 {
-                    if (memory.SetPointId.Value != Guid.Empty)
+                    manualValueItem = await Points.GetFinalItem(memory.ManualValueId.Value.ToString());
+                }
+            }
+
+            if (manualValueItem != null)
+            {
+                manualValue = double.Parse(manualValueItem.Value);
+            }
+            else
+            {
+                manualValue = memory.ManualValue;
+            }
+            
+            // ReverseOutput
+
+            FinalItemRedis? reverseOutputItem = null;
+            bool? reverseOutput = null;
+
+            if (memory.ReverseOutputId.HasValue)
+            {
+                if (memory.ReverseOutputId.Value != Guid.Empty)
+                {
+                    reverseOutputItem = await Points.GetFinalItem(memory.ReverseOutputId.Value.ToString());
+                }
+            }
+
+            if (reverseOutputItem != null)
+            {
+                bool r = reverseOutputItem.Value == "1";
+                reverseOutput = r;
+            }
+            else
+            {
+                reverseOutput = memory.ReverseOutput;
+            }
+
+            double processVariable = Convert.ToDouble(input.Value);
+
+            if (output == null)
+            {
+                // just create a new raw item and continue
+
+                output = new RawItemRedis()
+                {
+                    ItemId = memory.OutputItemId,
+                };
+
+                // addFlag = true;
+            }
+
+            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
+            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+
+            double deltaTime = 0;
+            
+            // Thread-safe access to shared _pids collection
+            PIDDto? matched;
+            lock (_lock)
+            {
+                matched = _pids.FirstOrDefault(x => x.Id == memory.Id);
+            }
+
+            if (matched == null)
+            {
+                matched = new PIDDto()
+                {
+                    Id = memory.Id,
+                    Timestamp = epochTime,
+                    PidController = new PIDController(memory.Kp, memory.Ki, memory.Kd, memory.OutputMin,
+                        memory.OutputMax,reverseOutput.Value)
                     {
-                        setPointItem = await Points.GetFinalItem(memory.SetPointId.Value.ToString());
-                    }
-                }
+                        DerivativeFilterAlpha = memory.DerivativeFilterAlpha,
+                        MaxOutputSlewRate = memory.MaxOutputSlewRate,
+                        DeadZone = memory.DeadZone,
+                        FeedForward = memory.FeedForward,
+                    },
+                };
 
-                if (setPointItem != null)
+                lock (_lock)
                 {
-                    setPoint = double.Parse(setPointItem.Value);
-                }
-                else
-                {
-                    setPoint = memory.SetPoint;
-                }
-
-                // IsAuto
-
-                FinalItemRedis? isAutoItem = null;
-                bool? isAuto = null;
-
-                if (memory.IsAutoId.HasValue)
-                {
-                    if (memory.IsAutoId.Value != Guid.Empty)
-                    {
-                        isAutoItem = await Points.GetFinalItem(memory.IsAutoId.Value.ToString());
-                    }
-                }
-
-                if (isAutoItem != null)
-                {
-                    bool auto = isAutoItem.Value == "1";
-                    isAuto = auto;
-                }
-                else
-                {
-                    isAuto = memory.IsAuto;
-                }
-
-                // ManualValue
-
-                FinalItemRedis? manualValueItem = null;
-                double? manualValue = null;
-
-                if (memory.ManualValueId.HasValue)
-                {
-                    if (memory.ManualValueId.Value != Guid.Empty)
-                    {
-                        manualValueItem = await Points.GetFinalItem(memory.ManualValueId.Value.ToString());
-                    }
-                }
-
-                if (manualValueItem != null)
-                {
-                    manualValue = double.Parse(manualValueItem.Value);
-                }
-                else
-                {
-                    manualValue = memory.ManualValue;
-                }
-                
-                // ReverseOutput
-
-                FinalItemRedis? reverseOutputItem = null;
-                bool? reverseOutput = null;
-
-                if (memory.ReverseOutputId.HasValue)
-                {
-                    if (memory.ReverseOutputId.Value != Guid.Empty)
-                    {
-                        reverseOutputItem = await Points.GetFinalItem(memory.ReverseOutputId.Value.ToString());
-                    }
-                }
-
-                if (reverseOutputItem != null)
-                {
-                    bool r = reverseOutputItem.Value == "1";
-                    reverseOutput = r;
-                }
-                else
-                {
-                    reverseOutput = memory.ReverseOutput;
-                }
-
-                double processVariable = Convert.ToDouble(input.Value);
-
-                if (output == null)
-                {
-                    // just create a new raw item and continue
-
-                    output = new RawItemRedis()
-                    {
-                        ItemId = memory.OutputItemId,
-                    };
-
-                    // addFlag = true;
-                }
-
-                DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
-                long epochTime = currentTimeUtc.ToUnixTimeSeconds();
-
-                double deltaTime = 0;
-                var matched = _pids.FirstOrDefault(x => x.Id == memory.Id);
-
-                if (matched == null)
-                {
-                    matched = new PIDDto()
-                    {
-                        Id = memory.Id,
-                        Timestamp = epochTime,
-                        PidController = new PIDController(memory.Kp, memory.Ki, memory.Kd, memory.OutputMin,
-                            memory.OutputMax,reverseOutput.Value)
-                        {
-                            DerivativeFilterAlpha = memory.DerivativeFilterAlpha,
-                            MaxOutputSlewRate = memory.MaxOutputSlewRate,
-                            DeadZone = memory.DeadZone,
-                            FeedForward = memory.FeedForward,
-                        },
-                    };
-
                     _pids.Add(matched);
-
-                    deltaTime = 1;
-                }
-                else
-                {
-                    deltaTime = epochTime - matched.Timestamp;
-
-                    if (deltaTime < memory.Interval)
-                    {
-                        continue;
-                    }
-
-                    matched.Timestamp = epochTime;
-
-                    int changes = 0;
-
-                    if (Math.Abs(matched.PidController.Kp - memory.Kp) > 0)
-                    {
-                        changes++;
-                    }
-
-                    if (Math.Abs(matched.PidController.Ki - memory.Ki) > 0)
-                    {
-                        changes++;
-                    }
-
-                    if (Math.Abs(matched.PidController.Kd - memory.Kd) > 0)
-                    {
-                        changes++;
-                    }
-
-                    if (Math.Abs(matched.PidController.OutputMin - memory.OutputMin) > 0)
-                    {
-                        changes++;
-                    }
-
-                    if (Math.Abs(matched.PidController.OutputMax - memory.OutputMax) > 0)
-                    {
-                        changes++;
-                    }
-
-                    if (Math.Abs(matched.PidController.DerivativeFilterAlpha - memory.DerivativeFilterAlpha) > 0)
-                    {
-                        changes++;
-                    }
-
-                    if (Math.Abs(matched.PidController.MaxOutputSlewRate - memory.MaxOutputSlewRate) > 0)
-                    {
-                        changes++;
-                    }
-
-                    if (Math.Abs(matched.PidController.DeadZone - memory.DeadZone) > 0)
-                    {
-                        changes++;
-                    }
-
-                    if (Math.Abs(matched.PidController.FeedForward - memory.FeedForward) > 0)
-                    {
-                        changes++;
-                    }
-
-                    if (matched.PidController.ReverseOutput != reverseOutput.Value)
-                    {
-                        changes++;
-                    }
-
-                    if (changes > 0)
-                    {
-                        matched.PidController.Reset();
-                        matched.PidController = new PIDController(memory.Kp, memory.Ki, memory.Kd, memory.OutputMin,
-                            memory.OutputMax,reverseOutput.Value)
-                        {
-                            DerivativeFilterAlpha = memory.DerivativeFilterAlpha,
-                            MaxOutputSlewRate = memory.MaxOutputSlewRate,
-                            DeadZone = memory.DeadZone,
-                            FeedForward = memory.FeedForward,
-                        };
-
-                        matched.PidController.InitializeForBumplessTransfer(Convert.ToDouble(output.Value),
-                            processVariable, setPoint!.Value);
-                    }
                 }
 
-                double result;
-
-                if (isAuto!.Value)
-                {
-                    result = matched.PidController.Compute(setPoint!.Value, processVariable, deltaTime);
-                }
-                else
-                {
-                    result = manualValue!.Value;
-                }
-
-                await Points.WriteOrAddValue(output.ItemId,
-                    result.ToString("F2", CultureInfo.InvariantCulture), epochTime);
+                deltaTime = 1;
             }
-            catch (Exception e)
+            else
             {
-                MyLog.LogJson(e);
+                deltaTime = epochTime - matched.Timestamp;
+
+                if (deltaTime < memory.Interval)
+                {
+                    return;
+                }
+
+                matched.Timestamp = epochTime;
+
+                int changes = 0;
+
+                if (Math.Abs(matched.PidController.Kp - memory.Kp) > 0)
+                {
+                    changes++;
+                }
+
+                if (Math.Abs(matched.PidController.Ki - memory.Ki) > 0)
+                {
+                    changes++;
+                }
+
+                if (Math.Abs(matched.PidController.Kd - memory.Kd) > 0)
+                {
+                    changes++;
+                }
+
+                if (Math.Abs(matched.PidController.OutputMin - memory.OutputMin) > 0)
+                {
+                    changes++;
+                }
+
+                if (Math.Abs(matched.PidController.OutputMax - memory.OutputMax) > 0)
+                {
+                    changes++;
+                }
+
+                if (Math.Abs(matched.PidController.DerivativeFilterAlpha - memory.DerivativeFilterAlpha) > 0)
+                {
+                    changes++;
+                }
+
+                if (Math.Abs(matched.PidController.MaxOutputSlewRate - memory.MaxOutputSlewRate) > 0)
+                {
+                    changes++;
+                }
+
+                if (Math.Abs(matched.PidController.DeadZone - memory.DeadZone) > 0)
+                {
+                    changes++;
+                }
+
+                if (Math.Abs(matched.PidController.FeedForward - memory.FeedForward) > 0)
+                {
+                    changes++;
+                }
+
+                if (matched.PidController.ReverseOutput != reverseOutput.Value)
+                {
+                    changes++;
+                }
+
+                if (changes > 0)
+                {
+                    matched.PidController.Reset();
+                    matched.PidController = new PIDController(memory.Kp, memory.Ki, memory.Kd, memory.OutputMin,
+                        memory.OutputMax,reverseOutput.Value)
+                    {
+                        DerivativeFilterAlpha = memory.DerivativeFilterAlpha,
+                        MaxOutputSlewRate = memory.MaxOutputSlewRate,
+                        DeadZone = memory.DeadZone,
+                        FeedForward = memory.FeedForward,
+                    };
+
+                    matched.PidController.InitializeForBumplessTransfer(Convert.ToDouble(output.Value),
+                        processVariable, setPoint!.Value);
+                }
             }
+
+            double result;
+
+            if (isAuto!.Value)
+            {
+                result = matched.PidController.Compute(setPoint!.Value, processVariable, deltaTime);
+            }
+            else
+            {
+                result = manualValue!.Value;
+            }
+
+            await Points.WriteOrAddValue(output.ItemId,
+                result.ToString("F2", CultureInfo.InvariantCulture), epochTime);
+        }
+        catch (Exception e)
+        {
+            MyLog.LogJson(new 
+            { 
+                Error = "PID Processing Error", 
+                MemoryId = memory.Id, 
+                MemoryName = memory.Name,
+                Exception = e 
+            });
         }
     }
 
