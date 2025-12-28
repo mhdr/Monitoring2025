@@ -2795,6 +2795,89 @@ export interface PIDMemory {
   cascadeLevel: number; // int - Cascade level (0=standalone, 1=outer, 2=inner)
 }
 
+// ==================== PID Auto-Tuning ====================
+
+/**
+ * Status of a PID auto-tuning session
+ */
+export type TuningStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+// Idle = 0, Initializing = 1, RelayTest = 2, AnalyzingData = 3, Completed = 4, Aborted = 5, Failed = 6
+
+/**
+ * PID Tuning Session data
+ */
+export interface PIDTuningSession {
+  id: string;
+  pidMemoryId: string;
+  startTime: string;
+  endTime?: string;
+  status: TuningStatus;
+  errorMessage?: string;
+  relayAmplitude: number;
+  relayHysteresis: number;
+  minCycles: number;
+  maxCycles: number;
+  maxAmplitude: number;
+  timeout: number;
+  ultimatePeriod?: number;
+  oscillationAmplitude?: number;
+  criticalGain?: number;
+  calculatedKp?: number;
+  calculatedKi?: number;
+  calculatedKd?: number;
+  originalKp: number;
+  originalKi: number;
+  originalKd: number;
+  confidenceScore?: number;
+  notes?: string;
+}
+
+export interface StartPIDTuningRequestDto {
+  pidMemoryId: string;
+  relayAmplitude?: number;
+  relayHysteresis?: number;
+  minCycles?: number;
+  maxCycles?: number;
+  maxAmplitude?: number;
+  timeout?: number;
+}
+
+export interface StartPIDTuningResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string;
+}
+
+export interface GetPIDTuningStatusRequestDto {
+  pidMemoryId: string;
+}
+
+export interface GetPIDTuningStatusResponseDto {
+  isSuccessful: boolean;
+  session?: PIDTuningSession;
+  errorMessage?: string;
+}
+
+export interface AbortPIDTuningRequestDto {
+  pidMemoryId: string;
+}
+
+export interface AbortPIDTuningResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string;
+}
+
+export interface ApplyTunedParametersRequestDto {
+  sessionId: string;
+  applyKp?: boolean;
+  applyKi?: boolean;
+  applyKd?: boolean;
+}
+
+export interface ApplyTunedParametersResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string;
+}
+
 /**
  * PID Memory with enhanced item details
  */

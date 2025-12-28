@@ -21,12 +21,14 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   PrecisionManufacturing as PIDIcon,
+  Tune as TuneIcon,
+  Visibility as ViewIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
-import { getPIDMemories } from '../services/extendedApi';
-import type { PIDMemory, PIDMemoryWithItems, ItemType } from '../types/api';
+import { getPIDMemories, getPIDTuningStatus } from '../services/extendedApi';
+import type { PIDMemory, PIDMemoryWithItems, ItemType, TuningStatus, PIDTuningSession } from '../types/api';
 import { ItemTypeEnum } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -35,6 +37,8 @@ const logger = createLogger('PIDMemoryManagementPage');
 // Lazy load dialog components
 const AddEditPIDMemoryDialog = lazy(() => import('./AddEditPIDMemoryDialog'));
 const DeletePIDMemoryDialog = lazy(() => import('./DeletePIDMemoryDialog'));
+const StartPIDTuningDialog = lazy(() => import('./StartPIDTuningDialog'));
+const TuningStatusDialog = lazy(() => import('./TuningStatusDialog'));
 
 /**
  * Get ItemType color for badge
@@ -86,10 +90,13 @@ const PIDMemoryManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [tuningSessions, setTuningSessions] = useState<Map<string, PIDTuningSession>>(new Map());
 
   // Dialog states
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [startTuningDialogOpen, setStartTuningDialogOpen] = useState(false);
+  const [tuningStatusDialogOpen, setTuningStatusDialogOpen] = useState(false);
   const [selectedPIDMemory, setSelectedPIDMemory] = useState<PIDMemoryWithItems | null>(null);
   const [editMode, setEditMode] = useState(false);
 
@@ -152,6 +159,80 @@ const PIDMemoryManagementPage: React.FC = () => {
       fetchPIDMemories();
     }
   }, [fetchPIDMemories, items.length]);
+
+  /**
+   * Fetch tuning sessions for all PID memories
+   */
+  const fetchTuningSessions = useCallback(async () => {
+    if (pidMemories.length === 0) return;
+
+    const sessions = new Map<string, PIDTuningSession>();
+
+    // Fetch tuning status for each PID memory in parallel
+    await Promise.all(
+      pidMemories.map(async (pm) => {
+        try {
+          const response = await getPIDTuningStatus({ pidMemoryId: pm.id });
+          if (response.isSuccessful && response.session) {
+            sessions.set(pm.id, response.session);
+          }
+        } catch (err) {
+          logger.error(`Failed to fetch tuning status for PID ${pm.id}`, err);
+        }
+      })
+    );
+
+    setTuningSessions(sessions);
+  }, [pidMemories]);
+
+  /**
+   * Auto-refresh tuning sessions for active tunings
+   */
+  useEffect(() => {
+    if (pidMemories.length === 0) return;
+
+    // Initial fetch
+    fetchTuningSessions();
+
+    // Set up polling interval
+    const intervalId = setInterval(() => {
+      fetchTuningSessions();
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(intervalId);
+  }, [pidMemories, fetchTuningSessions]);
+
+  /**
+   * Get tuning status label
+   */
+  const getTuningStatusLabel = (status: TuningStatus): string => {
+    const statusMap: Record<number, string> = {
+      0: t('pidMemory.autoTuning.statusIdle'),
+      1: t('pidMemory.autoTuning.statusInitializing'),
+      2: t('pidMemory.autoTuning.statusRelayTest'),
+      3: t('pidMemory.autoTuning.statusAnalyzing'),
+      4: t('pidMemory.autoTuning.statusCompleted'),
+      5: t('pidMemory.autoTuning.statusAborted'),
+      6: t('pidMemory.autoTuning.statusFailed'),
+    };
+    return statusMap[status] || t('common.unknown');
+  };
+
+  /**
+   * Get tuning status color
+   */
+  const getTuningStatusColor = (status: TuningStatus): 'default' | 'primary' | 'success' | 'error' | 'warning' => {
+    switch (status) {
+      case 0: return 'default'; // Idle
+      case 1: return 'primary'; // Initializing
+      case 2: return 'primary'; // RelayTest
+      case 3: return 'primary'; // AnalyzingData
+      case 4: return 'success'; // Completed
+      case 5: return 'warning'; // Aborted
+      case 6: return 'error'; // Failed
+      default: return 'default';
+    }
+  };
 
   /**
    * Filter PID memories based on search term
@@ -336,34 +417,87 @@ const PIDMemoryManagementPage: React.FC = () => {
         ),
       },
       {
+        field: 'tuningStatus',
+        headerText: t('pidMemory.autoTuning.statusTitle'),
+        width: 150,
+        template: (rowData: PIDMemoryWithItems) => {
+          const session = tuningSessions.get(rowData.id);
+          return (
+            <Box data-id-ref="pid-memory-tuning-status-cell">
+              {session ? (
+                <Chip
+                  label={getTuningStatusLabel(session.status)}
+                  size="small"
+                  color={getTuningStatusColor(session.status)}
+                  sx={{ height: 20, fontSize: '0.7rem' }}
+                  onClick={() => handleViewTuningStatus(rowData)}
+                  clickable
+                />
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  {t('pidMemory.autoTuning.statusIdle')}
+                </Typography>
+              )}
+            </Box>
+          );
+        },
+      },
+      {
         field: 'actions',
         headerText: t('common.actions'),
-        width: 120,
-        template: (rowData: PIDMemoryWithItems) => (
-          <Box sx={{ display: 'flex', gap: 1 }} data-id-ref="pid-memory-actions-cell">
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={() => handleEdit(rowData)}
-              data-id-ref="pid-memory-edit-btn"
-              title={t('common.edit')}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => handleDelete(rowData)}
-              data-id-ref="pid-memory-delete-btn"
-              title={t('common.delete')}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        ),
+        width: 160,
+        template: (rowData: PIDMemoryWithItems) => {
+          const session = tuningSessions.get(rowData.id);
+          const isActiveTuning = session && (session.status === 1 || session.status === 2 || session.status === 3);
+
+          return (
+            <Box sx={{ display: 'flex', gap: 1 }} data-id-ref="pid-memory-actions-cell">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => handleEdit(rowData)}
+                data-id-ref="pid-memory-edit-btn"
+                title={t('common.edit')}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => handleDelete(rowData)}
+                data-id-ref="pid-memory-delete-btn"
+                title={t('common.delete')}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+              {session && (session.status === 4 || session.status === 5 || session.status === 6 || isActiveTuning) ? (
+                <IconButton
+                  size="small"
+                  color="info"
+                  onClick={() => handleViewTuningStatus(rowData)}
+                  data-id-ref="pid-memory-view-tuning-btn"
+                  title={t('pidMemory.autoTuning.viewStatus')}
+                >
+                  <ViewIcon fontSize="small" />
+                </IconButton>
+              ) : (
+                <IconButton
+                  size="small"
+                  color="secondary"
+                  onClick={() => handleStartTuning(rowData)}
+                  data-id-ref="pid-memory-start-tuning-btn"
+                  title={t('pidMemory.autoTuning.startButton')}
+                  disabled={isActiveTuning}
+                >
+                  <TuneIcon fontSize="small" />
+                </IconButton>
+              )}
+            </Box>
+          );
+        },
       },
     ],
-    [t]
+    [t, tuningSessions]
   );
 
   /**
@@ -393,16 +527,35 @@ const PIDMemoryManagementPage: React.FC = () => {
   };
 
   /**
+   * Handle start tuning button click
+   */
+  const handleStartTuning = (pidMemory: PIDMemoryWithItems) => {
+    setSelectedPIDMemory(pidMemory);
+    setStartTuningDialogOpen(true);
+  };
+
+  /**
+   * Handle view tuning status button click
+   */
+  const handleViewTuningStatus = (pidMemory: PIDMemoryWithItems) => {
+    setSelectedPIDMemory(pidMemory);
+    setTuningStatusDialogOpen(true);
+  };
+
+  /**
    * Handle dialog close and refresh data
    */
   const handleDialogClose = (shouldRefresh: boolean) => {
     setAddEditDialogOpen(false);
     setDeleteDialogOpen(false);
+    setStartTuningDialogOpen(false);
+    setTuningStatusDialogOpen(false);
     setSelectedPIDMemory(null);
     setEditMode(false);
 
     if (shouldRefresh) {
       fetchPIDMemories();
+      fetchTuningSessions();
     }
   };
 
@@ -529,6 +682,20 @@ const PIDMemoryManagementPage: React.FC = () => {
             open={deleteDialogOpen}
             onClose={handleDialogClose}
             pidMemory={selectedPIDMemory}
+          />
+        )}
+        {startTuningDialogOpen && (
+          <StartPIDTuningDialog
+            open={startTuningDialogOpen}
+            pidMemory={selectedPIDMemory}
+            onClose={handleDialogClose}
+          />
+        )}
+        {tuningStatusDialogOpen && selectedPIDMemory && (
+          <TuningStatusDialog
+            open={tuningStatusDialogOpen}
+            pidMemoryId={selectedPIDMemory.id}
+            onClose={handleDialogClose}
           />
         )}
       </Suspense>

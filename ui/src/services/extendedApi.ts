@@ -28,6 +28,14 @@ import type {
   GetPidControllersRequestDto,
   EditPidControllerRequestDto,
   EditPidSetPointRequestDto,
+  StartPIDTuningRequestDto,
+  StartPIDTuningResponseDto,
+  GetPIDTuningStatusRequestDto,
+  GetPIDTuningStatusResponseDto,
+  AbortPIDTuningRequestDto,
+  AbortPIDTuningResponseDto,
+  ApplyTunedParametersRequestDto,
+  ApplyTunedParametersResponseDto,
   GetPidControllerRequestDto,
   // Timeout Memory types
   GetTimeoutMemoriesRequestDto,
@@ -482,6 +490,54 @@ export const deletePIDMemory = async (data: DeletePIDMemoryRequestDto): Promise<
 export const getPotentialParentPIDs = async (data: GetPotentialParentPIDsRequestDto): Promise<GetPotentialParentPIDsResponseDto> => {
   try {
     const response = await apiClient.post<GetPotentialParentPIDsResponseDto>('/api/Monitoring/GetPotentialParentPIDs', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Start PID auto-tuning using Ziegler-Nichols relay feedback method
+ */
+export const startPIDTuning = async (data: StartPIDTuningRequestDto): Promise<StartPIDTuningResponseDto> => {
+  try {
+    const response = await apiClient.post<StartPIDTuningResponseDto>('/api/Monitoring/StartPIDTuning', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get current status of PID auto-tuning session
+ */
+export const getPIDTuningStatus = async (data: GetPIDTuningStatusRequestDto): Promise<GetPIDTuningStatusResponseDto> => {
+  try {
+    const response = await apiClient.post<GetPIDTuningStatusResponseDto>('/api/Monitoring/GetPIDTuningStatus', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Abort an active PID auto-tuning session
+ */
+export const abortPIDTuning = async (data: AbortPIDTuningRequestDto): Promise<AbortPIDTuningResponseDto> => {
+  try {
+    const response = await apiClient.post<AbortPIDTuningResponseDto>('/api/Monitoring/AbortPIDTuning', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Apply calculated PID gains from a completed tuning session
+ */
+export const applyTunedParameters = async (data: ApplyTunedParametersRequestDto): Promise<ApplyTunedParametersResponseDto> => {
+  try {
+    const response = await apiClient.post<ApplyTunedParametersResponseDto>('/api/Monitoring/ApplyTunedParameters', data);
     return response.data;
   } catch (error) {
     handleApiError(error);
