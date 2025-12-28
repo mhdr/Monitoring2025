@@ -194,7 +194,9 @@ app.get('*', (req, res) => {
 
   if (ext) {
     // Request for a file that doesn't exist
-    return res.status(404).send('File not found');
+    // Send proper 404 with correct content type to prevent MIME type errors
+    res.status(404).type('text/plain').send('File not found');
+    return;
   }
 
   // Serve index.html for all routes (SPA)
