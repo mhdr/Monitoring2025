@@ -7278,6 +7278,311 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
         return BadRequest(ModelState);
     }
 
+    #region PID Memory Management
+
+    /// <summary>
+    /// Get all PID memory configurations
+    /// </summary>
+    /// <param name="request">Request parameters for retrieving PID memories</param>
+    /// <returns>List of PID memory configurations</returns>
+    /// <remarks>
+    /// Retrieves all configured PID controllers with their tuning parameters, setpoints, and mode settings.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetPIDMemories
+    ///     {
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the list of PID memory configurations</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetPIDMemories")]
+    public async Task<IActionResult> GetPIDMemories([FromBody] GetPIDMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetPIDMemoriesResponseDto();
+
+            var pidMemories = await Core.PIDMemories.GetPIDMemories();
+
+            if (pidMemories != null)
+            {
+                foreach (var pm in pidMemories)
+                {
+                    response.PIDMemories.Add(new GetPIDMemoriesResponseDto.PIDMemory()
+                    {
+                        Id = pm.Id,
+                        Name = pm.Name,
+                        InputItemId = pm.InputItemId,
+                        OutputItemId = pm.OutputItemId,
+                        Kp = pm.Kp,
+                        Ki = pm.Ki,
+                        Kd = pm.Kd,
+                        OutputMin = pm.OutputMin,
+                        OutputMax = pm.OutputMax,
+                        Interval = pm.Interval,
+                        IsDisabled = pm.IsDisabled,
+                        SetPoint = pm.SetPoint,
+                        SetPointId = pm.SetPointId,
+                        DerivativeFilterAlpha = pm.DerivativeFilterAlpha,
+                        MaxOutputSlewRate = pm.MaxOutputSlewRate,
+                        DeadZone = pm.DeadZone,
+                        FeedForward = pm.FeedForward,
+                        IsAuto = pm.IsAuto,
+                        IsAutoId = pm.IsAutoId,
+                        ManualValue = pm.ManualValue,
+                        ManualValueId = pm.ManualValueId,
+                        ReverseOutput = pm.ReverseOutput,
+                        ReverseOutputId = pm.ReverseOutputId
+                    });
+                }
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new PID memory configuration
+    /// </summary>
+    /// <param name="request">PID memory configuration details</param>
+    /// <returns>Result indicating success or failure with the new PID memory ID</returns>
+    /// <remarks>
+    /// Creates a new PID controller configuration with tuning parameters and operational settings.
+    /// Input item must be AnalogInput, output item must be AnalogOutput.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AddPIDMemory
+    ///     {
+    ///        "name": "Temperature Controller",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "outputItemId": "550e8400-e29b-41d4-a716-446655440001",
+    ///        "kp": 1.0,
+    ///        "ki": 0.1,
+    ///        "kd": 0.05,
+    ///        "outputMin": 0.0,
+    ///        "outputMax": 100.0,
+    ///        "interval": 10,
+    ///        "isDisabled": false,
+    ///        "setPoint": 25.0,
+    ///        "isAuto": true
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the newly created PID memory ID</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("AddPIDMemory")]
+    public async Task<IActionResult> AddPIDMemory([FromBody] AddPIDMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var pidMemory = new Core.Models.PIDMemory
+            {
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                Kp = request.Kp,
+                Ki = request.Ki,
+                Kd = request.Kd,
+                OutputMin = request.OutputMin,
+                OutputMax = request.OutputMax,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                SetPoint = request.SetPoint,
+                SetPointId = request.SetPointId,
+                DerivativeFilterAlpha = request.DerivativeFilterAlpha,
+                MaxOutputSlewRate = request.MaxOutputSlewRate,
+                DeadZone = request.DeadZone,
+                FeedForward = request.FeedForward,
+                IsAuto = request.IsAuto,
+                IsAutoId = request.IsAutoId,
+                ManualValue = request.ManualValue,
+                ManualValueId = request.ManualValueId,
+                ReverseOutput = request.ReverseOutput,
+                ReverseOutputId = request.ReverseOutputId
+            };
+
+            var (success, id, errorMessage) = await Core.PIDMemories.AddPIDMemory(pidMemory);
+
+            var response = new AddPIDMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Edit an existing PID memory configuration
+    /// </summary>
+    /// <param name="request">Updated PID memory configuration details</param>
+    /// <returns>Result indicating success or failure of the update</returns>
+    /// <remarks>
+    /// Updates an existing PID controller configuration. All fields can be modified.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/EditPIDMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Updated Temperature Controller",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "outputItemId": "550e8400-e29b-41d4-a716-446655440001",
+    ///        "kp": 1.2,
+    ///        "ki": 0.15,
+    ///        "kd": 0.06,
+    ///        "outputMin": 0.0,
+    ///        "outputMax": 100.0,
+    ///        "interval": 10,
+    ///        "isDisabled": false,
+    ///        "setPoint": 26.0,
+    ///        "isAuto": true
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status of the update operation</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("EditPIDMemory")]
+    public async Task<IActionResult> EditPIDMemory([FromBody] EditPIDMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var pidMemory = new Core.Models.PIDMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                Kp = request.Kp,
+                Ki = request.Ki,
+                Kd = request.Kd,
+                OutputMin = request.OutputMin,
+                OutputMax = request.OutputMax,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                SetPoint = request.SetPoint,
+                SetPointId = request.SetPointId,
+                DerivativeFilterAlpha = request.DerivativeFilterAlpha,
+                MaxOutputSlewRate = request.MaxOutputSlewRate,
+                DeadZone = request.DeadZone,
+                FeedForward = request.FeedForward,
+                IsAuto = request.IsAuto,
+                IsAutoId = request.IsAutoId,
+                ManualValue = request.ManualValue,
+                ManualValueId = request.ManualValueId,
+                ReverseOutput = request.ReverseOutput,
+                ReverseOutputId = request.ReverseOutputId
+            };
+
+            var (success, errorMessage) = await Core.PIDMemories.EditPIDMemory(pidMemory);
+
+            var response = new EditPIDMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Delete a PID memory configuration
+    /// </summary>
+    /// <param name="request">Request containing the ID of the PID memory to delete</param>
+    /// <returns>Result indicating success or failure of the deletion</returns>
+    /// <remarks>
+    /// Permanently removes a PID controller configuration from the system.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/DeletePIDMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status of the deletion operation</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("DeletePIDMemory")]
+    public async Task<IActionResult> DeletePIDMemory([FromBody] DeletePIDMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.PIDMemories.DeletePIDMemory(request.Id);
+
+            var response = new DeletePIDMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    #endregion
+
     /// <summary>
     /// Write a value directly to a controller for a specific monitoring item
     /// </summary>

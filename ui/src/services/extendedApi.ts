@@ -38,6 +38,15 @@ import type {
   EditTimeoutMemoryResponseDto,
   DeleteTimeoutMemoryRequestDto,
   DeleteTimeoutMemoryResponseDto,
+  // PID Memory types
+  GetPIDMemoriesRequestDto,
+  GetPIDMemoriesResponseDto,
+  AddPIDMemoryRequestDto,
+  AddPIDMemoryResponseDto,
+  EditPIDMemoryRequestDto,
+  EditPIDMemoryResponseDto,
+  DeletePIDMemoryRequestDto,
+  DeletePIDMemoryResponseDto,
   GetSvgLayoutRequestDto,
   GetSvgLayoutsRequestDto,
   AuditLogRequestDto,
@@ -409,6 +418,56 @@ export const editTimeoutMemory = async (data: EditTimeoutMemoryRequestDto): Prom
 export const deleteTimeoutMemory = async (data: DeleteTimeoutMemoryRequestDto): Promise<DeleteTimeoutMemoryResponseDto> => {
   try {
     const response = await apiClient.post<DeleteTimeoutMemoryResponseDto>('/api/Monitoring/DeleteTimeoutMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// ==================== PID Memory ====================
+
+/**
+ * Get all PID memory configurations
+ */
+export const getPIDMemories = async (params: GetPIDMemoriesRequestDto = {}): Promise<GetPIDMemoriesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetPIDMemoriesResponseDto>('/api/Monitoring/GetPIDMemories', params);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new PID memory configuration
+ */
+export const addPIDMemory = async (data: AddPIDMemoryRequestDto): Promise<AddPIDMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddPIDMemoryResponseDto>('/api/Monitoring/AddPIDMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing PID memory configuration
+ */
+export const editPIDMemory = async (data: EditPIDMemoryRequestDto): Promise<EditPIDMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditPIDMemoryResponseDto>('/api/Monitoring/EditPIDMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a PID memory configuration
+ */
+export const deletePIDMemory = async (data: DeletePIDMemoryRequestDto): Promise<DeletePIDMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeletePIDMemoryResponseDto>('/api/Monitoring/DeletePIDMemory', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

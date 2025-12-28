@@ -2758,3 +2758,162 @@ export interface DeleteTimeoutMemoryResponseDto {
   isSuccessful: boolean;
   errorMessage?: string | null;
 }
+
+// ==================== PID Memory DTOs ====================
+
+/**
+ * PID Memory configuration
+ */
+export interface PIDMemory {
+  id: string; // UUID
+  name?: string | null;
+  inputItemId: string; // UUID - Process Variable (must be AnalogInput)
+  outputItemId: string; // UUID - Control Output (must be AnalogOutput)
+  kp: number; // double - Proportional gain
+  ki: number; // double - Integral gain
+  kd: number; // double - Derivative gain
+  outputMin: number; // double - Minimum output value
+  outputMax: number; // double - Maximum output value
+  interval: number; // int - Execution interval in seconds
+  isDisabled: boolean; // bool - Whether PID is disabled
+  setPoint?: number | null; // double - Static setpoint value
+  setPointId?: string | null; // UUID - Dynamic setpoint item (AnalogInput/AnalogOutput)
+  derivativeFilterAlpha: number; // double - Derivative filter alpha (0-1)
+  maxOutputSlewRate: number; // double - Maximum output slew rate
+  deadZone: number; // double - Dead zone around setpoint
+  feedForward: number; // double - Feed-forward term
+  isAuto: boolean; // bool - Static auto/manual mode
+  isAutoId?: string | null; // UUID - Dynamic auto/manual item (DigitalInput/DigitalOutput)
+  manualValue?: number | null; // double - Static manual mode value
+  manualValueId?: string | null; // UUID - Dynamic manual value item (AnalogInput/AnalogOutput)
+  reverseOutput: boolean; // bool - Static reverse output flag
+  reverseOutputId?: string | null; // UUID - Dynamic reverse output item (DigitalInput/DigitalOutput)
+}
+
+/**
+ * PID Memory with enhanced item details
+ */
+export interface PIDMemoryWithItems extends PIDMemory {
+  inputItemName?: string;
+  inputItemNameFa?: string;
+  inputItemType?: ItemType;
+  outputItemName?: string;
+  outputItemNameFa?: string;
+  outputItemType?: ItemType;
+  setPointItemName?: string;
+  setPointItemNameFa?: string;
+  setPointItemType?: ItemType;
+  isAutoItemName?: string;
+  isAutoItemNameFa?: string;
+  isAutoItemType?: ItemType;
+  manualValueItemName?: string;
+  manualValueItemNameFa?: string;
+  manualValueItemType?: ItemType;
+  reverseOutputItemName?: string;
+  reverseOutputItemNameFa?: string;
+  reverseOutputItemType?: ItemType;
+}
+
+/**
+ * Request DTO for retrieving PID memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetPIDMemoriesRequestDto {
+  // Empty - no filtering parameters needed currently
+}
+
+/**
+ * Response DTO containing list of PID memory configurations
+ */
+export interface GetPIDMemoriesResponseDto {
+  pidMemories: PIDMemory[];
+}
+
+/**
+ * Request DTO for creating a new PID memory configuration
+ */
+export interface AddPIDMemoryRequestDto {
+  name?: string | null;
+  inputItemId: string; // UUID
+  outputItemId: string; // UUID
+  kp: number; // double
+  ki: number; // double
+  kd: number; // double
+  outputMin: number; // double
+  outputMax: number; // double
+  interval: number; // int - must be > 0
+  isDisabled: boolean; // bool
+  setPoint?: number | null; // double
+  setPointId?: string | null; // UUID
+  derivativeFilterAlpha: number; // double (0-1)
+  maxOutputSlewRate: number; // double
+  deadZone: number; // double
+  feedForward: number; // double
+  isAuto: boolean; // bool
+  isAutoId?: string | null; // UUID
+  manualValue?: number | null; // double
+  manualValueId?: string | null; // UUID
+  reverseOutput: boolean; // bool
+  reverseOutputId?: string | null; // UUID
+}
+
+/**
+ * Response DTO for adding a new PID memory configuration
+ */
+export interface AddPIDMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of newly created PID memory
+}
+
+/**
+ * Request DTO for editing an existing PID memory configuration
+ */
+export interface EditPIDMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  inputItemId: string; // UUID
+  outputItemId: string; // UUID
+  kp: number; // double
+  ki: number; // double
+  kd: number; // double
+  outputMin: number; // double
+  outputMax: number; // double
+  interval: number; // int - must be > 0
+  isDisabled: boolean; // bool
+  setPoint?: number | null; // double
+  setPointId?: string | null; // UUID
+  derivativeFilterAlpha: number; // double (0-1)
+  maxOutputSlewRate: number; // double
+  deadZone: number; // double
+  feedForward: number; // double
+  isAuto: boolean; // bool
+  isAutoId?: string | null; // UUID
+  manualValue?: number | null; // double
+  manualValueId?: string | null; // UUID
+  reverseOutput: boolean; // bool
+  reverseOutputId?: string | null; // UUID
+}
+
+/**
+ * Response DTO for editing a PID memory configuration
+ */
+export interface EditPIDMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a PID memory configuration
+ */
+export interface DeletePIDMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a PID memory configuration
+ */
+export interface DeletePIDMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
