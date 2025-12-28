@@ -640,30 +640,6 @@ const PIDMemoryManagementPage: React.FC = () => {
               height="600px"
             />
           )}
-
-          {/* No Results */}
-          {!loading && !error && filteredPIDMemories.length === 0 && (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                py: 8,
-              }}
-              data-id-ref="pid-memory-no-results"
-            >
-              <PIDIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary">
-                {searchTerm ? t('common.noResultsFound') : t('pidMemory.noPIDMemories')}
-              </Typography>
-              {!searchTerm && (
-                <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAdd} sx={{ mt: 2 }}>
-                  {t('pidMemory.addFirst')}
-                </Button>
-              )}
-            </Box>
-          )}
         </CardContent>
       </Card>
 
