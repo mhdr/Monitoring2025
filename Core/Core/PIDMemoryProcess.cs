@@ -13,9 +13,7 @@ public class PIDMemoryProcess
     private static readonly object _lock = new object();
     private static Task? _runTask;
     private List<PIDMemory> _memories = [];
-#pragma warning disable CS0649 // Field is never assigned to
     private long? _memoriesEpoch;
-#pragma warning restore CS0649
     private DataContext? _context;
 
     private List<PIDDto> _pids = [];
@@ -108,18 +106,20 @@ public class PIDMemoryProcess
 
     private async Task FetchPidMemories()
     {
+        DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
+        long epochTime = currentTimeUtc.ToUnixTimeSeconds();
+
         if (!_memoriesEpoch.HasValue)
         {
             _memories = await _context!.PIDMemories.ToListAsync();
+            _memoriesEpoch = epochTime;
         }
         else
         {
-            DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
-            long epochTime = currentTimeUtc.ToUnixTimeSeconds();
-
             if (epochTime - _memoriesEpoch.Value > 60)
             {
                 _memories = await _context!.PIDMemories.ToListAsync();
+                _memoriesEpoch = epochTime;
             }
         }
     }
