@@ -579,4 +579,230 @@ public class PIDMemories
             return (false, e.Message);
         }
     }
+
+    #region PID Auto-Tuning Methods
+
+    /// <summary>
+    /// Starts a new auto-tuning session for the specified PID controller.
+    /// </summary>
+    public static async Task<(bool Success, Guid? SessionId, string? ErrorMessage)> StartPIDTuning(
+        Guid pidMemoryId,
+        double relayAmplitude = 20.0,
+        double relayHysteresis = 0.5,
+        int minCycles = 3,
+        int maxCycles = 10,
+        double maxAmplitude = 10.0,
+        int timeout = 600)
+    {
+        try
+        {
+            var context = new DataContext();
+            
+            // Validate PID exists
+            var pidMemory = await context.PIDMemories.FindAsync(pidMemoryId);
+            if (pidMemory == null)
+            {
+                await context.DisposeAsync();
+                return (false, null, "PID memory not found");
+            }
+
+            // Check if already tuning
+            var existingSession = await context.PIDTuningSessions
+                .Where(s => s.PIDMemoryId == pidMemoryId && 
+                           (s.Status == TuningStatus.Initializing || 
+                            s.Status == TuningStatus.RelayTest || 
+                            s.Status == TuningStatus.AnalyzingData))
+                .FirstOrDefaultAsync();
+
+            if (existingSession != null)
+            {
+                await context.DisposeAsync();
+                return (false, null, "PID is already undergoing auto-tuning");
+            }
+
+            // Validate parameters
+            if (relayAmplitude < 5.0 || relayAmplitude > 50.0)
+            {
+                await context.DisposeAsync();
+                return (false, null, "RelayAmplitude must be between 5% and 50%");
+            }
+
+            if (minCycles < 2 || minCycles > maxCycles)
+            {
+                await context.DisposeAsync();
+                return (false, null, "MinCycles must be between 2 and MaxCycles");
+            }
+
+            // Validate cascade constraints
+            if (pidMemory.ParentPIDId.HasValue)
+            {
+                var parentPID = await context.PIDMemories.FindAsync(pidMemory.ParentPIDId.Value);
+                if (parentPID != null && !parentPID.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Cannot tune: Parent PID must be disabled first");
+                }
+            }
+
+            // Create tuning session
+            var session = new PIDTuningSession
+            {
+                PIDMemoryId = pidMemoryId,
+                StartTime = DateTime.UtcNow,
+                Status = TuningStatus.Initializing,
+                RelayAmplitude = relayAmplitude,
+                RelayHysteresis = relayHysteresis,
+                MinCycles = minCycles,
+                MaxCycles = maxCycles,
+                MaxAmplitude = maxAmplitude,
+                Timeout = timeout,
+                OriginalKp = pidMemory.Kp,
+                OriginalKi = pidMemory.Ki,
+                OriginalKd = pidMemory.Kd
+            };
+
+            context.PIDTuningSessions.Add(session);
+            await context.SaveChangesAsync();
+
+            var sessionId = session.Id;
+            await context.DisposeAsync();
+
+            MyLog.Info($"Auto-tuning session started for PID {pidMemoryId}", new Dictionary<string, object?>
+            {
+                ["SessionId"] = sessionId,
+                ["RelayAmplitude"] = relayAmplitude,
+                ["Timeout"] = timeout
+            });
+
+            return (true, sessionId, null);
+        }
+        catch (Exception e)
+        {
+            MyLog.LogJson(e);
+            return (false, null, e.Message);
+        }
+    }
+
+    /// <summary>
+    /// Gets the current or most recent tuning session for a PID controller.
+    /// </summary>
+    public static async Task<PIDTuningSession?> GetPIDTuningSession(Guid pidMemoryId)
+    {
+        try
+        {
+            var context = new DataContext();
+            var session = await context.PIDTuningSessions
+                .Where(s => s.PIDMemoryId == pidMemoryId)
+                .OrderByDescending(s => s.StartTime)
+                .FirstOrDefaultAsync();
+            
+            await context.DisposeAsync();
+            return session;
+        }
+        catch (Exception e)
+        {
+            MyLog.LogJson(e);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Gets a tuning session by its ID.
+    /// </summary>
+    public static async Task<PIDTuningSession?> GetPIDTuningSessionById(Guid sessionId)
+    {
+        try
+        {
+            var context = new DataContext();
+            var session = await context.PIDTuningSessions.FindAsync(sessionId);
+            await context.DisposeAsync();
+            return session;
+        }
+        catch (Exception e)
+        {
+            MyLog.LogJson(e);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Applies calculated PID gains from a completed tuning session to the PID controller.
+    /// </summary>
+    public static async Task<(bool Success, string? ErrorMessage)> ApplyTunedParameters(
+        Guid sessionId,
+        bool applyKp = true,
+        bool applyKi = true,
+        bool applyKd = true)
+    {
+        try
+        {
+            var context = new DataContext();
+            
+            var session = await context.PIDTuningSessions.FindAsync(sessionId);
+            if (session == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Tuning session not found");
+            }
+
+            if (session.Status != TuningStatus.Completed)
+            {
+                await context.DisposeAsync();
+                return (false, $"Cannot apply parameters: Session status is {session.Status}");
+            }
+
+            if (!session.CalculatedKp.HasValue || !session.CalculatedKi.HasValue || !session.CalculatedKd.HasValue)
+            {
+                await context.DisposeAsync();
+                return (false, "Calculated gains are not available");
+            }
+
+            var pidMemory = await context.PIDMemories.FindAsync(session.PIDMemoryId);
+            if (pidMemory == null)
+            {
+                await context.DisposeAsync();
+                return (false, "PID memory not found");
+            }
+
+            // Apply selected gains
+            if (applyKp) pidMemory.Kp = session.CalculatedKp.Value;
+            if (applyKi) pidMemory.Ki = session.CalculatedKi.Value;
+            if (applyKd) pidMemory.Kd = session.CalculatedKd.Value;
+
+            context.PIDMemories.Update(pidMemory);
+            await context.SaveChangesAsync();
+            await context.DisposeAsync();
+
+            // Clear PID state to force reinitialization with new gains
+            await Points.DeletePIDState(session.PIDMemoryId);
+
+            MyLog.Info($"Applied tuned parameters to PID {session.PIDMemoryId}", new Dictionary<string, object?>
+            {
+                ["SessionId"] = sessionId,
+                ["Kp"] = applyKp ? session.CalculatedKp : pidMemory.Kp,
+                ["Ki"] = applyKi ? session.CalculatedKi : pidMemory.Ki,
+                ["Kd"] = applyKd ? session.CalculatedKd : pidMemory.Kd
+            });
+
+            return (true, null);
+        }
+        catch (Exception e)
+        {
+            MyLog.LogJson(e);
+            return (false, e.Message);
+        }
+    }
+
+    /// <summary>
+    /// Aborts an active tuning session.
+    /// </summary>
+    public static async Task<(bool Success, string? ErrorMessage)> AbortPIDTuning(Guid pidMemoryId)
+    {
+        var success = await PIDTuningProcess.Instance.AbortTuning(pidMemoryId);
+        return success 
+            ? (true, null) 
+            : (false, "No active tuning session found or abort failed");
+    }
+
+    #endregion
 }

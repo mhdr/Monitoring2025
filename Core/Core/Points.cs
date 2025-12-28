@@ -1394,4 +1394,110 @@ public static class Points
     }
 
     #endregion
+    
+    #region PID Tuning State Redis Methods
+
+    /// <summary>
+    /// Retrieves PID tuning state from Redis by PID memory ID.
+    /// </summary>
+    /// <param name="pidMemoryId">The PID memory ID.</param>
+    /// <returns>The PIDTuningStateRedis object, or null if not found.</returns>
+    public static async Task<PIDTuningStateRedis?> GetPIDTuningState(Guid pidMemoryId)
+    {
+        try
+        {
+            var db = RedisConnection.Instance.GetDatabase();
+            var value = await db.StringGetAsync($"PIDTuningState:{pidMemoryId}");
+
+            if (value.HasValue)
+            {
+                var json = value.ToString();
+                var result = JsonConvert.DeserializeObject<PIDTuningStateRedis>(json);
+                
+                MyLog.Debug("Retrieved PID tuning state from Redis", new Dictionary<string, object?>
+                {
+                    ["PIDMemoryId"] = pidMemoryId,
+                    ["Status"] = result?.Status.ToString(),
+                    ["CycleCount"] = result?.CycleCount
+                });
+                
+                return result;
+            }
+
+            return null;
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to retrieve PID tuning state from Redis", e, new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = pidMemoryId
+            });
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Stores PID tuning state in Redis.
+    /// </summary>
+    /// <param name="tuningState">The PIDTuningStateRedis object to store.</param>
+    public static async Task SetPIDTuningState(PIDTuningStateRedis tuningState)
+    {
+        try
+        {
+            var db = RedisConnection.Instance.GetDatabase();
+            await db.StringSetAsync($"PIDTuningState:{tuningState.PIDMemoryId}", JsonConvert.SerializeObject(tuningState));
+            
+            MyLog.Debug("Saved PID tuning state to Redis", new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = tuningState.PIDMemoryId,
+                ["Status"] = tuningState.Status.ToString(),
+                ["CycleCount"] = tuningState.CycleCount
+            });
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to save PID tuning state to Redis", e, new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = tuningState.PIDMemoryId
+            });
+        }
+    }
+
+    /// <summary>
+    /// Deletes PID tuning state from Redis.
+    /// </summary>
+    /// <param name="pidMemoryId">The PID memory ID.</param>
+    public static async Task DeletePIDTuningState(Guid pidMemoryId)
+    {
+        try
+        {
+            var db = RedisConnection.Instance.GetDatabase();
+            await db.KeyDeleteAsync($"PIDTuningState:{pidMemoryId}");
+            
+            MyLog.Debug("Deleted PID tuning state from Redis", new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = pidMemoryId
+            });
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to delete PID tuning state from Redis", e, new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = pidMemoryId
+            });
+        }
+    }
+
+    /// <summary>
+    /// Checks if a PID controller is currently undergoing auto-tuning.
+    /// </summary>
+    /// <param name="pidMemoryId">The PID memory ID.</param>
+    /// <returns>True if tuning is active (status is RelayTest), false otherwise.</returns>
+    public static async Task<bool> IsPIDTuningActive(Guid pidMemoryId)
+    {
+        var tuningState = await GetPIDTuningState(pidMemoryId);
+        return tuningState?.Status == TuningStatus.RelayTest;
+    }
+
+    #endregion
 }

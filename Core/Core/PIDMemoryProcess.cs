@@ -208,6 +208,13 @@ public class PIDMemoryProcess
     {
         try
         {
+            // Skip if PID is undergoing auto-tuning (PIDTuningProcess controls output during tuning)
+            if (await Points.IsPIDTuningActive(memory.Id))
+            {
+                MyLog.Debug($"Skipping PID {memory.Id} - auto-tuning in progress");
+                return;
+            }
+
             // Use cached batch-fetched items instead of individual Redis calls
             finalItemsCache.TryGetValue(memory.InputItemId.ToString(), out var input);
             rawItemsCache.TryGetValue(memory.OutputItemId.ToString(), out var output);

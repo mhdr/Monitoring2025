@@ -25,7 +25,10 @@ public class Worker : BackgroundService
         _logger.LogInformation("Start Processing PID Memories...");
         var task4 = PIDMemoryProcess.Instance.Run();
 
-        await Task.WhenAll(task1, task2, task3, task4);
+        _logger.LogInformation("Start Processing PID Auto-Tuning...");
+        var task5 = PIDTuningProcess.Instance.Run();
+
+        await Task.WhenAll(task1, task2, task3, task4, task5);
         Console.ReadKey();
     }
 }

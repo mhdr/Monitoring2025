@@ -45,6 +45,7 @@ public class DataContext : DbContext
     public DbSet<TimeoutMemory> TimeoutMemories { get; set; }
 
     public DbSet<PIDMemory> PIDMemories { get; set; }
+    public DbSet<PIDTuningSession> PIDTuningSessions { get; set; }
     
     public DbSet<JobDetail> JobDetails { get; set; }
     public DbSet<Trigger> Triggers { get; set; }

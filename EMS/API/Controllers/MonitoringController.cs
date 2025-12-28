@@ -7597,6 +7597,230 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
+    /// Start PID auto-tuning using Ziegler-Nichols relay feedback method
+    /// </summary>
+    /// <param name="request">Tuning configuration parameters</param>
+    /// <returns>Success status and session ID</returns>
+    /// <remarks>
+    /// Starts an automatic tuning session that will:
+    /// 1. Perform relay feedback test (toggle output when PV crosses setpoint)
+    /// 2. Detect oscillation characteristics (period and amplitude)
+    /// 3. Calculate optimal PID gains using Ziegler-Nichols formulas
+    /// 
+    /// The tuning process runs in the background and can be monitored via GetPIDTuningStatus.
+    /// Normal PID control is suspended during tuning.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/StartPIDTuning
+    ///     {
+    ///        "pidMemoryId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "relayAmplitude": 20.0,
+    ///        "relayHysteresis": 0.5,
+    ///        "minCycles": 3,
+    ///        "maxCycles": 10,
+    ///        "maxAmplitude": 10.0,
+    ///        "timeout": 600
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns session ID if tuning started successfully</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails or tuning cannot be started</response>
+    [HttpPost("StartPIDTuning")]
+    public async Task<IActionResult> StartPIDTuning([FromBody] StartPIDTuningRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, sessionId, errorMessage) = await Core.PIDMemories.StartPIDTuning(
+                request.PidMemoryId,
+                request.RelayAmplitude ?? 20.0,
+                request.RelayHysteresis ?? 0.5,
+                request.MinCycles ?? 3,
+                request.MaxCycles ?? 10,
+                request.MaxAmplitude ?? 10.0,
+                request.Timeout ?? 600
+            );
+
+            var response = new StartPIDTuningResponseDto
+            {
+                IsSuccessful = success,
+                SessionId = sessionId,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Get current status of PID auto-tuning session
+    /// </summary>
+    /// <param name="request">Request with PID memory ID</param>
+    /// <returns>Tuning session details including status, progress, and calculated gains</returns>
+    /// <remarks>
+    /// Returns the most recent tuning session for the specified PID controller.
+    /// Includes real-time status, oscillation data, calculated gains, and confidence score.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetPIDTuningStatus
+    ///     {
+    ///        "pidMemoryId": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns tuning session details</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetPIDTuningStatus")]
+    public async Task<IActionResult> GetPIDTuningStatus([FromBody] GetPIDTuningStatusRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var session = await Core.PIDMemories.GetPIDTuningSession(request.PidMemoryId);
+
+            var response = new GetPIDTuningStatusResponseDto
+            {
+                Session = session
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Abort an active PID auto-tuning session
+    /// </summary>
+    /// <param name="request">Request with PID memory ID</param>
+    /// <returns>Success status of abort operation</returns>
+    /// <remarks>
+    /// Manually stops an in-progress tuning session and restores normal PID control.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AbortPIDTuning
+    ///     {
+    ///        "pidMemoryId": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("AbortPIDTuning")]
+    public async Task<IActionResult> AbortPIDTuning([FromBody] AbortPIDTuningRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.PIDMemories.AbortPIDTuning(request.PidMemoryId);
+
+            var response = new AbortPIDTuningResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Apply calculated PID gains from a completed tuning session
+    /// </summary>
+    /// <param name="request">Request with session ID and gain selection</param>
+    /// <returns>Success status of apply operation</returns>
+    /// <remarks>
+    /// Applies the auto-tuned PID gains to the controller configuration.
+    /// You can selectively apply Kp, Ki, and/or Kd gains.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/ApplyTunedParameters
+    ///     {
+    ///        "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "applyKp": true,
+    ///        "applyKi": true,
+    ///        "applyKd": true
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If session not found or gains cannot be applied</response>
+    [HttpPost("ApplyTunedParameters")]
+    public async Task<IActionResult> ApplyTunedParameters([FromBody] ApplyTunedParametersRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.PIDMemories.ApplyTunedParameters(
+                request.SessionId,
+                request.ApplyKp ?? true,
+                request.ApplyKi ?? true,
+                request.ApplyKd ?? true
+            );
+
+            var response = new ApplyTunedParametersResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
     /// Get potential parent PIDs for cascade control configuration
     /// </summary>
     /// <param name="request">Request with optional current PID ID and desired cascade level</param>
@@ -10046,3 +10270,60 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
         }
     }
 }
+
+#region PID Auto-Tuning DTOs
+
+public class StartPIDTuningRequestDto
+{
+    public Guid PidMemoryId { get; set; }
+    public double? RelayAmplitude { get; set; } // % of output range (default 20%)
+    public double? RelayHysteresis { get; set; } // Units (default 0.5)
+    public int? MinCycles { get; set; } // Default 3
+    public int? MaxCycles { get; set; } // Default 10
+    public double? MaxAmplitude { get; set; } // % of scale (default 10%)
+    public int? Timeout { get; set; } // Seconds (default 600)
+}
+
+public class StartPIDTuningResponseDto
+{
+    public bool IsSuccessful { get; set; }
+    public Guid? SessionId { get; set; }
+    public string? ErrorMessage { get; set; }
+}
+
+public class GetPIDTuningStatusRequestDto
+{
+    public Guid PidMemoryId { get; set; }
+}
+
+public class GetPIDTuningStatusResponseDto
+{
+    public Core.Models.PIDTuningSession? Session { get; set; }
+}
+
+public class AbortPIDTuningRequestDto
+{
+    public Guid PidMemoryId { get; set; }
+}
+
+public class AbortPIDTuningResponseDto
+{
+    public bool IsSuccessful { get; set; }
+    public string? ErrorMessage { get; set; }
+}
+
+public class ApplyTunedParametersRequestDto
+{
+    public Guid SessionId { get; set; }
+    public bool? ApplyKp { get; set; } // Default true
+    public bool? ApplyKi { get; set; } // Default true
+    public bool? ApplyKd { get; set; } // Default true
+}
+
+public class ApplyTunedParametersResponseDto
+{
+    public bool IsSuccessful { get; set; }
+    public string? ErrorMessage { get; set; }
+}
+
+#endregion
