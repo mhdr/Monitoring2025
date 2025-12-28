@@ -1,4 +1,6 @@
 ﻿using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Core.Libs;
 using Core.Models;
 using Core.RedisModels;
@@ -287,6 +289,32 @@ public class PIDMemoryProcess
                     },
                 };
 
+                // Attempt to restore state from Redis
+                var configHash = GenerateConfigurationHash(memory, reverseOutput.Value);
+                var stateRestored = await LoadPIDState(memory, matched, configHash);
+                
+                if (!stateRestored)
+                {
+                    // No saved state or config changed - initialize for bumpless transfer
+                    if (output != null && !string.IsNullOrEmpty(output.Value))
+                    {
+                        matched.PidController.InitializeForBumplessTransfer(
+                            Convert.ToDouble(output.Value),
+                            processVariable, 
+                            setPoint!.Value
+                        );
+                        
+                        MyLog.Info("Initialized PID for bumpless transfer", new Dictionary<string, object?>
+                        {
+                            ["PIDMemoryId"] = memory.Id,
+                            ["PIDMemoryName"] = memory.Name,
+                            ["CurrentOutput"] = output.Value,
+                            ["ProcessVariable"] = processVariable,
+                            ["SetPoint"] = setPoint.Value
+                        });
+                    }
+                }
+
                 lock (_lock)
                 {
                     _pids.Add(matched);
@@ -425,9 +453,12 @@ public class PIDMemoryProcess
                 }
             }
 
-            // Write analog output as normal
-            await Points.WriteOrAddValue(output.ItemId,
+            // Write analog output as normal (output is guaranteed non-null after line 253)
+            await Points.WriteOrAddValue(output!.ItemId,
                 result.ToString("F2", CultureInfo.InvariantCulture), epochTime);
+            
+            // Persist PID state to Redis for bumpless restart
+            await SavePIDState(memory, matched, epochTime);
         }
         catch (Exception e)
         {
@@ -437,6 +468,117 @@ public class PIDMemoryProcess
                 MemoryId = memory.Id, 
                 MemoryName = memory.Name,
                 Exception = e 
+            });
+        }
+    }
+
+    /// <summary>
+    /// Generates a configuration hash for detecting PID parameter changes
+    /// </summary>
+    private string GenerateConfigurationHash(PIDMemory memory, bool reverseOutput)
+    {
+        var config = $"{memory.Kp}|{memory.Ki}|{memory.Kd}|{memory.OutputMin}|{memory.OutputMax}|" +
+                    $"{memory.DerivativeFilterAlpha}|{memory.MaxOutputSlewRate}|{memory.DeadZone}|" +
+                    $"{memory.FeedForward}|{reverseOutput}";
+        
+        using var sha256 = SHA256.Create();
+        var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(config));
+        return Convert.ToBase64String(hashBytes);
+    }
+
+    /// <summary>
+    /// Loads persisted PID state from Redis if available
+    /// </summary>
+    private async Task<bool> LoadPIDState(PIDMemory memory, PIDDto pidDto, string configHash)
+    {
+        try
+        {
+            var savedState = await Points.GetPIDState(memory.Id);
+            
+            if (savedState == null)
+            {
+                MyLog.Debug("No saved state found for PID", new Dictionary<string, object?>
+                {
+                    ["PIDMemoryId"] = memory.Id,
+                    ["PIDMemoryName"] = memory.Name
+                });
+                return false;
+            }
+
+            // Check if configuration has changed
+            if (savedState.ConfigurationHash != configHash)
+            {
+                MyLog.Info("PID configuration changed, not restoring state", new Dictionary<string, object?>
+                {
+                    ["PIDMemoryId"] = memory.Id,
+                    ["PIDMemoryName"] = memory.Name,
+                    ["SavedHash"] = savedState.ConfigurationHash,
+                    ["CurrentHash"] = configHash
+                });
+                return false;
+            }
+
+            // Restore the PID controller state
+            pidDto.PidController.SetState(
+                savedState.IntegralTerm,
+                savedState.PreviousProcessVariable,
+                savedState.FilteredDerivative,
+                savedState.PreviousOutput
+            );
+            
+            pidDto.DigitalOutputState = savedState.DigitalOutputState;
+
+            MyLog.Info("Restored PID state from Redis", new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = memory.Id,
+                ["PIDMemoryName"] = memory.Name,
+                ["IntegralTerm"] = savedState.IntegralTerm,
+                ["PreviousOutput"] = savedState.PreviousOutput,
+                ["LastSaveTime"] = savedState.LastUpdateTime
+            });
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to load PID state from Redis", e, new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = memory.Id,
+                ["PIDMemoryName"] = memory.Name
+            });
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Saves PID state to Redis for persistence across restarts
+    /// </summary>
+    private async Task SavePIDState(PIDMemory memory, PIDDto pidDto, long epochTime)
+    {
+        try
+        {
+            var state = pidDto.PidController.GetState();
+            
+            var pidState = new PIDStateRedis
+            {
+                PIDMemoryId = memory.Id,
+                IntegralTerm = state.IntegralTerm,
+                PreviousProcessVariable = state.PreviousProcessVariable,
+                FilteredDerivative = state.FilteredDerivative,
+                PreviousOutput = state.PreviousOutput,
+                DigitalOutputState = pidDto.DigitalOutputState,
+                LastUpdateTime = epochTime,
+                ConfigurationHash = GenerateConfigurationHash(memory, pidDto.PidController.ReverseOutput)
+            };
+
+            await Points.SetPIDState(pidState);
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to save PID state to Redis", e, new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = memory.Id,
+                ["PIDMemoryName"] = memory.Name
             });
         }
     }

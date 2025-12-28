@@ -386,6 +386,10 @@ public class PIDMemories
             context.PIDMemories.Remove(pidMemory);
             await context.SaveChangesAsync();
             await context.DisposeAsync();
+            
+            // Clean up persisted state from Redis
+            await Points.DeletePIDState(id);
+            
             return (true, null);
         }
         catch (Exception e)

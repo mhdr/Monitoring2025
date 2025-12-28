@@ -1177,4 +1177,104 @@ public static class Points
             throw;
         }
     }
+
+    #region PID State Persistence
+
+    /// <summary>
+    /// Retrieves PID controller state from Redis by PID memory ID.
+    /// </summary>
+    /// <param name="pidMemoryId">The PID memory ID.</param>
+    /// <returns>The PIDStateRedis object, or null if not found.</returns>
+    public static async Task<PIDStateRedis?> GetPIDState(Guid pidMemoryId)
+    {
+        try
+        {
+            var db = RedisConnection.Instance.GetDatabase();
+            var value = await db.StringGetAsync($"PIDState:{pidMemoryId}");
+
+            if (value.HasValue)
+            {
+                var json = value.ToString();
+                var result = JsonConvert.DeserializeObject<PIDStateRedis>(json);
+                
+                MyLog.Debug("Retrieved PID state from Redis", new Dictionary<string, object?>
+                {
+                    ["PIDMemoryId"] = pidMemoryId,
+                    ["IntegralTerm"] = result?.IntegralTerm,
+                    ["LastUpdateTime"] = result?.LastUpdateTime
+                });
+                
+                return result;
+            }
+
+            MyLog.Debug("No PID state found in Redis", new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = pidMemoryId
+            });
+
+            return null;
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to retrieve PID state from Redis", e, new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = pidMemoryId
+            });
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Stores PID controller state in Redis.
+    /// </summary>
+    /// <param name="pidState">The PIDStateRedis object to store.</param>
+    public static async Task SetPIDState(PIDStateRedis pidState)
+    {
+        try
+        {
+            var db = RedisConnection.Instance.GetDatabase();
+            await db.StringSetAsync($"PIDState:{pidState.PIDMemoryId}", JsonConvert.SerializeObject(pidState));
+            
+            MyLog.Debug("Saved PID state to Redis", new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = pidState.PIDMemoryId,
+                ["IntegralTerm"] = pidState.IntegralTerm,
+                ["LastUpdateTime"] = pidState.LastUpdateTime
+            });
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to save PID state to Redis", e, new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = pidState.PIDMemoryId
+            });
+        }
+    }
+
+    /// <summary>
+    /// Deletes PID controller state from Redis.
+    /// </summary>
+    /// <param name="pidMemoryId">The PID memory ID.</param>
+    public static async Task DeletePIDState(Guid pidMemoryId)
+    {
+        try
+        {
+            var db = RedisConnection.Instance.GetDatabase();
+            await db.KeyDeleteAsync($"PIDState:{pidMemoryId}");
+            
+            MyLog.Debug("Deleted PID state from Redis", new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = pidMemoryId
+            });
+        }
+        catch (Exception e)
+        {
+            MyLog.Error("Failed to delete PID state from Redis", e, new Dictionary<string, object?>
+            {
+                ["PIDMemoryId"] = pidMemoryId
+            });
+        }
+    }
+
+    #endregion
 }

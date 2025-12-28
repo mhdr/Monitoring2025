@@ -370,4 +370,38 @@ public class PIDController
     }
 
     #endregion
+
+    #region State Persistence Methods
+
+    /// <summary>
+    /// Gets the current internal state of the PID controller for persistence
+    /// </summary>
+    /// <returns>Tuple containing (IntegralTerm, PreviousProcessVariable, FilteredDerivative, PreviousOutput)</returns>
+    public (double IntegralTerm, double PreviousProcessVariable, double FilteredDerivative, double PreviousOutput) GetState()
+    {
+        lock (_lock)
+        {
+            return (_integralTerm, _previousProcessVariable, _filteredDerivative, _previousOutput);
+        }
+    }
+
+    /// <summary>
+    /// Restores the internal state of the PID controller from persisted values
+    /// </summary>
+    /// <param name="integralTerm">Accumulated integral term</param>
+    /// <param name="previousProcessVariable">Previous process variable value</param>
+    /// <param name="filteredDerivative">Current filtered derivative value</param>
+    /// <param name="previousOutput">Previous controller output value</param>
+    public void SetState(double integralTerm, double previousProcessVariable, double filteredDerivative, double previousOutput)
+    {
+        lock (_lock)
+        {
+            _integralTerm = integralTerm;
+            _previousProcessVariable = previousProcessVariable;
+            _filteredDerivative = filteredDerivative;
+            _previousOutput = previousOutput;
+        }
+    }
+
+    #endregion
 }
