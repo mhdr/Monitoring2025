@@ -1724,6 +1724,7 @@
       "level2": "Level 2 - Inner in Cascade",
       "parentRequired": "Parent PID is required for cascade levels > 0",
       "parentOutput": "Parent Output",
+      "info": "In cascade control, parent PID's output becomes this PID's setpoint",
       "cascadeInfo": "In cascade control, parent PID's output becomes this PID's setpoint",
       "level": "Level",
       "standalone": "Standalone"
