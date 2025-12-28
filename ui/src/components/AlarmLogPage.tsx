@@ -423,8 +423,7 @@ const AlarmLogPage: React.FC = () => {
         flexDirection: 'column',
         p: isMobile ? 1 : 3,
         maxWidth: '100%',
-        height: '100%',
-        overflow: 'hidden',
+        minHeight: 0,
       }}
     >
       {/* Date Range Selection Card */}
@@ -550,7 +549,7 @@ const AlarmLogPage: React.FC = () => {
       </Card>
 
       {/* Data Grid Card */}
-      <Card data-id-ref="alarm-log-data-grid-card" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Card data-id-ref="alarm-log-data-grid-card" sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '600px' }}>
         <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: isMobile ? 2 : 3 }}>
           {/* Toolbar */}
           <Box
