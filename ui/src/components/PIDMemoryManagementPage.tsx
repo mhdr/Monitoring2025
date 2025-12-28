@@ -376,7 +376,7 @@ const PIDMemoryManagementPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }} data-id-ref="pid-memory-page-container">
+    <Container maxWidth={false} data-id-ref="pid-memory-page-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
       <Card sx={{ boxShadow: 3 }} data-id-ref="pid-memory-page-card">
         <CardHeader
           avatar={<PIDIcon sx={{ fontSize: 32, color: 'primary.main' }} />}
