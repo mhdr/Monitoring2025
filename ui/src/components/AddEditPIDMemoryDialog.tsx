@@ -66,6 +66,11 @@ interface FormData {
   useReverseOutputItem: boolean;
   reverseOutput: boolean;
   reverseOutputId: string;
+  // Hysteresis Control
+  useDigitalOutputItem: boolean;
+  digitalOutputItemId: string;
+  hysteresisHighThreshold: number;
+  hysteresisLowThreshold: number;
   // Advanced
   derivativeFilterAlpha: number;
   maxOutputSlewRate: number;
@@ -125,6 +130,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   const [basicExpanded, setBasicExpanded] = useState(true);
   const [tuningExpanded, setTuningExpanded] = useState(true);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
+  const [hysteresisExpanded, setHysteresisExpanded] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -150,6 +156,10 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
     useReverseOutputItem: false,
     reverseOutput: false,
     reverseOutputId: '',
+    useDigitalOutputItem: false,
+    digitalOutputItemId: '',
+    hysteresisHighThreshold: 75.0,
+    hysteresisLowThreshold: 25.0,
     derivativeFilterAlpha: 1.0,
     maxOutputSlewRate: 100.0,
     deadZone: 0.0,
@@ -187,6 +197,10 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           useReverseOutputItem: !!pidMemory.reverseOutputId,
           reverseOutput: pidMemory.reverseOutput,
           reverseOutputId: pidMemory.reverseOutputId ?? '',
+          useDigitalOutputItem: !!pidMemory.digitalOutputItemId,
+          digitalOutputItemId: pidMemory.digitalOutputItemId ?? '',
+          hysteresisHighThreshold: pidMemory.hysteresisHighThreshold,
+          hysteresisLowThreshold: pidMemory.hysteresisLowThreshold,
           derivativeFilterAlpha: pidMemory.derivativeFilterAlpha,
           maxOutputSlewRate: pidMemory.maxOutputSlewRate,
           deadZone: pidMemory.deadZone,
@@ -217,6 +231,10 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           useReverseOutputItem: false,
           reverseOutput: false,
           reverseOutputId: '',
+          useDigitalOutputItem: false,
+          digitalOutputItemId: '',
+          hysteresisHighThreshold: 75.0,
+          hysteresisLowThreshold: 25.0,
           derivativeFilterAlpha: 1.0,
           maxOutputSlewRate: 100.0,
           deadZone: 0.0,
@@ -233,6 +251,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   const analogOutputItems = useMemo(() => items.filter((item) => item.itemType === ItemTypeEnum.AnalogOutput), [items]);
   const analogItems = useMemo(() => items.filter((item) => item.itemType === ItemTypeEnum.AnalogInput || item.itemType === ItemTypeEnum.AnalogOutput), [items]);
   const digitalItems = useMemo(() => items.filter((item) => item.itemType === ItemTypeEnum.DigitalInput || item.itemType === ItemTypeEnum.DigitalOutput), [items]);
+  const digitalOutputItems = useMemo(() => items.filter((item) => item.itemType === ItemTypeEnum.DigitalOutput), [items]);
 
   // Get selected items
   const selectedInputItem = useMemo(() => items.find((item) => item.id === formData.inputItemId) || null, [items, formData.inputItemId]);
@@ -241,6 +260,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   const selectedIsAutoItem = useMemo(() => items.find((item) => item.id === formData.isAutoId) || null, [items, formData.isAutoId]);
   const selectedManualValueItem = useMemo(() => items.find((item) => item.id === formData.manualValueId) || null, [items, formData.manualValueId]);
   const selectedReverseOutputItem = useMemo(() => items.find((item) => item.id === formData.reverseOutputId) || null, [items, formData.reverseOutputId]);
+  const selectedDigitalOutputItem = useMemo(() => items.find((item) => item.id === formData.digitalOutputItemId) || null, [items, formData.digitalOutputItemId]);
 
   /**
    * Get item label for display
@@ -275,6 +295,17 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
     if (formData.derivativeFilterAlpha < 0 || formData.derivativeFilterAlpha > 1) errors.derivativeFilterAlpha = t('pidMemory.validation.derivativeFilterRange');
     if (formData.maxOutputSlewRate < 0) errors.maxOutputSlewRate = t('pidMemory.validation.maxOutputSlewRateMin');
     if (formData.deadZone < 0) errors.deadZone = t('pidMemory.validation.deadZoneMin');
+    
+    // Hysteresis validation
+    if (formData.hysteresisLowThreshold >= formData.hysteresisHighThreshold) {
+      errors.hysteresisLowThreshold = t('pidMemory.validation.hysteresisLowLessThanHigh');
+    }
+    if (formData.hysteresisLowThreshold < formData.outputMin) {
+      errors.hysteresisLowThreshold = t('pidMemory.validation.hysteresisLowOutOfRange');
+    }
+    if (formData.hysteresisHighThreshold > formData.outputMax) {
+      errors.hysteresisHighThreshold = t('pidMemory.validation.hysteresisHighOutOfRange');
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -315,6 +346,9 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           manualValueId: formData.useManualValueItem ? (formData.manualValueId || null) : null,
           reverseOutput: formData.reverseOutput,
           reverseOutputId: formData.useReverseOutputItem ? (formData.reverseOutputId || null) : null,
+          digitalOutputItemId: formData.useDigitalOutputItem ? (formData.digitalOutputItemId || null) : null,
+          hysteresisHighThreshold: formData.hysteresisHighThreshold,
+          hysteresisLowThreshold: formData.hysteresisLowThreshold,
         };
 
         const response = await editPIDMemory(requestData);
@@ -350,6 +384,9 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           manualValueId: formData.useManualValueItem ? (formData.manualValueId || null) : null,
           reverseOutput: formData.reverseOutput,
           reverseOutputId: formData.useReverseOutputItem ? (formData.reverseOutputId || null) : null,
+          digitalOutputItemId: formData.useDigitalOutputItem ? (formData.digitalOutputItemId || null) : null,
+          hysteresisHighThreshold: formData.hysteresisHighThreshold,
+          hysteresisLowThreshold: formData.hysteresisLowThreshold,
         };
 
         const response = await addPIDMemory(requestData);
@@ -936,6 +973,128 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     />
                   )}
                 </Box>
+              </Box>
+            </CardContent>
+          </Collapse>
+        </Card>
+
+        {/* Hysteresis Control Section */}
+        <Card data-id-ref="pid-memory-hysteresis-section">
+          <CardHeader
+            title={t('pidMemory.sections.hysteresis')}
+            action={
+              <IconButton
+                onClick={() => setHysteresisExpanded(!hysteresisExpanded)}
+                sx={{
+                  transform: hysteresisExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.3s',
+                }}
+                data-id-ref="pid-memory-hysteresis-expand-btn"
+              >
+                <ExpandMoreIcon />
+              </IconButton>
+            }
+          />
+          <Collapse in={hysteresisExpanded} timeout="auto" unmountOnExit>
+            <CardContent>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {t('pidMemory.hysteresisInfo')}
+              </Alert>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.useDigitalOutputItem}
+                      onChange={(e) => handleFieldChange('useDigitalOutputItem', e.target.checked)}
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-use-digital-output-switch"
+                    />
+                  }
+                  label={t('pidMemory.useDigitalOutput')}
+                  data-id-ref="pid-memory-use-digital-output-field"
+                />
+
+                {formData.useDigitalOutputItem && (
+                  <>
+                    <Autocomplete
+                      options={digitalOutputItems}
+                      getOptionLabel={getItemLabel}
+                      value={selectedDigitalOutputItem}
+                      onChange={(_, newValue) => handleFieldChange('digitalOutputItemId', newValue?.id || '')}
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-digital-output-item-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('pidMemory.digitalOutputItem')}
+                          helperText={t('pidMemory.digitalOutputItemHelp')}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {getItemLabel(option)}
+                            </Typography>
+                            <Chip
+                              label={getItemTypeLabel(option.itemType, t)}
+                              size="small"
+                              color={getItemTypeColor(option.itemType)}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                    />
+
+                    <TextField
+                      fullWidth
+                      label={t('pidMemory.hysteresisHighThreshold')}
+                      type="number"
+                      value={formData.hysteresisHighThreshold}
+                      onChange={(e) => handleFieldChange('hysteresisHighThreshold', parseFloat(e.target.value) || 0)}
+                      disabled={isSaving}
+                      error={!!formErrors.hysteresisHighThreshold}
+                      helperText={
+                        formErrors.hysteresisHighThreshold || 
+                        t('pidMemory.hysteresisHighThresholdHelp', { 
+                          min: formData.outputMin, 
+                          max: formData.outputMax 
+                        })
+                      }
+                      inputProps={{ 
+                        min: formData.outputMin, 
+                        max: formData.outputMax,
+                        step: 1 
+                      }}
+                      data-id-ref="pid-memory-hysteresis-high-threshold-input"
+                    />
+
+                    <TextField
+                      fullWidth
+                      label={t('pidMemory.hysteresisLowThreshold')}
+                      type="number"
+                      value={formData.hysteresisLowThreshold}
+                      onChange={(e) => handleFieldChange('hysteresisLowThreshold', parseFloat(e.target.value) || 0)}
+                      disabled={isSaving}
+                      error={!!formErrors.hysteresisLowThreshold}
+                      helperText={
+                        formErrors.hysteresisLowThreshold || 
+                        t('pidMemory.hysteresisLowThresholdHelp', { 
+                          min: formData.outputMin, 
+                          max: formData.outputMax 
+                        })
+                      }
+                      inputProps={{ 
+                        min: formData.outputMin, 
+                        max: formData.outputMax,
+                        step: 1 
+                      }}
+                      data-id-ref="pid-memory-hysteresis-low-threshold-input"
+                    />
+                  </>
+                )}
               </Box>
             </CardContent>
           </Collapse>

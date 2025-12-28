@@ -1632,10 +1632,19 @@
     "dynamic": "Dynamic",
     "modeSettings": "Mode Settings",
     "reverseOutputSettings": "Output Direction Settings",
+    "useDigitalOutput": "Enable Hysteresis Control",
+    "digitalOutputItem": "Digital Output Item",
+    "digitalOutputItemHelp": "Digital output for ON/OFF control based on thresholds",
+    "hysteresisHighThreshold": "High Threshold (Turn ON)",
+    "hysteresisHighThresholdHelp": "Turn ON when PID output reaches this value ({{min}}-{{max}})",
+    "hysteresisLowThreshold": "Low Threshold (Turn OFF)",
+    "hysteresisLowThresholdHelp": "Turn OFF when PID output drops to this value ({{min}}-{{max}})",
+    "hysteresisInfo": "Hysteresis control enables digital ON/OFF output based on the PID control value, with separate high and low thresholds to prevent rapid switching (oscillation).",
     "sections": {
       "basic": "Basic Configuration",
       "tuning": "PID Tuning",
-      "advanced": "Advanced Settings"
+      "advanced": "Advanced Settings",
+      "hysteresis": "Hysteresis Control"
     },
     "validation": {
       "inputItemRequired": "Input item is required",
@@ -1645,7 +1654,10 @@
       "outputMaxGreater": "Output Max must be greater than Output Min",
       "derivativeFilterRange": "Derivative filter must be between 0 and 1",
       "maxOutputSlewRateMin": "Max output slew rate must be non-negative",
-      "deadZoneMin": "Dead zone must be non-negative"
+      "deadZoneMin": "Dead zone must be non-negative",
+      "hysteresisLowLessThanHigh": "Low threshold must be less than high threshold",
+      "hysteresisLowOutOfRange": "Low threshold must be >= Output Min",
+      "hysteresisHighOutOfRange": "High threshold must be <= Output Max"
     },
     "errors": {
       "fetchFailed": "Failed to load PID memories",

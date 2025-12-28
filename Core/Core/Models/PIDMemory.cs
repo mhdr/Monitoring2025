@@ -74,4 +74,16 @@ public class PIDMemory
     
     [Column("reverse_output_id")]
     public Guid? ReverseOutputId { get; set; }
+    
+    // Hysteresis Control for Digital Output
+    [Column("digital_output_item_id")]
+    public Guid? DigitalOutputItemId { get; set; }
+    
+    [DefaultValue(75.0)]
+    [Column("hysteresis_high_threshold")]
+    public double HysteresisHighThreshold { get; set; }
+    
+    [DefaultValue(25.0)]
+    [Column("hysteresis_low_threshold")]
+    public double HysteresisLowThreshold { get; set; }
 }

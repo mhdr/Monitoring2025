@@ -146,6 +146,43 @@ public class PIDMemories
                 }
             }
 
+            // Validate DigitalOutputItemId if provided
+            if (pidMemory.DigitalOutputItemId.HasValue && pidMemory.DigitalOutputItemId.Value != Guid.Empty)
+            {
+                var digitalOutputItem = await context.MonitoringItems.FindAsync(pidMemory.DigitalOutputItemId.Value);
+                if (digitalOutputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "DigitalOutput item not found");
+                }
+                
+                if (digitalOutputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "DigitalOutput item must be DigitalOutput type");
+                }
+            }
+
+            // Validate hysteresis thresholds
+            if (pidMemory.HysteresisLowThreshold >= pidMemory.HysteresisHighThreshold)
+            {
+                await context.DisposeAsync();
+                return (false, null, "HysteresisLowThreshold must be less than HysteresisHighThreshold");
+            }
+
+            // Validate thresholds are within output range
+            if (pidMemory.HysteresisLowThreshold < pidMemory.OutputMin)
+            {
+                await context.DisposeAsync();
+                return (false, null, $"HysteresisLowThreshold ({pidMemory.HysteresisLowThreshold}) must be >= OutputMin ({pidMemory.OutputMin})");
+            }
+
+            if (pidMemory.HysteresisHighThreshold > pidMemory.OutputMax)
+            {
+                await context.DisposeAsync();
+                return (false, null, $"HysteresisHighThreshold ({pidMemory.HysteresisHighThreshold}) must be <= OutputMax ({pidMemory.OutputMax})");
+            }
+
             context.PIDMemories.Add(pidMemory);
             await context.SaveChangesAsync();
             var id = pidMemory.Id;
@@ -279,6 +316,43 @@ public class PIDMemories
                     await context.DisposeAsync();
                     return (false, "ReverseOutput item must be DigitalInput or DigitalOutput");
                 }
+            }
+
+            // Validate DigitalOutputItemId if provided
+            if (pidMemory.DigitalOutputItemId.HasValue && pidMemory.DigitalOutputItemId.Value != Guid.Empty)
+            {
+                var digitalOutputItem = await context.MonitoringItems.FindAsync(pidMemory.DigitalOutputItemId.Value);
+                if (digitalOutputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "DigitalOutput item not found");
+                }
+                
+                if (digitalOutputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "DigitalOutput item must be DigitalOutput type");
+                }
+            }
+
+            // Validate hysteresis thresholds
+            if (pidMemory.HysteresisLowThreshold >= pidMemory.HysteresisHighThreshold)
+            {
+                await context.DisposeAsync();
+                return (false, "HysteresisLowThreshold must be less than HysteresisHighThreshold");
+            }
+
+            // Validate thresholds are within output range
+            if (pidMemory.HysteresisLowThreshold < pidMemory.OutputMin)
+            {
+                await context.DisposeAsync();
+                return (false, $"HysteresisLowThreshold ({pidMemory.HysteresisLowThreshold}) must be >= OutputMin ({pidMemory.OutputMin})");
+            }
+
+            if (pidMemory.HysteresisHighThreshold > pidMemory.OutputMax)
+            {
+                await context.DisposeAsync();
+                return (false, $"HysteresisHighThreshold ({pidMemory.HysteresisHighThreshold}) must be <= OutputMax ({pidMemory.OutputMax})");
             }
 
             context.PIDMemories.Update(pidMemory);

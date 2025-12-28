@@ -2788,6 +2788,9 @@ export interface PIDMemory {
   manualValueId?: string | null; // UUID - Dynamic manual value item (AnalogInput/AnalogOutput)
   reverseOutput: boolean; // bool - Static reverse output flag
   reverseOutputId?: string | null; // UUID - Dynamic reverse output item (DigitalInput/DigitalOutput)
+  digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control (DigitalOutput)
+  hysteresisHighThreshold: number; // double - High threshold for hysteresis (turn ON)
+  hysteresisLowThreshold: number; // double - Low threshold for hysteresis (turn OFF)
 }
 
 /**
@@ -2812,6 +2815,9 @@ export interface PIDMemoryWithItems extends PIDMemory {
   reverseOutputItemName?: string;
   reverseOutputItemNameFa?: string;
   reverseOutputItemType?: ItemType;
+  digitalOutputItemName?: string;
+  digitalOutputItemNameFa?: string;
+  digitalOutputItemType?: ItemType;
 }
 
 /**
@@ -2855,6 +2861,9 @@ export interface AddPIDMemoryRequestDto {
   manualValueId?: string | null; // UUID
   reverseOutput: boolean; // bool
   reverseOutputId?: string | null; // UUID
+  digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control
+  hysteresisHighThreshold: number; // double - High threshold (default 75.0)
+  hysteresisLowThreshold: number; // double - Low threshold (default 25.0)
 }
 
 /**
@@ -2893,6 +2902,9 @@ export interface EditPIDMemoryRequestDto {
   manualValueId?: string | null; // UUID
   reverseOutput: boolean; // bool
   reverseOutputId?: string | null; // UUID
+  digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control
+  hysteresisHighThreshold: number; // double - High threshold
+  hysteresisLowThreshold: number; // double - Low threshold
 }
 
 /**

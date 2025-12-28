@@ -385,6 +385,47 @@ public class PIDMemoryProcess
                 result = manualValue!.Value;
             }
 
+            // Hysteresis logic for digital output
+            if (memory.DigitalOutputItemId.HasValue && memory.DigitalOutputItemId.Value != Guid.Empty)
+            {
+                bool newDigitalState = matched.DigitalOutputState; // Current state
+                
+                // State transitions with hysteresis
+                if (!matched.DigitalOutputState) // Currently OFF (0)
+                {
+                    // Turn ON when output rises above HIGH threshold
+                    if (result >= memory.HysteresisHighThreshold)
+                    {
+                        newDigitalState = true;
+                    }
+                }
+                else // Currently ON (1)
+                {
+                    // Turn OFF when output falls below LOW threshold
+                    if (result <= memory.HysteresisLowThreshold)
+                    {
+                        newDigitalState = false;
+                    }
+                }
+                
+                // Update state and write digital output only if state changed
+                if (newDigitalState != matched.DigitalOutputState)
+                {
+                    matched.DigitalOutputState = newDigitalState;
+                    
+                    // Apply ReverseOutput by inverting the digital bit
+                    bool finalDigitalState = reverseOutput!.Value ? !newDigitalState : newDigitalState;
+                    
+                    // Write digital output value
+                    await Points.WriteOrAddValue(
+                        memory.DigitalOutputItemId.Value,
+                        finalDigitalState ? "1" : "0",
+                        epochTime
+                    );
+                }
+            }
+
+            // Write analog output as normal
             await Points.WriteOrAddValue(output.ItemId,
                 result.ToString("F2", CultureInfo.InvariantCulture), epochTime);
         }
@@ -406,5 +447,8 @@ public class PIDMemoryProcess
         public PIDController PidController { get; set; } = null!;
 
         public long Timestamp { get; set; }
+        
+        // Digital output state for hysteresis control
+        public bool DigitalOutputState { get; set; }
     }
 }

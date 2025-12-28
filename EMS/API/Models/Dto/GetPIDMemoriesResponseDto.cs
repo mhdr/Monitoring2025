@@ -131,5 +131,21 @@ public class GetPIDMemoriesResponseDto
         /// ID of monitoring item for dynamic reverse output (DigitalInput or DigitalOutput)
         /// </summary>
         public Guid? ReverseOutputId { get; set; }
+
+        /// <summary>
+        /// ID of digital output item for hysteresis control (optional)
+        /// Must be DigitalOutput type. When configured, enables on/off control based on thresholds.
+        /// </summary>
+        public Guid? DigitalOutputItemId { get; set; }
+
+        /// <summary>
+        /// High threshold for hysteresis control (turn ON when output >= this value)
+        /// </summary>
+        public double HysteresisHighThreshold { get; set; }
+
+        /// <summary>
+        /// Low threshold for hysteresis control (turn OFF when output &lt;= this value)
+        /// </summary>
+        public double HysteresisLowThreshold { get; set; }
     }
 }

@@ -1632,10 +1632,19 @@
     "dynamic": "پویا",
     "modeSettings": "تنظیمات حالت",
     "reverseOutputSettings": "تنظیمات جهت خروجی",
+    "useDigitalOutput": "فعال‌سازی کنترل هیسترزیس",
+    "digitalOutputItem": "آیتم خروجی دیجیتال",
+    "digitalOutputItemHelp": "خروجی دیجیتال برای کنترل روشن/خاموش بر اساس آستانه‌ها",
+    "hysteresisHighThreshold": "آستانه بالا (روشن کردن)",
+    "hysteresisHighThresholdHelp": "روشن شدن هنگامی که خروجی PID به این مقدار برسد ({{min}}-{{max}})",
+    "hysteresisLowThreshold": "آستانه پایین (خاموش کردن)",
+    "hysteresisLowThresholdHelp": "خاموش شدن هنگامی که خروجی PID به این مقدار برسد ({{min}}-{{max}})",
+    "hysteresisInfo": "کنترل هیسترزیس، خروجی دیجیتال روشن/خاموش را بر اساس مقدار کنترل PID با آستانه‌های بالا و پایین جداگانه فعال می‌کند تا از سوئیچینگ سریع (نوسان) جلوگیری شود.",
     "sections": {
       "basic": "پیکربندی اولیه",
       "tuning": "تنظیم PID",
-      "advanced": "تنظیمات پیشرفته"
+      "advanced": "تنظیمات پیشرفته",
+      "hysteresis": "کنترل هیسترزیس"
     },
     "validation": {
       "inputItemRequired": "آیتم ورودی الزامی است",
@@ -1645,7 +1654,10 @@
       "outputMaxGreater": "حداکثر خروجی باید بیشتر از حداقل خروجی باشد",
       "derivativeFilterRange": "فیلتر مشتق باید بین ۰ و ۱ باشد",
       "maxOutputSlewRateMin": "حداکثر نرخ تغییر خروجی باید غیرمنفی باشد",
-      "deadZoneMin": "ناحیه مرده باید غیرمنفی باشد"
+      "deadZoneMin": "ناحیه مرده باید غیرمنفی باشد",
+      "hysteresisLowLessThanHigh": "آستانه پایین باید کمتر از آستانه بالا باشد",
+      "hysteresisLowOutOfRange": "آستانه پایین باید >= حداقل خروجی باشد",
+      "hysteresisHighOutOfRange": "آستانه بالا باید <= حداکثر خروجی باشد"
     },
     "errors": {
       "fetchFailed": "بارگذاری حافظه‌های PID ناموفق بود",

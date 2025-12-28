@@ -7341,7 +7341,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         ManualValue = pm.ManualValue,
                         ManualValueId = pm.ManualValueId,
                         ReverseOutput = pm.ReverseOutput,
-                        ReverseOutputId = pm.ReverseOutputId
+                        ReverseOutputId = pm.ReverseOutputId,
+                        DigitalOutputItemId = pm.DigitalOutputItemId,
+                        HysteresisHighThreshold = pm.HysteresisHighThreshold,
+                        HysteresisLowThreshold = pm.HysteresisLowThreshold
                     });
                 }
             }
@@ -7422,7 +7425,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 ManualValue = request.ManualValue,
                 ManualValueId = request.ManualValueId,
                 ReverseOutput = request.ReverseOutput,
-                ReverseOutputId = request.ReverseOutputId
+                ReverseOutputId = request.ReverseOutputId,
+                DigitalOutputItemId = request.DigitalOutputItemId,
+                HysteresisHighThreshold = request.HysteresisHighThreshold,
+                HysteresisLowThreshold = request.HysteresisLowThreshold
             };
 
             var (success, id, errorMessage) = await Core.PIDMemories.AddPIDMemory(pidMemory);
@@ -7511,7 +7517,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 ManualValue = request.ManualValue,
                 ManualValueId = request.ManualValueId,
                 ReverseOutput = request.ReverseOutput,
-                ReverseOutputId = request.ReverseOutputId
+                ReverseOutputId = request.ReverseOutputId,
+                DigitalOutputItemId = request.DigitalOutputItemId,
+                HysteresisHighThreshold = request.HysteresisHighThreshold,
+                HysteresisLowThreshold = request.HysteresisLowThreshold
             };
 
             var (success, errorMessage) = await Core.PIDMemories.EditPIDMemory(pidMemory);
