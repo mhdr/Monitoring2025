@@ -22,7 +22,7 @@ public class EditTimeoutMemoryRequestDto
 
     /// <summary>
     /// ID of the monitoring item to write timeout status (output)
-    /// Should be DigitalInput or DigitalOutput
+    /// Must be DigitalOutput
     /// </summary>
     [Required(ErrorMessage = "Output item ID is required")]
     public Guid OutputItemId { get; set; }

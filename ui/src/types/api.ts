@@ -2689,7 +2689,7 @@ export interface GatewayStatusUpdate {
 export interface TimeoutMemory {
   id: string; // UUID
   inputItemId: string; // UUID - Item to watch for timeout (can be any ItemType)
-  outputItemId: string; // UUID - Item to write timeout status (should be DigitalInput or DigitalOutput)
+  outputItemId: string; // UUID - Item to write timeout status (must be DigitalOutput)
   timeout: number; // int64 - Timeout duration in seconds
 }
 

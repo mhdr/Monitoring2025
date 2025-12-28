@@ -1551,7 +1551,7 @@
     "inputItem": "Input Item",
     "inputItemHelp": "Item to monitor for timeout (any type)",
     "outputItem": "Output Item",
-    "outputItemHelp": "Item to write timeout status (Digital Input/Output only)",
+    "outputItemHelp": "Item to write timeout status (Digital Output only)",
     "timeout": "Timeout (seconds)",
     "timeoutHelp": "Number of seconds before timeout occurs",
     "validation": {

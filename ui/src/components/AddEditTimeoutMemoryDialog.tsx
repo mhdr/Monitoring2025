@@ -121,9 +121,9 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
     }
   }, [open, editMode, timeoutMemory]);
 
-  // Filter output items to only DigitalInput (1) and DigitalOutput (2)
+  // Filter output items to only DigitalOutput (2)
   const outputItems = useMemo(() => {
-    return items.filter((item) => item.itemType === 1 || item.itemType === 2);
+    return items.filter((item) => item.itemType === 2);
   }, [items]);
 
   // Get selected input and output items

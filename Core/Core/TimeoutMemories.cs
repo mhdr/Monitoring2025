@@ -57,11 +57,11 @@ public class TimeoutMemories
                 return (false, null, "Output item not found");
             }
 
-            // Validate OutputItem is DigitalInput or DigitalOutput
-            if (outputItem.ItemType != ItemType.DigitalInput && outputItem.ItemType != ItemType.DigitalOutput)
+            // Validate OutputItem is DigitalOutput
+            if (outputItem.ItemType != ItemType.DigitalOutput)
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item must be DigitalInput or DigitalOutput");
+                return (false, null, "Output item must be DigitalOutput");
             }
 
             // Validate InputItemId != OutputItemId
@@ -117,11 +117,11 @@ public class TimeoutMemories
                 return (false, "Output item not found");
             }
 
-            // Validate OutputItem is DigitalInput or DigitalOutput
-            if (outputItem.ItemType != ItemType.DigitalInput && outputItem.ItemType != ItemType.DigitalOutput)
+            // Validate OutputItem is DigitalOutput
+            if (outputItem.ItemType != ItemType.DigitalOutput)
             {
                 await context.DisposeAsync();
-                return (false, "Output item must be DigitalInput or DigitalOutput");
+                return (false, "Output item must be DigitalOutput");
             }
 
             // Validate InputItemId != OutputItemId
