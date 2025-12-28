@@ -1803,6 +1803,161 @@
       "percentage": "%"
     },
     "help": {
+      "basicConfiguration": {
+        "title": "Basic PID Configuration",
+        "sections": [
+          {
+            "title": "What is PID Control?",
+            "content": "PID (Proportional-Integral-Derivative) is a control algorithm that continuously calculates an error value as the difference between a desired setpoint and a measured process variable. It applies corrections based on proportional, integral, and derivative terms."
+          },
+          {
+            "title": "Key Components",
+            "content": [
+              "Input Item (PV): Process Variable - what you're measuring",
+              "Output Item (CV): Control Variable - what you're controlling",
+              "SetPoint (SP): Target value you want to maintain",
+              "PID Gains: How aggressively the controller responds"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Temperature Control Example",
+            "content": "Input Item: Temperature sensor (25°C current)\nOutput Item: Heating valve (0-100%)\nSetPoint: 30°C target\nKp=5, Ki=0.1, Kd=1\n\nController Logic:\n• Reads temperature (PV = 25°C)\n• Calculates error (30 - 25 = 5°C)\n• Applies PID formula → Output = 65%\n• Opens valve to 65% to add heat"
+          },
+          {
+            "type": "tip",
+            "title": "Getting Started",
+            "content": "1. Select your sensor (Input Item)\n2. Select your actuator (Output Item)\n3. Set your target value (SetPoint)\n4. Use Auto-Tuning to find optimal PID gains\n5. Fine-tune based on performance"
+          }
+        ]
+      },
+      "inputItem": {
+        "title": "Input Item (Process Variable - PV)",
+        "sections": [
+          {
+            "title": "What is the Input Item?",
+            "content": "The Input Item is the measurement sensor that provides the current value of what you're trying to control. This is also called the Process Variable (PV) in PID terminology."
+          },
+          {
+            "title": "Requirements",
+            "content": [
+              "Must be an Analog Input monitoring item",
+              "Should provide stable, accurate measurements",
+              "Update rate should match PID interval",
+              "Range should be appropriate for the process"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Common Input Items",
+            "content": "Temperature Control:\n• RTD temperature sensor\n• Thermocouple\n• Temperature transmitter (4-20mA)\n\nPressure Control:\n• Pressure transmitter\n• Differential pressure sensor\n\nFlow Control:\n• Flow meter\n• Magnetic flow transmitter\n\nLevel Control:\n• Level transmitter\n• Ultrasonic level sensor"
+          },
+          {
+            "type": "warning",
+            "title": "Important Notes",
+            "content": "Ensure sensor is:\n• Properly calibrated\n• Installed in representative location\n• Free from noise and interference\n• Appropriate range for the process\n\nPoor sensor selection leads to unstable control!"
+          }
+        ]
+      },
+      "outputItem": {
+        "title": "Output Item (Control Variable - CV)",
+        "sections": [
+          {
+            "title": "What is the Output Item?",
+            "content": "The Output Item is the actuator or control device that the PID controller manipulates to affect the process. This is also called the Control Variable (CV) or Manipulated Variable (MV)."
+          },
+          {
+            "title": "Requirements",
+            "content": [
+              "Must be an Analog Output monitoring item",
+              "Should have sufficient authority over the process",
+              "Response time should match process dynamics",
+              "Range should be properly sized (outputMin/outputMax)"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Common Output Items",
+            "content": "Temperature Control:\n• Control valve (heating/cooling)\n• VFD for fan speed\n• SCR power controller\n\nPressure Control:\n• Control valve position\n• VFD for compressor/pump\n• Damper position\n\nFlow Control:\n• Flow control valve\n• VFD for pump speed\n\nLevel Control:\n• Inlet/outlet valve\n• Pump speed control"
+          },
+          {
+            "type": "warning",
+            "title": "Sizing Considerations",
+            "content": "Output device must be:\n• Large enough to handle maximum demand\n• Small enough to provide fine control\n• Not oversized (causes hunting)\n• Properly tuned with outputMin/outputMax limits\n\nOversized actuators lead to unstable control!"
+          },
+          {
+            "type": "tip",
+            "title": "Control Authority",
+            "content": "The output item should have enough 'control authority' to affect the process. If the PID output can swing from 0-100% but the process barely moves, the actuator is undersized or the process has other dominant influences."
+          }
+        ]
+      },
+      "name": {
+        "title": "PID Controller Name",
+        "sections": [
+          {
+            "title": "Naming Your PID Controller",
+            "content": "A descriptive name helps you identify and manage multiple PID controllers. While optional, good naming conventions improve maintainability and troubleshooting."
+          },
+          {
+            "title": "Recommended Naming Patterns",
+            "content": [
+              "Process-Location: 'Tank-1 Temperature'",
+              "Function-Zone: 'HVA-Zone-A Pressure'",
+              "Equipment-Purpose: 'Boiler-1 Steam Control'",
+              "Loop-ID: 'TIC-101' (Temperature Indicating Controller)"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Naming Examples",
+            "content": "Good Names:\n• 'Reactor Temperature Control'\n• 'Supply Air Pressure - AHU-1'\n• 'Cooling Water Flow - Tower A'\n• 'TIC-201: Feed Tank Temperature'\n\nPoor Names:\n• 'PID1'\n• 'Controller'\n• 'Temp'\n• 'Test'"
+          },
+          {
+            "type": "tip",
+            "title": "Best Practices",
+            "content": "Use consistent naming across your facility:\n• Include process/location identifiers\n• Match names to P&ID drawings\n• Use standard abbreviations\n• Keep names concise but descriptive"
+          }
+        ]
+      },
+      "isDisabled": {
+        "title": "Disable PID Controller",
+        "sections": [
+          {
+            "title": "What Does Disable Mean?",
+            "content": "Disabling a PID controller temporarily stops all control calculations and output updates while preserving the configuration. The controller is paused but not deleted."
+          },
+          {
+            "title": "When to Disable",
+            "content": [
+              "Maintenance: Equipment is offline for service",
+              "Seasonal Shutdown: Process not running (winter/summer)",
+              "Testing: Commissioning other systems",
+              "Manual Operation: Temporary operator control required",
+              "Troubleshooting: Isolating control loops"
+            ]
+          },
+          {
+            "title": "What Happens When Disabled",
+            "content": [
+              "PID calculations stop immediately",
+              "Output item is NOT updated (holds last value or operator sets manually)",
+              "Configuration is preserved",
+              "Can be re-enabled anytime without reconfiguration"
+            ]
+          },
+          {
+            "type": "warning",
+            "title": "Important Safety Note",
+            "content": "Disabling a PID controller does NOT force the output to a safe state. The output item will hold its last value or must be controlled manually.\n\nFor safety-critical processes, ensure operators understand the implications of disabling control loops!"
+          },
+          {
+            "type": "tip",
+            "title": "Alternative: Manual Mode",
+            "content": "If you need to temporarily override control but want to keep the controller active, use Manual Mode instead. This allows you to set a fixed output value while keeping the controller configuration ready for auto mode."
+          }
+        ]
+      },
       "reverseOutput": {
         "title": "Output Direction (Direct vs Reverse)",
         "sections": [

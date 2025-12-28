@@ -501,7 +501,19 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
         {/* Basic Configuration Section */}
         <Card sx={{ mb: 2 }} data-id-ref="pid-memory-basic-section">
           <CardHeader
-            title={t('pidMemory.sections.basic')}
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="h6">{t('pidMemory.sections.basic')}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('pidMemory.help.basicConfiguration')}
+                  sx={{ p: 0.25 }}
+                  data-id-ref="pid-memory-basic-config-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            }
             action={
               <IconButton
                 onClick={() => setBasicExpanded(!basicExpanded)}
@@ -518,83 +530,118 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           <Collapse in={basicExpanded} timeout="auto" unmountOnExit>
             <CardContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  fullWidth
-                  label={t('pidMemory.name')}
-                  value={formData.name}
-                  onChange={(e) => handleFieldChange('name', e.target.value)}
-                  disabled={isSaving}
-                  helperText={t('pidMemory.nameHelp')}
-                  data-id-ref="pid-memory-name-input"
-                />
+                {/* Name with Help */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <TextField
+                    fullWidth
+                    label={t('pidMemory.name')}
+                    value={formData.name}
+                    onChange={(e) => handleFieldChange('name', e.target.value)}
+                    disabled={isSaving}
+                    helperText={t('pidMemory.nameHelp')}
+                    data-id-ref="pid-memory-name-input"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.name')}
+                    sx={{ p: 0.25, mt: -3 }}
+                    data-id-ref="pid-memory-name-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
-                <Autocomplete
-                  options={analogInputItems}
-                  getOptionLabel={getItemLabel}
-                  value={selectedInputItem}
-                  onChange={(_, newValue) => handleFieldChange('inputItemId', newValue?.id || '')}
-                  disabled={isSaving}
-                  data-id-ref="pid-memory-input-item-select"
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('pidMemory.inputItem')}
-                      required
-                      error={!!formErrors.inputItemId}
-                      helperText={formErrors.inputItemId || t('pidMemory.inputItemHelp')}
-                    />
-                  )}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType, t)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
+                {/* Input Item with Help */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Autocomplete
+                    fullWidth
+                    options={analogInputItems}
+                    getOptionLabel={getItemLabel}
+                    value={selectedInputItem}
+                    onChange={(_, newValue) => handleFieldChange('inputItemId', newValue?.id || '')}
+                    disabled={isSaving}
+                    data-id-ref="pid-memory-input-item-select"
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('pidMemory.inputItem')}
+                        required
+                        error={!!formErrors.inputItemId}
+                        helperText={formErrors.inputItemId || t('pidMemory.inputItemHelp')}
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                            {getItemLabel(option)}
+                          </Typography>
+                          <Chip
+                            label={getItemTypeLabel(option.itemType, t)}
+                            size="small"
+                            color={getItemTypeColor(option.itemType)}
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </Box>
                       </Box>
-                    </Box>
-                  )}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                />
+                    )}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.inputItem')}
+                    sx={{ p: 0.25, mt: -3 }}
+                    data-id-ref="pid-memory-input-item-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
-                <Autocomplete
-                  options={analogOutputItems}
-                  getOptionLabel={getItemLabel}
-                  value={selectedOutputItem}
-                  onChange={(_, newValue) => handleFieldChange('outputItemId', newValue?.id || '')}
-                  disabled={isSaving}
-                  data-id-ref="pid-memory-output-item-select"
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('pidMemory.outputItem')}
-                      required
-                      error={!!formErrors.outputItemId}
-                      helperText={formErrors.outputItemId || t('pidMemory.outputItemHelp')}
-                    />
-                  )}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType, t)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
+                {/* Output Item with Help */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Autocomplete
+                    fullWidth
+                    options={analogOutputItems}
+                    getOptionLabel={getItemLabel}
+                    value={selectedOutputItem}
+                    onChange={(_, newValue) => handleFieldChange('outputItemId', newValue?.id || '')}
+                    disabled={isSaving}
+                    data-id-ref="pid-memory-output-item-select"
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('pidMemory.outputItem')}
+                        required
+                        error={!!formErrors.outputItemId}
+                        helperText={formErrors.outputItemId || t('pidMemory.outputItemHelp')}
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                            {getItemLabel(option)}
+                          </Typography>
+                          <Chip
+                            label={getItemTypeLabel(option.itemType, t)}
+                            size="small"
+                            color={getItemTypeColor(option.itemType)}
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </Box>
                       </Box>
-                    </Box>
-                  )}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                />
+                    )}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.outputItem')}
+                    sx={{ p: 0.25, mt: -3 }}
+                    data-id-ref="pid-memory-output-item-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <Box sx={{ flex: 1 }}>
@@ -625,18 +672,29 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     />
                   </Box>
 
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.isDisabled}
-                        onChange={(e) => handleFieldChange('isDisabled', e.target.checked)}
-                        disabled={isSaving}
-                        data-id-ref="pid-memory-disabled-switch"
-                      />
-                    }
-                    label={t('pidMemory.isDisabled')}
-                    data-id-ref="pid-memory-disabled-field"
-                  />
+                  {/* IsDisabled with Help */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.isDisabled}
+                          onChange={(e) => handleFieldChange('isDisabled', e.target.checked)}
+                          disabled={isSaving}
+                          data-id-ref="pid-memory-disabled-switch"
+                        />
+                      }
+                      label={t('pidMemory.isDisabled')}
+                      data-id-ref="pid-memory-disabled-field"
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('pidMemory.help.isDisabled')}
+                      sx={{ p: 0.25 }}
+                      data-id-ref="pid-memory-is-disabled-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
                 </Box>
 
                 {/* SetPoint - Dual Mode */}
@@ -1476,6 +1534,36 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
       </DialogActions>
 
       {/* Help Popovers */}
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.basicConfiguration']}
+        open={Boolean(helpAnchorEl['pidMemory.help.basicConfiguration'])}
+        onClose={handleHelpClose('pidMemory.help.basicConfiguration')}
+        fieldKey="pidMemory.help.basicConfiguration"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.name']}
+        open={Boolean(helpAnchorEl['pidMemory.help.name'])}
+        onClose={handleHelpClose('pidMemory.help.name')}
+        fieldKey="pidMemory.help.name"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.inputItem']}
+        open={Boolean(helpAnchorEl['pidMemory.help.inputItem'])}
+        onClose={handleHelpClose('pidMemory.help.inputItem')}
+        fieldKey="pidMemory.help.inputItem"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.outputItem']}
+        open={Boolean(helpAnchorEl['pidMemory.help.outputItem'])}
+        onClose={handleHelpClose('pidMemory.help.outputItem')}
+        fieldKey="pidMemory.help.outputItem"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.isDisabled']}
+        open={Boolean(helpAnchorEl['pidMemory.help.isDisabled'])}
+        onClose={handleHelpClose('pidMemory.help.isDisabled')}
+        fieldKey="pidMemory.help.isDisabled"
+      />
       <FieldHelpPopover
         anchorEl={helpAnchorEl['pidMemory.help.interval']}
         open={Boolean(helpAnchorEl['pidMemory.help.interval'])}
