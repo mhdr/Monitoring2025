@@ -7101,6 +7101,184 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
+    /// Get all timeout memory configurations
+    /// </summary>
+    /// <param name="request">Get timeout memories request (empty for now)</param>
+    /// <returns>List of timeout memory configurations</returns>
+    /// <response code="200">Returns list of timeout memory configurations</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("GetTimeoutMemories")]
+    public async Task<IActionResult> GetTimeoutMemories([FromBody] GetTimeoutMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetTimeoutMemoriesResponseDto();
+
+            var timeoutMemories = await Core.TimeoutMemories.GetTimeoutMemories();
+
+            if (timeoutMemories != null)
+            {
+                foreach (var tm in timeoutMemories)
+                {
+                    response.TimeoutMemories.Add(new GetTimeoutMemoriesResponseDto.TimeoutMemory()
+                    {
+                        Id = tm.Id,
+                        InputItemId = tm.InputItemId,
+                        OutputItemId = tm.OutputItemId,
+                        Timeout = tm.Timeout
+                    });
+                }
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new timeout memory configuration
+    /// </summary>
+    /// <param name="request">Add timeout memory request containing input item ID, output item ID, and timeout duration</param>
+    /// <returns>Result indicating success or failure of the add operation with the new ID</returns>
+    /// <response code="200">Returns success status and new timeout memory ID</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("AddTimeoutMemory")]
+    public async Task<IActionResult> AddTimeoutMemory([FromBody] AddTimeoutMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var timeoutMemory = new Core.Models.TimeoutMemory
+            {
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                Timeout = request.Timeout
+            };
+
+            var (success, id, errorMessage) = await Core.TimeoutMemories.AddTimeoutMemory(timeoutMemory);
+
+            var response = new AddTimeoutMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Edit an existing timeout memory configuration
+    /// </summary>
+    /// <param name="request">Edit timeout memory request containing updated configuration</param>
+    /// <returns>Result indicating success or failure of the edit operation</returns>
+    /// <response code="200">Returns success status of the timeout memory update</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("EditTimeoutMemory")]
+    public async Task<IActionResult> EditTimeoutMemory([FromBody] EditTimeoutMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var timeoutMemory = new Core.Models.TimeoutMemory
+            {
+                Id = request.Id,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                Timeout = request.Timeout
+            };
+
+            var (success, errorMessage) = await Core.TimeoutMemories.EditTimeoutMemory(timeoutMemory);
+
+            var response = new EditTimeoutMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Delete a timeout memory configuration
+    /// </summary>
+    /// <param name="request">Delete timeout memory request containing the ID to delete</param>
+    /// <returns>Result indicating success or failure of the delete operation</returns>
+    /// <response code="200">Returns success status of the timeout memory deletion</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("DeleteTimeoutMemory")]
+    public async Task<IActionResult> DeleteTimeoutMemory([FromBody] DeleteTimeoutMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.TimeoutMemories.DeleteTimeoutMemory(request.Id);
+
+            var response = new DeleteTimeoutMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
     /// Write a value directly to a controller for a specific monitoring item
     /// </summary>
     /// <param name="request">Write value request containing item ID, value, optional timestamp, and optional duration</param>

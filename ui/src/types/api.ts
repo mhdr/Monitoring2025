@@ -2680,3 +2680,81 @@ export interface GatewayStatusUpdate {
   lastReadTime: string | null;
   lastWriteTime: string | null;
 }
+
+// ==================== Timeout Memory DTOs ====================
+
+/**
+ * Timeout Memory configuration
+ */
+export interface TimeoutMemory {
+  id: string; // UUID
+  inputItemId: string; // UUID - Item to watch for timeout (can be any ItemType)
+  outputItemId: string; // UUID - Item to write timeout status (should be DigitalInput or DigitalOutput)
+  timeout: number; // int64 - Timeout duration in seconds
+}
+
+/**
+ * Request DTO for retrieving timeout memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetTimeoutMemoriesRequestDto {
+  // Empty - no filtering parameters needed currently
+}
+
+/**
+ * Response DTO containing list of timeout memory configurations
+ */
+export interface GetTimeoutMemoriesResponseDto {
+  timeoutMemories: TimeoutMemory[];
+}
+
+/**
+ * Request DTO for creating a new timeout memory configuration
+ */
+export interface AddTimeoutMemoryRequestDto {
+  inputItemId: string; // UUID
+  outputItemId: string; // UUID
+  timeout: number; // int64 - must be > 0
+}
+
+/**
+ * Response DTO for adding a new timeout memory configuration
+ */
+export interface AddTimeoutMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of newly created timeout memory
+}
+
+/**
+ * Request DTO for editing an existing timeout memory configuration
+ */
+export interface EditTimeoutMemoryRequestDto {
+  id: string; // UUID
+  inputItemId: string; // UUID
+  outputItemId: string; // UUID
+  timeout: number; // int64 - must be > 0
+}
+
+/**
+ * Response DTO for editing a timeout memory configuration
+ */
+export interface EditTimeoutMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a timeout memory configuration
+ */
+export interface DeleteTimeoutMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a timeout memory configuration
+ */
+export interface DeleteTimeoutMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}

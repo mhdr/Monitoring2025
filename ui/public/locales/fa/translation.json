@@ -200,7 +200,15 @@
     "loading": "در حال بارگذاری...",
     "showPassword": "نمایش رمز عبور",
     "hidePassword": "مخفی کردن رمز عبور",
-    "actions": "عملیات"
+    "actions": "عملیات",
+    "add": "افزودن",
+    "edit": "ویرایش"
+  },
+  "itemType": {
+    "digitalInput": "ورودی دیجیتال",
+    "digitalOutput": "خروجی دیجیتال",
+    "analogInput": "ورودی آنالوگ",
+    "analogOutput": "خروجی آنالوگ"
   },
   "settings": {
     "pageTitle": "تنظیمات",
@@ -1529,6 +1537,34 @@
       "mappingCreated": "نگاشت با موفقیت ایجاد شد",
       "mappingUpdated": "نگاشت با موفقیت به‌روزرسانی شد",
       "mappingDeleted": "نگاشت با موفقیت حذف شد"
+    }
+  },
+  "timeoutMemory": {
+    "title": "حافظه تایم‌اوت",
+    "addNew": "افزودن حافظه تایم‌اوت",
+    "addTitle": "افزودن حافظه تایم‌اوت",
+    "editTitle": "ویرایش حافظه تایم‌اوت",
+    "deleteTitle": "حذف حافظه تایم‌اوت",
+    "deleteMessage": "آیا از حذف پیکربندی حافظه تایم‌اوت برای «{{name}}» اطمینان دارید؟",
+    "deleteWarning": "این عمل غیرقابل بازگشت است.",
+    "searchPlaceholder": "جستجوی حافظه‌های تایم‌اوت...",
+    "inputItem": "آیتم ورودی",
+    "inputItemHelp": "آیتم برای نظارت بر تایم‌اوت (هر نوع)",
+    "outputItem": "آیتم خروجی",
+    "outputItemHelp": "آیتم برای نوشتن وضعیت تایم‌اوت (فقط ورودی/خروجی دیجیتال)",
+    "timeout": "تایم‌اوت (ثانیه)",
+    "timeoutHelp": "تعداد ثانیه قبل از وقوع تایم‌اوت",
+    "validation": {
+      "inputItemRequired": "آیتم ورودی الزامی است",
+      "outputItemRequired": "آیتم خروجی الزامی است",
+      "timeoutRequired": "تایم‌اوت باید بیشتر از ۰ باشد",
+      "itemsMustBeDifferent": "آیتم‌های ورودی و خروجی باید متفاوت باشند"
+    },
+    "errors": {
+      "fetchFailed": "بارگذاری حافظه‌های تایم‌اوت ناموفق بود",
+      "createFailed": "ایجاد حافظه تایم‌اوت ناموفق بود",
+      "updateFailed": "به‌روزرسانی حافظه تایم‌اوت ناموفق بود",
+      "deleteFailed": "حذف حافظه تایم‌اوت ناموفق بود"
     }
   },
   "statistics": {

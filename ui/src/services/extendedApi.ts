@@ -29,6 +29,15 @@ import type {
   EditPidControllerRequestDto,
   EditPidSetPointRequestDto,
   GetPidControllerRequestDto,
+  // Timeout Memory types
+  GetTimeoutMemoriesRequestDto,
+  GetTimeoutMemoriesResponseDto,
+  AddTimeoutMemoryRequestDto,
+  AddTimeoutMemoryResponseDto,
+  EditTimeoutMemoryRequestDto,
+  EditTimeoutMemoryResponseDto,
+  DeleteTimeoutMemoryRequestDto,
+  DeleteTimeoutMemoryResponseDto,
   GetSvgLayoutRequestDto,
   GetSvgLayoutsRequestDto,
   AuditLogRequestDto,
@@ -350,6 +359,56 @@ export const editPidSetPoint = async (data: EditPidSetPointRequestDto): Promise<
 export const getPidController = async (params: GetPidControllerRequestDto): Promise<{ data: unknown }> => {
   try {
     const response = await apiClient.post<{ data: unknown }>('/api/Monitoring/GetPidController', params);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// ==================== Timeout Memory ====================
+
+/**
+ * Get all timeout memory configurations
+ */
+export const getTimeoutMemories = async (params: GetTimeoutMemoriesRequestDto = {}): Promise<GetTimeoutMemoriesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetTimeoutMemoriesResponseDto>('/api/Monitoring/GetTimeoutMemories', params);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new timeout memory configuration
+ */
+export const addTimeoutMemory = async (data: AddTimeoutMemoryRequestDto): Promise<AddTimeoutMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddTimeoutMemoryResponseDto>('/api/Monitoring/AddTimeoutMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing timeout memory configuration
+ */
+export const editTimeoutMemory = async (data: EditTimeoutMemoryRequestDto): Promise<EditTimeoutMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditTimeoutMemoryResponseDto>('/api/Monitoring/EditTimeoutMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a timeout memory configuration
+ */
+export const deleteTimeoutMemory = async (data: DeleteTimeoutMemoryRequestDto): Promise<DeleteTimeoutMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteTimeoutMemoryResponseDto>('/api/Monitoring/DeleteTimeoutMemory', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

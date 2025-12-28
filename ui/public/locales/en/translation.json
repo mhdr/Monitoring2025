@@ -200,7 +200,15 @@
     "loading": "Loading...",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "actions": "Actions"
+    "actions": "Actions",
+    "add": "Add",
+    "edit": "Edit"
+  },
+  "itemType": {
+    "digitalInput": "Digital Input",
+    "digitalOutput": "Digital Output",
+    "analogInput": "Analog Input",
+    "analogOutput": "Analog Output"
   },
   "settings": {
     "pageTitle": "Settings",
@@ -1529,6 +1537,34 @@
       "mappingCreated": "Mapping created successfully",
       "mappingUpdated": "Mapping updated successfully",
       "mappingDeleted": "Mapping deleted successfully"
+    }
+  },
+  "timeoutMemory": {
+    "title": "Timeout Memory",
+    "addNew": "Add Timeout Memory",
+    "addTitle": "Add Timeout Memory",
+    "editTitle": "Edit Timeout Memory",
+    "deleteTitle": "Delete Timeout Memory",
+    "deleteMessage": "Are you sure you want to delete timeout memory configuration for \"{{name}}\"?",
+    "deleteWarning": "This action cannot be undone.",
+    "searchPlaceholder": "Search timeout memories...",
+    "inputItem": "Input Item",
+    "inputItemHelp": "Item to monitor for timeout (any type)",
+    "outputItem": "Output Item",
+    "outputItemHelp": "Item to write timeout status (Digital Input/Output only)",
+    "timeout": "Timeout (seconds)",
+    "timeoutHelp": "Number of seconds before timeout occurs",
+    "validation": {
+      "inputItemRequired": "Input item is required",
+      "outputItemRequired": "Output item is required",
+      "timeoutRequired": "Timeout must be greater than 0",
+      "itemsMustBeDifferent": "Input and output items must be different"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load timeout memories",
+      "createFailed": "Failed to create timeout memory",
+      "updateFailed": "Failed to update timeout memory",
+      "deleteFailed": "Failed to delete timeout memory"
     }
   },
   "statistics": {
