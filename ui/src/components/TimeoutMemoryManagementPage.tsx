@@ -208,7 +208,7 @@ const TimeoutMemoryManagementPage: React.FC = () => {
     setDeleteDialogOpen(true);
   }, []);
 
-  const handleDialogClose = (shouldRefresh: boolean) => {
+  const handleDialogClose = useCallback((shouldRefresh: boolean) => {
     setAddEditDialogOpen(false);
     setDeleteDialogOpen(false);
     setSelectedTimeoutMemory(null);
@@ -217,7 +217,7 @@ const TimeoutMemoryManagementPage: React.FC = () => {
     if (shouldRefresh) {
       fetchTimeoutMemories();
     }
-  };
+  }, [fetchTimeoutMemories]);
 
   // Define columns for Syncfusion Grid
   const columns: SyncfusionColumnDef[] = useMemo(
