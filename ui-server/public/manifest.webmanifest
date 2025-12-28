@@ -1,0 +1,1 @@
+{"name":"Monitoring System 2025","short_name":"Monitoring","description":"Real-time monitoring and alarm management system","start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#1976d2","lang":"fa-IR","scope":"/","orientation":"any","icons":[{"src":"icons/eye.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}],"dir":"rtl"}

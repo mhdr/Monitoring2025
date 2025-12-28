@@ -67,9 +67,9 @@ export default defineConfig({
   globIgnores: ['**/stats.html', '**/sw-message-handler.js', '**/syncfusion-*.js', '**/echarts-*.js', '**/index-*.js'],
         // Import custom message handler for cache invalidation
         importScripts: ['sw-message-handler.js'],
-  // Increase maximum file size to accommodate larger vendor chunks (no JS minification)
-  // Syncfusion Grid and ECharts can exceed 2MB without minification
-  maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+  // Increase maximum file size to accommodate larger vendor chunks
+  // Syncfusion CSS (with customized material theme) can exceed 4MB
+  maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           // Cache ALL JavaScript chunks - CacheFirst strategy with long expiration
           // This ensures any chunk loaded in one tab is immediately available in new tabs

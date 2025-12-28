@@ -29,6 +29,7 @@
     "@syncfusion/ej2-base": "^32.1.19",
     "@syncfusion/ej2-data": "^32.1.19",
     "@syncfusion/ej2-grids": "^32.1.20",
+    "@syncfusion/ej2-material-theme": "^32.1.20",
     "@syncfusion/ej2-react-grids": "^32.1.20",
     "async-mutex": "^0.5.0",
     "axios": "^1.13.2",
