@@ -262,7 +262,8 @@ const PIDMemoryManagementPage: React.FC = () => {
     () => [
       {
         field: 'name',
-        headerText: t('pidMemory.name'),
+        headerText: t('pidMemory.columnHeaders.name'),
+        headerTooltip: t('pidMemory.columnHeaders.nameTooltip'),
         width: 180,
         template: (rowData: PIDMemoryWithItems) => (
           <Box data-id-ref="pid-memory-name-cell">
@@ -282,7 +283,8 @@ const PIDMemoryManagementPage: React.FC = () => {
       },
       {
         field: 'inputItemName',
-        headerText: t('pidMemory.inputItem'),
+        headerText: t('pidMemory.columnHeaders.inputItem'),
+        headerTooltip: t('pidMemory.columnHeaders.inputItemTooltip'),
         width: 200,
         template: (rowData: PIDMemoryWithItems) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-id-ref="pid-memory-input-item-cell">
@@ -302,7 +304,8 @@ const PIDMemoryManagementPage: React.FC = () => {
       },
       {
         field: 'outputItemName',
-        headerText: t('pidMemory.outputItem'),
+        headerText: t('pidMemory.columnHeaders.outputItem'),
+        headerTooltip: t('pidMemory.columnHeaders.outputItemTooltip'),
         width: 200,
         template: (rowData: PIDMemoryWithItems) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-id-ref="pid-memory-output-item-cell">
@@ -322,7 +325,8 @@ const PIDMemoryManagementPage: React.FC = () => {
       },
       {
         field: 'setPoint',
-        headerText: t('pidMemory.setPoint'),
+        headerText: t('pidMemory.columnHeaders.setPoint'),
+        headerTooltip: t('pidMemory.columnHeaders.setPointTooltip'),
         width: 140,
         template: (rowData: PIDMemoryWithItems) => (
           <Box data-id-ref="pid-memory-setpoint-cell">
@@ -345,25 +349,29 @@ const PIDMemoryManagementPage: React.FC = () => {
       },
       {
         field: 'kp',
-        headerText: t('pidMemory.kp'),
+        headerText: t('pidMemory.columnHeaders.kp'),
+        headerTooltip: t('pidMemory.columnHeaders.kpTooltip'),
         width: 80,
         format: 'N3',
       },
       {
         field: 'ki',
-        headerText: t('pidMemory.ki'),
+        headerText: t('pidMemory.columnHeaders.ki'),
+        headerTooltip: t('pidMemory.columnHeaders.kiTooltip'),
         width: 80,
         format: 'N3',
       },
       {
         field: 'kd',
-        headerText: t('pidMemory.kd'),
+        headerText: t('pidMemory.columnHeaders.kd'),
+        headerTooltip: t('pidMemory.columnHeaders.kdTooltip'),
         width: 80,
         format: 'N3',
       },
       {
         field: 'interval',
-        headerText: t('pidMemory.interval'),
+        headerText: t('pidMemory.columnHeaders.interval'),
+        headerTooltip: t('pidMemory.columnHeaders.intervalTooltip'),
         width: 100,
         template: (rowData: PIDMemoryWithItems) => (
           <Typography variant="body2" data-id-ref="pid-memory-interval-cell">
@@ -373,7 +381,8 @@ const PIDMemoryManagementPage: React.FC = () => {
       },
       {
         field: 'isAuto',
-        headerText: t('pidMemory.mode'),
+        headerText: t('pidMemory.columnHeaders.mode'),
+        headerTooltip: t('pidMemory.columnHeaders.modeTooltip'),
         width: 100,
         template: (rowData: PIDMemoryWithItems) => (
           <Chip
@@ -387,7 +396,8 @@ const PIDMemoryManagementPage: React.FC = () => {
       },
       {
         field: 'cascadeLevel',
-        headerText: t('pidMemory.cascadeControl.title'),
+        headerText: t('pidMemory.columnHeaders.cascadeLevel'),
+        headerTooltip: t('pidMemory.columnHeaders.cascadeLevelTooltip'),
         width: 160,
         template: (rowData: PIDMemoryWithItems) => (
           <Box data-id-ref="pid-memory-cascade-cell">

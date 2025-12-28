@@ -25,6 +25,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   Save as SaveIcon,
   Close as CloseIcon,
+  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -32,6 +33,7 @@ import { addPIDMemory, editPIDMemory, getPotentialParentPIDs } from '../services
 import type { PIDMemoryWithItems, MonitoringItem, ItemType, AddPIDMemoryRequestDto, EditPIDMemoryRequestDto, PotentialParentPID } from '../types/api';
 import { ItemTypeEnum } from '../types/api';
 import { createLogger } from '../utils/logger';
+import FieldHelpPopover from './common/FieldHelpPopover';
 
 const logger = createLogger('AddEditPIDMemoryDialog');
 
@@ -136,6 +138,17 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   const [cascadeExpanded, setCascadeExpanded] = useState(false);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [hysteresisExpanded, setHysteresisExpanded] = useState(false);
+
+  // Help popover states
+  const [helpAnchorEl, setHelpAnchorEl] = useState<Record<string, HTMLElement | null>>({});
+  
+  const handleHelpOpen = (fieldKey: string) => (event: React.MouseEvent<HTMLElement>) => {
+    setHelpAnchorEl(prev => ({ ...prev, [fieldKey]: event.currentTarget }));
+  };
+  
+  const handleHelpClose = (fieldKey: string) => () => {
+    setHelpAnchorEl(prev => ({ ...prev, [fieldKey]: null }));
+  };
 
   // Potential parent PIDs for cascade control
   const [potentialParents, setPotentialParents] = useState<PotentialParentPID[]>([]);
@@ -584,19 +597,33 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                 />
 
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                  <TextField
-                    fullWidth
-                    label={t('pidMemory.interval')}
-                    type="number"
-                    value={formData.interval}
-                    onChange={(e) => handleFieldChange('interval', parseInt(e.target.value) || 1)}
-                    disabled={isSaving}
-                    required
-                    error={!!formErrors.interval}
-                    helperText={formErrors.interval || t('pidMemory.intervalHelp')}
-                    inputProps={{ min: 1, step: 1 }}
-                    data-id-ref="pid-memory-interval-input"
-                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {t('pidMemory.interval')}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={handleHelpOpen('pidMemory.help.interval')}
+                        sx={{ p: 0.25 }}
+                        data-id-ref="pid-memory-interval-help-btn"
+                      >
+                        <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                      </IconButton>
+                    </Box>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={formData.interval}
+                      onChange={(e) => handleFieldChange('interval', parseInt(e.target.value) || 1)}
+                      disabled={isSaving}
+                      required
+                      error={!!formErrors.interval}
+                      helperText={formErrors.interval || t('pidMemory.intervalHelp')}
+                      inputProps={{ min: 1, step: 1 }}
+                      data-id-ref="pid-memory-interval-input"
+                    />
+                  </Box>
 
                   <FormControlLabel
                     control={
@@ -779,9 +806,19 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
 
                 {/* IsAuto - Dual Mode */}
                 <Divider sx={{ my: 1 }} />
-                <Typography variant="subtitle2" color="text.secondary">
-                  {t('pidMemory.modeSettings')}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {t('pidMemory.modeSettings')}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.isAuto')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="pid-memory-is-auto-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
                 <Box>
                   <FormControlLabel
                     control={
@@ -954,23 +991,47 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   data-id-ref="pid-memory-max-output-slew-rate-input"
                 />
 
-                <TextField
-                  fullWidth
-                  label={t('pidMemory.feedForward')}
-                  type="number"
-                  value={formData.feedForward}
-                  onChange={(e) => handleFieldChange('feedForward', parseFloat(e.target.value) || 0)}
-                  disabled={isSaving}
-                  helperText={t('pidMemory.feedForwardHelp')}
-                  inputProps={{ step: 0.1 }}
-                  data-id-ref="pid-memory-feed-forward-input"
-                />
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {t('pidMemory.feedForward')}
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('pidMemory.help.feedForward')}
+                      sx={{ p: 0.25 }}
+                      data-id-ref="pid-memory-feed-forward-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    value={formData.feedForward}
+                    onChange={(e) => handleFieldChange('feedForward', parseFloat(e.target.value) || 0)}
+                    disabled={isSaving}
+                    helperText={t('pidMemory.feedForwardHelp')}
+                    inputProps={{ step: 0.1 }}
+                    data-id-ref="pid-memory-feed-forward-input"
+                  />
+                </Box>
 
                 {/* ReverseOutput - Dual Mode */}
                 <Divider sx={{ my: 1 }} />
-                <Typography variant="subtitle2" color="text.secondary">
-                  {t('pidMemory.reverseOutputSettings')}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {t('pidMemory.reverseOutputSettings')}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.reverseOutput')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="pid-memory-reverse-output-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
                 <Box>
                   <FormControlLabel
                     control={
@@ -1059,28 +1120,38 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                 {t('pidMemory.cascadeControl.info')}
               </Alert>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.useParentPID}
-                      onChange={(e) => {
-                        const useParent = e.target.checked;
-                        handleFieldChange('useParentPID', useParent);
-                        if (!useParent) {
-                          handleFieldChange('parentPIDId', '');
-                          handleFieldChange('cascadeLevel', 0);
-                        } else {
-                          // Default to level 2 (inner PID) when enabling cascade
-                          handleFieldChange('cascadeLevel', 2);
-                        }
-                      }}
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-use-parent-pid-switch"
-                    />
-                  }
-                  label={t('pidMemory.cascadeControl.useParentPID')}
-                  data-id-ref="pid-memory-use-parent-pid-field"
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.useParentPID}
+                        onChange={(e) => {
+                          const useParent = e.target.checked;
+                          handleFieldChange('useParentPID', useParent);
+                          if (!useParent) {
+                            handleFieldChange('parentPIDId', '');
+                            handleFieldChange('cascadeLevel', 0);
+                          } else {
+                            // Default to level 2 (inner PID) when enabling cascade
+                            handleFieldChange('cascadeLevel', 2);
+                          }
+                        }}
+                        disabled={isSaving}
+                        data-id-ref="pid-memory-use-parent-pid-switch"
+                      />
+                    }
+                    label={t('pidMemory.cascadeControl.useParentPID')}
+                    data-id-ref="pid-memory-use-parent-pid-field"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.useParentPID')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="pid-memory-cascade-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
                 {formData.useParentPID && (
                   <>
@@ -1172,18 +1243,28 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                 {t('pidMemory.hysteresisInfo')}
               </Alert>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.useDigitalOutputItem}
-                      onChange={(e) => handleFieldChange('useDigitalOutputItem', e.target.checked)}
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-use-digital-output-switch"
-                    />
-                  }
-                  label={t('pidMemory.useDigitalOutput')}
-                  data-id-ref="pid-memory-use-digital-output-field"
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.useDigitalOutputItem}
+                        onChange={(e) => handleFieldChange('useDigitalOutputItem', e.target.checked)}
+                        disabled={isSaving}
+                        data-id-ref="pid-memory-use-digital-output-switch"
+                      />
+                    }
+                    label={t('pidMemory.useDigitalOutput')}
+                    data-id-ref="pid-memory-use-digital-output-field"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('pidMemory.help.useDigitalOutput')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="pid-memory-hysteresis-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
                 {formData.useDigitalOutputItem && (
                   <>
@@ -1291,6 +1372,62 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           {isSaving ? t('common.saving') : t('common.save')}
         </Button>
       </DialogActions>
+
+      {/* Help Popovers */}
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.interval']}
+        open={Boolean(helpAnchorEl['pidMemory.help.interval'])}
+        onClose={handleHelpClose('pidMemory.help.interval')}
+        fieldKey="pidMemory.help.interval"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.reverseOutput']}
+        open={Boolean(helpAnchorEl['pidMemory.help.reverseOutput'])}
+        onClose={handleHelpClose('pidMemory.help.reverseOutput')}
+        fieldKey="pidMemory.help.reverseOutput"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.isAuto']}
+        open={Boolean(helpAnchorEl['pidMemory.help.isAuto'])}
+        onClose={handleHelpClose('pidMemory.help.isAuto')}
+        fieldKey="pidMemory.help.isAuto"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.outputRange']}
+        open={Boolean(helpAnchorEl['pidMemory.help.outputRange'])}
+        onClose={handleHelpClose('pidMemory.help.outputRange')}
+        fieldKey="pidMemory.help.outputRange"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.deadZone']}
+        open={Boolean(helpAnchorEl['pidMemory.help.deadZone'])}
+        onClose={handleHelpClose('pidMemory.help.deadZone')}
+        fieldKey="pidMemory.help.deadZone"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.feedForward']}
+        open={Boolean(helpAnchorEl['pidMemory.help.feedForward'])}
+        onClose={handleHelpClose('pidMemory.help.feedForward')}
+        fieldKey="pidMemory.help.feedForward"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.useParentPID']}
+        open={Boolean(helpAnchorEl['pidMemory.help.useParentPID'])}
+        onClose={handleHelpClose('pidMemory.help.useParentPID')}
+        fieldKey="pidMemory.help.useParentPID"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.useDigitalOutput']}
+        open={Boolean(helpAnchorEl['pidMemory.help.useDigitalOutput'])}
+        onClose={handleHelpClose('pidMemory.help.useDigitalOutput')}
+        fieldKey="pidMemory.help.useDigitalOutput"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['pidMemory.help.dualMode']}
+        open={Boolean(helpAnchorEl['pidMemory.help.dualMode'])}
+        onClose={handleHelpClose('pidMemory.help.dualMode')}
+        fieldKey="pidMemory.help.dualMode"
+      />
     </Dialog>
   );
 };

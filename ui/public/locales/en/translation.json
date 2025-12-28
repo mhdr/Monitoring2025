@@ -1581,6 +1581,31 @@
     "deleteWarning": "This action cannot be undone.",
     "searchPlaceholder": "Search PID memories...",
     "noPIDMemories": "No PID controllers configured",
+    "columnHeaders": {
+      "name": "Name",
+      "nameTooltip": "Human-readable identifier for this PID controller",
+      "inputItem": "Input Item (PV)",
+      "inputItemTooltip": "Process Variable - The measurement being controlled (e.g., temperature sensor, pressure transmitter)",
+      "outputItem": "Output Item (CV)",
+      "outputItemTooltip": "Control Variable - The actuator being manipulated (e.g., control valve, VFD, damper)",
+      "setPoint": "SetPoint",
+      "setPointTooltip": "Target value the controller tries to maintain",
+      "kp": "Kp",
+      "kpTooltip": "Proportional Gain - Immediate response to error",
+      "ki": "Ki",
+      "kiTooltip": "Integral Gain - Eliminates steady-state error over time",
+      "kd": "Kd",
+      "kdTooltip": "Derivative Gain - Dampens oscillations and improves stability",
+      "interval": "Interval",
+      "intervalTooltip": "How often the PID calculation executes (seconds)",
+      "mode": "Mode",
+      "modeTooltip": "Auto: PID controls output | Manual: Fixed output value",
+      "cascadeLevel": "Cascade",
+      "cascadeLevelTooltip": "Multi-loop control level: 0=Standalone, 1=Outer loop, 2=Inner loop",
+      "tuningStatus": "Tuning",
+      "tuningStatusTooltip": "Auto-tuning status (if active)",
+      "actions": "Actions"
+    },
     "name": "Name",
     "nameHelp": "Optional human-readable name for this PID controller",
     "inputItem": "Input Item (PV)",
@@ -1588,8 +1613,9 @@
     "outputItem": "Output Item (CV)",
     "outputItemHelp": "Control Value - Analog Output item to control",
     "interval": "Interval (seconds)",
-    "intervalHelp": "How often the PID calculation runs",
+    "intervalHelp": "How often the PID calculation runs (seconds). Typical: 1-10s for fast processes (flow), 10-60s for slow processes (temperature). Shorter = faster response but higher CPU usage.",
     "isDisabled": "Disabled",
+    "isDisabledHelp": "Temporarily disable this PID controller without deleting the configuration. Useful for maintenance, testing, or seasonal shutdown.",
     "kp": "Proportional Gain (Kp)",
     "kpHelp": "Proportional gain - how strongly the controller reacts to current error",
     "ki": "Integral Gain (Ki)",
@@ -1597,35 +1623,41 @@
     "kd": "Derivative Gain (Kd)",
     "kdHelp": "Derivative gain - dampens oscillations and improves stability",
     "outputMin": "Output Minimum",
-    "outputMinHelp": "Minimum allowed output value",
+    "outputMinHelp": "Minimum allowed output value. Defines control range (e.g., 0-100% for valve position, 4-20mA for analog signal). Protects equipment and defines control authority.",
     "outputMax": "Output Maximum",
-    "outputMaxHelp": "Maximum allowed output value",
+    "outputMaxHelp": "Maximum allowed output value. Defines control range (e.g., 0-100% for valve position, 4-20mA for analog signal). Protects equipment and defines control authority.",
     "setPoint": "SetPoint",
     "setPointHelp": "Static target value for the process variable",
     "setPointItem": "SetPoint Item",
     "setPointItemHelp": "Dynamic setpoint from another item (Analog Input/Output)",
     "useSetPointItem": "Use SetPoint Item",
+    "useSetPointItemHelp": "Enable to get setpoint from external monitoring item instead of static value. Useful for remote control, scheduling, or integration with other systems.",
     "deadZone": "Dead Zone",
-    "deadZoneHelp": "No control action within this range around setpoint",
+    "deadZoneHelp": "No control action within this range around setpoint. Example: ±0.5°C for temperature, ±1% for flow rate. Prevents 'hunting' or constant small adjustments.",
     "derivativeFilterAlpha": "Derivative Filter (Alpha)",
     "derivativeFilterAlphaHelp": "Filter coefficient for derivative term (0-1, higher = less filtering)",
     "maxOutputSlewRate": "Max Output Slew Rate",
-    "maxOutputSlewRateHelp": "Maximum rate of change for output value",
+    "maxOutputSlewRateHelp": "Limits how fast output can change per second (units/sec). Prevents sudden jumps that could damage equipment. Example: 10%/sec for smooth valve movement.",
     "feedForward": "Feed Forward",
-    "feedForwardHelp": "Feed-forward term for known disturbances",
+    "feedForwardHelp": "Compensates for known disturbances before they affect the process. Advanced feature - leave at 0 unless you have specific process knowledge. Example: +20% output when load increases.",
     "isAuto": "Auto Mode",
+    "isAutoHelp": "Auto Mode: PID controller calculates output automatically. Manual Mode: Output set to fixed value (for testing, emergencies, or commissioning).",
     "isAutoItem": "Auto Mode Item",
     "isAutoItemHelp": "Digital item to control auto/manual mode (1=Auto, 0=Manual)",
     "useIsAutoItem": "Use Auto Mode Item",
+    "useIsAutoItemHelp": "Enable to get auto/manual mode from external monitoring item. Useful for remote control, scheduling, or integration with other systems.",
     "manualValue": "Manual Value",
     "manualValueHelp": "Static output value when in manual mode",
     "manualValueItem": "Manual Value Item",
     "manualValueItemHelp": "Dynamic manual value from another item (Analog Input/Output)",
     "useManualValueItem": "Use Manual Value Item",
+    "useManualValueItemHelp": "Get manual mode value from external source instead of fixed value. Useful for remote control or operator override.",
     "reverseOutput": "Reverse Output",
+    "reverseOutputHelp": "Direct Action (Heating): Output increases when below setpoint. Reverse Action (Cooling): Output decreases when below setpoint. Choose based on your process type.",
     "reverseOutputItem": "Reverse Output Item",
     "reverseOutputItemHelp": "Digital item to control output direction (1=Reverse, 0=Direct)",
     "useReverseOutputItem": "Use Reverse Output Item",
+    "useReverseOutputItemHelp": "Allow external control of direct/reverse action. Useful for processes that switch between heating and cooling modes.",
     "mode": "Mode",
     "auto": "Auto",
     "manual": "Manual",
@@ -1633,6 +1665,7 @@
     "modeSettings": "Mode Settings",
     "reverseOutputSettings": "Output Direction Settings",
     "useDigitalOutput": "Enable Hysteresis Control",
+    "useDigitalOutputHelp": "Enable ON/OFF control of relay/contactor based on PID output level. Common for staged heating/cooling or pump control.",
     "digitalOutputItem": "Digital Output Item",
     "digitalOutputItemHelp": "Digital output for ON/OFF control based on thresholds",
     "hysteresisHighThreshold": "High Threshold (Turn ON)",
@@ -1679,6 +1712,7 @@
       "cascadeLevel": "Cascade Level",
       "cascadeLevelHelp": "Execution order: 0=standalone, 1=outer, 2=inner",
       "useParentPID": "Use Cascaded Control",
+      "useParentPIDHelp": "Enable multi-stage cascade control where this PID's setpoint comes from parent PID's output. Example: Outer loop controls temperature → Inner loop controls valve position.",
       "noParentPID": "Standalone (no parent)",
       "selectParent": "Select Parent PID...",
       "level0": "Level 0 - Standalone/Outer",
@@ -1763,6 +1797,320 @@
       "tuningInProgress": "Tuning in progress...",
       "seconds": "seconds",
       "percentage": "%"
+    },
+    "help": {
+      "reverseOutput": {
+        "title": "Output Direction (Direct vs Reverse)",
+        "sections": [
+          {
+            "title": "What is Output Direction?",
+            "content": "Output direction determines how the PID controller reacts when the process variable differs from the setpoint. This is critical for system stability and depends on your process type."
+          },
+          {
+            "title": "Direct Action (Heating) 🔥",
+            "content": [
+              "Output INCREASES when below setpoint",
+              "Output DECREASES when above setpoint",
+              "Used for: Heating, Pressurizing, Filling"
+            ]
+          },
+          {
+            "title": "Reverse Action (Cooling) ❄️",
+            "content": [
+              "Output DECREASES when below setpoint",
+              "Output INCREASES when above setpoint",
+              "Used for: Cooling, Depressurizing, Draining"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Examples",
+            "content": "Heating Tank: Setpoint 50°C, Current 45°C\n• Direct: Output increases to heat up\n\nCooling Tower: Setpoint 20°C, Current 25°C\n• Reverse: Output increases to cool down"
+          },
+          {
+            "type": "warning",
+            "title": "Important",
+            "content": "Incorrect direction causes instability! The system will drive away from setpoint instead of toward it."
+          }
+        ]
+      },
+      "isAuto": {
+        "title": "Auto vs Manual Mode",
+        "sections": [
+          {
+            "title": "What are Control Modes?",
+            "content": "Control modes determine who controls the output: the PID algorithm (Auto) or a fixed value (Manual)."
+          },
+          {
+            "title": "Auto Mode (Automatic Control)",
+            "content": [
+              "PID algorithm calculates output automatically",
+              "Continuously adjusts to maintain setpoint",
+              "Normal operating mode for closed-loop control"
+            ]
+          },
+          {
+            "title": "Manual Mode (Override)",
+            "content": [
+              "Output set to fixed value (Manual Value)",
+              "PID calculation disabled",
+              "Used for testing, commissioning, or emergencies"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "When to Use Manual Mode",
+            "content": "• Equipment testing before automation\n• Emergency situations requiring operator control\n• Commissioning and calibration\n• Maintenance and troubleshooting"
+          },
+          {
+            "type": "tip",
+            "title": "Best Practice",
+            "content": "Always verify process stability before switching from Manual to Auto mode. Use bumpless transfer to avoid output jumps."
+          }
+        ]
+      },
+      "interval": {
+        "title": "PID Calculation Interval",
+        "sections": [
+          {
+            "title": "What is Interval?",
+            "content": "The time between PID calculations in seconds. This determines how often the controller updates the output value."
+          },
+          {
+            "title": "Typical Values",
+            "content": [
+              "Fast processes (flow, pressure): 1-10 seconds",
+              "Medium processes (level, pH): 10-30 seconds",
+              "Slow processes (temperature): 30-60 seconds"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Examples",
+            "content": "Water Flow Control: 2 seconds\nTank Level: 15 seconds\nFurnace Temperature: 45 seconds"
+          },
+          {
+            "type": "warning",
+            "title": "Trade-offs",
+            "content": "Shorter intervals: Faster response but higher CPU usage and potential instability.\nLonger intervals: Lower CPU usage but slower response to disturbances."
+          },
+          {
+            "type": "tip",
+            "title": "Recommendation",
+            "content": "Match the interval to your process time constant. A good rule: interval = process time constant / 10"
+          }
+        ]
+      },
+      "outputRange": {
+        "title": "Output Range (Min/Max)",
+        "sections": [
+          {
+            "title": "What is Output Range?",
+            "content": "The minimum and maximum values the PID controller can output. This defines the control authority and protects equipment."
+          },
+          {
+            "title": "Common Ranges",
+            "content": [
+              "Percentage: 0-100%",
+              "Current Loop: 4-20 mA (0-100 scaled)",
+              "Voltage: 0-10V (0-100 scaled)",
+              "Custom: Any range matching your actuator"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Examples",
+            "content": "Valve Position: 0-100% (fully closed to fully open)\nVFD Speed: 20-100% (minimum speed to full speed)\n4-20mA Signal: 0-100 (scaled to current output)"
+          },
+          {
+            "type": "tip",
+            "title": "Best Practice",
+            "content": "Set limits to protect equipment (e.g., minimum valve opening, maximum motor speed) and prevent dangerous operating conditions."
+          }
+        ]
+      },
+      "deadZone": {
+        "title": "Dead Zone (Dead Band)",
+        "sections": [
+          {
+            "title": "What is Dead Zone?",
+            "content": "A range around the setpoint where no control action is taken. This prevents excessive adjustments for minor deviations."
+          },
+          {
+            "title": "Why Use Dead Zone?",
+            "content": [
+              "Prevents 'hunting' - constant small oscillations",
+              "Reduces wear on actuators (valves, dampers)",
+              "Saves energy by avoiding unnecessary adjustments",
+              "Accounts for sensor noise and measurement uncertainty"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Examples",
+            "content": "Temperature Control: ±0.5°C dead zone\n  Setpoint 50°C → No action between 49.5-50.5°C\n\nFlow Control: ±1% dead zone\n  Setpoint 100 L/min → No action between 99-101 L/min"
+          },
+          {
+            "type": "warning",
+            "title": "Important",
+            "content": "Too large: Poor control, setpoint never reached\nToo small: Excessive actuator wear, energy waste\nRecommended: 0.5-2% of measurement range"
+          }
+        ]
+      },
+      "feedForward": {
+        "title": "Feed-Forward Control (Advanced)",
+        "sections": [
+          {
+            "title": "What is Feed-Forward?",
+            "content": "A control strategy that anticipates disturbances and compensates BEFORE they affect the process variable. This is an advanced technique."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "Measures disturbances (load changes, ambient conditions)",
+              "Calculates required output adjustment",
+              "Adds compensation to PID output",
+              "Reduces disturbance impact on process variable"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Industrial Example",
+            "content": "Heat Exchanger:\n• Disturbance: Inlet temperature drops 5°C\n• Feed-forward: Increase valve opening +20%\n• Result: Output temperature stays stable\n\nWithout feed-forward: Temperature drops, then PID reacts (slower response)"
+          },
+          {
+            "type": "warning",
+            "title": "Complexity Warning",
+            "content": "Feed-forward requires:\n• Accurate process model\n• Reliable disturbance measurements\n• Expert tuning knowledge\n\nMost applications work fine with PID only. Leave at 0 unless you have specific expertise."
+          },
+          {
+            "type": "tip",
+            "title": "When to Consider",
+            "content": "Use feed-forward when:\n• Disturbances are measurable and predictable\n• Process has large dead time\n• Tight control during disturbances is critical\n• You have process engineering expertise"
+          }
+        ]
+      },
+      "useParentPID": {
+        "title": "Cascade Control (Multi-Loop)",
+        "sections": [
+          {
+            "title": "What is Cascade Control?",
+            "content": "A control strategy where one PID (outer/parent) controls the setpoint of another PID (inner/child). This improves disturbance rejection and response time."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "Outer Loop: Controls primary process variable (slower)",
+              "Inner Loop: Controls secondary variable (faster)",
+              "Parent PID output becomes Child PID setpoint",
+              "Inner loop reacts faster to disturbances"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Common Applications",
+            "content": "Tank Level + Flow:\n• Outer: Controls tank level (slow)\n• Inner: Controls inlet flow rate (fast)\n• Level controller adjusts flow setpoint\n\nTemperature + Valve:\n• Outer: Controls temperature (slow)\n• Inner: Controls valve position (fast)\n• Temp controller adjusts valve setpoint"
+          },
+          {
+            "title": "Benefits",
+            "content": [
+              "Faster disturbance rejection",
+              "Better control of slow processes",
+              "Inner loop compensates for actuator dynamics",
+              "Improved stability and response"
+            ]
+          },
+          {
+            "type": "warning",
+            "title": "Configuration Notes",
+            "content": "• Inner loop must be faster than outer loop\n• Maximum 2 cascade levels supported\n• Requires dynamic setpoint (setpoint item)\n• Tune inner loop first, then outer loop"
+          },
+          {
+            "type": "tip",
+            "title": "When to Use",
+            "content": "Consider cascade when:\n• Secondary measurement is available and faster\n• Disturbances affect secondary variable\n• Single-loop control is insufficient\n• Process has multiple time scales"
+          }
+        ]
+      },
+      "useDigitalOutput": {
+        "title": "Hysteresis Control (ON/OFF Output)",
+        "sections": [
+          {
+            "title": "What is Hysteresis Control?",
+            "content": "Converts the continuous PID output to an ON/OFF digital signal using two thresholds. This enables staged control of relays, contactors, or pumps."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "PID output reaches HIGH threshold → Turn ON",
+              "PID output drops to LOW threshold → Turn OFF",
+              "Gap between thresholds prevents rapid cycling",
+              "Digital output controls relay, contactor, or pump"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Heating System Example",
+            "content": "Output Range: 0-100%\nHigh Threshold: 75%\nLow Threshold: 25%\n\nScenario:\n• PID output reaches 75% → Heater ON\n• PID output decreases to 60% → Still ON (hysteresis)\n• PID output drops to 25% → Heater OFF\n• Prevents rapid ON/OFF cycling"
+          },
+          {
+            "title": "Common Applications",
+            "content": [
+              "Staged heating/cooling (multiple compressors)",
+              "Pump control (ON/OFF based on demand)",
+              "Relay-controlled equipment",
+              "Backup systems (activate at threshold)"
+            ]
+          },
+          {
+            "type": "warning",
+            "title": "Threshold Selection",
+            "content": "Gap too small: Rapid cycling, equipment wear\nGap too large: Poor control, slow response\nRecommended: 20-40% gap between thresholds"
+          },
+          {
+            "type": "tip",
+            "title": "Best Practice",
+            "content": "Use hysteresis for equipment with:\n• Limited switching cycles (compressors, contactors)\n• ON/OFF operation only (relays, solenoids)\n• Staging requirements (multiple units)"
+          }
+        ]
+      },
+      "dualMode": {
+        "title": "Static vs Dynamic Values",
+        "sections": [
+          {
+            "title": "What is Dual-Mode Configuration?",
+            "content": "Many fields support both static (fixed) values and dynamic (item-based) values. This provides flexibility for different control scenarios."
+          },
+          {
+            "title": "Static Mode",
+            "content": [
+              "Value entered directly in configuration",
+              "Fixed during operation",
+              "Simple and predictable",
+              "Good for most applications"
+            ]
+          },
+          {
+            "title": "Dynamic Mode (Use Item)",
+            "content": [
+              "Value comes from monitoring system item",
+              "Can change during operation",
+              "Enables remote control and scheduling",
+              "Integrates with other systems"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Examples",
+            "content": "SetPoint:\n• Static: Always maintain 50°C\n• Dynamic: Read setpoint from HMI (operator adjustable)\n\nManual Value:\n• Static: Fixed 75% output in manual mode\n• Dynamic: Operator sets manual output via SCADA\n\nAuto/Manual Mode:\n• Static: Configured in dialog (always auto/manual)\n• Dynamic: Controlled by digital input (remote switch)"
+          },
+          {
+            "type": "tip",
+            "title": "When to Use Dynamic",
+            "content": "Choose dynamic (item-based) when:\n• Operators need runtime adjustments\n• Integration with SCADA/HMI systems\n• Scheduling or time-based control\n• Automatic mode switching based on conditions"
+          }
+        ]
+      }
     }
   },
   "statistics": {
