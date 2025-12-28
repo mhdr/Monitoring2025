@@ -715,6 +715,8 @@
     "fields": {
       "itemType": "نوع آیتم",
       "pointNumber": "شماره پوینت",
+      "nextAvailablePointNumber": "شماره پوینت بعدی (تولید خودکار)",
+      "loadingNextNumber": "در حال بارگذاری شماره پوینت بعدی...",
       "interfaceType": "نوع رابط",
       "isEditable": "اجازه نوشتن مقدار",
       "itemName": "نام",

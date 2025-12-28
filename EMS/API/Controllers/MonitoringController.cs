@@ -2951,6 +2951,78 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     /// <summary>
+    /// Get the next available point number for a new monitoring item
+    /// </summary>
+    /// <returns>The next available point number (max point number + 1)</returns>
+    /// <remarks>
+    /// Retrieves the maximum point number currently in use across all monitoring items
+    /// and returns the next available number (max + 1).
+    /// Returns 1 if no items exist in the system.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/nextnumber
+    ///     
+    /// Sample response:
+    /// 
+    ///     {
+    ///        "success": true,
+    ///        "nextPointNumber": 102,
+    ///        "message": "Next available point number retrieved successfully"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the next available point number</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="500">If an internal error occurs</response>
+    [HttpPost("NextNumber")]
+    [ProducesResponseType(typeof(GetNextPointNumberResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetNextPointNumber()
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("GetNextPointNumber: Unauthorized access attempt");
+                return Unauthorized(new { success = false, message = "Authentication required" });
+            }
+
+            _logger.LogInformation("GetNextPointNumber operation started for user {UserId}", userId);
+
+            // Get the maximum point number from all items
+            var maxPointNumber = await Core.Points.GetMaxPointNumber();
+
+            // Calculate next point number (max + 1, or 1 if no items exist)
+            var nextPointNumber = maxPointNumber + 1;
+
+            _logger.LogInformation("GetNextPointNumber: Max point number is {MaxPointNumber}, next is {NextPointNumber}", 
+                maxPointNumber, nextPointNumber);
+
+            return Ok(new GetNextPointNumberResponseDto
+            {
+                Success = true,
+                NextPointNumber = nextPointNumber,
+                Message = "Next available point number retrieved successfully"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetNextPointNumber: Error retrieving next point number: {Message}", 
+                ex.Message);
+            return StatusCode(500, new GetNextPointNumberResponseDto
+            {
+                Success = false,
+                NextPointNumber = 0,
+                Message = "Internal server error"
+            });
+        }
+    }
+
+    /// <summary>
     /// Add a new monitoring item to the system
     /// </summary>
     /// <param name="request">Add item request containing the new item configuration properties</param>

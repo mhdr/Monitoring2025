@@ -715,6 +715,8 @@
     "fields": {
       "itemType": "Item Type",
       "pointNumber": "Point Number",
+      "nextAvailablePointNumber": "Next available point number (auto-generated)",
+      "loadingNextNumber": "Loading next point number...",
       "interfaceType": "Interface Type",
       "isEditable": "Allow Value Write",
       "itemName": "Name",

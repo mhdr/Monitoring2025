@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,12 +17,13 @@ import {
   Divider,
   Alert,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
-import { addItem } from '../services/monitoringApi';
+import { addItem, getNextPointNumber } from '../services/monitoringApi';
 import type {
   AddItemRequestDto,
 } from '../types/api';
@@ -116,6 +117,7 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isLoadingNextNumber, setIsLoadingNextNumber] = useState<boolean>(false);
   
   const [formData, setFormData] = useState<AddItemFormData>({
     itemType: ItemTypeEnum.DigitalInput,
@@ -159,6 +161,36 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
   const shouldShowScaling = useMemo(() => {
     return isAnalog && formData.shouldScale === ShouldScaleTypeEnum.Yes;
   }, [isAnalog, formData.shouldScale]);
+
+  // Fetch next available point number when dialog opens
+  useEffect(() => {
+    const fetchNextPointNumber = async () => {
+      if (open) {
+        setIsLoadingNextNumber(true);
+        try {
+          logger.log('Fetching next point number');
+          const response = await getNextPointNumber();
+          
+          if (response.success && response.nextPointNumber > 0) {
+            logger.log('Next point number retrieved:', response.nextPointNumber);
+            setFormData((prev) => ({
+              ...prev,
+              pointNumber: response.nextPointNumber,
+            }));
+          } else {
+            logger.warn('Failed to retrieve next point number, using default 0');
+          }
+        } catch (error) {
+          logger.error('Error fetching next point number:', error);
+          // Keep default value of 0 on error
+        } finally {
+          setIsLoadingNextNumber(false);
+        }
+      }
+    };
+
+    fetchNextPointNumber();
+  }, [open]);
 
   const handleFieldChange = <K extends keyof AddItemFormData>(
     field: K,
@@ -464,12 +496,20 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
                 type="number"
                 value={formData.pointNumber}
                 onChange={(e) => handleFieldChange('pointNumber', parseInt(e.target.value) || 0)}
-                disabled={isSaving}
+                disabled={isSaving || isLoadingNextNumber}
                 required
                 error={!!fieldErrors.pointNumber}
-                helperText={fieldErrors.pointNumber || ''}
+                helperText={
+                  fieldErrors.pointNumber || 
+                  (isLoadingNextNumber ? t('addItemDialog.fields.loadingNextNumber') : t('addItemDialog.fields.nextAvailablePointNumber'))
+                }
                 inputProps={{ min: 0, max: 2147483647 }}
                 data-id-ref="add-item-dialog-point-number"
+                InputProps={{
+                  endAdornment: isLoadingNextNumber ? (
+                    <CircularProgress size={20} data-id-ref="add-item-dialog-point-number-loading" />
+                  ) : undefined,
+                }}
               />
             </Box>
 

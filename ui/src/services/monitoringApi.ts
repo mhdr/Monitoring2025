@@ -58,6 +58,7 @@ import type {
   GetItemResponseDto,
   AddItemRequestDto,
   AddItemResponseDto,
+  GetNextPointNumberResponseDto,
   EditItemRequestDto,
   EditItemResponseDto,
   SettingsVersionResponseDto,
@@ -908,6 +909,30 @@ export const editItem = async (data: EditItemRequestDto): Promise<EditItemRespon
     return response.data;
   } catch (error) {
     logger.error('Failed to edit item', { itemId: data.id, error });
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get the next available point number for a new monitoring item
+ * Retrieves the maximum point number currently in use and returns the next available number (max + 1)
+ * Returns 1 if no items exist in the system
+ */
+export const getNextPointNumber = async (): Promise<GetNextPointNumberResponseDto> => {
+  const logger = createLogger('MonitoringAPI:getNextPointNumber');
+  try {
+    logger.log('Fetching next available point number');
+    
+    const response = await apiClient.post<GetNextPointNumberResponseDto>('/api/Monitoring/NextNumber', {});
+    
+    logger.log('Next point number retrieved successfully', { 
+      nextPointNumber: response.data.nextPointNumber,
+      success: response.data.success 
+    });
+    
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to get next point number', { error });
     handleApiError(error);
   }
 };

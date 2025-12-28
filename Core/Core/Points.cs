@@ -118,6 +118,20 @@ public static class Points
     }
 
     /// <summary>
+    /// Gets the maximum point number from all monitoring items.
+    /// </summary>
+    /// <returns>The maximum point number, or 0 if no items exist.</returns>
+    public static async Task<int> GetMaxPointNumber()
+    {
+        var context = new DataContext();
+        var maxPointNumber = await context.MonitoringItems.AnyAsync() 
+            ? await context.MonitoringItems.MaxAsync(x => x.PointNumber)
+            : 0;
+        await context.DisposeAsync();
+        return maxPointNumber;
+    }
+
+    /// <summary>
     /// Retrieves a monitoring point matching the given predicate.
     /// </summary>
     /// <param name="predicate">The predicate to filter points.</param>

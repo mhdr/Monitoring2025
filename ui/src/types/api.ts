@@ -1743,6 +1743,18 @@ export interface AddItemResponseDto {
 }
 
 /**
+ * Response model for getting the next available point number
+ */
+export interface GetNextPointNumberResponseDto {
+  /** Indicates if the operation was successful */
+  success: boolean;
+  /** The next available point number */
+  nextPointNumber: number;
+  /** Optional message providing additional context */
+  message?: string | null;
+}
+
+/**
  * Request DTO for editing a monitoring item's complete configuration
  */
 export interface EditItemRequestDto {
