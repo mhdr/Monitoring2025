@@ -130,15 +130,34 @@ public class PIDMemoryProcess
     {
         await FetchPidMemories();
 
-        // Process all PID controllers in parallel with error isolation
-        var tasks = _memories
+        // Group PIDs by cascade level for ordered execution
+        // Level 0 (standalone/outer) execute first, then level 1, then level 2
+        var pidsByLevel = _memories
             .Where(m => !m.IsDisabled)
-            .Select(memory => ProcessSinglePID(memory))
+            .GroupBy(m => m.CascadeLevel)
+            .OrderBy(g => g.Key)
             .ToList();
 
-        // Execute all PID processing tasks concurrently
-        await Task.WhenAll(tasks);
+        // Execute each cascade level sequentially to ensure proper dependency order
+        foreach (var levelGroup in pidsByLevel)
+        {
+            // Within each level, PIDs can execute in parallel (they don't depend on each other)
+            var tasks = levelGroup
+                .Select(memory => ProcessSinglePID(memory))
+                .ToList();
+
+            // Wait for all PIDs at this level to complete before moving to next level
+            await Task.WhenAll(tasks);
+            
+            // Small delay to allow Redis writes to propagate before next level reads them
+            if (levelGroup.Key < MaxCascadeDepth)
+            {
+                await Task.Delay(50); // 50ms propagation delay between cascade levels
+            }
+        }
     }
+
+    private const int MaxCascadeDepth = 2;
 
     /// <summary>
     /// Process a single PID controller with full error isolation
@@ -568,7 +587,9 @@ public class PIDMemoryProcess
                 PreviousOutput = state.PreviousOutput,
                 DigitalOutputState = pidDto.DigitalOutputState,
                 LastUpdateTime = epochTime,
-                ConfigurationHash = GenerateConfigurationHash(memory, pidDto.PidController.ReverseOutput)
+                ConfigurationHash = GenerateConfigurationHash(memory, pidDto.PidController.ReverseOutput),
+                ParentPIDId = memory.ParentPIDId,
+                CascadeLevel = memory.CascadeLevel
             };
 
             await Points.SetPIDState(pidState);

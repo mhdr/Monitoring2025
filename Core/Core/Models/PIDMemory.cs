@@ -86,4 +86,20 @@ public class PIDMemory
     [DefaultValue(25.0)]
     [Column("hysteresis_low_threshold")]
     public double HysteresisLowThreshold { get; set; }
+    
+    // Cascaded PID Control
+    /// <summary>
+    /// Reference to parent PID controller in a cascade configuration.
+    /// Outer PID's CVId should match inner PID's SetPointId.
+    /// </summary>
+    [Column("parent_pid_id")]
+    public Guid? ParentPIDId { get; set; }
+    
+    /// <summary>
+    /// Cascade level: 0 = standalone/outer, 1 = outer in cascade, 2 = inner in cascade.
+    /// Used for execution ordering (level 0 first, then 1, then 2).
+    /// </summary>
+    [DefaultValue(0)]
+    [Column("cascade_level")]
+    public int CascadeLevel { get; set; }
 }

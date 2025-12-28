@@ -10,6 +10,135 @@ namespace Core;
 /// </summary>
 public class PIDMemories
 {
+    private const int MaxCascadeDepth = 2;
+    
+    /// <summary>
+    /// Validates cascade configuration and detects circular references
+    /// </summary>
+    private static async Task<(bool IsValid, string? ErrorMessage)> ValidateCascadeConfiguration(
+        DataContext context, 
+        Guid currentPidId, 
+        Guid? parentPidId, 
+        int cascadeLevel,
+        Guid outputItemId)
+    {
+        // If no parent specified, must be standalone (level 0)
+        if (!parentPidId.HasValue || parentPidId.Value == Guid.Empty)
+        {
+            if (cascadeLevel != 0)
+            {
+                return (false, "CascadeLevel must be 0 for standalone PIDs (no parent)");
+            }
+            return (true, null);
+        }
+        
+        // Validate cascade level is within allowed range
+        if (cascadeLevel < 1 || cascadeLevel > MaxCascadeDepth)
+        {
+            return (false, $"CascadeLevel must be between 1 and {MaxCascadeDepth} when ParentPIDId is set");
+        }
+        
+        // Validate parent PID exists
+        var parentPid = await context.PIDMemories.FindAsync(parentPidId.Value);
+        if (parentPid == null)
+        {
+            return (false, "Parent PID not found");
+        }
+        
+        // Prevent self-reference
+        if (parentPidId.Value == currentPidId)
+        {
+            return (false, "PID cannot be its own parent");
+        }
+        
+        // Validate parent's cascade level is exactly one less
+        if (parentPid.CascadeLevel != cascadeLevel - 1)
+        {
+            return (false, $"Parent PID cascade level ({parentPid.CascadeLevel}) must be exactly one less than child's level ({cascadeLevel})");
+        }
+        
+        // Detect circular references by walking up the parent chain
+        var visitedPids = new HashSet<Guid> { currentPidId };
+        var currentParentId = parentPidId.Value;
+        int depth = 0;
+        
+        while (currentParentId != Guid.Empty)
+        {
+            if (visitedPids.Contains(currentParentId))
+            {
+                return (false, "Circular reference detected in PID cascade chain");
+            }
+            
+            visitedPids.Add(currentParentId);
+            depth++;
+            
+            if (depth > MaxCascadeDepth + 1)
+            {
+                return (false, $"Cascade chain exceeds maximum depth of {MaxCascadeDepth}");
+            }
+            
+            var parent = await context.PIDMemories.FindAsync(currentParentId);
+            if (parent == null)
+            {
+                break;
+            }
+            
+            currentParentId = parent.ParentPIDId ?? Guid.Empty;
+        }
+        
+        // Validate that this PID is not already a parent of another PID
+        // (A PID at level 2 cannot have children)
+        if (cascadeLevel >= MaxCascadeDepth)
+        {
+            var hasChildren = await context.PIDMemories
+                .AnyAsync(p => p.ParentPIDId == currentPidId);
+            
+            if (hasChildren)
+            {
+                return (false, $"PID at cascade level {MaxCascadeDepth} cannot be a parent (maximum cascade depth reached)");
+            }
+        }
+        
+        // Validate output compatibility is not enforced here - it's checked separately
+        // because we need to verify parent's CVId matches child's SetPointId
+        
+        return (true, null);
+    }
+    
+    /// <summary>
+    /// Validates that parent's output matches child's setpoint in a cascade
+    /// </summary>
+    private static async Task<(bool IsValid, string? ErrorMessage)> ValidateCascadeSetpointMatch(
+        DataContext context,
+        Guid? parentPidId,
+        Guid? setPointId)
+    {
+        // Only validate if both parent and setpoint are specified
+        if (!parentPidId.HasValue || parentPidId.Value == Guid.Empty)
+        {
+            return (true, null);
+        }
+        
+        if (!setPointId.HasValue || setPointId.Value == Guid.Empty)
+        {
+            return (false, "SetPointId must be specified when using cascaded control (parent PID specified)");
+        }
+        
+        var parentPid = await context.PIDMemories.FindAsync(parentPidId.Value);
+        if (parentPid == null)
+        {
+            return (false, "Parent PID not found");
+        }
+        
+        // Verify parent's output item matches this PID's setpoint item
+        if (parentPid.OutputItemId != setPointId.Value)
+        {
+            return (false, $"Parent PID's output item must match this PID's setpoint item for cascade control. Parent outputs to {parentPid.OutputItemId}, but this PID's setpoint is {setPointId.Value}");
+        }
+        
+        return (true, null);
+    }
+    
     /// <summary>
     /// Get all PID memory configurations
     /// </summary>
@@ -183,6 +312,32 @@ public class PIDMemories
                 return (false, null, $"HysteresisHighThreshold ({pidMemory.HysteresisHighThreshold}) must be <= OutputMax ({pidMemory.OutputMax})");
             }
 
+            // Validate cascade configuration
+            var cascadeValidation = await ValidateCascadeConfiguration(
+                context, 
+                Guid.Empty, // New PID, no ID yet
+                pidMemory.ParentPIDId, 
+                pidMemory.CascadeLevel,
+                pidMemory.OutputItemId);
+            
+            if (!cascadeValidation.IsValid)
+            {
+                await context.DisposeAsync();
+                return (false, null, cascadeValidation.ErrorMessage);
+            }
+            
+            // Validate cascade setpoint match
+            var setpointValidation = await ValidateCascadeSetpointMatch(
+                context,
+                pidMemory.ParentPIDId,
+                pidMemory.SetPointId);
+            
+            if (!setpointValidation.IsValid)
+            {
+                await context.DisposeAsync();
+                return (false, null, setpointValidation.ErrorMessage);
+            }
+
             context.PIDMemories.Add(pidMemory);
             await context.SaveChangesAsync();
             var id = pidMemory.Id;
@@ -353,6 +508,32 @@ public class PIDMemories
             {
                 await context.DisposeAsync();
                 return (false, $"HysteresisHighThreshold ({pidMemory.HysteresisHighThreshold}) must be <= OutputMax ({pidMemory.OutputMax})");
+            }
+
+            // Validate cascade configuration
+            var cascadeValidation = await ValidateCascadeConfiguration(
+                context, 
+                pidMemory.Id,
+                pidMemory.ParentPIDId, 
+                pidMemory.CascadeLevel,
+                pidMemory.OutputItemId);
+            
+            if (!cascadeValidation.IsValid)
+            {
+                await context.DisposeAsync();
+                return (false, cascadeValidation.ErrorMessage);
+            }
+            
+            // Validate cascade setpoint match
+            var setpointValidation = await ValidateCascadeSetpointMatch(
+                context,
+                pidMemory.ParentPIDId,
+                pidMemory.SetPointId);
+            
+            if (!setpointValidation.IsValid)
+            {
+                await context.DisposeAsync();
+                return (false, setpointValidation.ErrorMessage);
             }
 
             context.PIDMemories.Update(pidMemory);

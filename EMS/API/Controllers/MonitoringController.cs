@@ -7344,7 +7344,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         ReverseOutputId = pm.ReverseOutputId,
                         DigitalOutputItemId = pm.DigitalOutputItemId,
                         HysteresisHighThreshold = pm.HysteresisHighThreshold,
-                        HysteresisLowThreshold = pm.HysteresisLowThreshold
+                        HysteresisLowThreshold = pm.HysteresisLowThreshold,
+                        ParentPIDId = pm.ParentPIDId,
+                        CascadeLevel = pm.CascadeLevel
                     });
                 }
             }
@@ -7428,7 +7430,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 ReverseOutputId = request.ReverseOutputId,
                 DigitalOutputItemId = request.DigitalOutputItemId,
                 HysteresisHighThreshold = request.HysteresisHighThreshold,
-                HysteresisLowThreshold = request.HysteresisLowThreshold
+                HysteresisLowThreshold = request.HysteresisLowThreshold,
+                ParentPIDId = request.ParentPIDId,
+                CascadeLevel = request.CascadeLevel
             };
 
             var (success, id, errorMessage) = await Core.PIDMemories.AddPIDMemory(pidMemory);
@@ -7520,7 +7524,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 ReverseOutputId = request.ReverseOutputId,
                 DigitalOutputItemId = request.DigitalOutputItemId,
                 HysteresisHighThreshold = request.HysteresisHighThreshold,
-                HysteresisLowThreshold = request.HysteresisLowThreshold
+                HysteresisLowThreshold = request.HysteresisLowThreshold,
+                ParentPIDId = request.ParentPIDId,
+                CascadeLevel = request.CascadeLevel
             };
 
             var (success, errorMessage) = await Core.PIDMemories.EditPIDMemory(pidMemory);
@@ -7578,6 +7584,79 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 IsSuccessful = success,
                 ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Get potential parent PIDs for cascade control configuration
+    /// </summary>
+    /// <param name="request">Request with optional current PID ID and desired cascade level</param>
+    /// <returns>List of PIDs that can be used as parents for cascaded control</returns>
+    /// <remarks>
+    /// Returns PIDs that can serve as parent controllers in a cascaded configuration.
+    /// Filters out disabled PIDs and ensures cascade level compatibility.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetPotentialParentPIDs
+    ///     {
+    ///        "currentPidId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "desiredCascadeLevel": 2
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns list of potential parent PIDs</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetPotentialParentPIDs")]
+    public async Task<IActionResult> GetPotentialParentPIDs([FromBody] GetPotentialParentPIDsRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var allPids = await Core.PIDMemories.GetPIDMemories();
+
+            if (allPids == null)
+            {
+                return Ok(new GetPotentialParentPIDsResponseDto { PotentialParents = [] });
+            }
+
+            // Filter PIDs that can be parents:
+            // 1. Not disabled
+            // 2. Not the current PID itself
+            // 3. Cascade level must be exactly one less than desired level
+            // 4. Must not already be a child of the current PID (prevent circular refs)
+            var potentialParents = allPids
+                .Where(p => !p.IsDisabled)
+                .Where(p => !request.CurrentPidId.HasValue || p.Id != request.CurrentPidId.Value)
+                .Where(p => p.CascadeLevel == request.DesiredCascadeLevel - 1)
+                .Select(p => new GetPotentialParentPIDsResponseDto.ParentPID
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    OutputItemId = p.OutputItemId,
+                    CascadeLevel = p.CascadeLevel,
+                    IsDisabled = p.IsDisabled
+                })
+                .ToList();
+
+            var response = new GetPotentialParentPIDsResponseDto
+            {
+                PotentialParents = potentialParents
             };
 
             return Ok(response);

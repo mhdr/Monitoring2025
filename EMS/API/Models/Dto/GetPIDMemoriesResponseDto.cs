@@ -147,5 +147,15 @@ public class GetPIDMemoriesResponseDto
         /// Low threshold for hysteresis control (turn OFF when output &lt;= this value)
         /// </summary>
         public double HysteresisLowThreshold { get; set; }
+        
+        /// <summary>
+        /// Parent PID ID for cascaded control (optional)
+        /// </summary>
+        public Guid? ParentPIDId { get; set; }
+        
+        /// <summary>
+        /// Cascade level: 0 = standalone/outer, 1 = outer in cascade, 2 = inner in cascade
+        /// </summary>
+        public int CascadeLevel { get; set; }
     }
 }

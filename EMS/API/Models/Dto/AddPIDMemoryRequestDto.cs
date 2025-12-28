@@ -150,4 +150,17 @@ public class AddPIDMemoryRequestDto
     /// </summary>
     [Range(0.0, double.MaxValue, ErrorMessage = "HysteresisLowThreshold must be non-negative")]
     public double HysteresisLowThreshold { get; set; } = 25.0;
+    
+    /// <summary>
+    /// Parent PID ID for cascaded control (optional)
+    /// For cascaded control, parent PID's output must match this PID's setpoint
+    /// </summary>
+    public Guid? ParentPIDId { get; set; }
+    
+    /// <summary>
+    /// Cascade level: 0 = standalone/outer, 1 = outer in cascade, 2 = inner in cascade
+    /// Default: 0. Must be set appropriately if ParentPIDId is specified.
+    /// </summary>
+    [Range(0, 2, ErrorMessage = "CascadeLevel must be between 0 and 2")]
+    public int CascadeLevel { get; set; } = 0;
 }
