@@ -352,7 +352,7 @@ const TimeoutMemoryManagementPage: React.FC = () => {
             </Box>
           }
         />
-        <CardContent data-id-ref="timeout-memory-page-card-body" sx={{ flex: 1, overflow: 'auto', p: 0 }}>
+        <CardContent data-id-ref="timeout-memory-page-card-body" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', p: 0 }}>
           {/* Info Alert explaining timeout behavior */}
           <Box sx={{ p: 2, pb: 0 }}>
             <Alert severity="info" sx={{ mb: 2 }} data-id-ref="timeout-memory-behavior-info">
@@ -378,16 +378,18 @@ const TimeoutMemoryManagementPage: React.FC = () => {
               <CircularProgress />
             </Box>
           ) : (
-            <SyncfusionGridWrapper
-              data={filteredTimeoutMemories}
-              columns={columns}
-              allowPaging={true}
-              allowSorting={true}
-              allowFiltering={true}
-              pageSettings={{ pageSize: 50, pageSizes: [25, 50, 100, 200] }}
-              filterSettings={{ type: 'Excel' }}
-              height="100%"
-            />
+            <Box sx={{ flex: 1, minHeight: 400 }} data-id-ref="timeout-memory-grid-container">
+              <SyncfusionGridWrapper
+                data={filteredTimeoutMemories}
+                columns={columns}
+                allowPaging={true}
+                allowSorting={true}
+                allowFiltering={true}
+                pageSettings={{ pageSize: 50, pageSizes: [25, 50, 100, 200] }}
+                filterSettings={{ type: 'Excel' }}
+                height="100%"
+              />
+            </Box>
           )}
         </CardContent>
       </Card>

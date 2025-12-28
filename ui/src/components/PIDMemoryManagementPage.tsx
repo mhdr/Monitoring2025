@@ -561,7 +561,7 @@ const PIDMemoryManagementPage: React.FC = () => {
 
   return (
     <Container maxWidth={false} data-id-ref="pid-memory-page-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
-      <Card sx={{ boxShadow: 3 }} data-id-ref="pid-memory-page-card">
+      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 3 }} data-id-ref="pid-memory-page-card">
         <CardHeader
           avatar={<PIDIcon sx={{ fontSize: 32, color: 'primary.main' }} />}
           title={
@@ -587,9 +587,9 @@ const PIDMemoryManagementPage: React.FC = () => {
           data-id-ref="pid-memory-page-header"
         />
 
-        <CardContent data-id-ref="pid-memory-page-content">
+        <CardContent data-id-ref="pid-memory-page-content" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', p: 2 }}>
           {/* Search and Filter */}
-          <Box sx={{ mb: 3 }} data-id-ref="pid-memory-search-container">
+          <Box sx={{ mb: 2 }} data-id-ref="pid-memory-search-container">
             <TextField
               fullWidth
               placeholder={t('pidMemory.searchPlaceholder')}
@@ -629,16 +629,18 @@ const PIDMemoryManagementPage: React.FC = () => {
 
           {/* Data Grid */}
           {!loading && (
-            <SyncfusionGridWrapper
-              data={filteredPIDMemories}
-              columns={columns}
-              allowPaging={true}
-              pageSettings={{ pageSize: 50, pageSizes: [25, 50, 100, 200] }}
-              allowSorting={true}
-              allowFiltering={true}
-              filterSettings={{ type: 'Excel' }}
-              height="600px"
-            />
+            <Box sx={{ flex: 1, minHeight: 400 }} data-id-ref="pid-memory-grid-container">
+              <SyncfusionGridWrapper
+                data={filteredPIDMemories}
+                columns={columns}
+                allowPaging={true}
+                pageSettings={{ pageSize: 50, pageSizes: [25, 50, 100, 200] }}
+                allowSorting={true}
+                allowFiltering={true}
+                filterSettings={{ type: 'Excel' }}
+                height="100%"
+              />
+            </Box>
           )}
         </CardContent>
       </Card>
