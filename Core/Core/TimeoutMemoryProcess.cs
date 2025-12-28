@@ -131,15 +131,15 @@ public class TimeoutMemoryProcess
                 long epochTime = currentTimeUtc.ToUnixTimeSeconds();
 
                 // Check if input item has timed out
-                // If timeout exceeded: set output to "1" (fault/communication lost)
-                // If input is fresh: set output to "0" (healthy/communication active)
+                // If timeout exceeded: set output to "1"
+                // If input is fresh: set output to "0"
                 if (epochTime - input.Time > memory.Timeout)
                 {
-                    output.Value = "1";  // Timeout exceeded - fault condition
+                    output.Value = "1";  // Timeout exceeded
                 }
                 else
                 {
-                    output.Value = "0";  // Input is updating regularly - healthy
+                    output.Value = "0";  // Input is updating regularly
                 }
 
                 output.Time = epochTime;

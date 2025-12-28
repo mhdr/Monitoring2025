@@ -1541,8 +1541,8 @@
   },
   "timeoutMemory": {
     "title": "Timeout Memory",
-    "description": "Monitor input items and automatically set output status based on update frequency. The output item value indicates communication health:",
-    "behaviorNote": "Behavior: Output = 0 when input is updating regularly | Output = 1 when timeout exceeded (communication lost)",
+    "description": "Monitor input items and automatically set output status based on update frequency.",
+    "behaviorNote": "Behavior: Output = 0 when input is updating regularly | Output = 1 when timeout exceeded",
     "addNew": "Add Timeout Memory",
     "addTitle": "Add Timeout Memory",
     "editTitle": "Edit Timeout Memory",
@@ -1553,9 +1553,9 @@
     "inputItem": "Input Item",
     "inputItemHelp": "Item to monitor for timeout (any type). Its update timestamp is checked every second.",
     "outputItem": "Output Item",
-    "outputItemHelp": "Digital Output item that will be set to: 0 = input updating regularly, 1 = timeout exceeded (fault)",
+    "outputItemHelp": "Digital Output item that will be set to: 0 = input updating regularly, 1 = timeout exceeded",
     "timeout": "Timeout (seconds)",
-    "timeoutHelp": "If input item is not updated within this many seconds, output will be set to 1 (fault/timeout)",
+    "timeoutHelp": "If input item is not updated within this many seconds, output will be set to 1",
     "validation": {
       "inputItemRequired": "Input item is required",
       "outputItemRequired": "Output item is required",

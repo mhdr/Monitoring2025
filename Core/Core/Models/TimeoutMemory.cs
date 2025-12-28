@@ -9,10 +9,8 @@ namespace Core.Models;
 /// </summary>
 /// <remarks>
 /// The TimeoutMemoryProcess checks the input item every second:
-/// - If (CurrentTime - InputItemTime) > Timeout: Output is set to "1" (timeout exceeded/fault)
-/// - Otherwise: Output is set to "0" (input is updating regularly/healthy)
-/// 
-/// This is useful for monitoring communication health with PLCs, sensors, or other data sources.
+/// - If (CurrentTime - InputItemTime) > Timeout: Output is set to "1" (timeout exceeded)
+/// - Otherwise: Output is set to "0" (input is updating regularly)
 /// </remarks>
 [Table("timeout_memory")]
 public class TimeoutMemory
@@ -29,15 +27,15 @@ public class TimeoutMemory
     
     /// <summary>
     /// The Digital Output item that receives the timeout status:
-    /// - Value "0" = Input item is being updated regularly (communication healthy)
-    /// - Value "1" = Input item timeout exceeded (communication lost/fault)
+    /// - Value "0" = Input item is being updated regularly
+    /// - Value "1" = Input item timeout exceeded
     /// Must be ItemType.DigitalOutput.
     /// </summary>
     [Column("output_item_id")] public Guid OutputItemId { get; set; }
     
     /// <summary>
     /// Timeout duration in seconds. If the input item is not updated within this time,
-    /// the output item will be set to "1" (fault condition).
+    /// the output item will be set to "1".
     /// </summary>
     [Column("timeout")] public long Timeout { get; set; }
 }
