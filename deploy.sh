@@ -82,11 +82,31 @@ if [[ "$modbus_value" == "1" ]]; then
    popd || exit
 
 else
-   bacnet_status=$(systemctl is-active monitoring_interface_modbus.service)
+   modbus_status=$(systemctl is-active monitoring_interface_modbus.service)
    if [[ "$modbus_status" == "active" ]]; then
       systemctl stop monitoring_interface_modbus.service
       systemctl disable monitoring_interface_modbus.service
       rm -r /opt/monitoring/modbus/*
+   fi
+fi
+
+modbus_gateway_value=$(yq eval '.interfaces.modbus_gateway' /opt/monitoring/config.yaml)
+
+# Check if modbus_gateway is 1
+if [[ "$modbus_gateway_value" == "1" ]]; then
+   systemctl stop monitoring_modbus_gateway.service
+   rm -r /opt/monitoring/modbus_gateway/*
+
+   pushd Core/ModbusGateway || exit
+      ./manager.sh 8
+   popd || exit
+
+else
+   modbus_gateway_status=$(systemctl is-active monitoring_modbus_gateway.service)
+   if [[ "$modbus_gateway_status" == "active" ]]; then
+      systemctl stop monitoring_modbus_gateway.service
+      systemctl disable monitoring_modbus_gateway.service
+      rm -r /opt/monitoring/modbus_gateway/*
    fi
 fi
 
