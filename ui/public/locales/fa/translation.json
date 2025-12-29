@@ -210,6 +210,8 @@
     "builderTitle": "ساخت عبارت زمان‌بندی",
     "builderDescription": "از ابزار بصری زیر برای ایجاد زمان‌بندی استفاده کنید یا مستقیماً عبارت را وارد نمایید.",
     "preview": "پیش‌نمایش",
+    "nextRun": "اجرای بعدی",
+    "nextExecutions": "اجراهای بعدی",
     "invalidFormat": "فرمت نامعتبر",
     "descriptions": {
       "dailyAtMidnight": "روزانه در نیمه‌شب (00:00)",

@@ -17,6 +17,7 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 import Cron from 'react-cron-generator';
+import cronParser from 'cron-parser';
 import './CronExpressionInput.css';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -54,6 +55,7 @@ const CronExpressionInput: React.FC<CronExpressionInputProps> = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tempValue, setTempValue] = useState(value || '0 0 * * *');
   const [cronDescription, setCronDescription] = useState('');
+  const [nextExecutions, setNextExecutions] = useState<string[]>([]);
 
   // Update temp value when external value changes
   useEffect(() => {
@@ -62,11 +64,35 @@ const CronExpressionInput: React.FC<CronExpressionInputProps> = ({
     }
   }, [value]);
 
-  // Generate human-readable description
+  // Generate human-readable description and next executions
   useEffect(() => {
     const description = generateCronDescription(tempValue);
     setCronDescription(description);
+    
+    const executions = getNextExecutions(tempValue);
+    setNextExecutions(executions);
   }, [tempValue]);
+
+  /**
+   * Get next execution times using cron-parser
+   */
+  const getNextExecutions = (cronExpression: string, count: number = 3): string[] => {
+    if (!cronExpression) return [];
+
+    try {
+      const interval = cronParser.parse(cronExpression);
+      const executions: string[] = [];
+      
+      for (let i = 0; i < count; i++) {
+        const next = interval.next();
+        executions.push(next.toDate().toLocaleString());
+      }
+      
+      return executions;
+    } catch (err) {
+      return [];
+    }
+  };
 
   /**
    * Generate human-readable cron description
@@ -164,9 +190,16 @@ const CronExpressionInput: React.FC<CronExpressionInputProps> = ({
       />
 
       {value && !error && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-          {cronDescription}
-        </Typography>
+        <Box sx={{ mt: 0.5 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+            {cronDescription}
+          </Typography>
+          {nextExecutions.length > 0 && (
+            <Typography variant="caption" color="primary" sx={{ display: 'block', mt: 0.5 }}>
+              {t('cron.nextRun')}: {nextExecutions[0]}
+            </Typography>
+          )}
+        </Box>
       )}
 
       <Dialog
@@ -250,6 +283,18 @@ const CronExpressionInput: React.FC<CronExpressionInputProps> = ({
               <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                 {cronDescription}
               </Typography>
+              {nextExecutions.length > 0 && (
+                <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                  <Typography variant="caption" fontWeight="medium" sx={{ display: 'block', mb: 0.5 }}>
+                    {t('cron.nextExecutions')}:
+                  </Typography>
+                  {nextExecutions.map((execution, index) => (
+                    <Typography key={index} variant="caption" color="primary" sx={{ display: 'block' }}>
+                      {index + 1}. {execution}
+                    </Typography>
+                  ))}
+                </Box>
+              )}
             </Box>
           </Box>
 

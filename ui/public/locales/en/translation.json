@@ -210,6 +210,8 @@
     "builderTitle": "Cron Expression Builder",
     "builderDescription": "Use the visual builder below to create your cron schedule, or enter the expression directly.",
     "preview": "Preview",
+    "nextRun": "Next run",
+    "nextExecutions": "Next executions",
     "invalidFormat": "Invalid cron format",
     "descriptions": {
       "dailyAtMidnight": "Daily at midnight (00:00)",
