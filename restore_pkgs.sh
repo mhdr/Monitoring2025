@@ -41,13 +41,3 @@ if [[ "$modbus_value" == "1" ]]; then
    popd
    
 fi
-
-jobs_value=$(yq eval '.interfaces.jobs' /opt/monitoring/config.yaml)
-
-if [[ "$jobs_value" == "1" ]]; then
-
-   pushd Core/JobsService
-      dotnet restore
-   popd
-   
-fi

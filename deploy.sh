@@ -110,23 +110,4 @@ else
    fi
 fi
 
-jobs_value=$(yq eval '.interfaces.jobs' /opt/monitoring/config.yaml)
-
-if [[ "$jobs_value" == "1" ]]; then
-   systemctl stop monitoring_jobs.service
-   rm -r /opt/monitoring/jobs/*
-
-   pushd Core/JobsService || exit
-      ./manager.sh 8
-   popd || exit
-
-else
-   jobs_status=$(systemctl is-active monitoring_jobs.service)
-   if [[ "$jobs_status" == "active" ]]; then
-      systemctl stop monitoring_jobs.service
-      systemctl disable monitoring_jobs.service
-      rm -r /opt/monitoring/jobs/*
-   fi
-fi
-
 systemctl daemon-reload

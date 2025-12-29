@@ -15,8 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitInterface", "RabbitIn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contracts", "Contracts\Contracts.csproj", "{5BF621EB-5BB9-4962-A98F-862B74E78DDE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JobsService", "JobsService\JobsService.csproj", "{BE3C0307-F6F4-4975-91CD-2CAC4D3CE94F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModbusInterface", "ModbusInterface\ModbusInterface.csproj", "{EDA9C75F-631D-48E6-9317-F2DA0993FCB1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataGen", "DataGen\DataGen.csproj", "{585084D0-BA02-41EC-A775-670454485F4A}"
@@ -53,10 +51,6 @@ Global
 		{5BF621EB-5BB9-4962-A98F-862B74E78DDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5BF621EB-5BB9-4962-A98F-862B74E78DDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5BF621EB-5BB9-4962-A98F-862B74E78DDE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BE3C0307-F6F4-4975-91CD-2CAC4D3CE94F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BE3C0307-F6F4-4975-91CD-2CAC4D3CE94F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BE3C0307-F6F4-4975-91CD-2CAC4D3CE94F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BE3C0307-F6F4-4975-91CD-2CAC4D3CE94F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EDA9C75F-631D-48E6-9317-F2DA0993FCB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EDA9C75F-631D-48E6-9317-F2DA0993FCB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EDA9C75F-631D-48E6-9317-F2DA0993FCB1}.Release|Any CPU.ActiveCfg = Release|Any CPU

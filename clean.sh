@@ -13,5 +13,3 @@ rm -r ~/git/MonitoringCore/Core/Contracts/bin
 rm -r ~/git/MonitoringCore/Core/Contracts/obj
 rm -r ~/git/MonitoringCore/Core/RabbitInterface/bin
 rm -r ~/git/MonitoringCore/Core/RabbitInterface/obj
-rm -r ~/git/MonitoringCore/Core/JobsService/bin
-rm -r ~/git/MonitoringCore/Core/JobsService/obj
