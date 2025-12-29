@@ -2797,6 +2797,290 @@
             "type": "warning"
           }
         ]
+      },
+      "basicConfiguration": {
+        "title": "Basic Totalizer Configuration",
+        "sections": [
+          {
+            "title": "What is a Totalizer?",
+            "content": "A totalizer (or accumulator) continuously sums values over time. It's used to track cumulative measurements like total flow volume, energy consumption, operating hours, or event counts."
+          },
+          {
+            "title": "Key Components",
+            "content": [
+              "Input Item: Source of data to accumulate (Analog or Digital)",
+              "Output Item: Where accumulated value is written (Analog Output)",
+              "Accumulation Type: How values are summed (Rate Integration or Event Counting)",
+              "Reset Configuration: When/how to reset the accumulated value"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Flow Totalizer Example",
+            "content": "Input Item: Flow rate sensor (10 L/min)\nOutput Item: Total volume register\nAccumulation Type: Rate Integration\nInterval: 10 seconds\n\nTotalizer Logic:\n• Reads flow rate every 10 seconds\n• Integrates: Total += (Flow × Time)\n• After 60 seconds: 10 L/min × 1 min = 10 L\n• Writes to output item: 10 L accumulated"
+          },
+          {
+            "type": "tip",
+            "title": "Getting Started",
+            "content": "1. Select your input source (sensor or signal)\n2. Select output item to store total\n3. Choose accumulation type (Rate Integration or Event Counting)\n4. Configure reset behavior (Auto/Scheduled/Manual)\n5. Set appropriate units and decimal places"
+          }
+        ]
+      },
+      "name": {
+        "title": "Totalizer Name",
+        "sections": [
+          {
+            "content": "A descriptive name to identify this totalizer in the management interface. Optional but highly recommended for clarity."
+          },
+          {
+            "type": "example",
+            "title": "Naming Examples",
+            "content": [
+              "\"Water Flow Total\" - for water consumption",
+              "\"Energy Meter kWh\" - for electrical energy",
+              "\"Production Counter\" - for parts produced",
+              "\"Operating Hours\" - for equipment runtime",
+              "\"Daily Steam Total\" - for steam consumption"
+            ]
+          }
+        ]
+      },
+      "inputItem": {
+        "title": "Input Item (Data Source)",
+        "sections": [
+          {
+            "title": "What is the Input Item?",
+            "content": "The monitoring item that provides the data to be accumulated. The item type depends on your accumulation method."
+          },
+          {
+            "title": "Rate Integration",
+            "content": [
+              "Requires: Analog Input item",
+              "Examples: Flow rate (L/min), Power (kW), Speed (%)",
+              "The analog value is integrated over time",
+              "Result: Total volume, energy, or distance"
+            ]
+          },
+          {
+            "title": "Event Counting",
+            "content": [
+              "Requires: Digital Input item",
+              "Examples: Pulse counter, Contact closure, Proximity sensor",
+              "Counts signal transitions (edges)",
+              "Result: Total number of events/pulses"
+            ]
+          },
+          {
+            "type": "warning",
+            "title": "Important",
+            "content": "Input item must provide stable, reliable data. Poor signal quality leads to inaccurate accumulation!"
+          }
+        ]
+      },
+      "outputItem": {
+        "title": "Output Item (Accumulated Value)",
+        "sections": [
+          {
+            "title": "What is the Output Item?",
+            "content": "An Analog Output monitoring item where the accumulated total is continuously written. This allows other systems to read the totalizer value."
+          },
+          {
+            "title": "Requirements",
+            "content": [
+              "Must be an Analog Output monitoring item",
+              "Should have sufficient range for expected totals",
+              "Updated at each totalizer calculation cycle",
+              "Persists to database for recovery after crashes"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Common Uses",
+            "content": [
+              "Write to SCADA system registers",
+              "Display on HMI screens",
+              "Input to other calculations",
+              "Trigger alarms on thresholds",
+              "Export to reporting systems"
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "Best Practice",
+            "content": "Create dedicated output items for totalizers (e.g., \"WaterTotal_Output\") rather than reusing existing items. This prevents conflicts and makes troubleshooting easier."
+          }
+        ]
+      },
+      "interval": {
+        "title": "Calculation Interval",
+        "sections": [
+          {
+            "title": "What is Interval?",
+            "content": "How often (in seconds) the totalizer performs its accumulation calculation and updates the output item."
+          },
+          {
+            "title": "Choosing the Right Interval",
+            "content": [
+              "Fast-changing rates (flow, power): 1-10 seconds",
+              "Slow-changing values: 10-60 seconds",
+              "Event counting: 1-5 seconds (must catch all pulses)",
+              "Operating hours: 60 seconds or more"
+            ]
+          },
+          {
+            "type": "warning",
+            "title": "Trade-offs",
+            "content": "Shorter intervals:\n• More accurate integration\n• Higher CPU usage\n• More database writes\n\nLonger intervals:\n• Less overhead\n• May miss rapid changes\n• Coarser resolution\n\nBalance accuracy needs with system load!"
+          },
+          {
+            "type": "tip",
+            "title": "Recommendation",
+            "content": "Start with 10 seconds for most applications. Adjust based on:\n• How fast your input changes\n• Required accuracy\n• System performance\n• Storage constraints"
+          }
+        ]
+      },
+      "isDisabled": {
+        "title": "Disable Totalizer",
+        "sections": [
+          {
+            "content": "Temporarily stop accumulation without deleting the totalizer configuration. The accumulated value is preserved."
+          },
+          {
+            "type": "example",
+            "title": "When to Disable",
+            "content": [
+              "During maintenance or calibration",
+              "When input sensor is offline",
+              "Seasonal shutdown periods",
+              "Testing other configurations",
+              "Troubleshooting issues"
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "Disable vs Delete",
+            "content": "Disable: Pauses accumulation, preserves value and configuration.\nDelete: Permanently removes totalizer and all data.\n\nUse disable for temporary pauses!"
+          }
+        ]
+      },
+      "accumulationConfiguration": {
+        "title": "Accumulation Configuration",
+        "sections": [
+          {
+            "title": "Accumulation Types",
+            "content": "Determines how the totalizer processes input data to produce accumulated values."
+          },
+          {
+            "title": "Rate Integration",
+            "content": "Integrates analog rate values over time using trapezoidal rule. Use for continuous measurements like flow rates, power consumption, or speed."
+          },
+          {
+            "title": "Event Counting",
+            "content": "Counts digital signal transitions (edges). Three modes:\n• Rising Edge: Counts 0→1 transitions\n• Falling Edge: Counts 1→0 transitions\n• Both Edges: Counts all transitions\n\nUse for discrete events like pulses, cycles, or activations."
+          },
+          {
+            "type": "tip",
+            "title": "Choosing the Right Type",
+            "content": "Rate Integration: Flow meters, power meters, analog sensors\nEvent Counting: Pulse counters, proximity switches, contact closures"
+          }
+        ]
+      },
+      "accumulationType": {
+        "title": "Accumulation Type Selection",
+        "sections": [
+          {
+            "title": "Rate Integration (Trapezoidal Rule)",
+            "content": "For analog input items. Integrates rate values over time:\nTotal += (Rate₁ + Rate₂) / 2 × ΔTime\n\nProvides accurate integration even with varying rates. Ideal for flow, energy, and continuous measurements."
+          },
+          {
+            "title": "Event Count - Rising Edge",
+            "content": "Counts LOW→HIGH transitions on digital input.\nUse when: Events occur on rising edge (e.g., pulse flow meters, normally-low sensors)"
+          },
+          {
+            "title": "Event Count - Falling Edge",
+            "content": "Counts HIGH→LOW transitions on digital input.\nUse when: Events occur on falling edge (e.g., normally-high contacts)"
+          },
+          {
+            "title": "Event Count - Both Edges",
+            "content": "Counts all transitions (both rising and falling).\nUse when: Every state change is an event (e.g., toggle switches, AC cycle counting)"
+          },
+          {
+            "type": "warning",
+            "title": "Digital Input Baseline",
+            "content": "On first run, current digital state is recorded as baseline without counting. This prevents false counts from system startup or configuration changes."
+          }
+        ]
+      },
+      "resetConfiguration": {
+        "title": "Reset Configuration",
+        "sections": [
+          {
+            "title": "Reset Mechanisms",
+            "content": "Three independent reset methods can be enabled simultaneously. When reset occurs, accumulated value returns to zero and output item is also cleared."
+          },
+          {
+            "title": "Auto Reset (Overflow)",
+            "content": [
+              "Automatically resets when value reaches threshold",
+              "Use for: Cyclic counters with fixed display range",
+              "Example: 4-digit counter resets at 9999",
+              "Prevents overflow in limited-precision displays"
+            ]
+          },
+          {
+            "title": "Scheduled Reset (Cron)",
+            "content": [
+              "Resets at specific times using cron expressions",
+              "Use for: Reporting periods (daily/weekly/monthly)",
+              "Example: Daily production totals reset at midnight",
+              "Supports complex schedules (weekdays only, first of month, etc.)"
+            ]
+          },
+          {
+            "title": "Manual Reset",
+            "content": [
+              "Operator-triggered reset through management UI",
+              "Use for: Ad-hoc resets (batch completion, calibration)",
+              "Always available when enabled",
+              "Provides audit trail in logs"
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "Combining Reset Methods",
+            "content": "All three methods can work together:\n• Daily scheduled reset for reports\n• Overflow protection at 1,000,000\n• Manual reset for special circumstances\n\nEach reset is logged for traceability."
+          }
+        ]
+      },
+      "advancedSettings": {
+        "title": "Advanced Totalizer Settings",
+        "sections": [
+          {
+            "title": "Units Configuration",
+            "content": "Specify measurement units for display and reporting. Optional but highly recommended for clarity and preventing unit confusion."
+          },
+          {
+            "type": "example",
+            "title": "Common Units",
+            "content": [
+              "Volume: L, m³, gal, bbl",
+              "Energy: kWh, MWh, BTU, GJ",
+              "Mass: kg, t, lb",
+              "Distance: km, mi, m",
+              "Time: hours, minutes",
+              "Count: count, pcs, units"
+            ]
+          },
+          {
+            "title": "Decimal Places",
+            "content": "Number of decimal places for display (0-10).\n• Counts/Events: 0 decimals\n• Flow/Volume: 1-3 decimals\n• Energy: 2-4 decimals\n• High-precision: 4+ decimals\n\nMore decimals = higher resolution but more storage."
+          },
+          {
+            "type": "tip",
+            "title": "Current Accumulated Value (Edit Mode)",
+            "content": "When editing an existing totalizer, you can see the current accumulated value. This is read-only and can only be changed by:\n• Manual reset button\n• Scheduled reset trigger\n• Overflow auto-reset\n\nDirect value editing is not allowed to maintain data integrity."
+          }
+        ]
       }
     }
   }

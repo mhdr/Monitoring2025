@@ -29,6 +29,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   Save as SaveIcon,
   Close as CloseIcon,
+  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -37,6 +38,7 @@ import type { TotalizerMemoryWithItems, MonitoringItem, ItemType } from '../type
 import { ItemTypeEnum, AccumulationType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import CronExpressionInput from './CronExpressionInput';
+import FieldHelpPopover from './common/FieldHelpPopover';
 
 const logger = createLogger('AddEditTotalizerMemoryDialog');
 
@@ -89,6 +91,17 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
   const [accumulationExpanded, setAccumulationExpanded] = useState(true);
   const [resetExpanded, setResetExpanded] = useState(true);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
+
+  // Help popover states
+  const [helpAnchorEl, setHelpAnchorEl] = useState<Record<string, HTMLElement | null>>({});
+
+  const handleHelpOpen = (fieldKey: string) => (event: React.MouseEvent<HTMLElement>) => {
+    setHelpAnchorEl(prev => ({ ...prev, [fieldKey]: event.currentTarget }));
+  };
+
+  const handleHelpClose = (fieldKey: string) => () => {
+    setHelpAnchorEl(prev => ({ ...prev, [fieldKey]: null }));
+  };
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -375,7 +388,19 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
         {/* Basic Configuration Section */}
         <Card sx={{ mb: 2 }} data-id-ref="totalizer-memory-basic-section">
           <CardHeader
-            title={t('totalizerMemory.sections.basic')}
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="h6">{t('totalizerMemory.sections.basic')}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('totalizerMemory.help.basicConfiguration')}
+                  sx={{ p: 0.25 }}
+                  data-id-ref="totalizer-memory-basic-config-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            }
             action={
               <IconButton
                 onClick={() => setBasicExpanded(!basicExpanded)}
@@ -391,105 +416,157 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
           />
           <Collapse in={basicExpanded} timeout="auto" unmountOnExit>
             <CardContent>
-              <TextField
-                fullWidth
-                label={t('totalizerMemory.name')}
-                value={formData.name}
-                onChange={(e) => handleFieldChange('name', e.target.value)}
-                helperText={t('totalizerMemory.nameHelp')}
-                sx={{ mb: 2 }}
-                data-id-ref="totalizer-memory-name-input"
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <TextField
+                  fullWidth
+                  label={t('totalizerMemory.name')}
+                  value={formData.name}
+                  onChange={(e) => handleFieldChange('name', e.target.value)}
+                  helperText={t('totalizerMemory.nameHelp')}
+                  sx={{ mb: 2 }}
+                  data-id-ref="totalizer-memory-name-input"
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('totalizerMemory.help.name')}
+                  sx={{ p: 0.25, mt: -3 }}
+                  data-id-ref="totalizer-memory-name-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
 
-              <Autocomplete
-                options={inputItems}
-                value={selectedInputItem || null}
-                onChange={(_, newValue) => handleFieldChange('inputItemId', newValue?.id || '')}
-                getOptionLabel={getItemLabel}
-                renderOption={(props, option) => (
-                  <Box component="li" {...props} key={option.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                      <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                        {getItemLabel(option)}
-                      </Typography>
-                      <Chip
-                        label={getItemTypeLabel(option.itemType)}
-                        size="small"
-                        color={getItemTypeColor(option.itemType)}
-                        sx={{ height: 20, fontSize: '0.7rem' }}
-                      />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Autocomplete
+                  fullWidth
+                  options={inputItems}
+                  value={selectedInputItem || null}
+                  onChange={(_, newValue) => handleFieldChange('inputItemId', newValue?.id || '')}
+                  getOptionLabel={getItemLabel}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {getItemLabel(option)}
+                        </Typography>
+                        <Chip
+                          label={getItemTypeLabel(option.itemType)}
+                          size="small"
+                          color={getItemTypeColor(option.itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
                     </Box>
-                  </Box>
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={t('totalizerMemory.inputItem')}
-                    error={!!formErrors.inputItemId}
-                    helperText={formErrors.inputItemId || t('totalizerMemory.inputItemHelp')}
-                    required
-                  />
-                )}
-                sx={{ mb: 2 }}
-                data-id-ref="totalizer-memory-input-item-select"
-              />
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('totalizerMemory.inputItem')}
+                      error={!!formErrors.inputItemId}
+                      helperText={formErrors.inputItemId || t('totalizerMemory.inputItemHelp')}
+                      required
+                    />
+                  )}
+                  sx={{ mb: 2 }}
+                  data-id-ref="totalizer-memory-input-item-select"
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('totalizerMemory.help.inputItem')}
+                  sx={{ p: 0.25, mt: -3 }}
+                  data-id-ref="totalizer-memory-input-item-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
 
-              <Autocomplete
-                options={analogOutputItems}
-                value={selectedOutputItem || null}
-                onChange={(_, newValue) => handleFieldChange('outputItemId', newValue?.id || '')}
-                getOptionLabel={getItemLabel}
-                renderOption={(props, option) => (
-                  <Box component="li" {...props} key={option.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                      <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                        {getItemLabel(option)}
-                      </Typography>
-                      <Chip
-                        label={getItemTypeLabel(option.itemType)}
-                        size="small"
-                        color={getItemTypeColor(option.itemType)}
-                        sx={{ height: 20, fontSize: '0.7rem' }}
-                      />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Autocomplete
+                  fullWidth
+                  options={analogOutputItems}
+                  value={selectedOutputItem || null}
+                  onChange={(_, newValue) => handleFieldChange('outputItemId', newValue?.id || '')}
+                  getOptionLabel={getItemLabel}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {getItemLabel(option)}
+                        </Typography>
+                        <Chip
+                          label={getItemTypeLabel(option.itemType)}
+                          size="small"
+                          color={getItemTypeColor(option.itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
                     </Box>
-                  </Box>
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={t('totalizerMemory.outputItem')}
-                    error={!!formErrors.outputItemId}
-                    helperText={formErrors.outputItemId || t('totalizerMemory.outputItemHelp')}
-                    required
-                  />
-                )}
-                sx={{ mb: 2 }}
-                data-id-ref="totalizer-memory-output-item-select"
-              />
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('totalizerMemory.outputItem')}
+                      error={!!formErrors.outputItemId}
+                      helperText={formErrors.outputItemId || t('totalizerMemory.outputItemHelp')}
+                      required
+                    />
+                  )}
+                  sx={{ mb: 2 }}
+                  data-id-ref="totalizer-memory-output-item-select"
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('totalizerMemory.help.outputItem')}
+                  sx={{ p: 0.25, mt: -3 }}
+                  data-id-ref="totalizer-memory-output-item-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
 
-              <TextField
-                fullWidth
-                type="number"
-                label={t('totalizerMemory.interval')}
-                value={formData.interval}
-                onChange={(e) => handleFieldChange('interval', Number(e.target.value))}
-                error={!!formErrors.interval}
-                helperText={formErrors.interval || t('totalizerMemory.intervalHelp')}
-                InputProps={{ inputProps: { min: 1 } }}
-                sx={{ mb: 2 }}
-                data-id-ref="totalizer-memory-interval-input"
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label={t('totalizerMemory.interval')}
+                  value={formData.interval}
+                  onChange={(e) => handleFieldChange('interval', Number(e.target.value))}
+                  error={!!formErrors.interval}
+                  helperText={formErrors.interval || t('totalizerMemory.intervalHelp')}
+                  InputProps={{ inputProps: { min: 1 } }}
+                  sx={{ mb: 2 }}
+                  data-id-ref="totalizer-memory-interval-input"
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('totalizerMemory.help.interval')}
+                  sx={{ p: 0.25, mt: -3 }}
+                  data-id-ref="totalizer-memory-interval-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
 
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.isDisabled}
-                    onChange={(e) => handleFieldChange('isDisabled', e.target.checked)}
-                    data-id-ref="totalizer-memory-disabled-switch"
-                  />
-                }
-                label={t('totalizerMemory.isDisabled')}
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isDisabled}
+                      onChange={(e) => handleFieldChange('isDisabled', e.target.checked)}
+                      data-id-ref="totalizer-memory-disabled-switch"
+                    />
+                  }
+                  label={t('totalizerMemory.isDisabled')}
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('totalizerMemory.help.isDisabled')}
+                  sx={{ p: 0.25 }}
+                  data-id-ref="totalizer-memory-disabled-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
             </CardContent>
           </Collapse>
         </Card>
@@ -497,7 +574,19 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
         {/* Accumulation Type Section */}
         <Card sx={{ mb: 2 }} data-id-ref="totalizer-memory-accumulation-section">
           <CardHeader
-            title={t('totalizerMemory.sections.accumulation')}
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="h6">{t('totalizerMemory.sections.accumulation')}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('totalizerMemory.help.accumulationConfiguration')}
+                  sx={{ p: 0.25 }}
+                  data-id-ref="totalizer-memory-accumulation-config-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            }
             action={
               <IconButton
                 onClick={() => setAccumulationExpanded(!accumulationExpanded)}
@@ -512,29 +601,39 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
           />
           <Collapse in={accumulationExpanded} timeout="auto" unmountOnExit>
             <CardContent>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>{t('totalizerMemory.accumulationType.label')}</InputLabel>
-                <Select
-                  value={formData.accumulationType}
-                  onChange={(e) => handleFieldChange('accumulationType', Number(e.target.value))}
-                  label={t('totalizerMemory.accumulationType.label')}
-                  data-id-ref="totalizer-memory-accumulation-type-select"
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel>{t('totalizerMemory.accumulationType.label')}</InputLabel>
+                  <Select
+                    value={formData.accumulationType}
+                    onChange={(e) => handleFieldChange('accumulationType', Number(e.target.value))}
+                    label={t('totalizerMemory.accumulationType.label')}
+                    data-id-ref="totalizer-memory-accumulation-type-select"
+                  >
+                    <MenuItem value={AccumulationType.RateIntegration}>
+                      {t('totalizerMemory.accumulationType.rateIntegration')}
+                    </MenuItem>
+                    <MenuItem value={AccumulationType.EventCountRising}>
+                      {t('totalizerMemory.accumulationType.eventCountRising')}
+                    </MenuItem>
+                    <MenuItem value={AccumulationType.EventCountFalling}>
+                      {t('totalizerMemory.accumulationType.eventCountFalling')}
+                    </MenuItem>
+                    <MenuItem value={AccumulationType.EventCountBoth}>
+                      {t('totalizerMemory.accumulationType.eventCountBoth')}
+                    </MenuItem>
+                  </Select>
+                  <FormHelperText>{t('totalizerMemory.accumulationTypeHelp')}</FormHelperText>
+                </FormControl>
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('totalizerMemory.help.accumulationType')}
+                  sx={{ p: 0.25, mt: -3 }}
+                  data-id-ref="totalizer-memory-accumulation-type-help-btn"
                 >
-                  <MenuItem value={AccumulationType.RateIntegration}>
-                    {t('totalizerMemory.accumulationType.rateIntegration')}
-                  </MenuItem>
-                  <MenuItem value={AccumulationType.EventCountRising}>
-                    {t('totalizerMemory.accumulationType.eventCountRising')}
-                  </MenuItem>
-                  <MenuItem value={AccumulationType.EventCountFalling}>
-                    {t('totalizerMemory.accumulationType.eventCountFalling')}
-                  </MenuItem>
-                  <MenuItem value={AccumulationType.EventCountBoth}>
-                    {t('totalizerMemory.accumulationType.eventCountBoth')}
-                  </MenuItem>
-                </Select>
-                <FormHelperText>{t('totalizerMemory.accumulationTypeHelp')}</FormHelperText>
-              </FormControl>
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
             </CardContent>
           </Collapse>
         </Card>
@@ -542,7 +641,19 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
         {/* Reset Configuration Section */}
         <Card sx={{ mb: 2 }} data-id-ref="totalizer-memory-reset-section">
           <CardHeader
-            title={t('totalizerMemory.sections.resetConfig')}
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="h6">{t('totalizerMemory.sections.resetConfig')}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('totalizerMemory.help.resetConfiguration')}
+                  sx={{ p: 0.25 }}
+                  data-id-ref="totalizer-memory-reset-config-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            }
             action={
               <IconButton
                 onClick={() => setResetExpanded(!resetExpanded)}
@@ -639,7 +750,19 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
         {/* Advanced Settings Section */}
         <Card data-id-ref="totalizer-memory-advanced-section">
           <CardHeader
-            title={t('totalizerMemory.sections.advanced')}
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="h6">{t('totalizerMemory.sections.advanced')}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('totalizerMemory.help.advancedSettings')}
+                  sx={{ p: 0.25 }}
+                  data-id-ref="totalizer-memory-advanced-settings-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            }
             action={
               <IconButton
                 onClick={() => setAdvancedExpanded(!advancedExpanded)}
@@ -705,6 +828,68 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
           {loading ? t('common.loading') : editMode ? t('common.save') : t('common.add')}
         </Button>
       </DialogActions>
+
+      {/* Help Popovers */}
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['totalizerMemory.help.basicConfiguration']}
+        open={Boolean(helpAnchorEl['totalizerMemory.help.basicConfiguration'])}
+        onClose={handleHelpClose('totalizerMemory.help.basicConfiguration')}
+        fieldKey="totalizerMemory.help.basicConfiguration"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['totalizerMemory.help.name']}
+        open={Boolean(helpAnchorEl['totalizerMemory.help.name'])}
+        onClose={handleHelpClose('totalizerMemory.help.name')}
+        fieldKey="totalizerMemory.help.name"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['totalizerMemory.help.inputItem']}
+        open={Boolean(helpAnchorEl['totalizerMemory.help.inputItem'])}
+        onClose={handleHelpClose('totalizerMemory.help.inputItem')}
+        fieldKey="totalizerMemory.help.inputItem"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['totalizerMemory.help.outputItem']}
+        open={Boolean(helpAnchorEl['totalizerMemory.help.outputItem'])}
+        onClose={handleHelpClose('totalizerMemory.help.outputItem')}
+        fieldKey="totalizerMemory.help.outputItem"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['totalizerMemory.help.interval']}
+        open={Boolean(helpAnchorEl['totalizerMemory.help.interval'])}
+        onClose={handleHelpClose('totalizerMemory.help.interval')}
+        fieldKey="totalizerMemory.help.interval"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['totalizerMemory.help.isDisabled']}
+        open={Boolean(helpAnchorEl['totalizerMemory.help.isDisabled'])}
+        onClose={handleHelpClose('totalizerMemory.help.isDisabled')}
+        fieldKey="totalizerMemory.help.isDisabled"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['totalizerMemory.help.accumulationConfiguration']}
+        open={Boolean(helpAnchorEl['totalizerMemory.help.accumulationConfiguration'])}
+        onClose={handleHelpClose('totalizerMemory.help.accumulationConfiguration')}
+        fieldKey="totalizerMemory.help.accumulationConfiguration"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['totalizerMemory.help.accumulationType']}
+        open={Boolean(helpAnchorEl['totalizerMemory.help.accumulationType'])}
+        onClose={handleHelpClose('totalizerMemory.help.accumulationType')}
+        fieldKey="totalizerMemory.help.accumulationType"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['totalizerMemory.help.resetConfiguration']}
+        open={Boolean(helpAnchorEl['totalizerMemory.help.resetConfiguration'])}
+        onClose={handleHelpClose('totalizerMemory.help.resetConfiguration')}
+        fieldKey="totalizerMemory.help.resetConfiguration"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['totalizerMemory.help.advancedSettings']}
+        open={Boolean(helpAnchorEl['totalizerMemory.help.advancedSettings'])}
+        onClose={handleHelpClose('totalizerMemory.help.advancedSettings')}
+        fieldKey="totalizerMemory.help.advancedSettings"
+      />
     </Dialog>
   );
 };
