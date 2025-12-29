@@ -295,7 +295,16 @@ const AverageMemoryManagementPage: React.FC = () => {
             </Box>
           }
         />
-        <CardContent data-id-ref="average-memory-page-content" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', p: 2 }}>
+        <CardContent 
+          data-id-ref="average-memory-page-content" 
+          sx={{ 
+            flex: 1, 
+            overflow: 'auto', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            p: 2 
+          }}
+        >
           {/* Error Alert */
           {error && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
