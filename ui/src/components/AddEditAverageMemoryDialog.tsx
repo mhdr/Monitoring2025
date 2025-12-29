@@ -28,7 +28,8 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { addAverageMemory, editAverageMemory } from '../services/extendedApi';
-import type { AverageMemory, MonitoringItem, OutlierMethod } from '../types/api';
+import type { AverageMemory, MonitoringItem, OutlierMethod, ItemType } from '../types/api';
+import { ItemTypeEnum } from '../types/api';
 
 interface AddEditAverageMemoryDialogProps {
   open: boolean;
@@ -55,6 +56,42 @@ interface FormData {
 interface FormErrors {
   [key: string]: string | undefined;
 }
+
+/**
+ * Get ItemType color for badge
+ */
+const getItemTypeColor = (itemType: ItemType): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+  switch (itemType) {
+    case ItemTypeEnum.DigitalInput:
+      return 'info';
+    case ItemTypeEnum.DigitalOutput:
+      return 'success';
+    case ItemTypeEnum.AnalogInput:
+      return 'primary';
+    case ItemTypeEnum.AnalogOutput:
+      return 'secondary';
+    default:
+      return 'default';
+  }
+};
+
+/**
+ * Get ItemType label
+ */
+const getItemTypeLabel = (itemType: ItemType, t: (key: string) => string): string => {
+  switch (itemType) {
+    case ItemTypeEnum.DigitalInput:
+      return t('itemType.digitalInput');
+    case ItemTypeEnum.DigitalOutput:
+      return t('itemType.digitalOutput');
+    case ItemTypeEnum.AnalogInput:
+      return t('itemType.analogInput');
+    case ItemTypeEnum.AnalogOutput:
+      return t('itemType.analogOutput');
+    default:
+      return String(itemType);
+  }
+};
 
 const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
   open,
@@ -323,6 +360,22 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
                 />
               ))
             }
+            renderOption={(props, option) => (
+              <Box component="li" {...props} key={option.id}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                  <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                    {getItemLabel(option)}
+                  </Typography>
+                  <Chip
+                    label={getItemTypeLabel(option.itemType, t)}
+                    size="small"
+                    color={getItemTypeColor(option.itemType)}
+                    sx={{ height: 20, fontSize: '0.7rem' }}
+                  />
+                </Box>
+              </Box>
+            )}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
             data-id-ref="average-memory-input-items-select"
           />
 
@@ -342,6 +395,22 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
                 helperText={formErrors.outputItemId || t('averageMemory.outputItemHelp')}
               />
             )}
+            renderOption={(props, option) => (
+              <Box component="li" {...props} key={option.id}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                  <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                    {getItemLabel(option)}
+                  </Typography>
+                  <Chip
+                    label={getItemTypeLabel(option.itemType, t)}
+                    size="small"
+                    color={getItemTypeColor(option.itemType)}
+                    sx={{ height: 20, fontSize: '0.7rem' }}
+                  />
+                </Box>
+              </Box>
+            )}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
             data-id-ref="average-memory-output-item-select"
           />
 
