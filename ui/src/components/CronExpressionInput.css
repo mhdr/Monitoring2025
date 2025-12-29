@@ -1,0 +1,35 @@
+/* Cron Expression Builder Styles */
+.cron_builder {
+  width: 100%;
+}
+
+.cron_builder .cron-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.cron_builder label {
+  min-width: 80px;
+  font-weight: 500;
+}
+
+.cron_builder select,
+.cron_builder input[type="text"] {
+  padding: 8px 12px;
+  border-radius: 4px;
+  min-width: 80px;
+}
+
+.cron_builder .tab-content {
+  padding: 16px 0;
+}
+
+.cron_builder .result-cron {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  font-family: monospace;
+}

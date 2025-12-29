@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
-  Container,
   Card,
   CardHeader,
   CardContent,

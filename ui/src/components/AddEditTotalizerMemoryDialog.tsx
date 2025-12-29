@@ -36,6 +36,7 @@ import { addTotalizerMemory, editTotalizerMemory } from '../services/extendedApi
 import type { TotalizerMemoryWithItems, MonitoringItem, ItemType } from '../types/api';
 import { ItemTypeEnum, AccumulationType } from '../types/api';
 import { createLogger } from '../utils/logger';
+import CronExpressionInput from './CronExpressionInput';
 
 const logger = createLogger('AddEditTotalizerMemoryDialog');
 
@@ -609,15 +610,13 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
 
               {formData.scheduledResetEnabled && (
                 <>
-                  <TextField
-                    fullWidth
-                    label={t('totalizerMemory.resetCron')}
+                  <CronExpressionInput
                     value={formData.resetCron}
-                    onChange={(e) => handleFieldChange('resetCron', e.target.value)}
+                    onChange={(value) => handleFieldChange('resetCron', value)}
                     error={!!formErrors.resetCron}
                     helperText={formErrors.resetCron || t('totalizerMemory.resetCronHelp')}
+                    label={t('totalizerMemory.resetCron')}
                     placeholder="0 0 * * *"
-                    sx={{ mb: 1 }}
                     data-id-ref="totalizer-memory-reset-cron-input"
                   />
                   <Alert severity="info" sx={{ mt: 1 }}>

@@ -2764,11 +2764,12 @@ export interface DeleteTimeoutMemoryResponseDto {
 /**
  * Outlier detection method for Average Memory
  */
-export enum OutlierMethod {
-  None = 0,
-  IQR = 1,
-  ZScore = 2,
-}
+export const OutlierMethod = {
+  None: 0,
+  IQR: 1,
+  ZScore: 2,
+} as const;
+export type OutlierMethod = (typeof OutlierMethod)[keyof typeof OutlierMethod];
 
 /**
  * Average Memory configuration
@@ -3025,12 +3026,13 @@ export interface PIDMemoryWithItems extends PIDMemory {
 /**
  * Accumulation types for totalizer memory
  */
-export enum AccumulationType {
-  RateIntegration = 1,
-  EventCountRising = 2,
-  EventCountFalling = 3,
-  EventCountBoth = 4,
-}
+export const AccumulationType = {
+  RateIntegration: 1,
+  EventCountRising: 2,
+  EventCountFalling: 3,
+  EventCountBoth: 4,
+} as const;
+export type AccumulationType = (typeof AccumulationType)[keyof typeof AccumulationType];
 
 /**
  * Totalizer Memory interface

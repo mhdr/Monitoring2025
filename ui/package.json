@@ -44,6 +44,7 @@
     "i18next-http-backend": "^3.0.2",
     "jalaali-js": "^1.2.8",
     "react": "^19.2.0",
+    "react-cron-generator": "^2.0.20",
     "react-dom": "^19.2.0",
     "react-i18next": "^16.2.4",
     "react-router-dom": "^7.9.5",

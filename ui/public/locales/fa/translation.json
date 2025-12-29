@@ -203,7 +203,31 @@
     "actions": "عملیات",
     "add": "افزودن",
     "edit": "ویرایش",
-    "refresh": "بارگذاری مجدد"
+    "refresh": "بارگذاری مجدد",
+    "apply": "اعمال"
+  },
+  "cron": {
+    "builderTitle": "ساخت عبارت زمان‌بندی",
+    "builderDescription": "از ابزار بصری زیر برای ایجاد زمان‌بندی استفاده کنید یا مستقیماً عبارت را وارد نمایید.",
+    "preview": "پیش‌نمایش",
+    "invalidFormat": "فرمت نامعتبر",
+    "descriptions": {
+      "dailyAtMidnight": "روزانه در نیمه‌شب (00:00)",
+      "dailyAtHour": "روزانه در ساعت {{hour}}:00",
+      "dailyAt": "روزانه در ساعت {{hour}}:{{minute}}",
+      "everyHour": "هر ساعت",
+      "monthlyOnDay": "ماهانه در روز {{day}} ساعت {{hour}}:{{minute}}",
+      "weeklyOnDay": "هفتگی در {{day}} ساعت {{hour}}:{{minute}}",
+      "custom": "زمان‌بندی سفارشی"
+    },
+    "examples": {
+      "title": "نمونه‌های متداول:",
+      "dailyAtMidnight": "روزانه در نیمه‌شب",
+      "everyHour": "هر ساعت",
+      "monthlyFirst": "روز اول ماه در نیمه‌شب",
+      "weeklySunday": "هر یکشنبه در نیمه‌شب",
+      "every15Minutes": "هر 15 دقیقه"
+    }
   },
   "itemType": {
     "digitalInput": "ورودی دیجیتال",

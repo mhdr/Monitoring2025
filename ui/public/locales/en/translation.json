@@ -203,7 +203,31 @@
     "actions": "Actions",
     "add": "Add",
     "edit": "Edit",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "apply": "Apply"
+  },
+  "cron": {
+    "builderTitle": "Cron Expression Builder",
+    "builderDescription": "Use the visual builder below to create your cron schedule, or enter the expression directly.",
+    "preview": "Preview",
+    "invalidFormat": "Invalid cron format",
+    "descriptions": {
+      "dailyAtMidnight": "Daily at midnight (00:00)",
+      "dailyAtHour": "Daily at {{hour}}:00",
+      "dailyAt": "Daily at {{hour}}:{{minute}}",
+      "everyHour": "Every hour",
+      "monthlyOnDay": "Monthly on day {{day}} at {{hour}}:{{minute}}",
+      "weeklyOnDay": "Weekly on {{day}} at {{hour}}:{{minute}}",
+      "custom": "Custom schedule"
+    },
+    "examples": {
+      "title": "Common Examples:",
+      "dailyAtMidnight": "Daily at midnight",
+      "everyHour": "Every hour",
+      "monthlyFirst": "First day of month at midnight",
+      "weeklySunday": "Every Sunday at midnight",
+      "every15Minutes": "Every 15 minutes"
+    }
   },
   "itemType": {
     "digitalInput": "Digital Input",
