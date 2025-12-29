@@ -325,7 +325,7 @@ const AverageMemoryManagementPage: React.FC = () => {
               <CircularProgress />
             </Box>
           ) : (
-            <Box sx={{ height: 'calc(100vh - 300px)', minHeight: 400 }}>
+            <Box sx={{ flex: 1, minHeight: 400 }} data-id-ref="average-memory-grid-container">
               <SyncfusionGridWrapper
                 data={filteredMemories}
                 columns={columns}
@@ -334,6 +334,7 @@ const AverageMemoryManagementPage: React.FC = () => {
                 allowSorting={true}
                 allowFiltering={true}
                 filterSettings={{ type: 'Excel' }}
+                height="100%"
               />
             </Box>
           )}
