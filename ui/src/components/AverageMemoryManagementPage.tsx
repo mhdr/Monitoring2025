@@ -295,23 +295,7 @@ const AverageMemoryManagementPage: React.FC = () => {
             </Box>
           }
         />
-        <CardContent 
-          data-id-ref="average-memory-page-content" 
-          sx={{ 
-            flex: 1, 
-            overflow: 'auto', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            p: 2 
-          }}
-        >
-          {/* Error Alert */
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-
+        <CardContent data-id-ref="average-memory-page-content" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', p: 2 }}>
           {/* Search */}
           <Box sx={{ mb: 2 }}>
             <TextField
@@ -328,12 +312,22 @@ const AverageMemoryManagementPage: React.FC = () => {
             />
           </Box>
 
-          {/* Data Grid */}
-          {loading ? (
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+
+          {/* Loading Indicator */}
+          {loading && (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress />
             </Box>
-          ) : (
+          )}
+
+          {/* Data Grid */}
+          {!loading && (
             <Box sx={{ flex: 1, minHeight: 400 }} data-id-ref="average-memory-grid-container">
               <SyncfusionGridWrapper
                 data={filteredMemories}
