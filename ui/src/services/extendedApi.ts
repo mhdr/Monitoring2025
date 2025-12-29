@@ -113,6 +113,8 @@ import type {
   GetModbusGatewayMappingsResponseDto,
   BatchEditModbusGatewayMappingsRequestDto,
   BatchEditModbusGatewayMappingsResponseDto,
+  // Totalizer Memory types
+  TotalizerMemory,
 } from '../types/api';
 
 /**
@@ -942,6 +944,119 @@ export const getModbusGatewayMappings = async (data: GetModbusGatewayMappingsReq
 export const batchEditModbusGatewayMappings = async (data: BatchEditModbusGatewayMappingsRequestDto): Promise<BatchEditModbusGatewayMappingsResponseDto> => {
   try {
     const response = await apiClient.post<BatchEditModbusGatewayMappingsResponseDto>('/api/Monitoring/BatchEditModbusGatewayMappings', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// ==================== Totalizer Memory Management ====================
+
+/**
+ * Get all totalizer memory configurations
+ */
+export const getTotalizerMemories = async (params: {} = {}): Promise<{ isSuccessful: boolean; errorMessage?: string; totalizerMemories: TotalizerMemory[] }> => {
+  try {
+    const response = await apiClient.post<{ isSuccessful: boolean; errorMessage?: string; totalizerMemories: TotalizerMemory[] }>(
+      '/api/Monitoring/GetTotalizerMemories',
+      params
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new totalizer memory configuration
+ */
+export const addTotalizerMemory = async (data: {
+  name?: string;
+  inputItemId: string;
+  outputItemId: string;
+  interval: number;
+  isDisabled: boolean;
+  accumulationType: number;
+  resetOnOverflow: boolean;
+  overflowThreshold?: number;
+  manualResetEnabled: boolean;
+  scheduledResetEnabled: boolean;
+  resetCron?: string;
+  units?: string;
+  decimalPlaces: number;
+}): Promise<{ isSuccessful: boolean; errorMessage?: string; id?: string }> => {
+  try {
+    const response = await apiClient.post<{ isSuccessful: boolean; errorMessage?: string; id?: string }>(
+      '/api/Monitoring/AddTotalizerMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing totalizer memory configuration
+ */
+export const editTotalizerMemory = async (data: {
+  id: string;
+  name?: string;
+  inputItemId: string;
+  outputItemId: string;
+  interval: number;
+  isDisabled: boolean;
+  accumulationType: number;
+  resetOnOverflow: boolean;
+  overflowThreshold?: number;
+  manualResetEnabled: boolean;
+  scheduledResetEnabled: boolean;
+  resetCron?: string;
+  accumulatedValue: number;
+  lastInputValue?: number;
+  lastEventState?: boolean;
+  lastResetTime?: string;
+  units?: string;
+  decimalPlaces: number;
+}): Promise<{ isSuccessful: boolean; errorMessage?: string }> => {
+  try {
+    const response = await apiClient.post<{ isSuccessful: boolean; errorMessage?: string }>(
+      '/api/Monitoring/EditTotalizerMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a totalizer memory configuration
+ */
+export const deleteTotalizerMemory = async (data: { id: string }): Promise<{ isSuccessful: boolean; errorMessage?: string }> => {
+  try {
+    const response = await apiClient.post<{ isSuccessful: boolean; errorMessage?: string }>(
+      '/api/Monitoring/DeleteTotalizerMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Reset a totalizer memory to zero
+ */
+export const resetTotalizerMemory = async (data: {
+  id: string;
+  preserveInDatabase?: boolean;
+}): Promise<{ isSuccessful: boolean; errorMessage?: string }> => {
+  try {
+    const response = await apiClient.post<{ isSuccessful: boolean; errorMessage?: string }>(
+      '/api/Monitoring/ResetTotalizerMemory',
+      data
+    );
     return response.data;
   } catch (error) {
     handleApiError(error);

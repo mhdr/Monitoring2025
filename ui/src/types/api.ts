@@ -3020,6 +3020,54 @@ export interface PIDMemoryWithItems extends PIDMemory {
   parentPIDName?: string; // Name of parent PID
 }
 
+// ==================== Totalizer Memory ====================
+
+/**
+ * Accumulation types for totalizer memory
+ */
+export enum AccumulationType {
+  RateIntegration = 1,
+  EventCountRising = 2,
+  EventCountFalling = 3,
+  EventCountBoth = 4,
+}
+
+/**
+ * Totalizer Memory interface
+ */
+export interface TotalizerMemory {
+  id: string; // UUID
+  name?: string | null;
+  inputItemId: string; // UUID - AnalogInput for rate, DigitalInput for events
+  outputItemId: string; // UUID - AnalogOutput for accumulated value
+  interval: number; // int - Execution interval in seconds
+  isDisabled: boolean; // bool - Whether totalizer is disabled
+  accumulationType: AccumulationType; // Accumulation type
+  resetOnOverflow: boolean; // bool - Auto-reset on overflow
+  overflowThreshold?: number | null; // double - Overflow threshold
+  manualResetEnabled: boolean; // bool - Allow manual reset
+  scheduledResetEnabled: boolean; // bool - Enable scheduled reset
+  resetCron?: string | null; // Cron expression for scheduled reset
+  lastResetTime?: string | null; // DateTime - Last reset timestamp
+  accumulatedValue: number; // double - Current accumulated value
+  lastInputValue?: number | null; // double - Last input for trapezoidal
+  lastEventState?: boolean | null; // bool - Last state for edge detection
+  units?: string | null; // Display units (kWh, m³, hours, count)
+  decimalPlaces: number; // int - Decimal places for formatting
+}
+
+/**
+ * Enhanced Totalizer Memory with item details
+ */
+export interface TotalizerMemoryWithItems extends TotalizerMemory {
+  inputItemName?: string;
+  inputItemNameFa?: string;
+  inputItemType?: ItemType;
+  outputItemName?: string;
+  outputItemNameFa?: string;
+  outputItemType?: ItemType;
+}
+
 /**
  * Request DTO for retrieving PID memory configurations
  */

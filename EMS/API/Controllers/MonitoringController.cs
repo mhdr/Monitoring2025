@@ -7596,6 +7596,365 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
         return BadRequest(ModelState);
     }
 
+    #endregion
+
+    #region Totalizer Memory Management
+
+    /// <summary>
+    /// Get all totalizer memory configurations
+    /// </summary>
+    /// <param name="request">Empty request (returns all totalizer memories)</param>
+    /// <returns>List of all totalizer memories with their current state</returns>
+    /// <remarks>
+    /// Retrieves all configured totalizer/accumulator memories including:
+    /// - Rate integration (flow, energy)
+    /// - Event counting (rising/falling edge detection)
+    /// - Current accumulated values
+    /// - Reset configuration
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetTotalizerMemories
+    ///     {}
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns list of totalizer memories</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetTotalizerMemories")]
+    public async Task<IActionResult> GetTotalizerMemories([FromBody] GetTotalizerMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetTotalizerMemoriesResponseDto();
+
+            var totalizerMemories = await Core.TotalizerMemories.GetTotalizerMemories();
+
+            if (totalizerMemories != null && totalizerMemories.Count > 0)
+            {
+                response.TotalizerMemories = new List<TotalizerMemoryItemDto>();
+                foreach (var memory in totalizerMemories)
+                {
+                    response.TotalizerMemories.Add(new TotalizerMemoryItemDto
+                    {
+                        Id = memory.Id,
+                        Name = memory.Name,
+                        InputItemId = memory.InputItemId,
+                        OutputItemId = memory.OutputItemId,
+                        Interval = memory.Interval,
+                        IsDisabled = memory.IsDisabled,
+                        AccumulationType = (int)memory.AccumulationType,
+                        ResetOnOverflow = memory.ResetOnOverflow,
+                        OverflowThreshold = memory.OverflowThreshold,
+                        ManualResetEnabled = memory.ManualResetEnabled,
+                        ScheduledResetEnabled = memory.ScheduledResetEnabled,
+                        ResetCron = memory.ResetCron,
+                        LastResetTime = memory.LastResetTime,
+                        AccumulatedValue = memory.AccumulatedValue,
+                        LastInputValue = memory.LastInputValue,
+                        LastEventState = memory.LastEventState,
+                        Units = memory.Units,
+                        DecimalPlaces = memory.DecimalPlaces
+                    });
+                }
+            }
+
+            response.IsSuccessful = true;
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new totalizer memory configuration
+    /// </summary>
+    /// <param name="request">Totalizer configuration parameters</param>
+    /// <returns>Success status and ID of created totalizer</returns>
+    /// <remarks>
+    /// Creates a new totalizer/accumulator memory for:
+    /// - **Rate Integration**: Accumulate flow (m³), energy (kWh), operating hours
+    /// - **Event Counting**: Count rising/falling edges for production counters
+    /// 
+    /// Features:
+    /// - Trapezoidal rule integration for accuracy
+    /// - Baseline edge detection (no counting until established)
+    /// - Multiple reset mechanisms: overflow, manual, scheduled (cron)
+    /// - Crash recovery with persisted accumulated value
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AddTotalizerMemory
+    ///     {
+    ///        "name": "Total Water Flow",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "interval": 10,
+    ///        "accumulationType": 1,
+    ///        "resetOnOverflow": true,
+    ///        "overflowThreshold": 10000.0,
+    ///        "scheduledResetEnabled": true,
+    ///        "resetCron": "0 0 * * *",
+    ///        "units": "m³",
+    ///        "decimalPlaces": 2
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns ID of created totalizer memory</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("AddTotalizerMemory")]
+    public async Task<IActionResult> AddTotalizerMemory([FromBody] AddTotalizerMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var totalizerMemory = new Core.Models.TotalizerMemory
+            {
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                AccumulationType = (Core.Models.AccumulationType)request.AccumulationType,
+                ResetOnOverflow = request.ResetOnOverflow,
+                OverflowThreshold = request.OverflowThreshold,
+                ManualResetEnabled = request.ManualResetEnabled,
+                ScheduledResetEnabled = request.ScheduledResetEnabled,
+                ResetCron = request.ResetCron,
+                Units = request.Units,
+                DecimalPlaces = request.DecimalPlaces
+            };
+
+            var (success, id, errorMessage) = await Core.TotalizerMemories.AddTotalizerMemory(totalizerMemory);
+
+            var response = new AddTotalizerMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Edit an existing totalizer memory configuration
+    /// </summary>
+    /// <param name="request">Updated totalizer configuration parameters</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Updates an existing totalizer memory configuration.
+    /// Can modify all parameters including accumulated value for manual corrections.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/EditTotalizerMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Updated Total Water Flow",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "interval": 15,
+    ///        "isDisabled": false,
+    ///        "accumulationType": 1,
+    ///        "resetOnOverflow": true,
+    ///        "overflowThreshold": 15000.0,
+    ///        "units": "m³",
+    ///        "decimalPlaces": 3
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("EditTotalizerMemory")]
+    public async Task<IActionResult> EditTotalizerMemory([FromBody] EditTotalizerMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var totalizerMemory = new Core.Models.TotalizerMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                AccumulationType = (Core.Models.AccumulationType)request.AccumulationType,
+                ResetOnOverflow = request.ResetOnOverflow,
+                OverflowThreshold = request.OverflowThreshold,
+                ManualResetEnabled = request.ManualResetEnabled,
+                ScheduledResetEnabled = request.ScheduledResetEnabled,
+                ResetCron = request.ResetCron,
+                AccumulatedValue = request.AccumulatedValue,
+                LastInputValue = request.LastInputValue,
+                LastEventState = request.LastEventState,
+                LastResetTime = request.LastResetTime,
+                Units = request.Units,
+                DecimalPlaces = request.DecimalPlaces
+            };
+
+            var (success, errorMessage) = await Core.TotalizerMemories.EditTotalizerMemory(totalizerMemory);
+
+            var response = new EditTotalizerMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Delete a totalizer memory configuration
+    /// </summary>
+    /// <param name="request">ID of totalizer memory to delete</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Permanently deletes a totalizer memory configuration.
+    /// The accumulated value will be lost.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/DeleteTotalizerMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails or memory not found</response>
+    [HttpPost("DeleteTotalizerMemory")]
+    public async Task<IActionResult> DeleteTotalizerMemory([FromBody] DeleteTotalizerMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.TotalizerMemories.DeleteTotalizerMemory(request.Id);
+
+            var response = new DeleteTotalizerMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Reset a totalizer memory to zero
+    /// </summary>
+    /// <param name="request">Reset configuration</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Manually resets a totalizer memory's accumulated value to zero.
+    /// Requires ManualResetEnabled to be true.
+    /// 
+    /// Options:
+    /// - **preserveInDatabase = false**: Zeros both database and output
+    /// - **preserveInDatabase = true**: Keeps value in DB but zeros output
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/ResetTotalizerMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "preserveInDatabase": false
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If manual reset is not enabled or memory not found</response>
+    [HttpPost("ResetTotalizerMemory")]
+    public async Task<IActionResult> ResetTotalizerMemory([FromBody] ResetTotalizerMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.TotalizerMemories.ResetTotalizerMemory(
+                request.Id, 
+                request.PreserveInDatabase
+            );
+
+            var response = new ResetTotalizerMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    #endregion
+
+    #region PID Auto-Tuning
+
     /// <summary>
     /// Start PID auto-tuning using Ziegler-Nichols relay feedback method
     /// </summary>

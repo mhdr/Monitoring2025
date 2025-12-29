@@ -32,6 +32,7 @@ const ModbusGatewayPage = lazy(() => import('./components/ModbusGatewayPage'));
 const TimeoutMemoryManagementPage = lazy(() => import('./components/TimeoutMemoryManagementPage'));
 const AverageMemoryManagementPage = lazy(() => import('./components/AverageMemoryManagementPage'));
 const PIDMemoryManagementPage = lazy(() => import('./components/PIDMemoryManagementPage'));
+const TotalizerMemoryManagementPage = lazy(() => import('./components/TotalizerMemoryManagementPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
@@ -172,6 +173,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <PIDMemoryManagementPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="management/totalizer-memory" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <TotalizerMemoryManagementPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

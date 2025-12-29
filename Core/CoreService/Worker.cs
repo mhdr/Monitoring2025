@@ -31,7 +31,10 @@ public class Worker : BackgroundService
         _logger.LogInformation("Start Processing Average Memories...");
         var task6 = AverageMemoryProcess.Instance.Run();
 
-        await Task.WhenAll(task1, task2, task3, task4, task5, task6);
+        _logger.LogInformation("Start Processing Totalizer Memories...");
+        var task7 = TotalizerMemoryProcess.Instance.Run();
+
+        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7);
         Console.ReadKey();
     }
 }

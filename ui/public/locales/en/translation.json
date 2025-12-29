@@ -2604,5 +2604,171 @@
     "totalCount": "Total Count",
     "dailyCountTrend": "Daily Count Trend"
   },
-  "statisticsDetail": "Statistics"
+  "statisticsDetail": "Statistics",
+  "totalizerMemory": {
+    "title": "Totalizer Memory",
+    "description": "Configure totalizers/accumulators for flow, energy, event counting, and operating hours tracking.",
+    "addNew": "Add Totalizer",
+    "addFirst": "Add First Totalizer",
+    "addTitle": "Add Totalizer Memory",
+    "editTitle": "Edit Totalizer Memory",
+    "deleteTitle": "Delete Totalizer Memory",
+    "deleteMessage": "Are you sure you want to delete totalizer memory \"{{name}}\"?",
+    "deleteWarning": "This action cannot be undone.",
+    "deleteAccumulatedValue": "Current accumulated value: {{value}} {{units}}. All accumulation data will be lost.",
+    "searchPlaceholder": "Search totalizers...",
+    "noTotalizers": "No totalizers configured",
+    "columnHeaders": {
+      "name": "Name",
+      "nameTooltip": "Human-readable identifier for this totalizer",
+      "inputItem": "Input Item",
+      "inputItemTooltip": "Source item to accumulate (Analog Input for rate integration, Digital Input for event counting)",
+      "outputItem": "Output Item",
+      "outputItemTooltip": "Analog Output item where accumulated value is written",
+      "accumulationType": "Type",
+      "accumulationTypeTooltip": "Rate Integration (flow/energy) or Event Counting (rising/falling/both edges)",
+      "accumulatedValue": "Value",
+      "accumulatedValueTooltip": "Current accumulated value",
+      "interval": "Interval",
+      "intervalTooltip": "How often accumulation calculation executes (seconds)",
+      "resetConfig": "Reset",
+      "resetConfigTooltip": "Reset mechanisms: Auto (overflow), Scheduled (cron), Manual",
+      "actions": "Actions"
+    },
+    "name": "Name",
+    "nameHelp": "Optional human-readable name for this totalizer",
+    "inputItem": "Input Item",
+    "inputItemHelp": "For Rate Integration: Analog Input (flow rate, power, etc.). For Event Counting: Digital Input (contact, sensor, etc.)",
+    "outputItem": "Output Item",
+    "outputItemHelp": "Analog Output item where accumulated value is continuously written",
+    "interval": "Interval (seconds)",
+    "intervalHelp": "How often the totalizer calculation runs (seconds). Typical: 1-10s for fast-changing rates, 10-60s for slow processes. Shorter = more accurate but higher CPU usage.",
+    "isDisabled": "Disabled",
+    "isDisabledHelp": "Temporarily disable this totalizer without deleting the configuration. Accumulation will pause but accumulated value is preserved.",
+    "accumulationType": {
+      "label": "Accumulation Type",
+      "rateIntegration": "Rate Integration",
+      "eventCountRising": "Event Count (Rising Edge)",
+      "eventCountFalling": "Event Count (Falling Edge)",
+      "eventCountBoth": "Event Count (Both Edges)"
+    },
+    "accumulationTypeHelp": "Rate Integration: Integrate analog value over time (flow→volume, power→energy). Event Counting: Count digital signal transitions (pulses, cycles, alarms).",
+    "resetOnOverflow": "Auto Reset on Overflow",
+    "resetOnOverflowHelp": "Automatically reset accumulated value to zero when it reaches the overflow threshold. Useful for cyclic totalizers like daily production counters.",
+    "overflowThreshold": "Overflow Threshold",
+    "overflowThresholdHelp": "Maximum accumulated value before automatic reset. Example: 10000 for 4-digit counters, 1000000 for large totalizers.",
+    "manualResetEnabled": "Enable Manual Reset",
+    "manualResetEnabledHelp": "Allow operators to manually reset the totalizer through the management interface. Recommended for most applications.",
+    "scheduledResetEnabled": "Enable Scheduled Reset",
+    "scheduledResetEnabledHelp": "Automatically reset at specified intervals using cron expressions. Useful for daily/weekly/monthly reporting periods (e.g., daily production totals).",
+    "resetCron": "Reset Schedule (Cron)",
+    "resetCronHelp": "Cron expression for scheduled resets (5 fields: minute hour day month weekday). Examples below.",
+    "cronExamples": "Common Cron Examples:",
+    "cronExamples.daily": "Daily at midnight",
+    "cronExamples.hourly": "Every hour",
+    "cronExamples.monthly": "First of month at midnight",
+    "units": "Units",
+    "unitsHelp": "Measurement units for display (e.g., kWh, m³, hours, count, liters, kg). Optional but recommended for clarity.",
+    "decimalPlaces": "Decimal Places",
+    "decimalPlacesHelp": "Number of decimal places to display (0-10). Typical: 0-2 for counts, 2-4 for flow/energy.",
+    "currentAccumulated": "Current Accumulated Value",
+    "accumulatedValue": "Accumulated Value",
+    "resetConfig": "Reset Configuration",
+    "autoReset": "Auto",
+    "scheduled": "Scheduled",
+    "manual": "Manual",
+    "sections": {
+      "basic": "Basic Configuration",
+      "accumulation": "Accumulation Type",
+      "resetConfig": "Reset Configuration",
+      "advanced": "Advanced Settings"
+    },
+    "validation": {
+      "inputItemRequired": "Input item is required",
+      "outputItemRequired": "Output item is required",
+      "inputOutputSame": "Input and output items must be different",
+      "intervalMin": "Interval must be at least 1 second",
+      "overflowThresholdRequired": "Overflow threshold is required when auto reset is enabled",
+      "cronRequired": "Cron expression is required when scheduled reset is enabled",
+      "cronInvalid": "Invalid cron expression (must have 5 fields: minute hour day month weekday)",
+      "decimalPlacesRange": "Decimal places must be between 0 and 10",
+      "validationFailed": "Please fix validation errors before saving"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load totalizers",
+      "saveFailed": "Failed to save totalizer",
+      "createFailed": "Failed to create totalizer",
+      "deleteFailed": "Failed to delete totalizer",
+      "resetFailed": "Failed to reset totalizer"
+    },
+    "resetAction": "Reset",
+    "resetDialogTitle": "Reset Totalizer",
+    "resetDialogMessage": "Reset accumulated value to zero for \"{{name}}\"?",
+    "resetSuccess": "Totalizer reset successfully",
+    "help": {
+      "rateIntegration": {
+        "title": "Rate Integration (Trapezoidal Rule)",
+        "sections": [
+          {
+            "content": "Accumulates analog values over time using the trapezoidal rule for accuracy.",
+            "type": "default"
+          },
+          {
+            "content": "Common Applications: Total water/gas flow (integrating flow rate), Energy consumption (kWh from power readings), Operating hours tracking (from load percentage)",
+            "type": "example"
+          },
+          {
+            "content": "Requires Analog Input for rate measurement (e.g., flow sensor, power meter)",
+            "type": "tip"
+          }
+        ]
+      },
+      "eventCounting": {
+        "title": "Event Counting (Edge Detection)",
+        "sections": [
+          {
+            "content": "Counts digital signal transitions (edges) with baseline initialization on first run.",
+            "type": "default"
+          },
+          {
+            "content": "Common Applications: Production counters (each part triggers pulse), Alarm occurrences (count alarm activations), Cycle counts (machine operations), Pulse flow meters",
+            "type": "example"
+          },
+          {
+            "content": "Rising Edge: Counts 0→1 transitions (LOW to HIGH). Falling Edge: Counts 1→0 transitions (HIGH to LOW). Both Edges: Counts all transitions.",
+            "type": "tip"
+          },
+          {
+            "content": "Baseline initialization: On first run, current digital state is recorded without counting to avoid false counts on system startup.",
+            "type": "warning"
+          }
+        ]
+      },
+      "resetMechanisms": {
+        "title": "Reset Mechanisms",
+        "sections": [
+          {
+            "content": "Three independent reset mechanisms can be enabled simultaneously or individually.",
+            "type": "default"
+          },
+          {
+            "content": "Auto Reset (Overflow): Automatically resets when accumulated value reaches threshold. Use for cyclic counters with fixed range (e.g., 0-9999 displays).",
+            "type": "tip"
+          },
+          {
+            "content": "Scheduled Reset (Cron): Resets at specific times/dates. Use for reporting periods (daily production, monthly consumption, shift totals).",
+            "type": "tip"
+          },
+          {
+            "content": "Manual Reset: Operator-triggered reset through UI. Use for ad-hoc resets (batch completion, maintenance, calibration).",
+            "type": "tip"
+          },
+          {
+            "content": "All resets persist to database for crash recovery. Output item is also zeroed on reset.",
+            "type": "warning"
+          }
+        ]
+      }
+    }
+  }
 }

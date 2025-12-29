@@ -23,6 +23,7 @@ import {
   Timer as TimerIcon,
   PrecisionManufacturing as PIDIcon,
   Calculate as CalculateIcon,
+  Countertops as TotalizerIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -54,6 +55,7 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
     { path: '/dashboard/management/timeout-memory', key: 'timeoutMemory.title', icon: <TimerIcon /> },
     { path: '/dashboard/management/average-memory', key: 'averageMemory.title', icon: <CalculateIcon /> },
     { path: '/dashboard/management/pid-memory', key: 'pidMemory.title', icon: <PIDIcon /> },
+    { path: '/dashboard/management/totalizer-memory', key: 'totalizerMemory.title', icon: <TotalizerIcon /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;

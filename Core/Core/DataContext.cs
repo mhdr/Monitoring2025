@@ -49,6 +49,8 @@ public class DataContext : DbContext
     
     public DbSet<AverageMemory> AverageMemories { get; set; }
     
+    public DbSet<TotalizerMemory> TotalizerMemories { get; set; }
+    
     public DbSet<ControllerModbus> ControllerModbuses { get; set; }
     public DbSet<MapModbus> MapModbuses { get; set; }
     
@@ -126,6 +128,10 @@ public class DataContext : DbContext
             .HasDefaultValueSql("gen_random_uuid()");
         
         modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<TotalizerMemory>()
             .Property(e => e.Id)
             .HasDefaultValueSql("gen_random_uuid()");
         
@@ -283,6 +289,38 @@ public class DataContext : DbContext
         modelBuilder.Entity<AverageMemory>()
             .Property(e => e.MinimumInputs)
             .HasDefaultValue(1);
+        
+        modelBuilder.Entity<TotalizerMemory>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<TotalizerMemory>()
+            .Property(e => e.Interval)
+            .HasDefaultValue(10);
+        
+        modelBuilder.Entity<TotalizerMemory>()
+            .Property(e => e.AccumulationType)
+            .HasDefaultValue(AccumulationType.RateIntegration);
+        
+        modelBuilder.Entity<TotalizerMemory>()
+            .Property(e => e.ResetOnOverflow)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<TotalizerMemory>()
+            .Property(e => e.ManualResetEnabled)
+            .HasDefaultValue(true);
+        
+        modelBuilder.Entity<TotalizerMemory>()
+            .Property(e => e.ScheduledResetEnabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<TotalizerMemory>()
+            .Property(e => e.AccumulatedValue)
+            .HasDefaultValue(0.0);
+        
+        modelBuilder.Entity<TotalizerMemory>()
+            .Property(e => e.DecimalPlaces)
+            .HasDefaultValue(2);
         
         modelBuilder.Entity<ControllerModbus>()
             .Property(e => e.Endianness)
