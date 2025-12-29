@@ -271,8 +271,8 @@ const AverageMemoryManagementPage: React.FC = () => {
   );
 
   return (
-    <Container maxWidth={false} data-id-ref="average-memory-page-container">
-      <Card data-id-ref="average-memory-page-card">
+    <Container maxWidth={false} data-id-ref="average-memory-page-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
+      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 3 }} data-id-ref="average-memory-page-card">
         <CardHeader
           title={t('averageMemory.title')}
           subheader={t('averageMemory.description')}
@@ -295,8 +295,8 @@ const AverageMemoryManagementPage: React.FC = () => {
             </Box>
           }
         />
-        <CardContent data-id-ref="average-memory-page-content">
-          {/* Error Alert */}
+        <CardContent data-id-ref="average-memory-page-content" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', p: 2 }}>
+          {/* Error Alert */
           {error && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
               {error}
