@@ -202,7 +202,8 @@
     "hidePassword": "مخفی کردن رمز عبور",
     "actions": "عملیات",
     "add": "افزودن",
-    "edit": "ویرایش"
+    "edit": "ویرایش",
+    "refresh": "بارگذاری مجدد"
   },
   "itemType": {
     "digitalInput": "ورودی دیجیتال",
@@ -2351,6 +2352,8 @@
     "resetDialogTitle": "بازنشانی جمع‌کننده",
     "resetDialogMessage": "آیا مقدار انباشته را برای «{{name}}» به صفر بازنشانی کنیم؟",
     "resetSuccess": "جمع‌کننده با موفقیت بازنشانی شد",
+    "totalCount": "مجموع: {{count}} جمع‌کننده",
+    "filteredCount": "نمایش: {{count}} جمع‌کننده",
     "help": {
       "rateIntegration": {
         "title": "انتگرال‌گیری نرخ (قاعده ذوزنقه‌ای)",

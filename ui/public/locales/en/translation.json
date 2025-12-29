@@ -202,7 +202,8 @@
     "hidePassword": "Hide password",
     "actions": "Actions",
     "add": "Add",
-    "edit": "Edit"
+    "edit": "Edit",
+    "refresh": "Refresh"
   },
   "itemType": {
     "digitalInput": "Digital Input",
@@ -2705,6 +2706,8 @@
     "resetDialogTitle": "Reset Totalizer",
     "resetDialogMessage": "Reset accumulated value to zero for \"{{name}}\"?",
     "resetSuccess": "Totalizer reset successfully",
+    "totalCount": "Total: {{count}} totalizer(s)",
+    "filteredCount": "Showing: {{count}} totalizer(s)",
     "help": {
       "rateIntegration": {
         "title": "Rate Integration (Trapezoidal Rule)",
