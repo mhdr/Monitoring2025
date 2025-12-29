@@ -47,6 +47,8 @@ public class DataContext : DbContext
     public DbSet<PIDMemory> PIDMemories { get; set; }
     public DbSet<PIDTuningSession> PIDTuningSessions { get; set; }
     
+    public DbSet<AverageMemory> AverageMemories { get; set; }
+    
     public DbSet<JobDetail> JobDetails { get; set; }
     public DbSet<Trigger> Triggers { get; set; }
     
@@ -123,6 +125,10 @@ public class DataContext : DbContext
             .HasDefaultValueSql("gen_random_uuid()");
 
         modelBuilder.Entity<PIDMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<AverageMemory>()
             .Property(e => e.Id)
             .HasDefaultValueSql("gen_random_uuid()");
         
@@ -261,6 +267,38 @@ public class DataContext : DbContext
             .Property(e => e.ReverseOutput)
             .HasDefaultValue(false);
         
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.Interval)
+            .HasDefaultValue(10);
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.IgnoreStale)
+            .HasDefaultValue(true);
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.StaleTimeout)
+            .HasDefaultValue(60L);
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.EnableOutlierDetection)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.OutlierMethod)
+            .HasDefaultValue(OutlierMethod.IQR);
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.OutlierThreshold)
+            .HasDefaultValue(1.5);
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.MinimumInputs)
+            .HasDefaultValue(1);
+        
         modelBuilder.Entity<ControllerModbus>()
             .Property(e => e.Endianness)
             .HasDefaultValue(Endianness.None);
@@ -372,6 +410,10 @@ public class DataContext : DbContext
 
         modelBuilder.Entity<ModbusGatewayMapping>()
             .Property(u => u.Endianness)
+            .HasConversion<int>();
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(u => u.OutlierMethod)
             .HasConversion<int>();
 
         // keys

@@ -169,3 +169,16 @@ public enum ModbusDataRepresentation
     /// <summary>Scaled integer: value mapped to 0-65535 range using ScaleMin/ScaleMax. Uses 1 register.</summary>
     ScaledInteger = 3,
 }
+
+/// <summary>
+/// Specifies the outlier detection method for AverageMemory processing.
+/// </summary>
+public enum OutlierMethod
+{
+    /// <summary>No outlier detection - use all valid inputs</summary>
+    None = 0,
+    /// <summary>Interquartile Range (IQR) method - removes values outside Q1-k*IQR to Q3+k*IQR (robust, recommended)</summary>
+    IQR = 1,
+    /// <summary>Z-Score method - removes values with |z-score| > threshold (assumes normal distribution)</summary>
+    ZScore = 2,
+}
