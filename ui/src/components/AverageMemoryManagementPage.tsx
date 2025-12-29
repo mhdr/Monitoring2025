@@ -302,7 +302,7 @@ const AverageMemoryManagementPage: React.FC = () => {
               fullWidth
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={t('common.search')}
+              placeholder={t('averageMemory.searchPlaceholder')}
               variant="outlined"
               size="small"
               InputProps={{
