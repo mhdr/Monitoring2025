@@ -371,8 +371,18 @@ const TotalizerMemoryManagementPage: React.FC = () => {
   }, [t, handleEdit, handleDelete]);
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }} data-id-ref="totalizer-memory-page">
-      <Card>
+    <Box 
+      sx={{ 
+        width: '100%', 
+        height: '100vh', 
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        p: 3 
+      }} 
+      data-id-ref="totalizer-memory-page"
+    >
+      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <CardHeader
           avatar={<TotalizerIcon fontSize="large" color="primary" />}
           title={
@@ -397,7 +407,7 @@ const TotalizerMemoryManagementPage: React.FC = () => {
           }
         />
 
-        <CardContent>
+        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Error Alert */}
           {error && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -441,20 +451,22 @@ const TotalizerMemoryManagementPage: React.FC = () => {
           </Box>
 
           {/* Totalizer Memories Grid */}
-          {loading && totalizerMemories.length === 0 ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <SyncfusionGridWrapper
-              data={filteredTotalizerMemories}
-              columns={columns}
-              allowPaging={true}
-              allowSorting={true}
-              allowFiltering={true}
-              height="600px"
-            />
-          )}
+          <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            {loading && totalizerMemories.length === 0 ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <SyncfusionGridWrapper
+                data={filteredTotalizerMemories}
+                columns={columns}
+                allowPaging={true}
+                allowSorting={true}
+                allowFiltering={true}
+                height="100%"
+              />
+            )}
+          </Box>
 
           {/* Summary */}
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -489,7 +501,7 @@ const TotalizerMemoryManagementPage: React.FC = () => {
           />
         )}
       </Suspense>
-    </Container>
+    </Box>
   );
 };
 
