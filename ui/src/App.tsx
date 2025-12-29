@@ -30,6 +30,7 @@ const ModbusControllersPage = lazy(() => import('./components/ModbusControllersP
 const Sharp7ControllersPage = lazy(() => import('./components/Sharp7ControllersPage'));
 const ModbusGatewayPage = lazy(() => import('./components/ModbusGatewayPage'));
 const TimeoutMemoryManagementPage = lazy(() => import('./components/TimeoutMemoryManagementPage'));
+const AverageMemoryManagementPage = lazy(() => import('./components/AverageMemoryManagementPage'));
 const PIDMemoryManagementPage = lazy(() => import('./components/PIDMemoryManagementPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
@@ -157,6 +158,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <TimeoutMemoryManagementPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="management/average-memory" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <AverageMemoryManagementPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

@@ -46,6 +46,15 @@ import type {
   EditTimeoutMemoryResponseDto,
   DeleteTimeoutMemoryRequestDto,
   DeleteTimeoutMemoryResponseDto,
+  // Average Memory types
+  GetAverageMemoriesRequestDto,
+  GetAverageMemoriesResponseDto,
+  AddAverageMemoryRequestDto,
+  AddAverageMemoryResponseDto,
+  EditAverageMemoryRequestDto,
+  EditAverageMemoryResponseDto,
+  DeleteAverageMemoryRequestDto,
+  DeleteAverageMemoryResponseDto,
   // PID Memory types
   GetPIDMemoriesRequestDto,
   GetPIDMemoriesResponseDto,
@@ -428,6 +437,56 @@ export const editTimeoutMemory = async (data: EditTimeoutMemoryRequestDto): Prom
 export const deleteTimeoutMemory = async (data: DeleteTimeoutMemoryRequestDto): Promise<DeleteTimeoutMemoryResponseDto> => {
   try {
     const response = await apiClient.post<DeleteTimeoutMemoryResponseDto>('/api/Monitoring/DeleteTimeoutMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// ==================== Average Memory ====================
+
+/**
+ * Get all average memory configurations
+ */
+export const getAverageMemories = async (params: GetAverageMemoriesRequestDto = {}): Promise<GetAverageMemoriesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetAverageMemoriesResponseDto>('/api/Monitoring/GetAverageMemories', params);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new average memory configuration
+ */
+export const addAverageMemory = async (data: AddAverageMemoryRequestDto): Promise<AddAverageMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddAverageMemoryResponseDto>('/api/Monitoring/AddAverageMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing average memory configuration
+ */
+export const editAverageMemory = async (data: EditAverageMemoryRequestDto): Promise<EditAverageMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditAverageMemoryResponseDto>('/api/Monitoring/EditAverageMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete an average memory configuration
+ */
+export const deleteAverageMemory = async (data: DeleteAverageMemoryRequestDto): Promise<DeleteAverageMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteAverageMemoryResponseDto>('/api/Monitoring/DeleteAverageMemory', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

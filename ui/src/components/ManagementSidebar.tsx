@@ -22,6 +22,7 @@ import {
   DeviceHub as DeviceHubIcon,
   Timer as TimerIcon,
   PrecisionManufacturing as PIDIcon,
+  Calculate as CalculateIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -51,6 +52,7 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
     { path: '/dashboard/management/sharp7-controllers', key: 'sharp7Controllers.title', icon: <MemoryIcon /> },
     { path: '/dashboard/management/modbus-gateway', key: 'modbusGateway.title', icon: <DeviceHubIcon /> },
     { path: '/dashboard/management/timeout-memory', key: 'timeoutMemory.title', icon: <TimerIcon /> },
+    { path: '/dashboard/management/average-memory', key: 'averageMemory.title', icon: <CalculateIcon /> },
     { path: '/dashboard/management/pid-memory', key: 'pidMemory.title', icon: <PIDIcon /> },
   ];
 

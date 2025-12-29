@@ -2759,6 +2759,120 @@ export interface DeleteTimeoutMemoryResponseDto {
   errorMessage?: string | null;
 }
 
+// ==================== Average Memory DTOs ====================
+
+/**
+ * Outlier detection method for Average Memory
+ */
+export enum OutlierMethod {
+  None = 0,
+  IQR = 1,
+  ZScore = 2,
+}
+
+/**
+ * Average Memory configuration
+ */
+export interface AverageMemory {
+  id: string; // UUID
+  name?: string | null;
+  inputItemIds: string; // JSON array of UUIDs - ["guid1", "guid2", ...]
+  outputItemId: string; // UUID - Must be AnalogInput or AnalogOutput
+  interval: number; // Processing interval in seconds
+  isDisabled: boolean;
+  weights?: string | null; // Optional JSON array of weights - [1.0, 2.0, ...]
+  ignoreStale: boolean; // Whether to ignore stale inputs
+  staleTimeout: number; // int64 - Maximum age for input in seconds
+  enableOutlierDetection: boolean; // Whether outlier detection is enabled
+  outlierMethod: OutlierMethod; // IQR or ZScore
+  outlierThreshold: number; // Threshold for outlier detection
+  minimumInputs: number; // Minimum valid inputs required
+}
+
+/**
+ * Request DTO for retrieving average memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetAverageMemoriesRequestDto {
+  // Empty - no filtering parameters needed currently
+}
+
+/**
+ * Response DTO containing list of average memory configurations
+ */
+export interface GetAverageMemoriesResponseDto {
+  averageMemories: AverageMemory[];
+}
+
+/**
+ * Request DTO for creating a new average memory configuration
+ */
+export interface AddAverageMemoryRequestDto {
+  name?: string | null;
+  inputItemIds: string; // JSON array - ["guid1", "guid2", ...]
+  outputItemId: string; // UUID
+  interval: number; // Must be > 0
+  isDisabled?: boolean;
+  weights?: string | null; // Optional JSON array
+  ignoreStale?: boolean;
+  staleTimeout?: number; // int64
+  enableOutlierDetection?: boolean;
+  outlierMethod?: OutlierMethod;
+  outlierThreshold?: number;
+  minimumInputs?: number;
+}
+
+/**
+ * Response DTO for adding a new average memory configuration
+ */
+export interface AddAverageMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of newly created average memory
+}
+
+/**
+ * Request DTO for editing an existing average memory configuration
+ */
+export interface EditAverageMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  inputItemIds: string; // JSON array
+  outputItemId: string; // UUID
+  interval: number; // Must be > 0
+  isDisabled?: boolean;
+  weights?: string | null;
+  ignoreStale?: boolean;
+  staleTimeout?: number; // int64
+  enableOutlierDetection?: boolean;
+  outlierMethod?: OutlierMethod;
+  outlierThreshold?: number;
+  minimumInputs?: number;
+}
+
+/**
+ * Response DTO for editing an average memory configuration
+ */
+export interface EditAverageMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting an average memory configuration
+ */
+export interface DeleteAverageMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting an average memory configuration
+ */
+export interface DeleteAverageMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
 // ==================== PID Memory DTOs ====================
 
 /**
