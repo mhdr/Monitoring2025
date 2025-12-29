@@ -49,9 +49,6 @@ public class DataContext : DbContext
     
     public DbSet<AverageMemory> AverageMemories { get; set; }
     
-    public DbSet<JobDetail> JobDetails { get; set; }
-    public DbSet<Trigger> Triggers { get; set; }
-    
     public DbSet<ControllerModbus> ControllerModbuses { get; set; }
     public DbSet<MapModbus> MapModbuses { get; set; }
     
@@ -129,14 +126,6 @@ public class DataContext : DbContext
             .HasDefaultValueSql("gen_random_uuid()");
         
         modelBuilder.Entity<AverageMemory>()
-            .Property(e => e.Id)
-            .HasDefaultValueSql("gen_random_uuid()");
-        
-        modelBuilder.Entity<JobDetail>()
-            .Property(e => e.Id)
-            .HasDefaultValueSql("gen_random_uuid()");
-        
-        modelBuilder.Entity<Trigger>()
             .Property(e => e.Id)
             .HasDefaultValueSql("gen_random_uuid()");
         
@@ -257,10 +246,6 @@ public class DataContext : DbContext
         
         modelBuilder.Entity<MonitoringItem>()
             .Property(e => e.IsEditable)
-            .HasDefaultValue(false);
-        
-        modelBuilder.Entity<Trigger>()
-            .Property(e => e.IsDisabled)
             .HasDefaultValue(false);
         
         modelBuilder.Entity<PIDMemory>()

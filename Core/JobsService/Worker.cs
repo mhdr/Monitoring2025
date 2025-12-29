@@ -2,7 +2,6 @@ using System.Runtime.InteropServices;
 using Core;
 using Core.Libs;
 using Core.Models;
-using Cronos;
 using Microsoft.EntityFrameworkCore;
 
 namespace JobsService;
@@ -24,30 +23,12 @@ public class Worker : BackgroundService
             try
             {
                 _context = new DataContext();
-                var triggers = await FindActiveTriggers();
-                MyLog.LogJson(triggers);
-
-                foreach (var trigger in triggers)
-                {
-                    try
-                    {
-                        var jobDetails = await _context.JobDetails.Where(x => x.TriggerId == trigger.Id)
-                            .ToListAsync();
-
-                        foreach (var jobDetail in jobDetails)
-                        {
-                            await Points.WriteOrAddValue(jobDetail.ItemId, jobDetail.Value);
-                            MyLog.LogJson("Trigger",trigger);
-                        }
-                    }
-                    catch (Exception e2)
-                    {
-                        MyLog.LogJson(e2);
-                    }
-                }
-
+                // Job triggers functionality has been removed
+                // This service is no longer functional
+                _logger.LogWarning("JobsService is disabled - JobDetail and Trigger functionality has been removed from the system");
+                
                 await _context.DisposeAsync();
-                await Task.Delay(1000 * 10, stoppingToken);
+                await Task.Delay(1000 * 60, stoppingToken); // Wait 60 seconds before logging again
             }
             catch (Exception e)
             {
@@ -81,46 +62,5 @@ public class Worker : BackgroundService
         TimeZoneInfo tehranTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
 
         return tehranTimeZone;
-    }
-
-    private async Task<List<Trigger>> FindActiveTriggers()
-    {
-        List<Trigger> result = new List<Trigger>();
-
-        try
-        {
-
-            var now = DateTimeOffset.Now;
-            var todayMidnight = new DateTimeOffset(now.Date, now.Offset);
-
-            var triggers = await _context.Triggers.ToListAsync();
-
-            foreach (var trigger in triggers)
-            {
-                if (trigger.IsDisabled)
-                {
-                    continue;
-                }
-                
-                var cronExpressionStart = CronExpression.Parse(trigger.StartTime);
-                var cronExpressionEnd = CronExpression.Parse(trigger.EndTime);
-
-                var startTimeOccurrence = cronExpressionStart.GetNextOccurrence(todayMidnight,TimeZoneInfo.Local);
-                var endTimeOccurrence = cronExpressionEnd.GetNextOccurrence(todayMidnight,TimeZoneInfo.Local);
-
-                bool isNowBetween = startTimeOccurrence <= now && now <= endTimeOccurrence;
-
-                if (isNowBetween)
-                {
-                    result.Add(trigger);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            MyLog.LogJson(e);
-        }
-
-        return result;
     }
 }
