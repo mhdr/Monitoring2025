@@ -60,7 +60,7 @@ const AverageMemoryManagementPage: React.FC = () => {
     try {
       const response = await getAverageMemories();
       // Enhance with item details from monitoring context
-      const enhanced = response.averageMemories.map((am) => {
+      const enhanced = (response.averageMemories || []).map((am) => {
         let inputIds: string[] = [];
         try {
           inputIds = JSON.parse(am.inputItemIds);

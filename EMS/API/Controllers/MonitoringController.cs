@@ -7278,6 +7278,67 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
         return BadRequest(ModelState);
     }
 
+    #region Average Memory Management
+
+    /// <summary>
+    /// Get all average memory configurations
+    /// </summary>
+    /// <param name="request">Get average memories request (empty for now)</param>
+    /// <returns>List of average memory configurations</returns>
+    /// <response code="200">Returns list of average memory configurations</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("GetAverageMemories")]
+    public async Task<IActionResult> GetAverageMemories([FromBody] GetAverageMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetAverageMemoriesResponseDto();
+
+            var averageMemories = await Core.AverageMemories.GetAverageMemories();
+
+            if (averageMemories != null)
+            {
+                foreach (var am in averageMemories)
+                {
+                    response.AverageMemories!.Add(new GetAverageMemoriesResponseDto.AverageMemory()
+                    {
+                        Id = am.Id,
+                        Name = am.Name,
+                        InputItemIds = am.InputItemIds,
+                        OutputItemId = am.OutputItemId,
+                        Interval = am.Interval,
+                        IsDisabled = am.IsDisabled,
+                        Weights = am.Weights,
+                        IgnoreStale = am.IgnoreStale,
+                        StaleTimeout = am.StaleTimeout,
+                        EnableOutlierDetection = am.EnableOutlierDetection,
+                        OutlierMethod = (int)am.OutlierMethod,
+                        OutlierThreshold = am.OutlierThreshold,
+                        MinimumInputs = am.MinimumInputs
+                    });
+                }
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    #endregion
+
     #region PID Memory Management
 
     /// <summary>
