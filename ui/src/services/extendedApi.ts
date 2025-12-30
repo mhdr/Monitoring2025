@@ -1634,7 +1634,7 @@ export const testFormulaExpression = async (
  * Get all IF memory configurations
  */
 export const getIfMemories = async (
-  params?: GetIfMemoriesRequestDto
+  params: GetIfMemoriesRequestDto = {}
 ): Promise<GetIfMemoriesResponseDto> => {
   try {
     const response = await apiClient.post<GetIfMemoriesResponseDto>(
