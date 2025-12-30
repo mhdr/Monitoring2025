@@ -443,6 +443,42 @@ export const ModbusDataTypeEnum = {
   Float: 3,
 } as const;
 
+/** RateCalculationMethod: 1 = SimpleDifference, 2 = MovingAverage, 3 = WeightedAverage, 4 = LinearRegression */
+export type RateCalculationMethod = 1 | 2 | 3 | 4;
+
+/**
+ * RateCalculationMethod enum values for better code readability
+ * Backend uses SimpleDifference=1, MovingAverage=2, WeightedAverage=3, LinearRegression=4
+ * Used for derivative computation in Rate of Change Memory
+ */
+export const RateCalculationMethod = {
+  /** Simple difference: (current - last) / deltaTime - Fast but sensitive to noise */
+  SimpleDifference: 1,
+  /** Moving average of derivatives over time window - Reduces noise but introduces lag */
+  MovingAverage: 2,
+  /** Weighted moving average with exponential decay - Balance between noise reduction and responsiveness */
+  WeightedAverage: 3,
+  /** Least-squares linear regression over time window - Best for noisy data, requires minimum 5 samples */
+  LinearRegression: 4,
+} as const;
+
+/** RateTimeUnit: 1 = PerSecond, 60 = PerMinute, 3600 = PerHour */
+export type RateTimeUnit = 1 | 60 | 3600;
+
+/**
+ * RateTimeUnit enum values for better code readability
+ * Value represents multiplier from per-second to target unit
+ * Backend uses PerSecond=1, PerMinute=60, PerHour=3600
+ */
+export const RateTimeUnit = {
+  /** Rate per second (multiplier = 1) */
+  PerSecond: 1,
+  /** Rate per minute (multiplier = 60) */
+  PerMinute: 60,
+  /** Rate per hour (multiplier = 3600) */
+  PerHour: 3600,
+} as const;
+
 // LogType: Based on backend enum - EditPoint=1, EditAlarm=2, Login=3, Logout=4, EditGroup=5, AddAlarm=6, DeleteAlarm=7, AddExternalAlarm=8, DeleteExternalAlarm=9, EditExternalAlarm=10, AddPoint=11, DeletePoint=12, DeleteGroup=13, AddGroup=14, EditUser=15, AddUser=16, DeleteUser=17, EditRole=18, AddRole=19, DeleteRole=20
 export type LogType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
 
