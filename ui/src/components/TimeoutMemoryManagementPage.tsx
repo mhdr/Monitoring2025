@@ -313,52 +313,56 @@ const TimeoutMemoryManagementPage: React.FC = () => {
         <CardHeader
           data-id-ref="timeout-memory-page-card-header"
           title={
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-              <Typography variant="h4" component="h1" data-id-ref="timeout-memory-page-title">
-                {t('timeoutMemory.title')}
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <TextField
-                  size="small"
-                  placeholder={t('timeoutMemory.searchPlaceholder')}
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  data-id-ref="timeout-memory-search-input"
-                  sx={{ minWidth: 250 }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                    endAdornment: searchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={handleClearSearch} edge="end" data-id-ref="timeout-memory-clear-search-btn">
-                          <ClearIcon />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleCreateTimeoutMemory}
-                  data-id-ref="timeout-memory-add-btn"
-                >
-                  {t('timeoutMemory.addNew')}
-                </Button>
-              </Box>
-            </Box>
+            <Typography variant="h5" component="h1" fontWeight="bold" data-id-ref="timeout-memory-page-title">
+              {t('timeoutMemory.title')}
+            </Typography>
+          }
+          subheader={
+            <Typography variant="body2" color="text.secondary" data-id-ref="timeout-memory-page-description">
+              {t('timeoutMemory.description')}
+            </Typography>
+          }
+          action={
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreateTimeoutMemory}
+              data-id-ref="timeout-memory-add-btn"
+            >
+              {t('timeoutMemory.addNew')}
+            </Button>
           }
         />
-        <CardContent data-id-ref="timeout-memory-page-card-body" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', p: 0 }}>
+        <CardContent data-id-ref="timeout-memory-page-card-body" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', p: 2 }}>
+          {/* Search */}
+          <Box sx={{ mb: 2 }} data-id-ref="timeout-memory-search-container">
+            <TextField
+              fullWidth
+              placeholder={t('timeoutMemory.searchPlaceholder')}
+              value={searchTerm}
+              onChange={handleSearchChange}
+              size="small"
+              data-id-ref="timeout-memory-search-input"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: searchTerm && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={handleClearSearch} edge="end" data-id-ref="timeout-memory-clear-search-btn">
+                      <ClearIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
+
           {/* Info Alert explaining timeout behavior */}
-          <Box sx={{ p: 2, pb: 0 }}>
-            <Alert severity="info" sx={{ mb: 2 }} data-id-ref="timeout-memory-behavior-info">
-              <Typography variant="body2" sx={{ mb: 0.5 }}>
-                {t('timeoutMemory.description')}
-              </Typography>
+          <Box sx={{ mb: 2 }}>
+            <Alert severity="info" data-id-ref="timeout-memory-behavior-info">
               <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                 {t('timeoutMemory.behaviorNote')}
               </Typography>
@@ -366,7 +370,7 @@ const TimeoutMemoryManagementPage: React.FC = () => {
           </Box>
           
           {error && (
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ mb: 2 }}>
               <Alert severity="error" data-id-ref="timeout-memory-error-alert">
                 {error}
               </Alert>
