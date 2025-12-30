@@ -188,6 +188,8 @@
     "error": "Error",
     "on": "ON",
     "off": "OFF",
+    "none": "None",
+    "disabled": "Disabled",
     "close": "Close",
     "cancel": "Cancel",
     "save": "Save",
