@@ -1599,6 +1599,45 @@
       "deleteFailed": "Failed to delete timeout memory"
     },
     "help": {
+      "overview": {
+        "title": "Timeout Memory Overview",
+        "sections": [
+          {
+            "title": "What is Timeout Memory?",
+            "content": "Timeout Memory monitors the update frequency of monitoring items and automatically sets a digital output based on whether the item is updating regularly or has stopped responding. It acts as a watchdog timer for data freshness."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "Every second, the system checks the input item's last update timestamp",
+              "Output = 0: Input is updating within the timeout period (normal)",
+              "Output = 1: Input hasn't updated for longer than timeout (stale/failure)",
+              "Automatically resets when input resumes updating"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Communication Monitoring Example",
+            "content": "Scenario: Monitor Modbus slave communication\n\nInput Item: Temperature sensor from Modbus device\nOutput Item: Communication status indicator\nTimeout: 60 seconds\n\nNormal Operation:\n• Modbus polls every 10 seconds\n• Temperature updates regularly\n• Output stays at 0\n\nCommunication Failure:\n• Network cable unplugged\n• Temperature stops updating\n• After 60 seconds, output changes to 1\n• Alarm triggers notification\n• Output resets to 0 when cable reconnected"
+          },
+          {
+            "type": "tip",
+            "title": "Common Applications",
+            "content": [
+              "Device Health Monitoring: Track PLC, sensor, and field device responsiveness",
+              "Communication Watchdog: Detect Modbus, BACnet, or OPC failures",
+              "Data Staleness Detection: Identify frozen or stuck measurements",
+              "Safety Interlocks: Stop processes when critical data becomes stale",
+              "Dashboard Indicators: Display real-time device online/offline status"
+            ]
+          },
+          {
+            "type": "warning",
+            "title": "Configuration Guidelines",
+            "content": "Set timeout period 2-3x the normal scan rate to avoid false alarms. For a 10-second scan rate, use 30-60 second timeout. Account for network delays, system load, and startup time."
+          }
+        ]
+      },
       "inputItem": {
         "title": "Input Item - What to Monitor",
         "sections": [

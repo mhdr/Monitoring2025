@@ -21,6 +21,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Timer as TimerIcon,
+  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -29,6 +30,7 @@ import { getTimeoutMemories } from '../services/extendedApi';
 import type { TimeoutMemory, ItemType } from '../types/api';
 import { ItemTypeEnum } from '../types/api';
 import { createLogger } from '../utils/logger';
+import FieldHelpPopover from './common/FieldHelpPopover';
 
 const logger = createLogger('TimeoutMemoryManagementPage');
 
@@ -127,6 +129,17 @@ const TimeoutMemoryManagementPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTimeoutMemory, setSelectedTimeoutMemory] = useState<TimeoutMemoryWithItems | null>(null);
   const [editMode, setEditMode] = useState(false);
+
+  // Help popover state
+  const [overviewHelpAnchor, setOverviewHelpAnchor] = useState<HTMLElement | null>(null);
+
+  const handleOverviewHelpOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setOverviewHelpAnchor(event.currentTarget);
+  };
+
+  const handleOverviewHelpClose = () => {
+    setOverviewHelpAnchor(null);
+  };
 
   // Fetch timeout memories
   const fetchTimeoutMemories = useCallback(async () => {
@@ -318,9 +331,19 @@ const TimeoutMemoryManagementPage: React.FC = () => {
             </Typography>
           }
           subheader={
-            <Typography variant="body2" color="text.secondary" data-id-ref="timeout-memory-page-description">
-              {t('timeoutMemory.description')}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="body2" color="text.secondary" data-id-ref="timeout-memory-page-description">
+                {t('timeoutMemory.description')}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={handleOverviewHelpOpen}
+                data-id-ref="timeout-memory-overview-help-btn"
+                sx={{ ml: 0.5 }}
+              >
+                <HelpOutlineIcon fontSize="small" color="action" />
+              </IconButton>
+            </Box>
           }
           action={
             <Button
@@ -407,6 +430,14 @@ const TimeoutMemoryManagementPage: React.FC = () => {
           />
         )}
       </Suspense>
+
+      {/* Overview Help Popover */}
+      <FieldHelpPopover
+        anchorEl={overviewHelpAnchor}
+        open={Boolean(overviewHelpAnchor)}
+        onClose={handleOverviewHelpClose}
+        fieldKey="timeoutMemory.help.overview"
+      />
     </Container>
   );
 };
