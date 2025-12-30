@@ -18,6 +18,7 @@
     <PackageReference Include="Cronos" Version="0.8.4" />
     <PackageReference Include="NCalc.DependencyInjection" Version="5.11.0" />
     <PackageReference Include="NCalc.LambdaCompilation" Version="5.11.0" />
+    <PackageReference Include="NCalc.MemoryCache" Version="5.11.0" />
     <PackageReference Include="NCalcAsync" Version="5.11.0" />
     <PackageReference Include="NCalcSync" Version="5.11.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
