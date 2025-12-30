@@ -3210,690 +3210,63 @@ export interface PotentialParentPID {
   isDisabled: boolean; // bool
 }
 
-// ==========================================
-// Rate of Change Memory Types
-// ==========================================
-
-/**
- * Rate calculation methods for derivative computation
- */
-export const RateCalculationMethod = {
-  SimpleDifference: 1,
-  MovingAverage: 2,
-  WeightedAverage: 3,
-  LinearRegression: 4,
-} as const;
-export type RateCalculationMethod = (typeof RateCalculationMethod)[keyof typeof RateCalculationMethod];
-
-/**
- * Time unit for rate output conversion
- */
-export const RateTimeUnit = {
-  PerSecond: 1,
-  PerMinute: 60,
-  PerHour: 3600,
-} as const;
-export type RateTimeUnit = (typeof RateTimeUnit)[keyof typeof RateTimeUnit];
-
-/**
- * Rate of Change Memory interface
- */
-export interface RateOfChangeMemory {
-  id: string; // UUID
-  name?: string | null;
-  inputItemId: string; // UUID - AnalogInput or AnalogOutput
-  outputItemId: string; // UUID - AnalogOutput for rate value
-  alarmOutputItemId?: string | null; // UUID - Optional DigitalOutput for threshold alarms
-  interval: number; // int - Processing interval in seconds
-  isDisabled: boolean; // bool - Whether memory is disabled
-  calculationMethod: RateCalculationMethod; // Rate calculation method
-  timeWindowSeconds: number; // int - Time window for windowed calculations
-  smoothingFilterAlpha: number; // double - Exponential smoothing (0-1)
-  highRateThreshold?: number | null; // double - High rate alarm threshold
-  lowRateThreshold?: number | null; // double - Low rate alarm threshold
-  highRateHysteresis: number; // double - Hysteresis for high alarm (0-1)
-  lowRateHysteresis: number; // double - Hysteresis for low alarm (0-1)
-  alarmState?: boolean | null; // bool - Current alarm state (true=high, false=low, null=none)
-  baselineSampleCount: number; // int - Samples to ignore during baseline
-  accumulatedSamples: number; // int - Current sample count during baseline
-  timeUnit: RateTimeUnit; // Time unit for output
-  rateUnitDisplay?: string | null; // Display unit string (e.g., "°C/min")
-  decimalPlaces: number; // int - Decimal places for output
-  lastSmoothedRate?: number | null; // double - Last calculated smoothed rate
-  lastInputValue?: number | null; // double - Last input value
-  lastTimestamp?: number | null; // long - Last timestamp (epoch seconds)
-}
-
-/**
- * Enhanced Rate of Change Memory with item details
- */
-export interface RateOfChangeMemoryWithItems extends RateOfChangeMemory {
-  inputItemName?: string;
-  inputItemNameFa?: string;
-  inputItemType?: ItemType;
-  outputItemName?: string;
-  outputItemNameFa?: string;
-  outputItemType?: ItemType;
-  alarmOutputItemName?: string;
-  alarmOutputItemNameFa?: string;
-  alarmOutputItemType?: ItemType;
-}
-
-/**
- * Request DTO for retrieving rate of change memory configurations
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface GetRateOfChangeMemoriesRequestDto {
-  // Empty - reserved for future filtering
-}
-
-/**
- * Response DTO containing list of rate of change memory configurations
- */
-export interface GetRateOfChangeMemoriesResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-  rateOfChangeMemories?: RateOfChangeMemory[] | null;
-}
-
-/**
- * Request DTO for creating a new rate of change memory configuration
- */
-export interface AddRateOfChangeMemoryRequestDto {
-  name?: string | null;
-  inputItemId: string; // UUID
-  outputItemId: string; // UUID
-  alarmOutputItemId?: string | null; // UUID
-  interval: number; // int - must be > 0
-  isDisabled: boolean; // bool
-  calculationMethod: number; // int - 1-4
-  timeWindowSeconds: number; // int - must be > 0
-  smoothingFilterAlpha: number; // double (0-1)
-  highRateThreshold?: number | null; // double
-  lowRateThreshold?: number | null; // double
-  highRateHysteresis: number; // double (0-1)
-  lowRateHysteresis: number; // double (0-1)
-  baselineSampleCount: number; // int >= 0
-  timeUnit: number; // int - 1, 60, or 3600
-  rateUnitDisplay?: string | null;
-  decimalPlaces: number; // int (0-10)
-}
-
-/**
- * Response DTO for adding a rate of change memory configuration
- */
-export interface AddRateOfChangeMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-  id?: string | null; // UUID
-}
-
-/**
- * Request DTO for editing a rate of change memory configuration
- */
-export interface EditRateOfChangeMemoryRequestDto {
-  id: string; // UUID
-  name?: string | null;
-  inputItemId: string; // UUID
-  outputItemId: string; // UUID
-  alarmOutputItemId?: string | null; // UUID
-  interval: number; // int - must be > 0
-  isDisabled: boolean; // bool
-  calculationMethod: number; // int - 1-4
-  timeWindowSeconds: number; // int - must be > 0
-  smoothingFilterAlpha: number; // double (0-1)
-  highRateThreshold?: number | null; // double
-  lowRateThreshold?: number | null; // double
-  highRateHysteresis: number; // double (0-1)
-  lowRateHysteresis: number; // double (0-1)
-  baselineSampleCount: number; // int >= 0
-  timeUnit: number; // int - 1, 60, or 3600
-  rateUnitDisplay?: string | null;
-  decimalPlaces: number; // int (0-10)
-}
-
-/**
- * Response DTO for editing a rate of change memory configuration
- */
-export interface EditRateOfChangeMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
-/**
- * Request DTO for deleting a rate of change memory configuration
- */
-export interface DeleteRateOfChangeMemoryRequestDto {
-  id: string; // UUID
-}
-
-/**
- * Response DTO for deleting a rate of change memory configuration
- */
-export interface DeleteRateOfChangeMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
-/**
- * Request DTO for resetting a rate of change memory state
- */
-export interface ResetRateOfChangeMemoryRequestDto {
-  id: string; // UUID
-}
-
-/**
- * Response DTO for resetting a rate of change memory state
- */
-export interface ResetRateOfChangeMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
 // ============================================================================
-// Schedule Memory Types
+// Statistical Memory Types
 // ============================================================================
-
-/**
- * Override expiration mode for manual override behavior
- */
-export const OverrideExpirationMode = {
-  /** Override expires after a specified duration in minutes */
-  TimeBased: 1,
-  /** Override remains active until the next schedule change or manual deactivation */
-  EventBased: 2,
-} as const;
-export type OverrideExpirationMode =
-  (typeof OverrideExpirationMode)[keyof typeof OverrideExpirationMode];
-
-/**
- * Priority levels for schedule blocks to resolve conflicts
- */
-export const SchedulePriority = {
-  /** Low priority - can be overridden by any higher priority */
-  Low: 1,
-  /** Normal priority - default for most schedules */
-  Normal: 2,
-  /** High priority - takes precedence over normal schedules */
-  High: 3,
-  /** Critical priority - highest precedence, for emergency or demand response */
-  Critical: 4,
-} as const;
-export type SchedulePriority =
-  (typeof SchedulePriority)[keyof typeof SchedulePriority];
-
-/**
- * Days of the week for schedule block configuration
- */
-export const ScheduleDayOfWeek = {
-  Sunday: 0,
-  Monday: 1,
-  Tuesday: 2,
-  Wednesday: 3,
-  Thursday: 4,
-  Friday: 5,
-  Saturday: 6,
-} as const;
-export type ScheduleDayOfWeek =
-  (typeof ScheduleDayOfWeek)[keyof typeof ScheduleDayOfWeek];
-
-/**
- * Schedule block representing a time period with specific output value
- */
-export interface ScheduleBlock {
-  id: string; // UUID
-  scheduleMemoryId: string; // UUID
-  dayOfWeek: ScheduleDayOfWeek; // Day of week
-  startTime: string; // Format: "HH:mm:ss"
-  endTime: string; // Format: "HH:mm:ss"
-  priority: SchedulePriority; // Priority level
-  analogOutputValue?: number | null; // Analog value for this block
-  digitalOutputValue?: boolean | null; // Digital value for this block
-  description?: string | null; // Optional description
-}
-
-/**
- * Schedule Memory for time-based setpoint/command generation
- */
-export interface ScheduleMemory {
-  id: string; // UUID
-  name?: string | null;
-  outputItemId: string; // UUID - AnalogOutput or DigitalOutput
-  interval: number; // int - Processing interval in seconds
-  isDisabled: boolean; // bool - Whether memory is disabled
-  holidayCalendarId?: string | null; // UUID - Optional holiday calendar reference
-  holidayCalendarName?: string | null; // Name of referenced calendar
-  defaultAnalogValue?: number | null; // Default analog value when no block active
-  defaultDigitalValue?: boolean | null; // Default digital value when no block active
-  manualOverrideActive: boolean; // Whether manual override is active
-  manualOverrideAnalogValue?: number | null; // Override analog value
-  manualOverrideDigitalValue?: boolean | null; // Override digital value
-  overrideExpirationMode: OverrideExpirationMode; // Override expiration behavior
-  overrideDurationMinutes: number; // Duration for time-based expiration
-  overrideActivationTime?: string | null; // When override was activated (ISO date)
-  lastActiveBlockId?: string | null; // UUID - Last active block for event-based detection
-  scheduleBlocks?: ScheduleBlock[] | null; // Schedule blocks
-}
-
-/**
- * Enhanced Schedule Memory with item details
- */
-export interface ScheduleMemoryWithItems extends ScheduleMemory {
-  outputItemName?: string;
-  outputItemNameFa?: string;
-  outputItemType?: ItemType;
-}
-
-/**
- * Request DTO for retrieving schedule memory configurations
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface GetScheduleMemoriesRequestDto {
-  // Empty - reserved for future filtering
-}
-
-/**
- * Response DTO containing list of schedule memory configurations
- */
-export interface GetScheduleMemoriesResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-  scheduleMemories?: ScheduleMemory[] | null;
-}
-
-/**
- * DTO for adding a schedule block
- */
-export interface AddScheduleBlockDto {
-  dayOfWeek: number; // 0-6
-  startTime: string; // Format: "HH:mm:ss"
-  endTime: string; // Format: "HH:mm:ss"
-  priority: number; // 1-4
-  analogOutputValue?: number | null;
-  digitalOutputValue?: boolean | null;
-  description?: string | null;
-}
-
-/**
- * Request DTO for creating a new schedule memory configuration
- */
-export interface AddScheduleMemoryRequestDto {
-  name?: string | null;
-  outputItemId: string; // UUID
-  interval: number; // int - must be > 0
-  isDisabled: boolean;
-  holidayCalendarId?: string | null; // UUID
-  defaultAnalogValue?: number | null;
-  defaultDigitalValue?: boolean | null;
-  overrideExpirationMode: number; // 1 or 2
-  overrideDurationMinutes: number; // int - must be > 0
-  scheduleBlocks?: AddScheduleBlockDto[] | null;
-}
-
-/**
- * Response DTO for adding a schedule memory configuration
- */
-export interface AddScheduleMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-  id?: string | null; // UUID
-}
-
-/**
- * Request DTO for editing a schedule memory configuration
- */
-export interface EditScheduleMemoryRequestDto {
-  id: string; // UUID
-  name?: string | null;
-  outputItemId: string; // UUID
-  interval: number; // int - must be > 0
-  isDisabled: boolean;
-  holidayCalendarId?: string | null; // UUID
-  defaultAnalogValue?: number | null;
-  defaultDigitalValue?: boolean | null;
-  overrideExpirationMode: number; // 1 or 2
-  overrideDurationMinutes: number; // int - must be > 0
-  scheduleBlocks?: AddScheduleBlockDto[] | null;
-}
-
-/**
- * Response DTO for editing a schedule memory configuration
- */
-export interface EditScheduleMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
-/**
- * Request DTO for deleting a schedule memory configuration
- */
-export interface DeleteScheduleMemoryRequestDto {
-  id: string; // UUID
-}
-
-/**
- * Response DTO for deleting a schedule memory configuration
- */
-export interface DeleteScheduleMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
-/**
- * Request DTO for setting manual override on a schedule memory
- */
-export interface SetScheduleOverrideRequestDto {
-  id: string; // UUID
-  activate: boolean;
-  analogValue?: number | null;
-  digitalValue?: boolean | null;
-}
-
-/**
- * Response DTO for setting manual override
- */
-export interface SetScheduleOverrideResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
-// ============================================================================
-// Holiday Calendar Types
-// ============================================================================
-
-/**
- * Holiday date within a calendar
- */
-export interface HolidayDate {
-  id: string; // UUID
-  holidayCalendarId: string; // UUID
-  date: string; // Format: "yyyy-MM-dd"
-  name?: string | null; // Holiday name
-  holidayAnalogValue?: number | null; // Optional analog value for this holiday
-  holidayDigitalValue?: boolean | null; // Optional digital value for this holiday
-}
-
-/**
- * Holiday calendar for schedule exception handling
- */
-export interface HolidayCalendar {
-  id: string; // UUID
-  name: string; // Calendar name
-  description?: string | null; // Optional description
-  dates?: HolidayDate[] | null; // Holiday dates in this calendar
-}
-
-/**
- * Request DTO for retrieving holiday calendars
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface GetHolidayCalendarsRequestDto {
-  // Empty - reserved for future filtering
-}
-
-/**
- * Response DTO containing list of holiday calendars
- */
-export interface GetHolidayCalendarsResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-  holidayCalendars?: HolidayCalendar[] | null;
-}
-
-/**
- * DTO for adding a holiday date
- */
-export interface AddHolidayDateDto {
-  date: string; // Format: "yyyy-MM-dd"
-  name?: string | null;
-  holidayAnalogValue?: number | null;
-  holidayDigitalValue?: boolean | null;
-}
-
-/**
- * Request DTO for creating a new holiday calendar
- */
-export interface AddHolidayCalendarRequestDto {
-  name: string;
-  description?: string | null;
-  dates?: AddHolidayDateDto[] | null;
-}
-
-/**
- * Response DTO for adding a holiday calendar
- */
-export interface AddHolidayCalendarResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-  id?: string | null; // UUID
-}
-
-/**
- * Request DTO for editing a holiday calendar
- */
-export interface EditHolidayCalendarRequestDto {
-  id: string; // UUID
-  name: string;
-  description?: string | null;
-  dates?: AddHolidayDateDto[] | null;
-}
-
-/**
- * Response DTO for editing a holiday calendar
- */
-export interface EditHolidayCalendarResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
-/**
- * Request DTO for deleting a holiday calendar
- */
-export interface DeleteHolidayCalendarRequestDto {
-  id: string; // UUID
-}
-
-/**
- * Response DTO for deleting a holiday calendar
- */
-export interface DeleteHolidayCalendarResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
-// ==================== Comparison Memory DTOs ====================
-
-/**
- * Group operator for combining multiple comparison groups
- */
-export const GroupOperator = {
-  And: 1, // All groups must evaluate to true
-  Or: 2, // At least one group must evaluate to true
-  Xor: 3, // Exactly one group must evaluate to true
-} as const;
-export type GroupOperator = (typeof GroupOperator)[keyof typeof GroupOperator];
-
-/**
- * Comparison mode for determining input types and comparison logic
- */
-export const ComparisonMode = {
-  Analog: 1, // Inputs are analog values compared against numeric thresholds
-  Digital: 2, // Inputs are digital values compared against 0 or 1
-} as const;
-export type ComparisonMode = (typeof ComparisonMode)[keyof typeof ComparisonMode];
-
-/**
- * Represents a single comparison group within a ComparisonMemory
- */
-export interface ComparisonGroup {
-  id: string; // Unique identifier for this group (for UI tracking)
-  inputItemIds: string[]; // List of input item GUIDs
-  requiredVotes: number; // N in N-out-of-M voting (1 to inputItemIds.length)
-  comparisonMode: ComparisonMode; // Analog or Digital
-  compareType: CompareType; // Equal, NotEqual, Higher, Lower, Between
-  threshold1?: number | null; // Primary threshold (for analog)
-  threshold2?: number | null; // Secondary threshold (for Between)
-  thresholdHysteresis: number; // Hysteresis for analog thresholds (default: 0)
-  votingHysteresis: number; // Hysteresis for vote counts (default: 0)
-  digitalValue?: string | null; // "0" or "1" (for digital mode)
-  name?: string | null; // Optional group name
-}
-
-/**
- * Comparison Memory configuration
- * Evaluates multiple inputs using configurable N-out-of-M voting logic
- * with AND/OR/XOR operators between groups
- */
-export interface ComparisonMemory {
-  id: string; // UUID
-  name?: string | null;
-  comparisonGroups: string; // JSON array of ComparisonGroup objects
-  groupOperator: GroupOperator; // AND, OR, XOR
-  outputItemId: string; // UUID - Must be DigitalOutput
-  interval: number; // Processing interval in seconds
-  isDisabled: boolean;
-  invertOutput: boolean; // Whether to invert the final output
-}
-
-/**
- * Request DTO for retrieving comparison memory configurations
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface GetComparisonMemoriesRequestDto {
-  // Empty - no filtering parameters needed currently
-}
-
-/**
- * Response DTO containing list of comparison memory configurations
- */
-export interface GetComparisonMemoriesResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-  comparisonMemories?: ComparisonMemory[] | null;
-}
-
-/**
- * Request DTO for creating a new comparison memory configuration
- */
-export interface AddComparisonMemoryRequestDto {
-  name?: string | null;
-  comparisonGroups: string; // JSON array of ComparisonGroup objects
-  groupOperator?: GroupOperator; // Default: AND (1)
-  outputItemId: string; // UUID - Must be DigitalOutput
-  interval?: number; // Default: 1
-  isDisabled?: boolean; // Default: false
-  invertOutput?: boolean; // Default: false
-}
-
-/**
- * Response DTO for adding a new comparison memory configuration
- */
-export interface AddComparisonMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-  id?: string | null; // UUID of newly created comparison memory
-}
-
-/**
- * Request DTO for editing an existing comparison memory configuration
- */
-export interface EditComparisonMemoryRequestDto {
-  id: string; // UUID
-  name?: string | null;
-  comparisonGroups: string; // JSON array of ComparisonGroup objects
-  groupOperator?: GroupOperator;
-  outputItemId: string; // UUID
-  interval?: number;
-  isDisabled?: boolean;
-  invertOutput?: boolean;
-}
-
-/**
- * Response DTO for editing a comparison memory configuration
- */
-export interface EditComparisonMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
-/**
- * Request DTO for deleting a comparison memory configuration
- */
-export interface DeleteComparisonMemoryRequestDto {
-  id: string; // UUID
-}
-
-/**
- * Response DTO for deleting a comparison memory configuration
- */
-export interface DeleteComparisonMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
-// ==================== Statistical Memory DTOs ====================
 
 /**
  * Window type for statistical calculations
+ * - Rolling: Sliding window that always maintains WindowSize samples
+ * - Tumbling: Batch window that resets after WindowSize samples are collected
  */
 export const StatisticalWindowType = {
-  Rolling: 1, // Sliding window that always maintains WindowSize samples
-  Tumbling: 2, // Batch window that resets after WindowSize samples are collected
+  /** Rolling/sliding window: continuously slides, always maintains WindowSize samples */
+  Rolling: 1,
+  /** Tumbling/batch window: collects WindowSize samples, calculates, then resets */
+  Tumbling: 2,
 } as const;
-export type StatisticalWindowType =
-  (typeof StatisticalWindowType)[keyof typeof StatisticalWindowType];
+export type StatisticalWindowType = (typeof StatisticalWindowType)[keyof typeof StatisticalWindowType];
 
 /**
  * Percentile configuration for custom percentile outputs
  */
 export interface PercentileConfig {
-  percentile: number; // Percentile value (0-100), e.g., 95, 99
-  outputItemId: string; // UUID of output item for this percentile
+  /** Percentile value (0-100). Common values: 50 (median), 90, 95, 99 */
+  percentile: number;
+  /** Output item ID to write the calculated percentile value */
+  outputItemId: string; // UUID
 }
 
 /**
- * Statistical Memory configuration
- * Computes statistical metrics (min, max, avg, stddev, range, median, percentiles, CV)
- * over configurable rolling or tumbling time windows
+ * Statistical Memory for computing statistical metrics over a configurable window
  */
 export interface StatisticalMemory {
   id: string; // UUID
   name?: string | null;
-  inputItemId: string; // UUID - Input item to collect samples from (AnalogInput/AnalogOutput)
-  interval: number; // Processing interval in seconds
-  isDisabled: boolean;
+  inputItemId: string; // UUID - Input item to collect samples from
+  interval: number; // int - Execution interval in seconds
+  isDisabled: boolean; // bool - Whether statistical memory is disabled
+  
   // Window configuration
-  windowSize: number; // Number of samples in calculation window (10-10000)
-  windowType: StatisticalWindowType; // Rolling or Tumbling
-  minSamples: number; // Minimum samples required before calculating (default: 2)
-  // Optional output items (at least one required)
-  outputMinItemId?: string | null; // UUID - Min value output
-  outputMaxItemId?: string | null; // UUID - Max value output
-  outputAvgItemId?: string | null; // UUID - Average/mean output
-  outputStdDevItemId?: string | null; // UUID - Standard deviation output
-  outputRangeItemId?: string | null; // UUID - Range (max-min) output
-  outputMedianItemId?: string | null; // UUID - Median (50th percentile) output
-  outputCVItemId?: string | null; // UUID - Coefficient of Variation output
-  // Percentile configuration
-  percentilesConfig: string; // JSON array of PercentileConfig objects
+  windowSize: number; // int - Number of samples (10-10000)
+  windowType: StatisticalWindowType; // Rolling or Tumbling window
+  minSamples: number; // int - Minimum samples before calculating stats
+  
+  // Optional output items (all nullable)
+  outputMinItemId?: string | null; // UUID - Output for minimum value
+  outputMaxItemId?: string | null; // UUID - Output for maximum value
+  outputAvgItemId?: string | null; // UUID - Output for average value
+  outputStdDevItemId?: string | null; // UUID - Output for standard deviation
+  outputRangeItemId?: string | null; // UUID - Output for range (max - min)
+  outputMedianItemId?: string | null; // UUID - Output for median
+  outputCVItemId?: string | null; // UUID - Output for Coefficient of Variation
+  
+  // Percentile configuration (JSON array)
+  percentilesConfig: string; // JSON array of PercentileConfig
+  
   // State tracking
-  currentBatchCount: number; // For tumbling window: samples in current batch
-  lastResetTime?: number | null; // Unix epoch seconds of last reset
-}
-
-/**
- * Extended Statistical Memory with resolved item names for display
- */
-export interface StatisticalMemoryWithItems extends StatisticalMemory {
-  inputItemName?: string;
-  outputMinItemName?: string;
-  outputMaxItemName?: string;
-  outputAvgItemName?: string;
-  outputStdDevItemName?: string;
-  outputRangeItemName?: string;
-  outputMedianItemName?: string;
-  outputCVItemName?: string;
-  percentileOutputNames?: Array<{ percentile: number; outputItemName: string }>;
+  currentBatchCount: number; // int - Current batch count for tumbling window
+  lastResetTime?: number | null; // long - Unix epoch seconds of last reset
 }
 
 /**
@@ -3901,7 +3274,7 @@ export interface StatisticalMemoryWithItems extends StatisticalMemory {
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GetStatisticalMemoriesRequestDto {
-  // Empty - no filtering parameters needed currently
+  // Empty - no filtering parameters needed
 }
 
 /**
@@ -3918,13 +3291,16 @@ export interface GetStatisticalMemoriesResponseDto {
  */
 export interface AddStatisticalMemoryRequestDto {
   name?: string | null;
-  inputItemId: string; // UUID - Must be AnalogInput or AnalogOutput
-  interval?: number; // Default: 10
-  isDisabled?: boolean; // Default: false
-  windowSize?: number; // Default: 100
-  windowType?: StatisticalWindowType; // Default: Rolling (1)
-  minSamples?: number; // Default: 2
-  // Optional outputs (at least one required)
+  inputItemId: string; // UUID
+  interval: number; // int - must be > 0
+  isDisabled?: boolean;
+  
+  // Window configuration
+  windowSize: number; // int - 10-10000
+  windowType: StatisticalWindowType;
+  minSamples?: number; // int - at least 2
+  
+  // Optional output items
   outputMinItemId?: string | null;
   outputMaxItemId?: string | null;
   outputAvgItemId?: string | null;
@@ -3932,17 +3308,18 @@ export interface AddStatisticalMemoryRequestDto {
   outputRangeItemId?: string | null;
   outputMedianItemId?: string | null;
   outputCVItemId?: string | null;
-  // Custom percentiles
-  percentilesConfig?: string; // Default: "[]"
+  
+  // Percentile configuration
+  percentilesConfig?: string;
 }
 
 /**
- * Response DTO for adding a new statistical memory configuration
+ * Response DTO for adding a statistical memory
  */
 export interface AddStatisticalMemoryResponseDto {
   isSuccessful: boolean;
   errorMessage?: string | null;
-  id?: string | null; // UUID of newly created statistical memory
+  id?: string | null; // UUID of created statistical memory
 }
 
 /**
@@ -3952,11 +3329,15 @@ export interface EditStatisticalMemoryRequestDto {
   id: string; // UUID
   name?: string | null;
   inputItemId: string; // UUID
-  interval?: number;
+  interval: number; // int - must be > 0
   isDisabled?: boolean;
-  windowSize?: number;
-  windowType?: StatisticalWindowType;
-  minSamples?: number;
+  
+  // Window configuration
+  windowSize: number; // int - 10-10000
+  windowType: StatisticalWindowType;
+  minSamples?: number; // int - at least 2
+  
+  // Optional output items
   outputMinItemId?: string | null;
   outputMaxItemId?: string | null;
   outputAvgItemId?: string | null;
@@ -3964,13 +3345,17 @@ export interface EditStatisticalMemoryRequestDto {
   outputRangeItemId?: string | null;
   outputMedianItemId?: string | null;
   outputCVItemId?: string | null;
+  
+  // Percentile configuration
   percentilesConfig?: string;
+  
+  // State tracking (usually not edited directly)
   currentBatchCount?: number;
   lastResetTime?: number | null;
 }
 
 /**
- * Response DTO for editing a statistical memory configuration
+ * Response DTO for editing a statistical memory
  */
 export interface EditStatisticalMemoryResponseDto {
   isSuccessful: boolean;
@@ -3978,14 +3363,14 @@ export interface EditStatisticalMemoryResponseDto {
 }
 
 /**
- * Request DTO for deleting a statistical memory configuration
+ * Request DTO for deleting a statistical memory
  */
 export interface DeleteStatisticalMemoryRequestDto {
   id: string; // UUID
 }
 
 /**
- * Response DTO for deleting a statistical memory configuration
+ * Response DTO for deleting a statistical memory
  */
 export interface DeleteStatisticalMemoryResponseDto {
   isSuccessful: boolean;
