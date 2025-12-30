@@ -322,8 +322,9 @@ const TimeoutMemoryManagementPage: React.FC = () => {
 
   return (
     <Container maxWidth={false} data-id-ref="timeout-memory-page-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
-      <Card data-id-ref="timeout-memory-page-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Card data-id-ref="timeout-memory-page-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 3 }}>
         <CardHeader
+          avatar={<TimerIcon sx={{ fontSize: 32, color: 'primary.main' }} />}
           data-id-ref="timeout-memory-page-card-header"
           title={
             <Typography variant="h5" component="h1" fontWeight="bold" data-id-ref="timeout-memory-page-title">
