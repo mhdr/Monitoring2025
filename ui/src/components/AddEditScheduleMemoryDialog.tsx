@@ -521,62 +521,77 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
 
                     {/* Interval and Holiday Calendar */}
                     <Box sx={{ display: 'flex', gap: 2 }}>
-                      <TextField
-                        label={t('scheduleMemory.interval')}
-                        type="number"
-                        value={formData.interval}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, interval: Number(e.target.value) }))}
-                        disabled={loading}
-                        required
-                        error={!!formErrors.interval}
-                        helperText={formErrors.interval || t('scheduleMemory.intervalHelp')}
-                        inputProps={{ min: 1 }}
-                        sx={{ width: 150 }}
-                        data-id-ref="schedule-memory-interval-input"
-                      />
-
-                      <FormControl sx={{ flex: 1 }}>
-                        <InputLabel>{t('scheduleMemory.holidayCalendar')}</InputLabel>
-                        <Select
-                          value={formData.holidayCalendarId}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, holidayCalendarId: e.target.value }))}
-                          label={t('scheduleMemory.holidayCalendar')}
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                        <TextField
+                          label={t('scheduleMemory.interval')}
+                          type="number"
+                          value={formData.interval}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, interval: Number(e.target.value) }))}
                           disabled={loading}
-                          data-id-ref="schedule-memory-holiday-calendar-select"
-                        >
-                          <MenuItem value="">{t('common.none')}</MenuItem>
-                          {holidayCalendars.map((cal) => (
-                            <MenuItem key={cal.id} value={cal.id}>{cal.name}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                          required
+                          error={!!formErrors.interval}
+                          helperText={formErrors.interval || t('scheduleMemory.intervalHelp')}
+                          inputProps={{ min: 1 }}
+                          sx={{ width: 150 }}
+                          data-id-ref="schedule-memory-interval-input"
+                        />
+                        <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.interval')} sx={{ mt: 1 }}>
+                          <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                        </IconButton>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, flex: 1 }}>
+                        <FormControl sx={{ flex: 1 }}>
+                          <InputLabel>{t('scheduleMemory.holidayCalendar')}</InputLabel>
+                          <Select
+                            value={formData.holidayCalendarId}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, holidayCalendarId: e.target.value }))}
+                            label={t('scheduleMemory.holidayCalendar')}
+                            disabled={loading}
+                            data-id-ref="schedule-memory-holiday-calendar-select"
+                          >
+                            <MenuItem value="">{t('common.none')}</MenuItem>
+                            {holidayCalendars.map((cal) => (
+                              <MenuItem key={cal.id} value={cal.id}>{cal.name}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.holidayCalendar')} sx={{ mt: 1 }}>
+                          <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                        </IconButton>
+                      </Box>
                     </Box>
 
                     {/* Default Value */}
-                    {isAnalogOutput ? (
-                      <TextField
-                        label={t('scheduleMemory.defaultAnalogValue')}
-                        type="number"
-                        value={formData.defaultAnalogValue ?? ''}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, defaultAnalogValue: e.target.value ? Number(e.target.value) : null }))}
-                        disabled={loading}
-                        fullWidth
-                        data-id-ref="schedule-memory-default-analog-input"
-                        helperText={t('scheduleMemory.defaultValueHelp')}
-                      />
-                    ) : (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.defaultDigitalValue ?? false}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, defaultDigitalValue: e.target.checked }))}
-                            disabled={loading}
-                            data-id-ref="schedule-memory-default-digital-switch"
-                          />
-                        }
-                        label={t('scheduleMemory.defaultDigitalValue')}
-                      />
-                    )}
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                      {isAnalogOutput ? (
+                        <TextField
+                          label={t('scheduleMemory.defaultAnalogValue')}
+                          type="number"
+                          value={formData.defaultAnalogValue ?? ''}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, defaultAnalogValue: e.target.value ? Number(e.target.value) : null }))}
+                          disabled={loading}
+                          fullWidth
+                          data-id-ref="schedule-memory-default-analog-input"
+                          helperText={t('scheduleMemory.defaultValueHelp')}
+                        />
+                      ) : (
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={formData.defaultDigitalValue ?? false}
+                              onChange={(e) => setFormData((prev) => ({ ...prev, defaultDigitalValue: e.target.checked }))}
+                              disabled={loading}
+                              data-id-ref="schedule-memory-default-digital-switch"
+                            />
+                          }
+                          label={t('scheduleMemory.defaultDigitalValue')}
+                        />
+                      )}
+                      <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.defaultValue')} sx={{ mt: isAnalogOutput ? 1 : 0.5 }}>
+                        <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                      </IconButton>
+                    </Box>
 
                     {/* Disabled switch */}
                     <FormControlLabel
@@ -831,6 +846,24 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           open={Boolean(helpAnchorEl['scheduleMemory.help.outputItem'])}
           onClose={handleHelpClose('scheduleMemory.help.outputItem')}
           fieldKey="scheduleMemory.help.outputItem"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['scheduleMemory.help.interval']}
+          open={Boolean(helpAnchorEl['scheduleMemory.help.interval'])}
+          onClose={handleHelpClose('scheduleMemory.help.interval')}
+          fieldKey="scheduleMemory.help.interval"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['scheduleMemory.help.holidayCalendar']}
+          open={Boolean(helpAnchorEl['scheduleMemory.help.holidayCalendar'])}
+          onClose={handleHelpClose('scheduleMemory.help.holidayCalendar')}
+          fieldKey="scheduleMemory.help.holidayCalendar"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['scheduleMemory.help.defaultValue']}
+          open={Boolean(helpAnchorEl['scheduleMemory.help.defaultValue'])}
+          onClose={handleHelpClose('scheduleMemory.help.defaultValue')}
+          fieldKey="scheduleMemory.help.defaultValue"
         />
         <FieldHelpPopover
           anchorEl={helpAnchorEl['scheduleMemory.help.blocks']}

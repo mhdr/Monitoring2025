@@ -3850,6 +3850,79 @@
           }
         ]
       },
+      "interval": {
+        "title": "Evaluation Interval",
+        "sections": [
+          {
+            "title": "What is Evaluation Interval?",
+            "content": "The evaluation interval determines how often (in seconds) the system checks the schedule to see which block should be active and updates the output accordingly."
+          },
+          {
+            "title": "Choosing the Right Interval",
+            "content": [
+              "Faster (1-10 seconds): Quick response to schedule changes, higher CPU usage",
+              "Typical (10-60 seconds): Balanced performance for most applications",
+              "Slower (60+ seconds): Lower CPU usage, acceptable for slowly changing schedules"
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "Best Practices",
+            "content": "For HVAC setpoints, 30-60 seconds is usually sufficient. For critical control applications requiring precise timing, use 5-10 seconds. Avoid intervals below 5 seconds unless absolutely necessary."
+          }
+        ]
+      },
+      "holidayCalendar": {
+        "title": "Holiday Calendar",
+        "sections": [
+          {
+            "title": "What is a Holiday Calendar?",
+            "content": "A Holiday Calendar lets you define special days (company holidays, weekends, maintenance windows) where the schedule should behave differently than normal weekdays."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "When a holiday calendar is assigned, holiday dates override normal schedule blocks",
+              "You can set specific analog or digital values for holidays",
+              "Leave unassigned if you don't need holiday-specific behavior"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Office Building Example",
+            "content": "Normal Schedule:\n• Monday-Friday: 72°F during business hours\n\nHoliday Calendar (Company Holidays):\n• New Year's Day, Christmas, etc.: 62°F (energy savings)\n\nResult: On holidays, temperature stays at 62°F all day instead of following the normal schedule."
+          }
+        ]
+      },
+      "defaultValue": {
+        "title": "Default Value",
+        "sections": [
+          {
+            "title": "What is the Default Value?",
+            "content": "The default value is the 'fallback' output when no schedule block is currently active. It ensures the output always has a defined value."
+          },
+          {
+            "title": "When is the Default Value Used?",
+            "content": [
+              "During time periods not covered by any schedule block",
+              "When all schedule blocks are disabled",
+              "As the initial value before the first block becomes active"
+            ]
+          },
+          {
+            "title": "For Digital Outputs",
+            "content": "Toggle ON (true) or OFF (false) for the default state. Common choices:\n• ON: For normally-running equipment\n• OFF: For equipment that should be off by default"
+          },
+          {
+            "title": "For Analog Outputs",
+            "content": "Enter the numeric setpoint value to use as default. Common examples:\n• HVAC: Nighttime/unoccupied setpoint (e.g., 65°F)\n• Lighting: Minimum brightness level\n• Pressure: Safe operating pressure"
+          },
+          {
+            "type": "tip",
+            "content": "Choose a safe, energy-efficient default value. For HVAC, this is often the unoccupied/setback temperature. For equipment, this is typically the OFF state unless safety requires it to run."
+          }
+        ]
+      },
       "blocks": {
         "title": "Schedule Blocks",
         "sections": [
