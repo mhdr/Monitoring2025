@@ -3733,6 +3733,8 @@
     "priority": "Priority",
     "analogValue": "Analog Value",
     "digitalValue": "Digital Value",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description...",
     "override": "Override",
     "overrideActive": "Manual override is active",
     "overrideInactive": "Using scheduled values",

@@ -3379,6 +3379,8 @@
     "priority": "اولویت",
     "analogValue": "مقدار آنالوگ",
     "digitalValue": "مقدار دیجیتال",
+    "description": "توضیحات",
+    "descriptionPlaceholder": "توضیحات اختیاری...",
     "override": "غلبه",
     "overrideActive": "غلبه دستی فعال است",
     "overrideInactive": "استفاده از مقادیر زمان‌بندی شده",

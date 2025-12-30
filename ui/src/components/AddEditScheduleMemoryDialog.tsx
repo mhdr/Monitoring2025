@@ -424,16 +424,23 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
     <Dialog
       open={open}
       onClose={() => !loading && onClose(false)}
-      maxWidth="lg"
+      maxWidth="xl"
       fullWidth
       data-id-ref="schedule-memory-dialog"
+      PaperProps={{
+        sx: {
+          height: '90vh',
+          maxHeight: '90vh',
+        },
+      }}
     >
       <DialogTitle data-id-ref="schedule-memory-dialog-title">
         {editMode ? t('scheduleMemory.editTitle') : t('scheduleMemory.addTitle')}
       </DialogTitle>
 
-      <DialogContent data-id-ref="schedule-memory-dialog-content">
+      <DialogContent data-id-ref="schedule-memory-dialog-content" sx={{ overflow: 'auto' }}>
         <Stack spacing={2} sx={{ mt: 1 }}>
+
           {error && (
               <Alert severity="error" data-id-ref="schedule-memory-error-alert">
                 {error}
@@ -628,18 +635,19 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                       {t('scheduleMemory.noBlocks')}
                     </Typography>
                   ) : (
-                    <Table size="small" data-id-ref="schedule-memory-blocks-table">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>{t('scheduleMemory.dayOfWeek')}</TableCell>
-                          <TableCell>{t('scheduleMemory.startTime')}</TableCell>
-                          <TableCell>{t('scheduleMemory.endTime')}</TableCell>
-                          <TableCell>{t('scheduleMemory.priority')}</TableCell>
-                          <TableCell>{isAnalogOutput ? t('scheduleMemory.analogValue') : t('scheduleMemory.digitalValue')}</TableCell>
-                          <TableCell>{t('scheduleMemory.description')}</TableCell>
-                          <TableCell width={50}></TableCell>
-                        </TableRow>
-                      </TableHead>
+                    <Box sx={{ overflowX: 'auto', width: '100%' }}>
+                      <Table size="small" data-id-ref="schedule-memory-blocks-table" sx={{ minWidth: 1000 }}>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.dayOfWeek')}</TableCell>
+                            <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.startTime')}</TableCell>
+                            <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.endTime')}</TableCell>
+                            <TableCell sx={{ minWidth: 120 }}>{t('scheduleMemory.priority')}</TableCell>
+                            <TableCell sx={{ minWidth: 120 }}>{isAnalogOutput ? t('scheduleMemory.analogValue') : t('scheduleMemory.digitalValue')}</TableCell>
+                            <TableCell sx={{ minWidth: 180 }}>{t('scheduleMemory.description')}</TableCell>
+                            <TableCell sx={{ width: 60 }}></TableCell>
+                          </TableRow>
+                        </TableHead>
                       <TableBody>
                         {formData.scheduleBlocks.map((block) => (
                           <TableRow key={block.tempId} data-id-ref={`schedule-block-row-${block.tempId}`}>
@@ -649,7 +657,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                                 value={block.dayOfWeek}
                                 onChange={(e) => handleBlockChange(block.tempId, 'dayOfWeek', Number(e.target.value))}
                                 data-id-ref={`schedule-block-day-${block.tempId}`}
-                                sx={{ minWidth: 120 }}
+                                sx={{ minWidth: 130, width: '100%' }}
                               >
                                 {[0, 1, 2, 3, 4, 5, 6].map((day) => (
                                   <MenuItem key={day} value={day}>{getDayOfWeekLabel(day, t)}</MenuItem>
@@ -682,7 +690,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                                 value={block.priority}
                                 onChange={(e) => handleBlockChange(block.tempId, 'priority', Number(e.target.value))}
                                 data-id-ref={`schedule-block-priority-${block.tempId}`}
-                                sx={{ minWidth: 100 }}
+                                sx={{ minWidth: 110, width: '100%' }}
                               >
                                 {[1, 2, 3, 4].map((p) => (
                                   <MenuItem key={p} value={p}>{getPriorityLabel(p, t)}</MenuItem>
@@ -713,7 +721,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                                 value={block.description}
                                 onChange={(e) => handleBlockChange(block.tempId, 'description', e.target.value)}
                                 data-id-ref={`schedule-block-desc-${block.tempId}`}
-                                sx={{ width: 150 }}
+                                sx={{ width: 170 }}
+                                placeholder={t('scheduleMemory.descriptionPlaceholder')}
                               />
                             </TableCell>
                             <TableCell>
@@ -731,7 +740,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                           </TableRow>
                         ))}
                       </TableBody>
-                    </Table>
+                      </Table>
+                    </Box>
                   )}
                 </CardContent>
               </Collapse>
