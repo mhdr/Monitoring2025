@@ -605,6 +605,7 @@ const PIDMemoryManagementPage: React.FC = () => {
               placeholder={t('pidMemory.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              size="small"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
