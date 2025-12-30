@@ -2718,6 +2718,286 @@
       "updateFailed": "Failed to update average memory",
       "deleteFailed": "Failed to delete average memory",
       "saveFailed": "Failed to save average memory"
+    },
+    "help": {
+      "name": {
+        "title": "Average Memory Name",
+        "sections": [
+          {
+            "content": "An optional descriptive name to identify this average memory configuration in the management interface."
+          },
+          {
+            "type": "example",
+            "title": "Naming Examples",
+            "content": [
+              "\"Zone Temperature Average\" - for averaging multiple temperature sensors",
+              "\"Multi-Pump Flow Average\" - for flow rate across parallel pumps",
+              "\"Production Line Average\" - for averaging multiple production metrics",
+              "\"Building Power Average\" - for average power consumption"
+            ]
+          }
+        ]
+      },
+      "inputItems": {
+        "title": "Input Items (Sources to Average)",
+        "sections": [
+          {
+            "title": "What are Input Items?",
+            "content": "The analog monitoring items whose values will be averaged together. All items must be of type Analog Input or Analog Output."
+          },
+          {
+            "title": "Requirements",
+            "content": [
+              "Must select at least one input item",
+              "All items must be analog type (AnalogInput or AnalogOutput)",
+              "Items should have similar units and scale for meaningful averaging",
+              "More inputs provide better averaging but increase computation"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Common Use Cases",
+            "content": [
+              "Multiple temperature sensors in same zone (redundancy/accuracy)",
+              "Parallel pump flow rates (total flow calculation)",
+              "Multiple production lines (overall average output)",
+              "Redundant pressure sensors (eliminate single point failure)"
+            ]
+          },
+          {
+            "type": "tip",
+            "content": "Use outlier detection when averaging sensors to automatically exclude faulty readings!"
+          }
+        ]
+      },
+      "outputItem": {
+        "title": "Output Item (Average Result)",
+        "sections": [
+          {
+            "title": "What is the Output Item?",
+            "content": "An Analog Output monitoring item where the calculated average value will be continuously written."
+          },
+          {
+            "title": "Requirements",
+            "content": [
+              "Must be an Analog Output item",
+              "Should have sufficient range for average values",
+              "Cannot be one of the input items",
+              "Updated at each processing interval"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Output Uses",
+            "content": [
+              "Display averaged value on HMI/SCADA",
+              "Input to control loops (average temperature for HVAC)",
+              "Alarm monitoring on averaged value",
+              "Historical trending and reporting"
+            ]
+          },
+          {
+            "type": "tip",
+            "content": "Create dedicated output items for averages (e.g., \"ZoneTemp_Average\") rather than reusing existing items."
+          }
+        ]
+      },
+      "interval": {
+        "title": "Processing Interval",
+        "sections": [
+          {
+            "title": "What is Processing Interval?",
+            "content": "How often (in seconds) the average is recalculated and written to the output item."
+          },
+          {
+            "title": "Choosing the Right Interval",
+            "content": [
+              "Fast-changing values: 1-10 seconds",
+              "Moderate changes: 10-60 seconds",
+              "Slow-changing values: 60-300 seconds",
+              "Statistical analysis: Match your sampling needs"
+            ]
+          },
+          {
+            "type": "warning",
+            "title": "Performance Trade-offs",
+            "content": "Shorter intervals:\n• More responsive to changes\n• Higher CPU usage\n• More frequent output updates\n\nLonger intervals:\n• Lower system load\n• Smoother averaged values\n• May miss rapid transients"
+          },
+          {
+            "type": "tip",
+            "content": "Start with 10-30 seconds for most applications. Adjust based on how quickly your process changes and system load."
+          }
+        ]
+      },
+      "minimumInputs": {
+        "title": "Minimum Valid Inputs",
+        "sections": [
+          {
+            "title": "What is Minimum Valid Inputs?",
+            "content": "The minimum number of valid (non-stale, non-outlier) input values required to compute and write the average. If fewer valid inputs are available, the average is not calculated."
+          },
+          {
+            "title": "Setting the Value",
+            "content": [
+              "Must be at least 1 and at most the total number of input items",
+              "Higher values = stricter requirement for valid data",
+              "Lower values = more tolerant of missing/bad inputs"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Usage Examples",
+            "content": [
+              "3 sensors, minimum 2: Can tolerate 1 failed sensor",
+              "5 sensors, minimum 4: Requires 4 good readings",
+              "10 sensors, minimum 5: Can work with half the sensors"
+            ]
+          },
+          {
+            "type": "warning",
+            "content": "Setting this too high may cause output to stop updating if many inputs fail. Setting too low may produce unreliable averages from insufficient data."
+          }
+        ]
+      },
+      "weightedAverage": {
+        "title": "Weighted Average",
+        "sections": [
+          {
+            "title": "What is Weighted Average?",
+            "content": "Instead of a simple average where all inputs have equal importance, weighted averaging assigns different weights to each input. Higher weights give that input more influence on the result."
+          },
+          {
+            "title": "How It Works",
+            "content": "Weighted Average = (w1×v1 + w2×v2 + ... + wn×vn) / (w1 + w2 + ... + wn)\n\nwhere w = weight, v = value"
+          },
+          {
+            "type": "example",
+            "title": "Use Cases",
+            "content": [
+              "Sensor accuracy: Give higher weights to more accurate sensors",
+              "Importance: Weight critical measurements more heavily",
+              "Coverage area: Weight by zone size (large room = higher weight)",
+              "Reliability: Higher weights for proven reliable sensors"
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "Example Calculation",
+            "content": "3 sensors with readings: 20°C, 22°C, 24°C\n\nSimple average: (20+22+24)/3 = 22°C\n\nWeighted (1.0, 2.0, 1.0): (1×20 + 2×22 + 1×24)/(1+2+1) = 22°C\nWeighted (2.0, 1.0, 1.0): (2×20 + 1×22 + 1×24)/(2+1+1) = 21.5°C"
+          }
+        ]
+      },
+      "staleInputHandling": {
+        "title": "Stale Input Handling",
+        "sections": [
+          {
+            "title": "What is a Stale Input?",
+            "content": "An input is considered stale when it hasn't been updated recently. This typically indicates a communication failure, sensor malfunction, or processing issue."
+          },
+          {
+            "title": "Ignore Stale Inputs Option",
+            "content": "When enabled, stale inputs are automatically excluded from the average calculation. Only fresh inputs are used. This prevents old/frozen values from skewing the average."
+          },
+          {
+            "type": "example",
+            "title": "Why Ignore Stale Inputs?",
+            "content": [
+              "Sensor communication failure: Don't use old frozen values",
+              "Controller offline: Exclude disconnected devices",
+              "Maintenance mode: Ignore sensors temporarily offline",
+              "Network issues: Skip unreachable devices"
+            ]
+          },
+          {
+            "type": "warning",
+            "content": "If too many inputs become stale and you fall below Minimum Valid Inputs, the average will not be calculated and output won't update."
+          }
+        ]
+      },
+      "staleTimeout": {
+        "title": "Stale Timeout",
+        "sections": [
+          {
+            "title": "What is Stale Timeout?",
+            "content": "The maximum age (in seconds) for an input value to be considered fresh. If an input hasn't been updated within this time period, it's marked as stale and excluded from averaging."
+          },
+          {
+            "title": "Recommended Settings",
+            "content": [
+              "Fast polling (1s): 5-10 seconds timeout",
+              "Moderate polling (10s): 30-60 seconds timeout",
+              "Slow polling (60s): 120-300 seconds timeout",
+              "Rule of thumb: 3-5× your expected update interval"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Setting Examples",
+            "content": [
+              "Modbus sensors polling every 5s → 20s timeout",
+              "BACnet devices updating every 30s → 90s timeout",
+              "Manual entry updated hourly → 7200s timeout"
+            ]
+          },
+          {
+            "type": "tip",
+            "content": "Set timeout longer than normal update interval to avoid false stale detection from temporary communication delays."
+          }
+        ]
+      },
+      "outlierDetection": {
+        "title": "Outlier Detection",
+        "sections": [
+          {
+            "title": "What is Outlier Detection?",
+            "content": "Automatically identifies and excludes anomalous values that are significantly different from the other inputs. This prevents faulty sensors or measurement errors from skewing the average."
+          },
+          {
+            "title": "Why Use Outlier Detection?",
+            "content": [
+              "Automatic fault detection: No manual intervention needed",
+              "Improved accuracy: Bad readings don't corrupt average",
+              "Sensor redundancy: System continues with good sensors",
+              "Early warning: Identifies potentially failing sensors"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Real-World Scenarios",
+            "content": [
+              "5 temperature sensors: 22°C, 23°C, 22.5°C, 23°C, 85°C → Detects 85°C as outlier",
+              "Pressure sensors: 100, 102, 98, 101, 15 PSI → Detects 15 PSI as fault",
+              "Flow meters: All reading 50 L/min except one at 0 → Identifies failed meter"
+            ]
+          },
+          {
+            "type": "warning",
+            "content": "Outlier detection requires at least 3 inputs. With very few inputs, be cautious as legitimate variations might be incorrectly flagged."
+          }
+        ]
+      },
+      "outlierThreshold": {
+        "title": "Outlier Threshold",
+        "sections": [
+          {
+            "title": "IQR Method (Interquartile Range)",
+            "content": "Uses the statistical spread of values. Standard threshold is 1.5 (boxplot rule).\n\n• 1.5: Standard, moderate sensitivity\n• 2.0-3.0: Less sensitive, fewer false positives\n• 1.0-1.2: More sensitive, catches subtle outliers\n\nDetects values outside: [Q1 - threshold×IQR, Q3 + threshold×IQR]"
+          },
+          {
+            "title": "Z-Score Method",
+            "content": "Measures how many standard deviations a value is from the mean.\n\n• 3.0: Standard (99.7% confidence), conservative\n• 2.5: More sensitive detection\n• 2.0: Very sensitive, may flag valid extremes\n\nDetects values with |z-score| > threshold"
+          },
+          {
+            "type": "example",
+            "title": "Choosing Threshold",
+            "content": "IQR 1.5: Good for most industrial applications\nIQR 2.0: Use when inputs have high natural variation\nZ-Score 3.0: Best when data is normally distributed\nZ-Score 2.5: For tighter outlier control"
+          },
+          {
+            "type": "tip",
+            "content": "Start with IQR 1.5 or Z-Score 3.0. Monitor results and adjust if needed. Lower values = more aggressive outlier detection."
+          }
+        ]
+      }
     }
   },
   "statistics": {

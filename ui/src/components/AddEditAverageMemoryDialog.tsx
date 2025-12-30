@@ -21,15 +21,18 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  IconButton,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
+  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { addAverageMemory, editAverageMemory } from '../services/extendedApi';
 import type { AverageMemory, MonitoringItem, OutlierMethod, ItemType } from '../types/api';
 import { ItemTypeEnum } from '../types/api';
+import FieldHelpPopover from './common/FieldHelpPopover';
 
 interface AddEditAverageMemoryDialogProps {
   open: boolean;
@@ -122,6 +125,17 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [useWeights, setUseWeights] = useState(false);
+
+  // Help popover states
+  const [helpAnchorEl, setHelpAnchorEl] = useState<Record<string, HTMLElement | null>>({});
+
+  const handleHelpOpen = (fieldKey: string) => (event: React.MouseEvent<HTMLElement>) => {
+    setHelpAnchorEl(prev => ({ ...prev, [fieldKey]: event.currentTarget }));
+  };
+
+  const handleHelpClose = (fieldKey: string) => () => {
+    setHelpAnchorEl(prev => ({ ...prev, [fieldKey]: null }));
+  };
 
   // Initialize form data
   useEffect(() => {
@@ -325,123 +339,175 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           {/* Name */}
-          <TextField
-            label={t('averageMemory.name')}
-            value={formData.name}
-            onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-            fullWidth
-            error={!!formErrors.name}
-            helperText={formErrors.name}
-            data-id-ref="average-memory-name-input"
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <TextField
+              label={t('averageMemory.name')}
+              value={formData.name}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+              fullWidth
+              error={!!formErrors.name}
+              helperText={formErrors.name}
+              data-id-ref="average-memory-name-input"
+            />
+            <IconButton
+              size="small"
+              onClick={handleHelpOpen('averageMemory.help.name')}
+              sx={{ p: 0.25, mt: -3 }}
+              data-id-ref="average-memory-name-help-btn"
+            >
+              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+            </IconButton>
+          </Box>
 
           {/* Input Items */}
-          <Autocomplete
-            multiple
-            options={analogItems}
-            getOptionLabel={getItemLabel}
-            value={analogItems.filter((item) => formData.inputItemIds.includes(item.id))}
-            onChange={handleInputItemsChange}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label={t('averageMemory.inputItems')}
-                error={!!formErrors.inputItemIds}
-                helperText={formErrors.inputItemIds || t('averageMemory.inputItemsHelp')}
-              />
-            )}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  label={getItemLabel(option)}
-                  {...getTagProps({ index })}
-                  size="small"
-                  key={option.id}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Autocomplete
+              multiple
+              options={analogItems}
+              getOptionLabel={getItemLabel}
+              value={analogItems.filter((item) => formData.inputItemIds.includes(item.id))}
+              onChange={handleInputItemsChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t('averageMemory.inputItems')}
+                  error={!!formErrors.inputItemIds}
+                  helperText={formErrors.inputItemIds || t('averageMemory.inputItemsHelp')}
                 />
-              ))
-            }
-            renderOption={(props, option) => (
-              <Box component="li" {...props} key={option.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                  <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                    {getItemLabel(option)}
-                  </Typography>
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
                   <Chip
-                    label={getItemTypeLabel(option.itemType, t)}
+                    label={getItemLabel(option)}
+                    {...getTagProps({ index })}
                     size="small"
-                    color={getItemTypeColor(option.itemType)}
-                    sx={{ height: 20, fontSize: '0.7rem' }}
+                    key={option.id}
                   />
+                ))
+              }
+              renderOption={(props, option) => (
+                <Box component="li" {...props} key={option.id}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                      {getItemLabel(option)}
+                    </Typography>
+                    <Chip
+                      label={getItemTypeLabel(option.itemType, t)}
+                      size="small"
+                      color={getItemTypeColor(option.itemType)}
+                      sx={{ height: 20, fontSize: '0.7rem' }}
+                    />
+                  </Box>
                 </Box>
-              </Box>
-            )}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            data-id-ref="average-memory-input-items-select"
-          />
+              )}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              data-id-ref="average-memory-input-items-select"
+              fullWidth
+            />
+            <IconButton
+              size="small"
+              onClick={handleHelpOpen('averageMemory.help.inputItems')}
+              sx={{ p: 0.25, mt: -3 }}
+              data-id-ref="average-memory-input-items-help-btn"
+            >
+              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+            </IconButton>
+          </Box>
 
           {/* Output Item */}
-          <Autocomplete
-            options={analogItems.filter((item) => !formData.inputItemIds.includes(item.id))}
-            getOptionLabel={getItemLabel}
-            value={analogItems.find((item) => item.id === formData.outputItemId) || null}
-            onChange={(_, value) =>
-              setFormData((prev) => ({ ...prev, outputItemId: value?.id || '' }))
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label={t('averageMemory.outputItem')}
-                error={!!formErrors.outputItemId}
-                helperText={formErrors.outputItemId || t('averageMemory.outputItemHelp')}
-              />
-            )}
-            renderOption={(props, option) => (
-              <Box component="li" {...props} key={option.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                  <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                    {getItemLabel(option)}
-                  </Typography>
-                  <Chip
-                    label={getItemTypeLabel(option.itemType, t)}
-                    size="small"
-                    color={getItemTypeColor(option.itemType)}
-                    sx={{ height: 20, fontSize: '0.7rem' }}
-                  />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Autocomplete
+              options={analogItems.filter((item) => !formData.inputItemIds.includes(item.id))}
+              getOptionLabel={getItemLabel}
+              value={analogItems.find((item) => item.id === formData.outputItemId) || null}
+              onChange={(_, value) =>
+                setFormData((prev) => ({ ...prev, outputItemId: value?.id || '' }))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t('averageMemory.outputItem')}
+                  error={!!formErrors.outputItemId}
+                  helperText={formErrors.outputItemId || t('averageMemory.outputItemHelp')}
+                />
+              )}
+              renderOption={(props, option) => (
+                <Box component="li" {...props} key={option.id}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                      {getItemLabel(option)}
+                    </Typography>
+                    <Chip
+                      label={getItemTypeLabel(option.itemType, t)}
+                      size="small"
+                      color={getItemTypeColor(option.itemType)}
+                      sx={{ height: 20, fontSize: '0.7rem' }}
+                    />
+                  </Box>
                 </Box>
-              </Box>
-            )}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            data-id-ref="average-memory-output-item-select"
-          />
+              )}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              data-id-ref="average-memory-output-item-select"
+              fullWidth
+            />
+            <IconButton
+              size="small"
+              onClick={handleHelpOpen('averageMemory.help.outputItem')}
+              sx={{ p: 0.25, mt: -3 }}
+              data-id-ref="average-memory-output-item-help-btn"
+            >
+              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+            </IconButton>
+          </Box>
 
           {/* Interval */}
-          <TextField
-            type="number"
-            label={t('averageMemory.interval')}
-            value={formData.interval}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, interval: Number(e.target.value) }))
-            }
-            fullWidth
-            error={!!formErrors.interval}
-            helperText={formErrors.interval || t('averageMemory.intervalHelp')}
-            InputProps={{ endAdornment: <Typography variant="body2">s</Typography> }}
-            data-id-ref="average-memory-interval-input"
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <TextField
+              type="number"
+              label={t('averageMemory.interval')}
+              value={formData.interval}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, interval: Number(e.target.value) }))
+              }
+              fullWidth
+              error={!!formErrors.interval}
+              helperText={formErrors.interval || t('averageMemory.intervalHelp')}
+              InputProps={{ endAdornment: <Typography variant="body2">s</Typography> }}
+              data-id-ref="average-memory-interval-input"
+            />
+            <IconButton
+              size="small"
+              onClick={handleHelpOpen('averageMemory.help.interval')}
+              sx={{ p: 0.25, mt: -3 }}
+              data-id-ref="average-memory-interval-help-btn"
+            >
+              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+            </IconButton>
+          </Box>
 
           {/* Minimum Inputs */}
-          <TextField
-            type="number"
-            label={t('averageMemory.minimumInputs')}
-            value={formData.minimumInputs}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, minimumInputs: Number(e.target.value) }))
-            }
-            fullWidth
-            error={!!formErrors.minimumInputs}
-            helperText={formErrors.minimumInputs || t('averageMemory.minimumInputsHelp')}
-            data-id-ref="average-memory-minimum-inputs-input"
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <TextField
+              type="number"
+              label={t('averageMemory.minimumInputs')}
+              value={formData.minimumInputs}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, minimumInputs: Number(e.target.value) }))
+              }
+              fullWidth
+              error={!!formErrors.minimumInputs}
+              helperText={formErrors.minimumInputs || t('averageMemory.minimumInputsHelp')}
+              data-id-ref="average-memory-minimum-inputs-input"
+            />
+            <IconButton
+              size="small"
+              onClick={handleHelpOpen('averageMemory.help.minimumInputs')}
+              sx={{ p: 0.25, mt: -3 }}
+              data-id-ref="average-memory-minimum-inputs-help-btn"
+            >
+              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+            </IconButton>
+          </Box>
 
           {/* Disabled Switch */}
           <FormControlLabel
@@ -462,7 +528,20 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
           {/* Weighted Average */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography>{t('averageMemory.weightedAverage')}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography>{t('averageMemory.weightedAverage')}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleHelpOpen('averageMemory.help.weightedAverage')(e);
+                  }}
+                  sx={{ p: 0.25 }}
+                  data-id-ref="average-memory-weighted-avg-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -511,7 +590,20 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
           {/* Stale Input Handling */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography>{t('averageMemory.staleInputHandling')}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography>{t('averageMemory.staleInputHandling')}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleHelpOpen('averageMemory.help.staleInputHandling')(e);
+                  }}
+                  sx={{ p: 0.25 }}
+                  data-id-ref="average-memory-stale-handling-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -529,19 +621,29 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
                 />
 
                 {formData.ignoreStale && (
-                  <TextField
-                    type="number"
-                    label={t('averageMemory.staleTimeout')}
-                    value={formData.staleTimeout}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, staleTimeout: Number(e.target.value) }))
-                    }
-                    fullWidth
-                    error={!!formErrors.staleTimeout}
-                    helperText={formErrors.staleTimeout || t('averageMemory.staleTimeoutHelp')}
-                    InputProps={{ endAdornment: <Typography variant="body2">s</Typography> }}
-                    data-id-ref="average-memory-stale-timeout-input"
-                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <TextField
+                      type="number"
+                      label={t('averageMemory.staleTimeout')}
+                      value={formData.staleTimeout}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, staleTimeout: Number(e.target.value) }))
+                      }
+                      fullWidth
+                      error={!!formErrors.staleTimeout}
+                      helperText={formErrors.staleTimeout || t('averageMemory.staleTimeoutHelp')}
+                      InputProps={{ endAdornment: <Typography variant="body2">s</Typography> }}
+                      data-id-ref="average-memory-stale-timeout-input"
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('averageMemory.help.staleTimeout')}
+                      sx={{ p: 0.25, mt: -3 }}
+                      data-id-ref="average-memory-stale-timeout-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
                 )}
               </Box>
             </AccordionDetails>
@@ -550,7 +652,20 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
           {/* Outlier Detection */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography>{t('averageMemory.outlierDetection')}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography>{t('averageMemory.outlierDetection')}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleHelpOpen('averageMemory.help.outlierDetection')(e);
+                  }}
+                  sx={{ p: 0.25 }}
+                  data-id-ref="average-memory-outlier-detection-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -590,27 +705,37 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
                       </Select>
                     </FormControl>
 
-                    <TextField
-                      type="number"
-                      label={t('averageMemory.outlierThreshold')}
-                      value={formData.outlierThreshold}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          outlierThreshold: Number(e.target.value),
-                        }))
-                      }
-                      fullWidth
-                      error={!!formErrors.outlierThreshold}
-                      helperText={
-                        formErrors.outlierThreshold ||
-                        (formData.outlierMethod === 1
-                          ? t('averageMemory.outlierThresholdHelpIQR')
-                          : t('averageMemory.outlierThresholdHelpZScore'))
-                      }
-                      inputProps={{ step: 0.1, min: 0.1 }}
-                      data-id-ref="average-memory-outlier-threshold-input"
-                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <TextField
+                        type="number"
+                        label={t('averageMemory.outlierThreshold')}
+                        value={formData.outlierThreshold}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            outlierThreshold: Number(e.target.value),
+                          }))
+                        }
+                        fullWidth
+                        error={!!formErrors.outlierThreshold}
+                        helperText={
+                          formErrors.outlierThreshold ||
+                          (formData.outlierMethod === 1
+                            ? t('averageMemory.outlierThresholdHelpIQR')
+                            : t('averageMemory.outlierThresholdHelpZScore'))
+                        }
+                        inputProps={{ step: 0.1, min: 0.1 }}
+                        data-id-ref="average-memory-outlier-threshold-input"
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={handleHelpOpen('averageMemory.help.outlierThreshold')}
+                        sx={{ p: 0.25, mt: -3 }}
+                        data-id-ref="average-memory-outlier-threshold-help-btn"
+                      >
+                        <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                      </IconButton>
+                    </Box>
                   </>
                 )}
               </Box>
@@ -631,6 +756,68 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
           {loading ? t('common.saving') : t('common.save')}
         </Button>
       </DialogActions>
+
+      {/* Field Help Popovers */}
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.name']}
+        open={Boolean(helpAnchorEl['averageMemory.help.name'])}
+        onClose={handleHelpClose('averageMemory.help.name')}
+        fieldKey="averageMemory.help.name"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.inputItems']}
+        open={Boolean(helpAnchorEl['averageMemory.help.inputItems'])}
+        onClose={handleHelpClose('averageMemory.help.inputItems')}
+        fieldKey="averageMemory.help.inputItems"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.outputItem']}
+        open={Boolean(helpAnchorEl['averageMemory.help.outputItem'])}
+        onClose={handleHelpClose('averageMemory.help.outputItem')}
+        fieldKey="averageMemory.help.outputItem"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.interval']}
+        open={Boolean(helpAnchorEl['averageMemory.help.interval'])}
+        onClose={handleHelpClose('averageMemory.help.interval')}
+        fieldKey="averageMemory.help.interval"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.minimumInputs']}
+        open={Boolean(helpAnchorEl['averageMemory.help.minimumInputs'])}
+        onClose={handleHelpClose('averageMemory.help.minimumInputs')}
+        fieldKey="averageMemory.help.minimumInputs"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.weightedAverage']}
+        open={Boolean(helpAnchorEl['averageMemory.help.weightedAverage'])}
+        onClose={handleHelpClose('averageMemory.help.weightedAverage')}
+        fieldKey="averageMemory.help.weightedAverage"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.staleInputHandling']}
+        open={Boolean(helpAnchorEl['averageMemory.help.staleInputHandling'])}
+        onClose={handleHelpClose('averageMemory.help.staleInputHandling')}
+        fieldKey="averageMemory.help.staleInputHandling"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.staleTimeout']}
+        open={Boolean(helpAnchorEl['averageMemory.help.staleTimeout'])}
+        onClose={handleHelpClose('averageMemory.help.staleTimeout')}
+        fieldKey="averageMemory.help.staleTimeout"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.outlierDetection']}
+        open={Boolean(helpAnchorEl['averageMemory.help.outlierDetection'])}
+        onClose={handleHelpClose('averageMemory.help.outlierDetection')}
+        fieldKey="averageMemory.help.outlierDetection"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.outlierThreshold']}
+        open={Boolean(helpAnchorEl['averageMemory.help.outlierThreshold'])}
+        onClose={handleHelpClose('averageMemory.help.outlierThreshold')}
+        fieldKey="averageMemory.help.outlierThreshold"
+      />
     </Dialog>
   );
 };
