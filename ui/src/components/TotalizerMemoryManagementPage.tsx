@@ -122,7 +122,7 @@ const TotalizerMemoryManagementPage: React.FC = () => {
       const response = await getTotalizerMemories();
 
       // Enhance with item details from monitoring context
-      const enhancedMemories: TotalizerMemoryWithItems[] = response.totalizerMemories.map((tm: TotalizerMemory) => {
+      const enhancedMemories: TotalizerMemoryWithItems[] = (response.totalizerMemories || []).map((tm: TotalizerMemory) => {
         const inputItem = items.find((item) => item.id === tm.inputItemId);
         const outputItem = items.find((item) => item.id === tm.outputItemId);
 

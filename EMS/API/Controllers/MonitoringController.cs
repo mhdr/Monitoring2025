@@ -7699,7 +7699,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
 
             if (totalizerMemories != null && totalizerMemories.Count > 0)
             {
-                response.TotalizerMemories = new List<TotalizerMemoryItemDto>();
                 foreach (var memory in totalizerMemories)
                 {
                     response.TotalizerMemories.Add(new TotalizerMemoryItemDto

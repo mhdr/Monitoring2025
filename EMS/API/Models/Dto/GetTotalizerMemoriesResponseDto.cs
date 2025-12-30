@@ -18,7 +18,7 @@ public class GetTotalizerMemoriesResponseDto
     /// <summary>
     /// List of totalizer memory items
     /// </summary>
-    public List<TotalizerMemoryItemDto>? TotalizerMemories { get; set; }
+    public List<TotalizerMemoryItemDto> TotalizerMemories { get; set; } = [];
 }
 
 /// <summary>
