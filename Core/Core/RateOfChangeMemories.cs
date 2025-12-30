@@ -1,0 +1,461 @@
+using System.Linq.Expressions;
+using Core.Libs;
+using Core.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Core;
+
+/// <summary>
+/// Helper class for RateOfChangeMemory CRUD operations
+/// </summary>
+public class RateOfChangeMemories
+{
+    /// <summary>
+    /// Get all rate of change memory configurations
+    /// </summary>
+    public static async Task<List<RateOfChangeMemory>?> GetRateOfChangeMemories()
+    {
+        var context = new DataContext();
+        var found = await context.RateOfChangeMemories.ToListAsync();
+        await context.DisposeAsync();
+        return found;
+    }
+
+    /// <summary>
+    /// Get a specific rate of change memory by predicate
+    /// </summary>
+    public static async Task<RateOfChangeMemory?> GetRateOfChangeMemory(Expression<Func<RateOfChangeMemory, bool>> predicate)
+    {
+        var context = new DataContext();
+        var found = await context.RateOfChangeMemories.FirstOrDefaultAsync(predicate);
+        await context.DisposeAsync();
+        return found;
+    }
+
+    /// <summary>
+    /// Add a new rate of change memory configuration
+    /// </summary>
+    public static async Task<(bool Success, Guid? Id, string? ErrorMessage)> AddRateOfChangeMemory(RateOfChangeMemory memory)
+    {
+        try
+        {
+            var context = new DataContext();
+            
+            // Validate InputItem exists
+            var inputItem = await context.MonitoringItems.FindAsync(memory.InputItemId);
+            if (inputItem == null)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Input item not found");
+            }
+
+            // Validate InputItem type (must be analog)
+            if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Input item must be AnalogInput or AnalogOutput");
+            }
+
+            // Validate OutputItem exists
+            var outputItem = await context.MonitoringItems.FindAsync(memory.OutputItemId);
+            if (outputItem == null)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Output item not found");
+            }
+
+            // Validate OutputItem is AnalogOutput
+            if (outputItem.ItemType != ItemType.AnalogOutput)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Output item must be AnalogOutput");
+            }
+
+            // Validate AlarmOutputItem if provided
+            if (memory.AlarmOutputItemId.HasValue)
+            {
+                var alarmOutputItem = await context.MonitoringItems.FindAsync(memory.AlarmOutputItemId.Value);
+                if (alarmOutputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Alarm output item not found");
+                }
+
+                if (alarmOutputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Alarm output item must be DigitalOutput");
+                }
+            }
+
+            // Validate InputItemId != OutputItemId
+            if (memory.InputItemId == memory.OutputItemId)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Input and output items must be different");
+            }
+
+            // Validate Interval > 0
+            if (memory.Interval <= 0)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Interval must be greater than 0");
+            }
+
+            // Validate TimeWindowSeconds > 0
+            if (memory.TimeWindowSeconds <= 0)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Time window must be greater than 0");
+            }
+
+            // Validate SmoothingFilterAlpha is in range [0, 1]
+            if (memory.SmoothingFilterAlpha < 0 || memory.SmoothingFilterAlpha > 1)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Smoothing filter alpha must be between 0 and 1");
+            }
+
+            // Validate hysteresis values are in range (0, 1]
+            if (memory.HighRateHysteresis <= 0 || memory.HighRateHysteresis > 1)
+            {
+                await context.DisposeAsync();
+                return (false, null, "High rate hysteresis must be between 0 (exclusive) and 1 (inclusive)");
+            }
+
+            if (memory.LowRateHysteresis <= 0 || memory.LowRateHysteresis > 1)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Low rate hysteresis must be between 0 (exclusive) and 1 (inclusive)");
+            }
+
+            // Validate BaselineSampleCount >= 0
+            if (memory.BaselineSampleCount < 0)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Baseline sample count must be 0 or greater");
+            }
+
+            // Validate DecimalPlaces
+            if (memory.DecimalPlaces < 0 || memory.DecimalPlaces > 10)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Decimal places must be between 0 and 10");
+            }
+
+            // Validate LinearRegression requires minimum samples
+            if (memory.CalculationMethod == RateCalculationMethod.LinearRegression)
+            {
+                // Calculate expected samples in window: TimeWindowSeconds / Interval
+                int expectedSamples = memory.TimeWindowSeconds / memory.Interval;
+                if (expectedSamples < 5)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Linear regression requires at least 5 samples in the time window. Increase time window or decrease interval.");
+                }
+            }
+
+            // Validate thresholds - if alarm output is set, at least one threshold must be set
+            if (memory.AlarmOutputItemId.HasValue)
+            {
+                if (!memory.HighRateThreshold.HasValue && !memory.LowRateThreshold.HasValue)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "At least one threshold must be set when alarm output is configured");
+                }
+            }
+
+            context.RateOfChangeMemories.Add(memory);
+            await context.SaveChangesAsync();
+            
+            await context.DisposeAsync();
+            return (true, memory.Id, null);
+        }
+        catch (Exception ex)
+        {
+            MyLog.Error("Failed to add rate of change memory", ex, new Dictionary<string, object?>
+            {
+                ["RateOfChangeMemory"] = memory
+            });
+            return (false, null, $"Exception: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing rate of change memory configuration
+    /// </summary>
+    public static async Task<(bool Success, string? ErrorMessage)> EditRateOfChangeMemory(RateOfChangeMemory memory)
+    {
+        try
+        {
+            var context = new DataContext();
+
+            // Check if memory exists
+            var existingMemory = await context.RateOfChangeMemories.FindAsync(memory.Id);
+            if (existingMemory == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Rate of change memory not found");
+            }
+
+            // Validate InputItem exists
+            var inputItem = await context.MonitoringItems.FindAsync(memory.InputItemId);
+            if (inputItem == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Input item not found");
+            }
+
+            // Validate InputItem type (must be analog)
+            if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+            {
+                await context.DisposeAsync();
+                return (false, "Input item must be AnalogInput or AnalogOutput");
+            }
+
+            // Validate OutputItem exists
+            var outputItem = await context.MonitoringItems.FindAsync(memory.OutputItemId);
+            if (outputItem == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Output item not found");
+            }
+
+            // Validate OutputItem is AnalogOutput
+            if (outputItem.ItemType != ItemType.AnalogOutput)
+            {
+                await context.DisposeAsync();
+                return (false, "Output item must be AnalogOutput");
+            }
+
+            // Validate AlarmOutputItem if provided
+            if (memory.AlarmOutputItemId.HasValue)
+            {
+                var alarmOutputItem = await context.MonitoringItems.FindAsync(memory.AlarmOutputItemId.Value);
+                if (alarmOutputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Alarm output item not found");
+                }
+
+                if (alarmOutputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Alarm output item must be DigitalOutput");
+                }
+            }
+
+            // Validate InputItemId != OutputItemId
+            if (memory.InputItemId == memory.OutputItemId)
+            {
+                await context.DisposeAsync();
+                return (false, "Input and output items must be different");
+            }
+
+            // Validate Interval > 0
+            if (memory.Interval <= 0)
+            {
+                await context.DisposeAsync();
+                return (false, "Interval must be greater than 0");
+            }
+
+            // Validate TimeWindowSeconds > 0
+            if (memory.TimeWindowSeconds <= 0)
+            {
+                await context.DisposeAsync();
+                return (false, "Time window must be greater than 0");
+            }
+
+            // Validate SmoothingFilterAlpha is in range [0, 1]
+            if (memory.SmoothingFilterAlpha < 0 || memory.SmoothingFilterAlpha > 1)
+            {
+                await context.DisposeAsync();
+                return (false, "Smoothing filter alpha must be between 0 and 1");
+            }
+
+            // Validate hysteresis values are in range (0, 1]
+            if (memory.HighRateHysteresis <= 0 || memory.HighRateHysteresis > 1)
+            {
+                await context.DisposeAsync();
+                return (false, "High rate hysteresis must be between 0 (exclusive) and 1 (inclusive)");
+            }
+
+            if (memory.LowRateHysteresis <= 0 || memory.LowRateHysteresis > 1)
+            {
+                await context.DisposeAsync();
+                return (false, "Low rate hysteresis must be between 0 (exclusive) and 1 (inclusive)");
+            }
+
+            // Validate BaselineSampleCount >= 0
+            if (memory.BaselineSampleCount < 0)
+            {
+                await context.DisposeAsync();
+                return (false, "Baseline sample count must be 0 or greater");
+            }
+
+            // Validate DecimalPlaces
+            if (memory.DecimalPlaces < 0 || memory.DecimalPlaces > 10)
+            {
+                await context.DisposeAsync();
+                return (false, "Decimal places must be between 0 and 10");
+            }
+
+            // Validate LinearRegression requires minimum samples
+            if (memory.CalculationMethod == RateCalculationMethod.LinearRegression)
+            {
+                int expectedSamples = memory.TimeWindowSeconds / memory.Interval;
+                if (expectedSamples < 5)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Linear regression requires at least 5 samples in the time window. Increase time window or decrease interval.");
+                }
+            }
+
+            // Validate thresholds - if alarm output is set, at least one threshold must be set
+            if (memory.AlarmOutputItemId.HasValue)
+            {
+                if (!memory.HighRateThreshold.HasValue && !memory.LowRateThreshold.HasValue)
+                {
+                    await context.DisposeAsync();
+                    return (false, "At least one threshold must be set when alarm output is configured");
+                }
+            }
+
+            // Check if configuration changed significantly - if so, reset samples and baseline
+            bool configChanged = existingMemory.InputItemId != memory.InputItemId ||
+                                 existingMemory.TimeWindowSeconds != memory.TimeWindowSeconds ||
+                                 existingMemory.CalculationMethod != memory.CalculationMethod ||
+                                 existingMemory.Interval != memory.Interval;
+
+            if (configChanged)
+            {
+                // Delete all existing samples for this memory
+                var samplesToDelete = await context.RateOfChangeSamples
+                    .Where(s => s.RateOfChangeMemoryId == memory.Id)
+                    .ToListAsync();
+                context.RateOfChangeSamples.RemoveRange(samplesToDelete);
+
+                // Reset baseline and state
+                memory.AccumulatedSamples = 0;
+                memory.LastInputValue = null;
+                memory.LastTimestamp = null;
+                memory.LastSmoothedRate = null;
+                memory.AlarmState = null;
+
+                MyLog.Info("Rate of change memory configuration changed, resetting samples and baseline", new Dictionary<string, object?>
+                {
+                    ["MemoryId"] = memory.Id,
+                    ["MemoryName"] = memory.Name
+                });
+            }
+
+            // Detach the tracked entity and update with new values
+            context.Entry(existingMemory).State = EntityState.Detached;
+            context.RateOfChangeMemories.Update(memory);
+            await context.SaveChangesAsync();
+            
+            await context.DisposeAsync();
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            MyLog.Error("Failed to edit rate of change memory", ex, new Dictionary<string, object?>
+            {
+                ["RateOfChangeMemory"] = memory
+            });
+            return (false, $"Exception: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Delete a rate of change memory configuration (cascade deletes samples)
+    /// </summary>
+    public static async Task<(bool Success, string? ErrorMessage)> DeleteRateOfChangeMemory(Guid id)
+    {
+        try
+        {
+            var context = new DataContext();
+            var memory = await context.RateOfChangeMemories.FindAsync(id);
+            
+            if (memory == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Rate of change memory not found");
+            }
+
+            // Samples are cascade deleted by foreign key relationship
+            context.RateOfChangeMemories.Remove(memory);
+            await context.SaveChangesAsync();
+            
+            await context.DisposeAsync();
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            MyLog.Error("Failed to delete rate of change memory", ex, new Dictionary<string, object?>
+            {
+                ["Id"] = id
+            });
+            return (false, $"Exception: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Reset a rate of change memory's state (clears baseline, samples, and alarm state)
+    /// </summary>
+    public static async Task<(bool Success, string? ErrorMessage)> ResetRateOfChangeMemory(Guid id)
+    {
+        try
+        {
+            var context = new DataContext();
+            var memory = await context.RateOfChangeMemories.FindAsync(id);
+            
+            if (memory == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Rate of change memory not found");
+            }
+
+            // Delete all samples
+            var samplesToDelete = await context.RateOfChangeSamples
+                .Where(s => s.RateOfChangeMemoryId == id)
+                .ToListAsync();
+            context.RateOfChangeSamples.RemoveRange(samplesToDelete);
+
+            // Reset state
+            memory.AccumulatedSamples = 0;
+            memory.LastInputValue = null;
+            memory.LastTimestamp = null;
+            memory.LastSmoothedRate = null;
+            memory.AlarmState = null;
+
+            context.RateOfChangeMemories.Update(memory);
+            await context.SaveChangesAsync();
+            
+            // Write zero to output items
+            await Points.WriteOrAddValue(memory.OutputItemId, "0");
+            if (memory.AlarmOutputItemId.HasValue)
+            {
+                await Points.WriteOrAddValue(memory.AlarmOutputItemId.Value, "0");
+            }
+            
+            await context.DisposeAsync();
+            
+            MyLog.Info("Rate of change memory reset", new Dictionary<string, object?>
+            {
+                ["Id"] = id,
+                ["Name"] = memory.Name
+            });
+            
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            MyLog.Error("Failed to reset rate of change memory", ex, new Dictionary<string, object?>
+            {
+                ["Id"] = id
+            });
+            return (false, $"Exception: {ex.Message}");
+        }
+    }
+}

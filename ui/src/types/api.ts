@@ -3209,3 +3209,183 @@ export interface PotentialParentPID {
   cascadeLevel: number; // int - Cascade level of this PID
   isDisabled: boolean; // bool
 }
+
+// ==========================================
+// Rate of Change Memory Types
+// ==========================================
+
+/**
+ * Rate calculation methods for derivative computation
+ */
+export const RateCalculationMethod = {
+  SimpleDifference: 1,
+  MovingAverage: 2,
+  WeightedAverage: 3,
+  LinearRegression: 4,
+} as const;
+export type RateCalculationMethod = (typeof RateCalculationMethod)[keyof typeof RateCalculationMethod];
+
+/**
+ * Time unit for rate output conversion
+ */
+export const RateTimeUnit = {
+  PerSecond: 1,
+  PerMinute: 60,
+  PerHour: 3600,
+} as const;
+export type RateTimeUnit = (typeof RateTimeUnit)[keyof typeof RateTimeUnit];
+
+/**
+ * Rate of Change Memory interface
+ */
+export interface RateOfChangeMemory {
+  id: string; // UUID
+  name?: string | null;
+  inputItemId: string; // UUID - AnalogInput or AnalogOutput
+  outputItemId: string; // UUID - AnalogOutput for rate value
+  alarmOutputItemId?: string | null; // UUID - Optional DigitalOutput for threshold alarms
+  interval: number; // int - Processing interval in seconds
+  isDisabled: boolean; // bool - Whether memory is disabled
+  calculationMethod: RateCalculationMethod; // Rate calculation method
+  timeWindowSeconds: number; // int - Time window for windowed calculations
+  smoothingFilterAlpha: number; // double - Exponential smoothing (0-1)
+  highRateThreshold?: number | null; // double - High rate alarm threshold
+  lowRateThreshold?: number | null; // double - Low rate alarm threshold
+  highRateHysteresis: number; // double - Hysteresis for high alarm (0-1)
+  lowRateHysteresis: number; // double - Hysteresis for low alarm (0-1)
+  alarmState?: boolean | null; // bool - Current alarm state (true=high, false=low, null=none)
+  baselineSampleCount: number; // int - Samples to ignore during baseline
+  accumulatedSamples: number; // int - Current sample count during baseline
+  timeUnit: RateTimeUnit; // Time unit for output
+  rateUnitDisplay?: string | null; // Display unit string (e.g., "°C/min")
+  decimalPlaces: number; // int - Decimal places for output
+  lastSmoothedRate?: number | null; // double - Last calculated smoothed rate
+  lastInputValue?: number | null; // double - Last input value
+  lastTimestamp?: number | null; // long - Last timestamp (epoch seconds)
+}
+
+/**
+ * Enhanced Rate of Change Memory with item details
+ */
+export interface RateOfChangeMemoryWithItems extends RateOfChangeMemory {
+  inputItemName?: string;
+  inputItemNameFa?: string;
+  inputItemType?: ItemType;
+  outputItemName?: string;
+  outputItemNameFa?: string;
+  outputItemType?: ItemType;
+  alarmOutputItemName?: string;
+  alarmOutputItemNameFa?: string;
+  alarmOutputItemType?: ItemType;
+}
+
+/**
+ * Request DTO for retrieving rate of change memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetRateOfChangeMemoriesRequestDto {
+  // Empty - reserved for future filtering
+}
+
+/**
+ * Response DTO containing list of rate of change memory configurations
+ */
+export interface GetRateOfChangeMemoriesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  rateOfChangeMemories?: RateOfChangeMemory[] | null;
+}
+
+/**
+ * Request DTO for creating a new rate of change memory configuration
+ */
+export interface AddRateOfChangeMemoryRequestDto {
+  name?: string | null;
+  inputItemId: string; // UUID
+  outputItemId: string; // UUID
+  alarmOutputItemId?: string | null; // UUID
+  interval: number; // int - must be > 0
+  isDisabled: boolean; // bool
+  calculationMethod: number; // int - 1-4
+  timeWindowSeconds: number; // int - must be > 0
+  smoothingFilterAlpha: number; // double (0-1)
+  highRateThreshold?: number | null; // double
+  lowRateThreshold?: number | null; // double
+  highRateHysteresis: number; // double (0-1)
+  lowRateHysteresis: number; // double (0-1)
+  baselineSampleCount: number; // int >= 0
+  timeUnit: number; // int - 1, 60, or 3600
+  rateUnitDisplay?: string | null;
+  decimalPlaces: number; // int (0-10)
+}
+
+/**
+ * Response DTO for adding a rate of change memory configuration
+ */
+export interface AddRateOfChangeMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID
+}
+
+/**
+ * Request DTO for editing a rate of change memory configuration
+ */
+export interface EditRateOfChangeMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  inputItemId: string; // UUID
+  outputItemId: string; // UUID
+  alarmOutputItemId?: string | null; // UUID
+  interval: number; // int - must be > 0
+  isDisabled: boolean; // bool
+  calculationMethod: number; // int - 1-4
+  timeWindowSeconds: number; // int - must be > 0
+  smoothingFilterAlpha: number; // double (0-1)
+  highRateThreshold?: number | null; // double
+  lowRateThreshold?: number | null; // double
+  highRateHysteresis: number; // double (0-1)
+  lowRateHysteresis: number; // double (0-1)
+  baselineSampleCount: number; // int >= 0
+  timeUnit: number; // int - 1, 60, or 3600
+  rateUnitDisplay?: string | null;
+  decimalPlaces: number; // int (0-10)
+}
+
+/**
+ * Response DTO for editing a rate of change memory configuration
+ */
+export interface EditRateOfChangeMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a rate of change memory configuration
+ */
+export interface DeleteRateOfChangeMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a rate of change memory configuration
+ */
+export interface DeleteRateOfChangeMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for resetting a rate of change memory state
+ */
+export interface ResetRateOfChangeMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for resetting a rate of change memory state
+ */
+export interface ResetRateOfChangeMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}

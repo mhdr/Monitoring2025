@@ -7953,6 +7953,375 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
 
     #endregion
 
+    #region Rate of Change Memory
+
+    /// <summary>
+    /// Get all rate of change memory configurations
+    /// </summary>
+    /// <param name="request">Request parameters (reserved for filtering)</param>
+    /// <returns>List of rate of change memory configurations</returns>
+    /// <remarks>
+    /// Returns all rate of change memory configurations for derivative/rate calculations.
+    /// 
+    /// Calculation methods:
+    /// - **1 (SimpleDifference)**: (current - last) / deltaTime
+    /// - **2 (MovingAverage)**: Average of point-to-point derivatives
+    /// - **3 (WeightedAverage)**: Recent samples weighted higher
+    /// - **4 (LinearRegression)**: Least-squares slope (requires 5+ samples)
+    /// 
+    /// Time units:
+    /// - **1**: Per second
+    /// - **60**: Per minute
+    /// - **3600**: Per hour
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetRateOfChangeMemories
+    ///     {}
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns list of rate of change memories</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetRateOfChangeMemories")]
+    public async Task<IActionResult> GetRateOfChangeMemories([FromBody] GetRateOfChangeMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memories = await Core.RateOfChangeMemories.GetRateOfChangeMemories();
+
+            var response = new GetRateOfChangeMemoriesResponseDto
+            {
+                IsSuccessful = true,
+                RateOfChangeMemories = memories?.Select(m => new RateOfChangeMemoryItemDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    InputItemId = m.InputItemId,
+                    OutputItemId = m.OutputItemId,
+                    AlarmOutputItemId = m.AlarmOutputItemId,
+                    Interval = m.Interval,
+                    IsDisabled = m.IsDisabled,
+                    CalculationMethod = (int)m.CalculationMethod,
+                    TimeWindowSeconds = m.TimeWindowSeconds,
+                    SmoothingFilterAlpha = m.SmoothingFilterAlpha,
+                    HighRateThreshold = m.HighRateThreshold,
+                    LowRateThreshold = m.LowRateThreshold,
+                    HighRateHysteresis = m.HighRateHysteresis,
+                    LowRateHysteresis = m.LowRateHysteresis,
+                    AlarmState = m.AlarmState,
+                    BaselineSampleCount = m.BaselineSampleCount,
+                    AccumulatedSamples = m.AccumulatedSamples,
+                    TimeUnit = (int)m.TimeUnit,
+                    RateUnitDisplay = m.RateUnitDisplay,
+                    DecimalPlaces = m.DecimalPlaces,
+                    LastSmoothedRate = m.LastSmoothedRate,
+                    LastInputValue = m.LastInputValue,
+                    LastTimestamp = m.LastTimestamp
+                }).ToList()
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new rate of change memory configuration
+    /// </summary>
+    /// <param name="request">Rate of change memory configuration parameters</param>
+    /// <returns>ID of the newly created rate of change memory</returns>
+    /// <remarks>
+    /// Creates a new rate of change memory for calculating derivatives of analog values.
+    /// 
+    /// Use cases:
+    /// - Temperature rise/fall rate (°C/minute)
+    /// - Pressure change rate
+    /// - Level change detection
+    /// - Leak detection (unexpected rate changes)
+    /// - Predictive alerts (rate exceeds safe limits)
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AddRateOfChangeMemory
+    ///     {
+    ///        "name": "Temperature Rise Rate",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "alarmOutputItemId": "770e8400-e29b-41d4-a716-446655440002",
+    ///        "interval": 10,
+    ///        "calculationMethod": 2,
+    ///        "timeWindowSeconds": 60,
+    ///        "smoothingFilterAlpha": 0.2,
+    ///        "highRateThreshold": 5.0,
+    ///        "highRateHysteresis": 0.9,
+    ///        "baselineSampleCount": 3,
+    ///        "timeUnit": 60,
+    ///        "rateUnitDisplay": "°C/min",
+    ///        "decimalPlaces": 2
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns ID of created rate of change memory</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("AddRateOfChangeMemory")]
+    public async Task<IActionResult> AddRateOfChangeMemory([FromBody] AddRateOfChangeMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memory = new Core.Models.RateOfChangeMemory
+            {
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                AlarmOutputItemId = request.AlarmOutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                CalculationMethod = (Core.Models.RateCalculationMethod)request.CalculationMethod,
+                TimeWindowSeconds = request.TimeWindowSeconds,
+                SmoothingFilterAlpha = request.SmoothingFilterAlpha,
+                HighRateThreshold = request.HighRateThreshold,
+                LowRateThreshold = request.LowRateThreshold,
+                HighRateHysteresis = request.HighRateHysteresis,
+                LowRateHysteresis = request.LowRateHysteresis,
+                BaselineSampleCount = request.BaselineSampleCount,
+                TimeUnit = (Core.Models.RateTimeUnit)request.TimeUnit,
+                RateUnitDisplay = request.RateUnitDisplay,
+                DecimalPlaces = request.DecimalPlaces
+            };
+
+            var (success, id, errorMessage) = await Core.RateOfChangeMemories.AddRateOfChangeMemory(memory);
+
+            var response = new AddRateOfChangeMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Edit an existing rate of change memory configuration
+    /// </summary>
+    /// <param name="request">Updated rate of change memory configuration parameters</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Updates an existing rate of change memory configuration.
+    /// 
+    /// **Important**: Changing input item, calculation method, time window, or interval
+    /// will reset the sample history and baseline to ensure consistent calculations.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/EditRateOfChangeMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Updated Temperature Rate",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "interval": 15,
+    ///        "calculationMethod": 4,
+    ///        "timeWindowSeconds": 120,
+    ///        "smoothingFilterAlpha": 0.3,
+    ///        "highRateThreshold": 10.0,
+    ///        "timeUnit": 60,
+    ///        "decimalPlaces": 3
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("EditRateOfChangeMemory")]
+    public async Task<IActionResult> EditRateOfChangeMemory([FromBody] EditRateOfChangeMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memory = new Core.Models.RateOfChangeMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                AlarmOutputItemId = request.AlarmOutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                CalculationMethod = (Core.Models.RateCalculationMethod)request.CalculationMethod,
+                TimeWindowSeconds = request.TimeWindowSeconds,
+                SmoothingFilterAlpha = request.SmoothingFilterAlpha,
+                HighRateThreshold = request.HighRateThreshold,
+                LowRateThreshold = request.LowRateThreshold,
+                HighRateHysteresis = request.HighRateHysteresis,
+                LowRateHysteresis = request.LowRateHysteresis,
+                BaselineSampleCount = request.BaselineSampleCount,
+                TimeUnit = (Core.Models.RateTimeUnit)request.TimeUnit,
+                RateUnitDisplay = request.RateUnitDisplay,
+                DecimalPlaces = request.DecimalPlaces
+            };
+
+            var (success, errorMessage) = await Core.RateOfChangeMemories.EditRateOfChangeMemory(memory);
+
+            var response = new EditRateOfChangeMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Delete a rate of change memory configuration
+    /// </summary>
+    /// <param name="request">ID of the rate of change memory to delete</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Deletes a rate of change memory configuration.
+    /// All associated sample history is also deleted (cascade delete).
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/DeleteRateOfChangeMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If memory not found</response>
+    [HttpPost("DeleteRateOfChangeMemory")]
+    public async Task<IActionResult> DeleteRateOfChangeMemory([FromBody] DeleteRateOfChangeMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.RateOfChangeMemories.DeleteRateOfChangeMemory(request.Id);
+
+            var response = new DeleteRateOfChangeMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Reset a rate of change memory state
+    /// </summary>
+    /// <param name="request">ID of the rate of change memory to reset</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Resets a rate of change memory's state:
+    /// - Clears all sample history
+    /// - Resets baseline counter to 0
+    /// - Clears alarm state
+    /// - Sets output to 0
+    /// 
+    /// Useful for:
+    /// - Starting fresh after configuration changes
+    /// - Clearing stale data after extended downtime
+    /// - Testing and calibration
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/ResetRateOfChangeMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If memory not found</response>
+    [HttpPost("ResetRateOfChangeMemory")]
+    public async Task<IActionResult> ResetRateOfChangeMemory([FromBody] ResetRateOfChangeMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.RateOfChangeMemories.ResetRateOfChangeMemory(request.Id);
+
+            var response = new ResetRateOfChangeMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    #endregion
+
     #region PID Auto-Tuning
 
     /// <summary>

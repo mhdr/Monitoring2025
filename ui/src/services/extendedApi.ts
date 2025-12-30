@@ -115,6 +115,14 @@ import type {
   BatchEditModbusGatewayMappingsResponseDto,
   // Totalizer Memory types
   TotalizerMemory,
+  // Rate of Change Memory types
+  RateOfChangeMemory,
+  AddRateOfChangeMemoryRequestDto,
+  AddRateOfChangeMemoryResponseDto,
+  EditRateOfChangeMemoryRequestDto,
+  EditRateOfChangeMemoryResponseDto,
+  DeleteRateOfChangeMemoryRequestDto,
+  DeleteRateOfChangeMemoryResponseDto,
 } from '../types/api';
 
 /**
@@ -1055,6 +1063,101 @@ export const resetTotalizerMemory = async (data: {
   try {
     const response = await apiClient.post<{ isSuccessful: boolean; errorMessage?: string }>(
       '/api/Monitoring/ResetTotalizerMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// ==========================================
+// Rate of Change Memory API Functions
+// ==========================================
+
+/**
+ * Get all rate of change memory configurations
+ */
+export const getRateOfChangeMemories = async (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  params: Record<string, unknown> = {}
+): Promise<{
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  rateOfChangeMemories?: RateOfChangeMemory[] | null;
+}> => {
+  try {
+    const response = await apiClient.post<{
+      isSuccessful: boolean;
+      errorMessage?: string | null;
+      rateOfChangeMemories?: RateOfChangeMemory[] | null;
+    }>('/api/Monitoring/GetRateOfChangeMemories', params);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new rate of change memory configuration
+ */
+export const addRateOfChangeMemory = async (
+  data: AddRateOfChangeMemoryRequestDto
+): Promise<AddRateOfChangeMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddRateOfChangeMemoryResponseDto>(
+      '/api/Monitoring/AddRateOfChangeMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing rate of change memory configuration
+ */
+export const editRateOfChangeMemory = async (
+  data: EditRateOfChangeMemoryRequestDto
+): Promise<EditRateOfChangeMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditRateOfChangeMemoryResponseDto>(
+      '/api/Monitoring/EditRateOfChangeMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a rate of change memory configuration
+ */
+export const deleteRateOfChangeMemory = async (
+  data: DeleteRateOfChangeMemoryRequestDto
+): Promise<DeleteRateOfChangeMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteRateOfChangeMemoryResponseDto>(
+      '/api/Monitoring/DeleteRateOfChangeMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Reset a rate of change memory state (clears baseline, samples, and alarm state)
+ */
+export const resetRateOfChangeMemory = async (data: {
+  id: string;
+}): Promise<{ isSuccessful: boolean; errorMessage?: string | null }> => {
+  try {
+    const response = await apiClient.post<{ isSuccessful: boolean; errorMessage?: string | null }>(
+      '/api/Monitoring/ResetRateOfChangeMemory',
       data
     );
     return response.data;

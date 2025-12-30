@@ -51,6 +51,9 @@ public class DataContext : DbContext
     
     public DbSet<TotalizerMemory> TotalizerMemories { get; set; }
     
+    public DbSet<RateOfChangeMemory> RateOfChangeMemories { get; set; }
+    public DbSet<RateOfChangeSample> RateOfChangeSamples { get; set; }
+    
     public DbSet<ControllerModbus> ControllerModbuses { get; set; }
     public DbSet<MapModbus> MapModbuses { get; set; }
     
@@ -321,6 +324,69 @@ public class DataContext : DbContext
         modelBuilder.Entity<TotalizerMemory>()
             .Property(e => e.DecimalPlaces)
             .HasDefaultValue(2);
+        
+        // RateOfChangeMemory configuration
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.Interval)
+            .HasDefaultValue(10);
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.CalculationMethod)
+            .HasDefaultValue(RateCalculationMethod.SimpleDifference);
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.TimeWindowSeconds)
+            .HasDefaultValue(60);
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.SmoothingFilterAlpha)
+            .HasDefaultValue(0.2);
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.HighRateHysteresis)
+            .HasDefaultValue(0.9);
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.LowRateHysteresis)
+            .HasDefaultValue(0.9);
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.BaselineSampleCount)
+            .HasDefaultValue(3);
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.AccumulatedSamples)
+            .HasDefaultValue(0);
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.TimeUnit)
+            .HasDefaultValue(RateTimeUnit.PerMinute);
+        
+        modelBuilder.Entity<RateOfChangeMemory>()
+            .Property(e => e.DecimalPlaces)
+            .HasDefaultValue(2);
+        
+        // RateOfChangeSample configuration
+        modelBuilder.Entity<RateOfChangeSample>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<RateOfChangeSample>()
+            .HasOne(s => s.RateOfChangeMemory)
+            .WithMany(m => m.Samples)
+            .HasForeignKey(s => s.RateOfChangeMemoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        modelBuilder.Entity<RateOfChangeSample>()
+            .HasIndex(s => new { s.RateOfChangeMemoryId, s.Timestamp });
         
         modelBuilder.Entity<ControllerModbus>()
             .Property(e => e.Endianness)

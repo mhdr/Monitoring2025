@@ -33,6 +33,7 @@ const TimeoutMemoryManagementPage = lazy(() => import('./components/TimeoutMemor
 const AverageMemoryManagementPage = lazy(() => import('./components/AverageMemoryManagementPage'));
 const PIDMemoryManagementPage = lazy(() => import('./components/PIDMemoryManagementPage'));
 const TotalizerMemoryManagementPage = lazy(() => import('./components/TotalizerMemoryManagementPage'));
+const RateOfChangeMemoryManagementPage = lazy(() => import('./components/RateOfChangeMemoryManagementPage'));
 const MemoryPage = lazy(() => import('./components/MemoryPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
@@ -183,6 +184,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <TotalizerMemoryManagementPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="memory/rateofchange-memory" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <RateOfChangeMemoryManagementPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

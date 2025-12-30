@@ -3084,5 +3084,212 @@
         ]
       }
     }
+  },
+  "rateOfChangeMemory": {
+    "title": "Rate of Change Memory",
+    "description": "Calculate derivative of analog values to detect temperature rise/fall rate, pressure change rate, level change, and enable predictive alerts.",
+    "addNew": "Add Rate of Change",
+    "addFirst": "Add First Rate of Change",
+    "addTitle": "Add Rate of Change Memory",
+    "editTitle": "Edit Rate of Change Memory",
+    "deleteTitle": "Delete Rate of Change Memory",
+    "deleteMessage": "Are you sure you want to delete rate of change memory \"{{name}}\"?",
+    "deleteWarning": "This action cannot be undone. All sample history and configuration will be lost.",
+    "searchPlaceholder": "Search rate of change memories...",
+    "noRateOfChangeMemories": "No rate of change memories configured",
+    "name": "Name",
+    "nameHelp": "Optional human-readable name for this rate of change memory",
+    "inputItem": "Input Item",
+    "inputItemHelp": "Analog Input item to monitor for rate of change (e.g., temperature, pressure, level)",
+    "outputItem": "Output Item",
+    "outputItemHelp": "Analog Output item where calculated rate is continuously written",
+    "alarmOutputItem": "Alarm Output Item",
+    "alarmOutputItemHelp": "Optional Digital Output item for high/low rate alarm indication",
+    "interval": "Interval (seconds)",
+    "intervalHelp": "How often to sample and calculate rate (seconds). Typical: 1-10s for fast processes, 10-60s for slow processes.",
+    "isDisabled": "Disabled",
+    "isDisabledHelp": "Temporarily disable this rate of change memory without deleting the configuration.",
+    "calculationMethod": {
+      "label": "Calculation Method",
+      "simpleDifference": "Simple Difference",
+      "movingAverage": "Moving Average",
+      "weightedAverage": "Weighted Average",
+      "linearRegression": "Linear Regression"
+    },
+    "calculationMethodHelp": "Method used to calculate rate of change from sample data.",
+    "timeWindow": "Time Window (seconds)",
+    "timeWindowHelp": "Time window for calculations. Samples older than this are discarded. Larger windows provide smoother results.",
+    "smoothingAlpha": "Smoothing Alpha (0-1)",
+    "smoothingAlphaHelp": "Exponential smoothing factor. 0 = ignore new values, 1 = no smoothing. Typical: 0.2-0.5 for balanced response.",
+    "baselineSampleCount": "Baseline Sample Count",
+    "baselineSampleCountHelp": "Number of samples to collect before starting calculations. Prevents noisy initial readings.",
+    "baselineInfo": "Rate calculation will not begin until the baseline sample count is reached. This ensures stable initial readings.",
+    "timeUnit": {
+      "label": "Time Unit",
+      "perSecond": "Per Second (/s)",
+      "perMinute": "Per Minute (/min)",
+      "perHour": "Per Hour (/h)"
+    },
+    "timeUnitHelp": "Time unit for expressing rate values. Example: °C/min for temperature change rate.",
+    "rateUnitDisplay": "Rate Unit Display",
+    "rateUnitDisplayHelp": "Custom unit display string (e.g., '°C/min', 'm³/h', 'kPa/s'). Optional.",
+    "decimalPlaces": "Decimal Places",
+    "decimalPlacesHelp": "Number of decimal places to display (0-10). Typical: 2-4 for rate values.",
+    "currentRate": "Current Rate",
+    "baselineProgress": "Baseline Progress",
+    "highRateAlarm": "High Rate Alarm",
+    "lowRateAlarm": "Low Rate Alarm",
+    "highRateThreshold": "High Rate Threshold",
+    "highRateThresholdHelp": "Rate above this triggers high alarm. Leave empty to disable high alarm.",
+    "lowRateThreshold": "Low Rate Threshold",
+    "lowRateThresholdHelp": "Rate below this triggers low alarm. Use for detecting stall or freeze. Leave empty to disable.",
+    "highRateHysteresis": "High Rate Hysteresis (0-1)",
+    "lowRateHysteresis": "Low Rate Hysteresis (0-1)",
+    "hysteresisHelp": "Percentage of threshold for alarm auto-clear. 0.9 = alarm clears at 90% of threshold.",
+    "hysteresisInfo": "Hysteresis prevents alarm chatter. High alarm activates at threshold, clears when rate drops below threshold × hysteresis.",
+    "alarmStatus": "Alarm",
+    "baseline": "Baseline",
+    "linearRegressionInfo": "Linear Regression requires minimum {{minSamples}} samples. Current window will contain {{currentSamples}} samples.",
+    "sections": {
+      "basic": "Basic Configuration",
+      "calculation": "Calculation Method",
+      "baseline": "Baseline Configuration",
+      "units": "Unit Conversion",
+      "alarms": "Alarm Configuration"
+    },
+    "validation": {
+      "inputItemRequired": "Input item is required",
+      "outputItemRequired": "Output item is required",
+      "inputOutputSame": "Input and output items must be different",
+      "intervalMin": "Interval must be at least 1 second",
+      "timeWindowMin": "Time window must be at least equal to interval",
+      "linearRegressionMinSamples": "Linear Regression requires time window to contain at least 5 samples",
+      "smoothingAlphaRange": "Smoothing alpha must be between 0 and 1",
+      "baselineCountMin": "Baseline sample count cannot be negative",
+      "hysteresisRange": "Hysteresis must be between 0 and 1",
+      "decimalPlacesRange": "Decimal places must be between 0 and 10"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load rate of change memories",
+      "saveFailed": "Failed to save rate of change memory",
+      "validationFailed": "Please fix validation errors before saving",
+      "createFailed": "Failed to create rate of change memory",
+      "deleteFailed": "Failed to delete rate of change memory",
+      "resetFailed": "Failed to reset rate of change memory"
+    },
+    "totalCount": "Total: {{count}} rate of change memory(ies)",
+    "filteredCount": "Showing: {{count}} rate of change memory(ies)",
+    "help": {
+      "basicConfiguration": {
+        "title": "Basic Rate of Change Configuration",
+        "sections": [
+          {
+            "title": "What is Rate of Change?",
+            "content": "Rate of Change (ROC) calculates the derivative of analog values over time. It measures how fast a value is changing and in what direction."
+          },
+          {
+            "title": "Common Use Cases",
+            "content": [
+              "Temperature rise/fall rate (°C/minute)",
+              "Pressure change rate for leak detection",
+              "Level change rate for tank filling/emptying",
+              "Predictive maintenance alerts",
+              "Process upset detection"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Temperature Monitoring Example",
+            "content": "Input: Temperature sensor (currently 50°C)\nOutput: Rate calculation result\nTime Unit: Per Minute\n\nIf temperature rises from 50°C to 55°C in 2 minutes:\nRate = (55-50) / 2 = 2.5 °C/min\n\nHigh alarm at 5 °C/min detects runaway heating."
+          }
+        ]
+      },
+      "calculationMethod": {
+        "title": "Calculation Method Selection",
+        "sections": [
+          {
+            "title": "Simple Difference",
+            "content": "Calculates rate from first and last samples in window. Fast and simple but sensitive to noise. Best for clean signals with low noise."
+          },
+          {
+            "title": "Moving Average",
+            "content": "Averages rate calculations across all sample pairs in window. Provides smoother results than simple difference. Good general-purpose choice."
+          },
+          {
+            "title": "Weighted Average",
+            "content": "Similar to moving average but gives more weight to recent samples. Responds faster to changes while maintaining smoothing. Good for trending."
+          },
+          {
+            "title": "Linear Regression",
+            "content": "Fits a line to all samples and uses the slope as rate. Most noise-resistant method. Requires minimum 5 samples. Best for noisy signals."
+          },
+          {
+            "type": "tip",
+            "title": "Choosing a Method",
+            "content": "Clean signal + fast response → Simple Difference\nModerate noise + balanced response → Moving Average\nNoisy signal + smooth trend → Linear Regression\nBalance of speed and smoothing → Weighted Average"
+          }
+        ]
+      },
+      "timeWindow": {
+        "title": "Time Window Configuration",
+        "sections": [
+          {
+            "content": "The time window determines how much historical data is used for rate calculation. Samples older than this window are automatically discarded."
+          },
+          {
+            "title": "Effect of Window Size",
+            "content": [
+              "Smaller window (10-30s): Faster response, more noise",
+              "Medium window (60-120s): Balanced response",
+              "Larger window (300-600s): Smoother, slower response"
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "Sizing Guidelines",
+            "content": "Fast processes (pressure, flow): 10-60 seconds\nMedium processes (temperature): 60-300 seconds\nSlow processes (tank level): 300-900 seconds"
+          }
+        ]
+      },
+      "baselineConfiguration": {
+        "title": "Baseline Establishment",
+        "sections": [
+          {
+            "content": "The baseline phase ignores the first N samples to allow the system to stabilize before calculating rates."
+          },
+          {
+            "title": "Why Use Baseline?",
+            "content": [
+              "Avoid false alarms on startup",
+              "Allow sensors to stabilize",
+              "Skip initial transient readings",
+              "Ensure meaningful calculations"
+            ]
+          },
+          {
+            "type": "example",
+            "content": "Baseline = 5 samples, Interval = 10s\nFirst 50 seconds: Collecting baseline (no rate output)\nAfter 50 seconds: Rate calculation begins"
+          }
+        ]
+      },
+      "alarmConfiguration": {
+        "title": "Alarm Configuration",
+        "sections": [
+          {
+            "title": "High and Low Rate Alarms",
+            "content": "Set thresholds for abnormal rate of change. High alarm detects rapid increase/decrease. Low alarm can detect stalled or frozen values."
+          },
+          {
+            "title": "Hysteresis (Auto-Clear)",
+            "content": "Hysteresis prevents alarm chatter by requiring the rate to drop below a percentage of the threshold before clearing.\n\nExample: High threshold = 10, Hysteresis = 0.9\nAlarm activates at rate > 10\nAlarm clears at rate < 9 (10 × 0.9)"
+          },
+          {
+            "type": "tip",
+            "title": "Alarm Output",
+            "content": "Connect to a Digital Output to drive alarm indicators, notifications, or control actions. The alarm state is written to this output:\n• True = High rate alarm active\n• False = Low rate alarm active\n• Null = No alarm (rate in normal range)"
+          }
+        ]
+      }
+    }
   }
 }

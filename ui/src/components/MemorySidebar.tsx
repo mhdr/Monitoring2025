@@ -20,6 +20,7 @@ import {
   PrecisionManufacturing as PIDIcon,
   Calculate as CalculateIcon,
   Countertops as TotalizerIcon,
+  TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -48,6 +49,7 @@ const MemorySidebar: React.FC<MemorySidebarProps> = ({ isOpen, onToggle }) => {
     { path: '/dashboard/memory/average-memory', key: 'averageMemory.title', icon: <CalculateIcon /> },
     { path: '/dashboard/memory/pid-memory', key: 'pidMemory.title', icon: <PIDIcon /> },
     { path: '/dashboard/memory/totalizer-memory', key: 'totalizerMemory.title', icon: <TotalizerIcon /> },
+    { path: '/dashboard/memory/rateofchange-memory', key: 'rateOfChangeMemory.title', icon: <TrendingUpIcon /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;
