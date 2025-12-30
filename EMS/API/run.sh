@@ -60,5 +60,5 @@ echo ""
 # Export environment variable
 export ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENV}
 
-# Run the application in development mode with hot reload
-dotnet watch run --project ${PROJECT_NAME}.csproj
+# Run the application in development mode without hot reload
+dotnet run --project ${PROJECT_NAME}.csproj
