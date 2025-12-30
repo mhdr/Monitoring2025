@@ -4011,5 +4011,417 @@
         ]
       }
     }
+  },
+  "comparisonMemory": {
+    "title": "Comparison/Logic Memory",
+    "description": "Compare multiple inputs using N-out-of-M voting logic with AND/OR/XOR operators between groups.",
+    "addNew": "Add Comparison Memory",
+    "addTitle": "Add Comparison Memory",
+    "editTitle": "Edit Comparison Memory",
+    "deleteTitle": "Delete Comparison Memory",
+    "deleteMessage": "Are you sure you want to delete this comparison memory configuration?",
+    "deleteWarning": "This action cannot be undone.",
+    "searchPlaceholder": "Search comparison memories...",
+    "name": "Name",
+    "outputItem": "Output Item",
+    "outputItemHelp": "Digital output that receives the comparison result (1 = condition met, 0 = condition not met)",
+    "groupOperator": "Group Operator",
+    "interval": "Processing Interval",
+    "intervalHelp": "How often the comparison is evaluated (in seconds)",
+    "invertOutput": "Invert Output",
+    "isDisabled": "Disabled",
+    "sections": {
+      "basic": "Basic Configuration",
+      "groups": "Comparison Groups",
+      "advanced": "Advanced Settings"
+    },
+    "groupLabel": "Group {{index}}",
+    "addGroup": "Add Group",
+    "noGroups": "No comparison groups defined. Click \"Add Group\" to create one.",
+    "groupName": "Group Name",
+    "inputItems": "Input Items",
+    "requiredVotes": "Required Votes (N)",
+    "requiredVotesHelp": "Number of inputs that must satisfy the condition (1 to {{max}})",
+    "nOutOfM": "{{n}} out of {{m}}",
+    "mode": {
+      "analog": "Analog",
+      "digital": "Digital"
+    },
+    "compareType": {
+      "label": "Comparison Operator",
+      "equal": "Equal (=)",
+      "notEqual": "Not Equal (≠)",
+      "higher": "Greater Than (>)",
+      "lower": "Less Than (<)",
+      "between": "Between"
+    },
+    "threshold1": "Threshold Value",
+    "threshold2": "Upper Threshold (for Between)",
+    "thresholdHysteresis": "Threshold Hysteresis",
+    "thresholdHysteresisHelp": "Prevents output flapping near threshold boundaries",
+    "votingHysteresis": "Voting Hysteresis",
+    "votingHysteresisHelp": "Prevents output flapping when vote count is near threshold",
+    "digitalValue": "Digital Value to Match",
+    "digitalValue.on": "ON (1)",
+    "digitalValue.off": "OFF (0)",
+    "groupOperator": {
+      "and": "AND (All groups true)",
+      "or": "OR (Any group true)",
+      "xor": "XOR (Exactly one group true)"
+    },
+    "validation": {
+      "outputItemRequired": "Output item is required",
+      "intervalPositive": "Interval must be greater than 0",
+      "atLeastOneGroup": "At least one comparison group is required",
+      "inputItemsRequired": "At least one input item is required",
+      "requiredVotesMinimum": "Required votes must be at least 1",
+      "requiredVotesExceedsInputs": "Required votes ({{required}}) cannot exceed number of inputs ({{available}})",
+      "threshold1Required": "Threshold value is required for analog mode",
+      "threshold2Required": "Upper threshold is required for Between comparison",
+      "hysteresisNonNegative": "Hysteresis must be 0 or greater",
+      "digitalValueInvalid": "Digital value must be '0' or '1'",
+      "votingHysteresisTooHigh": "Voting hysteresis too high - would require {{required}} votes but only {{available}} inputs available"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load comparison memories",
+      "createFailed": "Failed to create comparison memory",
+      "updateFailed": "Failed to update comparison memory",
+      "deleteFailed": "Failed to delete comparison memory",
+      "saveFailed": "Failed to save comparison memory"
+    },
+    "help": {
+      "basicConfiguration": {
+        "title": "Basic Configuration",
+        "sections": [
+          {
+            "content": "Configure the fundamental settings for this comparison/logic memory including name, output item, and how multiple comparison groups are combined."
+          },
+          {
+            "type": "tip",
+            "content": "The output item must be a Digital Output. The comparison result (true/false) is written as 1 or 0."
+          }
+        ]
+      },
+      "name": {
+        "title": "Comparison Memory Name",
+        "sections": [
+          {
+            "content": "An optional descriptive name to identify this comparison memory in the management interface."
+          },
+          {
+            "type": "example",
+            "title": "Naming Examples",
+            "content": [
+              "\"2-out-of-3 Temperature Safety\" - for redundant sensor voting",
+              "\"All Pumps Running\" - for equipment status check",
+              "\"Interlock Condition\" - for safety interlock logic",
+              "\"Any Alarm Active\" - for combined alarm status"
+            ]
+          }
+        ]
+      },
+      "outputItem": {
+        "title": "Output Item",
+        "sections": [
+          {
+            "content": "A Digital Output item that receives the comparison result. Value '1' means the overall condition is met, '0' means it is not met."
+          },
+          {
+            "title": "Requirements",
+            "content": [
+              "Must be a Digital Output item",
+              "Cannot be used as an input in any comparison group",
+              "Updated at each processing interval"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Output Uses",
+            "content": [
+              "Trigger alarms when conditions are met",
+              "Enable/disable equipment based on logic",
+              "Display status on HMI/SCADA",
+              "Input to other control systems"
+            ]
+          }
+        ]
+      },
+      "groupOperator": {
+        "title": "Group Operator",
+        "sections": [
+          {
+            "content": "Determines how multiple comparison groups are combined to produce the final output."
+          },
+          {
+            "title": "Operator Types",
+            "content": [
+              "AND: All groups must evaluate to true (use for interlock conditions)",
+              "OR: At least one group must evaluate to true (use for 'any alarm' logic)",
+              "XOR: Exactly one group must evaluate to true (use for exclusive conditions)"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Example: Safety Interlock",
+            "content": "Group 1: 2-out-of-3 temperature sensors > 80°C\nGroup 2: Any pump running\n\nWith AND operator: Output is true only when BOTH groups are true (temperature high AND pump running)"
+          }
+        ]
+      },
+      "interval": {
+        "title": "Processing Interval",
+        "sections": [
+          {
+            "content": "How often the comparison logic is evaluated, in seconds. A shorter interval means faster response to changes."
+          },
+          {
+            "title": "Recommendations",
+            "content": [
+              "1 second: Real-time logic for safety systems",
+              "5-10 seconds: General monitoring applications",
+              "30-60 seconds: Non-critical status checks"
+            ]
+          },
+          {
+            "type": "warning",
+            "content": "Very short intervals (1 second) with many inputs may increase system load. Balance responsiveness with performance."
+          }
+        ]
+      },
+      "comparisonGroups": {
+        "title": "Comparison Groups",
+        "sections": [
+          {
+            "content": "Each group evaluates a set of inputs using N-out-of-M voting logic. Groups are then combined using the group operator (AND/OR/XOR)."
+          },
+          {
+            "title": "N-out-of-M Voting",
+            "content": [
+              "N = Required Votes: How many inputs must satisfy the condition",
+              "M = Total Inputs: How many inputs are in the group",
+              "Example: 2-out-of-3 means 2 of 3 sensors must agree"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Use Case: Redundant Sensors",
+            "content": "For critical measurements, use 3 sensors with 2-out-of-3 voting. This provides:\n• Fault tolerance (one sensor can fail)\n• Eliminates single point of failure\n• Common in safety systems (SIL-rated)"
+          }
+        ]
+      },
+      "groupName": {
+        "title": "Group Name",
+        "sections": [
+          {
+            "content": "Optional name to identify this comparison group. Helpful when you have multiple groups with different purposes."
+          },
+          {
+            "type": "example",
+            "title": "Examples",
+            "content": [
+              "\"Temperature Sensors\"",
+              "\"Pump Status\"",
+              "\"Pressure Limits\""
+            ]
+          }
+        ]
+      },
+      "comparisonMode": {
+        "title": "Comparison Mode",
+        "sections": [
+          {
+            "title": "Analog Mode",
+            "content": "Compare analog values against numeric thresholds. Supports all comparison operators: =, ≠, >, <, Between."
+          },
+          {
+            "title": "Digital Mode",
+            "content": "Compare digital values against ON (1) or OFF (0). Only checks if inputs match the expected state."
+          },
+          {
+            "type": "tip",
+            "content": "Switching modes will clear the selected input items since analog and digital items are different types."
+          }
+        ]
+      },
+      "inputItems": {
+        "title": "Input Items",
+        "sections": [
+          {
+            "content": "The monitoring items to evaluate in this group. All items must match the selected comparison mode (analog or digital)."
+          },
+          {
+            "title": "Selection Tips",
+            "content": [
+              "For redundant sensors, select all sensors measuring the same thing",
+              "Items should have similar units/scale for meaningful comparison",
+              "More inputs = more fault tolerance with N-out-of-M voting"
+            ]
+          }
+        ]
+      },
+      "requiredVotes": {
+        "title": "Required Votes (N)",
+        "sections": [
+          {
+            "content": "The 'N' in N-out-of-M voting. How many inputs must satisfy the comparison condition for the group to evaluate as true."
+          },
+          {
+            "title": "Common Patterns",
+            "content": [
+              "1-out-of-N: ANY input satisfies condition (most sensitive)",
+              "N-out-of-N: ALL inputs must satisfy condition (most strict)",
+              "2-out-of-3: Classic redundancy voting (balanced)"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Example: 2-out-of-3 Temperature Safety",
+            "content": "3 temperature sensors, require 2 to read > 80°C\n• If one sensor fails high: Still safe (only 1 vote)\n• If one sensor fails low: Still triggers (2 good sensors vote)\n• Provides fault tolerance in both directions"
+          }
+        ]
+      },
+      "compareType": {
+        "title": "Comparison Operator",
+        "sections": [
+          {
+            "content": "For analog mode, determines how input values are compared to the threshold."
+          },
+          {
+            "title": "Operators",
+            "content": [
+              "Equal (=): Value equals threshold (within hysteresis band)",
+              "Not Equal (≠): Value differs from threshold",
+              "Greater Than (>): Value exceeds threshold",
+              "Less Than (<): Value is below threshold",
+              "Between: Value is within two thresholds"
+            ]
+          },
+          {
+            "type": "tip",
+            "content": "For temperature high alarms, use 'Greater Than'. For level low alarms, use 'Less Than'."
+          }
+        ]
+      },
+      "threshold1": {
+        "title": "Threshold Value",
+        "sections": [
+          {
+            "content": "The numeric value to compare against. For 'Greater Than', values above this threshold satisfy the condition."
+          },
+          {
+            "type": "example",
+            "title": "Example",
+            "content": "For temperature > 80°C alarm:\nThreshold = 80.0"
+          }
+        ]
+      },
+      "threshold2": {
+        "title": "Upper Threshold (Between)",
+        "sections": [
+          {
+            "content": "Only used with 'Between' comparison. Values must be greater than Threshold 1 AND less than Threshold 2."
+          },
+          {
+            "type": "example",
+            "title": "Example",
+            "content": "For temperature between 20°C and 25°C:\nThreshold 1 = 20.0\nThreshold 2 = 25.0"
+          }
+        ]
+      },
+      "thresholdHysteresis": {
+        "title": "Threshold Hysteresis",
+        "sections": [
+          {
+            "content": "Prevents rapid on/off switching when values hover near the threshold. Creates a 'dead band' around the threshold."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "For 'Greater Than' with threshold=100 and hysteresis=5:",
+              "Turns ON when value > 105 (threshold + hysteresis)",
+              "Turns OFF when value < 95 (threshold - hysteresis)",
+              "Values between 95-105 maintain current state"
+            ]
+          },
+          {
+            "type": "tip",
+            "content": "Use hysteresis to prevent 'flapping' of outputs when sensor values fluctuate near thresholds."
+          }
+        ]
+      },
+      "digitalValue": {
+        "title": "Digital Value to Match",
+        "sections": [
+          {
+            "content": "For digital mode, the expected state of inputs. Each input is checked against this value."
+          },
+          {
+            "title": "Options",
+            "content": [
+              "ON (1): Input must be in ON/true state to count as a vote",
+              "OFF (0): Input must be in OFF/false state to count as a vote"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Example: All Pumps Running",
+            "content": "Select pump status inputs, set digital value to ON (1).\nWith 3 pumps and required votes = 3: All pumps must be ON for the group to be true."
+          }
+        ]
+      },
+      "votingHysteresis": {
+        "title": "Voting Hysteresis",
+        "sections": [
+          {
+            "content": "Prevents rapid on/off switching when the vote count fluctuates near the required votes threshold."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "For requiredVotes=2 and votingHysteresis=1:",
+              "Turns ON when votes >= 3 (required + hysteresis)",
+              "Turns OFF when votes < 1 (required - hysteresis)",
+              "Once ON, stays ON until votes drop significantly"
+            ]
+          },
+          {
+            "type": "warning",
+            "content": "Ensure requiredVotes + votingHysteresis doesn't exceed total inputs, or the condition can never turn ON."
+          }
+        ]
+      },
+      "advancedSettings": {
+        "title": "Advanced Settings",
+        "sections": [
+          {
+            "content": "Additional options for output behavior and enable/disable control."
+          }
+        ]
+      },
+      "invertOutput": {
+        "title": "Invert Output",
+        "sections": [
+          {
+            "content": "When enabled, applies a NOT operation to the final result. If the comparison logic evaluates to true, the output will be 0 (false), and vice versa."
+          },
+          {
+            "type": "example",
+            "title": "Use Case",
+            "content": "For a 'System OK' indicator that should be ON when no alarms are active:\n• Configure groups to detect alarm conditions\n• Enable 'Invert Output'\n• Output = 1 when conditions are NOT met (system is OK)"
+          }
+        ]
+      },
+      "isDisabled": {
+        "title": "Disabled",
+        "sections": [
+          {
+            "content": "When enabled, this comparison memory will not be processed. The output will not be updated."
+          },
+          {
+            "type": "tip",
+            "content": "Use this to temporarily disable comparison logic during maintenance or testing without deleting the configuration."
+          }
+        ]
+      }
+    }
   }
 }

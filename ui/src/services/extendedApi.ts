@@ -141,6 +141,16 @@ import type {
   EditHolidayCalendarResponseDto,
   DeleteHolidayCalendarRequestDto,
   DeleteHolidayCalendarResponseDto,
+  // Comparison Memory types
+  ComparisonMemory,
+  GetComparisonMemoriesRequestDto,
+  GetComparisonMemoriesResponseDto,
+  AddComparisonMemoryRequestDto,
+  AddComparisonMemoryResponseDto,
+  EditComparisonMemoryRequestDto,
+  EditComparisonMemoryResponseDto,
+  DeleteComparisonMemoryRequestDto,
+  DeleteComparisonMemoryResponseDto,
 } from '../types/api';
 
 /**
@@ -1356,3 +1366,76 @@ export const deleteHolidayCalendar = async (
     handleApiError(error);
   }
 };
+
+// ==================== Comparison Memory ====================
+
+/**
+ * Get all comparison memory configurations
+ */
+export const getComparisonMemories = async (
+  params: GetComparisonMemoriesRequestDto = {}
+): Promise<GetComparisonMemoriesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetComparisonMemoriesResponseDto>(
+      '/api/Monitoring/GetComparisonMemories',
+      params
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new comparison memory configuration
+ */
+export const addComparisonMemory = async (
+  data: AddComparisonMemoryRequestDto
+): Promise<AddComparisonMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddComparisonMemoryResponseDto>(
+      '/api/Monitoring/AddComparisonMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing comparison memory configuration
+ */
+export const editComparisonMemory = async (
+  data: EditComparisonMemoryRequestDto
+): Promise<EditComparisonMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditComparisonMemoryResponseDto>(
+      '/api/Monitoring/EditComparisonMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a comparison memory configuration
+ */
+export const deleteComparisonMemory = async (
+  data: DeleteComparisonMemoryRequestDto
+): Promise<DeleteComparisonMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteComparisonMemoryResponseDto>(
+      '/api/Monitoring/DeleteComparisonMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// Re-export types for convenience
+export type { ComparisonMemory };

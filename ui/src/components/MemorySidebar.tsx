@@ -22,6 +22,7 @@ import {
   Countertops as TotalizerIcon,
   TrendingUp as TrendingUpIcon,
   Schedule as ScheduleIcon,
+  CompareArrows as CompareArrowsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -52,6 +53,7 @@ const MemorySidebar: React.FC<MemorySidebarProps> = ({ isOpen, onToggle }) => {
     { path: '/dashboard/memory/totalizer-memory', key: 'totalizerMemory.title', icon: <TotalizerIcon /> },
     { path: '/dashboard/memory/rateofchange-memory', key: 'rateOfChangeMemory.title', icon: <TrendingUpIcon /> },
     { path: '/dashboard/memory/schedule-memory', key: 'scheduleMemory.title', icon: <ScheduleIcon /> },
+    { path: '/dashboard/memory/comparison-memory', key: 'comparisonMemory.title', icon: <CompareArrowsIcon /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;

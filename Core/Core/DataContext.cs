@@ -64,6 +64,8 @@ public class DataContext : DbContext
     public DbSet<ScheduleBlock> ScheduleBlocks { get; set; }
     public DbSet<HolidayCalendar> HolidayCalendars { get; set; }
     public DbSet<HolidayDate> HolidayDates { get; set; }
+    
+    public DbSet<ComparisonMemory> ComparisonMemories { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -140,6 +142,10 @@ public class DataContext : DbContext
             .HasDefaultValueSql("gen_random_uuid()");
         
         modelBuilder.Entity<TotalizerMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<ComparisonMemory>()
             .Property(e => e.Id)
             .HasDefaultValueSql("gen_random_uuid()");
         

@@ -36,6 +36,7 @@ const PIDMemoryManagementPage = lazy(() => import('./components/PIDMemoryManagem
 const TotalizerMemoryManagementPage = lazy(() => import('./components/TotalizerMemoryManagementPage'));
 const RateOfChangeMemoryManagementPage = lazy(() => import('./components/RateOfChangeMemoryManagementPage'));
 const ScheduleMemoryManagementPage = lazy(() => import('./components/ScheduleMemoryManagementPage'));
+const ComparisonMemoryManagementPage = lazy(() => import('./components/ComparisonMemoryManagementPage'));
 const MemoryPage = lazy(() => import('./components/MemoryPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
@@ -207,6 +208,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ScheduleMemoryManagementPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="memory/comparison-memory" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <ComparisonMemoryManagementPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

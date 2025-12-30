@@ -3695,3 +3695,132 @@ export interface DeleteHolidayCalendarResponseDto {
   errorMessage?: string | null;
 }
 
+// ==================== Comparison Memory DTOs ====================
+
+/**
+ * Group operator for combining multiple comparison groups
+ */
+export const GroupOperator = {
+  And: 1, // All groups must evaluate to true
+  Or: 2, // At least one group must evaluate to true
+  Xor: 3, // Exactly one group must evaluate to true
+} as const;
+export type GroupOperator = (typeof GroupOperator)[keyof typeof GroupOperator];
+
+/**
+ * Comparison mode for determining input types and comparison logic
+ */
+export const ComparisonMode = {
+  Analog: 1, // Inputs are analog values compared against numeric thresholds
+  Digital: 2, // Inputs are digital values compared against 0 or 1
+} as const;
+export type ComparisonMode = (typeof ComparisonMode)[keyof typeof ComparisonMode];
+
+/**
+ * Represents a single comparison group within a ComparisonMemory
+ */
+export interface ComparisonGroup {
+  id: string; // Unique identifier for this group (for UI tracking)
+  inputItemIds: string[]; // List of input item GUIDs
+  requiredVotes: number; // N in N-out-of-M voting (1 to inputItemIds.length)
+  comparisonMode: ComparisonMode; // Analog or Digital
+  compareType: CompareType; // Equal, NotEqual, Higher, Lower, Between
+  threshold1?: number | null; // Primary threshold (for analog)
+  threshold2?: number | null; // Secondary threshold (for Between)
+  thresholdHysteresis: number; // Hysteresis for analog thresholds (default: 0)
+  votingHysteresis: number; // Hysteresis for vote counts (default: 0)
+  digitalValue?: string | null; // "0" or "1" (for digital mode)
+  name?: string | null; // Optional group name
+}
+
+/**
+ * Comparison Memory configuration
+ * Evaluates multiple inputs using configurable N-out-of-M voting logic
+ * with AND/OR/XOR operators between groups
+ */
+export interface ComparisonMemory {
+  id: string; // UUID
+  name?: string | null;
+  comparisonGroups: string; // JSON array of ComparisonGroup objects
+  groupOperator: GroupOperator; // AND, OR, XOR
+  outputItemId: string; // UUID - Must be DigitalOutput
+  interval: number; // Processing interval in seconds
+  isDisabled: boolean;
+  invertOutput: boolean; // Whether to invert the final output
+}
+
+/**
+ * Request DTO for retrieving comparison memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetComparisonMemoriesRequestDto {
+  // Empty - no filtering parameters needed currently
+}
+
+/**
+ * Response DTO containing list of comparison memory configurations
+ */
+export interface GetComparisonMemoriesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  comparisonMemories?: ComparisonMemory[] | null;
+}
+
+/**
+ * Request DTO for creating a new comparison memory configuration
+ */
+export interface AddComparisonMemoryRequestDto {
+  name?: string | null;
+  comparisonGroups: string; // JSON array of ComparisonGroup objects
+  groupOperator?: GroupOperator; // Default: AND (1)
+  outputItemId: string; // UUID - Must be DigitalOutput
+  interval?: number; // Default: 1
+  isDisabled?: boolean; // Default: false
+  invertOutput?: boolean; // Default: false
+}
+
+/**
+ * Response DTO for adding a new comparison memory configuration
+ */
+export interface AddComparisonMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of newly created comparison memory
+}
+
+/**
+ * Request DTO for editing an existing comparison memory configuration
+ */
+export interface EditComparisonMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  comparisonGroups: string; // JSON array of ComparisonGroup objects
+  groupOperator?: GroupOperator;
+  outputItemId: string; // UUID
+  interval?: number;
+  isDisabled?: boolean;
+  invertOutput?: boolean;
+}
+
+/**
+ * Response DTO for editing a comparison memory configuration
+ */
+export interface EditComparisonMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a comparison memory configuration
+ */
+export interface DeleteComparisonMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a comparison memory configuration
+ */
+export interface DeleteComparisonMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}

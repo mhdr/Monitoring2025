@@ -11358,6 +11358,248 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     #endregion
+
+    #region Comparison Memory Management
+
+    /// <summary>
+    /// Get all comparison memory configurations
+    /// </summary>
+    /// <param name="request">Get comparison memories request</param>
+    /// <returns>List of comparison memory configurations</returns>
+    /// <remarks>
+    /// Retrieves all configured comparison/logic memories with their N-out-of-M voting settings,
+    /// comparison groups, and hysteresis parameters.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetComparisonMemories
+    ///     {
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns list of comparison memory configurations</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetComparisonMemories")]
+    public async Task<IActionResult> GetComparisonMemories([FromBody] GetComparisonMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetComparisonMemoriesResponseDto();
+
+            var comparisonMemories = await Core.ComparisonMemories.GetComparisonMemories();
+
+            if (comparisonMemories != null)
+            {
+                foreach (var cm in comparisonMemories)
+                {
+                    response.ComparisonMemories!.Add(new GetComparisonMemoriesResponseDto.ComparisonMemory()
+                    {
+                        Id = cm.Id,
+                        Name = cm.Name,
+                        ComparisonGroups = cm.ComparisonGroups,
+                        GroupOperator = (int)cm.GroupOperator,
+                        OutputItemId = cm.OutputItemId,
+                        Interval = cm.Interval,
+                        IsDisabled = cm.IsDisabled,
+                        InvertOutput = cm.InvertOutput
+                    });
+                }
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new comparison memory configuration
+    /// </summary>
+    /// <param name="request">Comparison memory configuration to add</param>
+    /// <returns>Result with new memory ID</returns>
+    /// <remarks>
+    /// Creates a new comparison/logic memory with N-out-of-M voting logic.
+    /// 
+    /// Comparison Groups format (JSON array):
+    /// - id: Unique identifier for the group
+    /// - inputItemIds: Array of input item GUIDs
+    /// - requiredVotes: N in N-out-of-M voting
+    /// - comparisonMode: 1=Analog, 2=Digital
+    /// - compareType: 1=Equal, 2=NotEqual, 3=Higher, 4=Lower, 5=Between
+    /// - threshold1/threshold2: Threshold values for analog mode
+    /// - thresholdHysteresis: Hysteresis for analog thresholds
+    /// - votingHysteresis: Hysteresis for vote counts
+    /// - digitalValue: "0" or "1" for digital mode
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AddComparisonMemory
+    ///     {
+    ///         "name": "2-out-of-3 Temperature Safety",
+    ///         "comparisonGroups": "[{\"id\":\"group1\",\"inputItemIds\":[\"guid1\",\"guid2\",\"guid3\"],\"requiredVotes\":2,\"comparisonMode\":1,\"compareType\":3,\"threshold1\":80.0,\"thresholdHysteresis\":2.0}]",
+    ///         "groupOperator": 1,
+    ///         "outputItemId": "output-guid",
+    ///         "interval": 1
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns the ID of the newly created comparison memory</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error</response>
+    [HttpPost("AddComparisonMemory")]
+    public async Task<IActionResult> AddComparisonMemory([FromBody] AddComparisonMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var comparisonMemory = new Core.Models.ComparisonMemory
+            {
+                Name = request.Name,
+                ComparisonGroups = request.ComparisonGroups,
+                GroupOperator = (Core.Models.GroupOperator)request.GroupOperator,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                InvertOutput = request.InvertOutput
+            };
+
+            var (success, id, errorMessage) = await Core.ComparisonMemories.AddComparisonMemory(comparisonMemory);
+
+            return Ok(new AddComparisonMemoryResponseDto
+            {
+                IsSuccessful = success,
+                Id = id,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new AddComparisonMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing comparison memory configuration
+    /// </summary>
+    /// <param name="request">Updated comparison memory configuration</param>
+    /// <returns>Result of the edit operation</returns>
+    /// <response code="200">Returns whether the edit was successful</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error</response>
+    [HttpPost("EditComparisonMemory")]
+    public async Task<IActionResult> EditComparisonMemory([FromBody] EditComparisonMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var comparisonMemory = new Core.Models.ComparisonMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                ComparisonGroups = request.ComparisonGroups,
+                GroupOperator = (Core.Models.GroupOperator)request.GroupOperator,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                InvertOutput = request.InvertOutput
+            };
+
+            var (success, errorMessage) = await Core.ComparisonMemories.EditComparisonMemory(comparisonMemory);
+
+            return Ok(new EditComparisonMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new EditComparisonMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Delete a comparison memory configuration
+    /// </summary>
+    /// <param name="request">Request containing the ID of the memory to delete</param>
+    /// <returns>Result of the delete operation</returns>
+    /// <response code="200">Returns whether the deletion was successful</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("DeleteComparisonMemory")]
+    public async Task<IActionResult> DeleteComparisonMemory([FromBody] DeleteComparisonMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.ComparisonMemories.DeleteComparisonMemory(request.Id);
+
+            return Ok(new DeleteComparisonMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new DeleteComparisonMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    #endregion
 }
 
 #region PID Auto-Tuning DTOs
