@@ -3412,3 +3412,138 @@ export interface DeleteStatisticalMemoryResponseDto {
   isSuccessful: boolean;
   errorMessage?: string | null;
 }
+
+// ============================================================================
+// FORMULA MEMORY TYPES
+// ============================================================================
+
+/**
+ * Formula/Expression Memory for evaluating custom mathematical expressions using NCalc.
+ * Supports multiple analog inputs mapped to variable aliases and outputs computed result.
+ */
+export interface FormulaMemory {
+  id: string; // UUID
+  name?: string | null;
+  expression: string; // NCalc expression using [alias] syntax for variables
+  variableAliases: string; // JSON object mapping alias -> item GUID
+  outputItemId: string; // UUID - Output item for computed result
+  interval: number; // int - Evaluation interval in seconds
+  isDisabled: boolean;
+  decimalPlaces: number; // int - Decimal places for formatting (0-10)
+  units?: string | null; // Display units (e.g., "°C", "kW")
+  description?: string | null; // Description of the formula
+  expressionHash?: string | null; // SHA256 hash for cache invalidation
+  lastEvaluationTime?: number | null; // Unix epoch seconds
+  lastError?: string | null; // Last evaluation error message
+  
+  // Resolved item names for display
+  outputItemName?: string | null;
+  outputItemNameFa?: string | null;
+}
+
+/**
+ * Variable alias mapping for display in UI
+ */
+export interface VariableAlias {
+  alias: string;
+  itemId: string;
+  itemName?: string | null;
+  itemNameFa?: string | null;
+}
+
+/**
+ * Request DTO for retrieving formula memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetFormulaMemoriesRequestDto {
+  // Empty - no filtering parameters needed
+}
+
+/**
+ * Response DTO containing list of formula memory configurations
+ */
+export interface GetFormulaMemoriesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  formulaMemories?: FormulaMemory[] | null;
+}
+
+/**
+ * Request DTO for creating a new formula memory configuration
+ */
+export interface AddFormulaMemoryRequestDto {
+  name?: string | null;
+  expression: string; // NCalc expression
+  variableAliases: string; // JSON object {"alias": "guid", ...}
+  outputItemId: string; // UUID
+  interval: number; // int - must be > 0
+  isDisabled?: boolean;
+  decimalPlaces?: number; // int - 0-10, default 2
+  units?: string | null;
+  description?: string | null;
+}
+
+/**
+ * Response DTO for adding a formula memory
+ */
+export interface AddFormulaMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of created formula memory
+}
+
+/**
+ * Request DTO for editing an existing formula memory configuration
+ */
+export interface EditFormulaMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  expression: string;
+  variableAliases: string;
+  outputItemId: string; // UUID
+  interval: number; // int - must be > 0
+  isDisabled?: boolean;
+  decimalPlaces?: number;
+  units?: string | null;
+  description?: string | null;
+}
+
+/**
+ * Response DTO for editing a formula memory
+ */
+export interface EditFormulaMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a formula memory
+ */
+export interface DeleteFormulaMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a formula memory
+ */
+export interface DeleteFormulaMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for testing/previewing a formula expression
+ */
+export interface TestFormulaExpressionRequestDto {
+  expression: string; // NCalc expression to evaluate
+  variableAliases?: VariableAlias[]; // List of variable alias to item ID mappings
+}
+
+/**
+ * Response DTO for testing a formula expression
+ */
+export interface TestFormulaExpressionResponseDto {
+  isSuccessful: boolean;
+  result?: number | null; // Computed result if successful
+  errorMessage?: string | null;
+}

@@ -161,6 +161,18 @@ import type {
   EditStatisticalMemoryResponseDto,
   DeleteStatisticalMemoryRequestDto,
   DeleteStatisticalMemoryResponseDto,
+  // Formula Memory types
+  FormulaMemory,
+  GetFormulaMemoriesRequestDto,
+  GetFormulaMemoriesResponseDto,
+  AddFormulaMemoryRequestDto,
+  AddFormulaMemoryResponseDto,
+  EditFormulaMemoryRequestDto,
+  EditFormulaMemoryResponseDto,
+  DeleteFormulaMemoryRequestDto,
+  DeleteFormulaMemoryResponseDto,
+  TestFormulaExpressionRequestDto,
+  TestFormulaExpressionResponseDto,
 } from '../types/api';
 
 /**
@@ -1517,5 +1529,92 @@ export const deleteStatisticalMemory = async (
   }
 };
 
+// ==================== Formula Memory ====================
+
+/**
+ * Get all formula memory configurations
+ */
+export const getFormulaMemories = async (
+  params: GetFormulaMemoriesRequestDto = {}
+): Promise<GetFormulaMemoriesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetFormulaMemoriesResponseDto>(
+      '/api/Monitoring/GetFormulaMemories',
+      params
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new formula memory configuration
+ */
+export const addFormulaMemory = async (
+  data: AddFormulaMemoryRequestDto
+): Promise<AddFormulaMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddFormulaMemoryResponseDto>(
+      '/api/Monitoring/AddFormulaMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing formula memory configuration
+ */
+export const editFormulaMemory = async (
+  data: EditFormulaMemoryRequestDto
+): Promise<EditFormulaMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditFormulaMemoryResponseDto>(
+      '/api/Monitoring/EditFormulaMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a formula memory configuration
+ */
+export const deleteFormulaMemory = async (
+  data: DeleteFormulaMemoryRequestDto
+): Promise<DeleteFormulaMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteFormulaMemoryResponseDto>(
+      '/api/Monitoring/DeleteFormulaMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Test/preview a formula expression with provided variable values
+ */
+export const testFormulaExpression = async (
+  data: TestFormulaExpressionRequestDto
+): Promise<TestFormulaExpressionResponseDto> => {
+  try {
+    const response = await apiClient.post<TestFormulaExpressionResponseDto>(
+      '/api/Monitoring/TestFormulaExpression',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
 // Re-export types for convenience
-export type { ComparisonMemory, StatisticalMemory };
+export type { ComparisonMemory, StatisticalMemory, FormulaMemory };

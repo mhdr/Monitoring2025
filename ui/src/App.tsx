@@ -38,6 +38,7 @@ const RateOfChangeMemoryManagementPage = lazy(() => import('./components/RateOfC
 const ScheduleMemoryManagementPage = lazy(() => import('./components/ScheduleMemoryManagementPage'));
 const ComparisonMemoryManagementPage = lazy(() => import('./components/ComparisonMemoryManagementPage'));
 const StatisticalMemoryManagementPage = lazy(() => import('./components/StatisticalMemoryManagementPage'));
+const FormulaMemoryManagementPage = lazy(() => import('./components/FormulaMemoryManagementPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
@@ -222,6 +223,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <StatisticalMemoryManagementPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="memory/formula-memory" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <FormulaMemoryManagementPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

@@ -4768,5 +4768,219 @@
         ]
       }
     }
+  },
+  "formulaMemory": {
+    "title": "Formula Memory",
+    "description": "Define custom mathematical expressions using multiple input variables to calculate computed values.",
+    "addNew": "Add Formula Memory",
+    "addTitle": "Add Formula Memory",
+    "editTitle": "Edit Formula Memory",
+    "deleteTitle": "Delete Formula Memory",
+    "deleteMessage": "Are you sure you want to delete the formula memory \"{{name}}\"?",
+    "deleteWarning": "This action cannot be undone. The formula will no longer calculate values.",
+    "searchPlaceholder": "Search formula memories...",
+    "name": "Name",
+    "nameHelp": "Optional descriptive name for this formula configuration",
+    "expression": "Expression",
+    "expressionHelp": "Mathematical expression using variable references like [v1], [v2], etc.",
+    "expressionPlaceholder": "e.g., ([v1] + [v2]) / 2 or sqrt([temp] * [pressure])",
+    "outputItem": "Output Item",
+    "outputItemHelp": "The analog output item where the calculated result will be written",
+    "interval": "Calculation Interval",
+    "intervalHelp": "How often the formula is evaluated (in seconds)",
+    "isDisabled": "Disabled",
+    "units": "Units",
+    "unitsHelp": "Optional units label for the calculated value (e.g., kW, %, °C)",
+    "decimalPlaces": "Decimal Places",
+    "decimalPlacesHelp": "Number of decimal places to round the result (0-10)",
+    "description": "Description",
+    "descriptionHelp": "Optional notes about this formula's purpose",
+    "variables": "Variables",
+    "vars": "vars",
+    "variableAlias": "Alias",
+    "variableItem": "Input Item",
+    "selectItem": "Select input item...",
+    "aliasPlaceholder": "e.g., temp, pressure",
+    "addVariable": "Add Variable",
+    "advancedAliasMode": "Custom Aliases",
+    "variablesBasicDescription": "Variables are automatically named v1, v2, v3, etc. Use [v1], [v2] in your expression.",
+    "variablesAdvancedDescription": "Define custom alias names for each variable. Use [alias] in your expression.",
+    "availableVariables": "Available variables (click to insert)",
+    "expressionPreview": "Expression preview",
+    "testExpression": "Test Expression",
+    "testResult": "Result",
+    "customFunctions": "Custom functions",
+    "status": "Status",
+    "error": "Error",
+    "ok": "OK",
+    "pending": "Pending",
+    "totalCount": "Total: {{count}} formula memories",
+    "filteredCount": "Showing: {{count}}",
+    "sections": {
+      "basic": "Basic Configuration",
+      "variables": "Input Variables",
+      "expression": "Expression",
+      "advanced": "Advanced"
+    },
+    "functions": {
+      "avg": "avg(a, b, c, ...) - Average of all arguments",
+      "min": "min(a, b, c, ...) - Minimum of all arguments",
+      "max": "max(a, b, c, ...) - Maximum of all arguments",
+      "clamp": "clamp(value, min, max) - Constrain value to range",
+      "scale": "scale(value, fromMin, fromMax, toMin, toMax) - Linear scaling",
+      "deadband": "deadband(value, center, width) - Apply deadband filter",
+      "iff": "iff(condition, trueValue, falseValue) - Conditional expression"
+    },
+    "validation": {
+      "expressionRequired": "Expression is required",
+      "outputItemRequired": "Output item is required",
+      "aliasRequired": "Variable alias is required",
+      "duplicateAlias": "Duplicate alias - each variable must have a unique alias",
+      "itemRequired": "Input item is required for each variable",
+      "outputUsedAsInput": "Output item cannot be used as an input variable",
+      "intervalMin": "Interval must be at least 1 second",
+      "decimalPlacesRange": "Decimal places must be between 0 and 10"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load formula memories",
+      "saveFailed": "Failed to save formula memory",
+      "deleteFailed": "Failed to delete formula memory",
+      "validationFailed": "Please fix the validation errors before saving"
+    },
+    "help": {
+      "basicConfiguration": {
+        "title": "Basic Configuration",
+        "sections": [
+          {
+            "content": "Configure the basic settings for this formula memory including name, output destination, and calculation interval."
+          }
+        ]
+      },
+      "name": {
+        "title": "Formula Name",
+        "sections": [
+          {
+            "content": "An optional descriptive name to identify this formula in the management interface."
+          },
+          {
+            "type": "example",
+            "title": "Naming Examples",
+            "content": [
+              "\"Total Power Consumption\" - sum of multiple power meters",
+              "\"COP Calculation\" - coefficient of performance",
+              "\"Dewpoint Temperature\" - calculated from temp and humidity"
+            ]
+          }
+        ]
+      },
+      "outputItem": {
+        "title": "Output Item",
+        "sections": [
+          {
+            "content": "The analog output item where the calculated result will be written."
+          },
+          {
+            "title": "Requirements",
+            "content": [
+              "Must be an Analog Output item",
+              "Cannot be the same as any input variable",
+              "Value is updated at each calculation interval"
+            ]
+          }
+        ]
+      },
+      "interval": {
+        "title": "Calculation Interval",
+        "sections": [
+          {
+            "content": "How often the formula is evaluated and the result written to the output item."
+          },
+          {
+            "type": "tip",
+            "content": "For slowly changing values (like temperatures), longer intervals (30-60s) are sufficient. For fast processes, use shorter intervals (1-10s)."
+          }
+        ]
+      },
+      "variables": {
+        "title": "Input Variables",
+        "sections": [
+          {
+            "content": "Define the input variables used in your formula. Each variable maps an alias to a monitoring point."
+          },
+          {
+            "title": "Basic Mode",
+            "content": "Variables are automatically named v1, v2, v3, etc. Reference them in expressions as [v1], [v2], [v3]."
+          },
+          {
+            "title": "Advanced Mode",
+            "content": "Define your own meaningful alias names. Reference them as [aliasName]."
+          },
+          {
+            "type": "example",
+            "title": "Variable Examples",
+            "content": [
+              "Basic: [v1] + [v2] / 2",
+              "Advanced: [temperature] * [pressure] / 100",
+              "Advanced: ([inletTemp] - [outletTemp]) * [flowRate]"
+            ]
+          }
+        ]
+      },
+      "expression": {
+        "title": "Expression Syntax",
+        "sections": [
+          {
+            "content": "Write mathematical expressions using standard operators and functions."
+          },
+          {
+            "title": "Operators",
+            "content": [
+              "+, -, *, / - Basic arithmetic",
+              "% - Modulo (remainder)",
+              "^ or ** - Power/exponent",
+              "( ) - Grouping"
+            ]
+          },
+          {
+            "title": "Built-in Functions",
+            "content": [
+              "abs(x) - Absolute value",
+              "sqrt(x) - Square root",
+              "pow(x, y) - Power",
+              "sin(x), cos(x), tan(x) - Trigonometry (radians)",
+              "log(x), log10(x) - Logarithms",
+              "round(x), floor(x), ceiling(x) - Rounding",
+              "min(a, b), max(a, b) - Min/Max"
+            ]
+          },
+          {
+            "title": "Custom Functions",
+            "content": [
+              "avg(a, b, ...) - Average of all arguments",
+              "clamp(value, min, max) - Constrain to range",
+              "scale(v, fromMin, fromMax, toMin, toMax) - Linear scaling",
+              "deadband(value, center, width) - Deadband filter",
+              "iff(condition, trueVal, falseVal) - Conditional"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Expression Examples",
+            "content": [
+              "Simple sum: [v1] + [v2] + [v3]",
+              "Average: avg([v1], [v2], [v3])",
+              "Power calc: [voltage] * [current] / 1000",
+              "COP: [heatingOutput] / [electricInput]",
+              "Scaled: scale([sensor], 4, 20, 0, 100)",
+              "Conditional: iff([temp] > 100, 1, 0)"
+            ]
+          },
+          {
+            "type": "warning",
+            "content": "Division by zero will result in an error. Use iff() to handle edge cases: iff([divisor] != 0, [numerator]/[divisor], 0)"
+          }
+        ]
+      }
+    }
   }
 }

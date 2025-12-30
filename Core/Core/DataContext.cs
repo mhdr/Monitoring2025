@@ -69,6 +69,8 @@ public class DataContext : DbContext
     
     public DbSet<StatisticalMemory> StatisticalMemories { get; set; }
     public DbSet<StatisticalMemorySample> StatisticalMemorySamples { get; set; }
+    
+    public DbSet<FormulaMemory> FormulaMemories { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -640,6 +642,31 @@ public class DataContext : DbContext
         modelBuilder.Entity<StatisticalMemorySample>()
             .HasIndex(s => new { s.StatisticalMemoryId, s.Timestamp })
             .IsDescending(false, true);
+
+        // FormulaMemory configuration
+        modelBuilder.Entity<FormulaMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<FormulaMemory>()
+            .Property(e => e.Interval)
+            .HasDefaultValue(10);
+        
+        modelBuilder.Entity<FormulaMemory>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<FormulaMemory>()
+            .Property(e => e.DecimalPlaces)
+            .HasDefaultValue(2);
+        
+        modelBuilder.Entity<FormulaMemory>()
+            .Property(e => e.Expression)
+            .HasDefaultValue("");
+        
+        modelBuilder.Entity<FormulaMemory>()
+            .Property(e => e.VariableAliases)
+            .HasDefaultValue("{}");
 
         // keys
 

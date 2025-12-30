@@ -11908,6 +11908,384 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     #endregion
+
+    #region Formula Memory Endpoints
+
+    /// <summary>
+    /// Get all formula memory configurations
+    /// </summary>
+    /// <param name="request">Empty request object</param>
+    /// <returns>List of all formula memory configurations</returns>
+    /// <remarks>
+    /// Returns all formula/expression memory configurations for evaluating custom mathematical expressions.
+    /// 
+    /// Use Cases:
+    /// - Complex calculations (density, enthalpy, power factor)
+    /// - Unit conversions (e.g., 4-20mA to engineering units)
+    /// - Custom engineering formulas
+    /// - Multi-variable relationships
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetFormulaMemories
+    ///     {}
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns list of formula memories</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetFormulaMemories")]
+    public async Task<IActionResult> GetFormulaMemories([FromBody] GetFormulaMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetFormulaMemoriesResponseDto();
+
+            var formulaMemories = await Core.FormulaMemories.GetFormulaMemories();
+
+            if (formulaMemories != null && formulaMemories.Count > 0)
+            {
+                response.FormulaMemories = new List<FormulaMemoryItemDto>();
+                foreach (var memory in formulaMemories)
+                {
+                    var itemDto = new FormulaMemoryItemDto
+                    {
+                        Id = memory.Id,
+                        Name = memory.Name,
+                        Expression = memory.Expression,
+                        VariableAliases = memory.VariableAliases,
+                        OutputItemId = memory.OutputItemId,
+                        Interval = memory.Interval,
+                        IsDisabled = memory.IsDisabled,
+                        DecimalPlaces = memory.DecimalPlaces,
+                        Units = memory.Units,
+                        Description = memory.Description,
+                        ExpressionHash = memory.ExpressionHash,
+                        LastEvaluationTime = memory.LastEvaluationTime,
+                        LastError = memory.LastError
+                    };
+
+                    response.FormulaMemories.Add(itemDto);
+                }
+            }
+
+            response.IsSuccessful = true;
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new GetFormulaMemoriesResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Add a new formula memory configuration
+    /// </summary>
+    /// <param name="request">Formula memory configuration parameters</param>
+    /// <returns>Success status and ID of created formula memory</returns>
+    /// <remarks>
+    /// Creates a new formula memory for evaluating custom NCalc mathematical expressions.
+    /// 
+    /// Features:
+    /// - Safe NCalc expression parser with standard math functions
+    /// - Built-in functions: sin, cos, tan, log, log10, exp, sqrt, abs, round, floor, ceiling
+    /// - Custom functions: avg, min, max, clamp, scale, deadband, iff
+    /// - Variable aliases mapped to input point values
+    /// - Compiled expression caching for performance
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AddFormulaMemory
+    ///     {
+    ///        "name": "Power Factor Calculation",
+    ///        "expression": "cos([phaseAngle] * 3.14159 / 180)",
+    ///        "variableAliases": "{\"phaseAngle\": \"550e8400-e29b-41d4-a716-446655440000\"}",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "interval": 10,
+    ///        "decimalPlaces": 3,
+    ///        "units": "PF",
+    ///        "description": "Calculate power factor from phase angle"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns ID of created formula memory</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("AddFormulaMemory")]
+    public async Task<IActionResult> AddFormulaMemory([FromBody] AddFormulaMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var formulaMemory = new Core.Models.FormulaMemory
+            {
+                Name = request.Name,
+                Expression = request.Expression,
+                VariableAliases = request.VariableAliases,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                DecimalPlaces = request.DecimalPlaces,
+                Units = request.Units,
+                Description = request.Description
+            };
+
+            var (success, id, errorMessage) = await Core.FormulaMemories.AddFormulaMemory(formulaMemory);
+
+            return Ok(new AddFormulaMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new AddFormulaMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing formula memory configuration
+    /// </summary>
+    /// <param name="request">Updated formula memory configuration parameters</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Updates an existing formula memory configuration.
+    /// Note: Changing the expression will invalidate the compiled cache.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/EditFormulaMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Updated Power Factor",
+    ///        "expression": "cos([phaseAngle] * 3.14159 / 180)",
+    ///        "variableAliases": "{\"phaseAngle\": \"550e8400-e29b-41d4-a716-446655440001\"}",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440002",
+    ///        "interval": 5
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("EditFormulaMemory")]
+    public async Task<IActionResult> EditFormulaMemory([FromBody] EditFormulaMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var formulaMemory = new Core.Models.FormulaMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                Expression = request.Expression,
+                VariableAliases = request.VariableAliases,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                DecimalPlaces = request.DecimalPlaces,
+                Units = request.Units,
+                Description = request.Description
+            };
+
+            var (success, errorMessage) = await Core.FormulaMemories.EditFormulaMemory(formulaMemory);
+
+            return Ok(new EditFormulaMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new EditFormulaMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Delete a formula memory configuration
+    /// </summary>
+    /// <param name="request">ID of formula memory to delete</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Permanently deletes a formula memory configuration.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/DeleteFormulaMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails or memory not found</response>
+    [HttpPost("DeleteFormulaMemory")]
+    public async Task<IActionResult> DeleteFormulaMemory([FromBody] DeleteFormulaMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.FormulaMemories.DeleteFormulaMemory(request.Id);
+
+            return Ok(new DeleteFormulaMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new DeleteFormulaMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Test/preview a formula expression with provided variable values
+    /// </summary>
+    /// <param name="request">Expression and test variable values</param>
+    /// <returns>Computed result or error message</returns>
+    /// <remarks>
+    /// Evaluates a formula expression with provided test values without saving.
+    /// Useful for validating expressions before saving.
+    /// 
+    /// Available Custom Functions:
+    /// - avg(v1, v2, ...) - Average of all arguments
+    /// - min(v1, v2, ...) - Minimum value
+    /// - max(v1, v2, ...) - Maximum value
+    /// - clamp(value, min, max) - Constrain value to range
+    /// - scale(val, inMin, inMax, outMin, outMax) - Linear scaling
+    /// - deadband(val, center, band) - Dead-band filtering
+    /// - iff(condition, trueValue, falseValue) - Inline conditional
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/TestFormulaExpression
+    ///     {
+    ///        "expression": "([v1] + [v2]) / 2",
+    ///        "variableValues": {"v1": 10.5, "v2": 20.5}
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns computed result or error</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("TestFormulaExpression")]
+    public async Task<IActionResult> TestFormulaExpression([FromBody] TestFormulaExpressionRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Convert variable aliases to values by fetching from Redis
+            var variableValues = new Dictionary<string, double>();
+            
+            if (request.VariableAliases != null && request.VariableAliases.Count > 0)
+            {
+                var itemIds = request.VariableAliases
+                    .Where(va => va.ItemId != Guid.Empty)
+                    .Select(va => va.ItemId.ToString())
+                    .ToList();
+
+                if (itemIds.Count > 0)
+                {
+                    var itemValues = await Core.Points.GetFinalItemsBatch(itemIds);
+
+                    foreach (var va in request.VariableAliases)
+                    {
+                        if (va.ItemId != Guid.Empty)
+                        {
+                            var itemIdStr = va.ItemId.ToString();
+                            if (itemValues.TryGetValue(itemIdStr, out var item) && 
+                                double.TryParse(item.Value, out var numericValue))
+                            {
+                                variableValues[va.Alias] = numericValue;
+                            }
+                            else
+                            {
+                                // Use 0 as default if value not found or not a number
+                                variableValues[va.Alias] = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            var (success, result, errorMessage) = Core.FormulaMemories.TestExpression(
+                request.Expression,
+                variableValues
+            );
+
+            return Ok(new TestFormulaExpressionResponseDto
+            {
+                IsSuccessful = success,
+                Result = result,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new TestFormulaExpressionResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    #endregion
 }
 
 #region PID Auto-Tuning DTOs

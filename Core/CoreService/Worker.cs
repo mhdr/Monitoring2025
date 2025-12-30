@@ -43,7 +43,10 @@ public class Worker : BackgroundService
         _logger.LogInformation("Start Processing Statistical Memories...");
         var task10 = StatisticalMemoryProcess.Instance.Run();
 
-        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7, task8, task9, task10);
+        _logger.LogInformation("Start Processing Formula Memories...");
+        var task11 = FormulaMemoryProcess.Instance.Run();
+
+        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7, task8, task9, task10, task11);
         Console.ReadKey();
     }
 }
