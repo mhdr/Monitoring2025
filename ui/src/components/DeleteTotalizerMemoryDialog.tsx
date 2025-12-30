@@ -21,15 +21,13 @@ const logger = createLogger('DeleteTotalizerMemoryDialog');
 
 interface DeleteTotalizerMemoryDialogProps {
   open: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+  onClose: (shouldRefresh: boolean) => void;
   totalizerMemory: TotalizerMemoryWithItems;
 }
 
 const DeleteTotalizerMemoryDialog: React.FC<DeleteTotalizerMemoryDialogProps> = ({
   open,
   onClose,
-  onSuccess,
   totalizerMemory,
 }) => {
   const { t } = useLanguage();
@@ -61,7 +59,7 @@ const DeleteTotalizerMemoryDialog: React.FC<DeleteTotalizerMemoryDialogProps> = 
 
       if (response.isSuccessful) {
         logger.info('Totalizer memory deleted successfully', { id: totalizerMemory.id });
-        onSuccess();
+        onClose(true);
       } else {
         setError(response.errorMessage || t('totalizerMemory.errors.deleteFailed'));
       }
@@ -74,7 +72,7 @@ const DeleteTotalizerMemoryDialog: React.FC<DeleteTotalizerMemoryDialogProps> = 
   };
 
   const handleCancel = () => {
-    onClose();
+    onClose(false);
   };
 
   return (

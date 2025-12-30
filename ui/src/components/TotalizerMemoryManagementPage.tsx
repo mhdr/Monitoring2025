@@ -21,6 +21,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   AccountBalance as TotalizerIcon,
+  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -29,6 +30,7 @@ import { getTotalizerMemories } from '../services/extendedApi';
 import type { TotalizerMemory, TotalizerMemoryWithItems, ItemType } from '../types/api';
 import { ItemTypeEnum, AccumulationType } from '../types/api';
 import { createLogger } from '../utils/logger';
+import FieldHelpPopover from './common/FieldHelpPopover';
 
 const logger = createLogger('TotalizerMemoryManagementPage');
 
@@ -111,6 +113,17 @@ const TotalizerMemoryManagementPage: React.FC = () => {
   const [selectedTotalizerMemory, setSelectedTotalizerMemory] = useState<TotalizerMemoryWithItems | null>(null);
   const [editMode, setEditMode] = useState(false);
 
+  // Help popover state
+  const [overviewHelpAnchor, setOverviewHelpAnchor] = useState<HTMLElement | null>(null);
+
+  const handleOverviewHelpOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setOverviewHelpAnchor(event.currentTarget);
+  };
+
+  const handleOverviewHelpClose = () => {
+    setOverviewHelpAnchor(null);
+  };
+
   /**
    * Fetch all totalizer memory configurations
    */
@@ -156,13 +169,6 @@ const TotalizerMemoryManagementPage: React.FC = () => {
   }, [fetchTotalizerMemories, items.length]);
 
   /**
-   * Handle refresh button click
-   */
-  const handleRefresh = () => {
-    fetchTotalizerMemories();
-  };
-
-  /**
    * Handle add button click
    */
   const handleAdd = useCallback(() => {
@@ -189,21 +195,18 @@ const TotalizerMemoryManagementPage: React.FC = () => {
   }, []);
 
   /**
-   * Handle dialog close
+   * Handle dialog close and refresh data
    */
-  const handleDialogClose = () => {
+  const handleDialogClose = useCallback((shouldRefresh: boolean) => {
     setAddEditDialogOpen(false);
     setDeleteDialogOpen(false);
     setSelectedTotalizerMemory(null);
-  };
+    setEditMode(false);
 
-  /**
-   * Handle successful operation (add/edit/delete)
-   */
-  const handleOperationSuccess = () => {
-    handleDialogClose();
-    fetchTotalizerMemories();
-  };
+    if (shouldRefresh) {
+      fetchTotalizerMemories();
+    }
+  }, [fetchTotalizerMemories]);
 
   /**
    * Filter totalizer memories based on search term
@@ -370,29 +373,29 @@ const TotalizerMemoryManagementPage: React.FC = () => {
   }, [t, handleEdit, handleDelete]);
 
   return (
-    <Box 
-      sx={{ 
-        width: '100%', 
-        height: '100vh', 
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        p: 3 
-      }} 
-      data-id-ref="totalizer-memory-page"
-    >
-      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <Container maxWidth={false} data-id-ref="totalizer-memory-page-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
+      <Card data-id-ref="totalizer-memory-page-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 3 }}>
         <CardHeader
-          avatar={<TotalizerIcon fontSize="large" color="primary" />}
+          avatar={<TotalizerIcon sx={{ fontSize: 32, color: 'primary.main' }} />}
           title={
-            <Typography variant="h5" component="h1">
+            <Typography variant="h5" component="h1" fontWeight="bold" data-id-ref="totalizer-memory-page-title">
               {t('totalizerMemory.title')}
             </Typography>
           }
           subheader={
-            <Typography variant="body2" color="text.secondary">
-              {t('totalizerMemory.description')}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="body2" color="text.secondary" data-id-ref="totalizer-memory-page-description">
+                {t('totalizerMemory.description')}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={handleOverviewHelpOpen}
+                data-id-ref="totalizer-memory-overview-help-btn"
+                sx={{ ml: 0.5 }}
+              >
+                <HelpOutlineIcon fontSize="small" color="action" />
+              </IconButton>
+            </Box>
           }
           action={
             <Button
@@ -404,24 +407,25 @@ const TotalizerMemoryManagementPage: React.FC = () => {
               {t('totalizerMemory.addNew')}
             </Button>
           }
+          data-id-ref="totalizer-memory-page-header"
         />
 
-        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <CardContent data-id-ref="totalizer-memory-page-card-body" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', p: 2 }}>
           {/* Error Alert */}
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            <Alert severity="error" sx={{ mb: 2 }} data-id-ref="totalizer-memory-error-alert">
               {error}
             </Alert>
           )}
 
-          {/* Search and Filter Bar */}
-          <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+          {/* Search Bar */}
+          <Box sx={{ mb: 2 }} data-id-ref="totalizer-memory-search-container">
             <TextField
+              fullWidth
               placeholder={t('totalizerMemory.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               size="small"
-              sx={{ flex: 1 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -430,52 +434,35 @@ const TotalizerMemoryManagementPage: React.FC = () => {
                 ),
                 endAdornment: searchTerm && (
                   <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setSearchTerm('')} edge="end">
-                      <ClearIcon fontSize="small" />
+                    <IconButton size="small" onClick={() => setSearchTerm('')} edge="end" data-id-ref="totalizer-memory-clear-search-btn">
+                      <ClearIcon />
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
               data-id-ref="totalizer-memory-search-input"
             />
-
-            <Button
-              variant="outlined"
-              onClick={handleRefresh}
-              disabled={loading}
-              data-id-ref="totalizer-memory-refresh-btn"
-            >
-              {loading ? <CircularProgress size={24} /> : t('common.refresh')}
-            </Button>
           </Box>
 
           {/* Totalizer Memories Grid */}
-          <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-            {loading && totalizerMemories.length === 0 ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
+          {loading && totalizerMemories.length === 0 ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box sx={{ flex: 1, minHeight: 400 }} data-id-ref="totalizer-memory-grid-container">
               <SyncfusionGridWrapper
                 data={filteredTotalizerMemories}
                 columns={columns}
                 allowPaging={true}
                 allowSorting={true}
                 allowFiltering={true}
+                pageSettings={{ pageSize: 50, pageSizes: [25, 50, 100, 200] }}
+                filterSettings={{ type: 'Excel' }}
                 height="100%"
               />
-            )}
-          </Box>
-
-          {/* Summary */}
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              {t('totalizerMemory.totalCount', { count: totalizerMemories.length })}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('totalizerMemory.filteredCount', { count: filteredTotalizerMemories.length })}
-            </Typography>
-          </Box>
+            </Box>
+          )}
         </CardContent>
       </Card>
 
@@ -485,22 +472,27 @@ const TotalizerMemoryManagementPage: React.FC = () => {
           <AddEditTotalizerMemoryDialog
             open={addEditDialogOpen}
             onClose={handleDialogClose}
-            onSuccess={handleOperationSuccess}
             totalizerMemory={selectedTotalizerMemory}
             editMode={editMode}
           />
         )}
-
         {deleteDialogOpen && selectedTotalizerMemory && (
           <DeleteTotalizerMemoryDialog
             open={deleteDialogOpen}
             onClose={handleDialogClose}
-            onSuccess={handleOperationSuccess}
             totalizerMemory={selectedTotalizerMemory}
           />
         )}
       </Suspense>
-    </Box>
+
+      {/* Overview Help Popover */}
+      <FieldHelpPopover
+        anchorEl={overviewHelpAnchor}
+        open={Boolean(overviewHelpAnchor)}
+        onClose={handleOverviewHelpClose}
+        fieldKey="totalizerMemory.help.overview"
+      />
+    </Container>
   );
 };
 

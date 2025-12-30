@@ -44,8 +44,7 @@ const logger = createLogger('AddEditTotalizerMemoryDialog');
 
 interface AddEditTotalizerMemoryDialogProps {
   open: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+  onClose: (shouldRefresh: boolean) => void;
   totalizerMemory: TotalizerMemoryWithItems | null;
   editMode: boolean;
 }
@@ -78,7 +77,6 @@ interface FormErrors {
 const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> = ({
   open,
   onClose,
-  onSuccess,
   totalizerMemory,
   editMode,
 }) => {
@@ -343,7 +341,7 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
 
       if (response.isSuccessful) {
         logger.info(`Totalizer memory ${editMode ? 'updated' : 'created'} successfully`);
-        onSuccess();
+        onClose(true);
       } else {
         setError(response.errorMessage || t('totalizerMemory.errors.saveFailed'));
       }
@@ -356,7 +354,7 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
   };
 
   const handleCancel = () => {
-    onClose();
+    onClose(false);
   };
 
   return (

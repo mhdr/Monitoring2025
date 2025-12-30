@@ -44,8 +44,7 @@ const logger = createLogger('AddEditRateOfChangeMemoryDialog');
 
 interface AddEditRateOfChangeMemoryDialogProps {
   open: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+  onClose: (shouldRefresh: boolean) => void;
   rateOfChangeMemory: RateOfChangeMemoryWithItems | null;
   editMode: boolean;
 }
@@ -77,7 +76,6 @@ interface FormErrors {
 const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogProps> = ({
   open,
   onClose,
-  onSuccess,
   rateOfChangeMemory,
   editMode,
 }) => {
@@ -326,7 +324,7 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
         const response = await editRateOfChangeMemory(editPayload);
         if (response.isSuccessful) {
           logger.info('Rate of change memory updated successfully');
-          onSuccess();
+          onClose(true);
         } else {
           setError(response.errorMessage || t('rateOfChangeMemory.errors.saveFailed'));
         }
@@ -353,7 +351,7 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
         const response = await addRateOfChangeMemory(addPayload);
         if (response.isSuccessful) {
           logger.info('Rate of change memory created successfully');
-          onSuccess();
+          onClose(true);
         } else {
           setError(response.errorMessage || t('rateOfChangeMemory.errors.saveFailed'));
         }
@@ -367,7 +365,7 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
   };
 
   const handleCancel = () => {
-    onClose();
+    onClose(false);
   };
 
   return (

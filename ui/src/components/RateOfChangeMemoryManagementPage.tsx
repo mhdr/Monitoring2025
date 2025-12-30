@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
+  Container,
   Card,
   CardHeader,
   CardContent,
@@ -22,6 +23,7 @@ import {
   Delete as DeleteIcon,
   TrendingUp as TrendingUpIcon,
   Warning as WarningIcon,
+  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -30,6 +32,7 @@ import { getRateOfChangeMemories } from '../services/extendedApi';
 import type { RateOfChangeMemory, RateOfChangeMemoryWithItems, ItemType } from '../types/api';
 import { ItemTypeEnum, RateCalculationMethod, RateTimeUnit } from '../types/api';
 import { createLogger } from '../utils/logger';
+import FieldHelpPopover from './common/FieldHelpPopover';
 
 const logger = createLogger('RateOfChangeMemoryManagementPage');
 
@@ -128,6 +131,17 @@ const RateOfChangeMemoryManagementPage: React.FC = () => {
   const [selectedMemory, setSelectedMemory] = useState<RateOfChangeMemoryWithItems | null>(null);
   const [editMode, setEditMode] = useState(false);
 
+  // Help popover state
+  const [overviewHelpAnchor, setOverviewHelpAnchor] = useState<HTMLElement | null>(null);
+
+  const handleOverviewHelpOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setOverviewHelpAnchor(event.currentTarget);
+  };
+
+  const handleOverviewHelpClose = () => {
+    setOverviewHelpAnchor(null);
+  };
+
   /**
    * Fetch all rate of change memory configurations
    */
@@ -182,13 +196,6 @@ const RateOfChangeMemoryManagementPage: React.FC = () => {
   }, [fetchRateOfChangeMemories, items.length]);
 
   /**
-   * Handle refresh button click
-   */
-  const handleRefresh = () => {
-    fetchRateOfChangeMemories();
-  };
-
-  /**
    * Handle add button click
    */
   const handleAdd = useCallback(() => {
@@ -215,21 +222,18 @@ const RateOfChangeMemoryManagementPage: React.FC = () => {
   }, []);
 
   /**
-   * Handle dialog close
+   * Handle dialog close and refresh data
    */
-  const handleDialogClose = () => {
+  const handleDialogClose = useCallback((shouldRefresh: boolean) => {
     setAddEditDialogOpen(false);
     setDeleteDialogOpen(false);
     setSelectedMemory(null);
-  };
+    setEditMode(false);
 
-  /**
-   * Handle successful operation (add/edit/delete)
-   */
-  const handleOperationSuccess = () => {
-    handleDialogClose();
-    fetchRateOfChangeMemories();
-  };
+    if (shouldRefresh) {
+      fetchRateOfChangeMemories();
+    }
+  }, [fetchRateOfChangeMemories]);
 
   /**
    * Filter rate of change memories based on search term
@@ -438,29 +442,29 @@ const RateOfChangeMemoryManagementPage: React.FC = () => {
   }, [t, handleEdit, handleDelete]);
 
   return (
-    <Box 
-      sx={{ 
-        width: '100%', 
-        height: '100vh', 
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        p: 3 
-      }} 
-      data-id-ref="rateofchange-memory-page"
-    >
-      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <Container maxWidth={false} data-id-ref="rateofchange-memory-page-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
+      <Card data-id-ref="rateofchange-memory-page-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 3 }}>
         <CardHeader
-          avatar={<TrendingUpIcon fontSize="large" color="primary" />}
+          avatar={<TrendingUpIcon sx={{ fontSize: 32, color: 'primary.main' }} />}
           title={
-            <Typography variant="h5" component="h1" data-id-ref="rateofchange-memory-page-title">
+            <Typography variant="h5" component="h1" fontWeight="bold" data-id-ref="rateofchange-memory-page-title">
               {t('rateOfChangeMemory.title')}
             </Typography>
           }
           subheader={
-            <Typography variant="body2" color="text.secondary" data-id-ref="rateofchange-memory-page-description">
-              {t('rateOfChangeMemory.description')}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="body2" color="text.secondary" data-id-ref="rateofchange-memory-page-description">
+                {t('rateOfChangeMemory.description')}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={handleOverviewHelpOpen}
+                data-id-ref="rateofchange-memory-overview-help-btn"
+                sx={{ ml: 0.5 }}
+              >
+                <HelpOutlineIcon fontSize="small" color="action" />
+              </IconButton>
+            </Box>
           }
           action={
             <Button
@@ -475,22 +479,22 @@ const RateOfChangeMemoryManagementPage: React.FC = () => {
           data-id-ref="rateofchange-memory-page-header"
         />
 
-        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <CardContent data-id-ref="rateofchange-memory-page-card-body" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', p: 2 }}>
           {/* Error Alert */}
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)} data-id-ref="rateofchange-memory-error-alert">
+            <Alert severity="error" sx={{ mb: 2 }} data-id-ref="rateofchange-memory-error-alert">
               {error}
             </Alert>
           )}
 
-          {/* Search and Filter Bar */}
-          <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }} data-id-ref="rateofchange-memory-toolbar">
+          {/* Search Bar */}
+          <Box sx={{ mb: 2 }} data-id-ref="rateofchange-memory-search-container">
             <TextField
+              fullWidth
               placeholder={t('rateOfChangeMemory.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               size="small"
-              sx={{ flex: 1 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -499,52 +503,35 @@ const RateOfChangeMemoryManagementPage: React.FC = () => {
                 ),
                 endAdornment: searchTerm && (
                   <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setSearchTerm('')} edge="end">
-                      <ClearIcon fontSize="small" />
+                    <IconButton size="small" onClick={() => setSearchTerm('')} edge="end" data-id-ref="rateofchange-memory-clear-search-btn">
+                      <ClearIcon />
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
               data-id-ref="rateofchange-memory-search-input"
             />
-
-            <Button
-              variant="outlined"
-              onClick={handleRefresh}
-              disabled={loading}
-              data-id-ref="rateofchange-memory-refresh-btn"
-            >
-              {loading ? <CircularProgress size={24} /> : t('common.refresh')}
-            </Button>
           </Box>
 
           {/* Rate of Change Memories Grid */}
-          <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }} data-id-ref="rateofchange-memory-grid-container">
-            {loading && rateOfChangeMemories.length === 0 ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
+          {loading && rateOfChangeMemories.length === 0 ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box sx={{ flex: 1, minHeight: 400 }} data-id-ref="rateofchange-memory-grid-container">
               <SyncfusionGridWrapper
                 data={filteredMemories}
                 columns={columns}
                 allowPaging={true}
                 allowSorting={true}
                 allowFiltering={true}
+                pageSettings={{ pageSize: 50, pageSizes: [25, 50, 100, 200] }}
+                filterSettings={{ type: 'Excel' }}
                 height="100%"
               />
-            )}
-          </Box>
-
-          {/* Summary */}
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} data-id-ref="rateofchange-memory-summary">
-            <Typography variant="body2" color="text.secondary">
-              {t('rateOfChangeMemory.totalCount', { count: rateOfChangeMemories.length })}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('rateOfChangeMemory.filteredCount', { count: filteredMemories.length })}
-            </Typography>
-          </Box>
+            </Box>
+          )}
         </CardContent>
       </Card>
 
@@ -554,22 +541,27 @@ const RateOfChangeMemoryManagementPage: React.FC = () => {
           <AddEditRateOfChangeMemoryDialog
             open={addEditDialogOpen}
             onClose={handleDialogClose}
-            onSuccess={handleOperationSuccess}
             rateOfChangeMemory={selectedMemory}
             editMode={editMode}
           />
         )}
-
         {deleteDialogOpen && selectedMemory && (
           <DeleteRateOfChangeMemoryDialog
             open={deleteDialogOpen}
             onClose={handleDialogClose}
-            onSuccess={handleOperationSuccess}
             rateOfChangeMemory={selectedMemory}
           />
         )}
       </Suspense>
-    </Box>
+
+      {/* Overview Help Popover */}
+      <FieldHelpPopover
+        anchorEl={overviewHelpAnchor}
+        open={Boolean(overviewHelpAnchor)}
+        onClose={handleOverviewHelpClose}
+        fieldKey="rateOfChangeMemory.help.overview"
+      />
+    </Container>
   );
 };
 

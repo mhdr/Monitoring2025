@@ -6,6 +6,7 @@ import {
   CardContent,
   Button,
   TextField,
+  InputAdornment,
   Box,
   Alert,
   CircularProgress,
@@ -17,15 +18,18 @@ import {
 import {
   Add as AddIcon,
   Search as SearchIcon,
+  Clear as ClearIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Refresh as RefreshIcon,
+  Calculate as CalculateIcon,
+  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getAverageMemories } from '../services/extendedApi';
 import type { AverageMemory, OutlierMethod } from '../types/api';
+import FieldHelpPopover from './common/FieldHelpPopover';
 
 // Lazy load dialog components for code splitting
 const AddEditAverageMemoryDialog = lazy(() => import('./AddEditAverageMemoryDialog'));
@@ -52,6 +56,17 @@ const AverageMemoryManagementPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedMemory, setSelectedMemory] = useState<AverageMemoryWithItems | null>(null);
   const [editMode, setEditMode] = useState(false);
+
+  // Help popover state
+  const [overviewHelpAnchor, setOverviewHelpAnchor] = useState<HTMLElement | null>(null);
+
+  const handleOverviewHelpOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setOverviewHelpAnchor(event.currentTarget);
+  };
+
+  const handleOverviewHelpClose = () => {
+    setOverviewHelpAnchor(null);
+  };
 
   // Fetch data with item enrichment
   const fetchMemories = useCallback(async () => {
@@ -115,7 +130,7 @@ const AverageMemoryManagementPage: React.FC = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDialogClose = (shouldRefresh: boolean) => {
+  const handleDialogClose = useCallback((shouldRefresh: boolean) => {
     setAddEditDialogOpen(false);
     setDeleteDialogOpen(false);
     setSelectedMemory(null);
@@ -123,7 +138,7 @@ const AverageMemoryManagementPage: React.FC = () => {
     if (shouldRefresh) {
       fetchMemories();
     }
-  };
+  }, [fetchMemories]);
 
   // Filter memories based on search term
   const filteredMemories = useMemo(() => {
@@ -274,26 +289,38 @@ const AverageMemoryManagementPage: React.FC = () => {
     <Container maxWidth={false} data-id-ref="average-memory-page-container" sx={{ height: '100%', width: '100%', py: '24px', px: 0, mx: 0 }}>
       <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 3 }} data-id-ref="average-memory-page-card">
         <CardHeader
-          title={t('averageMemory.title')}
-          subheader={t('averageMemory.description')}
-          data-id-ref="average-memory-page-header"
-          action={
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Tooltip title={t('common.refresh')}>
-                <IconButton onClick={fetchMemories} disabled={loading} data-id-ref="average-memory-refresh-btn">
-                  <RefreshIcon />
-                </IconButton>
-              </Tooltip>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAdd}
-                data-id-ref="average-memory-add-btn"
+          avatar={<CalculateIcon sx={{ fontSize: 32, color: 'primary.main' }} />}
+          title={
+            <Typography variant="h5" component="h1" fontWeight="bold" data-id-ref="average-memory-page-title">
+              {t('averageMemory.title')}
+            </Typography>
+          }
+          subheader={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="body2" color="text.secondary" data-id-ref="average-memory-page-description">
+                {t('averageMemory.description')}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={handleOverviewHelpOpen}
+                data-id-ref="average-memory-overview-help-btn"
+                sx={{ ml: 0.5 }}
               >
-                {t('averageMemory.addNew')}
-              </Button>
+                <HelpOutlineIcon fontSize="small" color="action" />
+              </IconButton>
             </Box>
           }
+          action={
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAdd}
+              data-id-ref="average-memory-add-btn"
+            >
+              {t('averageMemory.addNew')}
+            </Button>
+          }
+          data-id-ref="average-memory-page-header"
         />
         <CardContent data-id-ref="average-memory-page-content" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', p: 2 }}>
           {/* Search */}
@@ -306,7 +333,18 @@ const AverageMemoryManagementPage: React.FC = () => {
               variant="outlined"
               size="small"
               InputProps={{
-                startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: searchTerm && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchTerm('')} edge="end" data-id-ref="average-memory-clear-search-btn">
+                      <ClearIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
               }}
               data-id-ref="average-memory-search-input"
             />
@@ -333,7 +371,7 @@ const AverageMemoryManagementPage: React.FC = () => {
                 data={filteredMemories}
                 columns={columns}
                 allowPaging={true}
-                pageSettings={{ pageSize: 50, pageSizes: [25, 50, 100] }}
+                pageSettings={{ pageSize: 50, pageSizes: [25, 50, 100, 200] }}
                 allowSorting={true}
                 allowFiltering={true}
                 filterSettings={{ type: 'Excel' }}
@@ -362,6 +400,14 @@ const AverageMemoryManagementPage: React.FC = () => {
           />
         )}
       </Suspense>
+
+      {/* Overview Help Popover */}
+      <FieldHelpPopover
+        anchorEl={overviewHelpAnchor}
+        open={Boolean(overviewHelpAnchor)}
+        onClose={handleOverviewHelpClose}
+        fieldKey="averageMemory.help.overview"
+      />
     </Container>
   );
 };

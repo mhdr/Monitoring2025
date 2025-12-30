@@ -22,8 +22,7 @@ const logger = createLogger('DeleteRateOfChangeMemoryDialog');
 
 interface DeleteRateOfChangeMemoryDialogProps {
   open: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+  onClose: (shouldRefresh: boolean) => void;
   rateOfChangeMemory: RateOfChangeMemoryWithItems;
 }
 
@@ -64,7 +63,6 @@ const getTimeUnitLabel = (unit: number, t: (key: string) => string): string => {
 const DeleteRateOfChangeMemoryDialog: React.FC<DeleteRateOfChangeMemoryDialogProps> = ({
   open,
   onClose,
-  onSuccess,
   rateOfChangeMemory,
 }) => {
   const { t } = useLanguage();
@@ -96,7 +94,7 @@ const DeleteRateOfChangeMemoryDialog: React.FC<DeleteRateOfChangeMemoryDialogPro
 
       if (response.isSuccessful) {
         logger.info('Rate of change memory deleted successfully', { id: rateOfChangeMemory.id });
-        onSuccess();
+        onClose(true);
       } else {
         setError(response.errorMessage || t('rateOfChangeMemory.errors.deleteFailed'));
       }
@@ -109,7 +107,7 @@ const DeleteRateOfChangeMemoryDialog: React.FC<DeleteRateOfChangeMemoryDialogPro
   };
 
   const handleCancel = () => {
-    onClose();
+    onClose(false);
   };
 
   return (
