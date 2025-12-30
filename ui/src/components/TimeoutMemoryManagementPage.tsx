@@ -13,7 +13,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Popover,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -22,7 +21,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Timer as TimerIcon,
-  InfoOutlined as InfoIcon,
+  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -31,6 +30,7 @@ import { getTimeoutMemories } from '../services/extendedApi';
 import type { TimeoutMemory, ItemType } from '../types/api';
 import { ItemTypeEnum } from '../types/api';
 import { createLogger } from '../utils/logger';
+import FieldHelpPopover from './common/FieldHelpPopover';
 
 const logger = createLogger('TimeoutMemoryManagementPage');
 
@@ -130,18 +130,16 @@ const TimeoutMemoryManagementPage: React.FC = () => {
   const [selectedTimeoutMemory, setSelectedTimeoutMemory] = useState<TimeoutMemoryWithItems | null>(null);
   const [editMode, setEditMode] = useState(false);
 
-  // Popover state
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  // Help popover state
+  const [behaviorHelpAnchor, setBehaviorHelpAnchor] = useState<HTMLElement | null>(null);
 
-  const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleBehaviorHelpOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setBehaviorHelpAnchor(event.currentTarget);
   };
 
-  const handlePopoverClose = () => {
-    setAnchorEl(null);
+  const handleBehaviorHelpClose = () => {
+    setBehaviorHelpAnchor(null);
   };
-
-  const popoverOpen = Boolean(anchorEl);
 
   // Fetch timeout memories
   const fetchTimeoutMemories = useCallback(async () => {
@@ -339,11 +337,11 @@ const TimeoutMemoryManagementPage: React.FC = () => {
               </Typography>
               <IconButton
                 size="small"
-                onClick={handlePopoverOpen}
+                onClick={handleBehaviorHelpOpen}
                 data-id-ref="timeout-memory-behavior-info-btn"
                 sx={{ ml: 0.5 }}
               >
-                <InfoIcon fontSize="small" color="action" />
+                <HelpOutlineIcon fontSize="small" color="action" />
               </IconButton>
             </Box>
           }
@@ -442,33 +440,26 @@ const TimeoutMemoryManagementPage: React.FC = () => {
         )}
       </Suspense>
 
-      {/* Behavior Popover */}
-      <Popover
-        open={popoverOpen}
-        anchorEl={anchorEl}
-        onClose={handlePopoverClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-        data-id-ref="timeout-memory-behavior-popover"
-      >
-        <Box sx={{ p: 2, maxWidth: 400 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-            {t('timeoutMemory.behaviorNote')}
-          </Typography>
-          <Typography variant="body2">
-            <strong>Output = 0:</strong> {t('timeoutMemory.outputZero')}
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 0.5 }}>
-            <strong>Output = 1:</strong> {t('timeoutMemory.outputOne')}
-          </Typography>
-        </Box>
-      </Popover>
+      {/* Behavior Help Popover */}
+      <FieldHelpPopover
+        anchorEl={behaviorHelpAnchor}
+        open={Boolean(behaviorHelpAnchor)}
+        onClose={handleBehaviorHelpClose}
+        fieldKey="timeoutMemory.help.behavior"
+        title={t('timeoutMemory.behaviorNote')}
+        sections={[
+          {
+            title: 'Output = 0',
+            content: t('timeoutMemory.outputZero'),
+            type: 'default',
+          },
+          {
+            title: 'Output = 1',
+            content: t('timeoutMemory.outputOne'),
+            type: 'default',
+          },
+        ]}
+      />
     </Container>
   );
 };
