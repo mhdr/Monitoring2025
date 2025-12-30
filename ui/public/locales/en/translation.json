@@ -1571,6 +1571,8 @@
     "title": "Timeout Memory",
     "description": "Monitor input items and automatically set output status based on update frequency.",
     "behaviorNote": "Behavior: Output = 0 when input is updating regularly | Output = 1 when timeout exceeded",
+    "outputZero": "Input is updating regularly",
+    "outputOne": "Timeout exceeded",
     "addNew": "Add Timeout Memory",
     "addTitle": "Add Timeout Memory",
     "editTitle": "Edit Timeout Memory",

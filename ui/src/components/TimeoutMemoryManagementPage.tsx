@@ -13,6 +13,7 @@ import {
   Alert,
   CircularProgress,
   Chip,
+  Popover,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -21,6 +22,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Timer as TimerIcon,
+  InfoOutlined as InfoIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -127,6 +129,19 @@ const TimeoutMemoryManagementPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTimeoutMemory, setSelectedTimeoutMemory] = useState<TimeoutMemoryWithItems | null>(null);
   const [editMode, setEditMode] = useState(false);
+
+  // Popover state
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+
+  const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handlePopoverClose = () => {
+    setAnchorEl(null);
+  };
+
+  const popoverOpen = Boolean(anchorEl);
 
   // Fetch timeout memories
   const fetchTimeoutMemories = useCallback(async () => {
@@ -318,9 +333,19 @@ const TimeoutMemoryManagementPage: React.FC = () => {
             </Typography>
           }
           subheader={
-            <Typography variant="body2" color="text.secondary" data-id-ref="timeout-memory-page-description">
-              {t('timeoutMemory.description')}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="body2" color="text.secondary" data-id-ref="timeout-memory-page-description">
+                {t('timeoutMemory.description')}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={handlePopoverOpen}
+                data-id-ref="timeout-memory-behavior-info-btn"
+                sx={{ ml: 0.5 }}
+              >
+                <InfoIcon fontSize="small" color="action" />
+              </IconButton>
+            </Box>
           }
           action={
             <Button
@@ -416,6 +441,34 @@ const TimeoutMemoryManagementPage: React.FC = () => {
           />
         )}
       </Suspense>
+
+      {/* Behavior Popover */}
+      <Popover
+        open={popoverOpen}
+        anchorEl={anchorEl}
+        onClose={handlePopoverClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+        data-id-ref="timeout-memory-behavior-popover"
+      >
+        <Box sx={{ p: 2, maxWidth: 400 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            {t('timeoutMemory.behaviorNote')}
+          </Typography>
+          <Typography variant="body2">
+            <strong>Output = 0:</strong> {t('timeoutMemory.outputZero')}
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 0.5 }}>
+            <strong>Output = 1:</strong> {t('timeoutMemory.outputOne')}
+          </Typography>
+        </Box>
+      </Popover>
     </Container>
   );
 };
