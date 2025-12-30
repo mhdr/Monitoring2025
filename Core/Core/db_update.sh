@@ -1,4 +1,4 @@
 ﻿#!/bin/bash
 
-dotnet-ef migrations add db0061
+dotnet-ef migrations add db0062
 dotnet-ef database update
