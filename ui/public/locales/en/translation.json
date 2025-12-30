@@ -5056,28 +5056,251 @@
       "validationFailed": "Please fix the validation errors before saving"
     },
     "help": {
-      "basicTitle": "Basic Configuration",
-      "basicDescription": "Configure the basic settings including name, output type, and evaluation interval.",
-      "outputTypeTip": "Output Type Options",
-      "digitalOutputDesc": "Digital: Outputs 0 or 1 (for on/off control)",
-      "analogOutputDesc": "Analog: Outputs any numeric value (for setpoints, values)",
-      "variablesTitle": "Input Variables",
-      "variablesDescription": "Define aliases for input items to use in your conditions. Reference them as [alias] in expressions.",
-      "variablesExample": "Variable Mapping Example",
-      "variablesUsage": "Then use: [v1] >= 50 && [v2] < 100",
-      "branchesTitle": "Conditional Branches (IF/ELSE IF/ELSE)",
-      "branchesDescription": "Conditions are evaluated in order. The first matching condition determines the output value. If no condition matches, the ELSE (default) value is used.",
-      "conditionExamples": "Condition Examples",
-      "highCondition": "High priority condition",
-      "mediumCondition": "Medium priority condition",
-      "elseCondition": "ELSE → Default value when nothing matches",
-      "operatorsTip": "Available Operators",
-      "greaterOrEqual": "greater than or equal",
-      "lessOrEqual": "less than or equal",
-      "equal": "equal to",
-      "notEqual": "not equal to",
-      "and": "logical AND",
-      "or": "logical OR"
+      "basicConfiguration": {
+        "title": "Basic Configuration",
+        "sections": [
+          {
+            "title": "What is IF Memory?",
+            "content": "IF Memory allows you to define conditional logic with IF/ELSE IF/ELSE branches. Based on input conditions, different output values are written to the target item."
+          },
+          {
+            "title": "Common Use Cases",
+            "content": [
+              "Multi-level alarm states based on thresholds",
+              "Equipment mode selection (Auto/Manual/Override)",
+              "Cascade control with priority conditions",
+              "Status aggregation from multiple inputs",
+              "Setpoint selection based on operating conditions"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Temperature Control Example",
+            "content": "IF temperature >= 80°C → Output = 3 (High Alarm)\nELSE IF temperature >= 60°C → Output = 2 (Warning)\nELSE IF temperature >= 40°C → Output = 1 (Normal)\nELSE → Output = 0 (Low)"
+          }
+        ]
+      },
+      "name": {
+        "title": "Memory Name",
+        "sections": [
+          {
+            "content": "A unique, descriptive name for this IF Memory configuration. Use meaningful names that describe the purpose of the conditional logic."
+          },
+          {
+            "type": "tip",
+            "title": "Naming Suggestions",
+            "content": [
+              "Temperature_AlarmLevel",
+              "Pump_ModeSelector",
+              "Tank_FillState"
+            ]
+          }
+        ]
+      },
+      "outputType": {
+        "title": "Output Type Selection",
+        "sections": [
+          {
+            "content": "Choose the type of output value that will be written when conditions are evaluated."
+          },
+          {
+            "title": "Digital Output (0/1)",
+            "content": "Best for on/off states, alarm triggers, or boolean control signals. Output values are typically 0 or 1."
+          },
+          {
+            "title": "Analog Output (Numeric)",
+            "content": "Best for multi-state values, setpoints, or graduated levels. Output can be any numeric value."
+          },
+          {
+            "type": "tip",
+            "title": "Choosing Output Type",
+            "content": "Use Digital for simple true/false conditions.\nUse Analog for multiple states (e.g., 0=Off, 1=Low, 2=Medium, 3=High)."
+          }
+        ]
+      },
+      "outputItem": {
+        "title": "Output Item Selection",
+        "sections": [
+          {
+            "content": "Select the monitoring item where the result will be written. The output type must be compatible with the selected item type."
+          },
+          {
+            "title": "Item Compatibility",
+            "content": [
+              "Digital Output: Use Digital Output items only",
+              "Analog Output: Use Analog Output items only"
+            ]
+          },
+          {
+            "type": "warning",
+            "title": "Important",
+            "content": "The selected output item cannot be used as an input variable in the same IF Memory."
+          }
+        ]
+      },
+      "interval": {
+        "title": "Evaluation Interval",
+        "sections": [
+          {
+            "content": "How frequently the conditions are evaluated and output is updated. Specified in seconds."
+          },
+          {
+            "title": "Interval Guidelines",
+            "content": [
+              "1-5 seconds: Fast response for critical controls",
+              "10-30 seconds: Standard monitoring applications",
+              "60+ seconds: Slow-changing processes"
+            ]
+          },
+          {
+            "type": "tip",
+            "content": "Shorter intervals provide faster response but increase processing load. Match the interval to your process dynamics."
+          }
+        ]
+      },
+      "variables": {
+        "title": "Input Variables",
+        "sections": [
+          {
+            "content": "Define aliases for input items to use in your condition expressions. Each variable maps a short name (alias) to a monitoring item."
+          },
+          {
+            "title": "How Variables Work",
+            "content": [
+              "Create alias: v1 → Temperature Sensor",
+              "Create alias: v2 → Pressure Sensor",
+              "Use in conditions: [v1] >= 50 && [v2] < 100"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Variable Naming",
+            "content": "temp → Temperature reading\npres → Pressure reading\nflow → Flow rate\nlevel → Tank level"
+          },
+          {
+            "type": "tip",
+            "title": "Best Practices",
+            "content": "Use short, meaningful alias names.\nAvoid special characters except underscore.\nDon't use the output item as an input variable."
+          }
+        ]
+      },
+      "branches": {
+        "title": "Conditional Branches",
+        "sections": [
+          {
+            "content": "Branches define the IF/ELSE IF conditions and their corresponding output values. Conditions are evaluated in order from top to bottom."
+          },
+          {
+            "title": "Evaluation Order",
+            "content": [
+              "First branch: IF condition",
+              "Subsequent branches: ELSE IF conditions",
+              "Default: ELSE value when no condition matches"
+            ]
+          },
+          {
+            "type": "warning",
+            "title": "Order Matters",
+            "content": "The first matching condition wins. Place more specific conditions before general ones."
+          }
+        ]
+      },
+      "condition": {
+        "title": "Condition Expression",
+        "sections": [
+          {
+            "content": "Write conditions using NCalc expression syntax. Reference variables using [alias] format."
+          },
+          {
+            "title": "Available Operators",
+            "content": [
+              ">= (greater than or equal)",
+              "<= (less than or equal)",
+              "> (greater than)",
+              "< (less than)",
+              "== (equal to)",
+              "!= (not equal to)",
+              "&& (logical AND)",
+              "|| (logical OR)",
+              "! (logical NOT)"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Example Expressions",
+            "content": "[temp] >= 80\n[temp] >= 50 && [temp] < 80\n[pres] > 100 || [flow] < 10\n!([status] == 1)"
+          },
+          {
+            "type": "tip",
+            "title": "Testing Conditions",
+            "content": "Use the test button to validate your condition syntax before saving. Invalid expressions will show an error message."
+          }
+        ]
+      },
+      "outputValue": {
+        "title": "Branch Output Value",
+        "sections": [
+          {
+            "content": "The value to write to the output item when this branch's condition evaluates to true."
+          },
+          {
+            "title": "Digital vs Analog",
+            "content": [
+              "Digital: Typically 0 or 1",
+              "Analog: Any numeric value (integers or decimals)"
+            ]
+          },
+          {
+            "type": "example",
+            "content": "Alarm levels: 0=Normal, 1=Warning, 2=Alarm, 3=Critical\nSetpoints: 25.5, 30.0, 35.0 degrees"
+          }
+        ]
+      },
+      "hysteresis": {
+        "title": "Hysteresis (Deadband)",
+        "sections": [
+          {
+            "content": "Hysteresis prevents rapid switching when a value oscillates around a threshold. It creates a deadband around the condition threshold."
+          },
+          {
+            "title": "How It Works",
+            "content": "If condition threshold is 50 with hysteresis 5:\n• Activates when value rises above 50\n• Deactivates only when value falls below 45"
+          },
+          {
+            "type": "tip",
+            "title": "When to Use",
+            "content": "Use hysteresis for noisy signals or when you want to prevent rapid on/off cycling. Set to 0 to disable."
+          }
+        ]
+      },
+      "defaultValue": {
+        "title": "Default Value (ELSE)",
+        "sections": [
+          {
+            "content": "The value to write when none of the IF/ELSE IF conditions match. This is equivalent to the ELSE clause in programming."
+          },
+          {
+            "type": "example",
+            "content": "IF [temp] >= 80 → 3 (High)\nELSE IF [temp] >= 50 → 2 (Medium)\nELSE IF [temp] >= 30 → 1 (Low)\nELSE → 0 (Default - None of the above)"
+          },
+          {
+            "type": "tip",
+            "content": "Always set a sensible default value as a fallback state."
+          }
+        ]
+      },
+      "isDisabled": {
+        "title": "Disable IF Memory",
+        "sections": [
+          {
+            "content": "When disabled, the IF Memory stops evaluating conditions and writing to the output. The output item retains its last value."
+          },
+          {
+            "type": "tip",
+            "content": "Use this to temporarily pause the conditional logic without deleting the configuration."
+          }
+        ]
+      }
     }
   }
 }

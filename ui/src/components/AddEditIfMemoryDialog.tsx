@@ -715,10 +715,11 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
                 </Typography>
                 <IconButton
                   size="small"
-                  onClick={handleHelpOpen('basic')}
+                  onClick={handleHelpOpen('ifMemory.help.basicConfiguration')}
+                  sx={{ p: 0.25 }}
                   data-id-ref="if-memory-basic-help-btn"
                 >
-                  <HelpOutlineIcon fontSize="small" />
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                 </IconButton>
               </Box>
             }
@@ -741,95 +742,146 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
             <CardContent sx={{ pt: 0 }}>
               <Stack spacing={2}>
                 {/* Name */}
-                <TextField
-                  fullWidth
-                  label={t('ifMemory.fields.name')}
-                  value={formData.name}
-                  onChange={(e) => handleFieldChange('name', e.target.value)}
-                  error={!!formErrors.name}
-                  helperText={formErrors.name}
-                  data-id-ref="if-memory-name-input"
-                />
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <TextField
+                    fullWidth
+                    label={t('ifMemory.fields.name')}
+                    value={formData.name}
+                    onChange={(e) => handleFieldChange('name', e.target.value)}
+                    error={!!formErrors.name}
+                    helperText={formErrors.name}
+                    data-id-ref="if-memory-name-input"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('ifMemory.help.name')}
+                    sx={{ p: 0.25, mt: 1 }}
+                    data-id-ref="if-memory-name-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
                 {/* Output Type */}
-                <FormControl fullWidth data-id-ref="if-memory-output-type-select">
-                  <InputLabel>{t('ifMemory.fields.outputType')}</InputLabel>
-                  <Select
-                    value={formData.outputType}
-                    onChange={(e) => handleFieldChange('outputType', e.target.value)}
-                    label={t('ifMemory.fields.outputType')}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <FormControl fullWidth data-id-ref="if-memory-output-type-select">
+                    <InputLabel>{t('ifMemory.fields.outputType')}</InputLabel>
+                    <Select
+                      value={formData.outputType}
+                      onChange={(e) => handleFieldChange('outputType', e.target.value)}
+                      label={t('ifMemory.fields.outputType')}
+                    >
+                      <MenuItem value={IfMemoryOutputType.Digital}>
+                        {t('ifMemory.outputTypes.digital')}
+                      </MenuItem>
+                      <MenuItem value={IfMemoryOutputType.Analog}>
+                        {t('ifMemory.outputTypes.analog')}
+                      </MenuItem>
+                    </Select>
+                    <FormHelperText>{t('ifMemory.fields.outputTypeHelp')}</FormHelperText>
+                  </FormControl>
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('ifMemory.help.outputType')}
+                    sx={{ p: 0.25, mt: 1 }}
+                    data-id-ref="if-memory-output-type-help-btn"
                   >
-                    <MenuItem value={IfMemoryOutputType.Digital}>
-                      {t('ifMemory.outputTypes.digital')}
-                    </MenuItem>
-                    <MenuItem value={IfMemoryOutputType.Analog}>
-                      {t('ifMemory.outputTypes.analog')}
-                    </MenuItem>
-                  </Select>
-                  <FormHelperText>{t('ifMemory.fields.outputTypeHelp')}</FormHelperText>
-                </FormControl>
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
                 {/* Output Item */}
-                <Autocomplete
-                  options={outputItems}
-                  value={selectedOutputItem || null}
-                  onChange={(_, newValue) => {
-                    handleFieldChange('outputItemId', newValue?.id || '');
-                  }}
-                  getOptionLabel={(option) => getItemLabel(option)}
-                  renderOption={(props, option) => {
-                    const { key, ...otherProps } = props;
-                    return (
-                      <Box
-                        component="li"
-                        key={key}
-                        {...otherProps}
-                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                      >
-                        <Chip
-                          label={getItemTypeLabel(option.itemType)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                        />
-                        <Typography>{getItemLabel(option)}</Typography>
-                      </Box>
-                    );
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('ifMemory.fields.outputItem')}
-                      error={!!formErrors.outputItemId}
-                      helperText={formErrors.outputItemId}
-                    />
-                  )}
-                  data-id-ref="if-memory-output-item-autocomplete"
-                />
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <Autocomplete
+                    fullWidth
+                    options={outputItems}
+                    value={selectedOutputItem || null}
+                    onChange={(_, newValue) => {
+                      handleFieldChange('outputItemId', newValue?.id || '');
+                    }}
+                    getOptionLabel={(option) => getItemLabel(option)}
+                    renderOption={(props, option) => {
+                      const { key, ...otherProps } = props;
+                      return (
+                        <Box
+                          component="li"
+                          key={key}
+                          {...otherProps}
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <Chip
+                            label={getItemTypeLabel(option.itemType)}
+                            size="small"
+                            color={getItemTypeColor(option.itemType)}
+                          />
+                          <Typography>{getItemLabel(option)}</Typography>
+                        </Box>
+                      );
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('ifMemory.fields.outputItem')}
+                        error={!!formErrors.outputItemId}
+                        helperText={formErrors.outputItemId}
+                      />
+                    )}
+                    data-id-ref="if-memory-output-item-autocomplete"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('ifMemory.help.outputItem')}
+                    sx={{ p: 0.25, mt: 1 }}
+                    data-id-ref="if-memory-output-item-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
                 {/* Interval */}
-                <TextField
-                  fullWidth
-                  type="number"
-                  label={t('ifMemory.fields.interval')}
-                  value={formData.interval}
-                  onChange={(e) => handleFieldChange('interval', parseInt(e.target.value) || 1)}
-                  error={!!formErrors.interval}
-                  helperText={formErrors.interval || t('ifMemory.fields.intervalHelp')}
-                  inputProps={{ min: 1 }}
-                  data-id-ref="if-memory-interval-input"
-                />
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label={t('ifMemory.fields.interval')}
+                    value={formData.interval}
+                    onChange={(e) => handleFieldChange('interval', parseInt(e.target.value) || 1)}
+                    error={!!formErrors.interval}
+                    helperText={formErrors.interval || t('ifMemory.fields.intervalHelp')}
+                    inputProps={{ min: 1 }}
+                    data-id-ref="if-memory-interval-input"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('ifMemory.help.interval')}
+                    sx={{ p: 0.25, mt: 1 }}
+                    data-id-ref="if-memory-interval-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
 
                 {/* Is Disabled */}
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.isDisabled}
-                      onChange={(e) => handleFieldChange('isDisabled', e.target.checked)}
-                      data-id-ref="if-memory-disabled-switch"
-                    />
-                  }
-                  label={t('ifMemory.fields.isDisabled')}
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.isDisabled}
+                        onChange={(e) => handleFieldChange('isDisabled', e.target.checked)}
+                        data-id-ref="if-memory-disabled-switch"
+                      />
+                    }
+                    label={t('ifMemory.fields.isDisabled')}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('ifMemory.help.isDisabled')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="if-memory-disabled-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
               </Stack>
             </CardContent>
           </Collapse>
@@ -846,10 +898,11 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
                 <Chip label={formData.variableMappings.length} size="small" color="primary" />
                 <IconButton
                   size="small"
-                  onClick={handleHelpOpen('variables')}
+                  onClick={handleHelpOpen('ifMemory.help.variables')}
+                  sx={{ p: 0.25 }}
                   data-id-ref="if-memory-variables-help-btn"
                 >
-                  <HelpOutlineIcon fontSize="small" />
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                 </IconButton>
               </Box>
             }
@@ -987,10 +1040,11 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
                 />
                 <IconButton
                   size="small"
-                  onClick={handleHelpOpen('branches')}
+                  onClick={handleHelpOpen('ifMemory.help.branches')}
+                  sx={{ p: 0.25 }}
                   data-id-ref="if-memory-branches-help-btn"
                 >
-                  <HelpOutlineIcon fontSize="small" />
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                 </IconButton>
               </Box>
             }
@@ -1124,6 +1178,14 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
                               placeholder="[v1] >= 50 && [v2] < 100"
                               data-id-ref={`if-memory-branch-condition-input-${index}`}
                             />
+                            <IconButton
+                              size="small"
+                              onClick={handleHelpOpen('ifMemory.help.condition')}
+                              sx={{ p: 0.25, mt: 0.5 }}
+                              data-id-ref={`if-memory-branch-condition-help-btn-${index}`}
+                            >
+                              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                            </IconButton>
                             <Tooltip title={t('ifMemory.testCondition')}>
                               <span>
                                 <IconButton
@@ -1166,44 +1228,64 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
                         </Box>
 
                         {/* Output Value and Hysteresis */}
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                          <TextField
-                            size="small"
-                            type="number"
-                            label={t('ifMemory.fields.outputValue')}
-                            value={branch.outputValue}
-                            onChange={(e) =>
-                              handleBranchChange(
-                                branch.id,
-                                'outputValue',
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            sx={{ flex: 1 }}
-                            helperText={
-                              formData.outputType === IfMemoryOutputType.Digital
-                                ? t('ifMemory.outputValueDigitalHelp')
-                                : t('ifMemory.outputValueAnalogHelp')
-                            }
-                            data-id-ref={`if-memory-branch-output-value-input-${index}`}
-                          />
-                          <TextField
-                            size="small"
-                            type="number"
-                            label={t('ifMemory.fields.hysteresis')}
-                            value={branch.hysteresis}
-                            onChange={(e) =>
-                              handleBranchChange(
-                                branch.id,
-                                'hysteresis',
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            sx={{ flex: 1 }}
-                            inputProps={{ min: 0, step: 0.1 }}
-                            helperText={t('ifMemory.hysteresisHelp')}
-                            data-id-ref={`if-memory-branch-hysteresis-input-${index}`}
-                          />
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                          <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              type="number"
+                              label={t('ifMemory.fields.outputValue')}
+                              value={branch.outputValue}
+                              onChange={(e) =>
+                                handleBranchChange(
+                                  branch.id,
+                                  'outputValue',
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                              helperText={
+                                formData.outputType === IfMemoryOutputType.Digital
+                                  ? t('ifMemory.outputValueDigitalHelp')
+                                  : t('ifMemory.outputValueAnalogHelp')
+                              }
+                              data-id-ref={`if-memory-branch-output-value-input-${index}`}
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={handleHelpOpen('ifMemory.help.outputValue')}
+                              sx={{ p: 0.25, mt: 0.5 }}
+                              data-id-ref={`if-memory-branch-output-help-btn-${index}`}
+                            >
+                              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                            </IconButton>
+                          </Box>
+                          <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              type="number"
+                              label={t('ifMemory.fields.hysteresis')}
+                              value={branch.hysteresis}
+                              onChange={(e) =>
+                                handleBranchChange(
+                                  branch.id,
+                                  'hysteresis',
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                              inputProps={{ min: 0, step: 0.1 }}
+                              helperText={t('ifMemory.hysteresisHelp')}
+                              data-id-ref={`if-memory-branch-hysteresis-input-${index}`}
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={handleHelpOpen('ifMemory.help.hysteresis')}
+                              sx={{ p: 0.25, mt: 0.5 }}
+                              data-id-ref={`if-memory-branch-hysteresis-help-btn-${index}`}
+                            >
+                              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                            </IconButton>
+                          </Box>
                         </Box>
                       </Stack>
                     </Paper>
@@ -1221,6 +1303,14 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <Chip label="ELSE" size="small" color="secondary" />
                   <Typography variant="subtitle2">{t('ifMemory.elseSection')}</Typography>
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('ifMemory.help.defaultValue')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="if-memory-default-value-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
                 </Box>
                 <TextField
                   size="small"
@@ -1279,80 +1369,76 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
 
         {/* Help Popovers */}
         <FieldHelpPopover
-          anchorEl={helpAnchorEl['basic']}
-          open={Boolean(helpAnchorEl['basic'])}
-          onClose={handleHelpClose('basic')}
-          fieldKey="ifMemory.help.basic"
-          title={t('ifMemory.help.basicTitle')}
-          sections={[
-            {
-              content: t('ifMemory.help.basicDescription'),
-            },
-            {
-              type: 'tip',
-              title: t('ifMemory.help.outputTypeTip'),
-              content: [
-                t('ifMemory.help.digitalOutputDesc'),
-                t('ifMemory.help.analogOutputDesc'),
-              ],
-            },
-          ]}
+          anchorEl={helpAnchorEl['ifMemory.help.basicConfiguration']}
+          open={Boolean(helpAnchorEl['ifMemory.help.basicConfiguration'])}
+          onClose={handleHelpClose('ifMemory.help.basicConfiguration')}
+          fieldKey="ifMemory.help.basicConfiguration"
         />
-
         <FieldHelpPopover
-          anchorEl={helpAnchorEl['variables']}
-          open={Boolean(helpAnchorEl['variables'])}
-          onClose={handleHelpClose('variables')}
+          anchorEl={helpAnchorEl['ifMemory.help.name']}
+          open={Boolean(helpAnchorEl['ifMemory.help.name'])}
+          onClose={handleHelpClose('ifMemory.help.name')}
+          fieldKey="ifMemory.help.name"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['ifMemory.help.outputType']}
+          open={Boolean(helpAnchorEl['ifMemory.help.outputType'])}
+          onClose={handleHelpClose('ifMemory.help.outputType')}
+          fieldKey="ifMemory.help.outputType"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['ifMemory.help.outputItem']}
+          open={Boolean(helpAnchorEl['ifMemory.help.outputItem'])}
+          onClose={handleHelpClose('ifMemory.help.outputItem')}
+          fieldKey="ifMemory.help.outputItem"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['ifMemory.help.interval']}
+          open={Boolean(helpAnchorEl['ifMemory.help.interval'])}
+          onClose={handleHelpClose('ifMemory.help.interval')}
+          fieldKey="ifMemory.help.interval"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['ifMemory.help.isDisabled']}
+          open={Boolean(helpAnchorEl['ifMemory.help.isDisabled'])}
+          onClose={handleHelpClose('ifMemory.help.isDisabled')}
+          fieldKey="ifMemory.help.isDisabled"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['ifMemory.help.variables']}
+          open={Boolean(helpAnchorEl['ifMemory.help.variables'])}
+          onClose={handleHelpClose('ifMemory.help.variables')}
           fieldKey="ifMemory.help.variables"
-          title={t('ifMemory.help.variablesTitle')}
-          sections={[
-            {
-              content: t('ifMemory.help.variablesDescription'),
-            },
-            {
-              type: 'example',
-              title: t('ifMemory.help.variablesExample'),
-              content: [
-                'v1 → Temperature Sensor',
-                'v2 → Pressure Sensor',
-                t('ifMemory.help.variablesUsage'),
-              ],
-            },
-          ]}
         />
-
         <FieldHelpPopover
-          anchorEl={helpAnchorEl['branches']}
-          open={Boolean(helpAnchorEl['branches'])}
-          onClose={handleHelpClose('branches')}
+          anchorEl={helpAnchorEl['ifMemory.help.branches']}
+          open={Boolean(helpAnchorEl['ifMemory.help.branches'])}
+          onClose={handleHelpClose('ifMemory.help.branches')}
           fieldKey="ifMemory.help.branches"
-          title={t('ifMemory.help.branchesTitle')}
-          sections={[
-            {
-              content: t('ifMemory.help.branchesDescription'),
-            },
-            {
-              type: 'example',
-              title: t('ifMemory.help.conditionExamples'),
-              content: [
-                '[v1] >= 80 → ' + t('ifMemory.help.highCondition'),
-                '[v1] >= 50 && [v1] < 80 → ' + t('ifMemory.help.mediumCondition'),
-                t('ifMemory.help.elseCondition'),
-              ],
-            },
-            {
-              type: 'tip',
-              title: t('ifMemory.help.operatorsTip'),
-              content: [
-                '>= (' + t('ifMemory.help.greaterOrEqual') + ')',
-                '<= (' + t('ifMemory.help.lessOrEqual') + ')',
-                '== (' + t('ifMemory.help.equal') + ')',
-                '!= (' + t('ifMemory.help.notEqual') + ')',
-                '&& (' + t('ifMemory.help.and') + ')',
-                '|| (' + t('ifMemory.help.or') + ')',
-              ],
-            },
-          ]}
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['ifMemory.help.condition']}
+          open={Boolean(helpAnchorEl['ifMemory.help.condition'])}
+          onClose={handleHelpClose('ifMemory.help.condition')}
+          fieldKey="ifMemory.help.condition"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['ifMemory.help.outputValue']}
+          open={Boolean(helpAnchorEl['ifMemory.help.outputValue'])}
+          onClose={handleHelpClose('ifMemory.help.outputValue')}
+          fieldKey="ifMemory.help.outputValue"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['ifMemory.help.hysteresis']}
+          open={Boolean(helpAnchorEl['ifMemory.help.hysteresis'])}
+          onClose={handleHelpClose('ifMemory.help.hysteresis')}
+          fieldKey="ifMemory.help.hysteresis"
+        />
+        <FieldHelpPopover
+          anchorEl={helpAnchorEl['ifMemory.help.defaultValue']}
+          open={Boolean(helpAnchorEl['ifMemory.help.defaultValue'])}
+          onClose={handleHelpClose('ifMemory.help.defaultValue')}
+          fieldKey="ifMemory.help.defaultValue"
         />
       </DialogContent>
 
