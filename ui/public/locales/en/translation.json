@@ -3730,7 +3730,7 @@
     "dayOfWeek": "Day",
     "startTime": "Start Time",
     "endTime": "End Time",
-    "priority": "Priority",
+    "priorityLabel": "Priority",
     "analogValue": "Analog Value",
     "digitalValue": "Digital Value",
     "description": "Description",

@@ -3376,7 +3376,7 @@
     "dayOfWeek": "روز",
     "startTime": "زمان شروع",
     "endTime": "زمان پایان",
-    "priority": "اولویت",
+    "priorityLabel": "اولویت",
     "analogValue": "مقدار آنالوگ",
     "digitalValue": "مقدار دیجیتال",
     "description": "توضیحات",
