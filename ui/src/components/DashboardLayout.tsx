@@ -4,6 +4,7 @@ import { Box, useTheme, useMediaQuery } from '@mui/material';
 import ResponsiveNavbar from './ResponsiveNavbar';
 import Sidebar from './Sidebar';
 import ManagementSidebar from './ManagementSidebar';
+import MemorySidebar from './MemorySidebar';
 import { useAuth } from '../hooks/useAuth';
 import { useGlobalDataInitialization } from '../hooks/useGlobalDataInitialization';
 
@@ -14,8 +15,9 @@ const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const { isAuthenticated } = useAuth();
   
-  // Determine if we're on a management route
+  // Determine if we're on a management or memory route
   const isManagementRoute = location.pathname.startsWith('/dashboard/management');
+  const isMemoryRoute = location.pathname.startsWith('/dashboard/memory');
   
   // Initialize global monitoring data (groups, items) when authenticated
   // This ensures data is available across all dashboard pages
@@ -39,9 +41,14 @@ const DashboardLayout: React.FC = () => {
       }}
       data-id-ref="dashboard-layout-root-container"
     >
-      {/* Conditional Sidebar - Show ManagementSidebar for management routes, otherwise main Sidebar */}
+      {/* Conditional Sidebar - Show appropriate sidebar based on route */}
       {isManagementRoute ? (
         <ManagementSidebar 
+          isOpen={sidebarOpen} 
+          onToggle={toggleSidebar}
+        />
+      ) : isMemoryRoute ? (
+        <MemorySidebar 
           isOpen={sidebarOpen} 
           onToggle={toggleSidebar}
         />
