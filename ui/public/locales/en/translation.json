@@ -4423,5 +4423,350 @@
         ]
       }
     }
+  },
+  "statisticalMemory": {
+    "title": "Statistical Memory",
+    "description": "Compute statistical metrics (min, max, avg, stddev, percentiles) over configurable time windows.",
+    "addNew": "Add Statistical Memory",
+    "addTitle": "Add Statistical Memory",
+    "editTitle": "Edit Statistical Memory",
+    "deleteTitle": "Delete Statistical Memory",
+    "deleteMessage": "Are you sure you want to delete this statistical memory configuration?",
+    "deleteWarning": "This will also delete all stored sample data. This action cannot be undone.",
+    "searchPlaceholder": "Search statistical memories...",
+    "name": "Name",
+    "inputItem": "Input Item",
+    "outputItem": "Output Item",
+    "outputs": "Configured Outputs",
+    "interval": "Sampling Interval",
+    "intervalHelp": "How often a sample is collected from the input (in seconds)",
+    "isDisabled": "Disabled",
+    "selectOutputItem": "Select output item...",
+    "sections": {
+      "basic": "Basic Configuration",
+      "outputs": "Output Configuration",
+      "percentiles": "Custom Percentiles",
+      "window": "Window Settings"
+    },
+    "outputTypes": {
+      "min": "Minimum",
+      "max": "Maximum",
+      "avg": "Average",
+      "stddev": "Std Dev",
+      "range": "Range",
+      "median": "Median",
+      "cv": "CV %"
+    },
+    "outputsDescription": "Select which statistical metrics to calculate. At least one output is required. Each metric is written to its configured output item.",
+    "windowSize": "Window Size",
+    "windowSizeHelp": "Number of samples to include in calculations (10-10000)",
+    "windowType": {
+      "label": "Window Type",
+      "rolling": "Rolling",
+      "tumbling": "Tumbling"
+    },
+    "minSamples": "Minimum Samples",
+    "minSamplesHelp": "Minimum samples required before calculations begin (minimum 2)",
+    "percentileLabel": "Percentile {{index}}",
+    "percentileValue": "Percentile Value",
+    "percentileValueHelp": "Value between 0-100 (e.g., 95 for P95)",
+    "percentileOutputItem": "Output Item",
+    "addPercentile": "Add Percentile",
+    "noPercentiles": "No custom percentiles configured. Click \"Add Percentile\" to create one.",
+    "percentilesDescription": "Configure custom percentiles beyond the standard median (P50). Common choices include P90, P95, and P99.",
+    "validation": {
+      "inputItemRequired": "Input item is required",
+      "intervalPositive": "Interval must be greater than 0",
+      "windowSizeRange": "Window size must be between 10 and 10000",
+      "minSamplesMinimum": "Minimum samples must be at least 2",
+      "minSamplesExceedsWindow": "Minimum samples cannot exceed window size",
+      "atLeastOneOutput": "At least one output must be configured",
+      "outputItemRequired": "Output item is required",
+      "percentileRange": "Percentile must be between 0 and 100",
+      "duplicateOutputItems": "Each output must use a unique item (no duplicates allowed)"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load statistical memories",
+      "createFailed": "Failed to create statistical memory",
+      "updateFailed": "Failed to update statistical memory",
+      "deleteFailed": "Failed to delete statistical memory",
+      "saveFailed": "Failed to save statistical memory"
+    },
+    "help": {
+      "overview": {
+        "title": "Statistical Memory Overview",
+        "sections": [
+          {
+            "content": "Statistical Memory computes various statistical metrics over a window of samples collected from an analog input. Use cases include peak demand tracking, process variability monitoring, quality control (6-sigma analysis), baseline establishment, and performance reporting."
+          },
+          {
+            "title": "Available Metrics",
+            "content": [
+              "Minimum: Lowest value in the window",
+              "Maximum: Highest value in the window",
+              "Average: Arithmetic mean of all samples",
+              "Standard Deviation: Measure of data spread (using sample formula N-1)",
+              "Range: Difference between max and min",
+              "Median: Middle value (50th percentile)",
+              "Coefficient of Variation: StdDev/Average × 100 (relative variability %)"
+            ]
+          },
+          {
+            "type": "tip",
+            "content": "You can also configure custom percentiles (P90, P95, P99) for detailed distribution analysis."
+          }
+        ]
+      },
+      "name": {
+        "title": "Statistical Memory Name",
+        "sections": [
+          {
+            "content": "An optional descriptive name to identify this statistical memory in the management interface."
+          },
+          {
+            "type": "example",
+            "title": "Naming Examples",
+            "content": [
+              "\"Hourly Temperature Stats\" - for environmental monitoring",
+              "\"Daily Power Demand\" - for energy analysis",
+              "\"Process Quality Metrics\" - for quality control",
+              "\"Sensor Baseline\" - for calibration reference"
+            ]
+          }
+        ]
+      },
+      "inputItem": {
+        "title": "Input Item",
+        "sections": [
+          {
+            "content": "The analog input or output item from which samples are collected at each interval."
+          },
+          {
+            "title": "Requirements",
+            "content": [
+              "Must be an Analog Input or Analog Output item",
+              "Samples are collected at the configured interval",
+              "Only numeric values are stored"
+            ]
+          }
+        ]
+      },
+      "interval": {
+        "title": "Sampling Interval",
+        "sections": [
+          {
+            "content": "How often a new sample is collected from the input item. The actual statistical window duration depends on both interval and window size."
+          },
+          {
+            "type": "example",
+            "title": "Window Duration Examples",
+            "content": [
+              "10 second interval × 100 samples = ~17 minutes of data",
+              "60 second interval × 60 samples = 1 hour of data",
+              "300 second interval × 288 samples = 24 hours of data"
+            ]
+          }
+        ]
+      },
+      "isDisabled": {
+        "title": "Disabled",
+        "sections": [
+          {
+            "content": "When enabled, this statistical memory will not collect samples or update outputs."
+          },
+          {
+            "type": "tip",
+            "content": "Existing samples are preserved when disabled. Re-enabling will resume collection."
+          }
+        ]
+      },
+      "windowSize": {
+        "title": "Window Size",
+        "sections": [
+          {
+            "content": "The number of samples included in statistical calculations. Larger windows provide smoother averages but slower response to changes."
+          },
+          {
+            "title": "Recommendations",
+            "content": [
+              "50-100 samples: Fast response, recent data focus",
+              "500-1000 samples: Balanced smoothing and response",
+              "5000-10000 samples: Long-term statistics, very smooth"
+            ]
+          },
+          {
+            "type": "warning",
+            "content": "Larger window sizes require more storage and processing. Balance your analysis needs with system resources."
+          }
+        ]
+      },
+      "windowType": {
+        "title": "Window Type",
+        "sections": [
+          {
+            "content": "Determines how the sample window behaves when full."
+          },
+          {
+            "title": "Rolling Window",
+            "content": "Continuously slides as new samples arrive. Oldest samples are discarded to maintain window size. Statistics always reflect the most recent N samples. Best for real-time monitoring."
+          },
+          {
+            "title": "Tumbling Window",
+            "content": "Collects samples until window is full, then resets and starts fresh. Statistics reflect complete batches. Best for periodic reporting (hourly, daily summaries)."
+          },
+          {
+            "type": "example",
+            "title": "Use Cases",
+            "content": [
+              "Rolling: \"What's the average temperature over the last hour?\"",
+              "Tumbling: \"What was the peak demand during each shift?\""
+            ]
+          }
+        ]
+      },
+      "minSamples": {
+        "title": "Minimum Samples",
+        "sections": [
+          {
+            "content": "The minimum number of samples required before statistical calculations begin. This prevents misleading statistics when data is sparse."
+          },
+          {
+            "type": "tip",
+            "content": "Standard deviation requires at least 2 samples. For meaningful statistics, consider setting minimum samples to 10 or more."
+          }
+        ]
+      },
+      "outputMin": {
+        "title": "Minimum Output",
+        "sections": [
+          {
+            "content": "Outputs the lowest value found in the current sample window."
+          },
+          {
+            "type": "example",
+            "content": "Use for tracking minimum temperatures, lowest pressure readings, or floor values in quality control."
+          }
+        ]
+      },
+      "outputMax": {
+        "title": "Maximum Output",
+        "sections": [
+          {
+            "content": "Outputs the highest value found in the current sample window."
+          },
+          {
+            "type": "example",
+            "content": "Use for peak demand tracking, maximum temperature monitoring, or ceiling values in quality control."
+          }
+        ]
+      },
+      "outputAvg": {
+        "title": "Average Output",
+        "sections": [
+          {
+            "content": "Outputs the arithmetic mean of all samples in the window."
+          },
+          {
+            "type": "example",
+            "content": "Use for baseline establishment, trend analysis, or average consumption reporting."
+          }
+        ]
+      },
+      "outputStdDev": {
+        "title": "Standard Deviation Output",
+        "sections": [
+          {
+            "content": "Outputs the sample standard deviation (using N-1 formula) measuring how spread out values are from the mean."
+          },
+          {
+            "title": "Interpretation",
+            "content": [
+              "Low StdDev: Values are consistently close to the average",
+              "High StdDev: Values vary widely from the average"
+            ]
+          },
+          {
+            "type": "example",
+            "content": "Use for process variability monitoring, quality control (Six Sigma), and detecting unstable conditions."
+          }
+        ]
+      },
+      "outputRange": {
+        "title": "Range Output",
+        "sections": [
+          {
+            "content": "Outputs the difference between maximum and minimum values (Max - Min)."
+          },
+          {
+            "type": "example",
+            "content": "Use for quick assessment of data spread, quality control charts, or detecting unusual variations."
+          }
+        ]
+      },
+      "outputMedian": {
+        "title": "Median Output",
+        "sections": [
+          {
+            "content": "Outputs the middle value when all samples are sorted. Unlike average, median is not affected by extreme outliers."
+          },
+          {
+            "type": "tip",
+            "content": "Compare median to average: if they differ significantly, your data may have outliers or be skewed."
+          }
+        ]
+      },
+      "outputCV": {
+        "title": "Coefficient of Variation Output",
+        "sections": [
+          {
+            "content": "Outputs the relative variability as a percentage (StdDev / Average × 100). Useful for comparing variability across different scales."
+          },
+          {
+            "title": "Interpretation",
+            "content": [
+              "CV < 10%: Low variability, very consistent",
+              "CV 10-30%: Moderate variability",
+              "CV > 30%: High variability, inconsistent"
+            ]
+          },
+          {
+            "type": "warning",
+            "content": "CV is undefined when average is zero. Output will be 0 in this case."
+          }
+        ]
+      },
+      "percentileValue": {
+        "title": "Percentile Value",
+        "sections": [
+          {
+            "content": "The percentile to calculate (0-100). Common choices include P90, P95, and P99."
+          },
+          {
+            "title": "Interpretation",
+            "content": [
+              "P90: 90% of values are below this threshold",
+              "P95: 95% of values are below this threshold",
+              "P99: 99% of values are below this threshold"
+            ]
+          },
+          {
+            "type": "example",
+            "content": "Use P99 for SLA reporting: \"99% of response times were below X milliseconds.\""
+          }
+        ]
+      },
+      "percentileOutput": {
+        "title": "Percentile Output Item",
+        "sections": [
+          {
+            "content": "The analog output item where this percentile value will be written."
+          },
+          {
+            "type": "tip",
+            "content": "Each percentile must use a unique output item."
+          }
+        ]
+      }
+    }
   }
 }

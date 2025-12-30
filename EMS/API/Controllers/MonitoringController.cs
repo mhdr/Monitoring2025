@@ -11600,6 +11600,315 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     #endregion
+
+    #region Statistical Memory
+
+    /// <summary>
+    /// Get all statistical memory configurations
+    /// </summary>
+    /// <param name="request">Request parameters (reserved for filtering)</param>
+    /// <returns>List of statistical memory configurations</returns>
+    /// <remarks>
+    /// Returns all statistical memory configurations for calculating min/max/avg/stddev/range/median/percentiles/CV.
+    /// 
+    /// Window Types:
+    /// - **1 (Rolling)**: Sliding window that always maintains WindowSize samples
+    /// - **2 (Tumbling)**: Batch window that resets after WindowSize samples
+    /// 
+    /// Use Cases:
+    /// - Peak demand tracking (max over hourly windows)
+    /// - Process variability monitoring (standard deviation, CV)
+    /// - Quality control and 6-sigma analysis (percentiles)
+    /// - SLA monitoring (P95, P99 response times)
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetStatisticalMemories
+    ///     {}
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns list of statistical memories</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetStatisticalMemories")]
+    public async Task<IActionResult> GetStatisticalMemories([FromBody] GetStatisticalMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetStatisticalMemoriesResponseDto();
+
+            var statisticalMemories = await Core.StatisticalMemories.GetStatisticalMemories();
+
+            if (statisticalMemories != null && statisticalMemories.Count > 0)
+            {
+                response.StatisticalMemories = new List<StatisticalMemoryItemDto>();
+                foreach (var memory in statisticalMemories)
+                {
+                    response.StatisticalMemories.Add(new StatisticalMemoryItemDto
+                    {
+                        Id = memory.Id,
+                        Name = memory.Name,
+                        InputItemId = memory.InputItemId,
+                        Interval = memory.Interval,
+                        IsDisabled = memory.IsDisabled,
+                        WindowSize = memory.WindowSize,
+                        WindowType = (int)memory.WindowType,
+                        MinSamples = memory.MinSamples,
+                        OutputMinItemId = memory.OutputMinItemId,
+                        OutputMaxItemId = memory.OutputMaxItemId,
+                        OutputAvgItemId = memory.OutputAvgItemId,
+                        OutputStdDevItemId = memory.OutputStdDevItemId,
+                        OutputRangeItemId = memory.OutputRangeItemId,
+                        OutputMedianItemId = memory.OutputMedianItemId,
+                        OutputCVItemId = memory.OutputCVItemId,
+                        PercentilesConfig = memory.PercentilesConfig,
+                        CurrentBatchCount = memory.CurrentBatchCount,
+                        LastResetTime = memory.LastResetTime
+                    });
+                }
+            }
+
+            response.IsSuccessful = true;
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new GetStatisticalMemoriesResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Add a new statistical memory configuration
+    /// </summary>
+    /// <param name="request">Statistical memory configuration parameters</param>
+    /// <returns>Success status and ID of created statistical memory</returns>
+    /// <remarks>
+    /// Creates a new statistical memory for computing rolling/tumbling window statistics.
+    /// 
+    /// Features:
+    /// - **Rolling Window**: Continuously slides, always maintains WindowSize samples
+    /// - **Tumbling Window**: Batch mode, calculates when full then resets
+    /// - **Optional Outputs**: Select only the metrics you need
+    /// - **Custom Percentiles**: Configure any percentile values (P50, P90, P95, P99, etc.)
+    /// 
+    /// Available Metrics:
+    /// - Min, Max, Average, Standard Deviation, Range
+    /// - Median (50th percentile)
+    /// - Coefficient of Variation (CV = stddev/avg * 100)
+    /// - Custom percentiles via PercentilesConfig JSON
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AddStatisticalMemory
+    ///     {
+    ///        "name": "Temperature Stats",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "interval": 10,
+    ///        "windowSize": 100,
+    ///        "windowType": 1,
+    ///        "outputMinItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "outputMaxItemId": "660e8400-e29b-41d4-a716-446655440002",
+    ///        "outputAvgItemId": "660e8400-e29b-41d4-a716-446655440003",
+    ///        "percentilesConfig": "[{\"percentile\": 95, \"outputItemId\": \"770e8400-e29b-41d4-a716-446655440004\"}]"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns ID of created statistical memory</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("AddStatisticalMemory")]
+    public async Task<IActionResult> AddStatisticalMemory([FromBody] AddStatisticalMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var statisticalMemory = new Core.Models.StatisticalMemory
+            {
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                WindowSize = request.WindowSize,
+                WindowType = (Core.Models.StatisticalWindowType)request.WindowType,
+                MinSamples = request.MinSamples,
+                OutputMinItemId = request.OutputMinItemId,
+                OutputMaxItemId = request.OutputMaxItemId,
+                OutputAvgItemId = request.OutputAvgItemId,
+                OutputStdDevItemId = request.OutputStdDevItemId,
+                OutputRangeItemId = request.OutputRangeItemId,
+                OutputMedianItemId = request.OutputMedianItemId,
+                OutputCVItemId = request.OutputCVItemId,
+                PercentilesConfig = request.PercentilesConfig
+            };
+
+            var (success, id, errorMessage) = await Core.StatisticalMemories.AddStatisticalMemory(statisticalMemory);
+
+            return Ok(new AddStatisticalMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new AddStatisticalMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing statistical memory configuration
+    /// </summary>
+    /// <param name="request">Updated statistical memory configuration parameters</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Updates an existing statistical memory configuration.
+    /// Note: Changing window size or type will clear all collected samples.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/EditStatisticalMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Updated Temperature Stats",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "interval": 15,
+    ///        "windowSize": 200,
+    ///        "windowType": 1,
+    ///        "outputMinItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "outputMaxItemId": "660e8400-e29b-41d4-a716-446655440002"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("EditStatisticalMemory")]
+    public async Task<IActionResult> EditStatisticalMemory([FromBody] EditStatisticalMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var statisticalMemory = new Core.Models.StatisticalMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                WindowSize = request.WindowSize,
+                WindowType = (Core.Models.StatisticalWindowType)request.WindowType,
+                MinSamples = request.MinSamples,
+                OutputMinItemId = request.OutputMinItemId,
+                OutputMaxItemId = request.OutputMaxItemId,
+                OutputAvgItemId = request.OutputAvgItemId,
+                OutputStdDevItemId = request.OutputStdDevItemId,
+                OutputRangeItemId = request.OutputRangeItemId,
+                OutputMedianItemId = request.OutputMedianItemId,
+                OutputCVItemId = request.OutputCVItemId,
+                PercentilesConfig = request.PercentilesConfig,
+                CurrentBatchCount = request.CurrentBatchCount,
+                LastResetTime = request.LastResetTime
+            };
+
+            var (success, errorMessage) = await Core.StatisticalMemories.EditStatisticalMemory(statisticalMemory);
+
+            return Ok(new EditStatisticalMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new EditStatisticalMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Delete a statistical memory configuration
+    /// </summary>
+    /// <param name="request">ID of statistical memory to delete</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Permanently deletes a statistical memory configuration and all collected samples.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/DeleteStatisticalMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails or memory not found</response>
+    [HttpPost("DeleteStatisticalMemory")]
+    public async Task<IActionResult> DeleteStatisticalMemory([FromBody] DeleteStatisticalMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.StatisticalMemories.DeleteStatisticalMemory(request.Id);
+
+            return Ok(new DeleteStatisticalMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new DeleteStatisticalMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    #endregion
 }
 
 #region PID Auto-Tuning DTOs

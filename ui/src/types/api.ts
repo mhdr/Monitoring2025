@@ -3397,39 +3397,45 @@ export interface ResetRateOfChangeMemoryResponseDto {
 /**
  * Override expiration mode for manual override behavior
  */
-export enum OverrideExpirationMode {
+export const OverrideExpirationMode = {
   /** Override expires after a specified duration in minutes */
-  TimeBased = 1,
+  TimeBased: 1,
   /** Override remains active until the next schedule change or manual deactivation */
-  EventBased = 2,
-}
+  EventBased: 2,
+} as const;
+export type OverrideExpirationMode =
+  (typeof OverrideExpirationMode)[keyof typeof OverrideExpirationMode];
 
 /**
  * Priority levels for schedule blocks to resolve conflicts
  */
-export enum SchedulePriority {
+export const SchedulePriority = {
   /** Low priority - can be overridden by any higher priority */
-  Low = 1,
+  Low: 1,
   /** Normal priority - default for most schedules */
-  Normal = 2,
+  Normal: 2,
   /** High priority - takes precedence over normal schedules */
-  High = 3,
+  High: 3,
   /** Critical priority - highest precedence, for emergency or demand response */
-  Critical = 4,
-}
+  Critical: 4,
+} as const;
+export type SchedulePriority =
+  (typeof SchedulePriority)[keyof typeof SchedulePriority];
 
 /**
  * Days of the week for schedule block configuration
  */
-export enum ScheduleDayOfWeek {
-  Sunday = 0,
-  Monday = 1,
-  Tuesday = 2,
-  Wednesday = 3,
-  Thursday = 4,
-  Friday = 5,
-  Saturday = 6,
-}
+export const ScheduleDayOfWeek = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+} as const;
+export type ScheduleDayOfWeek =
+  (typeof ScheduleDayOfWeek)[keyof typeof ScheduleDayOfWeek];
 
 /**
  * Schedule block representing a time period with specific output value
@@ -3821,6 +3827,167 @@ export interface DeleteComparisonMemoryRequestDto {
  * Response DTO for deleting a comparison memory configuration
  */
 export interface DeleteComparisonMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+// ==================== Statistical Memory DTOs ====================
+
+/**
+ * Window type for statistical calculations
+ */
+export const StatisticalWindowType = {
+  Rolling: 1, // Sliding window that always maintains WindowSize samples
+  Tumbling: 2, // Batch window that resets after WindowSize samples are collected
+} as const;
+export type StatisticalWindowType =
+  (typeof StatisticalWindowType)[keyof typeof StatisticalWindowType];
+
+/**
+ * Percentile configuration for custom percentile outputs
+ */
+export interface PercentileConfig {
+  percentile: number; // Percentile value (0-100), e.g., 95, 99
+  outputItemId: string; // UUID of output item for this percentile
+}
+
+/**
+ * Statistical Memory configuration
+ * Computes statistical metrics (min, max, avg, stddev, range, median, percentiles, CV)
+ * over configurable rolling or tumbling time windows
+ */
+export interface StatisticalMemory {
+  id: string; // UUID
+  name?: string | null;
+  inputItemId: string; // UUID - Input item to collect samples from (AnalogInput/AnalogOutput)
+  interval: number; // Processing interval in seconds
+  isDisabled: boolean;
+  // Window configuration
+  windowSize: number; // Number of samples in calculation window (10-10000)
+  windowType: StatisticalWindowType; // Rolling or Tumbling
+  minSamples: number; // Minimum samples required before calculating (default: 2)
+  // Optional output items (at least one required)
+  outputMinItemId?: string | null; // UUID - Min value output
+  outputMaxItemId?: string | null; // UUID - Max value output
+  outputAvgItemId?: string | null; // UUID - Average/mean output
+  outputStdDevItemId?: string | null; // UUID - Standard deviation output
+  outputRangeItemId?: string | null; // UUID - Range (max-min) output
+  outputMedianItemId?: string | null; // UUID - Median (50th percentile) output
+  outputCVItemId?: string | null; // UUID - Coefficient of Variation output
+  // Percentile configuration
+  percentilesConfig: string; // JSON array of PercentileConfig objects
+  // State tracking
+  currentBatchCount: number; // For tumbling window: samples in current batch
+  lastResetTime?: number | null; // Unix epoch seconds of last reset
+}
+
+/**
+ * Extended Statistical Memory with resolved item names for display
+ */
+export interface StatisticalMemoryWithItems extends StatisticalMemory {
+  inputItemName?: string;
+  outputMinItemName?: string;
+  outputMaxItemName?: string;
+  outputAvgItemName?: string;
+  outputStdDevItemName?: string;
+  outputRangeItemName?: string;
+  outputMedianItemName?: string;
+  outputCVItemName?: string;
+  percentileOutputNames?: Array<{ percentile: number; outputItemName: string }>;
+}
+
+/**
+ * Request DTO for retrieving statistical memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetStatisticalMemoriesRequestDto {
+  // Empty - no filtering parameters needed currently
+}
+
+/**
+ * Response DTO containing list of statistical memory configurations
+ */
+export interface GetStatisticalMemoriesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  statisticalMemories?: StatisticalMemory[] | null;
+}
+
+/**
+ * Request DTO for creating a new statistical memory configuration
+ */
+export interface AddStatisticalMemoryRequestDto {
+  name?: string | null;
+  inputItemId: string; // UUID - Must be AnalogInput or AnalogOutput
+  interval?: number; // Default: 10
+  isDisabled?: boolean; // Default: false
+  windowSize?: number; // Default: 100
+  windowType?: StatisticalWindowType; // Default: Rolling (1)
+  minSamples?: number; // Default: 2
+  // Optional outputs (at least one required)
+  outputMinItemId?: string | null;
+  outputMaxItemId?: string | null;
+  outputAvgItemId?: string | null;
+  outputStdDevItemId?: string | null;
+  outputRangeItemId?: string | null;
+  outputMedianItemId?: string | null;
+  outputCVItemId?: string | null;
+  // Custom percentiles
+  percentilesConfig?: string; // Default: "[]"
+}
+
+/**
+ * Response DTO for adding a new statistical memory configuration
+ */
+export interface AddStatisticalMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of newly created statistical memory
+}
+
+/**
+ * Request DTO for editing an existing statistical memory configuration
+ */
+export interface EditStatisticalMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  inputItemId: string; // UUID
+  interval?: number;
+  isDisabled?: boolean;
+  windowSize?: number;
+  windowType?: StatisticalWindowType;
+  minSamples?: number;
+  outputMinItemId?: string | null;
+  outputMaxItemId?: string | null;
+  outputAvgItemId?: string | null;
+  outputStdDevItemId?: string | null;
+  outputRangeItemId?: string | null;
+  outputMedianItemId?: string | null;
+  outputCVItemId?: string | null;
+  percentilesConfig?: string;
+  currentBatchCount?: number;
+  lastResetTime?: number | null;
+}
+
+/**
+ * Response DTO for editing a statistical memory configuration
+ */
+export interface EditStatisticalMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a statistical memory configuration
+ */
+export interface DeleteStatisticalMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a statistical memory configuration
+ */
+export interface DeleteStatisticalMemoryResponseDto {
   isSuccessful: boolean;
   errorMessage?: string | null;
 }

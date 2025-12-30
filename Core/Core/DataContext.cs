@@ -66,6 +66,9 @@ public class DataContext : DbContext
     public DbSet<HolidayDate> HolidayDates { get; set; }
     
     public DbSet<ComparisonMemory> ComparisonMemories { get; set; }
+    
+    public DbSet<StatisticalMemory> StatisticalMemories { get; set; }
+    public DbSet<StatisticalMemorySample> StatisticalMemorySamples { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -589,6 +592,54 @@ public class DataContext : DbContext
         
         modelBuilder.Entity<HolidayDate>()
             .HasIndex(d => new { d.HolidayCalendarId, d.Date });
+        
+        // StatisticalMemory configuration
+        modelBuilder.Entity<StatisticalMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<StatisticalMemory>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<StatisticalMemory>()
+            .Property(e => e.Interval)
+            .HasDefaultValue(10);
+        
+        modelBuilder.Entity<StatisticalMemory>()
+            .Property(e => e.WindowSize)
+            .HasDefaultValue(100);
+        
+        modelBuilder.Entity<StatisticalMemory>()
+            .Property(e => e.WindowType)
+            .HasDefaultValue(StatisticalWindowType.Rolling);
+        
+        modelBuilder.Entity<StatisticalMemory>()
+            .Property(e => e.MinSamples)
+            .HasDefaultValue(2);
+        
+        modelBuilder.Entity<StatisticalMemory>()
+            .Property(e => e.CurrentBatchCount)
+            .HasDefaultValue(0);
+        
+        modelBuilder.Entity<StatisticalMemory>()
+            .Property(e => e.WindowType)
+            .HasConversion<int>();
+        
+        // StatisticalMemorySample configuration
+        modelBuilder.Entity<StatisticalMemorySample>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<StatisticalMemorySample>()
+            .HasOne(s => s.StatisticalMemory)
+            .WithMany(m => m.Samples)
+            .HasForeignKey(s => s.StatisticalMemoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        modelBuilder.Entity<StatisticalMemorySample>()
+            .HasIndex(s => new { s.StatisticalMemoryId, s.Timestamp })
+            .IsDescending(false, true);
 
         // keys
 

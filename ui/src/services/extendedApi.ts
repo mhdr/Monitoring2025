@@ -151,6 +151,16 @@ import type {
   EditComparisonMemoryResponseDto,
   DeleteComparisonMemoryRequestDto,
   DeleteComparisonMemoryResponseDto,
+  // Statistical Memory types
+  StatisticalMemory,
+  GetStatisticalMemoriesRequestDto,
+  GetStatisticalMemoriesResponseDto,
+  AddStatisticalMemoryRequestDto,
+  AddStatisticalMemoryResponseDto,
+  EditStatisticalMemoryRequestDto,
+  EditStatisticalMemoryResponseDto,
+  DeleteStatisticalMemoryRequestDto,
+  DeleteStatisticalMemoryResponseDto,
 } from '../types/api';
 
 /**
@@ -1437,5 +1447,75 @@ export const deleteComparisonMemory = async (
   }
 };
 
+// ==================== Statistical Memory ====================
+
+/**
+ * Get all statistical memory configurations
+ */
+export const getStatisticalMemories = async (
+  params: GetStatisticalMemoriesRequestDto = {}
+): Promise<GetStatisticalMemoriesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetStatisticalMemoriesResponseDto>(
+      '/api/Monitoring/GetStatisticalMemories',
+      params
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new statistical memory configuration
+ */
+export const addStatisticalMemory = async (
+  data: AddStatisticalMemoryRequestDto
+): Promise<AddStatisticalMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddStatisticalMemoryResponseDto>(
+      '/api/Monitoring/AddStatisticalMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing statistical memory configuration
+ */
+export const editStatisticalMemory = async (
+  data: EditStatisticalMemoryRequestDto
+): Promise<EditStatisticalMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditStatisticalMemoryResponseDto>(
+      '/api/Monitoring/EditStatisticalMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a statistical memory configuration
+ */
+export const deleteStatisticalMemory = async (
+  data: DeleteStatisticalMemoryRequestDto
+): Promise<DeleteStatisticalMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteStatisticalMemoryResponseDto>(
+      '/api/Monitoring/DeleteStatisticalMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
 // Re-export types for convenience
-export type { ComparisonMemory };
+export type { ComparisonMemory, StatisticalMemory };
