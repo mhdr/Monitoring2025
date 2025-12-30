@@ -5,6 +5,9 @@
 
 set -e
 
+# Change to the script's directory
+cd "$(dirname "$0")"
+
 # Configuration
 PORT=5030
 PROJECT_NAME="API"
