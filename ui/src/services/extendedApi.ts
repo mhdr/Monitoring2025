@@ -173,6 +173,18 @@ import type {
   DeleteFormulaMemoryResponseDto,
   TestFormulaExpressionRequestDto,
   TestFormulaExpressionResponseDto,
+  // IF Memory types
+  IfMemory,
+  GetIfMemoriesRequestDto,
+  GetIfMemoriesResponseDto,
+  AddIfMemoryRequestDto,
+  AddIfMemoryResponseDto,
+  EditIfMemoryRequestDto,
+  EditIfMemoryResponseDto,
+  DeleteIfMemoryRequestDto,
+  DeleteIfMemoryResponseDto,
+  TestIfConditionRequestDto,
+  TestIfConditionResponseDto,
 } from '../types/api';
 
 /**
@@ -1616,5 +1628,92 @@ export const testFormulaExpression = async (
   }
 };
 
+// ==================== IF Memory ====================
+
+/**
+ * Get all IF memory configurations
+ */
+export const getIfMemories = async (
+  params?: GetIfMemoriesRequestDto
+): Promise<GetIfMemoriesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetIfMemoriesResponseDto>(
+      '/api/Monitoring/GetIfMemories',
+      params
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new IF memory configuration
+ */
+export const addIfMemory = async (
+  data: AddIfMemoryRequestDto
+): Promise<AddIfMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddIfMemoryResponseDto>(
+      '/api/Monitoring/AddIfMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing IF memory configuration
+ */
+export const editIfMemory = async (
+  data: EditIfMemoryRequestDto
+): Promise<EditIfMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditIfMemoryResponseDto>(
+      '/api/Monitoring/EditIfMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete an IF memory configuration
+ */
+export const deleteIfMemory = async (
+  data: DeleteIfMemoryRequestDto
+): Promise<DeleteIfMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteIfMemoryResponseDto>(
+      '/api/Monitoring/DeleteIfMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Test/preview an IF condition expression with current variable values
+ */
+export const testIfCondition = async (
+  data: TestIfConditionRequestDto
+): Promise<TestIfConditionResponseDto> => {
+  try {
+    const response = await apiClient.post<TestIfConditionResponseDto>(
+      '/api/Monitoring/TestIfCondition',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
 // Re-export types for convenience
-export type { ComparisonMemory, StatisticalMemory, FormulaMemory };
+export type { ComparisonMemory, StatisticalMemory, FormulaMemory, IfMemory };

@@ -71,6 +71,8 @@ public class DataContext : DbContext
     public DbSet<StatisticalMemorySample> StatisticalMemorySamples { get; set; }
     
     public DbSet<FormulaMemory> FormulaMemories { get; set; }
+    
+    public DbSet<IfMemory> IfMemories { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -665,6 +667,35 @@ public class DataContext : DbContext
             .HasDefaultValue("");
         
         modelBuilder.Entity<FormulaMemory>()
+            .Property(e => e.VariableAliases)
+            .HasDefaultValue("{}");
+
+        // IfMemory configuration
+        modelBuilder.Entity<IfMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<IfMemory>()
+            .Property(e => e.Interval)
+            .HasDefaultValue(1);
+        
+        modelBuilder.Entity<IfMemory>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<IfMemory>()
+            .Property(e => e.DefaultValue)
+            .HasDefaultValue(0);
+        
+        modelBuilder.Entity<IfMemory>()
+            .Property(e => e.OutputType)
+            .HasDefaultValue(IfMemoryOutputType.Digital);
+        
+        modelBuilder.Entity<IfMemory>()
+            .Property(e => e.Branches)
+            .HasDefaultValue("[]");
+        
+        modelBuilder.Entity<IfMemory>()
             .Property(e => e.VariableAliases)
             .HasDefaultValue("{}");
 

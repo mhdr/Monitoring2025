@@ -207,7 +207,10 @@
     "add": "افزودن",
     "edit": "ویرایش",
     "refresh": "بارگذاری مجدد",
-    "apply": "اعمال"
+    "apply": "اعمال",
+    "moveUp": "انتقال به بالا",
+    "moveDown": "انتقال به پایین",
+    "more": "بیشتر"
   },
   "cron": {
     "builderTitle": "ساخت عبارت زمان‌بندی",
@@ -4627,6 +4630,100 @@
           }
         ]
       }
+    }
+  },
+  "ifMemory": {
+    "title": "حافظه IF",
+    "description": "منطق شرطی با شاخه‌های IF/ELSE IF/ELSE برای تنظیم مقادیر خروجی بر اساس شرایط تعریف کنید.",
+    "addTitle": "افزودن حافظه IF",
+    "editTitle": "ویرایش حافظه IF",
+    "deleteTitle": "حذف حافظه IF",
+    "deleteWarning": "این حافظه IF به طور دائم حذف خواهد شد.",
+    "deleteConfirmation": "این عمل قابل بازگشت نیست. منطق شرطی دیگر ارزیابی نخواهد شد.",
+    "sections": {
+      "basic": "پیکربندی پایه",
+      "variables": "متغیرهای ورودی",
+      "branches": "شاخه‌های شرطی",
+      "advanced": "پیشرفته"
+    },
+    "fields": {
+      "name": "نام",
+      "outputType": "نوع خروجی",
+      "outputTypeHelp": "خروجی دیجیتال ۰/۱ است، خروجی آنالوگ می‌تواند هر مقدار عددی باشد",
+      "outputItem": "آیتم خروجی",
+      "interval": "بازه ارزیابی",
+      "intervalHelp": "هر چند وقت شرایط ارزیابی می‌شوند (به ثانیه)",
+      "isDisabled": "غیرفعال",
+      "description": "توضیحات",
+      "alias": "نام مستعار",
+      "inputItem": "آیتم ورودی",
+      "branchName": "نام شاخه",
+      "condition": "شرط",
+      "outputValue": "مقدار خروجی",
+      "hysteresis": "هیسترزیس",
+      "defaultValue": "مقدار پیش‌فرض (ELSE)"
+    },
+    "outputTypes": {
+      "digital": "دیجیتال (۰/۱)",
+      "analog": "آنالوگ (عددی)"
+    },
+    "addVariable": "افزودن متغیر",
+    "addBranch": "افزودن شاخه",
+    "noVariables": "متغیری تعریف نشده است. برای استفاده در شرایط متغیر اضافه کنید.",
+    "noBranches": "شاخه‌ای تعریف نشده است. حداقل یک شرط IF اضافه کنید.",
+    "branchLabel": "شاخه {{index}}",
+    "branchNamePlaceholder": "نام اختیاری برای این شاخه",
+    "conditionHelp": "از نحو NCalc با ارجاعات [alias] استفاده کنید",
+    "testCondition": "تست شرط",
+    "testResult": "نتیجه: {{result}}",
+    "outputValueDigitalHelp": "مقداری که هنگام درست بودن شرط خروجی می‌شود (معمولاً ۰ یا ۱)",
+    "outputValueAnalogHelp": "مقدار عددی که هنگام درست بودن شرط خروجی می‌شود",
+    "hysteresisHelp": "از سوئیچ سریع در اطراف مقادیر آستانه جلوگیری می‌کند",
+    "elseSection": "پیش‌فرض (ELSE) - وقتی هیچ شرطی مطابقت ندارد",
+    "defaultValueHelp": "مقداری که وقتی هیچ شرط IF/ELSE IF درست نیست خروجی می‌شود",
+    "selectItem": "انتخاب آیتم...",
+    "branchesCount": "شاخه‌ها",
+    "branchesPreview": "شرایط",
+    "emptyCondition": "(شرط خالی)",
+    "validation": {
+      "outputItemRequired": "آیتم خروجی الزامی است",
+      "atLeastOneBranch": "حداقل یک شاخه شرطی الزامی است",
+      "conditionRequired": "شرط برای شاخه‌های IF/ELSE IF الزامی است",
+      "aliasRequired": "نام مستعار متغیر الزامی است",
+      "duplicateAlias": "نام مستعار تکراری - هر متغیر باید نام منحصربه‌فرد داشته باشد",
+      "itemRequired": "آیتم ورودی برای هر متغیر الزامی است",
+      "outputUsedAsInput": "آیتم خروجی نمی‌تواند به عنوان متغیر ورودی استفاده شود",
+      "intervalMin": "بازه باید حداقل ۱ ثانیه باشد"
+    },
+    "errors": {
+      "createFailed": "ایجاد حافظه IF ناموفق بود",
+      "updateFailed": "به‌روزرسانی حافظه IF ناموفق بود",
+      "deleteFailed": "حذف حافظه IF ناموفق بود",
+      "validationFailed": "لطفاً خطاهای اعتبارسنجی را قبل از ذخیره برطرف کنید"
+    },
+    "help": {
+      "basicTitle": "پیکربندی پایه",
+      "basicDescription": "تنظیمات پایه شامل نام، نوع خروجی و بازه ارزیابی را پیکربندی کنید.",
+      "outputTypeTip": "گزینه‌های نوع خروجی",
+      "digitalOutputDesc": "دیجیتال: خروجی ۰ یا ۱ (برای کنترل روشن/خاموش)",
+      "analogOutputDesc": "آنالوگ: خروجی هر مقدار عددی (برای نقاط تنظیم، مقادیر)",
+      "variablesTitle": "متغیرهای ورودی",
+      "variablesDescription": "نام‌های مستعار برای آیتم‌های ورودی تعریف کنید تا در شرایط استفاده شوند. آن‌ها را به صورت [alias] در عبارات ارجاع دهید.",
+      "variablesExample": "نمونه نگاشت متغیر",
+      "variablesUsage": "سپس استفاده کنید: [v1] >= 50 && [v2] < 100",
+      "branchesTitle": "شاخه‌های شرطی (IF/ELSE IF/ELSE)",
+      "branchesDescription": "شرایط به ترتیب ارزیابی می‌شوند. اولین شرط مطابق مقدار خروجی را تعیین می‌کند. اگر هیچ شرطی مطابقت نکند، مقدار ELSE (پیش‌فرض) استفاده می‌شود.",
+      "conditionExamples": "نمونه‌های شرط",
+      "highCondition": "شرط اولویت بالا",
+      "mediumCondition": "شرط اولویت متوسط",
+      "elseCondition": "ELSE → مقدار پیش‌فرض وقتی چیزی مطابقت نمی‌کند",
+      "operatorsTip": "عملگرهای موجود",
+      "greaterOrEqual": "بزرگتر یا مساوی",
+      "lessOrEqual": "کوچکتر یا مساوی",
+      "equal": "مساوی با",
+      "notEqual": "نامساوی با",
+      "and": "AND منطقی",
+      "or": "OR منطقی"
     }
   }
 }

@@ -12286,6 +12286,307 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     #endregion
+
+    #region IF Memory Endpoints
+
+    /// <summary>
+    /// Add a new IF memory configuration with IF/ELSE IF/ELSE branching logic
+    /// </summary>
+    /// <param name="request">IF memory configuration parameters</param>
+    /// <returns>ID of created IF memory</returns>
+    /// <remarks>
+    /// IF Memory evaluates conditional expressions in order and outputs the value
+    /// of the first matching branch. Supports compound conditions using logical operators.
+    /// 
+    /// Features:
+    /// - Ordered IF/ELSE IF/ELSE branches (max 20)
+    /// - NCalc expression engine with comparison operators (>=, <=, ==, !=, >, <)
+    /// - Logical operators (&&, ||, !) for compound conditions
+    /// - Per-branch hysteresis for analog threshold comparisons
+    /// - Digital (0/1) and Analog (numeric) output modes
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AddIfMemory
+    ///     {
+    ///        "name": "Temperature State",
+    ///        "branches": "[{\"id\":\"1\",\"order\":0,\"condition\":\"[temp] >= 80\",\"outputValue\":3,\"name\":\"High\"},{\"id\":\"2\",\"order\":1,\"condition\":\"[temp] >= 50\",\"outputValue\":2,\"name\":\"Medium\"}]",
+    ///        "defaultValue": 1,
+    ///        "variableAliases": "{\"temp\": \"550e8400-e29b-41d4-a716-446655440000\"}",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "outputType": 1,
+    ///        "interval": 1,
+    ///        "description": "Output temperature state as numeric value"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns ID of created IF memory</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("AddIfMemory")]
+    public async Task<IActionResult> AddIfMemory([FromBody] AddIfMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var ifMemory = new Core.Models.IfMemory
+            {
+                Name = request.Name,
+                Branches = request.Branches,
+                DefaultValue = request.DefaultValue,
+                VariableAliases = request.VariableAliases,
+                OutputItemId = request.OutputItemId,
+                OutputType = (Core.Models.IfMemoryOutputType)request.OutputType,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                Description = request.Description
+            };
+
+            var (success, id, errorMessage) = await Core.IfMemories.AddIfMemory(ifMemory);
+
+            return Ok(new AddIfMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new AddIfMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing IF memory configuration
+    /// </summary>
+    /// <param name="request">Updated IF memory configuration parameters</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Updates an existing IF memory configuration.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/EditIfMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Updated Temperature State",
+    ///        "branches": "[{\"id\":\"1\",\"order\":0,\"condition\":\"[temp] >= 90\",\"outputValue\":3,\"name\":\"Critical\"}]",
+    ///        "defaultValue": 0,
+    ///        "variableAliases": "{\"temp\": \"550e8400-e29b-41d4-a716-446655440001\"}",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440002",
+    ///        "outputType": 1,
+    ///        "interval": 1
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("EditIfMemory")]
+    public async Task<IActionResult> EditIfMemory([FromBody] EditIfMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var ifMemory = new Core.Models.IfMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                Branches = request.Branches,
+                DefaultValue = request.DefaultValue,
+                VariableAliases = request.VariableAliases,
+                OutputItemId = request.OutputItemId,
+                OutputType = (Core.Models.IfMemoryOutputType)request.OutputType,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                Description = request.Description
+            };
+
+            var (success, errorMessage) = await Core.IfMemories.EditIfMemory(ifMemory);
+
+            return Ok(new EditIfMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new EditIfMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Delete an IF memory configuration
+    /// </summary>
+    /// <param name="request">ID of IF memory to delete</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Permanently deletes an IF memory configuration.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/DeleteIfMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails or memory not found</response>
+    [HttpPost("DeleteIfMemory")]
+    public async Task<IActionResult> DeleteIfMemory([FromBody] DeleteIfMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.IfMemories.DeleteIfMemory(request.Id);
+
+            return Ok(new DeleteIfMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new DeleteIfMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Test/preview an IF condition expression with current variable values
+    /// </summary>
+    /// <param name="request">Condition and variable mappings</param>
+    /// <returns>Boolean result (true/false) or error message</returns>
+    /// <remarks>
+    /// Evaluates a condition expression with current input values from Redis.
+    /// Useful for validating conditions before saving.
+    /// 
+    /// Supported Operators:
+    /// - Comparison: >=, <=, ==, !=, >, <
+    /// - Logical: && (AND), || (OR), ! (NOT)
+    /// - Arithmetic: +, -, *, /, %
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/TestIfCondition
+    ///     {
+    ///        "condition": "[temp] >= 50 && [pressure] < 100",
+    ///        "variableAliases": [
+    ///           {"alias": "temp", "itemId": "550e8400-e29b-41d4-a716-446655440000"},
+    ///           {"alias": "pressure", "itemId": "550e8400-e29b-41d4-a716-446655440001"}
+    ///        ]
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns boolean result or error</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("TestIfCondition")]
+    public async Task<IActionResult> TestIfCondition([FromBody] TestIfConditionRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Convert variable aliases to values by fetching from Redis
+            var variableValues = new Dictionary<string, double>();
+            
+            if (request.VariableAliases != null && request.VariableAliases.Count > 0)
+            {
+                var itemIds = request.VariableAliases
+                    .Where(va => va.ItemId != Guid.Empty)
+                    .Select(va => va.ItemId.ToString())
+                    .ToList();
+
+                if (itemIds.Count > 0)
+                {
+                    var itemValues = await Core.Points.GetFinalItemsBatch(itemIds);
+
+                    foreach (var va in request.VariableAliases)
+                    {
+                        if (va.ItemId != Guid.Empty)
+                        {
+                            var itemIdStr = va.ItemId.ToString();
+                            if (itemValues.TryGetValue(itemIdStr, out var item) && 
+                                double.TryParse(item.Value, out var numericValue))
+                            {
+                                variableValues[va.Alias] = numericValue;
+                            }
+                            else
+                            {
+                                // Use 0 as default if value not found or not a number
+                                variableValues[va.Alias] = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            var (success, result, errorMessage) = Core.IfMemories.TestCondition(
+                request.Condition,
+                variableValues
+            );
+
+            return Ok(new TestIfConditionResponseDto
+            {
+                IsSuccessful = success,
+                Result = result,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new TestIfConditionResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    #endregion
 }
 
 #region PID Auto-Tuning DTOs

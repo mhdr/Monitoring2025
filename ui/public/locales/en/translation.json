@@ -207,7 +207,10 @@
     "add": "Add",
     "edit": "Edit",
     "refresh": "Refresh",
-    "apply": "Apply"
+    "apply": "Apply",
+    "moveUp": "Move Up",
+    "moveDown": "Move Down",
+    "more": "more"
   },
   "cron": {
     "builderTitle": "Cron Expression Builder",
@@ -4981,6 +4984,100 @@
           }
         ]
       }
+    }
+  },
+  "ifMemory": {
+    "title": "IF Memory",
+    "description": "Define conditional logic with IF/ELSE IF/ELSE branches to set output values based on conditions.",
+    "addTitle": "Add IF Memory",
+    "editTitle": "Edit IF Memory",
+    "deleteTitle": "Delete IF Memory",
+    "deleteWarning": "This IF memory will be permanently deleted.",
+    "deleteConfirmation": "This action cannot be undone. The conditional logic will no longer evaluate.",
+    "sections": {
+      "basic": "Basic Configuration",
+      "variables": "Input Variables",
+      "branches": "Conditional Branches",
+      "advanced": "Advanced"
+    },
+    "fields": {
+      "name": "Name",
+      "outputType": "Output Type",
+      "outputTypeHelp": "Digital outputs are 0/1, Analog outputs can be any numeric value",
+      "outputItem": "Output Item",
+      "interval": "Evaluation Interval",
+      "intervalHelp": "How often the conditions are evaluated (in seconds)",
+      "isDisabled": "Disabled",
+      "description": "Description",
+      "alias": "Alias",
+      "inputItem": "Input Item",
+      "branchName": "Branch Name",
+      "condition": "Condition",
+      "outputValue": "Output Value",
+      "hysteresis": "Hysteresis",
+      "defaultValue": "Default Value (ELSE)"
+    },
+    "outputTypes": {
+      "digital": "Digital (0/1)",
+      "analog": "Analog (Numeric)"
+    },
+    "addVariable": "Add Variable",
+    "addBranch": "Add Branch",
+    "noVariables": "No variables defined. Add variables to use in conditions.",
+    "noBranches": "No branches defined. Add at least one IF condition.",
+    "branchLabel": "Branch {{index}}",
+    "branchNamePlaceholder": "Optional name for this branch",
+    "conditionHelp": "Use NCalc syntax with [alias] references",
+    "testCondition": "Test Condition",
+    "testResult": "Result: {{result}}",
+    "outputValueDigitalHelp": "Value to output when condition is true (typically 0 or 1)",
+    "outputValueAnalogHelp": "Numeric value to output when condition is true",
+    "hysteresisHelp": "Prevents rapid switching around threshold values",
+    "elseSection": "Default (ELSE) - When no condition matches",
+    "defaultValueHelp": "Value to output when no IF/ELSE IF condition is true",
+    "selectItem": "Select item...",
+    "branchesCount": "Branches",
+    "branchesPreview": "Conditions",
+    "emptyCondition": "(empty condition)",
+    "validation": {
+      "outputItemRequired": "Output item is required",
+      "atLeastOneBranch": "At least one conditional branch is required",
+      "conditionRequired": "Condition is required for IF/ELSE IF branches",
+      "aliasRequired": "Variable alias is required",
+      "duplicateAlias": "Duplicate alias - each variable must have a unique name",
+      "itemRequired": "Input item is required for each variable",
+      "outputUsedAsInput": "Output item cannot be used as an input variable",
+      "intervalMin": "Interval must be at least 1 second"
+    },
+    "errors": {
+      "createFailed": "Failed to create IF memory",
+      "updateFailed": "Failed to update IF memory",
+      "deleteFailed": "Failed to delete IF memory",
+      "validationFailed": "Please fix the validation errors before saving"
+    },
+    "help": {
+      "basicTitle": "Basic Configuration",
+      "basicDescription": "Configure the basic settings including name, output type, and evaluation interval.",
+      "outputTypeTip": "Output Type Options",
+      "digitalOutputDesc": "Digital: Outputs 0 or 1 (for on/off control)",
+      "analogOutputDesc": "Analog: Outputs any numeric value (for setpoints, values)",
+      "variablesTitle": "Input Variables",
+      "variablesDescription": "Define aliases for input items to use in your conditions. Reference them as [alias] in expressions.",
+      "variablesExample": "Variable Mapping Example",
+      "variablesUsage": "Then use: [v1] >= 50 && [v2] < 100",
+      "branchesTitle": "Conditional Branches (IF/ELSE IF/ELSE)",
+      "branchesDescription": "Conditions are evaluated in order. The first matching condition determines the output value. If no condition matches, the ELSE (default) value is used.",
+      "conditionExamples": "Condition Examples",
+      "highCondition": "High priority condition",
+      "mediumCondition": "Medium priority condition",
+      "elseCondition": "ELSE → Default value when nothing matches",
+      "operatorsTip": "Available Operators",
+      "greaterOrEqual": "greater than or equal",
+      "lessOrEqual": "less than or equal",
+      "equal": "equal to",
+      "notEqual": "not equal to",
+      "and": "logical AND",
+      "or": "logical OR"
     }
   }
 }

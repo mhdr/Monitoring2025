@@ -3547,3 +3547,148 @@ export interface TestFormulaExpressionResponseDto {
   result?: number | null; // Computed result if successful
   errorMessage?: string | null;
 }
+
+// ============================================================================
+// IF Memory Types
+// ============================================================================
+
+/**
+ * Output type for IF Memory determining how values are written.
+ */
+export enum IfMemoryOutputType {
+  /** Digital mode: Output is clamped to 0 (false/off) or 1 (true/on) */
+  Digital = 0,
+  /** Analog mode: Output value is written directly as a numeric value */
+  Analog = 1,
+}
+
+/**
+ * Represents a conditional branch within an IF memory.
+ * Branches are evaluated in order by their Order property.
+ */
+export interface ConditionalBranch {
+  id: string; // Unique identifier for tracking
+  order: number; // Evaluation order (0-based, lower = first)
+  condition: string; // NCalc condition expression using [alias] syntax
+  outputValue: number; // Value to output when condition is true
+  hysteresis: number; // Optional hysteresis for analog comparisons (default 0)
+  name?: string | null; // Optional label for UI display
+}
+
+/**
+ * IF Memory for evaluating conditional expressions with IF/ELSE IF/ELSE branching logic.
+ * Evaluates NCalc conditions in order and outputs the value of the first matching branch.
+ */
+export interface IfMemory {
+  id: string; // UUID
+  name?: string | null;
+  branches: string; // JSON array of ConditionalBranch objects
+  defaultValue: number; // ELSE value when no branch matches
+  variableAliases: string; // JSON object mapping alias -> item GUID
+  outputItemId: string; // UUID - Output item for result
+  outputType: IfMemoryOutputType; // Digital (0/1) or Analog (numeric)
+  interval: number; // int - Evaluation interval in seconds
+  isDisabled: boolean;
+  description?: string | null;
+
+  // Resolved item names for display
+  outputItemName?: string | null;
+  outputItemNameFa?: string | null;
+}
+
+/**
+ * Request DTO for retrieving IF memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetIfMemoriesRequestDto {
+  // Empty - no filtering parameters needed
+}
+
+/**
+ * Response DTO containing list of IF memory configurations
+ */
+export interface GetIfMemoriesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  ifMemories?: IfMemory[] | null;
+}
+
+/**
+ * Request DTO for creating a new IF memory configuration
+ */
+export interface AddIfMemoryRequestDto {
+  name?: string | null;
+  branches: string; // JSON array of ConditionalBranch objects
+  defaultValue?: number; // Default 0
+  variableAliases: string; // JSON object {"alias": "guid", ...}
+  outputItemId: string; // UUID
+  outputType?: number; // 0 = Digital, 1 = Analog (default 0)
+  interval?: number; // int - must be > 0, default 1
+  isDisabled?: boolean;
+  description?: string | null;
+}
+
+/**
+ * Response DTO for adding an IF memory
+ */
+export interface AddIfMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of created IF memory
+}
+
+/**
+ * Request DTO for editing an existing IF memory configuration
+ */
+export interface EditIfMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  branches: string;
+  defaultValue?: number;
+  variableAliases: string;
+  outputItemId: string; // UUID
+  outputType?: number;
+  interval?: number;
+  isDisabled?: boolean;
+  description?: string | null;
+}
+
+/**
+ * Response DTO for editing an IF memory
+ */
+export interface EditIfMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting an IF memory
+ */
+export interface DeleteIfMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting an IF memory
+ */
+export interface DeleteIfMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for testing/previewing an IF condition expression
+ */
+export interface TestIfConditionRequestDto {
+  condition: string; // NCalc condition expression to evaluate
+  variableAliases?: VariableAlias[]; // List of variable alias to item ID mappings
+}
+
+/**
+ * Response DTO for testing an IF condition expression
+ */
+export interface TestIfConditionResponseDto {
+  isSuccessful: boolean;
+  result?: boolean | null; // Boolean condition result if successful
+  errorMessage?: string | null;
+}
