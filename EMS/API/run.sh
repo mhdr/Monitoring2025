@@ -3,8 +3,6 @@
 # Development run script for EMS API
 # This script checks for port usage, kills any blocking process, and runs the API in development mode
 
-set -e
-
 # Change to the script's directory
 cd "$(dirname "$0")"
 
@@ -25,28 +23,52 @@ echo -e "${BLUE}  EMS API - Development Mode${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
+# Function to kill all processes using the port
+kill_port_processes() {
+    local max_retries=5
+    local retry_count=0
+    
+    while [ $retry_count -lt $max_retries ]; do
+        # Get all PIDs using the port
+        PIDS=$(lsof -ti:${PORT} 2>/dev/null || true)
+        
+        if [ -z "$PIDS" ]; then
+            echo -e "${GREEN}[SUCCESS]${NC} Port ${PORT} is now free"
+            return 0
+        fi
+        
+        if [ $retry_count -eq 0 ]; then
+            echo -e "${YELLOW}[WARNING]${NC} Port ${PORT} is in use by process(es): ${PIDS}"
+            echo -e "${YELLOW}[ACTION]${NC} Killing process(es)..."
+        else
+            echo -e "${YELLOW}[RETRY ${retry_count}/${max_retries}]${NC} Port still in use, retrying..."
+        fi
+        
+        # Kill all PIDs
+        for pid in $PIDS; do
+            kill -9 $pid 2>/dev/null || true
+        done
+        
+        # Also try to kill by pattern
+        pkill -9 -f "dotnet.*API" 2>/dev/null || true
+        
+        # Wait for processes to die
+        sleep 2
+        
+        retry_count=$((retry_count + 1))
+    done
+    
+    echo -e "${RED}[ERROR]${NC} Failed to free port ${PORT} after ${max_retries} attempts"
+    echo -e "${RED}[ERROR]${NC} Please manually kill the processes using: sudo lsof -ti:${PORT} | xargs kill -9"
+    exit 1
+}
+
 # Check if port is in use
 echo -e "${YELLOW}[CHECK]${NC} Checking if port ${PORT} is in use..."
 PID=$(lsof -ti:${PORT} 2>/dev/null || true)
 
 if [ -n "$PID" ]; then
-    echo -e "${YELLOW}[WARNING]${NC} Port ${PORT} is in use by process(es): ${PID}"
-    echo -e "${YELLOW}[ACTION]${NC} Killing process(es)..."
-    
-    # Kill the process
-    kill -9 $PID 2>/dev/null || true
-    
-    # Wait a moment for the port to be released
-    sleep 2
-    
-    # Verify port is now free
-    PID_CHECK=$(lsof -ti:${PORT} 2>/dev/null || true)
-    if [ -n "$PID_CHECK" ]; then
-        echo -e "${RED}[ERROR]${NC} Failed to free port ${PORT}"
-        exit 1
-    fi
-    
-    echo -e "${GREEN}[SUCCESS]${NC} Port ${PORT} is now free"
+    kill_port_processes
 else
     echo -e "${GREEN}[OK]${NC} Port ${PORT} is available"
 fi
