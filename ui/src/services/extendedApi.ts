@@ -123,6 +123,24 @@ import type {
   EditRateOfChangeMemoryResponseDto,
   DeleteRateOfChangeMemoryRequestDto,
   DeleteRateOfChangeMemoryResponseDto,
+  // Schedule Memory types
+  ScheduleMemory,
+  AddScheduleMemoryRequestDto,
+  AddScheduleMemoryResponseDto,
+  EditScheduleMemoryRequestDto,
+  EditScheduleMemoryResponseDto,
+  DeleteScheduleMemoryRequestDto,
+  DeleteScheduleMemoryResponseDto,
+  SetScheduleOverrideRequestDto,
+  SetScheduleOverrideResponseDto,
+  // Holiday Calendar types
+  HolidayCalendar,
+  AddHolidayCalendarRequestDto,
+  AddHolidayCalendarResponseDto,
+  EditHolidayCalendarRequestDto,
+  EditHolidayCalendarResponseDto,
+  DeleteHolidayCalendarRequestDto,
+  DeleteHolidayCalendarResponseDto,
 } from '../types/api';
 
 /**
@@ -1158,6 +1176,179 @@ export const resetRateOfChangeMemory = async (data: {
   try {
     const response = await apiClient.post<{ isSuccessful: boolean; errorMessage?: string | null }>(
       '/api/Monitoring/ResetRateOfChangeMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// ==========================================
+// Schedule Memory API Functions
+// ==========================================
+
+/**
+ * Get all schedule memory configurations
+ */
+export const getScheduleMemories = async (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  params: Record<string, unknown> = {}
+): Promise<{
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  scheduleMemories?: ScheduleMemory[] | null;
+}> => {
+  try {
+    const response = await apiClient.post<{
+      isSuccessful: boolean;
+      errorMessage?: string | null;
+      scheduleMemories?: ScheduleMemory[] | null;
+    }>('/api/Monitoring/GetScheduleMemories', params);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new schedule memory configuration
+ */
+export const addScheduleMemory = async (
+  data: AddScheduleMemoryRequestDto
+): Promise<AddScheduleMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddScheduleMemoryResponseDto>(
+      '/api/Monitoring/AddScheduleMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing schedule memory configuration
+ */
+export const editScheduleMemory = async (
+  data: EditScheduleMemoryRequestDto
+): Promise<EditScheduleMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditScheduleMemoryResponseDto>(
+      '/api/Monitoring/EditScheduleMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a schedule memory configuration
+ */
+export const deleteScheduleMemory = async (
+  data: DeleteScheduleMemoryRequestDto
+): Promise<DeleteScheduleMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteScheduleMemoryResponseDto>(
+      '/api/Monitoring/DeleteScheduleMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Set manual override for a schedule memory
+ */
+export const setScheduleOverride = async (
+  data: SetScheduleOverrideRequestDto
+): Promise<SetScheduleOverrideResponseDto> => {
+  try {
+    const response = await apiClient.post<SetScheduleOverrideResponseDto>(
+      '/api/Monitoring/SetScheduleOverride',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// ==========================================
+// Holiday Calendar API Functions
+// ==========================================
+
+/**
+ * Get all holiday calendars
+ */
+export const getHolidayCalendars = async (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  params: Record<string, unknown> = {}
+): Promise<{
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  holidayCalendars?: HolidayCalendar[] | null;
+}> => {
+  try {
+    const response = await apiClient.post<{
+      isSuccessful: boolean;
+      errorMessage?: string | null;
+      holidayCalendars?: HolidayCalendar[] | null;
+    }>('/api/Monitoring/GetHolidayCalendars', params);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new holiday calendar
+ */
+export const addHolidayCalendar = async (
+  data: AddHolidayCalendarRequestDto
+): Promise<AddHolidayCalendarResponseDto> => {
+  try {
+    const response = await apiClient.post<AddHolidayCalendarResponseDto>(
+      '/api/Monitoring/AddHolidayCalendar',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing holiday calendar
+ */
+export const editHolidayCalendar = async (
+  data: EditHolidayCalendarRequestDto
+): Promise<EditHolidayCalendarResponseDto> => {
+  try {
+    const response = await apiClient.post<EditHolidayCalendarResponseDto>(
+      '/api/Monitoring/EditHolidayCalendar',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a holiday calendar
+ */
+export const deleteHolidayCalendar = async (
+  data: DeleteHolidayCalendarRequestDto
+): Promise<DeleteHolidayCalendarResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteHolidayCalendarResponseDto>(
+      '/api/Monitoring/DeleteHolidayCalendar',
       data
     );
     return response.data;

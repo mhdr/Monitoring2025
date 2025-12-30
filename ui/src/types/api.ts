@@ -3389,3 +3389,309 @@ export interface ResetRateOfChangeMemoryResponseDto {
   isSuccessful: boolean;
   errorMessage?: string | null;
 }
+
+// ============================================================================
+// Schedule Memory Types
+// ============================================================================
+
+/**
+ * Override expiration mode for manual override behavior
+ */
+export enum OverrideExpirationMode {
+  /** Override expires after a specified duration in minutes */
+  TimeBased = 1,
+  /** Override remains active until the next schedule change or manual deactivation */
+  EventBased = 2,
+}
+
+/**
+ * Priority levels for schedule blocks to resolve conflicts
+ */
+export enum SchedulePriority {
+  /** Low priority - can be overridden by any higher priority */
+  Low = 1,
+  /** Normal priority - default for most schedules */
+  Normal = 2,
+  /** High priority - takes precedence over normal schedules */
+  High = 3,
+  /** Critical priority - highest precedence, for emergency or demand response */
+  Critical = 4,
+}
+
+/**
+ * Days of the week for schedule block configuration
+ */
+export enum ScheduleDayOfWeek {
+  Sunday = 0,
+  Monday = 1,
+  Tuesday = 2,
+  Wednesday = 3,
+  Thursday = 4,
+  Friday = 5,
+  Saturday = 6,
+}
+
+/**
+ * Schedule block representing a time period with specific output value
+ */
+export interface ScheduleBlock {
+  id: string; // UUID
+  scheduleMemoryId: string; // UUID
+  dayOfWeek: ScheduleDayOfWeek; // Day of week
+  startTime: string; // Format: "HH:mm:ss"
+  endTime: string; // Format: "HH:mm:ss"
+  priority: SchedulePriority; // Priority level
+  analogOutputValue?: number | null; // Analog value for this block
+  digitalOutputValue?: boolean | null; // Digital value for this block
+  description?: string | null; // Optional description
+}
+
+/**
+ * Schedule Memory for time-based setpoint/command generation
+ */
+export interface ScheduleMemory {
+  id: string; // UUID
+  name?: string | null;
+  outputItemId: string; // UUID - AnalogOutput or DigitalOutput
+  interval: number; // int - Processing interval in seconds
+  isDisabled: boolean; // bool - Whether memory is disabled
+  holidayCalendarId?: string | null; // UUID - Optional holiday calendar reference
+  holidayCalendarName?: string | null; // Name of referenced calendar
+  defaultAnalogValue?: number | null; // Default analog value when no block active
+  defaultDigitalValue?: boolean | null; // Default digital value when no block active
+  manualOverrideActive: boolean; // Whether manual override is active
+  manualOverrideAnalogValue?: number | null; // Override analog value
+  manualOverrideDigitalValue?: boolean | null; // Override digital value
+  overrideExpirationMode: OverrideExpirationMode; // Override expiration behavior
+  overrideDurationMinutes: number; // Duration for time-based expiration
+  overrideActivationTime?: string | null; // When override was activated (ISO date)
+  lastActiveBlockId?: string | null; // UUID - Last active block for event-based detection
+  scheduleBlocks?: ScheduleBlock[] | null; // Schedule blocks
+}
+
+/**
+ * Enhanced Schedule Memory with item details
+ */
+export interface ScheduleMemoryWithItems extends ScheduleMemory {
+  outputItemName?: string;
+  outputItemNameFa?: string;
+  outputItemType?: ItemType;
+}
+
+/**
+ * Request DTO for retrieving schedule memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetScheduleMemoriesRequestDto {
+  // Empty - reserved for future filtering
+}
+
+/**
+ * Response DTO containing list of schedule memory configurations
+ */
+export interface GetScheduleMemoriesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  scheduleMemories?: ScheduleMemory[] | null;
+}
+
+/**
+ * DTO for adding a schedule block
+ */
+export interface AddScheduleBlockDto {
+  dayOfWeek: number; // 0-6
+  startTime: string; // Format: "HH:mm:ss"
+  endTime: string; // Format: "HH:mm:ss"
+  priority: number; // 1-4
+  analogOutputValue?: number | null;
+  digitalOutputValue?: boolean | null;
+  description?: string | null;
+}
+
+/**
+ * Request DTO for creating a new schedule memory configuration
+ */
+export interface AddScheduleMemoryRequestDto {
+  name?: string | null;
+  outputItemId: string; // UUID
+  interval: number; // int - must be > 0
+  isDisabled: boolean;
+  holidayCalendarId?: string | null; // UUID
+  defaultAnalogValue?: number | null;
+  defaultDigitalValue?: boolean | null;
+  overrideExpirationMode: number; // 1 or 2
+  overrideDurationMinutes: number; // int - must be > 0
+  scheduleBlocks?: AddScheduleBlockDto[] | null;
+}
+
+/**
+ * Response DTO for adding a schedule memory configuration
+ */
+export interface AddScheduleMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID
+}
+
+/**
+ * Request DTO for editing a schedule memory configuration
+ */
+export interface EditScheduleMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  outputItemId: string; // UUID
+  interval: number; // int - must be > 0
+  isDisabled: boolean;
+  holidayCalendarId?: string | null; // UUID
+  defaultAnalogValue?: number | null;
+  defaultDigitalValue?: boolean | null;
+  overrideExpirationMode: number; // 1 or 2
+  overrideDurationMinutes: number; // int - must be > 0
+  scheduleBlocks?: AddScheduleBlockDto[] | null;
+}
+
+/**
+ * Response DTO for editing a schedule memory configuration
+ */
+export interface EditScheduleMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a schedule memory configuration
+ */
+export interface DeleteScheduleMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a schedule memory configuration
+ */
+export interface DeleteScheduleMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for setting manual override on a schedule memory
+ */
+export interface SetScheduleOverrideRequestDto {
+  id: string; // UUID
+  activate: boolean;
+  analogValue?: number | null;
+  digitalValue?: boolean | null;
+}
+
+/**
+ * Response DTO for setting manual override
+ */
+export interface SetScheduleOverrideResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+// ============================================================================
+// Holiday Calendar Types
+// ============================================================================
+
+/**
+ * Holiday date within a calendar
+ */
+export interface HolidayDate {
+  id: string; // UUID
+  holidayCalendarId: string; // UUID
+  date: string; // Format: "yyyy-MM-dd"
+  name?: string | null; // Holiday name
+  holidayAnalogValue?: number | null; // Optional analog value for this holiday
+  holidayDigitalValue?: boolean | null; // Optional digital value for this holiday
+}
+
+/**
+ * Holiday calendar for schedule exception handling
+ */
+export interface HolidayCalendar {
+  id: string; // UUID
+  name: string; // Calendar name
+  description?: string | null; // Optional description
+  dates?: HolidayDate[] | null; // Holiday dates in this calendar
+}
+
+/**
+ * Request DTO for retrieving holiday calendars
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetHolidayCalendarsRequestDto {
+  // Empty - reserved for future filtering
+}
+
+/**
+ * Response DTO containing list of holiday calendars
+ */
+export interface GetHolidayCalendarsResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  holidayCalendars?: HolidayCalendar[] | null;
+}
+
+/**
+ * DTO for adding a holiday date
+ */
+export interface AddHolidayDateDto {
+  date: string; // Format: "yyyy-MM-dd"
+  name?: string | null;
+  holidayAnalogValue?: number | null;
+  holidayDigitalValue?: boolean | null;
+}
+
+/**
+ * Request DTO for creating a new holiday calendar
+ */
+export interface AddHolidayCalendarRequestDto {
+  name: string;
+  description?: string | null;
+  dates?: AddHolidayDateDto[] | null;
+}
+
+/**
+ * Response DTO for adding a holiday calendar
+ */
+export interface AddHolidayCalendarResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID
+}
+
+/**
+ * Request DTO for editing a holiday calendar
+ */
+export interface EditHolidayCalendarRequestDto {
+  id: string; // UUID
+  name: string;
+  description?: string | null;
+  dates?: AddHolidayDateDto[] | null;
+}
+
+/**
+ * Response DTO for editing a holiday calendar
+ */
+export interface EditHolidayCalendarResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a holiday calendar
+ */
+export interface DeleteHolidayCalendarRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a holiday calendar
+ */
+export interface DeleteHolidayCalendarResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+

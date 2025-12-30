@@ -59,6 +59,11 @@ public class DataContext : DbContext
     
     public DbSet<ModbusGatewayConfig> ModbusGatewayConfigs { get; set; }
     public DbSet<ModbusGatewayMapping> ModbusGatewayMappings { get; set; }
+    
+    public DbSet<ScheduleMemory> ScheduleMemories { get; set; }
+    public DbSet<ScheduleBlock> ScheduleBlocks { get; set; }
+    public DbSet<HolidayCalendar> HolidayCalendars { get; set; }
+    public DbSet<HolidayDate> HolidayDates { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -504,6 +509,80 @@ public class DataContext : DbContext
         modelBuilder.Entity<AverageMemory>()
             .Property(u => u.OutlierMethod)
             .HasConversion<int>();
+        
+        // ScheduleMemory configuration
+        modelBuilder.Entity<ScheduleMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<ScheduleMemory>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<ScheduleMemory>()
+            .Property(e => e.Interval)
+            .HasDefaultValue(10);
+        
+        modelBuilder.Entity<ScheduleMemory>()
+            .Property(e => e.ManualOverrideActive)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<ScheduleMemory>()
+            .Property(e => e.OverrideExpirationMode)
+            .HasDefaultValue(OverrideExpirationMode.TimeBased);
+        
+        modelBuilder.Entity<ScheduleMemory>()
+            .Property(e => e.OverrideDurationMinutes)
+            .HasDefaultValue(60);
+        
+        modelBuilder.Entity<ScheduleMemory>()
+            .Property(e => e.OverrideExpirationMode)
+            .HasConversion<int>();
+        
+        // ScheduleBlock configuration
+        modelBuilder.Entity<ScheduleBlock>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<ScheduleBlock>()
+            .Property(e => e.Priority)
+            .HasDefaultValue(SchedulePriority.Normal);
+        
+        modelBuilder.Entity<ScheduleBlock>()
+            .Property(e => e.DayOfWeek)
+            .HasConversion<int>();
+        
+        modelBuilder.Entity<ScheduleBlock>()
+            .Property(e => e.Priority)
+            .HasConversion<int>();
+        
+        modelBuilder.Entity<ScheduleBlock>()
+            .HasOne(b => b.ScheduleMemory)
+            .WithMany(m => m.ScheduleBlocks)
+            .HasForeignKey(b => b.ScheduleMemoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        modelBuilder.Entity<ScheduleBlock>()
+            .HasIndex(b => new { b.ScheduleMemoryId, b.DayOfWeek, b.StartTime });
+        
+        // HolidayCalendar configuration
+        modelBuilder.Entity<HolidayCalendar>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        // HolidayDate configuration
+        modelBuilder.Entity<HolidayDate>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<HolidayDate>()
+            .HasOne(d => d.HolidayCalendar)
+            .WithMany(c => c.Dates)
+            .HasForeignKey(d => d.HolidayCalendarId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        modelBuilder.Entity<HolidayDate>()
+            .HasIndex(d => new { d.HolidayCalendarId, d.Date });
 
         // keys
 

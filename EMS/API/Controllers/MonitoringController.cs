@@ -10824,6 +10824,540 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             });
         }
     }
+
+    #region Schedule Memory Endpoints
+
+    /// <summary>
+    /// Get all schedule memory configurations
+    /// </summary>
+    /// <param name="request">Empty request</param>
+    /// <returns>List of schedule memories with their blocks</returns>
+    /// <remarks>
+    /// Retrieves all schedule memories for time-based setpoint/command generation.
+    /// 
+    /// Use cases:
+    /// - Temperature setpoints (day/night, weekday/weekend)
+    /// - Equipment start/stop schedules
+    /// - Demand response programs
+    /// - Lighting control
+    /// - HVAC optimization
+    /// 
+    /// Override expiration modes:
+    /// - **1 (TimeBased)**: Override expires after specified duration
+    /// - **2 (EventBased)**: Override expires when schedule changes
+    /// 
+    /// Priority levels:
+    /// - **1 (Low)**: Can be overridden by higher priority
+    /// - **2 (Normal)**: Default for most schedules
+    /// - **3 (High)**: Takes precedence over normal
+    /// - **4 (Critical)**: Highest precedence
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetScheduleMemories
+    ///     {}
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns list of schedule memories</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetScheduleMemories")]
+    public async Task<IActionResult> GetScheduleMemories([FromBody] GetScheduleMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memories = await Core.ScheduleMemories.GetScheduleMemories();
+
+            var response = new GetScheduleMemoriesResponseDto
+            {
+                IsSuccessful = true,
+                ScheduleMemories = memories?.Select(m => new ScheduleMemoryItemDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    OutputItemId = m.OutputItemId,
+                    Interval = m.Interval,
+                    IsDisabled = m.IsDisabled,
+                    HolidayCalendarId = m.HolidayCalendarId,
+                    HolidayCalendarName = m.HolidayCalendar?.Name,
+                    DefaultAnalogValue = m.DefaultAnalogValue,
+                    DefaultDigitalValue = m.DefaultDigitalValue,
+                    ManualOverrideActive = m.ManualOverrideActive,
+                    ManualOverrideAnalogValue = m.ManualOverrideAnalogValue,
+                    ManualOverrideDigitalValue = m.ManualOverrideDigitalValue,
+                    OverrideExpirationMode = (int)m.OverrideExpirationMode,
+                    OverrideDurationMinutes = m.OverrideDurationMinutes,
+                    OverrideActivationTime = m.OverrideActivationTime,
+                    LastActiveBlockId = m.LastActiveBlockId,
+                    ScheduleBlocks = m.ScheduleBlocks?.Select(b => new ScheduleBlockItemDto
+                    {
+                        Id = b.Id,
+                        ScheduleMemoryId = b.ScheduleMemoryId,
+                        DayOfWeek = (int)b.DayOfWeek,
+                        StartTime = b.StartTime.ToString(@"hh\:mm\:ss"),
+                        EndTime = b.EndTime.ToString(@"hh\:mm\:ss"),
+                        Priority = (int)b.Priority,
+                        AnalogOutputValue = b.AnalogOutputValue,
+                        DigitalOutputValue = b.DigitalOutputValue,
+                        Description = b.Description
+                    }).ToList()
+                }).ToList()
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new schedule memory configuration
+    /// </summary>
+    /// <param name="request">Schedule memory configuration parameters</param>
+    /// <returns>ID of the newly created schedule memory</returns>
+    /// <remarks>
+    /// Creates a new schedule memory for time-based setpoint/command generation.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AddScheduleMemory
+    ///     {
+    ///        "name": "HVAC Temperature Schedule",
+    ///        "outputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "interval": 10,
+    ///        "defaultAnalogValue": 20.0,
+    ///        "overrideExpirationMode": 1,
+    ///        "overrideDurationMinutes": 60,
+    ///        "scheduleBlocks": [
+    ///          {
+    ///            "dayOfWeek": 1,
+    ///            "startTime": "08:00:00",
+    ///            "endTime": "17:00:00",
+    ///            "priority": 2,
+    ///            "analogOutputValue": 22.0,
+    ///            "description": "Workday hours"
+    ///          }
+    ///        ]
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns ID of created schedule memory</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("AddScheduleMemory")]
+    public async Task<IActionResult> AddScheduleMemory([FromBody] AddScheduleMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memory = new Core.Models.ScheduleMemory
+            {
+                Name = request.Name,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                HolidayCalendarId = request.HolidayCalendarId,
+                DefaultAnalogValue = request.DefaultAnalogValue,
+                DefaultDigitalValue = request.DefaultDigitalValue,
+                OverrideExpirationMode = (Core.Models.OverrideExpirationMode)request.OverrideExpirationMode,
+                OverrideDurationMinutes = request.OverrideDurationMinutes,
+                ScheduleBlocks = request.ScheduleBlocks?.Select(b => new Core.Models.ScheduleBlock
+                {
+                    DayOfWeek = (Core.Models.ScheduleDayOfWeek)b.DayOfWeek,
+                    StartTime = TimeSpan.Parse(b.StartTime),
+                    EndTime = TimeSpan.Parse(b.EndTime),
+                    Priority = (Core.Models.SchedulePriority)b.Priority,
+                    AnalogOutputValue = b.AnalogOutputValue,
+                    DigitalOutputValue = b.DigitalOutputValue,
+                    Description = b.Description
+                }).ToList()
+            };
+
+            var (success, id, errorMessage) = await Core.ScheduleMemories.AddScheduleMemory(memory);
+
+            return Ok(new AddScheduleMemoryResponseDto
+            {
+                IsSuccessful = success,
+                Id = id,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new AddScheduleMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing schedule memory configuration
+    /// </summary>
+    /// <param name="request">Updated schedule memory configuration</param>
+    /// <returns>Success status</returns>
+    [HttpPost("EditScheduleMemory")]
+    public async Task<IActionResult> EditScheduleMemory([FromBody] EditScheduleMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memory = new Core.Models.ScheduleMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                HolidayCalendarId = request.HolidayCalendarId,
+                DefaultAnalogValue = request.DefaultAnalogValue,
+                DefaultDigitalValue = request.DefaultDigitalValue,
+                OverrideExpirationMode = (Core.Models.OverrideExpirationMode)request.OverrideExpirationMode,
+                OverrideDurationMinutes = request.OverrideDurationMinutes,
+                ScheduleBlocks = request.ScheduleBlocks?.Select(b => new Core.Models.ScheduleBlock
+                {
+                    DayOfWeek = (Core.Models.ScheduleDayOfWeek)b.DayOfWeek,
+                    StartTime = TimeSpan.Parse(b.StartTime),
+                    EndTime = TimeSpan.Parse(b.EndTime),
+                    Priority = (Core.Models.SchedulePriority)b.Priority,
+                    AnalogOutputValue = b.AnalogOutputValue,
+                    DigitalOutputValue = b.DigitalOutputValue,
+                    Description = b.Description
+                }).ToList()
+            };
+
+            var (success, errorMessage) = await Core.ScheduleMemories.EditScheduleMemory(memory);
+
+            return Ok(new EditScheduleMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new EditScheduleMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Delete a schedule memory configuration
+    /// </summary>
+    /// <param name="request">ID of the schedule memory to delete</param>
+    /// <returns>Success status</returns>
+    [HttpPost("DeleteScheduleMemory")]
+    public async Task<IActionResult> DeleteScheduleMemory([FromBody] DeleteScheduleMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.ScheduleMemories.DeleteScheduleMemory(request.Id);
+
+            return Ok(new DeleteScheduleMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new DeleteScheduleMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Set manual override for a schedule memory
+    /// </summary>
+    /// <param name="request">Override settings</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Activates or deactivates manual override for a schedule memory.
+    /// When override is active, the specified value is used instead of the schedule.
+    /// 
+    /// Sample request to activate:
+    /// 
+    ///     POST /api/monitoring/SetScheduleOverride
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "activate": true,
+    ///        "analogValue": 25.0
+    ///     }
+    ///     
+    /// Sample request to deactivate:
+    /// 
+    ///     POST /api/monitoring/SetScheduleOverride
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "activate": false
+    ///     }
+    ///     
+    /// </remarks>
+    [HttpPost("SetScheduleOverride")]
+    public async Task<IActionResult> SetScheduleOverride([FromBody] SetScheduleOverrideRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.ScheduleMemories.SetManualOverride(
+                request.Id,
+                request.Activate,
+                request.AnalogValue,
+                request.DigitalValue
+            );
+
+            return Ok(new SetScheduleOverrideResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new SetScheduleOverrideResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    #endregion
+
+    #region Holiday Calendar Endpoints
+
+    /// <summary>
+    /// Get all holiday calendars
+    /// </summary>
+    /// <param name="request">Empty request</param>
+    /// <returns>List of holiday calendars with their dates</returns>
+    [HttpPost("GetHolidayCalendars")]
+    public async Task<IActionResult> GetHolidayCalendars([FromBody] GetHolidayCalendarsRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var calendars = await Core.HolidayCalendars.GetHolidayCalendars();
+
+            var response = new GetHolidayCalendarsResponseDto
+            {
+                IsSuccessful = true,
+                HolidayCalendars = calendars?.Select(c => new HolidayCalendarItemDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    Dates = c.Dates?.Select(d => new HolidayDateItemDto
+                    {
+                        Id = d.Id,
+                        HolidayCalendarId = d.HolidayCalendarId,
+                        Date = d.Date.ToString("yyyy-MM-dd"),
+                        Name = d.Name,
+                        HolidayAnalogValue = d.HolidayAnalogValue,
+                        HolidayDigitalValue = d.HolidayDigitalValue
+                    }).ToList()
+                }).ToList()
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new holiday calendar
+    /// </summary>
+    /// <param name="request">Holiday calendar configuration</param>
+    /// <returns>ID of the newly created calendar</returns>
+    [HttpPost("AddHolidayCalendar")]
+    public async Task<IActionResult> AddHolidayCalendar([FromBody] AddHolidayCalendarRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var calendar = new Core.Models.HolidayCalendar
+            {
+                Name = request.Name,
+                Description = request.Description,
+                Dates = request.Dates?.Select(d => new Core.Models.HolidayDate
+                {
+                    Date = DateTime.Parse(d.Date),
+                    Name = d.Name,
+                    HolidayAnalogValue = d.HolidayAnalogValue,
+                    HolidayDigitalValue = d.HolidayDigitalValue
+                }).ToList()
+            };
+
+            var (success, id, errorMessage) = await Core.HolidayCalendars.AddHolidayCalendar(calendar);
+
+            return Ok(new AddHolidayCalendarResponseDto
+            {
+                IsSuccessful = success,
+                Id = id,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new AddHolidayCalendarResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing holiday calendar
+    /// </summary>
+    /// <param name="request">Updated holiday calendar configuration</param>
+    /// <returns>Success status</returns>
+    [HttpPost("EditHolidayCalendar")]
+    public async Task<IActionResult> EditHolidayCalendar([FromBody] EditHolidayCalendarRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var calendar = new Core.Models.HolidayCalendar
+            {
+                Id = request.Id,
+                Name = request.Name,
+                Description = request.Description,
+                Dates = request.Dates?.Select(d => new Core.Models.HolidayDate
+                {
+                    Date = DateTime.Parse(d.Date),
+                    Name = d.Name,
+                    HolidayAnalogValue = d.HolidayAnalogValue,
+                    HolidayDigitalValue = d.HolidayDigitalValue
+                }).ToList()
+            };
+
+            var (success, errorMessage) = await Core.HolidayCalendars.EditHolidayCalendar(calendar);
+
+            return Ok(new EditHolidayCalendarResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new EditHolidayCalendarResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Delete a holiday calendar
+    /// </summary>
+    /// <param name="request">ID of the calendar to delete</param>
+    /// <returns>Success status</returns>
+    [HttpPost("DeleteHolidayCalendar")]
+    public async Task<IActionResult> DeleteHolidayCalendar([FromBody] DeleteHolidayCalendarRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.HolidayCalendars.DeleteHolidayCalendar(request.Id);
+
+            return Ok(new DeleteHolidayCalendarResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new DeleteHolidayCalendarResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    #endregion
 }
 
 #region PID Auto-Tuning DTOs

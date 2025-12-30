@@ -1,0 +1,427 @@
+using System.Linq.Expressions;
+using Core.Libs;
+using Core.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Core;
+
+/// <summary>
+/// Helper class for ScheduleMemory CRUD operations
+/// </summary>
+public class ScheduleMemories
+{
+    /// <summary>
+    /// Get all schedule memory configurations with their blocks
+    /// </summary>
+    public static async Task<List<ScheduleMemory>?> GetScheduleMemories()
+    {
+        var context = new DataContext();
+        var found = await context.ScheduleMemories
+            .Include(m => m.ScheduleBlocks)
+            .Include(m => m.HolidayCalendar)
+            .ToListAsync();
+        await context.DisposeAsync();
+        return found;
+    }
+
+    /// <summary>
+    /// Get a specific schedule memory by predicate with blocks
+    /// </summary>
+    public static async Task<ScheduleMemory?> GetScheduleMemory(Expression<Func<ScheduleMemory, bool>> predicate)
+    {
+        var context = new DataContext();
+        var found = await context.ScheduleMemories
+            .Include(m => m.ScheduleBlocks)
+            .Include(m => m.HolidayCalendar)
+            .ThenInclude(c => c!.Dates)
+            .FirstOrDefaultAsync(predicate);
+        await context.DisposeAsync();
+        return found;
+    }
+
+    /// <summary>
+    /// Add a new schedule memory configuration with blocks
+    /// </summary>
+    public static async Task<(bool Success, Guid? Id, string? ErrorMessage)> AddScheduleMemory(ScheduleMemory scheduleMemory)
+    {
+        try
+        {
+            var context = new DataContext();
+            
+            // Validate OutputItem exists
+            var outputItem = await context.MonitoringItems.FindAsync(scheduleMemory.OutputItemId);
+            if (outputItem == null)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Output item not found");
+            }
+
+            // Validate OutputItem is AnalogOutput or DigitalOutput
+            if (outputItem.ItemType != ItemType.AnalogOutput && outputItem.ItemType != ItemType.DigitalOutput)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Output item must be AnalogOutput or DigitalOutput");
+            }
+
+            // Validate Interval > 0
+            if (scheduleMemory.Interval <= 0)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Interval must be greater than 0");
+            }
+
+            // Validate HolidayCalendar exists if referenced
+            if (scheduleMemory.HolidayCalendarId.HasValue)
+            {
+                var calendar = await context.HolidayCalendars.FindAsync(scheduleMemory.HolidayCalendarId.Value);
+                if (calendar == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Holiday calendar not found");
+                }
+            }
+
+            // Validate override duration for time-based mode
+            if (scheduleMemory.OverrideExpirationMode == OverrideExpirationMode.TimeBased)
+            {
+                if (scheduleMemory.OverrideDurationMinutes <= 0)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Override duration must be greater than 0 for time-based mode");
+                }
+            }
+
+            // Validate default value based on output type
+            bool isAnalogOutput = outputItem.ItemType == ItemType.AnalogOutput;
+            if (isAnalogOutput)
+            {
+                // For analog output, default analog value should be set (digital value ignored)
+                scheduleMemory.DefaultDigitalValue = null;
+            }
+            else
+            {
+                // For digital output, default digital value should be set (analog value ignored)
+                scheduleMemory.DefaultAnalogValue = null;
+            }
+
+            // Validate schedule blocks if provided
+            if (scheduleMemory.ScheduleBlocks != null && scheduleMemory.ScheduleBlocks.Count > 0)
+            {
+                var blockValidation = ValidateScheduleBlocks(scheduleMemory.ScheduleBlocks.ToList(), isAnalogOutput);
+                if (!blockValidation.Success)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, blockValidation.ErrorMessage);
+                }
+            }
+
+            context.ScheduleMemories.Add(scheduleMemory);
+            await context.SaveChangesAsync();
+            
+            await context.DisposeAsync();
+            return (true, scheduleMemory.Id, null);
+        }
+        catch (Exception ex)
+        {
+            MyLog.Error("Failed to add schedule memory", ex, new Dictionary<string, object?>
+            {
+                ["ScheduleMemory"] = scheduleMemory
+            });
+            return (false, null, $"Exception: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing schedule memory configuration
+    /// </summary>
+    public static async Task<(bool Success, string? ErrorMessage)> EditScheduleMemory(ScheduleMemory scheduleMemory)
+    {
+        try
+        {
+            var context = new DataContext();
+
+            // Check if memory exists
+            var existingMemory = await context.ScheduleMemories
+                .Include(m => m.ScheduleBlocks)
+                .FirstOrDefaultAsync(m => m.Id == scheduleMemory.Id);
+            if (existingMemory == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Schedule memory not found");
+            }
+            
+            // Validate OutputItem exists
+            var outputItem = await context.MonitoringItems.FindAsync(scheduleMemory.OutputItemId);
+            if (outputItem == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Output item not found");
+            }
+
+            // Validate OutputItem is AnalogOutput or DigitalOutput
+            if (outputItem.ItemType != ItemType.AnalogOutput && outputItem.ItemType != ItemType.DigitalOutput)
+            {
+                await context.DisposeAsync();
+                return (false, "Output item must be AnalogOutput or DigitalOutput");
+            }
+
+            // Validate Interval > 0
+            if (scheduleMemory.Interval <= 0)
+            {
+                await context.DisposeAsync();
+                return (false, "Interval must be greater than 0");
+            }
+
+            // Validate HolidayCalendar exists if referenced
+            if (scheduleMemory.HolidayCalendarId.HasValue)
+            {
+                var calendar = await context.HolidayCalendars.FindAsync(scheduleMemory.HolidayCalendarId.Value);
+                if (calendar == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Holiday calendar not found");
+                }
+            }
+
+            // Validate override duration for time-based mode
+            if (scheduleMemory.OverrideExpirationMode == OverrideExpirationMode.TimeBased)
+            {
+                if (scheduleMemory.OverrideDurationMinutes <= 0)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Override duration must be greater than 0 for time-based mode");
+                }
+            }
+
+            // Validate default value based on output type
+            bool isAnalogOutput = outputItem.ItemType == ItemType.AnalogOutput;
+            if (isAnalogOutput)
+            {
+                scheduleMemory.DefaultDigitalValue = null;
+            }
+            else
+            {
+                scheduleMemory.DefaultAnalogValue = null;
+            }
+
+            // Validate schedule blocks if provided
+            if (scheduleMemory.ScheduleBlocks != null && scheduleMemory.ScheduleBlocks.Count > 0)
+            {
+                var blockValidation = ValidateScheduleBlocks(scheduleMemory.ScheduleBlocks.ToList(), isAnalogOutput);
+                if (!blockValidation.Success)
+                {
+                    await context.DisposeAsync();
+                    return (false, blockValidation.ErrorMessage);
+                }
+            }
+
+            // Remove existing blocks and add new ones
+            if (existingMemory.ScheduleBlocks != null)
+            {
+                context.ScheduleBlocks.RemoveRange(existingMemory.ScheduleBlocks);
+            }
+
+            // Update properties
+            existingMemory.Name = scheduleMemory.Name;
+            existingMemory.OutputItemId = scheduleMemory.OutputItemId;
+            existingMemory.Interval = scheduleMemory.Interval;
+            existingMemory.IsDisabled = scheduleMemory.IsDisabled;
+            existingMemory.HolidayCalendarId = scheduleMemory.HolidayCalendarId;
+            existingMemory.DefaultAnalogValue = scheduleMemory.DefaultAnalogValue;
+            existingMemory.DefaultDigitalValue = scheduleMemory.DefaultDigitalValue;
+            existingMemory.OverrideExpirationMode = scheduleMemory.OverrideExpirationMode;
+            existingMemory.OverrideDurationMinutes = scheduleMemory.OverrideDurationMinutes;
+
+            // Add new blocks
+            if (scheduleMemory.ScheduleBlocks != null)
+            {
+                foreach (var block in scheduleMemory.ScheduleBlocks)
+                {
+                    block.ScheduleMemoryId = existingMemory.Id;
+                    context.ScheduleBlocks.Add(block);
+                }
+            }
+
+            await context.SaveChangesAsync();
+            await context.DisposeAsync();
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            MyLog.Error("Failed to edit schedule memory", ex, new Dictionary<string, object?>
+            {
+                ["ScheduleMemory"] = scheduleMemory
+            });
+            return (false, $"Exception: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Delete a schedule memory configuration (cascade deletes blocks)
+    /// </summary>
+    public static async Task<(bool Success, string? ErrorMessage)> DeleteScheduleMemory(Guid id)
+    {
+        try
+        {
+            var context = new DataContext();
+            var memory = await context.ScheduleMemories.FindAsync(id);
+            if (memory == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Schedule memory not found");
+            }
+
+            context.ScheduleMemories.Remove(memory);
+            await context.SaveChangesAsync();
+            
+            await context.DisposeAsync();
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            MyLog.Error("Failed to delete schedule memory", ex, new Dictionary<string, object?>
+            {
+                ["Id"] = id
+            });
+            return (false, $"Exception: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Set manual override for a schedule memory
+    /// </summary>
+    public static async Task<(bool Success, string? ErrorMessage)> SetManualOverride(
+        Guid id, 
+        bool activate, 
+        double? analogValue = null, 
+        bool? digitalValue = null)
+    {
+        try
+        {
+            var context = new DataContext();
+            var memory = await context.ScheduleMemories.FindAsync(id);
+            if (memory == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Schedule memory not found");
+            }
+
+            // Get output item to validate value type
+            var outputItem = await context.MonitoringItems.FindAsync(memory.OutputItemId);
+            if (outputItem == null)
+            {
+                await context.DisposeAsync();
+                return (false, "Output item not found");
+            }
+
+            if (activate)
+            {
+                // Validate override value based on output type
+                if (outputItem.ItemType == ItemType.AnalogOutput)
+                {
+                    if (!analogValue.HasValue)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Analog override value is required for AnalogOutput");
+                    }
+                    memory.ManualOverrideAnalogValue = analogValue;
+                    memory.ManualOverrideDigitalValue = null;
+                }
+                else
+                {
+                    if (!digitalValue.HasValue)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Digital override value is required for DigitalOutput");
+                    }
+                    memory.ManualOverrideDigitalValue = digitalValue;
+                    memory.ManualOverrideAnalogValue = null;
+                }
+
+                memory.ManualOverrideActive = true;
+                memory.OverrideActivationTime = DateTime.UtcNow;
+            }
+            else
+            {
+                memory.ManualOverrideActive = false;
+                memory.OverrideActivationTime = null;
+                memory.ManualOverrideAnalogValue = null;
+                memory.ManualOverrideDigitalValue = null;
+            }
+
+            await context.SaveChangesAsync();
+            await context.DisposeAsync();
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            MyLog.Error("Failed to set manual override", ex, new Dictionary<string, object?>
+            {
+                ["Id"] = id,
+                ["Activate"] = activate
+            });
+            return (false, $"Exception: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Validate schedule blocks for conflicts and value consistency
+    /// </summary>
+    private static (bool Success, string? ErrorMessage) ValidateScheduleBlocks(List<ScheduleBlock> blocks, bool isAnalogOutput)
+    {
+        foreach (var block in blocks)
+        {
+            // Validate exactly one output value is set
+            bool hasAnalog = block.AnalogOutputValue.HasValue;
+            bool hasDigital = block.DigitalOutputValue.HasValue;
+
+            if (isAnalogOutput)
+            {
+                if (!hasAnalog)
+                {
+                    return (false, $"Block '{block.Description ?? block.Id.ToString()}': Analog output value is required for AnalogOutput items");
+                }
+                block.DigitalOutputValue = null; // Clear digital value for analog output
+            }
+            else
+            {
+                if (!hasDigital)
+                {
+                    return (false, $"Block '{block.Description ?? block.Id.ToString()}': Digital output value is required for DigitalOutput items");
+                }
+                block.AnalogOutputValue = null; // Clear analog value for digital output
+            }
+
+            // Validate time range
+            if (block.StartTime >= block.EndTime)
+            {
+                return (false, $"Block '{block.Description ?? block.Id.ToString()}': Start time must be before end time");
+            }
+
+            // Validate time is within 24 hours
+            if (block.StartTime.TotalHours < 0 || block.StartTime.TotalHours >= 24 ||
+                block.EndTime.TotalHours < 0 || block.EndTime.TotalHours > 24)
+            {
+                return (false, $"Block '{block.Description ?? block.Id.ToString()}': Times must be within 00:00:00 to 24:00:00");
+            }
+        }
+
+        // Check for overlapping blocks on same day with same priority
+        var groupedByDayAndPriority = blocks
+            .GroupBy(b => new { b.DayOfWeek, b.Priority });
+
+        foreach (var group in groupedByDayAndPriority)
+        {
+            var sortedBlocks = group.OrderBy(b => b.StartTime).ToList();
+            for (int i = 0; i < sortedBlocks.Count - 1; i++)
+            {
+                if (sortedBlocks[i].EndTime > sortedBlocks[i + 1].StartTime)
+                {
+                    return (false, $"Overlapping schedule blocks detected on {group.Key.DayOfWeek} with priority {group.Key.Priority}: '{sortedBlocks[i].Description ?? "Block " + (i + 1)}' and '{sortedBlocks[i + 1].Description ?? "Block " + (i + 2)}'");
+                }
+            }
+        }
+
+        return (true, null);
+    }
+}

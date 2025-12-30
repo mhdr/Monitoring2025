@@ -3702,5 +3702,193 @@
         ]
       }
     }
+  },
+  "scheduleMemory": {
+    "title": "Schedule Memory",
+    "description": "Generate setpoints or outputs based on time-of-day and day-of-week schedules with holiday calendar support.",
+    "addNew": "Add Schedule",
+    "addTitle": "Add Schedule Memory",
+    "editTitle": "Edit Schedule Memory",
+    "deleteTitle": "Delete Schedule Memory",
+    "deleteConfirmation": "Are you sure you want to delete this schedule memory?",
+    "deleteBlocksWarning": "This will also delete {{count}} schedule blocks.",
+    "searchPlaceholder": "Search schedule memories...",
+    "name": "Name",
+    "outputItem": "Output Item",
+    "interval": "Evaluation Interval (s)",
+    "intervalHelp": "How often to evaluate the schedule (in seconds)",
+    "holidayCalendar": "Holiday Calendar",
+    "isDisabled": "Disabled",
+    "defaultAnalogValue": "Default Analog Value",
+    "defaultDigitalValue": "Default Digital Value",
+    "defaultValueHelp": "Value to use when no schedule block is active and no holiday override applies",
+    "blocks": "Schedule Blocks",
+    "noBlocks": "No schedule blocks defined. Click 'Add Block' to create one.",
+    "addBlock": "Add Block",
+    "dayOfWeek": "Day",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "priority": "Priority",
+    "analogValue": "Analog Value",
+    "digitalValue": "Digital Value",
+    "override": "Override",
+    "overrideActive": "Manual override is active",
+    "overrideInactive": "Using scheduled values",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activateOverride": "Activate manual override",
+    "deactivateOverride": "Deactivate manual override",
+    "overrideMode": "Override Expiration Mode",
+    "overrideMode.timeBased": "Time-Based (auto-expire after duration)",
+    "overrideMode.eventBased": "Event-Based (stays until next schedule change)",
+    "overrideModeHelp": "How manual overrides expire: time-based expires after duration, event-based expires at next schedule transition",
+    "overrideDuration": "Override Duration (minutes)",
+    "overrideDurationHelp": "How long a manual override stays active before reverting to schedule",
+    "sections": {
+      "basic": "Basic Configuration",
+      "blocks": "Schedule Blocks",
+      "override": "Override Settings"
+    },
+    "days": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "priority": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "validation": {
+      "outputItemRequired": "Output item is required",
+      "intervalRequired": "Evaluation interval must be greater than 0",
+      "durationRequired": "Override duration must be greater than 0 for time-based mode",
+      "blockTimesRequired": "Start and end times are required for all blocks",
+      "startBeforeEnd": "Start time must be before end time",
+      "analogValueRequired": "Analog value is required for all blocks",
+      "digitalValueRequired": "Digital value is required for all blocks"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load schedule memories",
+      "createFailed": "Failed to create schedule memory",
+      "updateFailed": "Failed to update schedule memory",
+      "deleteFailed": "Failed to delete schedule memory",
+      "saveFailed": "Failed to save schedule memory"
+    },
+    "help": {
+      "overview": {
+        "title": "Schedule Memory Overview",
+        "sections": [
+          {
+            "title": "What is Schedule Memory?",
+            "content": "Schedule Memory automatically generates setpoints or controls outputs based on time-of-day and day-of-week schedules. Perfect for HVAC temperature setpoints, lighting control, equipment start/stop schedules, and demand response programs."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "Define schedule blocks with specific days, times, and output values",
+              "System evaluates the schedule at your configured interval",
+              "Active blocks are applied based on priority (higher priority wins)",
+              "Holiday calendars can override normal weekly schedules",
+              "Manual overrides temporarily bypass the schedule"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "HVAC Temperature Setpoint Example",
+            "content": "Scenario: Office building temperature control\n\nSchedule Blocks:\n• Monday-Friday 6:00-18:00: 72°F (Normal Priority)\n• Monday-Friday 18:00-22:00: 68°F (Normal Priority)\n• Saturday 8:00-14:00: 70°F (Normal Priority)\n• Default: 65°F\n\nHoliday Calendar: Company holidays → 62°F\nManual Override: Enabled for late meetings"
+          },
+          {
+            "type": "tip",
+            "title": "Common Applications",
+            "content": [
+              "HVAC: Day/night, weekday/weekend temperature setpoints",
+              "Lighting: Scheduled on/off for energy savings",
+              "Equipment: Start/stop times for pumps, fans, compressors",
+              "Demand Response: Pre-cooling, load shedding periods",
+              "Security: Access control schedules, alarm arming"
+            ]
+          }
+        ]
+      },
+      "basic": {
+        "title": "Basic Configuration",
+        "sections": [
+          {
+            "title": "Output Item",
+            "content": "Select the Analog Output (for setpoints) or Digital Output (for on/off control) that this schedule will control."
+          },
+          {
+            "title": "Evaluation Interval",
+            "content": "How often the schedule is evaluated in seconds. Lower values mean faster response to schedule changes but more processing. 10-60 seconds is typical."
+          },
+          {
+            "title": "Default Value",
+            "content": "The value to use when no schedule block is active. This is the 'fallback' value for times not covered by any block."
+          }
+        ]
+      },
+      "outputItem": {
+        "title": "Output Item Selection",
+        "sections": [
+          {
+            "title": "Analog vs Digital Outputs",
+            "content": "Choose based on your control needs:\n\n• Analog Output: For setpoints (temperature, pressure, speed)\n• Digital Output: For on/off control (equipment start/stop, lighting)"
+          },
+          {
+            "type": "tip",
+            "content": "The output type determines what values you can set in schedule blocks (numeric for analog, on/off for digital)."
+          }
+        ]
+      },
+      "blocks": {
+        "title": "Schedule Blocks",
+        "sections": [
+          {
+            "title": "What are Schedule Blocks?",
+            "content": "Schedule blocks define when specific output values should be active. Each block specifies a day of week, time range, priority, and the value to output during that period."
+          },
+          {
+            "title": "Priority Resolution",
+            "content": [
+              "When multiple blocks overlap in time, the highest priority wins",
+              "Critical > High > Normal > Low",
+              "Use higher priorities for exceptions and overrides",
+              "Same-priority overlaps should be avoided"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Overlapping Blocks Example",
+            "content": "Regular Hours (Normal Priority):\n• Monday-Friday 8:00-17:00: 72°F\n\nMeeting Room Override (High Priority):\n• Wednesday 14:00-16:00: 70°F\n\nResult: On Wednesday at 15:00, the temperature will be 70°F because the meeting room block has higher priority."
+          }
+        ]
+      },
+      "override": {
+        "title": "Override Settings",
+        "sections": [
+          {
+            "title": "Manual Override",
+            "content": "Manual override allows operators to temporarily bypass the schedule. Useful for unexpected events, late meetings, or emergency situations."
+          },
+          {
+            "title": "Expiration Modes",
+            "content": [
+              "Time-Based: Override expires after the specified duration (e.g., 60 minutes)",
+              "Event-Based: Override expires when the next schedule transition occurs"
+            ]
+          },
+          {
+            "type": "warning",
+            "content": "Remember that active overrides bypass ALL schedule logic, including holiday calendars. Use sparingly and monitor for forgotten overrides."
+          }
+        ]
+      }
+    }
   }
 }

@@ -37,7 +37,10 @@ public class Worker : BackgroundService
         _logger.LogInformation("Start Processing Rate of Change Memories...");
         var task8 = RateOfChangeMemoryProcess.Instance.Run();
 
-        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7, task8);
+        _logger.LogInformation("Start Processing Schedule Memories...");
+        var task9 = ScheduleMemoryProcess.Instance.Run();
+
+        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7, task8, task9);
         Console.ReadKey();
     }
 }
