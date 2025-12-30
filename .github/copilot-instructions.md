@@ -39,6 +39,31 @@ This is a full-stack monitoring application with separate backend and frontend:
 
 ---
 
+## 🚀 Running Applications
+
+⚠️ **MANDATORY: Always use `run.sh` scripts to start EMS/API or ui applications**
+
+### Running the Backend (EMS/API)
+```bash
+cd EMS/API
+./run.sh
+```
+
+### Running the Frontend (ui)
+```bash
+cd ui
+./run.sh
+```
+
+**Why use run.sh?**
+- Automatically handles port conflicts
+- Ensures proper environment setup
+- Manages process lifecycle correctly
+
+**NEVER** run the applications directly using `dotnet run`, `npm run dev`, or similar commands. Always use the provided `run.sh` scripts.
+
+---
+
 ## 🏷️ Element Identification
 
 ⚠️ **MANDATORY: ALL elements created by AI must have `data-id-ref` attribute**
