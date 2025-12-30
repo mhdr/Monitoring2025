@@ -21,7 +21,6 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Timer as TimerIcon,
-  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -30,7 +29,6 @@ import { getTimeoutMemories } from '../services/extendedApi';
 import type { TimeoutMemory, ItemType } from '../types/api';
 import { ItemTypeEnum } from '../types/api';
 import { createLogger } from '../utils/logger';
-import FieldHelpPopover from './common/FieldHelpPopover';
 
 const logger = createLogger('TimeoutMemoryManagementPage');
 
@@ -129,17 +127,6 @@ const TimeoutMemoryManagementPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTimeoutMemory, setSelectedTimeoutMemory] = useState<TimeoutMemoryWithItems | null>(null);
   const [editMode, setEditMode] = useState(false);
-
-  // Help popover state
-  const [behaviorHelpAnchor, setBehaviorHelpAnchor] = useState<HTMLElement | null>(null);
-
-  const handleBehaviorHelpOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setBehaviorHelpAnchor(event.currentTarget);
-  };
-
-  const handleBehaviorHelpClose = () => {
-    setBehaviorHelpAnchor(null);
-  };
 
   // Fetch timeout memories
   const fetchTimeoutMemories = useCallback(async () => {
@@ -331,19 +318,9 @@ const TimeoutMemoryManagementPage: React.FC = () => {
             </Typography>
           }
           subheader={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Typography variant="body2" color="text.secondary" data-id-ref="timeout-memory-page-description">
-                {t('timeoutMemory.description')}
-              </Typography>
-              <IconButton
-                size="small"
-                onClick={handleBehaviorHelpOpen}
-                data-id-ref="timeout-memory-behavior-info-btn"
-                sx={{ ml: 0.5 }}
-              >
-                <HelpOutlineIcon fontSize="small" color="action" />
-              </IconButton>
-            </Box>
+            <Typography variant="body2" color="text.secondary" data-id-ref="timeout-memory-page-description">
+              {t('timeoutMemory.description')}
+            </Typography>
           }
           action={
             <Button
@@ -383,15 +360,6 @@ const TimeoutMemoryManagementPage: React.FC = () => {
             />
           </Box>
 
-          {/* Info Alert explaining timeout behavior */}
-          <Box sx={{ mb: 2 }}>
-            <Alert severity="info" data-id-ref="timeout-memory-behavior-info">
-              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                {t('timeoutMemory.behaviorNote')}
-              </Typography>
-            </Alert>
-          </Box>
-          
           {error && (
             <Box sx={{ mb: 2 }}>
               <Alert severity="error" data-id-ref="timeout-memory-error-alert">
@@ -439,27 +407,6 @@ const TimeoutMemoryManagementPage: React.FC = () => {
           />
         )}
       </Suspense>
-
-      {/* Behavior Help Popover */}
-      <FieldHelpPopover
-        anchorEl={behaviorHelpAnchor}
-        open={Boolean(behaviorHelpAnchor)}
-        onClose={handleBehaviorHelpClose}
-        fieldKey="timeoutMemory.help.behavior"
-        title={t('timeoutMemory.behaviorNote')}
-        sections={[
-          {
-            title: 'Output = 0',
-            content: t('timeoutMemory.outputZero'),
-            type: 'default',
-          },
-          {
-            title: 'Output = 1',
-            content: t('timeoutMemory.outputOne'),
-            type: 'default',
-          },
-        ]}
-      />
     </Container>
   );
 };
