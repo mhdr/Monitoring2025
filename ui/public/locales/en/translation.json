@@ -1597,6 +1597,96 @@
       "createFailed": "Failed to create timeout memory",
       "updateFailed": "Failed to update timeout memory",
       "deleteFailed": "Failed to delete timeout memory"
+    },
+    "help": {
+      "inputItem": {
+        "title": "Input Item - What to Monitor",
+        "sections": [
+          {
+            "title": "What is the Input Item?",
+            "content": "The Input Item is any monitoring item (Digital or Analog, Input or Output) whose update timestamp will be monitored for timeout detection."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "Every second, the system checks the item's last update timestamp",
+              "If the time since last update exceeds the timeout period, the output is set to 1",
+              "When the item starts updating again, the output resets to 0"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Common Use Cases",
+            "content": "Communication Monitoring:\n• Monitor Modbus slave connection status\n• Detect PLC communication failures\n• Track field device health\n\nSensor Watchdog:\n• Verify temperature sensors are responding\n• Check flow meter updates\n• Monitor pressure transmitter activity\n\nProcess Monitoring:\n• Detect stuck process values\n• Identify frozen measurements\n• Alert on data staleness"
+          },
+          {
+            "type": "tip",
+            "title": "Best Practices",
+            "content": "• Choose critical items that must update regularly\n• Consider communication scan rates when setting timeout\n• Use for safety-critical monitoring\n• Combine with alarms for immediate notification"
+          }
+        ]
+      },
+      "outputItem": {
+        "title": "Output Item - Timeout Status Indicator",
+        "sections": [
+          {
+            "title": "What is the Output Item?",
+            "content": "The Output Item is a Digital Output that indicates timeout status: 0 = Input updating normally, 1 = Timeout exceeded (input stale or not updating)"
+          },
+          {
+            "title": "Output Behavior",
+            "content": [
+              "Output = 0: Input item is updating within timeout period (normal operation)",
+              "Output = 1: Input item hasn't updated for longer than timeout period (failure/stale data)",
+              "Changes immediately when timeout condition occurs",
+              "Automatically resets when input resumes updating"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Integration Examples",
+            "content": "Alarm Integration:\n• Connect to alarm system for notifications\n• Trigger warning lights or sirens\n• Send email/SMS alerts via alarm conditions\n\nControl Logic:\n• Interlock processes requiring live data\n• Switch to backup sensors\n• Activate safe mode when data is stale\n\nDashboard Display:\n• Show communication health status\n• Display device online/offline indicators\n• Create system health overview"
+          },
+          {
+            "type": "warning",
+            "title": "Important Notes",
+            "content": "• Output must be a Digital Output type\n• Do not use the same item for input and output\n• Consider fail-safe logic in downstream systems\n• Test timeout detection before deployment"
+          }
+        ]
+      },
+      "timeout": {
+        "title": "Timeout Period - Detection Threshold",
+        "sections": [
+          {
+            "title": "What is the Timeout Period?",
+            "content": "The Timeout Period is the maximum allowed time (in seconds) between updates before the item is considered stale or non-responsive. When this period is exceeded, the output is set to 1."
+          },
+          {
+            "title": "How to Choose Timeout Value",
+            "content": [
+              "Consider normal update rate: Set timeout 2-3x the expected update interval",
+              "Account for communication delays: Add buffer for network latency",
+              "Balance sensitivity vs. false alarms: Too short = nuisance alarms, too long = delayed detection",
+              "Match to process criticality: Critical systems need shorter timeouts"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Typical Timeout Values",
+            "content": "Fast Processes (1s scan rate):\n• Timeout: 5-10 seconds\n• Use for: Critical safety systems, fast control loops\n\nNormal Processes (5-10s scan rate):\n• Timeout: 30-60 seconds\n• Use for: Standard monitoring, temperature control\n\nSlow Processes (30s+ scan rate):\n• Timeout: 120-300 seconds\n• Use for: Tank levels, slow temperature changes\n\nRemote Devices (variable network):\n• Timeout: 60-120 seconds\n• Use for: Remote sites, wireless sensors, cellular connections"
+          },
+          {
+            "type": "tip",
+            "title": "Configuration Tips",
+            "content": "1. Start with conservative (longer) timeouts\n2. Monitor false alarm rate over 24-48 hours\n3. Gradually reduce timeout if needed\n4. Document timeout rationale for future reference\n5. Review timeouts during system changes"
+          },
+          {
+            "type": "warning",
+            "title": "Common Pitfalls",
+            "content": "• Setting timeout shorter than normal scan interval\n• Not accounting for startup/initialization time\n• Ignoring network latency variations\n• Forgetting about system load impacts\n• Using same timeout for all items regardless of criticality"
+          }
+        ]
+      }
     }
   },
   "pidMemory": {

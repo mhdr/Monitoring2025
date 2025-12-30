@@ -13,12 +13,17 @@ import {
   Box,
   Chip,
   Typography,
+  IconButton,
 } from '@mui/material';
+import {
+  HelpOutline as HelpOutlineIcon,
+} from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { addTimeoutMemory, editTimeoutMemory } from '../services/extendedApi';
 import type { TimeoutMemory, Item, ItemType } from '../types/api';
 import { createLogger } from '../utils/logger';
+import FieldHelpPopover from './common/FieldHelpPopover';
 
 const logger = createLogger('AddEditTimeoutMemoryDialog');
 
@@ -90,6 +95,17 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+
+  // Help popover states
+  const [helpAnchorEl, setHelpAnchorEl] = useState<Record<string, HTMLElement | null>>({});
+
+  const handleHelpOpen = (fieldKey: string) => (event: React.MouseEvent<HTMLElement>) => {
+    setHelpAnchorEl((prev) => ({ ...prev, [fieldKey]: event.currentTarget }));
+  };
+
+  const handleHelpClose = (fieldKey: string) => () => {
+    setHelpAnchorEl((prev) => ({ ...prev, [fieldKey]: null }));
+  };
 
   const [formData, setFormData] = useState<FormData>({
     inputItemId: '',
@@ -278,91 +294,122 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
           )}
 
           {/* Input Item Selection */}
-          <Autocomplete
-            options={items}
-            getOptionLabel={getItemLabel}
-            value={selectedInputItem}
-            onChange={handleInputItemChange}
-            disabled={loading}
-            data-id-ref="timeout-memory-input-item-select"
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label={t('timeoutMemory.inputItem')}
-                required
-                error={!!formErrors.inputItemId}
-                helperText={formErrors.inputItemId || t('timeoutMemory.inputItemHelp')}
-              />
-            )}
-            renderOption={(props, option) => (
-              <Box component="li" {...props} key={option.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                  <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                    {getItemLabel(option)}
-                  </Typography>
-                  <Chip
-                    label={getItemTypeLabel(option.itemType, t)}
-                    size="small"
-                    color={getItemTypeColor(option.itemType)}
-                    sx={{ height: 20, fontSize: '0.7rem' }}
-                  />
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Autocomplete
+              options={items}
+              getOptionLabel={getItemLabel}
+              value={selectedInputItem}
+              onChange={handleInputItemChange}
+              disabled={loading}
+              data-id-ref="timeout-memory-input-item-select"
+              sx={{ flex: 1 }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t('timeoutMemory.inputItem')}
+                  required
+                  error={!!formErrors.inputItemId}
+                  helperText={formErrors.inputItemId || t('timeoutMemory.inputItemHelp')}
+                />
+              )}
+              renderOption={(props, option) => (
+                <Box component="li" {...props} key={option.id}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                      {getItemLabel(option)}
+                    </Typography>
+                    <Chip
+                      label={getItemTypeLabel(option.itemType, t)}
+                      size="small"
+                      color={getItemTypeColor(option.itemType)}
+                      sx={{ height: 20, fontSize: '0.7rem' }}
+                    />
+                  </Box>
                 </Box>
-              </Box>
-            )}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-          />
-
-          {/* Output Item Selection - Filtered to DigitalInput/DigitalOutput only */}
-          <Autocomplete
-            options={outputItems}
-            getOptionLabel={getItemLabel}
-            value={selectedOutputItem}
-            onChange={handleOutputItemChange}
-            disabled={loading}
-            data-id-ref="timeout-memory-output-item-select"
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label={t('timeoutMemory.outputItem')}
-                required
-                error={!!formErrors.outputItemId}
-                helperText={formErrors.outputItemId || t('timeoutMemory.outputItemHelp')}
-              />
-            )}
-            renderOption={(props, option) => (
-              <Box component="li" {...props} key={option.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                  <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                    {getItemLabel(option)}
-                  </Typography>
-                  <Chip
-                    label={getItemTypeLabel(option.itemType, t)}
-                    size="small"
-                    color={getItemTypeColor(option.itemType)}
-                    sx={{ height: 20, fontSize: '0.7rem' }}
-                  />
+              )}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+            />
+            <IconButton
+              size="small"
+              onClick={handleHelpOpen('timeoutMemory.help.inputItem')}
+              sx={{ p: 0.25, mt: 1 }}
+              data-id-ref="timeout-memory-input-item-help-btn"
+            >
+              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+            </IconButton>
+          </Box>
+          {/* Output Item Selection - Filtered to DigitalOutput only */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Autocomplete
+              options={outputItems}
+              getOptionLabel={getItemLabel}
+              value={selectedOutputItem}
+              onChange={handleOutputItemChange}
+              disabled={loading}
+              data-id-ref="timeout-memory-output-item-select"
+              sx={{ flex: 1 }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t('timeoutMemory.outputItem')}
+                  required
+                  error={!!formErrors.outputItemId}
+                  helperText={formErrors.outputItemId || t('timeoutMemory.outputItemHelp')}
+                />
+              )}
+              renderOption={(props, option) => (
+                <Box component="li" {...props} key={option.id}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                      {getItemLabel(option)}
+                    </Typography>
+                    <Chip
+                      label={getItemTypeLabel(option.itemType, t)}
+                      size="small"
+                      color={getItemTypeColor(option.itemType)}
+                      sx={{ height: 20, fontSize: '0.7rem' }}
+                    />
+                  </Box>
                 </Box>
-              </Box>
-            )}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-          />
-
+              )}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+            />
+            <IconButton
+              size="small"
+              onClick={handleHelpOpen('timeoutMemory.help.outputItem')}
+              sx={{ p: 0.25, mt: 1 }}
+              data-id-ref="timeout-memory-output-item-help-btn"
+            >
+              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+            </IconButton>
+          </Box>
           {/* Timeout Input */}
-          <TextField
-            label={t('timeoutMemory.timeout')}
-            type="number"
-            value={formData.timeout}
-            onChange={handleTimeoutChange}
-            disabled={loading}
-            required
-            error={!!formErrors.timeout}
-            helperText={formErrors.timeout || t('timeoutMemory.timeoutHelp')}
-            data-id-ref="timeout-memory-timeout-input"
-            inputProps={{
-              min: 1,
-              step: 1,
-            }}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <TextField
+              label={t('timeoutMemory.timeout')}
+              type="number"
+              value={formData.timeout}
+              onChange={handleTimeoutChange}
+              disabled={loading}
+              required
+              error={!!formErrors.timeout}
+              helperText={formErrors.timeout || t('timeoutMemory.timeoutHelp')}
+              data-id-ref="timeout-memory-timeout-input"
+              inputProps={{
+                min: 1,
+                step: 1,
+              }}
+              fullWidth
+            />
+            <IconButton
+              size="small"
+              onClick={handleHelpOpen('timeoutMemory.help.timeout')}
+              sx={{ p: 0.25, mt: 1 }}
+              data-id-ref="timeout-memory-timeout-help-btn"
+            >
+              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+            </IconButton>
+          </Box>
         </Stack>
       </DialogContent>
 
@@ -384,6 +431,26 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
           {editMode ? t('common.save') : t('common.add')}
         </Button>
       </DialogActions>
+
+      {/* Help Popovers */}
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['timeoutMemory.help.inputItem']}
+        open={Boolean(helpAnchorEl['timeoutMemory.help.inputItem'])}
+        onClose={handleHelpClose('timeoutMemory.help.inputItem')}
+        fieldKey="timeoutMemory.help.inputItem"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['timeoutMemory.help.outputItem']}
+        open={Boolean(helpAnchorEl['timeoutMemory.help.outputItem'])}
+        onClose={handleHelpClose('timeoutMemory.help.outputItem')}
+        fieldKey="timeoutMemory.help.outputItem"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['timeoutMemory.help.timeout']}
+        open={Boolean(helpAnchorEl['timeoutMemory.help.timeout'])}
+        onClose={handleHelpClose('timeoutMemory.help.timeout')}
+        fieldKey="timeoutMemory.help.timeout"
+      />
     </Dialog>
   );
 };
