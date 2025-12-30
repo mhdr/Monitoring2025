@@ -384,6 +384,26 @@ export const CompareTypeEnum = {
   Between: 5,
 } as const;
 
+/**
+ * ComparisonMode enum for comparison memory groups
+ * 1 = Analog (threshold comparison)
+ * 2 = Digital (state comparison)
+ */
+export const ComparisonMode = {
+  Analog: 1,
+  Digital: 2,
+} as const;
+
+/**
+ * GroupOperator enum for combining comparison groups
+ * 1 = AND
+ * 2 = OR
+ */
+export const GroupOperator = {
+  And: 1,
+  Or: 2,
+} as const;
+
 /** ControllerType: 1 = Siemens */
 export type ControllerType = 1;
 

@@ -25,6 +25,7 @@ import {
   CompareArrows as CompareArrowsIcon,
   Timeline as TimelineIcon,
   Functions as FormulaIcon,
+  AccountTree as IfMemoryIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -58,6 +59,7 @@ const MemorySidebar: React.FC<MemorySidebarProps> = ({ isOpen, onToggle }) => {
     { path: '/dashboard/memory/comparison-memory', key: 'comparisonMemory.title', icon: <CompareArrowsIcon /> },
     { path: '/dashboard/memory/statistical-memory', key: 'statisticalMemory.title', icon: <TimelineIcon /> },
     { path: '/dashboard/memory/formula-memory', key: 'formulaMemory.title', icon: <FormulaIcon /> },
+    { path: '/dashboard/memory/if-memory', key: 'ifMemory.title', icon: <IfMemoryIcon /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;

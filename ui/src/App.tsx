@@ -39,6 +39,7 @@ const ScheduleMemoryManagementPage = lazy(() => import('./components/ScheduleMem
 const ComparisonMemoryManagementPage = lazy(() => import('./components/ComparisonMemoryManagementPage'));
 const StatisticalMemoryManagementPage = lazy(() => import('./components/StatisticalMemoryManagementPage'));
 const FormulaMemoryManagementPage = lazy(() => import('./components/FormulaMemoryManagementPage'));
+const IfMemoryManagementPage = lazy(() => import('./components/IfMemoryManagementPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
@@ -230,6 +231,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <FormulaMemoryManagementPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="memory/if-memory" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <IfMemoryManagementPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
