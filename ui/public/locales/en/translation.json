@@ -1206,6 +1206,50 @@
       "allRoles": "All Roles"
     }
   },
+  "holidayCalendar": {
+    "title": "Holiday Calendars",
+    "subtitle": "Manage holiday calendars for schedule memory configurations",
+    "addCalendar": "Add Calendar",
+    "editCalendar": "Edit Calendar",
+    "deleteCalendar": "Delete Calendar",
+    "name": "Calendar Name",
+    "description": "Description",
+    "holidayCount": "Holidays",
+    "holidays": "Holiday Dates",
+    "date": "Date",
+    "holidayName": "Holiday Name",
+    "analogValue": "Analog Value",
+    "digitalValue": "Digital Value",
+    "addHoliday": "Add Holiday",
+    "holidayNumber": "Holiday {{number}}",
+    "noDates": "No holidays added yet. Click 'Add Holiday' to get started.",
+    "searchPlaceholder": "Search by name or description...",
+    "basicInfo": "Basic Information",
+    "deleteConfirmation": "Are you sure you want to delete the holiday calendar \"{{name}}\"?",
+    "deleteWarning": "This calendar may be referenced by schedule memory configurations. Deleting it may affect schedule operations.",
+    "hints": {
+      "name": "A descriptive name to identify this holiday calendar",
+      "description": "Optional description explaining the purpose of this calendar",
+      "holidayName": "Optional name for this holiday (e.g., 'New Year', 'Independence Day')",
+      "analogValue": "Optional analog value to use during this holiday"
+    },
+    "validation": {
+      "nameRequired": "Calendar name is required",
+      "dateRequired": "Date is required",
+      "analogValueInvalid": "Analog value must be a valid number"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load holiday calendars",
+      "createFailed": "Failed to create holiday calendar",
+      "editFailed": "Failed to update holiday calendar",
+      "deleteFailed": "Failed to delete holiday calendar"
+    },
+    "success": {
+      "created": "Holiday calendar created successfully",
+      "updated": "Holiday calendar updated successfully",
+      "deleted": "Holiday calendar deleted successfully"
+    }
+  },
   "permissionsManagement": {
     "managePermissions": "Manage Permissions",
     "searchItems": "Search monitoring items...",

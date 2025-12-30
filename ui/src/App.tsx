@@ -26,6 +26,7 @@ const AuditTrailPage = lazy(() => import('./components/AuditTrailPage'));
 const DisabledAlarmsPage = lazy(() => import('./components/DisabledAlarmsPage'));
 const SchedulerPage = lazy(() => import('./components/SchedulerPage'));
 const UsersPage = lazy(() => import('./components/UsersPage'));
+const HolidayCalendarPage = lazy(() => import('./components/HolidayCalendarPage'));
 const ModbusControllersPage = lazy(() => import('./components/ModbusControllersPage'));
 const Sharp7ControllersPage = lazy(() => import('./components/Sharp7ControllersPage'));
 const ModbusGatewayPage = lazy(() => import('./components/ModbusGatewayPage'));
@@ -134,6 +135,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <UsersPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="management/holiday-calendars" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <HolidayCalendarPage />
               </Suspense>
             </LazyErrorBoundary>
           } />

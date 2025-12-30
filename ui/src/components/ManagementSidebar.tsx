@@ -20,6 +20,7 @@ import {
   SettingsEthernet as SettingsEthernetIcon,
   Memory as MemoryIcon,
   DeviceHub as DeviceHubIcon,
+  Event as EventIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -45,6 +46,7 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
 
   const menuItems: MenuItem[] = [
     { path: '/dashboard/management/users', key: 'users', icon: <UsersIcon /> },
+    { path: '/dashboard/management/holiday-calendars', key: 'holidayCalendar.title', icon: <EventIcon /> },
     { path: '/dashboard/management/modbus-controllers', key: 'modbusControllers.title', icon: <SettingsEthernetIcon /> },
     { path: '/dashboard/management/sharp7-controllers', key: 'sharp7Controllers.title', icon: <MemoryIcon /> },
     { path: '/dashboard/management/modbus-gateway', key: 'modbusGateway.title', icon: <DeviceHubIcon /> },
