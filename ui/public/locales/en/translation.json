@@ -40,6 +40,7 @@
   "auditTrail": "Audit Trail",
   "disabledAlarms": "Disabled Alarms",
   "scheduler": "Scheduler",
+  "memory": "Memory",
   "management": "Management",
   "loginTitle": "System Login",
   "loginSubtitle": "Please enter your credentials",

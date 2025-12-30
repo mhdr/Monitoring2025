@@ -16,14 +16,14 @@ import {
 } from '@mui/material';
 import {
   Close as CloseIcon,
-  People as UsersIcon,
-  SettingsEthernet as SettingsEthernetIcon,
-  Memory as MemoryIcon,
-  DeviceHub as DeviceHubIcon,
+  Timer as TimerIcon,
+  PrecisionManufacturing as PIDIcon,
+  Calculate as CalculateIcon,
+  Countertops as TotalizerIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
-interface ManagementSidebarProps {
+interface MemorySidebarProps {
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -36,7 +36,7 @@ interface MenuItem {
 
 const SIDEBAR_WIDTH = 280;
 
-const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle }) => {
+const MemorySidebar: React.FC<MemorySidebarProps> = ({ isOpen, onToggle }) => {
   const { t } = useLanguage();
   const theme = useTheme();
   const location = useLocation();
@@ -44,10 +44,10 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
   const menuItems: MenuItem[] = [
-    { path: '/dashboard/management/users', key: 'users', icon: <UsersIcon /> },
-    { path: '/dashboard/management/modbus-controllers', key: 'modbusControllers.title', icon: <SettingsEthernetIcon /> },
-    { path: '/dashboard/management/sharp7-controllers', key: 'sharp7Controllers.title', icon: <MemoryIcon /> },
-    { path: '/dashboard/management/modbus-gateway', key: 'modbusGateway.title', icon: <DeviceHubIcon /> },
+    { path: '/dashboard/memory/timeout-memory', key: 'timeoutMemory.title', icon: <TimerIcon /> },
+    { path: '/dashboard/memory/average-memory', key: 'averageMemory.title', icon: <CalculateIcon /> },
+    { path: '/dashboard/memory/pid-memory', key: 'pidMemory.title', icon: <PIDIcon /> },
+    { path: '/dashboard/memory/totalizer-memory', key: 'totalizerMemory.title', icon: <TotalizerIcon /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -67,7 +67,7 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
         flexDirection: 'column',
         backgroundColor: 'background.paper',
       }}
-      data-id-ref="management-sidebar-root-container"
+      data-id-ref="memory-sidebar-root-container"
     >
       {/* Header */}
       <Box
@@ -81,7 +81,7 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
           borderColor: 'divider',
           minHeight: 64,
         }}
-        data-id-ref="management-sidebar-header"
+        data-id-ref="memory-sidebar-header"
       >
         <Typography
           variant="h6"
@@ -91,9 +91,9 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
             color: 'primary.main',
             letterSpacing: 0.5,
           }}
-          data-id-ref="management-sidebar-title"
+          data-id-ref="memory-sidebar-title"
         >
-          {t('management')}
+          {t('memory')}
         </Typography>
         {isMobile && (
           <IconButton
@@ -102,7 +102,7 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
             className="touch-target"
             aria-label={t('common.buttons.close')}
             size="small"
-            data-id-ref="management-sidebar-toggle-close-btn"
+            data-id-ref="memory-sidebar-toggle-close-btn"
             sx={{
               minWidth: { xs: 48, sm: 44 },
               minHeight: { xs: 48, sm: 44 },
@@ -112,12 +112,12 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
               },
             }}
           >
-            <CloseIcon data-id-ref="management-sidebar-toggle-close-icon" />
+            <CloseIcon data-id-ref="memory-sidebar-toggle-close-icon" />
           </IconButton>
         )}
       </Box>
 
-      <Divider data-id-ref="management-sidebar-divider" />
+      <Divider data-id-ref="memory-sidebar-divider" />
 
       {/* Navigation Menu */}
       <Box
@@ -128,9 +128,9 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
           overflowX: 'hidden',
           py: 1,
         }}
-        data-id-ref="management-sidebar-nav"
+        data-id-ref="memory-sidebar-nav"
       >
-        <List sx={{ px: 1 }} data-id-ref="management-sidebar-nav-list">
+        <List sx={{ px: 1 }} data-id-ref="memory-sidebar-nav-list">
           {menuItems.map((item) => {
             const active = isActive(item.path);
 
@@ -139,34 +139,29 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
                 key={item.key}
                 disablePadding
                 sx={{ mb: 0.5 }}
-                data-id-ref={`management-sidebar-nav-item-${item.key}`}
+                data-id-ref={`memory-sidebar-nav-item-${item.key}`}
               >
                 <ListItemButton
                   onClick={() => handleNavigation(item.path)}
-                  selected={active}
-                  data-id-ref={`management-sidebar-nav-link-${item.key}`}
+                  data-id-ref={`memory-sidebar-nav-button-${item.key}`}
+                  className="touch-target"
                   sx={{
-                    borderRadius: 2,
-                    py: 1.5,
+                    borderRadius: 1.5,
+                    minHeight: { xs: 48, sm: 44 },
                     px: 2,
+                    py: 1.5,
+                    backgroundColor: active ? 'primary.main' : 'transparent',
                     transition: 'all 0.2s ease-in-out',
-                    '&.Mui-selected': {
-                      backgroundColor: 'primary.main',
-                      color: 'primary.contrastText',
-                      '&:hover': {
-                        backgroundColor: 'primary.dark',
-                      },
-                      '& .MuiListItemIcon-root': {
-                        color: 'primary.contrastText',
-                      },
-                    },
                     '&:hover': {
                       backgroundColor: active ? 'primary.dark' : 'action.hover',
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: active ? 'primary.contrastText' : 'text.secondary',
                     },
                   }}
                 >
                   <ListItemIcon
-                    data-id-ref={`management-sidebar-nav-icon-${item.key}`}
+                    data-id-ref={`memory-sidebar-nav-icon-${item.key}`}
                     sx={{
                       minWidth: 40,
                       color: active ? 'primary.contrastText' : 'text.secondary',
@@ -177,7 +172,7 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
                   </ListItemIcon>
                   <ListItemText
                     primary={t(item.key)}
-                    data-id-ref={`management-sidebar-nav-text-${item.key}`}
+                    data-id-ref={`memory-sidebar-nav-text-${item.key}`}
                     primaryTypographyProps={{
                       fontWeight: active ? 600 : 500,
                       fontSize: '0.9rem',
@@ -197,27 +192,24 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
 
   return (
     <Drawer
-      variant={isMobile ? 'temporary' : 'persistent'}
-      anchor={theme.direction === 'rtl' ? 'right' : 'left'}
+      variant={isMobile ? 'temporary' : 'permanent'}
       open={isOpen}
       onClose={onToggle}
-      data-id-ref="management-sidebar-drawer"
+      data-id-ref="memory-sidebar-drawer"
+      ModalProps={{
+        keepMounted: true, // Better mobile performance
+      }}
       sx={{
-        width: isOpen ? SIDEBAR_WIDTH : 0,
+        width: SIDEBAR_WIDTH,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: SIDEBAR_WIDTH,
           boxSizing: 'border-box',
-          border: 'none',
-          boxShadow: theme.shadows[4],
-          position: 'absolute',
-          // Use logical properties for RTL support
-          insetInlineStart: 0,
-          insetInlineEnd: 'auto',
+          borderRight: 1,
+          borderColor: 'divider',
+          position: isMobile ? 'fixed' : 'relative',
+          height: isMobile ? '100vh' : '100%',
         },
-      }}
-      ModalProps={{
-        keepMounted: true, // Better mobile performance
       }}
     >
       {drawerContent}
@@ -225,4 +217,4 @@ const ManagementSidebar: React.FC<ManagementSidebarProps> = ({ isOpen, onToggle 
   );
 };
 
-export default ManagementSidebar;
+export default MemorySidebar;

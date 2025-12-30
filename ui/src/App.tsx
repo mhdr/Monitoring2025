@@ -33,6 +33,7 @@ const TimeoutMemoryManagementPage = lazy(() => import('./components/TimeoutMemor
 const AverageMemoryManagementPage = lazy(() => import('./components/AverageMemoryManagementPage'));
 const PIDMemoryManagementPage = lazy(() => import('./components/PIDMemoryManagementPage'));
 const TotalizerMemoryManagementPage = lazy(() => import('./components/TotalizerMemoryManagementPage'));
+const MemoryPage = lazy(() => import('./components/MemoryPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
@@ -155,34 +156,46 @@ const AppRoutes = () => {
               </Suspense>
             </LazyErrorBoundary>
           } />
-          <Route path="management/timeout-memory" element={
+          
+          {/* Memory Routes - with nested sidebar */}
+          <Route path="memory" element={
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-                <TimeoutMemoryManagementPage />
+                <MemoryPage />
               </Suspense>
             </LazyErrorBoundary>
-          } />
-          <Route path="management/average-memory" element={
-            <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-                <AverageMemoryManagementPage />
-              </Suspense>
-            </LazyErrorBoundary>
-          } />
-          <Route path="management/pid-memory" element={
-            <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-                <PIDMemoryManagementPage />
-              </Suspense>
-            </LazyErrorBoundary>
-          } />
-          <Route path="management/totalizer-memory" element={
-            <LazyErrorBoundary>
-              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
-                <TotalizerMemoryManagementPage />
-              </Suspense>
-            </LazyErrorBoundary>
-          } />
+          }>
+            <Route index element={<Navigate to="/dashboard/memory/timeout-memory" replace />} />
+            <Route path="timeout-memory" element={
+              <LazyErrorBoundary>
+                <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                  <TimeoutMemoryManagementPage />
+                </Suspense>
+              </LazyErrorBoundary>
+            } />
+            <Route path="average-memory" element={
+              <LazyErrorBoundary>
+                <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                  <AverageMemoryManagementPage />
+                </Suspense>
+              </LazyErrorBoundary>
+            } />
+            <Route path="pid-memory" element={
+              <LazyErrorBoundary>
+                <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                  <PIDMemoryManagementPage />
+                </Suspense>
+              </LazyErrorBoundary>
+            } />
+            <Route path="totalizer-memory" element={
+              <LazyErrorBoundary>
+                <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                  <TotalizerMemoryManagementPage />
+                </Suspense>
+              </LazyErrorBoundary>
+            } />
+          </Route>
+          
           <Route path="settings" element={
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
