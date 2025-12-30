@@ -12290,6 +12290,68 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     #region IF Memory Endpoints
 
     /// <summary>
+    /// Get all IF memory configurations
+    /// </summary>
+    /// <param name="request">Empty request DTO</param>
+    /// <returns>List of IF memory configurations</returns>
+    /// <remarks>
+    /// Retrieves all IF memory configurations from the database.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetIfMemories
+    ///     {
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns list of IF memory configurations</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetIfMemories")]
+    public async Task<IActionResult> GetIfMemories([FromBody] GetIfMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetIfMemoriesResponseDto();
+
+            var ifMemories = await Core.IfMemories.GetIfMemories();
+
+            if (ifMemories != null)
+            {
+                foreach (var im in ifMemories)
+                {
+                    response.IfMemories!.Add(new GetIfMemoriesResponseDto.IfMemory()
+                    {
+                        Id = im.Id,
+                        Name = im.Name,
+                        Branches = im.Branches ?? "[]",
+                        DefaultValue = im.DefaultValue,
+                        VariableAliases = im.VariableAliases ?? "{}",
+                        OutputItemId = im.OutputItemId,
+                        OutputType = (int)im.OutputType,
+                        Interval = im.Interval,
+                        IsDisabled = im.IsDisabled
+                    });
+                }
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
     /// Add a new IF memory configuration with IF/ELSE IF/ELSE branching logic
     /// </summary>
     /// <param name="request">IF memory configuration parameters</param>
