@@ -3872,6 +3872,8 @@
     "dayOfWeek": "Day",
     "startTime": "Start Time",
     "endTime": "End Time",
+    "useEndTime": "Use End Time",
+    "crossesMidnight": "→ next day",
     "priorityLabel": "Priority",
     "analogValue": "Analog Value",
     "digitalValue": "Digital Value",
@@ -3909,6 +3911,11 @@
       "normal": "Normal",
       "high": "High",
       "critical": "Critical"
+    },
+    "nullBehavior": {
+      "useDefault": "Use Default Value",
+      "extendToEndOfDay": "Extend to End of Day",
+      "helper": "Behavior when no end time is set"
     },
     "validation": {
       "outputItemRequired": "Output item is required",

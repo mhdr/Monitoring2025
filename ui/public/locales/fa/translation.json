@@ -3518,6 +3518,8 @@
     "dayOfWeek": "روز",
     "startTime": "زمان شروع",
     "endTime": "زمان پایان",
+    "useEndTime": "استفاده از زمان پایان",
+    "crossesMidnight": "→ روز بعد",
     "priorityLabel": "اولویت",
     "analogValue": "مقدار آنالوگ",
     "digitalValue": "مقدار دیجیتال",
@@ -3555,6 +3557,11 @@
       "normal": "عادی",
       "high": "بالا",
       "critical": "بحرانی"
+    },
+    "nullBehavior": {
+      "useDefault": "استفاده از مقدار پیش‌فرض",
+      "extendToEndOfDay": "تمدید تا پایان روز",
+      "helper": "رفتار زمانی که زمان پایان تنظیم نشده است"
     },
     "validation": {
       "outputItemRequired": "آیتم خروجی الزامی است",
