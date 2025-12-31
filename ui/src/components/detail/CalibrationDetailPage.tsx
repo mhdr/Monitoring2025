@@ -291,7 +291,7 @@ const CalibrationDetailPage: React.FC = () => {
   return (
     <Box
       sx={{
-        height: '100%',
+        minHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
         p: 3,
