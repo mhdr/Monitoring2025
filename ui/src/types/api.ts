@@ -2645,7 +2645,7 @@ export interface EditModbusGatewayResponseDto {
  * Request DTO for deleting a Modbus gateway
  */
 export interface DeleteModbusGatewayRequestDto {
-  gatewayId: string;
+  id: string;
 }
 
 /**

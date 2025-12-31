@@ -138,7 +138,7 @@ const ModbusGatewayPage: React.FC = () => {
     if (!selectedGateway) return;
     
     try {
-      const response = await deleteModbusGateway({ gatewayId: selectedGateway.id });
+      const response = await deleteModbusGateway({ id: selectedGateway.id });
       if (response.isSuccessful) {
         setSuccessMessage(t('modbusGateway.success.deleted'));
         fetchGateways();
