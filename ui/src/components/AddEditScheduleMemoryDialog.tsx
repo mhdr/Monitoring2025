@@ -905,6 +905,12 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
         fieldKey="scheduleMemory.help.interval"
       />
       <FieldHelpPopover
+        anchorEl={helpAnchorEl['scheduleMemory.help.duration']}
+        open={Boolean(helpAnchorEl['scheduleMemory.help.duration'])}
+        onClose={handleHelpClose('scheduleMemory.help.duration')}
+        fieldKey="scheduleMemory.help.duration"
+      />
+      <FieldHelpPopover
         anchorEl={helpAnchorEl['scheduleMemory.help.holidayCalendar']}
         open={Boolean(helpAnchorEl['scheduleMemory.help.holidayCalendar'])}
         onClose={handleHelpClose('scheduleMemory.help.holidayCalendar')}
