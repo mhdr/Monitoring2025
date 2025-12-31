@@ -23,9 +23,6 @@ import {
   Delete as DeleteIcon,
   PlayArrow as PlayArrowIcon,
   HelpOutline as HelpOutlineIcon,
-  CheckCircle as CheckCircleIcon,
-  Repeat as RepeatIcon,
-  AllInclusive as AllInclusiveIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
@@ -78,47 +75,7 @@ const getItemTypeLabel = (itemType: ItemType, t: (key: string) => string): strin
   }
 };
 
-/**
- * Format execution status display
- */
-const formatExecutionStatus = (
-  current: number,
-  max: number | null | undefined,
-  t: (key: string) => string
-): string => {
-  if (max === null || max === undefined) {
-    return `${current} (${t('writeActionMemory.continuous')})`;
-  }
-  return `${current}/${max}`;
-};
-
-/**
- * Get execution status color
- */
-const getExecutionStatusColor = (
-  current: number,
-  max: number | null | undefined
-): 'default' | 'primary' | 'success' | 'warning' | 'error' => {
-  if (max === null || max === undefined) {
-    return 'primary'; // Continuous execution
-  }
-  
-  const percentage = (current / max) * 100;
-  
-  if (current >= max) {
-    return 'error'; // Completed/stopped
-  } else if (percentage >= 80) {
-    return 'warning'; // Nearly complete
-  } else if (percentage >= 50) {
-    return 'success'; // In progress
-  } else {
-    return 'primary'; // Just started
-  }
-};
-
 interface WriteActionMemoryWithItems extends WriteActionMemory {
-  inputItemName?: string;
-  inputItemType?: ItemType;
   outputItemName?: string;
   outputItemType?: ItemType;
   sourceItemName?: string;
@@ -164,7 +121,6 @@ const WriteActionMemoryManagementPage: React.FC = () => {
       if (response?.writeActionMemories) {
         // Enhance write action memories with item names and types
         const enhancedMemories: WriteActionMemoryWithItems[] = response.writeActionMemories.map((wam) => {
-          const inputItem = items.find((item) => item.id === wam.inputItemId);
           const outputItem = items.find((item) => item.id === wam.outputItemId);
           const sourceItem = wam.outputValueSourceItemId 
             ? items.find((item) => item.id === wam.outputValueSourceItemId)
@@ -172,8 +128,6 @@ const WriteActionMemoryManagementPage: React.FC = () => {
 
           return {
             ...wam,
-            inputItemName: inputItem ? (language === 'fa' && inputItem.nameFa ? inputItem.nameFa : inputItem.name) : undefined,
-            inputItemType: inputItem?.itemType,
             outputItemName: outputItem ? (language === 'fa' && outputItem.nameFa ? outputItem.nameFa : outputItem.name) : undefined,
             outputItemType: outputItem?.itemType,
             sourceItemName: sourceItem ? (language === 'fa' && sourceItem.nameFa ? sourceItem.nameFa : sourceItem.name) : undefined,
@@ -208,7 +162,6 @@ const WriteActionMemoryManagementPage: React.FC = () => {
     return writeActionMemories.filter(
       (wam) =>
         wam.name?.toLowerCase().includes(lowerSearch) ||
-        wam.inputItemName?.toLowerCase().includes(lowerSearch) ||
         wam.outputItemName?.toLowerCase().includes(lowerSearch) ||
         wam.sourceItemName?.toLowerCase().includes(lowerSearch) ||
         wam.outputValue?.toLowerCase().includes(lowerSearch)
@@ -275,26 +228,6 @@ const WriteActionMemoryManagementPage: React.FC = () => {
         ),
       },
       {
-        field: 'inputItemName',
-        headerText: t('writeActionMemory.inputItem'),
-        width: 200,
-        template: (rowData: WriteActionMemoryWithItems) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
-              {rowData.inputItemName || rowData.inputItemId}
-            </Typography>
-            {rowData.inputItemType !== undefined && (
-              <Chip
-                label={getItemTypeLabel(rowData.inputItemType, t)}
-                size="small"
-                color={getItemTypeColor(rowData.inputItemType)}
-                sx={{ height: 20, fontSize: '0.65rem', flexShrink: 0 }}
-              />
-            )}
-          </Box>
-        ),
-      },
-      {
         field: 'outputItemName',
         headerText: t('writeActionMemory.outputItem'),
         width: 200,
@@ -349,50 +282,6 @@ const WriteActionMemoryManagementPage: React.FC = () => {
                   </Typography>
                 </>
               )}
-            </Box>
-          );
-        },
-      },
-      {
-        field: 'interval',
-        headerText: t('writeActionMemory.interval'),
-        width: 100,
-        textAlign: 'Center',
-        template: (rowData: WriteActionMemoryWithItems) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-            <RepeatIcon fontSize="small" color="action" />
-            <Typography variant="body2">{rowData.interval}s</Typography>
-          </Box>
-        ),
-      },
-      {
-        field: 'executionStatus',
-        headerText: t('writeActionMemory.executionStatus'),
-        width: 150,
-        textAlign: 'Center',
-        template: (rowData: WriteActionMemoryWithItems) => {
-          const statusColor = getExecutionStatusColor(rowData.currentExecutionCount, rowData.maxExecutionCount);
-          const statusText = formatExecutionStatus(rowData.currentExecutionCount, rowData.maxExecutionCount, t);
-          const isComplete = rowData.maxExecutionCount !== null && 
-                            rowData.maxExecutionCount !== undefined && 
-                            rowData.currentExecutionCount >= rowData.maxExecutionCount;
-          const isContinuous = rowData.maxExecutionCount === null || rowData.maxExecutionCount === undefined;
-
-          return (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-              {isComplete ? (
-                <CheckCircleIcon fontSize="small" color="error" />
-              ) : isContinuous ? (
-                <AllInclusiveIcon fontSize="small" color="primary" />
-              ) : (
-                <PlayArrowIcon fontSize="small" color={statusColor} />
-              )}
-              <Chip
-                label={statusText}
-                size="small"
-                color={statusColor}
-                sx={{ height: 20, fontSize: '0.65rem', minWidth: 80 }}
-              />
             </Box>
           );
         },
