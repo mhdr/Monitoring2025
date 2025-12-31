@@ -89,5 +89,27 @@ public class GetAverageMemoriesResponseDto
         /// Minimum number of inputs required
         /// </summary>
         public int MinimumInputs { get; set; }
+
+        // ==================== Moving Average / Filter Memory Properties ====================
+
+        /// <summary>
+        /// Type of moving average algorithm (0=Simple, 1=Exponential, 2=Weighted)
+        /// </summary>
+        public int AverageType { get; set; }
+
+        /// <summary>
+        /// Window size for SMA/WMA (number of samples)
+        /// </summary>
+        public int WindowSize { get; set; }
+
+        /// <summary>
+        /// Alpha (smoothing factor) for EMA (0.01-1.0)
+        /// </summary>
+        public double Alpha { get; set; }
+
+        /// <summary>
+        /// Use linear weights for WMA (true) or custom weights (false)
+        /// </summary>
+        public bool UseLinearWeights { get; set; }
     }
 }

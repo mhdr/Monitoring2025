@@ -165,6 +165,19 @@ public class AverageMemories
                 return (false, null, $"MinimumInputs ({averageMemory.MinimumInputs}) cannot exceed number of input items ({inputIds.Count})");
             }
 
+            // Validate moving average parameters
+            if (averageMemory.WindowSize < 2 || averageMemory.WindowSize > 1000)
+            {
+                await context.DisposeAsync();
+                return (false, null, "WindowSize must be between 2 and 1000");
+            }
+
+            if (averageMemory.Alpha < 0.01 || averageMemory.Alpha > 1.0)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Alpha must be between 0.01 and 1.0");
+            }
+
             context.AverageMemories.Add(averageMemory);
             await context.SaveChangesAsync();
             var id = averageMemory.Id;
@@ -316,6 +329,19 @@ public class AverageMemories
             {
                 await context.DisposeAsync();
                 return (false, $"MinimumInputs ({averageMemory.MinimumInputs}) cannot exceed number of input items ({inputIds.Count})");
+            }
+
+            // Validate moving average parameters
+            if (averageMemory.WindowSize < 2 || averageMemory.WindowSize > 1000)
+            {
+                await context.DisposeAsync();
+                return (false, "WindowSize must be between 2 and 1000");
+            }
+
+            if (averageMemory.Alpha < 0.01 || averageMemory.Alpha > 1.0)
+            {
+                await context.DisposeAsync();
+                return (false, "Alpha must be between 0.01 and 1.0");
             }
 
             context.AverageMemories.Update(averageMemory);

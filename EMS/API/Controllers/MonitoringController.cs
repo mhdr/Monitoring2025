@@ -7322,10 +7322,223 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         EnableOutlierDetection = am.EnableOutlierDetection,
                         OutlierMethod = (int)am.OutlierMethod,
                         OutlierThreshold = am.OutlierThreshold,
-                        MinimumInputs = am.MinimumInputs
+                        MinimumInputs = am.MinimumInputs,
+                        // Moving Average / Filter Memory properties
+                        AverageType = (int)am.AverageType,
+                        WindowSize = am.WindowSize,
+                        Alpha = am.Alpha,
+                        UseLinearWeights = am.UseLinearWeights
                     });
                 }
             }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new average memory / moving average configuration
+    /// </summary>
+    /// <param name="request">Average memory configuration parameters</param>
+    /// <returns>ID of the newly created average memory</returns>
+    /// <remarks>
+    /// Creates a new average memory configuration for signal averaging/filtering.
+    /// 
+    /// Supports two modes:
+    /// - Multi-input averaging: Average multiple input items together (use multiple InputItemIds)
+    /// - Time-based moving average: Apply SMA/EMA/WMA to a single input over time (use single InputItemId)
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AddAverageMemory
+    ///     {
+    ///        "name": "Zone Temperature Smoother",
+    ///        "inputItemIds": "[\"550e8400-e29b-41d4-a716-446655440000\"]",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "interval": 5,
+    ///        "averageType": 1,
+    ///        "windowSize": 20,
+    ///        "alpha": 0.3
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns ID of created average memory</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("AddAverageMemory")]
+    public async Task<IActionResult> AddAverageMemory([FromBody] AddAverageMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var averageMemory = new Core.Models.AverageMemory
+            {
+                Name = request.Name,
+                InputItemIds = request.InputItemIds,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                Weights = request.Weights,
+                IgnoreStale = request.IgnoreStale,
+                StaleTimeout = request.StaleTimeout,
+                EnableOutlierDetection = request.EnableOutlierDetection,
+                OutlierMethod = (Core.Libs.OutlierMethod)request.OutlierMethod,
+                OutlierThreshold = request.OutlierThreshold,
+                MinimumInputs = request.MinimumInputs,
+                // Moving Average properties
+                AverageType = (Core.Models.MovingAverageType)request.AverageType,
+                WindowSize = request.WindowSize,
+                Alpha = request.Alpha,
+                UseLinearWeights = request.UseLinearWeights
+            };
+
+            var (success, id, errorMessage) = await Core.AverageMemories.AddAverageMemory(averageMemory);
+
+            var response = new AddAverageMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Edit an existing average memory / moving average configuration
+    /// </summary>
+    /// <param name="request">Updated average memory configuration parameters</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Updates an existing average memory configuration.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/EditAverageMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Updated Zone Temperature Smoother",
+    ///        "inputItemIds": "[\"550e8400-e29b-41d4-a716-446655440000\"]",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "interval": 10,
+    ///        "averageType": 1,
+    ///        "windowSize": 30,
+    ///        "alpha": 0.2
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("EditAverageMemory")]
+    public async Task<IActionResult> EditAverageMemory([FromBody] EditAverageMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var averageMemory = new Core.Models.AverageMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                InputItemIds = request.InputItemIds,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                Weights = request.Weights,
+                IgnoreStale = request.IgnoreStale,
+                StaleTimeout = request.StaleTimeout,
+                EnableOutlierDetection = request.EnableOutlierDetection,
+                OutlierMethod = (Core.Libs.OutlierMethod)request.OutlierMethod,
+                OutlierThreshold = request.OutlierThreshold,
+                MinimumInputs = request.MinimumInputs,
+                // Moving Average properties
+                AverageType = (Core.Models.MovingAverageType)request.AverageType,
+                WindowSize = request.WindowSize,
+                Alpha = request.Alpha,
+                UseLinearWeights = request.UseLinearWeights
+            };
+
+            var (success, errorMessage) = await Core.AverageMemories.EditAverageMemory(averageMemory);
+
+            var response = new EditAverageMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Delete an average memory configuration
+    /// </summary>
+    /// <param name="request">ID of average memory to delete</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Permanently deletes an average memory configuration and its sample history.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/DeleteAverageMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails or memory not found</response>
+    [HttpPost("DeleteAverageMemory")]
+    public async Task<IActionResult> DeleteAverageMemory([FromBody] DeleteAverageMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.AverageMemories.DeleteAverageMemory(request.Id);
+
+            var response = new DeleteAverageMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
 
             return Ok(response);
         }

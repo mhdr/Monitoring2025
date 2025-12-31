@@ -2818,6 +2818,16 @@ export interface DeleteTimeoutMemoryResponseDto {
 // ==================== Average Memory DTOs ====================
 
 /**
+ * Moving average type for Average Memory
+ */
+export const MovingAverageType = {
+  Simple: 0, // Simple Moving Average (SMA)
+  Exponential: 1, // Exponential Moving Average (EMA)
+  Weighted: 2, // Weighted Moving Average (WMA)
+} as const;
+export type MovingAverageType = (typeof MovingAverageType)[keyof typeof MovingAverageType];
+
+/**
  * Outlier detection method for Average Memory
  */
 export const OutlierMethod = {
@@ -2829,6 +2839,7 @@ export type OutlierMethod = (typeof OutlierMethod)[keyof typeof OutlierMethod];
 
 /**
  * Average Memory configuration
+ * Supports both multi-input averaging and time-based moving average (SMA/EMA/WMA)
  */
 export interface AverageMemory {
   id: string; // UUID
@@ -2844,6 +2855,11 @@ export interface AverageMemory {
   outlierMethod: OutlierMethod; // IQR or ZScore
   outlierThreshold: number; // Threshold for outlier detection
   minimumInputs: number; // Minimum valid inputs required
+  // Moving Average fields (used when single input)
+  averageType: MovingAverageType; // SMA, EMA, or WMA
+  windowSize: number; // Number of samples for moving average (2-1000)
+  alpha: number; // Smoothing factor for EMA (0.01-1.0)
+  useLinearWeights: boolean; // Whether to use linear weights for WMA
 }
 
 /**
@@ -2877,6 +2893,11 @@ export interface AddAverageMemoryRequestDto {
   outlierMethod?: OutlierMethod;
   outlierThreshold?: number;
   minimumInputs?: number;
+  // Moving Average fields
+  averageType?: MovingAverageType; // Default: Simple (0)
+  windowSize?: number; // Default: 10, range 2-1000
+  alpha?: number; // Default: 0.2, range 0.01-1.0
+  useLinearWeights?: boolean; // Default: true
 }
 
 /**
@@ -2905,6 +2926,11 @@ export interface EditAverageMemoryRequestDto {
   outlierMethod?: OutlierMethod;
   outlierThreshold?: number;
   minimumInputs?: number;
+  // Moving Average fields
+  averageType?: MovingAverageType; // SMA, EMA, or WMA
+  windowSize?: number; // Range 2-1000
+  alpha?: number; // Range 0.01-1.0
+  useLinearWeights?: boolean;
 }
 
 /**

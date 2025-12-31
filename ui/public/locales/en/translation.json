@@ -2750,6 +2750,19 @@
     "outlierThreshold": "Outlier Threshold",
     "outlierThresholdHelpIQR": "IQR multiplier (1.5 = standard boxplot rule, lower = stricter)",
     "outlierThresholdHelpZScore": "Z-score cutoff (3.0 = 99.7% of normal distribution, lower = stricter)",
+    "movingAverageConfig": "Moving Average Configuration",
+    "movingAverageNote": "Moving average is used when a single input is selected. With multiple inputs, multi-input averaging mode is used instead.",
+    "averageType": {
+      "label": "Average Type",
+      "simple": "Simple Moving Average (SMA)",
+      "exponential": "Exponential Moving Average (EMA)",
+      "weighted": "Weighted Moving Average (WMA)"
+    },
+    "windowSize": "Window Size",
+    "windowSizeHelp": "Number of recent samples to include in the moving average (2-1000)",
+    "alpha": "Smoothing Factor (α)",
+    "alphaHelp": "Higher values give more weight to recent data (0.01-1.0). Low α = smoother but slower response. High α = faster response but noisier.",
+    "useLinearWeights": "Use Linear Weights (recent samples weighted higher)",
     "validation": {
       "inputItemsRequired": "At least one input item is required",
       "outputItemRequired": "Output item is required",
@@ -3044,6 +3057,59 @@
           {
             "type": "tip",
             "content": "Start with IQR 1.5 or Z-Score 3.0. Monitor results and adjust if needed. Lower values = more aggressive outlier detection."
+          }
+        ]
+      },
+      "movingAverageConfig": {
+        "title": "Moving Average Configuration",
+        "sections": [
+          {
+            "title": "What is Moving Average?",
+            "content": "Moving average is a time-based smoothing technique that calculates the average of recent values over a sliding window. It's used to reduce noise and smooth trend data."
+          },
+          {
+            "title": "When Does Moving Average Apply?",
+            "content": "Moving average mode is automatically used when you have a SINGLE input item. With multiple inputs, the system uses multi-input averaging instead."
+          },
+          {
+            "title": "Average Types",
+            "content": [
+              "Simple Moving Average (SMA): Equal weight to all samples in window",
+              "Exponential Moving Average (EMA): More weight to recent samples, smoother",
+              "Weighted Moving Average (WMA): Linearly decreasing weights from newest to oldest"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Use Cases",
+            "content": [
+              "Noise reduction: Smooth noisy sensor readings",
+              "Trend smoothing: Display cleaner trend lines",
+              "Signal conditioning: Prepare data for control loops",
+              "Dampen oscillations: Reduce rapid value fluctuations"
+            ]
+          }
+        ]
+      },
+      "windowSize": {
+        "title": "Window Size (Sample Count)",
+        "sections": [
+          {
+            "title": "What is Window Size?",
+            "content": "The number of recent samples to include in the moving average calculation. Larger windows provide more smoothing but slower response to changes."
+          },
+          {
+            "title": "Choosing Window Size",
+            "content": [
+              "Small (2-5): Minimal smoothing, fast response",
+              "Medium (10-20): Balanced smoothing and response",
+              "Large (50-100): Heavy smoothing, slow response",
+              "Very large (100+): Maximum smoothing for long-term trends"
+            ]
+          },
+          {
+            "type": "tip",
+            "content": "Start with 10 samples. Increase if output is still noisy, decrease if response is too slow."
           }
         ]
       }

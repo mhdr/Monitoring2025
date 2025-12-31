@@ -48,6 +48,7 @@ public class DataContext : DbContext
     public DbSet<PIDTuningSession> PIDTuningSessions { get; set; }
     
     public DbSet<AverageMemory> AverageMemories { get; set; }
+    public DbSet<AverageMemorySample> AverageMemorySamples { get; set; }
     
     public DbSet<TotalizerMemory> TotalizerMemories { get; set; }
     
@@ -313,6 +314,23 @@ public class DataContext : DbContext
             .Property(e => e.MinimumInputs)
             .HasDefaultValue(1);
         
+        // Moving Average / Filter Memory new properties
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.AverageType)
+            .HasDefaultValue(MovingAverageType.Simple);
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.WindowSize)
+            .HasDefaultValue(10);
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.Alpha)
+            .HasDefaultValue(0.2);
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(e => e.UseLinearWeights)
+            .HasDefaultValue(true);
+        
         modelBuilder.Entity<TotalizerMemory>()
             .Property(e => e.IsDisabled)
             .HasDefaultValue(false);
@@ -524,6 +542,25 @@ public class DataContext : DbContext
         modelBuilder.Entity<AverageMemory>()
             .Property(u => u.OutlierMethod)
             .HasConversion<int>();
+        
+        modelBuilder.Entity<AverageMemory>()
+            .Property(u => u.AverageType)
+            .HasConversion<int>();
+        
+        // AverageMemorySample configuration
+        modelBuilder.Entity<AverageMemorySample>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<AverageMemorySample>()
+            .HasOne(s => s.AverageMemory)
+            .WithMany(m => m.Samples)
+            .HasForeignKey(s => s.AverageMemoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        modelBuilder.Entity<AverageMemorySample>()
+            .HasIndex(s => new { s.AverageMemoryId, s.Timestamp })
+            .IsDescending(false, true);
         
         // ScheduleMemory configuration
         modelBuilder.Entity<ScheduleMemory>()

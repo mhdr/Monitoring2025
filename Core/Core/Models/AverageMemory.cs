@@ -6,16 +6,51 @@ using Core.Libs;
 namespace Core.Models;
 
 /// <summary>
-/// Represents an average memory configuration that computes the mean of multiple analog input items
-/// with optional outlier detection and weighted averaging.
+/// Type of moving average algorithm to apply
+/// </summary>
+public enum MovingAverageType
+{
+    /// <summary>
+    /// Simple Moving Average (SMA): Equal weight to all samples in window.
+    /// Output = (x1 + x2 + ... + xn) / n
+    /// Best for: General smoothing, trend analysis
+    /// </summary>
+    Simple = 0,
+    
+    /// <summary>
+    /// Exponential Moving Average (EMA): Exponential decay weight giving more importance to recent values.
+    /// Output = α × current + (1 - α) × previous_ema
+    /// Best for: Responsive smoothing, tracking recent changes
+    /// </summary>
+    Exponential = 1,
+    
+    /// <summary>
+    /// Weighted Moving Average (WMA): Linear or custom weights.
+    /// When using linear weights, most recent sample has highest weight.
+    /// Output = (w1×x1 + w2×x2 + ... + wn×xn) / (w1 + w2 + ... + wn)
+    /// Best for: Emphasizing recent values with predictable decay
+    /// </summary>
+    Weighted = 2
+}
+
+/// <summary>
+/// Represents a moving average/filter memory configuration for signal smoothing and noise reduction.
+/// Supports Simple Moving Average (SMA), Exponential Moving Average (EMA), and Weighted Moving Average (WMA).
 /// </summary>
 /// <remarks>
 /// The AverageMemoryProcess performs the following operations:
-/// 1. Retrieves values from all specified input items
-/// 2. Filters out stale values (optional, based on IgnoreStale and StaleTimeout)
-/// 3. Detects and removes outliers (optional, using IQR or Z-Score method)
-/// 4. Computes weighted or simple average of remaining values
-/// 5. Writes the result to the output item
+/// 1. Retrieves current value from input item (single input for time-based moving average)
+/// 2. Stores sample in rolling window history
+/// 3. Filters out stale values (optional, based on IgnoreStale and StaleTimeout)
+/// 4. Detects and removes outliers (optional, using IQR or Z-Score method)
+/// 5. Computes moving average based on selected algorithm (SMA/EMA/WMA)
+/// 6. Writes the smoothed result to the output item
+/// 
+/// Use Cases:
+/// - Noise reduction on analog signals
+/// - Trend smoothing for displays
+/// - Dampen oscillations in control systems
+/// - Signal conditioning before processing
 /// 
 /// Input items must be AnalogInput or AnalogOutput type.
 /// Output item must be AnalogInput or AnalogOutput type.
@@ -138,4 +173,56 @@ public class AverageMemory
     [DefaultValue(1)]
     [Column("minimum_inputs")]
     public int MinimumInputs { get; set; } = 1;
+
+    // ==================== Moving Average / Filter Memory Properties ====================
+
+    /// <summary>
+    /// Type of moving average algorithm to use.
+    /// - Simple (0): Equal weight to all samples - SMA
+    /// - Exponential (1): Exponential decay weighting - EMA
+    /// - Weighted (2): Linear or custom weights - WMA
+    /// Default: Simple (0) for backward compatibility.
+    /// </summary>
+    [DefaultValue(MovingAverageType.Simple)]
+    [Column("average_type")]
+    public MovingAverageType AverageType { get; set; } = MovingAverageType.Simple;
+
+    /// <summary>
+    /// Number of samples to keep in the rolling window for moving average calculation.
+    /// - Applies to SMA and WMA algorithms
+    /// - Larger windows = more smoothing but slower response
+    /// - Smaller windows = faster response but less smoothing
+    /// Range: 2-1000, Default: 10 samples
+    /// </summary>
+    [DefaultValue(10)]
+    [Column("window_size")]
+    public int WindowSize { get; set; } = 10;
+
+    /// <summary>
+    /// Smoothing factor (alpha) for Exponential Moving Average (EMA).
+    /// EMA = α × current_value + (1 - α) × previous_EMA
+    /// - Higher alpha (closer to 1) = more weight on recent values, faster response
+    /// - Lower alpha (closer to 0) = more weight on historical values, smoother output
+    /// Range: 0.01-1.0, Default: 0.2
+    /// Only used when AverageType = Exponential.
+    /// </summary>
+    [DefaultValue(0.2)]
+    [Column("alpha")]
+    public double Alpha { get; set; } = 0.2;
+
+    /// <summary>
+    /// If true, uses linear weights for WMA (most recent = highest weight).
+    /// If false, uses custom weights from the Weights property.
+    /// Linear weights: w[i] = i + 1, so for window_size=5: [1, 2, 3, 4, 5]
+    /// Only used when AverageType = Weighted.
+    /// Default: true
+    /// </summary>
+    [DefaultValue(true)]
+    [Column("use_linear_weights")]
+    public bool UseLinearWeights { get; set; } = true;
+    
+    /// <summary>
+    /// Navigation property to sample history for moving average calculations.
+    /// </summary>
+    public virtual ICollection<AverageMemorySample> Samples { get; set; } = new List<AverageMemorySample>();
 }

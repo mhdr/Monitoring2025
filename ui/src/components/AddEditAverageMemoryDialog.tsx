@@ -22,6 +22,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   IconButton,
+  Slider,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -30,8 +31,8 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { addAverageMemory, editAverageMemory } from '../services/extendedApi';
-import type { AverageMemory, MonitoringItem, OutlierMethod, ItemType } from '../types/api';
-import { ItemTypeEnum } from '../types/api';
+import type { AverageMemory, MonitoringItem, OutlierMethod, MovingAverageType, ItemType } from '../types/api';
+import { ItemTypeEnum, MovingAverageType as MovingAverageTypeEnum } from '../types/api';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
 interface AddEditAverageMemoryDialogProps {
@@ -54,6 +55,11 @@ interface FormData {
   outlierMethod: OutlierMethod;
   outlierThreshold: number;
   minimumInputs: number;
+  // Moving Average fields
+  averageType: MovingAverageType;
+  windowSize: number;
+  alpha: number;
+  useLinearWeights: boolean;
 }
 
 interface FormErrors {
@@ -119,6 +125,11 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
     outlierMethod: 1, // IQR
     outlierThreshold: 1.5,
     minimumInputs: 1,
+    // Moving Average defaults
+    averageType: MovingAverageTypeEnum.Simple,
+    windowSize: 10,
+    alpha: 0.2,
+    useLinearWeights: true,
   });
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -174,6 +185,11 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
           outlierMethod: averageMemory.outlierMethod,
           outlierThreshold: averageMemory.outlierThreshold,
           minimumInputs: averageMemory.minimumInputs,
+          // Moving Average fields
+          averageType: averageMemory.averageType ?? MovingAverageTypeEnum.Simple,
+          windowSize: averageMemory.windowSize ?? 10,
+          alpha: averageMemory.alpha ?? 0.2,
+          useLinearWeights: averageMemory.useLinearWeights ?? true,
         });
       } else {
         // Reset to defaults for add mode
@@ -190,6 +206,11 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
           outlierMethod: 1,
           outlierThreshold: 1.5,
           minimumInputs: 1,
+          // Moving Average defaults
+          averageType: MovingAverageTypeEnum.Simple,
+          windowSize: 10,
+          alpha: 0.2,
+          useLinearWeights: true,
         });
         setUseWeights(false);
       }
@@ -275,6 +296,11 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
         outlierMethod: formData.outlierMethod,
         outlierThreshold: formData.outlierThreshold,
         minimumInputs: formData.minimumInputs,
+        // Moving Average fields
+        averageType: formData.averageType,
+        windowSize: formData.windowSize,
+        alpha: formData.alpha,
+        useLinearWeights: formData.useLinearWeights,
       };
 
       const response = editMode && averageMemory
@@ -508,6 +534,143 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
               <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
             </IconButton>
           </Box>
+
+          <Divider />
+
+          {/* Moving Average Configuration */}
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography>{t('averageMemory.movingAverageConfig')}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleHelpOpen('averageMemory.help.movingAverageConfig')(e);
+                  }}
+                  sx={{ p: 0.25 }}
+                  data-id-ref="average-memory-moving-avg-config-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Alert severity="info" sx={{ mb: 1 }}>
+                  {t('averageMemory.movingAverageNote')}
+                </Alert>
+
+                {/* Average Type */}
+                <FormControl fullWidth>
+                  <InputLabel>{t('averageMemory.averageType.label')}</InputLabel>
+                  <Select
+                    value={formData.averageType}
+                    label={t('averageMemory.averageType.label')}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        averageType: Number(e.target.value) as MovingAverageType,
+                      }))
+                    }
+                    data-id-ref="average-memory-type-select"
+                  >
+                    <MenuItem value={MovingAverageTypeEnum.Simple}>
+                      {t('averageMemory.averageType.simple')}
+                    </MenuItem>
+                    <MenuItem value={MovingAverageTypeEnum.Exponential}>
+                      {t('averageMemory.averageType.exponential')}
+                    </MenuItem>
+                    <MenuItem value={MovingAverageTypeEnum.Weighted}>
+                      {t('averageMemory.averageType.weighted')}
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* Window Size - for SMA and WMA */}
+                {(formData.averageType === MovingAverageTypeEnum.Simple ||
+                  formData.averageType === MovingAverageTypeEnum.Weighted) && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <TextField
+                      type="number"
+                      label={t('averageMemory.windowSize')}
+                      value={formData.windowSize}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          windowSize: Math.max(2, Math.min(1000, Number(e.target.value))),
+                        }))
+                      }
+                      fullWidth
+                      error={!!formErrors.windowSize}
+                      helperText={formErrors.windowSize || t('averageMemory.windowSizeHelp')}
+                      inputProps={{ min: 2, max: 1000 }}
+                      data-id-ref="average-memory-window-size-input"
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('averageMemory.help.windowSize')}
+                      sx={{ p: 0.25, mt: -3 }}
+                      data-id-ref="average-memory-window-size-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
+                )}
+
+                {/* Alpha - for EMA */}
+                {formData.averageType === MovingAverageTypeEnum.Exponential && (
+                  <Box sx={{ px: 1 }}>
+                    <Typography gutterBottom>
+                      {t('averageMemory.alpha')}: {formData.alpha.toFixed(2)}
+                    </Typography>
+                    <Slider
+                      value={formData.alpha}
+                      onChange={(_, value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          alpha: value as number,
+                        }))
+                      }
+                      min={0.01}
+                      max={1.0}
+                      step={0.01}
+                      marks={[
+                        { value: 0.01, label: '0.01' },
+                        { value: 0.2, label: '0.2' },
+                        { value: 0.5, label: '0.5' },
+                        { value: 1.0, label: '1.0' },
+                      ]}
+                      valueLabelDisplay="auto"
+                      data-id-ref="average-memory-alpha-slider"
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      {t('averageMemory.alphaHelp')}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Use Linear Weights - for WMA */}
+                {formData.averageType === MovingAverageTypeEnum.Weighted && (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.useLinearWeights}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            useLinearWeights: e.target.checked,
+                          }))
+                        }
+                        data-id-ref="average-memory-use-linear-weights-switch"
+                      />
+                    }
+                    label={t('averageMemory.useLinearWeights')}
+                  />
+                )}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
 
           {/* Disabled Switch */}
           <FormControlLabel
@@ -817,6 +980,18 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
         open={Boolean(helpAnchorEl['averageMemory.help.outlierThreshold'])}
         onClose={handleHelpClose('averageMemory.help.outlierThreshold')}
         fieldKey="averageMemory.help.outlierThreshold"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.movingAverageConfig']}
+        open={Boolean(helpAnchorEl['averageMemory.help.movingAverageConfig'])}
+        onClose={handleHelpClose('averageMemory.help.movingAverageConfig')}
+        fieldKey="averageMemory.help.movingAverageConfig"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.windowSize']}
+        open={Boolean(helpAnchorEl['averageMemory.help.windowSize'])}
+        onClose={handleHelpClose('averageMemory.help.windowSize')}
+        fieldKey="averageMemory.help.windowSize"
       />
     </Dialog>
   );

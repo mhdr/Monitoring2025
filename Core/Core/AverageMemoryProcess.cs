@@ -6,6 +6,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Core;
 
+/// <summary>
+/// Processes Average Memory / Moving Average / Filter Memory configurations.
+/// Supports multiple modes:
+/// - Multi-input averaging (original behavior): Average multiple input items at a point in time
+/// - Time-based moving average: Apply SMA/EMA/WMA to a single input over time window
+/// 
+/// Use Cases:
+/// - Noise reduction on analog signals
+/// - Trend smoothing for displays
+/// - Dampen oscillations in control systems
+/// - Signal conditioning before processing
+/// </summary>
 public class AverageMemoryProcess
 {
     // Singleton instance
@@ -17,6 +29,9 @@ public class AverageMemoryProcess
 
     // Track last execution time for each memory to respect interval
     private readonly Dictionary<Guid, long> _lastExecutionTimes = new();
+    
+    // In-memory EMA state for fast processing (persisted to DB on significant changes)
+    private readonly Dictionary<Guid, double> _emaState = new();
 
     // Private constructor to enforce Singleton
     private AverageMemoryProcess()
@@ -59,6 +74,7 @@ public class AverageMemoryProcess
                             await using (_context = new DataContext())
                             {
                                 await Process();
+                                await CleanupOldSamples();
                             }
                         }
                         catch (Exception ex2)
@@ -201,6 +217,211 @@ public class AverageMemoryProcess
         if (inputIdStrings.Count == 0)
             return;
 
+        // Determine processing mode based on input count and average type
+        // - Single input: Time-based moving average (SMA/EMA/WMA over time window)
+        // - Multiple inputs: Multi-input averaging at a point in time
+        
+        if (inputIdStrings.Count == 1)
+        {
+            // Time-based moving average mode (filter memory)
+            await ProcessMovingAverage(memory, inputIdStrings[0], inputItemsCache, currentEpochTime);
+        }
+        else
+        {
+            // Multi-input averaging mode (original behavior)
+            await ProcessMultiInputAverage(memory, inputIdStrings, inputItemsCache, currentEpochTime);
+        }
+    }
+
+    /// <summary>
+    /// Process time-based moving average for a single input (signal filtering).
+    /// Stores samples in history and applies SMA/EMA/WMA algorithms.
+    /// </summary>
+    private async Task ProcessMovingAverage(
+        AverageMemory memory,
+        string inputId,
+        Dictionary<string, FinalItemRedis> inputItemsCache,
+        long currentEpochTime)
+    {
+        // Get current input value
+        if (!inputItemsCache.TryGetValue(inputId, out var inputItem))
+        {
+            MyLog.Debug($"AverageMemory {memory.Id}: Input item {inputId} not found in cache");
+            return;
+        }
+
+        // Check if input is stale
+        if (memory.IgnoreStale && (currentEpochTime - inputItem.Time) > memory.StaleTimeout)
+        {
+            MyLog.Debug($"AverageMemory {memory.Id}: Input is stale (age: {currentEpochTime - inputItem.Time}s > {memory.StaleTimeout}s)");
+            return;
+        }
+
+        // Parse input value
+        if (!double.TryParse(inputItem.Value, out var currentValue))
+        {
+            MyLog.Debug($"AverageMemory {memory.Id}: Cannot parse input value '{inputItem.Value}' as double");
+            return;
+        }
+
+        double result;
+        
+        switch (memory.AverageType)
+        {
+            case MovingAverageType.Exponential:
+                result = await ProcessEMA(memory, currentValue, currentEpochTime);
+                break;
+                
+            case MovingAverageType.Weighted:
+                result = await ProcessWMA(memory, currentValue, currentEpochTime);
+                break;
+                
+            case MovingAverageType.Simple:
+            default:
+                result = await ProcessSMA(memory, currentValue, currentEpochTime);
+                break;
+        }
+
+        // Write to output
+        await Points.WriteOrAddValue(memory.OutputItemId, result.ToString("F4"), currentEpochTime);
+
+        MyLog.Debug($"AverageMemory {memory.Id}: {memory.AverageType} = {result:F4} (input: {currentValue:F4})");
+    }
+
+    /// <summary>
+    /// Simple Moving Average (SMA): Equal weight to all samples in window.
+    /// SMA = (x1 + x2 + ... + xn) / n
+    /// </summary>
+    private async Task<double> ProcessSMA(AverageMemory memory, double currentValue, long timestamp)
+    {
+        // Add current sample to history
+        await AddSampleToHistory(memory.Id, currentValue, timestamp);
+
+        // Get samples within window
+        var samples = await GetRecentSamples(memory.Id, memory.WindowSize);
+        
+        if (samples.Count == 0)
+            return currentValue;
+
+        // Apply outlier detection if enabled
+        var values = samples.Select(s => s.Value).ToList();
+        if (memory.EnableOutlierDetection && values.Count >= 3)
+        {
+            var nonOutlierIndices = DetectOutliers(values, memory.OutlierMethod, memory.OutlierThreshold);
+            values = nonOutlierIndices.Select(i => values[i]).ToList();
+        }
+
+        if (values.Count < memory.MinimumInputs)
+            return currentValue; // Not enough valid samples
+
+        // Simple average
+        return values.Average();
+    }
+
+    /// <summary>
+    /// Exponential Moving Average (EMA): Exponential decay weighting.
+    /// EMA = α × current_value + (1 - α) × previous_EMA
+    /// </summary>
+    private async Task<double> ProcessEMA(AverageMemory memory, double currentValue, long timestamp)
+    {
+        // Check for stale input
+        if (memory.IgnoreStale && timestamp - (await GetLastSampleTimestamp(memory.Id)) > memory.StaleTimeout)
+        {
+            // Reset EMA if input was stale
+            _emaState.Remove(memory.Id);
+        }
+
+        // Get previous EMA or initialize with current value
+        if (!_emaState.TryGetValue(memory.Id, out var previousEma))
+        {
+            // Try to load from last sample
+            var lastSample = (await GetRecentSamples(memory.Id, 1)).FirstOrDefault();
+            if (lastSample != null)
+            {
+                previousEma = lastSample.Value;
+            }
+            else
+            {
+                previousEma = currentValue; // First sample, EMA = current value
+            }
+        }
+
+        // Calculate EMA: α × current + (1 - α) × previous
+        double alpha = Math.Clamp(memory.Alpha, 0.01, 1.0);
+        double ema = alpha * currentValue + (1.0 - alpha) * previousEma;
+
+        // Store EMA state
+        _emaState[memory.Id] = ema;
+
+        // Store sample for history (used for recovery after restart)
+        await AddSampleToHistory(memory.Id, ema, timestamp);
+
+        return ema;
+    }
+
+    /// <summary>
+    /// Weighted Moving Average (WMA): Linear or custom weights.
+    /// Most recent samples have higher weight when using linear weights.
+    /// </summary>
+    private async Task<double> ProcessWMA(AverageMemory memory, double currentValue, long timestamp)
+    {
+        // Add current sample to history
+        await AddSampleToHistory(memory.Id, currentValue, timestamp);
+
+        // Get samples within window
+        var samples = await GetRecentSamples(memory.Id, memory.WindowSize);
+        
+        if (samples.Count == 0)
+            return currentValue;
+
+        // Apply outlier detection if enabled
+        var values = samples.Select(s => s.Value).ToList();
+        if (memory.EnableOutlierDetection && values.Count >= 3)
+        {
+            var nonOutlierIndices = DetectOutliers(values, memory.OutlierMethod, memory.OutlierThreshold);
+            values = nonOutlierIndices.Select(i => values[i]).ToList();
+        }
+
+        if (values.Count < memory.MinimumInputs)
+            return currentValue; // Not enough valid samples
+
+        // Generate weights
+        List<double> weights;
+        if (memory.UseLinearWeights)
+        {
+            // Linear weights: [1, 2, 3, 4, 5] for window_size=5
+            // Most recent (last in list) has highest weight
+            weights = Enumerable.Range(1, values.Count).Select(i => (double)i).ToList();
+        }
+        else
+        {
+            // Use custom weights from configuration (or equal if not configured)
+            weights = ParseWeights(memory.Weights, values.Count);
+        }
+
+        // Calculate weighted average
+        double weightedSum = 0;
+        double totalWeight = 0;
+        for (int i = 0; i < values.Count; i++)
+        {
+            double w = i < weights.Count ? weights[i] : 1.0;
+            weightedSum += values[i] * w;
+            totalWeight += w;
+        }
+
+        return totalWeight > 0 ? weightedSum / totalWeight : currentValue;
+    }
+
+    /// <summary>
+    /// Process multi-input averaging at a point in time (original behavior).
+    /// Averages multiple input items together with optional weighting and outlier detection.
+    /// </summary>
+    private async Task ProcessMultiInputAverage(
+        AverageMemory memory,
+        List<string> inputIdStrings,
+        Dictionary<string, FinalItemRedis> inputItemsCache,
+        long currentEpochTime)
+    {
         // Parse weights if provided
         List<double>? weights = null;
         if (!string.IsNullOrWhiteSpace(memory.Weights))
@@ -302,6 +523,134 @@ public class AverageMemoryProcess
         MyLog.Debug($"AverageMemory {memory.Id}: Computed average = {average:F4} from {filteredInputs.Count} inputs");
     }
 
+    // ==================== Sample History Management ====================
+
+    /// <summary>
+    /// Add a sample to history for a given memory
+    /// </summary>
+    private async Task AddSampleToHistory(Guid memoryId, double value, long timestamp)
+    {
+        var sample = new AverageMemorySample
+        {
+            AverageMemoryId = memoryId,
+            Value = value,
+            Timestamp = timestamp
+        };
+        
+        _context!.AverageMemorySamples.Add(sample);
+        await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Get recent samples for a memory, ordered by timestamp descending
+    /// </summary>
+    private async Task<List<AverageMemorySample>> GetRecentSamples(Guid memoryId, int count)
+    {
+        return await _context!.AverageMemorySamples
+            .Where(s => s.AverageMemoryId == memoryId)
+            .OrderByDescending(s => s.Timestamp)
+            .Take(count)
+            .OrderBy(s => s.Timestamp) // Return in chronological order for weighted average
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Get the timestamp of the last sample for a memory
+    /// </summary>
+    private async Task<long> GetLastSampleTimestamp(Guid memoryId)
+    {
+        var lastSample = await _context!.AverageMemorySamples
+            .Where(s => s.AverageMemoryId == memoryId)
+            .OrderByDescending(s => s.Timestamp)
+            .FirstOrDefaultAsync();
+        
+        return lastSample?.Timestamp ?? 0;
+    }
+
+    /// <summary>
+    /// Cleanup old samples beyond the maximum window size
+    /// Called periodically to prevent unbounded growth
+    /// </summary>
+    private async Task CleanupOldSamples()
+    {
+        try
+        {
+            // Get all memories with their max window sizes
+            var memories = await _context!.AverageMemories
+                .Where(m => !m.IsDisabled)
+                .Select(m => new { m.Id, m.WindowSize })
+                .ToListAsync();
+
+            foreach (var memory in memories)
+            {
+                // Keep samples up to 2x window size for safety
+                int maxSamplesToKeep = memory.WindowSize * 2;
+
+                // Get sample count for this memory
+                var sampleCount = await _context.AverageMemorySamples
+                    .Where(s => s.AverageMemoryId == memory.Id)
+                    .CountAsync();
+
+                if (sampleCount <= maxSamplesToKeep)
+                    continue;
+
+                // Find the cutoff timestamp
+                var cutoffSample = await _context.AverageMemorySamples
+                    .Where(s => s.AverageMemoryId == memory.Id)
+                    .OrderByDescending(s => s.Timestamp)
+                    .Skip(maxSamplesToKeep)
+                    .FirstOrDefaultAsync();
+
+                if (cutoffSample != null)
+                {
+                    // Delete samples older than cutoff
+                    var samplesToDelete = await _context.AverageMemorySamples
+                        .Where(s => s.AverageMemoryId == memory.Id && s.Timestamp <= cutoffSample.Timestamp)
+                        .ToListAsync();
+
+                    if (samplesToDelete.Count > 0)
+                    {
+                        _context.AverageMemorySamples.RemoveRange(samplesToDelete);
+                        await _context.SaveChangesAsync();
+                        MyLog.Debug($"AverageMemory {memory.Id}: Cleaned up {samplesToDelete.Count} old samples");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MyLog.LogJson("Failed to cleanup old average memory samples", ex);
+        }
+    }
+
+    /// <summary>
+    /// Parse weights from JSON string or return equal weights
+    /// </summary>
+    private List<double> ParseWeights(string? weightsJson, int count)
+    {
+        if (string.IsNullOrWhiteSpace(weightsJson))
+        {
+            return Enumerable.Repeat(1.0, count).ToList();
+        }
+
+        try
+        {
+            var weights = JsonSerializer.Deserialize<List<double>>(weightsJson);
+            if (weights != null && weights.Count > 0)
+            {
+                // Pad or truncate to match count
+                while (weights.Count < count)
+                    weights.Add(1.0);
+                return weights.Take(count).ToList();
+            }
+        }
+        catch { }
+
+        return Enumerable.Repeat(1.0, count).ToList();
+    }
+
+    // ==================== Outlier Detection ====================
+    
     /// <summary>
     /// Detects outliers in a dataset and returns indices of non-outlier values
     /// </summary>
@@ -330,7 +679,7 @@ public class AverageMemoryProcess
                 return Enumerable.Range(0, values.Count).ToList();
         }
     }
-
+    
     /// <summary>
     /// IQR (Interquartile Range) method for outlier detection
     /// Removes values outside [Q1 - k*IQR, Q3 + k*IQR] where k is the threshold (typically 1.5)
