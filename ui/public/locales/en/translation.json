@@ -3159,6 +3159,34 @@
     "dailyCountTrend": "Daily Count Trend"
   },
   "statisticsDetail": "Statistics",
+  "calibrationDetail": "Calibration",
+  "calibrationPage": {
+    "title": "Calibration Settings",
+    "formulaTitle": "Calibration Formula",
+    "formula": "Calibrated Value = A × Raw Value + B",
+    "formulaDescription": "The calibration applies a linear transformation to the raw sensor value. Coefficient A is the multiplier (slope) and coefficient B is the offset (intercept).",
+    "enableCalibration": "Enable Calibration",
+    "enableCalibrationTooltip": "When enabled, the raw value from the sensor will be transformed using the calibration formula before being displayed and stored.",
+    "coefficientA": "Coefficient A (Multiplier)",
+    "coefficientAHelper": "Multiply raw value by this coefficient (slope)",
+    "coefficientB": "Coefficient B (Offset)",
+    "coefficientBHelper": "Add this offset to the result (intercept)",
+    "previewTitle": "Live Preview",
+    "testRawValue": "Test Raw Value",
+    "calibratedResult": "Calibrated Result",
+    "previewFormula": "{{a}} × {{raw}} {{b}} = {{result}}",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "reset": "Reset",
+    "saveSuccess": "Calibration settings saved successfully.",
+    "readOnlyWarning": "You do not have permission to edit calibration settings for this item.",
+    "errors": {
+      "noItemSelected": "No item selected. Please select an item to configure calibration.",
+      "notEditable": "You do not have permission to edit this item.",
+      "itemNotFound": "Item not found. The selected item may have been deleted.",
+      "saveFailed": "Failed to save calibration settings. Please try again."
+    }
+  },
   "totalizerMemory": {
     "title": "Totalizer Memory",
     "description": "Configure totalizers/accumulators for flow, energy, event counting, and operating hours tracking.",

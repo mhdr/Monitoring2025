@@ -53,6 +53,7 @@ const ActiveAlarmsDetailPage = lazy(() => import('./components/detail/ActiveAlar
 const AlarmLogDetailPage = lazy(() => import('./components/detail/AlarmLogDetailPage'));
 const AuditTrailDetailPage = lazy(() => import('./components/detail/AuditTrailDetailPage'));
 const ManagementDetailPage = lazy(() => import('./components/detail/ManagementDetailPage'));
+const CalibrationDetailPage = lazy(() => import('./components/detail/CalibrationDetailPage'));
 import './App.css';
 
 /**
@@ -350,6 +351,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <ManagementDetailPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="calibration" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <CalibrationDetailPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
