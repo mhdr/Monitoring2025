@@ -1092,7 +1092,7 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
                 fullWidth
                 multiline
                 rows={2}
-                label={t('formulaMemory.description')}
+                label={t('formulaMemory.descriptionField')}
                 value={formData.description}
                 onChange={(e) => handleFieldChange('description', e.target.value)}
                 helperText={t('formulaMemory.descriptionHelp')}

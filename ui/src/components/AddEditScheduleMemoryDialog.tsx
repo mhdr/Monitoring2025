@@ -659,7 +659,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                             <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.endTime')}</TableCell>
                             <TableCell sx={{ minWidth: 120 }}>{t('scheduleMemory.priorityLabel')}</TableCell>
                             <TableCell sx={{ minWidth: 120 }}>{isAnalogOutput ? t('scheduleMemory.analogValue') : t('scheduleMemory.digitalValue')}</TableCell>
-                            <TableCell sx={{ minWidth: 180 }}>{t('scheduleMemory.description')}</TableCell>
+                            <TableCell sx={{ minWidth: 180 }}>{t('scheduleMemory.blockDescription')}</TableCell>
                             <TableCell sx={{ width: 60 }}></TableCell>
                           </TableRow>
                         </TableHead>
