@@ -3891,3 +3891,124 @@ export interface DeleteDeadbandMemoryResponseDto {
   isSuccessful: boolean;
   errorMessage?: string | null;
 }
+
+// ============================================================================
+// MIN/MAX SELECTOR MEMORY TYPES
+// ============================================================================
+
+/**
+ * Selection mode for Min/Max Selector Memory
+ */
+export type MinMaxSelectionMode = 1 | 2; // 1 = Minimum, 2 = Maximum
+
+export const MinMaxSelectionModeEnum = {
+  Minimum: 1 as MinMaxSelectionMode,
+  Maximum: 2 as MinMaxSelectionMode,
+} as const;
+
+/**
+ * Failover behavior when inputs are detected as bad/invalid
+ */
+export type MinMaxFailoverMode = 1 | 2 | 3; // 1 = IgnoreBad, 2 = FallbackToOpposite, 3 = HoldLastGood
+
+export const MinMaxFailoverModeEnum = {
+  IgnoreBad: 1 as MinMaxFailoverMode,
+  FallbackToOpposite: 2 as MinMaxFailoverMode,
+  HoldLastGood: 3 as MinMaxFailoverMode,
+} as const;
+
+/**
+ * Min/Max Selector Memory for selecting the minimum or maximum value from multiple analog inputs.
+ * Supports 2-16 inputs with configurable selection mode and failover strategies.
+ */
+export interface MinMaxSelectorMemory {
+  id: string; // UUID
+  name?: string | null;
+  inputItemIds: string; // JSON array of input item GUIDs ["guid1", "guid2", ...]
+  outputItemId: string; // UUID - Output for selected value
+  selectedIndexOutputItemId?: string | null; // UUID - Optional output for which input (1-16) was selected
+  selectionMode: MinMaxSelectionMode; // 1 = Minimum, 2 = Maximum
+  failoverMode: MinMaxFailoverMode; // 1 = IgnoreBad, 2 = FallbackToOpposite, 3 = HoldLastGood
+  interval: number; // int - Execution interval in seconds
+  isDisabled: boolean;
+  lastSelectedIndex?: number | null; // int - Last selected input index (1-based)
+  lastSelectedValue?: number | null; // double - Last selected value
+}
+
+/**
+ * Request DTO for retrieving min/max selector memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetMinMaxSelectorMemoriesRequestDto {
+  // Empty - no filtering parameters needed
+}
+
+/**
+ * Response DTO containing list of min/max selector memory configurations
+ */
+export interface GetMinMaxSelectorMemoriesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  minMaxSelectorMemories?: MinMaxSelectorMemory[] | null;
+}
+
+/**
+ * Request DTO for creating a new min/max selector memory configuration
+ */
+export interface AddMinMaxSelectorMemoryRequestDto {
+  name?: string | null;
+  inputItemIds: string; // JSON array of input item GUIDs (2-16 items)
+  outputItemId: string; // UUID
+  selectedIndexOutputItemId?: string | null; // UUID - Optional
+  selectionMode: MinMaxSelectionMode;
+  failoverMode: MinMaxFailoverMode;
+  interval: number; // int - must be > 0
+  isDisabled?: boolean;
+}
+
+/**
+ * Response DTO for adding a min/max selector memory
+ */
+export interface AddMinMaxSelectorMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of created memory
+}
+
+/**
+ * Request DTO for editing an existing min/max selector memory configuration
+ */
+export interface EditMinMaxSelectorMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  inputItemIds: string; // JSON array of input item GUIDs (2-16 items)
+  outputItemId: string; // UUID
+  selectedIndexOutputItemId?: string | null; // UUID - Optional
+  selectionMode: MinMaxSelectionMode;
+  failoverMode: MinMaxFailoverMode;
+  interval: number; // int - must be > 0
+  isDisabled?: boolean;
+}
+
+/**
+ * Response DTO for editing a min/max selector memory
+ */
+export interface EditMinMaxSelectorMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a min/max selector memory
+ */
+export interface DeleteMinMaxSelectorMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a min/max selector memory
+ */
+export interface DeleteMinMaxSelectorMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}

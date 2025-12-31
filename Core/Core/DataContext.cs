@@ -76,6 +76,8 @@ public class DataContext : DbContext
     public DbSet<IfMemory> IfMemories { get; set; }
     
     public DbSet<DeadbandMemory> DeadbandMemories { get; set; }
+    
+    public DbSet<MinMaxSelectorMemory> MinMaxSelectorMemories { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -773,6 +775,39 @@ public class DataContext : DbContext
         
         modelBuilder.Entity<DeadbandMemory>()
             .Property(e => e.DeadbandType)
+            .HasConversion<int>();
+
+        // MinMaxSelectorMemory configuration
+        modelBuilder.Entity<MinMaxSelectorMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<MinMaxSelectorMemory>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<MinMaxSelectorMemory>()
+            .Property(e => e.Interval)
+            .HasDefaultValue(10);
+        
+        modelBuilder.Entity<MinMaxSelectorMemory>()
+            .Property(e => e.SelectionMode)
+            .HasDefaultValue(MinMaxSelectionMode.Minimum);
+        
+        modelBuilder.Entity<MinMaxSelectorMemory>()
+            .Property(e => e.FailoverMode)
+            .HasDefaultValue(MinMaxFailoverMode.IgnoreBad);
+        
+        modelBuilder.Entity<MinMaxSelectorMemory>()
+            .Property(e => e.InputItemIds)
+            .HasDefaultValue("[]");
+        
+        modelBuilder.Entity<MinMaxSelectorMemory>()
+            .Property(e => e.SelectionMode)
+            .HasConversion<int>();
+        
+        modelBuilder.Entity<MinMaxSelectorMemory>()
+            .Property(e => e.FailoverMode)
             .HasConversion<int>();
 
         // keys

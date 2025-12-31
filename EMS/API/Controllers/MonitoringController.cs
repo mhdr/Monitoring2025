@@ -13160,6 +13160,286 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     #endregion
+
+    #region Min/Max Selector Memory
+
+    /// <summary>
+    /// Get all min/max selector memory configurations
+    /// </summary>
+    /// <param name="request">Request parameters (reserved for filtering)</param>
+    /// <returns>List of min/max selector memory configurations</returns>
+    /// <remarks>
+    /// Returns all min/max selector memory configurations for selecting min/max from multiple inputs.
+    /// 
+    /// Selection Modes:
+    /// - **1 (Minimum)**: Select the lowest value from all valid inputs
+    /// - **2 (Maximum)**: Select the highest value from all valid inputs
+    /// 
+    /// Failover Modes:
+    /// - **1 (IgnoreBad)**: Skip invalid inputs, use remaining valid ones
+    /// - **2 (FallbackToOpposite)**: When selected goes bad, try opposite selection
+    /// - **3 (HoldLastGood)**: Keep last known good value when all inputs invalid
+    /// 
+    /// Use Cases:
+    /// - Lead-lag pump control (select least loaded)
+    /// - Temperature zone control (warmest/coolest sensor)
+    /// - Redundant sensor selection (TMR - triple modular redundancy)
+    /// - Safety selection (worst-case scenario)
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetMinMaxSelectorMemories
+    ///     {}
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns list of min/max selector memories</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetMinMaxSelectorMemories")]
+    public async Task<IActionResult> GetMinMaxSelectorMemories([FromBody] GetMinMaxSelectorMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetMinMaxSelectorMemoriesResponseDto();
+
+            var memories = await Core.MinMaxSelectorMemories.GetMinMaxSelectorMemories();
+
+            if (memories != null && memories.Count > 0)
+            {
+                response.MinMaxSelectorMemories = new List<MinMaxSelectorMemoryItemDto>();
+                foreach (var memory in memories)
+                {
+                    response.MinMaxSelectorMemories.Add(new MinMaxSelectorMemoryItemDto
+                    {
+                        Id = memory.Id,
+                        Name = memory.Name,
+                        InputItemIds = memory.InputItemIds,
+                        OutputItemId = memory.OutputItemId,
+                        SelectedIndexOutputItemId = memory.SelectedIndexOutputItemId,
+                        SelectionMode = (int)memory.SelectionMode,
+                        FailoverMode = (int)memory.FailoverMode,
+                        Interval = memory.Interval,
+                        IsDisabled = memory.IsDisabled,
+                        LastSelectedIndex = memory.LastSelectedIndex,
+                        LastSelectedValue = memory.LastSelectedValue
+                    });
+                }
+            }
+
+            response.IsSuccessful = true;
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new GetMinMaxSelectorMemoriesResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Add a new min/max selector memory configuration
+    /// </summary>
+    /// <param name="request">Min/max selector memory configuration parameters</param>
+    /// <returns>Success status and ID of created min/max selector memory</returns>
+    /// <remarks>
+    /// Creates a new min/max selector memory for selecting minimum or maximum from multiple inputs.
+    /// 
+    /// Features:
+    /// - **2-16 Inputs**: Compare multiple analog values
+    /// - **Selection Mode**: Choose minimum or maximum value
+    /// - **Failover Logic**: Handle bad input detection and recovery
+    /// - **Index Output**: Optional output showing which input (1-16) was selected
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/AddMinMaxSelectorMemory
+    ///     {
+    ///        "name": "TMR Temperature Selection",
+    ///        "inputItemIds": "[\"550e8400-e29b-41d4-a716-446655440001\", \"550e8400-e29b-41d4-a716-446655440002\", \"550e8400-e29b-41d4-a716-446655440003\"]",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440000",
+    ///        "selectedIndexOutputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "selectionMode": 1,
+    ///        "failoverMode": 3,
+    ///        "interval": 10
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns ID of created min/max selector memory</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("AddMinMaxSelectorMemory")]
+    public async Task<IActionResult> AddMinMaxSelectorMemory([FromBody] AddMinMaxSelectorMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memory = new Core.Models.MinMaxSelectorMemory
+            {
+                Name = request.Name,
+                InputItemIds = request.InputItemIds,
+                OutputItemId = request.OutputItemId,
+                SelectedIndexOutputItemId = request.SelectedIndexOutputItemId,
+                SelectionMode = (Core.Models.MinMaxSelectionMode)request.SelectionMode,
+                FailoverMode = (Core.Models.MinMaxFailoverMode)request.FailoverMode,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled
+            };
+
+            var (success, id, errorMessage) = await Core.MinMaxSelectorMemories.AddMinMaxSelectorMemory(memory);
+
+            return Ok(new AddMinMaxSelectorMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Ok(new AddMinMaxSelectorMemoryResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Edit an existing min/max selector memory configuration
+    /// </summary>
+    /// <param name="request">Updated min/max selector memory configuration parameters</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Updates an existing min/max selector memory configuration.
+    /// Note: Changing inputs or selection mode will reset the last selected state.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/EditMinMaxSelectorMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Updated TMR Selection",
+    ///        "inputItemIds": "[\"550e8400-e29b-41d4-a716-446655440001\", \"550e8400-e29b-41d4-a716-446655440002\"]",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440000",
+    ///        "selectionMode": 2,
+    ///        "failoverMode": 1,
+    ///        "interval": 5
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("EditMinMaxSelectorMemory")]
+    public async Task<IActionResult> EditMinMaxSelectorMemory([FromBody] EditMinMaxSelectorMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memory = new Core.Models.MinMaxSelectorMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                InputItemIds = request.InputItemIds,
+                OutputItemId = request.OutputItemId,
+                SelectedIndexOutputItemId = request.SelectedIndexOutputItemId,
+                SelectionMode = (Core.Models.MinMaxSelectionMode)request.SelectionMode,
+                FailoverMode = (Core.Models.MinMaxFailoverMode)request.FailoverMode,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled
+            };
+
+            var (success, errorMessage) = await Core.MinMaxSelectorMemories.EditMinMaxSelectorMemory(memory);
+
+            var response = new EditMinMaxSelectorMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Delete a min/max selector memory configuration
+    /// </summary>
+    /// <param name="request">ID of the min/max selector memory to delete</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Deletes a min/max selector memory configuration.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/DeleteMinMaxSelectorMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If memory not found</response>
+    [HttpPost("DeleteMinMaxSelectorMemory")]
+    public async Task<IActionResult> DeleteMinMaxSelectorMemory([FromBody] DeleteMinMaxSelectorMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.MinMaxSelectorMemories.DeleteMinMaxSelectorMemory(request.Id);
+
+            var response = new DeleteMinMaxSelectorMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    #endregion
 }
 
 #region PID Auto-Tuning DTOs

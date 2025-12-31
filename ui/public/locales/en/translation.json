@@ -5517,5 +5517,168 @@
         ]
       }
     }
+  },
+  "minMaxSelectorMemory": {
+    "title": "Min/Max Selector Memory",
+    "description": "Output the highest or lowest value from multiple analog inputs with failover logic and optional selected input index.",
+    "addNew": "Add Min/Max Selector Memory",
+    "addTitle": "Add Min/Max Selector Memory",
+    "editTitle": "Edit Min/Max Selector Memory",
+    "deleteTitle": "Delete Min/Max Selector Memory",
+    "deleteConfirmation": "Are you sure you want to delete the min/max selector memory \"{{name}}\"?",
+    "deleteWarning": "This action cannot be undone. The selection logic will stop immediately.",
+    "searchPlaceholder": "Search min/max selector memories...",
+    "name": "Name",
+    "inputItems": "Input Items",
+    "inputItemsHelp": "Select {{min}} to {{max}} analog input items ({{current}} selected)",
+    "outputItem": "Output Item",
+    "selectedIndexOutputItem": "Selected Index Output (Optional)",
+    "selectedIndexOutputItemHelp": "Optional analog item to write the selected input index (1-16)",
+    "interval": "Interval",
+    "intervalHelp": "Evaluation interval in seconds (1 to 86400)",
+    "disabled": "Disabled",
+    "value": "Value",
+    "lastSelected": "Last Selected",
+    "selectionMode": {
+      "label": "Selection Mode",
+      "min": "Minimum",
+      "max": "Maximum"
+    },
+    "selectionModeHelp": "Choose whether to output the minimum or maximum value from inputs",
+    "failoverMode": {
+      "label": "Failover Mode",
+      "ignoreBad": "Ignore Bad",
+      "fallbackToOpposite": "Fallback to Opposite",
+      "holdLastGood": "Hold Last Good"
+    },
+    "failoverModeHelp": "How to handle when all inputs are bad or invalid",
+    "errors": {
+      "fetchFailed": "Failed to load min/max selector memories",
+      "addFailed": "Failed to create min/max selector memory",
+      "editFailed": "Failed to update min/max selector memory",
+      "deleteFailed": "Failed to delete min/max selector memory",
+      "saveFailed": "Failed to save min/max selector memory",
+      "nameRequired": "Name is required",
+      "nameTooLong": "Name must not exceed 100 characters",
+      "minInputs": "At least {{count}} input items are required",
+      "maxInputs": "No more than {{count}} input items are allowed",
+      "outputRequired": "Output item is required",
+      "outputNotInInputs": "Output item cannot be one of the input items",
+      "indexOutputNotInInputs": "Index output cannot be one of the input items",
+      "indexOutputNotSameAsOutput": "Index output cannot be the same as the main output",
+      "intervalMin": "Interval must be at least 1 second",
+      "intervalMax": "Interval cannot exceed 86400 seconds (24 hours)"
+    },
+    "help": {
+      "overview": {
+        "title": "Min/Max Selector Memory Overview",
+        "sections": [
+          {
+            "content": "Min/Max Selector Memory outputs the highest or lowest value from 2-16 analog inputs. It's ideal for redundant sensor selection, lead-lag control, and safety-critical applications."
+          },
+          {
+            "title": "Common Use Cases",
+            "content": [
+              "Lead-lag pump control: Select the pump with lowest runtime",
+              "Temperature zone control: Select highest/lowest zone temperature",
+              "Redundant sensor selection (TMR): Pick the median or extreme value",
+              "Load balancing: Select least loaded equipment",
+              "Safety selection: Always use the most conservative value"
+            ]
+          },
+          {
+            "type": "tip",
+            "content": "Bad inputs are automatically detected via quality flags and value validity. Configure failover mode to handle all-bad scenarios."
+          }
+        ]
+      },
+      "inputItems": {
+        "title": "Input Items Selection",
+        "sections": [
+          {
+            "content": "Select between 2 and 16 analog input items to compare. The selector will continuously monitor all inputs and output the selected value based on the selection mode."
+          },
+          {
+            "title": "Requirements",
+            "content": [
+              "All inputs must be Analog type",
+              "Inputs are evaluated at each interval",
+              "Bad/invalid inputs are automatically excluded from selection"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Example Configurations",
+            "content": [
+              "2 inputs: Hot standby sensor redundancy",
+              "3 inputs: Triple Modular Redundancy (TMR)",
+              "8 inputs: Select from multiple zones or equipment"
+            ]
+          }
+        ]
+      },
+      "selectionMode": {
+        "title": "Selection Mode",
+        "sections": [
+          {
+            "title": "Minimum",
+            "content": "Outputs the lowest valid value among all good inputs. Use for selecting coolest temperature, lowest pressure, or least loaded equipment."
+          },
+          {
+            "title": "Maximum",
+            "content": "Outputs the highest valid value among all good inputs. Use for selecting hottest temperature, highest level, or peak demand."
+          },
+          {
+            "type": "tip",
+            "content": "For safety applications, choose the mode that selects the most conservative (safest) value."
+          }
+        ]
+      },
+      "failoverMode": {
+        "title": "Failover Mode",
+        "sections": [
+          {
+            "content": "Determines the behavior when all input values are bad or invalid."
+          },
+          {
+            "title": "Ignore Bad",
+            "content": "When all inputs are bad, the output remains at its last value but is marked as bad quality. No special fallback logic is applied."
+          },
+          {
+            "title": "Fallback to Opposite",
+            "content": "If the selected mode (min or max) has no valid inputs, try the opposite selection. Example: If looking for minimum but all minimums are bad, try maximum. Useful for systems where any valid reading is better than none."
+          },
+          {
+            "title": "Hold Last Good",
+            "content": "When all inputs are bad, maintain the last successfully selected value with good quality. Use when continuity is more important than accuracy."
+          },
+          {
+            "type": "warning",
+            "content": "Choose Hold Last Good carefully - the output may not reflect current conditions during prolonged failures."
+          }
+        ]
+      },
+      "selectedIndexOutput": {
+        "title": "Selected Index Output",
+        "sections": [
+          {
+            "content": "Optionally output which input (1-16) was selected. This is useful for monitoring, alarming, or lead-lag tracking."
+          },
+          {
+            "type": "example",
+            "title": "Use Cases",
+            "content": [
+              "Track which pump is currently lead in a lead-lag system",
+              "Monitor which sensor is being used in a redundant setup",
+              "Log zone selection for analysis"
+            ]
+          },
+          {
+            "type": "tip",
+            "content": "The index is 1-based. Value 1 means the first input is selected, value 2 means the second input, etc."
+          }
+        ]
+      }
+    }
   }
 }

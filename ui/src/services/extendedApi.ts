@@ -195,6 +195,16 @@ import type {
   EditDeadbandMemoryResponseDto,
   DeleteDeadbandMemoryRequestDto,
   DeleteDeadbandMemoryResponseDto,
+  // Min/Max Selector Memory types
+  MinMaxSelectorMemory,
+  GetMinMaxSelectorMemoriesRequestDto,
+  GetMinMaxSelectorMemoriesResponseDto,
+  AddMinMaxSelectorMemoryRequestDto,
+  AddMinMaxSelectorMemoryResponseDto,
+  EditMinMaxSelectorMemoryRequestDto,
+  EditMinMaxSelectorMemoryResponseDto,
+  DeleteMinMaxSelectorMemoryRequestDto,
+  DeleteMinMaxSelectorMemoryResponseDto,
 } from '../types/api';
 
 /**
@@ -1798,5 +1808,78 @@ export const deleteDeadbandMemory = async (
   }
 };
 
+// ==========================================
+// Min/Max Selector Memory API Functions
+// ==========================================
+
+/**
+ * Get all min/max selector memory configurations
+ */
+export const getMinMaxSelectorMemories = async (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  params: GetMinMaxSelectorMemoriesRequestDto = {}
+): Promise<GetMinMaxSelectorMemoriesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetMinMaxSelectorMemoriesResponseDto>(
+      '/api/Monitoring/GetMinMaxSelectorMemories',
+      params
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new min/max selector memory configuration
+ */
+export const addMinMaxSelectorMemory = async (
+  data: AddMinMaxSelectorMemoryRequestDto
+): Promise<AddMinMaxSelectorMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddMinMaxSelectorMemoryResponseDto>(
+      '/api/Monitoring/AddMinMaxSelectorMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing min/max selector memory configuration
+ */
+export const editMinMaxSelectorMemory = async (
+  data: EditMinMaxSelectorMemoryRequestDto
+): Promise<EditMinMaxSelectorMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditMinMaxSelectorMemoryResponseDto>(
+      '/api/Monitoring/EditMinMaxSelectorMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a min/max selector memory configuration
+ */
+export const deleteMinMaxSelectorMemory = async (
+  data: DeleteMinMaxSelectorMemoryRequestDto
+): Promise<DeleteMinMaxSelectorMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteMinMaxSelectorMemoryResponseDto>(
+      '/api/Monitoring/DeleteMinMaxSelectorMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
 // Re-export types for convenience
-export type { ComparisonMemory, StatisticalMemory, FormulaMemory, IfMemory, DeadbandMemory };
+export type { ComparisonMemory, StatisticalMemory, FormulaMemory, IfMemory, DeadbandMemory, MinMaxSelectorMemory };

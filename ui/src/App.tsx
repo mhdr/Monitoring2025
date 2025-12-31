@@ -41,6 +41,7 @@ const StatisticalMemoryManagementPage = lazy(() => import('./components/Statisti
 const FormulaMemoryManagementPage = lazy(() => import('./components/FormulaMemoryManagementPage'));
 const IfMemoryManagementPage = lazy(() => import('./components/IfMemoryManagementPage'));
 const DeadbandMemoryManagementPage = lazy(() => import('./components/DeadbandMemoryManagementPage'));
+const MinMaxSelectorMemoryManagementPage = lazy(() => import('./components/MinMaxSelectorMemoryManagementPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const TrendAnalysisPage = lazy(() => import('./components/detail/TrendAnalysisPage'));
@@ -246,6 +247,13 @@ const AppRoutes = () => {
             <LazyErrorBoundary>
               <Suspense fallback={<LoadingScreen message={t('loading')} />}>
                 <DeadbandMemoryManagementPage />
+              </Suspense>
+            </LazyErrorBoundary>
+          } />
+          <Route path="memory/minmax-selector-memory" element={
+            <LazyErrorBoundary>
+              <Suspense fallback={<LoadingScreen message={t('loading')} />}>
+                <MinMaxSelectorMemoryManagementPage />
               </Suspense>
             </LazyErrorBoundary>
           } />
