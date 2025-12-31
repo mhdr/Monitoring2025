@@ -82,16 +82,23 @@ public class AddScheduleBlockDto
     public string StartTime { get; set; } = string.Empty;
 
     /// <summary>
-    /// End time in format "HH:mm:ss"
+    /// End time in format "HH:mm:ss" (optional for blocks without explicit end time)
+    /// Can be earlier than StartTime for cross-midnight blocks (e.g., "22:00:00" to "02:00:00")
     /// </summary>
-    [Required(ErrorMessage = "End time is required")]
-    public string EndTime { get; set; } = string.Empty;
+    public string? EndTime { get; set; }
 
     /// <summary>
     /// Priority level (1=Low, 2=Normal, 3=High, 4=Critical)
     /// </summary>
     [Range(1, 4, ErrorMessage = "Priority must be 1-4")]
     public int Priority { get; set; } = 2;
+
+    /// <summary>
+    /// Behavior when EndTime is null (1=UseDefault, 2=ExtendToEndOfDay)
+    /// Default is 2 (ExtendToEndOfDay)
+    /// </summary>
+    [Range(1, 2, ErrorMessage = "Null end time behavior must be 1 (UseDefault) or 2 (ExtendToEndOfDay)")]
+    public int NullEndTimeBehavior { get; set; } = 2;
 
     /// <summary>
     /// Analog output value for this block (for AnalogOutput items)

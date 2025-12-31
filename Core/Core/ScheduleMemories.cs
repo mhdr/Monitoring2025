@@ -393,31 +393,76 @@ public class ScheduleMemories
             }
 
             // Validate time range
-            if (block.StartTime >= block.EndTime)
+            if (block.EndTime.HasValue)
             {
-                return (false, $"Block '{block.Description ?? block.Id.ToString()}': Start time must be before end time");
+                // Validate zero duration blocks
+                if (block.StartTime == block.EndTime.Value)
+                {
+                    return (false, $"Block '{block.Description ?? block.Id.ToString()}': Cannot have zero duration (start == end time)");
+                }
+                
+                // Validate end time is within 24 hours (allow cross-midnight blocks where StartTime > EndTime)
+                if (block.EndTime.Value.TotalHours < 0 || block.EndTime.Value.TotalHours > 24)
+                {
+                    return (false, $"Block '{block.Description ?? block.Id.ToString()}': End time must be within 00:00:00 to 24:00:00");
+                }
             }
 
-            // Validate time is within 24 hours
-            if (block.StartTime.TotalHours < 0 || block.StartTime.TotalHours >= 24 ||
-                block.EndTime.TotalHours < 0 || block.EndTime.TotalHours > 24)
+            // Validate start time is within 24 hours
+            if (block.StartTime.TotalHours < 0 || block.StartTime.TotalHours >= 24)
             {
-                return (false, $"Block '{block.Description ?? block.Id.ToString()}': Times must be within 00:00:00 to 24:00:00");
+                return (false, $"Block '{block.Description ?? block.Id.ToString()}': Start time must be within 00:00:00 to 24:00:00");
             }
         }
 
         // Check for overlapping blocks on same day with same priority
-        var groupedByDayAndPriority = blocks
-            .GroupBy(b => new { b.DayOfWeek, b.Priority });
-
-        foreach (var group in groupedByDayAndPriority)
+        // For cross-midnight blocks, treat them as two ranges for overlap detection
+        foreach (var day in Enum.GetValues<ScheduleDayOfWeek>())
         {
-            var sortedBlocks = group.OrderBy(b => b.StartTime).ToList();
-            for (int i = 0; i < sortedBlocks.Count - 1; i++)
+            foreach (var priority in blocks.Select(b => b.Priority).Distinct())
             {
-                if (sortedBlocks[i].EndTime > sortedBlocks[i + 1].StartTime)
+                var dayBlocks = blocks
+                    .Where(b => b.DayOfWeek == day && b.Priority == priority)
+                    .ToList();
+                
+                if (dayBlocks.Count <= 1)
+                    continue;
+                
+                // Create effective time ranges for overlap checking
+                var ranges = new List<(TimeSpan Start, TimeSpan End, string Description)>();
+                
+                foreach (var block in dayBlocks)
                 {
-                    return (false, $"Overlapping schedule blocks detected on {group.Key.DayOfWeek} with priority {group.Key.Priority}: '{sortedBlocks[i].Description ?? "Block " + (i + 1)}' and '{sortedBlocks[i + 1].Description ?? "Block " + (i + 2)}'");
+                    if (!block.EndTime.HasValue)
+                    {
+                        // Null EndTime: treat based on behavior
+                        if (block.NullEndTimeBehavior == NullEndTimeBehavior.ExtendToEndOfDay)
+                        {
+                            ranges.Add((block.StartTime, TimeSpan.FromHours(24), block.Description ?? block.Id.ToString()));
+                        }
+                        // UseDefault behavior doesn't need overlap check (immediate end)
+                    }
+                    else if (block.StartTime < block.EndTime.Value)
+                    {
+                        // Normal block (doesn't cross midnight)
+                        ranges.Add((block.StartTime, block.EndTime.Value, block.Description ?? block.Id.ToString()));
+                    }
+                    else
+                    {
+                        // Cross-midnight block: split into two ranges
+                        ranges.Add((block.StartTime, TimeSpan.FromHours(24), block.Description ?? block.Id.ToString() + " (before midnight)"));
+                        ranges.Add((TimeSpan.Zero, block.EndTime.Value, block.Description ?? block.Id.ToString() + " (after midnight)"));
+                    }
+                }
+                
+                // Check overlaps in effective ranges
+                var sorted = ranges.OrderBy(r => r.Start).ToList();
+                for (int i = 0; i < sorted.Count - 1; i++)
+                {
+                    if (sorted[i].End > sorted[i + 1].Start)
+                    {
+                        return (false, $"Overlapping schedule blocks detected on {day} with priority {priority}: '{sorted[i].Description}' and '{sorted[i + 1].Description}'");
+                    }
                 }
             }
         }

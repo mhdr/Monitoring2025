@@ -19,6 +19,25 @@ public enum ScheduleDayOfWeek
 }
 
 /// <summary>
+/// Behavior for schedule blocks when EndTime is null
+/// Determines how blocks without explicit end times should behave
+/// </summary>
+public enum NullEndTimeBehavior
+{
+    /// <summary>
+    /// Use memory's default value immediately (block activates then defaults)
+    /// Useful for momentary activation or when user wants manual control of deactivation
+    /// </summary>
+    UseDefault = 1,
+    
+    /// <summary>
+    /// Extend block to end of day (23:59:59.999)
+    /// Keeps the block active until midnight, then reevaluates schedule
+    /// </summary>
+    ExtendToEndOfDay = 2
+}
+
+/// <summary>
 /// A time block within a schedule that defines when a specific output value should be active
 /// Supports both analog setpoints and digital commands
 /// </summary>
@@ -57,9 +76,11 @@ public class ScheduleBlock
     /// <summary>
     /// End time of the schedule block (time of day)
     /// Stored as PostgreSQL interval type
+    /// Can be null for blocks without explicit end time (behavior controlled by NullEndTimeBehavior)
+    /// Can be less than StartTime for cross-midnight blocks (e.g., 22:00 to 02:00)
     /// </summary>
     [Column("end_time", TypeName = "interval")]
-    public TimeSpan EndTime { get; set; }
+    public TimeSpan? EndTime { get; set; }
     
     /// <summary>
     /// Priority level for conflict resolution
@@ -68,6 +89,13 @@ public class ScheduleBlock
     [DefaultValue(SchedulePriority.Normal)]
     [Column("priority")]
     public SchedulePriority Priority { get; set; } = SchedulePriority.Normal;
+    
+    /// <summary>
+    /// Behavior when EndTime is null - determines if block extends to end of day or uses default value
+    /// </summary>
+    [DefaultValue(NullEndTimeBehavior.ExtendToEndOfDay)]
+    [Column("null_end_time_behavior")]
+    public NullEndTimeBehavior NullEndTimeBehavior { get; set; } = NullEndTimeBehavior.ExtendToEndOfDay;
     
     /// <summary>
     /// Analog output value for this time block (used when output item is AnalogOutput)

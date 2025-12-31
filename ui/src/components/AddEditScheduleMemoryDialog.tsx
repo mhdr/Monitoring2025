@@ -42,7 +42,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { addScheduleMemory, editScheduleMemory, getHolidayCalendars } from '../services/extendedApi';
 import type { ScheduleMemory, Item, ItemType, HolidayCalendar, AddScheduleBlockDto } from '../types/api';
-import { OverrideExpirationMode, SchedulePriority, ScheduleDayOfWeek } from '../types/api';
+import { OverrideExpirationMode, SchedulePriority, ScheduleDayOfWeek, NullEndTimeBehavior } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -59,7 +59,9 @@ interface ScheduleBlockForm {
   tempId: string;
   dayOfWeek: number;
   startTime: string;
-  endTime: string;
+  endTime: string | null;
+  useEndTime: boolean;
+  nullEndTimeBehavior: number;
   priority: number;
   analogOutputValue: number | null;
   digitalOutputValue: boolean | null;
@@ -227,7 +229,9 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
             tempId: b.id || generateTempId(),
             dayOfWeek: typeof b.dayOfWeek === 'number' ? b.dayOfWeek : 0,
             startTime: b.startTime,
-            endTime: b.endTime,
+            endTime: b.endTime ?? null,
+            useEndTime: b.endTime != null,
+            nullEndTimeBehavior: b.nullEndTimeBehavior ?? NullEndTimeBehavior.ExtendToEndOfDay,
             priority: typeof b.priority === 'number' ? b.priority : SchedulePriority.Normal,
             analogOutputValue: b.analogOutputValue ?? null,
             digitalOutputValue: b.digitalOutputValue ?? null,
@@ -263,6 +267,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           dayOfWeek: ScheduleDayOfWeek.Monday,
           startTime: '08:00:00',
           endTime: '17:00:00',
+          useEndTime: true,
+          nullEndTimeBehavior: NullEndTimeBehavior.ExtendToEndOfDay,
           priority: SchedulePriority.Normal,
           analogOutputValue: isAnalogOutput ? 0 : null,
           digitalOutputValue: !isAnalogOutput ? true : null,
@@ -337,8 +343,9 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
       const blocks: AddScheduleBlockDto[] = formData.scheduleBlocks.map((b) => ({
         dayOfWeek: b.dayOfWeek,
         startTime: b.startTime,
-        endTime: b.endTime,
+        endTime: b.useEndTime ? b.endTime : null,
         priority: b.priority,
+        nullEndTimeBehavior: b.useEndTime ? undefined : b.nullEndTimeBehavior,
         analogOutputValue: isAnalogOutput ? b.analogOutputValue : null,
         digitalOutputValue: !isAnalogOutput ? b.digitalOutputValue : null,
         description: b.description || null,
@@ -409,7 +416,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
   };
 
   // Convert HH:mm:ss to HH:mm for HTML5 time input
-  const formatTimeForInput = (time: string): string => {
+  const formatTimeForInput = (time: string | null): string => {
+    if (!time) return '';
     // Return first 5 characters (HH:mm)
     return time.substring(0, 5);
   };
@@ -651,12 +659,12 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                     </Typography>
                   ) : (
                     <Box sx={{ overflowX: 'auto', width: '100%' }}>
-                      <Table size="small" data-id-ref="schedule-memory-blocks-table" sx={{ minWidth: 1000 }}>
+                      <Table size="small" data-id-ref="schedule-memory-blocks-table" sx={{ minWidth: 1200 }}>
                         <TableHead>
                           <TableRow>
                             <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.dayOfWeek')}</TableCell>
                             <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.startTime')}</TableCell>
-                            <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.endTime')}</TableCell>
+                            <TableCell sx={{ minWidth: 200 }}>{t('scheduleMemory.endTime')}</TableCell>
                             <TableCell sx={{ minWidth: 120 }}>{t('scheduleMemory.priorityLabel')}</TableCell>
                             <TableCell sx={{ minWidth: 120 }}>{isAnalogOutput ? t('scheduleMemory.analogValue') : t('scheduleMemory.digitalValue')}</TableCell>
                             <TableCell sx={{ minWidth: 180 }}>{t('scheduleMemory.blockDescription')}</TableCell>
@@ -690,14 +698,68 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                               />
                             </TableCell>
                             <TableCell>
-                              <TextField
-                                type="time"
-                                size="small"
-                                value={formatTimeForInput(block.endTime)}
-                                onChange={(e) => handleTimeChange(block.tempId, 'endTime', e.target.value)}
-                                data-id-ref={`schedule-block-end-${block.tempId}`}
-                                sx={{ width: 130 }}
-                              />
+                              <Stack spacing={0.5}>
+                                <FormControlLabel
+                                  control={
+                                    <Switch
+                                      size="small"
+                                      checked={block.useEndTime}
+                                      onChange={(e) => {
+                                        handleBlockChange(block.tempId, 'useEndTime', e.target.checked);
+                                        if (!e.target.checked) {
+                                          handleBlockChange(block.tempId, 'endTime', null);
+                                        } else {
+                                          handleBlockChange(block.tempId, 'endTime', '17:00:00');
+                                        }
+                                      }}
+                                      data-id-ref={`schedule-block-use-end-time-${block.tempId}`}
+                                    />
+                                  }
+                                  label={<Typography variant="caption">{t('scheduleMemory.useEndTime')}</Typography>}
+                                  sx={{ m: 0 }}
+                                />
+                                {block.useEndTime ? (
+                                  <Box>
+                                    <TextField
+                                      type="time"
+                                      size="small"
+                                      value={formatTimeForInput(block.endTime || '17:00:00')}
+                                      onChange={(e) => handleTimeChange(block.tempId, 'endTime', e.target.value)}
+                                      data-id-ref={`schedule-block-end-${block.tempId}`}
+                                      sx={{ width: 130 }}
+                                    />
+                                    {block.startTime && block.endTime && block.startTime > block.endTime && (
+                                      <Chip
+                                        label={t('scheduleMemory.crossesMidnight')}
+                                        size="small"
+                                        color="info"
+                                        icon={<Typography sx={{ fontSize: 12 }}>→</Typography>}
+                                        sx={{ mt: 0.5, height: 20, fontSize: '0.7rem' }}
+                                        data-id-ref={`schedule-block-midnight-indicator-${block.tempId}`}
+                                      />
+                                    )}
+                                  </Box>
+                                ) : (
+                                  <FormControl size="small" sx={{ width: 170 }}>
+                                    <Select
+                                      value={block.nullEndTimeBehavior}
+                                      onChange={(e) => handleBlockChange(block.tempId, 'nullEndTimeBehavior', Number(e.target.value))}
+                                      data-id-ref={`schedule-block-behavior-${block.tempId}`}
+                                      sx={{ fontSize: '0.75rem' }}
+                                    >
+                                      <MenuItem value={NullEndTimeBehavior.UseDefault}>
+                                        <Typography variant="caption">{t('scheduleMemory.nullBehavior.useDefault')}</Typography>
+                                      </MenuItem>
+                                      <MenuItem value={NullEndTimeBehavior.ExtendToEndOfDay}>
+                                        <Typography variant="caption">{t('scheduleMemory.nullBehavior.extendToEndOfDay')}</Typography>
+                                      </MenuItem>
+                                    </Select>
+                                    <FormHelperText sx={{ fontSize: '0.65rem', m: 0, mt: 0.5 }}>
+                                      {t('scheduleMemory.nullBehavior.helper')}
+                                    </FormHelperText>
+                                  </FormControl>
+                                )}
+                              </Stack>
                             </TableCell>
                             <TableCell>
                               <Select

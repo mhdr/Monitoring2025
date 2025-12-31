@@ -4057,6 +4057,21 @@ export enum SchedulePriority {
 }
 
 /**
+ * Behavior when EndTime is null in a schedule block
+ */
+export enum NullEndTimeBehavior {
+  /**
+   * Use memory's default value when EndTime is null (block activates then immediately reverts to default)
+   */
+  UseDefault = 1,
+  
+  /**
+   * Extend block to end of day (23:59:59) when EndTime is null
+   */
+  ExtendToEndOfDay = 2
+}
+
+/**
  * Days of the week for schedule block configuration
  */
 export enum ScheduleDayOfWeek {
@@ -4067,4 +4082,181 @@ export enum ScheduleDayOfWeek {
   Thursday = 4,
   Friday = 5,
   Saturday = 6
+}
+/**
+ * A time block within a schedule that defines when a specific output value should be active
+ */
+export interface ScheduleBlock {
+  id: string;
+  scheduleMemoryId: string;
+  dayOfWeek: ScheduleDayOfWeek;
+  startTime: string;
+  endTime?: string | null;
+  priority: SchedulePriority;
+  nullEndTimeBehavior?: NullEndTimeBehavior;
+  analogOutputValue?: number | null;
+  digitalOutputValue?: boolean | null;
+  description?: string | null;
+}
+
+/**
+ * Schedule Memory for generating setpoints or outputs based on time schedules
+ */
+export interface ScheduleMemory {
+  id: string;
+  name?: string | null;
+  outputItemId: string;
+  interval: number;
+  isDisabled: boolean;
+  holidayCalendarId?: string | null;
+  holidayCalendarName?: string | null;
+  defaultAnalogValue?: number | null;
+  defaultDigitalValue?: boolean | null;
+  manualOverrideActive: boolean;
+  manualOverrideAnalogValue?: number | null;
+  manualOverrideDigitalValue?: boolean | null;
+  overrideExpirationMode: OverrideExpirationMode;
+  overrideDurationMinutes: number;
+  overrideActivationTime?: string | null;
+  lastActiveBlockId?: string | null;
+  scheduleBlocks?: ScheduleBlock[] | null;
+}
+
+/**
+ * DTO for adding a schedule block
+ */
+export interface AddScheduleBlockDto {
+  dayOfWeek: number;
+  startTime: string;
+  endTime?: string | null;
+  priority: number;
+  nullEndTimeBehavior?: number;
+  analogOutputValue?: number | null;
+  digitalOutputValue?: boolean | null;
+  description?: string | null;
+}
+
+/**
+ * Holiday Calendar for managing holiday dates
+ */
+export interface HolidayCalendar {
+  id: string;
+  name: string;
+  description?: string | null;
+  dates?: HolidayDate[] | null;
+}
+
+/**
+ * Individual holiday date
+ */
+export interface HolidayDate {
+  id: string;
+  holidayCalendarId: string;
+  date: string;
+  description?: string | null;
+}
+
+/**
+ * DTO for adding a holiday date
+ */
+export interface AddHolidayDateDto {
+  date: string;
+  description?: string | null;
+}
+/**
+ * Request DTO for getting schedule memories
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetScheduleMemoriesRequestDto {}
+
+/**
+ * Response DTO for getting schedule memories
+ */
+export interface GetScheduleMemoriesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  scheduleMemories?: ScheduleMemory[] | null;
+}
+
+/**
+ * Request DTO for adding a schedule memory
+ */
+export interface AddScheduleMemoryRequestDto {
+  name?: string | null;
+  outputItemId: string;
+  interval: number;
+  isDisabled?: boolean;
+  holidayCalendarId?: string | null;
+  defaultAnalogValue?: number | null;
+  defaultDigitalValue?: boolean | null;
+  overrideExpirationMode?: number;
+  overrideDurationMinutes?: number;
+  scheduleBlocks?: AddScheduleBlockDto[] | null;
+}
+
+/**
+ * Response DTO for adding a schedule memory
+ */
+export interface AddScheduleMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null;
+}
+
+/**
+ * Request DTO for editing a schedule memory
+ */
+export interface EditScheduleMemoryRequestDto {
+  id: string;
+  name?: string | null;
+  outputItemId: string;
+  interval: number;
+  isDisabled?: boolean;
+  holidayCalendarId?: string | null;
+  defaultAnalogValue?: number | null;
+  defaultDigitalValue?: boolean | null;
+  overrideExpirationMode?: number;
+  overrideDurationMinutes?: number;
+  scheduleBlocks?: AddScheduleBlockDto[] | null;
+}
+
+/**
+ * Response DTO for editing a schedule memory
+ */
+export interface EditScheduleMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a schedule memory
+ */
+export interface DeleteScheduleMemoryRequestDto {
+  id: string;
+}
+
+/**
+ * Response DTO for deleting a schedule memory
+ */
+export interface DeleteScheduleMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for setting schedule override
+ */
+export interface SetScheduleOverrideRequestDto {
+  id: string;
+  activate: boolean;
+  analogValue?: number | null;
+  digitalValue?: boolean | null;
+}
+
+/**
+ * Response DTO for setting schedule override
+ */
+export interface SetScheduleOverrideResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
 }

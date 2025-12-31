@@ -11113,8 +11113,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         ScheduleMemoryId = b.ScheduleMemoryId,
                         DayOfWeek = (int)b.DayOfWeek,
                         StartTime = b.StartTime.ToString(@"hh\:mm\:ss"),
-                        EndTime = b.EndTime.ToString(@"hh\:mm\:ss"),
+                        EndTime = b.EndTime?.ToString(@"hh\:mm\:ss"),
                         Priority = (int)b.Priority,
+                        NullEndTimeBehavior = (int)b.NullEndTimeBehavior,
                         AnalogOutputValue = b.AnalogOutputValue,
                         DigitalOutputValue = b.DigitalOutputValue,
                         Description = b.Description
@@ -11193,8 +11194,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 {
                     DayOfWeek = (Core.Models.ScheduleDayOfWeek)b.DayOfWeek,
                     StartTime = TimeSpan.Parse(b.StartTime),
-                    EndTime = TimeSpan.Parse(b.EndTime),
+                    EndTime = !string.IsNullOrEmpty(b.EndTime) ? TimeSpan.Parse(b.EndTime) : null,
                     Priority = (Core.Models.SchedulePriority)b.Priority,
+                    NullEndTimeBehavior = (Core.Models.NullEndTimeBehavior)b.NullEndTimeBehavior,
                     AnalogOutputValue = b.AnalogOutputValue,
                     DigitalOutputValue = b.DigitalOutputValue,
                     Description = b.Description
@@ -11254,8 +11256,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 {
                     DayOfWeek = (Core.Models.ScheduleDayOfWeek)b.DayOfWeek,
                     StartTime = TimeSpan.Parse(b.StartTime),
-                    EndTime = TimeSpan.Parse(b.EndTime),
+                    EndTime = !string.IsNullOrEmpty(b.EndTime) ? TimeSpan.Parse(b.EndTime) : null,
                     Priority = (Core.Models.SchedulePriority)b.Priority,
+                    NullEndTimeBehavior = (Core.Models.NullEndTimeBehavior)b.NullEndTimeBehavior,
                     AnalogOutputValue = b.AnalogOutputValue,
                     DigitalOutputValue = b.DigitalOutputValue,
                     Description = b.Description

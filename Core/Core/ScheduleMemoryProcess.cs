@@ -327,7 +327,7 @@ public class ScheduleMemoryProcess
 
     /// <summary>
     /// Find the active schedule block for current day and time
-    /// Uses priority to resolve conflicts when multiple blocks match
+    /// Handles: null EndTime, cross-midnight blocks, priority resolution
     /// </summary>
     private ScheduleBlock? FindActiveBlock(ScheduleMemory memory, DateTime utcNow)
     {
@@ -338,21 +338,74 @@ public class ScheduleMemoryProcess
 
         var currentDayOfWeek = (ScheduleDayOfWeek)utcNow.DayOfWeek;
         var currentTime = utcNow.TimeOfDay;
-
-        // Find all blocks that match current day and time
-        var matchingBlocks = memory.ScheduleBlocks
-            .Where(b => b.DayOfWeek == currentDayOfWeek &&
-                       b.StartTime <= currentTime &&
-                       b.EndTime > currentTime)
-            .ToList();
+        var previousDay = (ScheduleDayOfWeek)(((int)currentDayOfWeek + 6) % 7);
+        
+        var matchingBlocks = new List<ScheduleBlock>();
+        
+        // Check blocks on current day
+        foreach (var block in memory.ScheduleBlocks.Where(b => b.DayOfWeek == currentDayOfWeek))
+        {
+            if (block.EndTime.HasValue)
+            {
+                if (block.StartTime < block.EndTime.Value)
+                {
+                    // Normal block (doesn't cross midnight)
+                    if (currentTime >= block.StartTime && currentTime < block.EndTime.Value)
+                    {
+                        matchingBlocks.Add(block);
+                    }
+                }
+                else
+                {
+                    // Cross-midnight block on current day (we're in the "before midnight" portion)
+                    if (currentTime >= block.StartTime)
+                    {
+                        matchingBlocks.Add(block);
+                    }
+                }
+            }
+            else
+            {
+                // Null EndTime - handle based on behavior
+                if (block.NullEndTimeBehavior == NullEndTimeBehavior.ExtendToEndOfDay)
+                {
+                    // Active from StartTime until end of day
+                    if (currentTime >= block.StartTime)
+                    {
+                        matchingBlocks.Add(block);
+                    }
+                }
+                else // UseDefault
+                {
+                    // Not active (immediate end - uses default value)
+                    // No match added
+                }
+            }
+        }
+        
+        // Check blocks from previous day that cross midnight (we're in the "after midnight" portion)
+        foreach (var block in memory.ScheduleBlocks.Where(b => b.DayOfWeek == previousDay && b.EndTime.HasValue))
+        {
+            if (block.StartTime > block.EndTime.Value)
+            {
+                // Cross-midnight block from previous day
+                if (currentTime < block.EndTime.Value)
+                {
+                    matchingBlocks.Add(block);
+                }
+            }
+        }
 
         if (matchingBlocks.Count == 0)
         {
             return null;
         }
 
-        // Return the highest priority block
-        return matchingBlocks.OrderByDescending(b => b.Priority).First();
+        // Return highest priority block, then earliest start time for tie-breaking
+        return matchingBlocks
+            .OrderByDescending(b => b.Priority)
+            .ThenBy(b => b.StartTime)
+            .First();
     }
 
     /// <summary>

@@ -58,8 +58,9 @@ public class ScheduleBlockItemDto
     public Guid ScheduleMemoryId { get; set; }
     public int DayOfWeek { get; set; }
     public string StartTime { get; set; } = string.Empty;  // Format: "HH:mm:ss"
-    public string EndTime { get; set; } = string.Empty;    // Format: "HH:mm:ss"
+    public string? EndTime { get; set; }    // Format: "HH:mm:ss" (optional for blocks without explicit end time)
     public int Priority { get; set; }
+    public int NullEndTimeBehavior { get; set; }  // 1=UseDefault, 2=ExtendToEndOfDay
     public double? AnalogOutputValue { get; set; }
     public bool? DigitalOutputValue { get; set; }
     public string? Description { get; set; }
