@@ -23,13 +23,11 @@ import {
   Delete as DeleteIcon,
   Schedule as ScheduleIcon,
   HelpOutline as HelpOutlineIcon,
-  PlayArrow as PlayArrowIcon,
-  Stop as StopIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
-import { getScheduleMemories, setScheduleOverride } from '../services/extendedApi';
+import { getScheduleMemories } from '../services/extendedApi';
 import type { ScheduleMemory, ItemType } from '../types/api';
 import { ItemTypeEnum } from '../types/api';
 import { createLogger } from '../utils/logger';
@@ -188,26 +186,6 @@ const ScheduleMemoryManagementPage: React.FC = () => {
     setDeleteDialogOpen(true);
   }, []);
 
-  const handleToggleOverride = useCallback(async (sm: EnhancedScheduleMemory) => {
-    try {
-      const response = await setScheduleOverride({
-        id: sm.id,
-        activate: !sm.manualOverrideActive,
-        analogValue: sm.defaultAnalogValue,
-        digitalValue: sm.defaultDigitalValue,
-      });
-
-      if (response.isSuccessful) {
-        logger.log('Override toggled', { id: sm.id, newState: !sm.manualOverrideActive });
-        fetchScheduleMemories();
-      } else {
-        logger.error('Failed to toggle override', { error: response.errorMessage });
-      }
-    } catch (err) {
-      logger.error('Failed to toggle override', { error: err });
-    }
-  }, [fetchScheduleMemories]);
-
   const handleDialogClose = useCallback(async (shouldRefresh: boolean) => {
     if (shouldRefresh) {
       await fetchScheduleMemories();
@@ -282,23 +260,6 @@ const ScheduleMemoryManagementPage: React.FC = () => {
         ),
       },
       {
-        field: 'manualOverrideActive',
-        headerText: t('scheduleMemory.override'),
-        width: 120,
-        textAlign: 'Center',
-        template: (rowData: EnhancedScheduleMemory) => (
-          <Tooltip title={rowData.manualOverrideActive ? t('scheduleMemory.overrideActive') : t('scheduleMemory.overrideInactive')}>
-            <Chip
-              icon={rowData.manualOverrideActive ? <StopIcon /> : <PlayArrowIcon />}
-              label={rowData.manualOverrideActive ? t('scheduleMemory.active') : t('scheduleMemory.inactive')}
-              size="small"
-              color={rowData.manualOverrideActive ? 'warning' : 'default'}
-              sx={{ height: 24, fontSize: '0.75rem' }}
-            />
-          </Tooltip>
-        ),
-      },
-      {
         field: 'interval',
         headerText: t('scheduleMemory.interval'),
         width: 100,
@@ -316,16 +277,6 @@ const ScheduleMemoryManagementPage: React.FC = () => {
         allowFiltering: false,
         template: (rowData: EnhancedScheduleMemory) => (
           <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-            <Tooltip title={rowData.manualOverrideActive ? t('scheduleMemory.deactivateOverride') : t('scheduleMemory.activateOverride')}>
-              <IconButton
-                size="small"
-                color={rowData.manualOverrideActive ? 'warning' : 'default'}
-                onClick={() => handleToggleOverride(rowData)}
-                data-id-ref="schedule-memory-toggle-override-btn"
-              >
-                {rowData.manualOverrideActive ? <StopIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
-              </IconButton>
-            </Tooltip>
             <IconButton
               size="small"
               color="primary"
@@ -348,7 +299,7 @@ const ScheduleMemoryManagementPage: React.FC = () => {
         ),
       },
     ],
-    [t, handleEditScheduleMemory, handleDeleteScheduleMemory, handleToggleOverride]
+    [t, handleEditScheduleMemory, handleDeleteScheduleMemory]
   );
 
   return (
