@@ -14,10 +14,6 @@ import {
   Chip,
   Typography,
   IconButton,
-  Card,
-  CardHeader,
-  CardContent,
-  Collapse,
   Switch,
   FormControlLabel,
   Select,
@@ -31,10 +27,13 @@ import {
   TableBody,
   FormHelperText,
   Tooltip,
+  Tabs,
+  Tab,
+  Grid,
+  Paper,
 } from '@mui/material';
 import {
   HelpOutline as HelpOutlineIcon,
-  ExpandMore as ExpandMoreIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
@@ -90,6 +89,33 @@ interface FormErrors {
   defaultValue?: string;
   overrideDurationMinutes?: string;
   scheduleBlocks?: string;
+}
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function CustomTabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`schedule-memory-tabpanel-${index}`}
+      aria-labelledby={`schedule-memory-tab-${index}`}
+      {...other}
+      style={{ height: '100%', overflow: 'auto' }}
+    >
+      {value === index && (
+        <Box sx={{ p: 2 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -156,11 +182,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [holidayCalendars, setHolidayCalendars] = useState<HolidayCalendar[]>([]);
-
-  // Section expansion states
-  const [basicExpanded, setBasicExpanded] = useState(true);
-  const [blocksExpanded, setBlocksExpanded] = useState(true);
-  const [overrideExpanded, setOverrideExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   // Help popover states
   const [helpAnchorEl, setHelpAnchorEl] = useState<Record<string, HTMLElement | null>>({});
@@ -217,6 +239,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
   // Initialize form data when dialog opens
   useEffect(() => {
     if (open) {
+      setActiveTab(0);
       if (editMode && scheduleMemory) {
         setFormData({
           name: scheduleMemory.name || '',
@@ -261,6 +284,10 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
       setError(null);
     }
   }, [open, editMode, scheduleMemory]);
+
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
 
   const handleAddBlock = useCallback(() => {
     setFormData((prev) => ({
@@ -457,518 +484,518 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
         {editMode ? t('scheduleMemory.editTitle') : t('scheduleMemory.addTitle')}
       </DialogTitle>
 
-      <DialogContent data-id-ref="schedule-memory-dialog-content" sx={{ overflow: 'auto' }}>
-        <Stack spacing={2} sx={{ mt: 1 }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs value={activeTab} onChange={handleTabChange} aria-label="schedule memory tabs">
+          <Tab label={t('scheduleMemory.sections.basic')} data-id-ref="schedule-memory-tab-basic" />
+          <Tab label={t('scheduleMemory.sections.blocks')} data-id-ref="schedule-memory-tab-blocks" />
+          <Tab label={t('scheduleMemory.sections.override')} data-id-ref="schedule-memory-tab-override" />
+        </Tabs>
+      </Box>
 
-          {error && (
-              <Alert severity="error" data-id-ref="schedule-memory-error-alert">
-                {error}
-              </Alert>
-            )}
+      <DialogContent data-id-ref="schedule-memory-dialog-content" sx={{ p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {error && (
+          <Box sx={{ p: 2, pb: 0 }}>
+            <Alert severity="error" data-id-ref="schedule-memory-error-alert">
+              {error}
+            </Alert>
+          </Box>
+        )}
 
-            {/* Basic Configuration Section */}
-            <Card data-id-ref="schedule-memory-basic-section">
-              <CardHeader
-                title={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="h6">{t('scheduleMemory.sections.basic')}</Typography>
-                    <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.basic')}>
-                      <HelpOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                }
-                action={
-                  <IconButton onClick={() => setBasicExpanded(!basicExpanded)}>
-                    <ExpandMoreIcon sx={{ transform: basicExpanded ? 'rotate(180deg)' : 'none' }} />
-                  </IconButton>
-                }
-                sx={{ pb: 0 }}
+        {/* Basic Configuration Tab */}
+        <CustomTabPanel value={activeTab} index={0}>
+          <Grid container spacing={3}>
+            <Grid size={12}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold">{t('scheduleMemory.sections.basic')}</Typography>
+                <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.basic')}>
+                  <HelpOutlineIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              <TextField
+                label={t('scheduleMemory.name')}
+                value={formData.name}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                disabled={loading}
+                fullWidth
+                data-id-ref="schedule-memory-name-input"
               />
-              <Collapse in={basicExpanded}>
-                <CardContent>
-                  <Stack spacing={2}>
-                    {/* Name */}
-                    <TextField
-                      label={t('scheduleMemory.name')}
-                      value={formData.name}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                      disabled={loading}
-                      fullWidth
-                      data-id-ref="schedule-memory-name-input"
-                    />
+            </Grid>
 
-                    {/* Output Item */}
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                      <Autocomplete
-                        options={outputItems}
-                        getOptionLabel={getItemLabel}
-                        value={selectedOutputItem}
-                        onChange={(_, value) => setFormData((prev) => ({ ...prev, outputItemId: value?.id || '' }))}
-                        disabled={loading}
-                        data-id-ref="schedule-memory-output-item-select"
-                        sx={{ flex: 1 }}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label={t('scheduleMemory.outputItem')}
-                            required
-                            error={!!formErrors.outputItemId}
-                            helperText={formErrors.outputItemId}
-                          />
-                        )}
-                        renderOption={(props, option) => (
-                          <Box component="li" {...props} key={option.id}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                              <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                                {getItemLabel(option)}
-                              </Typography>
-                              <Chip
-                                label={getItemTypeLabel(option.itemType, t)}
-                                size="small"
-                                color={getItemTypeColor(option.itemType)}
-                                sx={{ height: 20, fontSize: '0.7rem' }}
-                              />
-                            </Box>
-                          </Box>
-                        )}
-                        isOptionEqualToValue={(option, value) => option.id === value.id}
+            <Grid size={12}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="subtitle2">{t('scheduleMemory.outputItem')}</Typography>
+                <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.outputItem')}>
+                  <HelpOutlineIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              <Autocomplete
+                options={outputItems}
+                getOptionLabel={getItemLabel}
+                value={selectedOutputItem}
+                onChange={(_, value) => setFormData((prev) => ({ ...prev, outputItemId: value?.id || '' }))}
+                disabled={loading}
+                data-id-ref="schedule-memory-output-item-select"
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('scheduleMemory.outputItem')}
+                    required
+                    error={!!formErrors.outputItemId}
+                    helperText={formErrors.outputItemId}
+                  />
+                )}
+                renderOption={(props, option) => (
+                  <Box component="li" {...props} key={option.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                      <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                        {getItemLabel(option)}
+                      </Typography>
+                      <Chip
+                        label={getItemTypeLabel(option.itemType, t)}
+                        size="small"
+                        color={getItemTypeColor(option.itemType)}
+                        sx={{ height: 20, fontSize: '0.7rem' }}
                       />
-                      <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.outputItem')} sx={{ mt: 1 }}>
-                        <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                      </IconButton>
                     </Box>
+                  </Box>
+                )}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+              />
+            </Grid>
 
-                    {/* Interval, Duration and Holiday Calendar */}
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                        <TextField
-                          label={t('scheduleMemory.interval')}
-                          type="number"
-                          value={formData.interval}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, interval: Number(e.target.value) }))}
-                          disabled={loading}
-                          required
-                          error={!!formErrors.interval}
-                          helperText={formErrors.interval || t('scheduleMemory.intervalHelp')}
-                          inputProps={{ min: 1 }}
-                          sx={{ width: 150 }}
-                          data-id-ref="schedule-memory-interval-input"
-                        />
-                        <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.interval')} sx={{ mt: 1 }}>
-                          <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                        </IconButton>
-                      </Box>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="subtitle2">{t('scheduleMemory.interval')}</Typography>
+                <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.interval')}>
+                  <HelpOutlineIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              <TextField
+                label={t('scheduleMemory.interval')}
+                type="number"
+                value={formData.interval}
+                onChange={(e) => setFormData((prev) => ({ ...prev, interval: Number(e.target.value) }))}
+                disabled={loading}
+                required
+                error={!!formErrors.interval}
+                helperText={formErrors.interval || t('scheduleMemory.intervalHelp')}
+                inputProps={{ min: 1 }}
+                fullWidth
+                data-id-ref="schedule-memory-interval-input"
+              />
+            </Grid>
 
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                        <TextField
-                          label={t('scheduleMemory.duration')}
-                          type="number"
-                          value={formData.duration}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, duration: Math.max(0, Number(e.target.value) || 0) }))}
-                          disabled={loading}
-                          error={!!formErrors.duration}
-                          helperText={formErrors.duration || t('scheduleMemory.durationHelp')}
-                          inputProps={{ min: 0 }}
-                          sx={{ width: 150 }}
-                          data-id-ref="schedule-memory-duration-input"
-                        />
-                        <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.duration')} sx={{ mt: 1 }}>
-                          <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                        </IconButton>
-                      </Box>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="subtitle2">{t('scheduleMemory.duration')}</Typography>
+                <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.duration')}>
+                  <HelpOutlineIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              <TextField
+                label={t('scheduleMemory.duration')}
+                type="number"
+                value={formData.duration}
+                onChange={(e) => setFormData((prev) => ({ ...prev, duration: Math.max(0, Number(e.target.value) || 0) }))}
+                disabled={loading}
+                error={!!formErrors.duration}
+                helperText={formErrors.duration || t('scheduleMemory.durationHelp')}
+                inputProps={{ min: 0 }}
+                fullWidth
+                data-id-ref="schedule-memory-duration-input"
+              />
+            </Grid>
 
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, flex: 1 }}>
-                        <FormControl sx={{ flex: 1 }}>
-                          <InputLabel>{t('scheduleMemory.holidayCalendar')}</InputLabel>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="subtitle2">{t('scheduleMemory.holidayCalendar')}</Typography>
+                <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.holidayCalendar')}>
+                  <HelpOutlineIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              <FormControl fullWidth>
+                <InputLabel>{t('scheduleMemory.holidayCalendar')}</InputLabel>
+                <Select
+                  value={formData.holidayCalendarId}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, holidayCalendarId: e.target.value }))}
+                  label={t('scheduleMemory.holidayCalendar')}
+                  disabled={loading}
+                  data-id-ref="schedule-memory-holiday-calendar-select"
+                >
+                  <MenuItem value="">{t('common.none')}</MenuItem>
+                  {holidayCalendars.map((cal) => (
+                    <MenuItem key={cal.id} value={cal.id}>{cal.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="subtitle2">{t('scheduleMemory.defaultAnalogValue')}</Typography>
+                <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.defaultValue')}>
+                  <HelpOutlineIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              {isAnalogOutput ? (
+                <TextField
+                  label={t('scheduleMemory.defaultAnalogValue')}
+                  type="number"
+                  value={formData.defaultAnalogValue ?? ''}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, defaultAnalogValue: e.target.value ? Number(e.target.value) : null }))}
+                  disabled={loading}
+                  fullWidth
+                  data-id-ref="schedule-memory-default-analog-input"
+                  helperText={t('scheduleMemory.defaultValueHelp')}
+                />
+              ) : (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.defaultDigitalValue ?? false}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, defaultDigitalValue: e.target.checked }))}
+                      disabled={loading}
+                      data-id-ref="schedule-memory-default-digital-switch"
+                    />
+                  }
+                  label={t('scheduleMemory.defaultDigitalValue')}
+                />
+              )}
+            </Grid>
+
+            <Grid size={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.isDisabled}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, isDisabled: e.target.checked }))}
+                    disabled={loading}
+                    data-id-ref="schedule-memory-disabled-switch"
+                  />
+                }
+                label={t('scheduleMemory.isDisabled')}
+              />
+            </Grid>
+          </Grid>
+        </CustomTabPanel>
+
+        {/* Schedule Blocks Tab */}
+        <CustomTabPanel value={activeTab} index={1}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6">{t('scheduleMemory.sections.blocks')}</Typography>
+              <Chip label={formData.scheduleBlocks.length} size="small" color="primary" />
+              <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.blocks')}>
+                <HelpOutlineIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={handleAddBlock}
+              disabled={loading || !formData.outputItemId}
+              data-id-ref="schedule-memory-add-block-btn"
+            >
+              {t('scheduleMemory.addBlock')}
+            </Button>
+          </Box>
+
+          {formErrors.scheduleBlocks && (
+            <Alert severity="error" sx={{ mb: 2 }}>{formErrors.scheduleBlocks}</Alert>
+          )}
+
+          {formData.scheduleBlocks.length === 0 ? (
+            <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', bgcolor: 'background.default' }}>
+              <Typography color="text.secondary">
+                {t('scheduleMemory.noBlocks')}
+              </Typography>
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={handleAddBlock}
+                disabled={loading || !formData.outputItemId}
+                sx={{ mt: 2 }}
+              >
+                {t('scheduleMemory.addBlock')}
+              </Button>
+            </Paper>
+          ) : (
+            <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+              <Box sx={{ overflowX: 'auto' }}>
+                <Table size="small" data-id-ref="schedule-memory-blocks-table" sx={{ minWidth: 1200 }}>
+                  <TableHead sx={{ bgcolor: 'action.hover' }}>
+                    <TableRow>
+                      <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.dayOfWeek')}</TableCell>
+                      <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.startTime')}</TableCell>
+                      <TableCell sx={{ minWidth: 200 }}>{t('scheduleMemory.endTime')}</TableCell>
+                      <TableCell sx={{ minWidth: 120 }}>{t('scheduleMemory.priorityLabel')}</TableCell>
+                      <TableCell sx={{ minWidth: 120 }}>{isAnalogOutput ? t('scheduleMemory.analogValue') : t('scheduleMemory.digitalValue')}</TableCell>
+                      <TableCell sx={{ minWidth: 180 }}>{t('scheduleMemory.blockDescription')}</TableCell>
+                      <TableCell sx={{ width: 60 }}></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {formData.scheduleBlocks.map((block) => (
+                      <TableRow key={block.tempId} data-id-ref={`schedule-block-row-${block.tempId}`} hover>
+                        <TableCell>
                           <Select
-                            value={formData.holidayCalendarId}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, holidayCalendarId: e.target.value }))}
-                            label={t('scheduleMemory.holidayCalendar')}
-                            disabled={loading}
-                            data-id-ref="schedule-memory-holiday-calendar-select"
+                            size="small"
+                            value={block.dayOfWeek}
+                            onChange={(e) => handleBlockChange(block.tempId, 'dayOfWeek', Number(e.target.value))}
+                            data-id-ref={`schedule-block-day-${block.tempId}`}
+                            sx={{ minWidth: 130, width: '100%' }}
                           >
-                            <MenuItem value="">{t('common.none')}</MenuItem>
-                            {holidayCalendars.map((cal) => (
-                              <MenuItem key={cal.id} value={cal.id}>{cal.name}</MenuItem>
+                            {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                              <MenuItem key={day} value={day}>{getDayOfWeekLabel(day, t)}</MenuItem>
                             ))}
                           </Select>
-                        </FormControl>
-                        <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.holidayCalendar')} sx={{ mt: 1 }}>
-                          <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                        </IconButton>
-                      </Box>
-                    </Box>
-
-                    {/* Default Value */}
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                      {isAnalogOutput ? (
-                        <TextField
-                          label={t('scheduleMemory.defaultAnalogValue')}
-                          type="number"
-                          value={formData.defaultAnalogValue ?? ''}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, defaultAnalogValue: e.target.value ? Number(e.target.value) : null }))}
-                          disabled={loading}
-                          fullWidth
-                          data-id-ref="schedule-memory-default-analog-input"
-                          helperText={t('scheduleMemory.defaultValueHelp')}
-                        />
-                      ) : (
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={formData.defaultDigitalValue ?? false}
-                              onChange={(e) => setFormData((prev) => ({ ...prev, defaultDigitalValue: e.target.checked }))}
-                              disabled={loading}
-                              data-id-ref="schedule-memory-default-digital-switch"
-                            />
-                          }
-                          label={t('scheduleMemory.defaultDigitalValue')}
-                        />
-                      )}
-                      <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.defaultValue')} sx={{ mt: isAnalogOutput ? 1 : 0.5 }}>
-                        <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                      </IconButton>
-                    </Box>
-
-                    {/* Disabled switch */}
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={formData.isDisabled}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, isDisabled: e.target.checked }))}
-                          disabled={loading}
-                          data-id-ref="schedule-memory-disabled-switch"
-                        />
-                      }
-                      label={t('scheduleMemory.isDisabled')}
-                    />
-                  </Stack>
-                </CardContent>
-              </Collapse>
-            </Card>
-
-            {/* Schedule Blocks Section */}
-            <Card data-id-ref="schedule-memory-blocks-section">
-              <CardHeader
-                title={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="h6">{t('scheduleMemory.sections.blocks')}</Typography>
-                    <Chip label={formData.scheduleBlocks.length} size="small" color="primary" />
-                    <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.blocks')}>
-                      <HelpOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                }
-                action={
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      size="small"
-                      startIcon={<AddIcon />}
-                      onClick={handleAddBlock}
-                      disabled={loading || !formData.outputItemId}
-                      data-id-ref="schedule-memory-add-block-btn"
-                    >
-                      {t('scheduleMemory.addBlock')}
-                    </Button>
-                    <IconButton onClick={() => setBlocksExpanded(!blocksExpanded)}>
-                      <ExpandMoreIcon sx={{ transform: blocksExpanded ? 'rotate(180deg)' : 'none' }} />
-                    </IconButton>
-                  </Box>
-                }
-                sx={{ pb: 0 }}
-              />
-              <Collapse in={blocksExpanded}>
-                <CardContent>
-                  {formErrors.scheduleBlocks && (
-                    <Alert severity="error" sx={{ mb: 2 }}>{formErrors.scheduleBlocks}</Alert>
-                  )}
-                  {formData.scheduleBlocks.length === 0 ? (
-                    <Typography color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                      {t('scheduleMemory.noBlocks')}
-                    </Typography>
-                  ) : (
-                    <Box sx={{ overflowX: 'auto', width: '100%' }}>
-                      <Table size="small" data-id-ref="schedule-memory-blocks-table" sx={{ minWidth: 1200 }}>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.dayOfWeek')}</TableCell>
-                            <TableCell sx={{ minWidth: 140 }}>{t('scheduleMemory.startTime')}</TableCell>
-                            <TableCell sx={{ minWidth: 200 }}>{t('scheduleMemory.endTime')}</TableCell>
-                            <TableCell sx={{ minWidth: 120 }}>{t('scheduleMemory.priorityLabel')}</TableCell>
-                            <TableCell sx={{ minWidth: 120 }}>{isAnalogOutput ? t('scheduleMemory.analogValue') : t('scheduleMemory.digitalValue')}</TableCell>
-                            <TableCell sx={{ minWidth: 180 }}>{t('scheduleMemory.blockDescription')}</TableCell>
-                            <TableCell sx={{ width: 60 }}></TableCell>
-                          </TableRow>
-                        </TableHead>
-                      <TableBody>
-                        {formData.scheduleBlocks.map((block) => (
-                          <TableRow key={block.tempId} data-id-ref={`schedule-block-row-${block.tempId}`}>
-                            <TableCell>
-                              <Select
-                                size="small"
-                                value={block.dayOfWeek}
-                                onChange={(e) => handleBlockChange(block.tempId, 'dayOfWeek', Number(e.target.value))}
-                                data-id-ref={`schedule-block-day-${block.tempId}`}
-                                sx={{ minWidth: 130, width: '100%' }}
-                              >
-                                {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                                  <MenuItem key={day} value={day}>{getDayOfWeekLabel(day, t)}</MenuItem>
-                                ))}
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <TextField
-                                type="time"
-                                size="small"
-                                value={formatTimeForInput(block.startTime)}
-                                onChange={(e) => handleTimeChange(block.tempId, 'startTime', e.target.value)}
-                                data-id-ref={`schedule-block-start-${block.tempId}`}
-                                sx={{ width: 130 }}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Stack spacing={0.5}>
-                                <FormControlLabel
-                                  control={
-                                    <Switch
-                                      size="small"
-                                      checked={block.useEndTime}
-                                      onChange={(e) => {
-                                        handleBlockChange(block.tempId, 'useEndTime', e.target.checked);
-                                        if (!e.target.checked) {
-                                          handleBlockChange(block.tempId, 'endTime', null);
-                                        } else {
-                                          handleBlockChange(block.tempId, 'endTime', '17:00:00');
-                                        }
-                                      }}
-                                      data-id-ref={`schedule-block-use-end-time-${block.tempId}`}
-                                    />
-                                  }
-                                  label={<Typography variant="caption">{t('scheduleMemory.useEndTime')}</Typography>}
-                                  sx={{ m: 0 }}
-                                />
-                                {block.useEndTime ? (
-                                  <Box>
-                                    <TextField
-                                      type="time"
-                                      size="small"
-                                      value={formatTimeForInput(block.endTime || '17:00:00')}
-                                      onChange={(e) => handleTimeChange(block.tempId, 'endTime', e.target.value)}
-                                      data-id-ref={`schedule-block-end-${block.tempId}`}
-                                      sx={{ width: 130 }}
-                                    />
-                                    {block.startTime && block.endTime && block.startTime > block.endTime && (
-                                      <Chip
-                                        label={t('scheduleMemory.crossesMidnight')}
-                                        size="small"
-                                        color="info"
-                                        icon={<Typography sx={{ fontSize: 12 }}>→</Typography>}
-                                        sx={{ mt: 0.5, height: 20, fontSize: '0.7rem' }}
-                                        data-id-ref={`schedule-block-midnight-indicator-${block.tempId}`}
-                                      />
-                                    )}
-                                  </Box>
-                                ) : (
-                                  <FormControl size="small" sx={{ width: 170 }}>
-                                    <Select
-                                      value={block.nullEndTimeBehavior}
-                                      onChange={(e) => handleBlockChange(block.tempId, 'nullEndTimeBehavior', Number(e.target.value))}
-                                      data-id-ref={`schedule-block-behavior-${block.tempId}`}
-                                      sx={{ fontSize: '0.75rem' }}
-                                    >
-                                      <MenuItem value={NullEndTimeBehavior.UseDefault}>
-                                        <Typography variant="caption">{t('scheduleMemory.nullBehavior.useDefault')}</Typography>
-                                      </MenuItem>
-                                      <MenuItem value={NullEndTimeBehavior.ExtendToEndOfDay}>
-                                        <Typography variant="caption">{t('scheduleMemory.nullBehavior.extendToEndOfDay')}</Typography>
-                                      </MenuItem>
-                                    </Select>
-                                    <FormHelperText sx={{ fontSize: '0.65rem', m: 0, mt: 0.5 }}>
-                                      {t('scheduleMemory.nullBehavior.helper')}
-                                    </FormHelperText>
-                                  </FormControl>
-                                )}
-                              </Stack>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                size="small"
-                                value={block.priority}
-                                onChange={(e) => handleBlockChange(block.tempId, 'priority', Number(e.target.value))}
-                                data-id-ref={`schedule-block-priority-${block.tempId}`}
-                                sx={{ minWidth: 110, width: '100%' }}
-                              >
-                                {[1, 2, 3, 4].map((p) => (
-                                  <MenuItem key={p} value={p}>{getPriorityLabel(p, t)}</MenuItem>
-                                ))}
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              {isAnalogOutput ? (
-                                <TextField
-                                  size="small"
-                                  type="number"
-                                  value={block.analogOutputValue ?? ''}
-                                  onChange={(e) => handleBlockChange(block.tempId, 'analogOutputValue', e.target.value ? Number(e.target.value) : null)}
-                                  data-id-ref={`schedule-block-analog-${block.tempId}`}
-                                  sx={{ width: 100 }}
-                                />
-                              ) : (
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            type="time"
+                            size="small"
+                            value={formatTimeForInput(block.startTime)}
+                            onChange={(e) => handleTimeChange(block.tempId, 'startTime', e.target.value)}
+                            data-id-ref={`schedule-block-start-${block.tempId}`}
+                            sx={{ width: 130 }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Stack spacing={0.5}>
+                            <FormControlLabel
+                              control={
                                 <Switch
-                                  checked={block.digitalOutputValue ?? false}
-                                  onChange={(e) => handleBlockChange(block.tempId, 'digitalOutputValue', e.target.checked)}
-                                  data-id-ref={`schedule-block-digital-${block.tempId}`}
-                                />
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <TextField
-                                size="small"
-                                value={block.description}
-                                onChange={(e) => handleBlockChange(block.tempId, 'description', e.target.value)}
-                                data-id-ref={`schedule-block-desc-${block.tempId}`}
-                                sx={{ width: 170 }}
-                                placeholder={t('scheduleMemory.descriptionPlaceholder')}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Tooltip title={t('common.delete')}>
-                                <IconButton
                                   size="small"
-                                  color="error"
-                                  onClick={() => handleRemoveBlock(block.tempId)}
-                                  data-id-ref={`schedule-block-delete-${block.tempId}`}
+                                  checked={block.useEndTime}
+                                  onChange={(e) => {
+                                    handleBlockChange(block.tempId, 'useEndTime', e.target.checked);
+                                    if (!e.target.checked) {
+                                      handleBlockChange(block.tempId, 'endTime', null);
+                                    } else {
+                                      handleBlockChange(block.tempId, 'endTime', '17:00:00');
+                                    }
+                                  }}
+                                  data-id-ref={`schedule-block-use-end-time-${block.tempId}`}
+                                />
+                              }
+                              label={<Typography variant="caption">{t('scheduleMemory.useEndTime')}</Typography>}
+                              sx={{ m: 0 }}
+                            />
+                            {block.useEndTime ? (
+                              <Box>
+                                <TextField
+                                  type="time"
+                                  size="small"
+                                  value={formatTimeForInput(block.endTime || '17:00:00')}
+                                  onChange={(e) => handleTimeChange(block.tempId, 'endTime', e.target.value)}
+                                  data-id-ref={`schedule-block-end-${block.tempId}`}
+                                  sx={{ width: 130 }}
+                                />
+                                {block.startTime && block.endTime && block.startTime > block.endTime && (
+                                  <Chip
+                                    label={t('scheduleMemory.crossesMidnight')}
+                                    size="small"
+                                    color="info"
+                                    icon={<Typography sx={{ fontSize: 12 }}>→</Typography>}
+                                    sx={{ mt: 0.5, height: 20, fontSize: '0.7rem' }}
+                                    data-id-ref={`schedule-block-midnight-indicator-${block.tempId}`}
+                                  />
+                                )}
+                              </Box>
+                            ) : (
+                              <FormControl size="small" sx={{ width: 170 }}>
+                                <Select
+                                  value={block.nullEndTimeBehavior}
+                                  onChange={(e) => handleBlockChange(block.tempId, 'nullEndTimeBehavior', Number(e.target.value))}
+                                  data-id-ref={`schedule-block-behavior-${block.tempId}`}
+                                  sx={{ fontSize: '0.75rem' }}
                                 >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                      </Table>
-                    </Box>
-                  )}
-                </CardContent>
-              </Collapse>
-            </Card>
+                                  <MenuItem value={NullEndTimeBehavior.UseDefault}>
+                                    <Typography variant="caption">{t('scheduleMemory.nullBehavior.useDefault')}</Typography>
+                                  </MenuItem>
+                                  <MenuItem value={NullEndTimeBehavior.ExtendToEndOfDay}>
+                                    <Typography variant="caption">{t('scheduleMemory.nullBehavior.extendToEndOfDay')}</Typography>
+                                  </MenuItem>
+                                </Select>
+                                <FormHelperText sx={{ fontSize: '0.65rem', m: 0, mt: 0.5 }}>
+                                  {t('scheduleMemory.nullBehavior.helper')}
+                                </FormHelperText>
+                              </FormControl>
+                            )}
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            size="small"
+                            value={block.priority}
+                            onChange={(e) => handleBlockChange(block.tempId, 'priority', Number(e.target.value))}
+                            data-id-ref={`schedule-block-priority-${block.tempId}`}
+                            sx={{ minWidth: 110, width: '100%' }}
+                          >
+                            {[1, 2, 3, 4].map((p) => (
+                              <MenuItem key={p} value={p}>{getPriorityLabel(p, t)}</MenuItem>
+                            ))}
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          {isAnalogOutput ? (
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={block.analogOutputValue ?? ''}
+                              onChange={(e) => handleBlockChange(block.tempId, 'analogOutputValue', e.target.value ? Number(e.target.value) : null)}
+                              data-id-ref={`schedule-block-analog-${block.tempId}`}
+                              sx={{ width: 100 }}
+                            />
+                          ) : (
+                            <Switch
+                              checked={block.digitalOutputValue ?? false}
+                              onChange={(e) => handleBlockChange(block.tempId, 'digitalOutputValue', e.target.checked)}
+                              data-id-ref={`schedule-block-digital-${block.tempId}`}
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            size="small"
+                            value={block.description}
+                            onChange={(e) => handleBlockChange(block.tempId, 'description', e.target.value)}
+                            data-id-ref={`schedule-block-desc-${block.tempId}`}
+                            sx={{ width: 170 }}
+                            placeholder={t('scheduleMemory.descriptionPlaceholder')}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Tooltip title={t('common.delete')}>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleRemoveBlock(block.tempId)}
+                              data-id-ref={`schedule-block-delete-${block.tempId}`}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            </Paper>
+          )}
+        </CustomTabPanel>
 
-            {/* Override Settings Section */}
-            <Card data-id-ref="schedule-memory-override-section">
-              <CardHeader
-                title={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="h6">{t('scheduleMemory.sections.override')}</Typography>
-                    <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.override')}>
-                      <HelpOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                }
-                action={
-                  <IconButton onClick={() => setOverrideExpanded(!overrideExpanded)}>
-                    <ExpandMoreIcon sx={{ transform: overrideExpanded ? 'rotate(180deg)' : 'none' }} />
-                  </IconButton>
-                }
-                sx={{ pb: 0 }}
-              />
-              <Collapse in={overrideExpanded}>
-                <CardContent>
-                  <Stack spacing={2}>
-                    <FormControl>
-                      <InputLabel>{t('scheduleMemory.overrideMode')}</InputLabel>
-                      <Select
-                        value={formData.overrideExpirationMode}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, overrideExpirationMode: Number(e.target.value) }))}
-                        label={t('scheduleMemory.overrideMode')}
-                        disabled={loading}
-                        data-id-ref="schedule-memory-override-mode-select"
-                      >
-                        <MenuItem value={OverrideExpirationMode.TimeBased}>{t('scheduleMemory.overrideMode.timeBased')}</MenuItem>
-                        <MenuItem value={OverrideExpirationMode.EventBased}>{t('scheduleMemory.overrideMode.eventBased')}</MenuItem>
-                      </Select>
-                      <FormHelperText>{t('scheduleMemory.overrideModeHelp')}</FormHelperText>
-                    </FormControl>
+        {/* Override Settings Tab */}
+        <CustomTabPanel value={activeTab} index={2}>
+          <Grid container spacing={3}>
+            <Grid size={12}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold">{t('scheduleMemory.sections.override')}</Typography>
+                <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.override')}>
+                  <HelpOutlineIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Grid>
 
-                    {formData.overrideExpirationMode === OverrideExpirationMode.TimeBased && (
-                      <TextField
-                        label={t('scheduleMemory.overrideDuration')}
-                        type="number"
-                        value={formData.overrideDurationMinutes}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, overrideDurationMinutes: Number(e.target.value) }))}
-                        disabled={loading}
-                        required
-                        error={!!formErrors.overrideDurationMinutes}
-                        helperText={formErrors.overrideDurationMinutes || t('scheduleMemory.overrideDurationHelp')}
-                        inputProps={{ min: 1 }}
-                        data-id-ref="schedule-memory-override-duration-input"
-                      />
-                    )}
-                  </Stack>
-                </CardContent>
-              </Collapse>
-            </Card>
-          </Stack>
-        </DialogContent>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <FormControl fullWidth>
+                <InputLabel>{t('scheduleMemory.overrideMode')}</InputLabel>
+                <Select
+                  value={formData.overrideExpirationMode}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, overrideExpirationMode: Number(e.target.value) }))}
+                  label={t('scheduleMemory.overrideMode')}
+                  disabled={loading}
+                  data-id-ref="schedule-memory-override-mode-select"
+                >
+                  <MenuItem value={OverrideExpirationMode.TimeBased}>{t('scheduleMemory.overrideMode.timeBased')}</MenuItem>
+                  <MenuItem value={OverrideExpirationMode.EventBased}>{t('scheduleMemory.overrideMode.eventBased')}</MenuItem>
+                </Select>
+                <FormHelperText>{t('scheduleMemory.overrideModeHelp')}</FormHelperText>
+              </FormControl>
+            </Grid>
 
-        <DialogActions data-id-ref="schedule-memory-dialog-actions">
-          <Button onClick={() => onClose(false)} disabled={loading} data-id-ref="schedule-memory-cancel-btn">
-            {t('common.cancel')}
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            disabled={loading}
-            data-id-ref="schedule-memory-submit-btn"
-            startIcon={loading && <CircularProgress size={20} />}
-          >
-            {editMode ? t('common.save') : t('common.add')}
-          </Button>
-        </DialogActions>
+            {formData.overrideExpirationMode === OverrideExpirationMode.TimeBased && (
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  label={t('scheduleMemory.overrideDuration')}
+                  type="number"
+                  value={formData.overrideDurationMinutes}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, overrideDurationMinutes: Number(e.target.value) }))}
+                  disabled={loading}
+                  required
+                  error={!!formErrors.overrideDurationMinutes}
+                  helperText={formErrors.overrideDurationMinutes || t('scheduleMemory.overrideDurationHelp')}
+                  inputProps={{ min: 1 }}
+                  fullWidth
+                  data-id-ref="schedule-memory-override-duration-input"
+                />
+              </Grid>
+            )}
+          </Grid>
+        </CustomTabPanel>
+      </DialogContent>
 
-        {/* Help Popovers */}
-        <FieldHelpPopover
-          anchorEl={helpAnchorEl['scheduleMemory.help.basic']}
-          open={Boolean(helpAnchorEl['scheduleMemory.help.basic'])}
-          onClose={handleHelpClose('scheduleMemory.help.basic')}
-          fieldKey="scheduleMemory.help.basic"
-        />
-        <FieldHelpPopover
-          anchorEl={helpAnchorEl['scheduleMemory.help.outputItem']}
-          open={Boolean(helpAnchorEl['scheduleMemory.help.outputItem'])}
-          onClose={handleHelpClose('scheduleMemory.help.outputItem')}
-          fieldKey="scheduleMemory.help.outputItem"
-        />
-        <FieldHelpPopover
-          anchorEl={helpAnchorEl['scheduleMemory.help.interval']}
-          open={Boolean(helpAnchorEl['scheduleMemory.help.interval'])}
-          onClose={handleHelpClose('scheduleMemory.help.interval')}
-          fieldKey="scheduleMemory.help.interval"
-        />
-        <FieldHelpPopover
-          anchorEl={helpAnchorEl['scheduleMemory.help.holidayCalendar']}
-          open={Boolean(helpAnchorEl['scheduleMemory.help.holidayCalendar'])}
-          onClose={handleHelpClose('scheduleMemory.help.holidayCalendar')}
-          fieldKey="scheduleMemory.help.holidayCalendar"
-        />
-        <FieldHelpPopover
-          anchorEl={helpAnchorEl['scheduleMemory.help.defaultValue']}
-          open={Boolean(helpAnchorEl['scheduleMemory.help.defaultValue'])}
-          onClose={handleHelpClose('scheduleMemory.help.defaultValue')}
-          fieldKey="scheduleMemory.help.defaultValue"
-        />
-        <FieldHelpPopover
-          anchorEl={helpAnchorEl['scheduleMemory.help.blocks']}
-          open={Boolean(helpAnchorEl['scheduleMemory.help.blocks'])}
-          onClose={handleHelpClose('scheduleMemory.help.blocks')}
-          fieldKey="scheduleMemory.help.blocks"
-        />
-        <FieldHelpPopover
-          anchorEl={helpAnchorEl['scheduleMemory.help.override']}
-          open={Boolean(helpAnchorEl['scheduleMemory.help.override'])}
-          onClose={handleHelpClose('scheduleMemory.help.override')}
-          fieldKey="scheduleMemory.help.override"
-        />
-      </Dialog>
+      <DialogActions data-id-ref="schedule-memory-dialog-actions" sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider' }}>
+        <Button onClick={() => onClose(false)} disabled={loading} data-id-ref="schedule-memory-cancel-btn">
+          {t('common.cancel')}
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          disabled={loading}
+          data-id-ref="schedule-memory-submit-btn"
+          startIcon={loading && <CircularProgress size={20} />}
+        >
+          {editMode ? t('common.save') : t('common.add')}
+        </Button>
+      </DialogActions>
+
+      {/* Help Popovers */}
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['scheduleMemory.help.basic']}
+        open={Boolean(helpAnchorEl['scheduleMemory.help.basic'])}
+        onClose={handleHelpClose('scheduleMemory.help.basic')}
+        fieldKey="scheduleMemory.help.basic"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['scheduleMemory.help.outputItem']}
+        open={Boolean(helpAnchorEl['scheduleMemory.help.outputItem'])}
+        onClose={handleHelpClose('scheduleMemory.help.outputItem')}
+        fieldKey="scheduleMemory.help.outputItem"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['scheduleMemory.help.interval']}
+        open={Boolean(helpAnchorEl['scheduleMemory.help.interval'])}
+        onClose={handleHelpClose('scheduleMemory.help.interval')}
+        fieldKey="scheduleMemory.help.interval"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['scheduleMemory.help.holidayCalendar']}
+        open={Boolean(helpAnchorEl['scheduleMemory.help.holidayCalendar'])}
+        onClose={handleHelpClose('scheduleMemory.help.holidayCalendar')}
+        fieldKey="scheduleMemory.help.holidayCalendar"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['scheduleMemory.help.defaultValue']}
+        open={Boolean(helpAnchorEl['scheduleMemory.help.defaultValue'])}
+        onClose={handleHelpClose('scheduleMemory.help.defaultValue')}
+        fieldKey="scheduleMemory.help.defaultValue"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['scheduleMemory.help.blocks']}
+        open={Boolean(helpAnchorEl['scheduleMemory.help.blocks'])}
+        onClose={handleHelpClose('scheduleMemory.help.blocks')}
+        fieldKey="scheduleMemory.help.blocks"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['scheduleMemory.help.override']}
+        open={Boolean(helpAnchorEl['scheduleMemory.help.override'])}
+        onClose={handleHelpClose('scheduleMemory.help.override')}
+        fieldKey="scheduleMemory.help.override"
+      />
+    </Dialog>
   );
 };
 
