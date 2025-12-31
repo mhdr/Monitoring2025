@@ -11313,9 +11313,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
         catch (Exception e)
         {
             _logger.LogError(e, e.Message);
+            return Ok(new GetScheduleMemoriesResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message,
+                ScheduleMemories = new List<ScheduleMemoryItemDto>()
+            });
         }
-
-        return BadRequest(ModelState);
     }
 
     /// <summary>
