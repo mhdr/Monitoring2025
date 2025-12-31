@@ -208,15 +208,15 @@ const ScheduleMemoryManagementPage: React.FC = () => {
     }
   }, [fetchScheduleMemories]);
 
-  const handleDialogClose = useCallback((shouldRefresh: boolean) => {
+  const handleDialogClose = useCallback(async (shouldRefresh: boolean) => {
+    if (shouldRefresh) {
+      await fetchScheduleMemories();
+    }
+    
     setAddEditDialogOpen(false);
     setDeleteDialogOpen(false);
     setSelectedScheduleMemory(null);
     setEditMode(false);
-
-    if (shouldRefresh) {
-      fetchScheduleMemories();
-    }
   }, [fetchScheduleMemories]);
 
   // Define columns for Syncfusion Grid
