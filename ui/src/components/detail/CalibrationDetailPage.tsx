@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useMonitoring } from '../../hooks/useMonitoring';
+import { useAuth } from '../../hooks/useAuth';
 import { editItem } from '../../services/monitoringApi';
 import { CardHeader } from '../shared/CardHeader';
 import { createLogger } from '../../utils/logger';
@@ -49,6 +50,10 @@ const CalibrationDetailPage: React.FC = () => {
   
   const { t, language } = useLanguage();
   const { state, syncItems } = useMonitoring();
+  const { user } = useAuth();
+  
+  // Check if user has Admin or Manager role
+  const hasAdminOrManagerRole = user?.roles?.includes('Admin') || user?.roles?.includes('Manager') || false;
   
   // Form state
   const [isCalibrationEnabled, setIsCalibrationEnabled] = useState<boolean>(false);
@@ -152,7 +157,8 @@ const CalibrationDetailPage: React.FC = () => {
       return;
     }
 
-    if (!currentItem.isEditable) {
+    // Check permission: Admin/Manager can edit, or the item must be editable
+    if (!hasAdminOrManagerRole && !currentItem.isEditable) {
       setError(t('calibrationPage.errors.notEditable'));
       return;
     }
@@ -220,7 +226,7 @@ const CalibrationDetailPage: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  }, [currentItem, itemId, isCalibrationEnabled, calibrationA, calibrationB, syncItems, t]);
+  }, [currentItem, itemId, isCalibrationEnabled, calibrationA, calibrationB, syncItems, t, hasAdminOrManagerRole]);
 
   // No itemId provided
   if (!itemId) {
@@ -277,7 +283,9 @@ const CalibrationDetailPage: React.FC = () => {
     );
   }
 
-  const isReadOnly = !currentItem.isEditable;
+  // Determine if the form should be read-only
+  // Admin and Manager roles can always edit, others need isEditable permission
+  const isReadOnly = !hasAdminOrManagerRole && !currentItem.isEditable;
   const unit = language === 'fa' ? (currentItem.unitFa || currentItem.unit || '') : (currentItem.unit || '');
 
   return (
