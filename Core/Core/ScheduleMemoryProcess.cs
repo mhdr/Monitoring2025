@@ -423,7 +423,7 @@ public class ScheduleMemoryProcess
             value = memory.ManualOverrideDigitalValue == true ? "1" : "0";
         }
 
-        await Points.WriteValueToController(memory.OutputItemId, value, epochTime);
+        await Points.WriteOrAddValue(memory.OutputItemId, value, null, memory.Duration);
         
         MyLog.Debug("Schedule override value written", new Dictionary<string, object?>
         {
@@ -452,7 +452,7 @@ public class ScheduleMemoryProcess
             value = holidayValue == true ? "1" : "0";
         }
 
-        await Points.WriteValueToController(memory.OutputItemId, value, epochTime);
+        await Points.WriteOrAddValue(memory.OutputItemId, value, null, memory.Duration);
         
         MyLog.Debug("Schedule holiday value written", new Dictionary<string, object?>
         {
@@ -478,7 +478,7 @@ public class ScheduleMemoryProcess
             value = block.DigitalOutputValue == true ? "1" : "0";
         }
 
-        await Points.WriteValueToController(memory.OutputItemId, value, epochTime);
+        await Points.WriteOrAddValue(memory.OutputItemId, value, null, memory.Duration);
         
         MyLog.Debug("Schedule block value written", new Dictionary<string, object?>
         {
@@ -505,7 +505,7 @@ public class ScheduleMemoryProcess
             value = memory.DefaultDigitalValue == true ? "1" : "0";
         }
 
-        await Points.WriteValueToController(memory.OutputItemId, value, epochTime);
+        await Points.WriteOrAddValue(memory.OutputItemId, value, null, memory.Duration);
         
         MyLog.Debug("Schedule default value written", new Dictionary<string, object?>
         {

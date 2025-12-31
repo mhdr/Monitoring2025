@@ -4152,6 +4152,8 @@
     "outputItem": "Output Item",
     "interval": "Evaluation Interval (s)",
     "intervalHelp": "How often to evaluate the schedule (in seconds)",
+    "duration": "Write Duration",
+    "durationHelp": "Duration parameter passed to WriteOrAddValue function (default: 10). Used for controller write operations.",
     "holidayCalendar": "Holiday Calendar",
     "isDisabled": "Disabled",
     "defaultAnalogValue": "Default Analog Value",
@@ -4211,6 +4213,7 @@
     "validation": {
       "outputItemRequired": "Output item is required",
       "intervalRequired": "Evaluation interval must be greater than 0",
+      "durationInvalid": "Duration must be a non-negative number",
       "durationRequired": "Override duration must be greater than 0 for time-based mode",
       "blockTimesRequired": "Start and end times are required for all blocks",
       "startBeforeEnd": "Start time must be before end time",
@@ -4309,6 +4312,23 @@
             "type": "tip",
             "title": "Best Practices",
             "content": "For HVAC setpoints, 30-60 seconds is usually sufficient. For critical control applications requiring precise timing, use 5-10 seconds. Avoid intervals below 5 seconds unless absolutely necessary."
+          }
+        ]
+      },
+      "duration": {
+        "title": "Write Duration",
+        "sections": [
+          {
+            "title": "What is Write Duration?",
+            "content": "The duration parameter passed to the WriteOrAddValue function when writing scheduled values to the output item. This controls how long the written value persists on the controller."
+          },
+          {
+            "title": "Default Value",
+            "content": "The default duration is 10 (units depend on controller configuration). For most applications, this default works well."
+          },
+          {
+            "type": "tip",
+            "content": "Only adjust this value if you understand your controller's duration requirements. Higher values may be needed for slower communication protocols."
           }
         ]
       },
@@ -4424,6 +4444,8 @@
     "groupOperator": "Group Operator",
     "interval": "Processing Interval",
     "intervalHelp": "How often the comparison is evaluated (in seconds)",
+    "duration": "Write Duration",
+    "durationHelp": "Duration parameter passed to WriteOrAddValue function (default: 10). Used for controller write operations.",
     "invertOutput": "Invert Output",
     "isDisabled": "Disabled",
     "sections": {
@@ -4468,6 +4490,7 @@
     "validation": {
       "outputItemRequired": "Output item is required",
       "intervalPositive": "Interval must be greater than 0",
+      "durationInvalid": "Duration must be a non-negative number",
       "atLeastOneGroup": "At least one comparison group is required",
       "inputItemsRequired": "At least one input item is required",
       "requiredVotesMinimum": "Required votes must be at least 1",
@@ -4580,6 +4603,23 @@
           {
             "type": "warning",
             "content": "Very short intervals (1 second) with many inputs may increase system load. Balance responsiveness with performance."
+          }
+        ]
+      },
+      "duration": {
+        "title": "Write Duration",
+        "sections": [
+          {
+            "title": "What is Write Duration?",
+            "content": "The duration parameter passed to the WriteOrAddValue function when writing comparison results to the output item. This controls how long the written value persists on the controller."
+          },
+          {
+            "title": "Default Value",
+            "content": "The default duration is 10 (units depend on controller configuration). For most applications, this default works well."
+          },
+          {
+            "type": "tip",
+            "content": "Only adjust this value if you understand your controller's duration requirements. Higher values may be needed for slower communication protocols."
           }
         ]
       },
@@ -4836,6 +4876,8 @@
     "outputs": "Configured Outputs",
     "interval": "Sampling Interval",
     "intervalHelp": "How often a sample is collected from the input (in seconds)",
+    "duration": "Write Duration",
+    "durationHelp": "Duration parameter passed to WriteOrAddValue function (default: 10). Used for controller write operations.",
     "isDisabled": "Disabled",
     "selectOutputItem": "Select output item...",
     "sections": {
@@ -4873,6 +4915,7 @@
     "validation": {
       "inputItemRequired": "Input item is required",
       "intervalPositive": "Interval must be greater than 0",
+      "durationInvalid": "Duration must be a non-negative number",
       "windowSizeRange": "Window size must be between 10 and 10000",
       "minSamplesMinimum": "Minimum samples must be at least 2",
       "minSamplesExceedsWindow": "Minimum samples cannot exceed window size",
@@ -4961,6 +5004,22 @@
               "60 second interval × 60 samples = 1 hour of data",
               "300 second interval × 288 samples = 24 hours of data"
             ]
+          }
+        ]
+      },
+      "duration": {
+        "title": "Write Duration - Controller Parameter",
+        "sections": [
+          {
+            "content": "The duration parameter is passed to the WriteOrAddValue function when writing calculated statistics to output items. This controls how long the write persists in controller write operations."
+          },
+          {
+            "title": "Default Value",
+            "content": "Default is 10 seconds, which is suitable for most scenarios. Increase for slower controller response times or decrease for high-frequency updates."
+          },
+          {
+            "type": "tip",
+            "content": "This parameter only affects controller writes (Modbus, Sharp7). For internal-only items, this value is passed but may not have an effect."
           }
         ]
       },
@@ -5863,6 +5922,8 @@
     "selectedIndexOutputItemHelp": "Optional analog item to write the selected input index (1-16)",
     "interval": "Interval",
     "intervalHelp": "Evaluation interval in seconds (1 to 86400)",
+    "duration": "Write Duration",
+    "durationHelp": "Duration parameter passed to WriteOrAddValue function (default: 10). Used for controller write operations.",
     "disabled": "Disabled",
     "value": "Value",
     "lastSelected": "Last Selected",
@@ -5895,6 +5956,9 @@
       "indexOutputNotSameAsOutput": "Index output cannot be the same as the main output",
       "intervalMin": "Interval must be at least 1 second",
       "intervalMax": "Interval cannot exceed 86400 seconds (24 hours)"
+    },
+    "validation": {
+      "durationInvalid": "Duration must be a non-negative number"
     },
     "help": {
       "overview": {
@@ -6003,6 +6067,22 @@
           {
             "type": "tip",
             "content": "The index is 1-based. Value 1 means the first input is selected, value 2 means the second input, etc."
+          }
+        ]
+      },
+      "duration": {
+        "title": "Write Duration - Controller Parameter",
+        "sections": [
+          {
+            "content": "The duration parameter is passed to the WriteOrAddValue function when writing the selected value to output items. This controls how long the write persists in controller write operations."
+          },
+          {
+            "title": "Default Value",
+            "content": "Default is 10 seconds, which is suitable for most scenarios. Increase for slower controller response times."
+          },
+          {
+            "type": "tip",
+            "content": "This parameter only affects controller writes (Modbus, Sharp7). For internal-only items, this value is passed but may not have an effect."
           }
         ]
       }

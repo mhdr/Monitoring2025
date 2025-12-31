@@ -164,6 +164,13 @@ public class MinMaxSelectorMemories
                 return (false, null, "Invalid failover mode");
             }
 
+            // Validate duration
+            if (memory.Duration < 0)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Duration must be greater than or equal to 0");
+            }
+
             context.MinMaxSelectorMemories.Add(memory);
             await context.SaveChangesAsync();
             var id = memory.Id;
@@ -314,6 +321,13 @@ public class MinMaxSelectorMemories
             {
                 await context.DisposeAsync();
                 return (false, "Invalid failover mode");
+            }
+
+            // Validate duration
+            if (memory.Duration < 0)
+            {
+                await context.DisposeAsync();
+                return (false, "Duration must be greater than or equal to 0");
             }
 
             // Reset last selected values if configuration changed significantly

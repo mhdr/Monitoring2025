@@ -403,72 +403,65 @@ public class StatisticalMemoryProcess
         // Write core outputs (only if configured)
         if (memory.OutputMinItemId.HasValue)
         {
-            await Points.SetRawItem(new RawItemRedis
-            {
-                ItemId = memory.OutputMinItemId.Value,
-                Value = stats.Min.ToString("F4"),
-                Time = epochTime
-            });
+            await Points.WriteOrAddValue(
+                memory.OutputMinItemId.Value,
+                stats.Min.ToString("F4"),
+                null,
+                memory.Duration);
         }
 
         if (memory.OutputMaxItemId.HasValue)
         {
-            await Points.SetRawItem(new RawItemRedis
-            {
-                ItemId = memory.OutputMaxItemId.Value,
-                Value = stats.Max.ToString("F4"),
-                Time = epochTime
-            });
+            await Points.WriteOrAddValue(
+                memory.OutputMaxItemId.Value,
+                stats.Max.ToString("F4"),
+                null,
+                memory.Duration);
         }
 
         if (memory.OutputAvgItemId.HasValue)
         {
-            await Points.SetRawItem(new RawItemRedis
-            {
-                ItemId = memory.OutputAvgItemId.Value,
-                Value = stats.Average.ToString("F4"),
-                Time = epochTime
-            });
+            await Points.WriteOrAddValue(
+                memory.OutputAvgItemId.Value,
+                stats.Average.ToString("F4"),
+                null,
+                memory.Duration);
         }
 
         if (memory.OutputStdDevItemId.HasValue)
         {
-            await Points.SetRawItem(new RawItemRedis
-            {
-                ItemId = memory.OutputStdDevItemId.Value,
-                Value = stats.StdDev.ToString("F4"),
-                Time = epochTime
-            });
+            await Points.WriteOrAddValue(
+                memory.OutputStdDevItemId.Value,
+                stats.StdDev.ToString("F4"),
+                null,
+                memory.Duration);
         }
 
         if (memory.OutputRangeItemId.HasValue)
         {
-            await Points.SetRawItem(new RawItemRedis
-            {
-                ItemId = memory.OutputRangeItemId.Value,
-                Value = stats.Range.ToString("F4"),
-                Time = epochTime
-            });
+            await Points.WriteOrAddValue(
+                memory.OutputRangeItemId.Value,
+                stats.Range.ToString("F4"),
+                null,
+                memory.Duration);
         }
 
         if (memory.OutputMedianItemId.HasValue)
         {
-            await Points.SetRawItem(new RawItemRedis
-            {
-                ItemId = memory.OutputMedianItemId.Value,
-                Value = stats.Median.ToString("F4"),
-                Time = epochTime
-            });
+            await Points.WriteOrAddValue(
+                memory.OutputMedianItemId.Value,
+                stats.Median.ToString("F4"),
+                null,
+                memory.Duration);
         }
 
         if (memory.OutputCVItemId.HasValue)
         {
-            await Points.SetRawItem(new RawItemRedis
-            {
-                ItemId = memory.OutputCVItemId.Value,
-                Value = stats.CoefficientOfVariation.ToString("F4"),
-                Time = epochTime
-            });
+            await Points.WriteOrAddValue(
+                memory.OutputCVItemId.Value,
+                stats.CoefficientOfVariation.ToString("F4"),
+                null,
+                memory.Duration);
         }
 
         // Write percentile outputs
@@ -480,12 +473,11 @@ public class StatisticalMemoryProcess
             foreach (var p in percentiles)
             {
                 var percentileValue = CalculatePercentile(sorted, p.Percentile);
-                await Points.SetRawItem(new RawItemRedis
-                {
-                    ItemId = p.OutputItemId,
-                    Value = percentileValue.ToString("F4"),
-                    Time = epochTime
-                });
+                await Points.WriteOrAddValue(
+                    p.OutputItemId,
+                    percentileValue.ToString("F4"),
+                    null,
+                    memory.Duration);
             }
         }
     }

@@ -60,6 +60,7 @@ interface FormData {
   name: string;
   inputItemId: string;
   interval: number;
+  duration: number;
   isDisabled: boolean;
   // Window settings
   windowSize: number;
@@ -88,6 +89,7 @@ interface FormErrors {
   name?: string;
   inputItemId?: string;
   interval?: string;
+  duration?: string;
   windowSize?: string;
   minSamples?: string;
   outputs?: string;
@@ -174,6 +176,7 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
     name: '',
     inputItemId: '',
     interval: 10,
+    duration: 10,
     isDisabled: false,
     windowSize: 100,
     windowType: StatisticalWindowTypeEnum.Rolling,
@@ -239,6 +242,7 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
           name: statisticalMemory.name || '',
           inputItemId: statisticalMemory.inputItemId,
           interval: statisticalMemory.interval,
+          duration: statisticalMemory.duration ?? 10,
           isDisabled: statisticalMemory.isDisabled,
           windowSize: statisticalMemory.windowSize,
           windowType: statisticalMemory.windowType,
@@ -269,6 +273,7 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
           name: '',
           inputItemId: '',
           interval: 10,
+          duration: 10,
           isDisabled: false,
           windowSize: 100,
           windowType: StatisticalWindowTypeEnum.Rolling,
@@ -374,6 +379,11 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
       errors.interval = t('statisticalMemory.validation.intervalPositive');
     }
 
+    // Duration must be non-negative
+    if (formData.duration < 0) {
+      errors.duration = t('statisticalMemory.validation.durationInvalid');
+    }
+
     // Window size must be 10-10000
     if (formData.windowSize < 10 || formData.windowSize > 10000) {
       errors.windowSize = t('statisticalMemory.validation.windowSizeRange');
@@ -470,6 +480,7 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
         name: formData.name || null,
         inputItemId: formData.inputItemId,
         interval: formData.interval,
+        duration: formData.duration,
         isDisabled: formData.isDisabled,
         windowSize: formData.windowSize,
         windowType: formData.windowType,
@@ -851,6 +862,33 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
                     onClick={handleHelpOpen('statisticalMemory.help.interval')}
                     sx={{ p: 0.25 }}
                     data-id-ref="statistical-memory-interval-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
+
+                {/* Duration */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <TextField
+                    label={t('statisticalMemory.duration')}
+                    type="number"
+                    value={formData.duration}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, duration: Math.max(0, parseInt(e.target.value) || 0) }))}
+                    fullWidth
+                    size="small"
+                    error={!!formErrors.duration}
+                    helperText={formErrors.duration || t('statisticalMemory.durationHelp')}
+                    InputProps={{
+                      inputProps: { min: 0 },
+                      endAdornment: <Typography variant="caption" color="text.secondary">s</Typography>,
+                    }}
+                    data-id-ref="statistical-memory-duration-input"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('statisticalMemory.help.duration')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="statistical-memory-duration-help-btn"
                   >
                     <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                   </IconButton>

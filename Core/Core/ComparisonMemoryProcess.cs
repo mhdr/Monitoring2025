@@ -272,12 +272,11 @@ public class ComparisonMemoryProcess
                     ["FinalResult"] = finalResult
                 });
 
-                await Points.SetRawItem(new RawItemRedis
-                {
-                    ItemId = Guid.Parse(outputIdStr),
-                    Value = newValue,
-                    Time = DateTimeOffset.Now.ToUnixTimeSeconds()
-                });
+                await Points.WriteOrAddValue(
+                    memory.OutputItemId,
+                    newValue,
+                    null,
+                    memory.Duration);
             }
         }
         else

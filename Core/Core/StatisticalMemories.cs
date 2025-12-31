@@ -217,6 +217,13 @@ public class StatisticalMemories
                 return (false, null, $"MinSamples ({statisticalMemory.MinSamples}) cannot exceed WindowSize ({statisticalMemory.WindowSize})");
             }
 
+            // Validate duration
+            if (statisticalMemory.Duration < 0)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Duration must be greater than or equal to 0");
+            }
+
             context.StatisticalMemories.Add(statisticalMemory);
             await context.SaveChangesAsync();
             var id = statisticalMemory.Id;
@@ -420,6 +427,13 @@ public class StatisticalMemories
             {
                 await context.DisposeAsync();
                 return (false, $"MinSamples ({statisticalMemory.MinSamples}) cannot exceed WindowSize ({statisticalMemory.WindowSize})");
+            }
+
+            // Validate duration
+            if (statisticalMemory.Duration < 0)
+            {
+                await context.DisposeAsync();
+                return (false, "Duration must be greater than or equal to 0");
             }
 
             // Clear samples if window type changed (tumbling mode needs reset)

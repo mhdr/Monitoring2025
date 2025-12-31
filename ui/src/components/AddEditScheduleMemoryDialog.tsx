@@ -72,6 +72,7 @@ interface FormData {
   name: string;
   outputItemId: string;
   interval: number;
+  duration: number;
   isDisabled: boolean;
   holidayCalendarId: string;
   defaultAnalogValue: number | null;
@@ -85,6 +86,7 @@ interface FormErrors {
   name?: string;
   outputItemId?: string;
   interval?: string;
+  duration?: string;
   defaultValue?: string;
   overrideDurationMinutes?: string;
   scheduleBlocks?: string;
@@ -175,6 +177,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
     name: '',
     outputItemId: '',
     interval: 10,
+    duration: 10,
     isDisabled: false,
     holidayCalendarId: '',
     defaultAnalogValue: null,
@@ -219,6 +222,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           name: scheduleMemory.name || '',
           outputItemId: scheduleMemory.outputItemId,
           interval: scheduleMemory.interval,
+          duration: scheduleMemory.duration ?? 10,
           isDisabled: scheduleMemory.isDisabled,
           holidayCalendarId: scheduleMemory.holidayCalendarId || '',
           defaultAnalogValue: scheduleMemory.defaultAnalogValue ?? null,
@@ -243,6 +247,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           name: '',
           outputItemId: '',
           interval: 10,
+          duration: 10,
           isDisabled: false,
           holidayCalendarId: '',
           defaultAnalogValue: null,
@@ -305,6 +310,10 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
       errors.interval = t('scheduleMemory.validation.intervalRequired');
     }
 
+    if (formData.duration < 0) {
+      errors.duration = t('scheduleMemory.validation.durationInvalid');
+    }
+
     if (formData.overrideExpirationMode === OverrideExpirationMode.TimeBased && formData.overrideDurationMinutes <= 0) {
       errors.overrideDurationMinutes = t('scheduleMemory.validation.durationRequired');
     }
@@ -357,6 +366,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           name: formData.name || null,
           outputItemId: formData.outputItemId,
           interval: formData.interval,
+          duration: formData.duration,
           isDisabled: formData.isDisabled,
           holidayCalendarId: formData.holidayCalendarId || null,
           defaultAnalogValue: isAnalogOutput ? formData.defaultAnalogValue : null,
@@ -377,6 +387,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           name: formData.name || null,
           outputItemId: formData.outputItemId,
           interval: formData.interval,
+          duration: formData.duration,
           isDisabled: formData.isDisabled,
           holidayCalendarId: formData.holidayCalendarId || null,
           defaultAnalogValue: isAnalogOutput ? formData.defaultAnalogValue : null,
@@ -527,8 +538,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                       </IconButton>
                     </Box>
 
-                    {/* Interval and Holiday Calendar */}
-                    <Box sx={{ display: 'flex', gap: 2 }}>
+                    {/* Interval, Duration and Holiday Calendar */}
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
                         <TextField
                           label={t('scheduleMemory.interval')}
@@ -544,6 +555,24 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                           data-id-ref="schedule-memory-interval-input"
                         />
                         <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.interval')} sx={{ mt: 1 }}>
+                          <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                        </IconButton>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                        <TextField
+                          label={t('scheduleMemory.duration')}
+                          type="number"
+                          value={formData.duration}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, duration: Math.max(0, Number(e.target.value) || 0) }))}
+                          disabled={loading}
+                          error={!!formErrors.duration}
+                          helperText={formErrors.duration || t('scheduleMemory.durationHelp')}
+                          inputProps={{ min: 0 }}
+                          sx={{ width: 150 }}
+                          data-id-ref="schedule-memory-duration-input"
+                        />
+                        <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.duration')} sx={{ mt: 1 }}>
                           <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                         </IconButton>
                       </Box>

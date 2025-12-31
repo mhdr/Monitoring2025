@@ -31,6 +31,11 @@ public class StatisticalMemoryItemDto
     public Guid InputItemId { get; set; }
     public int Interval { get; set; }
     public bool IsDisabled { get; set; }
+
+    /// <summary>
+    /// Write duration in seconds for controller writes. Default: 10
+    /// </summary>
+    public long Duration { get; set; }
     
     // Window configuration
     public int WindowSize { get; set; }

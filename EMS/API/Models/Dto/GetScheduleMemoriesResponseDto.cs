@@ -31,6 +31,12 @@ public class ScheduleMemoryItemDto
     public Guid OutputItemId { get; set; }
     public int Interval { get; set; }
     public bool IsDisabled { get; set; }
+
+    /// <summary>
+    /// Write duration in seconds for controller writes. Default: 10
+    /// </summary>
+    public long Duration { get; set; }
+
     public Guid? HolidayCalendarId { get; set; }
     public string? HolidayCalendarName { get; set; }
     public double? DefaultAnalogValue { get; set; }

@@ -78,6 +78,16 @@ public class StatisticalMemory
     [Column("is_disabled")]
     public bool IsDisabled { get; set; } = false;
 
+    /// <summary>
+    /// Write duration in seconds for controller writes.
+    /// Default: 10 seconds. Must be >= 0.
+    /// 0 means instant write-and-release for supported interfaces.
+    /// </summary>
+    [Column("duration")]
+    [DefaultValue(10)]
+    [Required]
+    public long Duration { get; set; } = 10;
+
     #region Window Configuration
 
     /// <summary>

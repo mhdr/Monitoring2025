@@ -31,6 +31,12 @@ public class AddStatisticalMemoryRequestDto
     /// </summary>
     public bool IsDisabled { get; set; } = false;
 
+    /// <summary>
+    /// Write duration in seconds for controller writes. Default: 10. Must be >= 0.
+    /// </summary>
+    [Range(0, long.MaxValue, ErrorMessage = "Duration must be greater than or equal to 0")]
+    public long Duration { get; set; } = 10;
+
     #region Window Configuration
 
     /// <summary>

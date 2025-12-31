@@ -280,22 +280,20 @@ public class MinMaxSelectorMemoryProcess
         // just select based on mode. The failover is really for when inputs go bad.
         
         // Write output value
-        await Points.SetRawItem(new RawItemRedis
-        {
-            ItemId = memory.OutputItemId,
-            Value = selectedInput.SelectedValue.ToString("F4"),
-            Time = epochTime
-        });
+        await Points.WriteOrAddValue(
+            memory.OutputItemId,
+            selectedInput.SelectedValue.ToString("F4"),
+            null,
+            memory.Duration);
 
         // Write selected index if configured
         if (memory.SelectedIndexOutputItemId.HasValue)
         {
-            await Points.SetRawItem(new RawItemRedis
-            {
-                ItemId = memory.SelectedIndexOutputItemId.Value,
-                Value = selectedInput.SelectedIndex.ToString(),
-                Time = epochTime
-            });
+            await Points.WriteOrAddValue(
+                memory.SelectedIndexOutputItemId.Value,
+                selectedInput.SelectedIndex.ToString(),
+                null,
+                memory.Duration);
         }
 
         // Update runtime state
@@ -335,21 +333,19 @@ public class MinMaxSelectorMemoryProcess
                 // Output the last known good value if available
                 if (memory.LastSelectedValue.HasValue)
                 {
-                    await Points.SetRawItem(new RawItemRedis
-                    {
-                        ItemId = memory.OutputItemId,
-                        Value = memory.LastSelectedValue.Value.ToString("F4"),
-                        Time = epochTime
-                    });
+                    await Points.WriteOrAddValue(
+                        memory.OutputItemId,
+                        memory.LastSelectedValue.Value.ToString("F4"),
+                        null,
+                        memory.Duration);
 
                     if (memory.SelectedIndexOutputItemId.HasValue && memory.LastSelectedIndex.HasValue)
                     {
-                        await Points.SetRawItem(new RawItemRedis
-                        {
-                            ItemId = memory.SelectedIndexOutputItemId.Value,
-                            Value = memory.LastSelectedIndex.Value.ToString(),
-                            Time = epochTime
-                        });
+                        await Points.WriteOrAddValue(
+                            memory.SelectedIndexOutputItemId.Value,
+                            memory.LastSelectedIndex.Value.ToString(),
+                            null,
+                            memory.Duration);
                     }
 
                     MyLog.Debug($"MinMaxSelectorMemory {memory.Id}: No valid inputs, HoldLastGood - using last value {memory.LastSelectedValue.Value:F4} from input {memory.LastSelectedIndex}");

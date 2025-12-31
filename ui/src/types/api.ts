@@ -3412,6 +3412,7 @@ export interface StatisticalMemory {
   inputItemId: string; // UUID - Input item to collect samples from
   interval: number; // int - Execution interval in seconds
   isDisabled: boolean; // bool - Whether statistical memory is disabled
+  duration: number; // long - Write duration in seconds for controller writes. Default: 10
   
   // Window configuration
   windowSize: number; // int - Number of samples (10-10000)
@@ -3460,6 +3461,7 @@ export interface AddStatisticalMemoryRequestDto {
   inputItemId: string; // UUID
   interval: number; // int - must be > 0
   isDisabled?: boolean;
+  duration?: number; // long - Write duration in seconds. Default: 10
   
   // Window configuration
   windowSize: number; // int - 10-10000
@@ -3497,6 +3499,7 @@ export interface EditStatisticalMemoryRequestDto {
   inputItemId: string; // UUID
   interval: number; // int - must be > 0
   isDisabled?: boolean;
+  duration?: number; // long - Write duration in seconds. Default: 10
   
   // Window configuration
   windowSize: number; // int - 10-10000
@@ -3977,6 +3980,114 @@ export interface DeleteDeadbandMemoryResponseDto {
 }
 
 // ============================================================================
+// COMPARISON MEMORY TYPES
+// ============================================================================
+
+/**
+ * Type for Comparison operations
+ */
+export type ComparisonType = 1 | 2 | 3 | 4 | 5; // 1=Equal, 2=NotEqual, 3=Higher, 4=Lower, 5=Between
+
+/**
+ * Type for Group operators
+ */
+export type GroupOperatorType = 1 | 2 | 3; // 1=AND, 2=OR, 3=XOR
+
+/**
+ * Comparison Memory for evaluating complex logical conditions across multiple inputs.
+ * Supports grouped comparisons with AND/OR/XOR operators and threshold-based evaluation.
+ */
+export interface ComparisonMemory {
+  id: string; // UUID
+  name?: string | null;
+  comparisonGroups: string; // JSON array of comparison groups
+  groupOperator: number; // 1=AND, 2=OR, 3=XOR - Operator to combine group results
+  outputItemId: string; // UUID - Output item (must be DigitalOutput)
+  interval: number; // int - Execution interval in seconds
+  isDisabled: boolean;
+  invertOutput: boolean; // Whether to invert the final output
+  duration: number; // long - Write duration in seconds for controller writes. Default: 10
+}
+
+/**
+ * Request DTO for retrieving comparison memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetComparisonMemoriesRequestDto {
+  // Empty - no filtering parameters needed
+}
+
+/**
+ * Response DTO containing list of comparison memory configurations
+ */
+export interface GetComparisonMemoriesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  comparisonMemories?: ComparisonMemory[] | null;
+}
+
+/**
+ * Request DTO for creating a new comparison memory configuration
+ */
+export interface AddComparisonMemoryRequestDto {
+  name?: string | null;
+  comparisonGroups: string; // JSON array of comparison groups
+  groupOperator: number; // 1=AND, 2=OR, 3=XOR
+  outputItemId: string; // UUID
+  interval: number; // int - must be > 0
+  isDisabled?: boolean;
+  invertOutput?: boolean;
+  duration?: number; // long - Write duration in seconds. Default: 10
+}
+
+/**
+ * Response DTO for adding a comparison memory
+ */
+export interface AddComparisonMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of created memory
+}
+
+/**
+ * Request DTO for editing an existing comparison memory configuration
+ */
+export interface EditComparisonMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  comparisonGroups: string; // JSON array of comparison groups
+  groupOperator: number; // 1=AND, 2=OR, 3=XOR
+  outputItemId: string; // UUID
+  interval: number; // int - must be > 0
+  isDisabled?: boolean;
+  invertOutput?: boolean;
+  duration?: number; // long - Write duration in seconds. Default: 10
+}
+
+/**
+ * Response DTO for editing a comparison memory
+ */
+export interface EditComparisonMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a comparison memory
+ */
+export interface DeleteComparisonMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a comparison memory
+ */
+export interface DeleteComparisonMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+// ============================================================================
 // MIN/MAX SELECTOR MEMORY TYPES
 // ============================================================================
 
@@ -4015,6 +4126,7 @@ export interface MinMaxSelectorMemory {
   failoverMode: MinMaxFailoverMode; // 1 = IgnoreBad, 2 = FallbackToOpposite, 3 = HoldLastGood
   interval: number; // int - Execution interval in seconds
   isDisabled: boolean;
+  duration: number; // long - Write duration in seconds for controller writes. Default: 10
   lastSelectedIndex?: number | null; // int - Last selected input index (1-based)
   lastSelectedValue?: number | null; // double - Last selected value
 }
@@ -4048,6 +4160,7 @@ export interface AddMinMaxSelectorMemoryRequestDto {
   failoverMode: MinMaxFailoverMode;
   interval: number; // int - must be > 0
   isDisabled?: boolean;
+  duration?: number; // long - Write duration in seconds. Default: 10
 }
 
 /**
@@ -4072,6 +4185,7 @@ export interface EditMinMaxSelectorMemoryRequestDto {
   failoverMode: MinMaxFailoverMode;
   interval: number; // int - must be > 0
   isDisabled?: boolean;
+  duration?: number; // long - Write duration in seconds. Default: 10
 }
 
 /**
@@ -4192,6 +4306,7 @@ export interface ScheduleMemory {
   outputItemId: string;
   interval: number;
   isDisabled: boolean;
+  duration: number; // long - Write duration in seconds for controller writes. Default: 10
   holidayCalendarId?: string | null;
   holidayCalendarName?: string | null;
   defaultAnalogValue?: number | null;
@@ -4270,6 +4385,7 @@ export interface AddScheduleMemoryRequestDto {
   outputItemId: string;
   interval: number;
   isDisabled?: boolean;
+  duration?: number; // long - Write duration in seconds. Default: 10
   holidayCalendarId?: string | null;
   defaultAnalogValue?: number | null;
   defaultDigitalValue?: boolean | null;
@@ -4296,6 +4412,7 @@ export interface EditScheduleMemoryRequestDto {
   outputItemId: string;
   interval: number;
   isDisabled?: boolean;
+  duration?: number; // long - Write duration in seconds. Default: 10
   holidayCalendarId?: string | null;
   defaultAnalogValue?: number | null;
   defaultDigitalValue?: boolean | null;

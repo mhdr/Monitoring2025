@@ -70,6 +70,13 @@ public class ScheduleMemories
                 return (false, null, "Interval must be greater than 0");
             }
 
+            // Validate duration
+            if (scheduleMemory.Duration < 0)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Duration must be greater than or equal to 0");
+            }
+
             // Validate HolidayCalendar exists if referenced
             if (scheduleMemory.HolidayCalendarId.HasValue)
             {
@@ -172,6 +179,13 @@ public class ScheduleMemories
                 return (false, "Interval must be greater than 0");
             }
 
+            // Validate duration
+            if (scheduleMemory.Duration < 0)
+            {
+                await context.DisposeAsync();
+                return (false, "Duration must be greater than or equal to 0");
+            }
+
             // Validate HolidayCalendar exists if referenced
             if (scheduleMemory.HolidayCalendarId.HasValue)
             {
@@ -226,6 +240,7 @@ public class ScheduleMemories
             existingMemory.OutputItemId = scheduleMemory.OutputItemId;
             existingMemory.Interval = scheduleMemory.Interval;
             existingMemory.IsDisabled = scheduleMemory.IsDisabled;
+            existingMemory.Duration = scheduleMemory.Duration;
             existingMemory.HolidayCalendarId = scheduleMemory.HolidayCalendarId;
             existingMemory.DefaultAnalogValue = scheduleMemory.DefaultAnalogValue;
             existingMemory.DefaultDigitalValue = scheduleMemory.DefaultDigitalValue;

@@ -69,6 +69,7 @@ interface FormData {
   groupOperator: number;
   outputItemId: string;
   interval: number;
+  duration: number;
   isDisabled: boolean;
   invertOutput: boolean;
 }
@@ -77,6 +78,7 @@ interface FormErrors {
   name?: string;
   outputItemId?: string;
   interval?: string;
+  duration?: string;
   comparisonGroups?: string;
   groups?: { [key: number]: { [field: string]: string } };
 }
@@ -155,6 +157,7 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
     groupOperator: GroupOperator.And,
     outputItemId: '',
     interval: 1,
+    duration: 10,
     isDisabled: false,
     invertOutput: false,
   });
@@ -212,6 +215,7 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
           groupOperator: comparisonMemory.groupOperator || GroupOperator.And,
           outputItemId: comparisonMemory.outputItemId,
           interval: comparisonMemory.interval,
+          duration: comparisonMemory.duration ?? 10,
           isDisabled: comparisonMemory.isDisabled,
           invertOutput: comparisonMemory.invertOutput,
         });
@@ -223,6 +227,7 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
           groupOperator: GroupOperator.And,
           outputItemId: '',
           interval: 1,
+          duration: 10,
           isDisabled: false,
           invertOutput: false,
         });
@@ -299,6 +304,10 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
 
     if (formData.interval <= 0) {
       errors.interval = t('comparisonMemory.validation.intervalPositive');
+    }
+
+    if (formData.duration < 0) {
+      errors.duration = t('comparisonMemory.validation.durationInvalid');
     }
 
     if (formData.comparisonGroups.length === 0) {
@@ -400,6 +409,7 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
         groupOperator: formData.groupOperator as typeof GroupOperator[keyof typeof GroupOperator],
         outputItemId: formData.outputItemId,
         interval: formData.interval,
+        duration: formData.duration,
         isDisabled: formData.isDisabled,
         invertOutput: formData.invertOutput,
       };
@@ -938,6 +948,29 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
                     onClick={handleHelpOpen('comparisonMemory.help.interval')}
                     sx={{ p: 0.25 }}
                     data-id-ref="comparison-memory-interval-help-btn"
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                  </IconButton>
+                </Box>
+
+                {/* Duration */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <TextField
+                    label={t('comparisonMemory.duration')}
+                    type="number"
+                    value={formData.duration}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, duration: Math.max(0, parseInt(e.target.value) || 0) }))}
+                    fullWidth
+                    error={!!formErrors.duration}
+                    helperText={formErrors.duration || t('comparisonMemory.durationHelp')}
+                    InputProps={{ inputProps: { min: 0 } }}
+                    data-id-ref="comparison-memory-duration-input"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('comparisonMemory.help.duration')}
+                    sx={{ p: 0.25 }}
+                    data-id-ref="comparison-memory-duration-help-btn"
                   >
                     <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                   </IconButton>

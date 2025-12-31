@@ -202,6 +202,13 @@ public class ComparisonMemories
                 return (false, null, "Interval must be greater than 0");
             }
 
+            // Validate duration
+            if (comparisonMemory.Duration < 0)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Duration must be greater than or equal to 0");
+            }
+
             context.ComparisonMemories.Add(comparisonMemory);
             await context.SaveChangesAsync();
             var id = comparisonMemory.Id;
@@ -379,6 +386,13 @@ public class ComparisonMemories
             {
                 await context.DisposeAsync();
                 return (false, "Interval must be greater than 0");
+            }
+
+            // Validate duration
+            if (comparisonMemory.Duration < 0)
+            {
+                await context.DisposeAsync();
+                return (false, "Duration must be greater than or equal to 0");
             }
 
             // Update entity

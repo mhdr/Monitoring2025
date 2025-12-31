@@ -80,4 +80,9 @@ public class MinMaxSelectorMemoryItemDto
     /// Last selected value, null if not yet selected
     /// </summary>
     public double? LastSelectedValue { get; set; }
+
+    /// <summary>
+    /// Write duration in seconds for controller writes. Default: 10
+    /// </summary>
+    public long Duration { get; set; }
 }

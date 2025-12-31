@@ -11287,6 +11287,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     OutputItemId = m.OutputItemId,
                     Interval = m.Interval,
                     IsDisabled = m.IsDisabled,
+                    Duration = m.Duration,
                     HolidayCalendarId = m.HolidayCalendarId,
                     HolidayCalendarName = m.HolidayCalendar?.Name,
                     DefaultAnalogValue = m.DefaultAnalogValue,
@@ -11376,6 +11377,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 OutputItemId = request.OutputItemId,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
+                Duration = request.Duration,
                 HolidayCalendarId = request.HolidayCalendarId,
                 DefaultAnalogValue = request.DefaultAnalogValue,
                 DefaultDigitalValue = request.DefaultDigitalValue,
@@ -11438,6 +11440,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 OutputItemId = request.OutputItemId,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
+                Duration = request.Duration,
                 HolidayCalendarId = request.HolidayCalendarId,
                 DefaultAnalogValue = request.DefaultAnalogValue,
                 DefaultDigitalValue = request.DefaultDigitalValue,
@@ -11814,7 +11817,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         OutputItemId = cm.OutputItemId,
                         Interval = cm.Interval,
                         IsDisabled = cm.IsDisabled,
-                        InvertOutput = cm.InvertOutput
+                        InvertOutput = cm.InvertOutput,
+                        Duration = cm.Duration
                     });
                 }
             }
@@ -11888,7 +11892,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 OutputItemId = request.OutputItemId,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
-                InvertOutput = request.InvertOutput
+                InvertOutput = request.InvertOutput,
+                Duration = request.Duration
             };
 
             var (success, id, errorMessage) = await Core.ComparisonMemories.AddComparisonMemory(comparisonMemory);
@@ -11945,7 +11950,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 OutputItemId = request.OutputItemId,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
-                InvertOutput = request.InvertOutput
+                InvertOutput = request.InvertOutput,
+                Duration = request.Duration
             };
 
             var (success, errorMessage) = await Core.ComparisonMemories.EditComparisonMemory(comparisonMemory);
@@ -12063,6 +12069,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         InputItemId = memory.InputItemId,
                         Interval = memory.Interval,
                         IsDisabled = memory.IsDisabled,
+                        Duration = memory.Duration,
                         WindowSize = memory.WindowSize,
                         WindowType = (int)memory.WindowType,
                         MinSamples = memory.MinSamples,
@@ -12151,6 +12158,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 InputItemId = request.InputItemId,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
+                Duration = request.Duration,
                 WindowSize = request.WindowSize,
                 WindowType = (Core.Models.StatisticalWindowType)request.WindowType,
                 MinSamples = request.MinSamples,
@@ -12230,6 +12238,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 InputItemId = request.InputItemId,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
+                Duration = request.Duration,
                 WindowSize = request.WindowSize,
                 WindowType = (Core.Models.StatisticalWindowType)request.WindowType,
                 MinSamples = request.MinSamples,
@@ -13420,6 +13429,7 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         FailoverMode = (int)memory.FailoverMode,
                         Interval = memory.Interval,
                         IsDisabled = memory.IsDisabled,
+                        Duration = memory.Duration,
                         LastSelectedIndex = memory.LastSelectedIndex,
                         LastSelectedValue = memory.LastSelectedValue
                     });
@@ -13492,7 +13502,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 SelectionMode = (Core.Models.MinMaxSelectionMode)request.SelectionMode,
                 FailoverMode = (Core.Models.MinMaxFailoverMode)request.FailoverMode,
                 Interval = request.Interval,
-                IsDisabled = request.IsDisabled
+                IsDisabled = request.IsDisabled,
+                Duration = request.Duration
             };
 
             var (success, id, errorMessage) = await Core.MinMaxSelectorMemories.AddMinMaxSelectorMemory(memory);
@@ -13563,7 +13574,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 SelectionMode = (Core.Models.MinMaxSelectionMode)request.SelectionMode,
                 FailoverMode = (Core.Models.MinMaxFailoverMode)request.FailoverMode,
                 Interval = request.Interval,
-                IsDisabled = request.IsDisabled
+                IsDisabled = request.IsDisabled,
+                Duration = request.Duration
             };
 
             var (success, errorMessage) = await Core.MinMaxSelectorMemories.EditMinMaxSelectorMemory(memory);

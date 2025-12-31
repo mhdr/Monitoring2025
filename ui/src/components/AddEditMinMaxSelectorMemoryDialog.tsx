@@ -60,6 +60,7 @@ interface FormData {
   selectionMode: MinMaxSelectionMode;
   failoverMode: MinMaxFailoverMode;
   interval: number;
+  duration: number;
   isDisabled: boolean;
 }
 
@@ -69,6 +70,7 @@ interface FormErrors {
   outputItemId?: string;
   selectedIndexOutputItemId?: string;
   interval?: string;
+  duration?: string;
 }
 
 const AddEditMinMaxSelectorMemoryDialog: React.FC<Props> = ({
@@ -90,6 +92,7 @@ const AddEditMinMaxSelectorMemoryDialog: React.FC<Props> = ({
     selectionMode: MinMaxSelectionModeEnum.Minimum,
     failoverMode: MinMaxFailoverModeEnum.IgnoreBad,
     interval: 1,
+    duration: 10,
     isDisabled: false,
   });
 
@@ -131,6 +134,7 @@ const AddEditMinMaxSelectorMemoryDialog: React.FC<Props> = ({
           selectionMode: minMaxSelectorMemory.selectionMode,
           failoverMode: minMaxSelectorMemory.failoverMode,
           interval: minMaxSelectorMemory.interval || 1,
+          duration: minMaxSelectorMemory.duration ?? 10,
           isDisabled: minMaxSelectorMemory.isDisabled || false,
         });
       } else {
@@ -143,6 +147,7 @@ const AddEditMinMaxSelectorMemoryDialog: React.FC<Props> = ({
           selectionMode: MinMaxSelectionModeEnum.Minimum,
           failoverMode: MinMaxFailoverModeEnum.IgnoreBad,
           interval: 1,
+          duration: 10,
           isDisabled: false,
         });
       }
@@ -211,6 +216,11 @@ const AddEditMinMaxSelectorMemoryDialog: React.FC<Props> = ({
       newErrors.interval = t('minMaxSelectorMemory.errors.intervalMax');
     }
 
+    // Duration validation
+    if (formData.duration < 0) {
+      newErrors.duration = t('minMaxSelectorMemory.validation.durationInvalid');
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData, t]);
@@ -233,6 +243,7 @@ const AddEditMinMaxSelectorMemoryDialog: React.FC<Props> = ({
           selectionMode: formData.selectionMode,
           failoverMode: formData.failoverMode,
           interval: formData.interval,
+          duration: formData.duration,
           isDisabled: formData.isDisabled,
         };
         const response = await editMinMaxSelectorMemory(request);
@@ -248,6 +259,7 @@ const AddEditMinMaxSelectorMemoryDialog: React.FC<Props> = ({
           selectionMode: formData.selectionMode,
           failoverMode: formData.failoverMode,
           interval: formData.interval,
+          duration: formData.duration,
           isDisabled: formData.isDisabled,
         };
         const response = await addMinMaxSelectorMemory(request);
@@ -521,6 +533,29 @@ const AddEditMinMaxSelectorMemoryDialog: React.FC<Props> = ({
             required
             data-id-ref="minmax-selector-memory-interval-input"
           />
+
+          {/* Duration */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <TextField
+              fullWidth
+              type="number"
+              label={t('minMaxSelectorMemory.duration')}
+              value={formData.duration}
+              onChange={(e) => handleChange('duration', Math.max(0, parseInt(e.target.value, 10) || 0))}
+              error={!!errors.duration}
+              helperText={errors.duration || t('minMaxSelectorMemory.durationHelp')}
+              inputProps={{ min: 0 }}
+              data-id-ref="minmax-selector-memory-duration-input"
+            />
+            <IconButton
+              size="small"
+              onClick={(e) => handleHelpOpen(e, 'duration')}
+              sx={{ p: 0.25, mt: 1 }}
+              data-id-ref="minmax-selector-memory-duration-help-btn"
+            >
+              <HelpOutlineIcon fontSize="small" color="action" />
+            </IconButton>
+          </Box>
 
           {/* Disabled Toggle */}
           <FormControlLabel
