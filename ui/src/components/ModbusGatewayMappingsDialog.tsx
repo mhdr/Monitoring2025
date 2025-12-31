@@ -155,6 +155,7 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
   // Edit mapping state
   const [editingMapping, setEditingMapping] = useState<EditableMapping | null>(null);
   const [editFormData, setEditFormData] = useState<AddMappingFormData>({
+
     itemId: '',
     modbusAddress: 0,
     registerType: ModbusRegisterTypeEnum.HoldingRegister,
@@ -163,6 +164,9 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
     scaleMin: 0,
     scaleMax: 100,
   });
+
+  // Starting address for bulk additions
+  const [bulkStartingAddress, setBulkStartingAddress] = useState<number>(1);
 
   // Fetch all monitoring items for autocomplete (inputs and outputs)
   useEffect(() => {
@@ -239,6 +243,85 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
   const getRegisterCount = (dataRep: ModbusDataRepresentation): number => {
     return dataRep === ModbusDataRepresentationEnum.Float32 ? 2 : 1;
   };
+
+  /**
+   * Calculate the next available address for a specific register type.
+   * Finds the highest used address (considering register count) among existing mappings.
+   * @param registerType The register type to check
+   * @param existingMappings Current mappings to check for address usage
+   * @param userStartingAddress User-specified minimum starting address
+   * @returns The next available address (max of user starting address and end of existing allocations)
+   */
+  const calculateNextAvailableAddress = useCallback((
+    registerType: ModbusRegisterType,
+    existingMappings: EditableMapping[],
+    userStartingAddress: number
+  ): number => {
+    // Filter mappings by register type (only non-deleted ones)
+    const typeMappings = existingMappings.filter(
+      m => m.registerType === registerType && !m.isDeleted
+    );
+    
+    if (typeMappings.length === 0) {
+      return userStartingAddress;
+    }
+
+    // Find the maximum end address (modbusAddress + registerCount)
+    const maxEndAddress = Math.max(
+      ...typeMappings.map(m => m.modbusAddress + m.registerCount)
+    );
+
+    // Return the higher of user-specified starting address or next available
+    return Math.max(userStartingAddress, maxEndAddress);
+  }, []);
+
+  /**
+   * Allocate sequential addresses for a list of items, grouped by register type.
+   * Each register type has its own address space, starting from user-specified address
+   * or continuing from existing mappings (whichever is higher).
+   * @param items Items to allocate addresses for
+   * @param existingMappings Current mappings to consider
+   * @param userStartingAddress User-specified starting address
+   * @returns Map of itemId → allocated modbusAddress
+   */
+  const allocateSequentialAddresses = useCallback((
+    items: Item[],
+    existingMappings: EditableMapping[],
+    userStartingAddress: number
+  ): Map<string, number> => {
+    const addressMap = new Map<string, number>();
+    
+    // Group items by their target register type
+    const itemsByRegisterType = new Map<ModbusRegisterType, Array<{ item: Item; dataRep: ModbusDataRepresentation }>>();
+    
+    for (const item of items) {
+      const defaults = getDefaultMappingFromItem(item);
+      const registerType = defaults.registerType ?? ModbusRegisterTypeEnum.HoldingRegister;
+      const dataRep = defaults.dataRepresentation ?? ModbusDataRepresentationEnum.Float32;
+      
+      if (!itemsByRegisterType.has(registerType)) {
+        itemsByRegisterType.set(registerType, []);
+      }
+      itemsByRegisterType.get(registerType)!.push({ item, dataRep });
+    }
+    
+    // Allocate addresses for each register type group
+    for (const [registerType, itemsWithType] of itemsByRegisterType) {
+      let currentAddress = calculateNextAvailableAddress(
+        registerType,
+        existingMappings,
+        userStartingAddress
+      );
+      
+      for (const { item, dataRep } of itemsWithType) {
+        addressMap.set(item.id, currentAddress);
+        // Advance by register count (2 for Float32, 1 for others)
+        currentAddress += getRegisterCount(dataRep);
+      }
+    }
+    
+    return addressMap;
+  }, [calculateNextAvailableAddress]);
 
   // Register type labels
   const getRegisterTypeLabel = useCallback((type: ModbusRegisterType): string => {
@@ -589,17 +672,26 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
   }, [monitoringItems, displayMappings]);
 
   // Handle adding all available items with default configurations
+  // Uses sequential address allocation grouped by register type to avoid conflicts
   const handleAddAllItems = useCallback(() => {
     if (availableItems.length === 0) return;
+
+    // Allocate addresses sequentially, grouped by register type
+    const addressAllocation = allocateSequentialAddresses(
+      availableItems,
+      mappings,
+      bulkStartingAddress
+    );
 
     const newMappings: EditableMapping[] = availableItems.map((item, index) => {
       const defaults = getDefaultMappingFromItem(item);
       const dataRep = defaults.dataRepresentation ?? ModbusDataRepresentationEnum.Float32;
+      const allocatedAddress = addressAllocation.get(item.id) ?? bulkStartingAddress;
       
       return {
         id: `new-${Date.now()}-${index}`,
         gatewayId: gateway.id,
-        modbusAddress: defaults.modbusAddress ?? item.pointNumber,
+        modbusAddress: allocatedAddress,
         registerType: defaults.registerType ?? ModbusRegisterTypeEnum.HoldingRegister,
         itemId: item.id,
         itemName: item.name,
@@ -619,7 +711,7 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
     setMappings(prev => [...prev, ...newMappings]);
     setHasChanges(true);
     setShowAddForm(false);
-  }, [availableItems, gateway.id]);
+  }, [availableItems, gateway.id, mappings, bulkStartingAddress, allocateSequentialAddresses]);
 
   return (
     <Dialog
@@ -1045,6 +1137,18 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
               >
                 {t('modbusGateway.mappings.addMapping')}
               </Button>
+
+              <TextField
+                data-id-ref="mappings-starting-address-input"
+                label={t('modbusGateway.mappings.startingAddress')}
+                type="number"
+                size="small"
+                value={bulkStartingAddress}
+                onChange={(e) => setBulkStartingAddress(Math.max(1, Number(e.target.value) || 1))}
+                inputProps={{ min: 1 }}
+                sx={{ width: 140 }}
+                disabled={showAddForm || saving || !!editingMapping}
+              />
 
               <Tooltip title={t('modbusGateway.mappings.addAllItemsTooltip')}>
                 <span>
