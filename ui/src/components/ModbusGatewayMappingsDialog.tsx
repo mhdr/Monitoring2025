@@ -1126,7 +1126,7 @@ const ModbusGatewayMappingsDialog: React.FC<ModbusGatewayMappingsDialogProps> = 
             {/* Toolbar */}
             <Box
               data-id-ref="mappings-toolbar"
-              sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'center' }}
+              sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'flex-start', pt: 1 }}
             >
               <Button
                 data-id-ref="mappings-add-btn"
