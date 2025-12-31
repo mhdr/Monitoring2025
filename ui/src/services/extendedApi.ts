@@ -185,6 +185,16 @@ import type {
   DeleteIfMemoryResponseDto,
   TestIfConditionRequestDto,
   TestIfConditionResponseDto,
+  // Deadband Memory types
+  DeadbandMemory,
+  GetDeadbandMemoriesRequestDto,
+  GetDeadbandMemoriesResponseDto,
+  AddDeadbandMemoryRequestDto,
+  AddDeadbandMemoryResponseDto,
+  EditDeadbandMemoryRequestDto,
+  EditDeadbandMemoryResponseDto,
+  DeleteDeadbandMemoryRequestDto,
+  DeleteDeadbandMemoryResponseDto,
 } from '../types/api';
 
 /**
@@ -1715,5 +1725,78 @@ export const testIfCondition = async (
   }
 };
 
+// ==========================================
+// Deadband Memory API Functions
+// ==========================================
+
+/**
+ * Get all deadband memory configurations
+ */
+export const getDeadbandMemories = async (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  params: GetDeadbandMemoriesRequestDto = {}
+): Promise<GetDeadbandMemoriesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetDeadbandMemoriesResponseDto>(
+      '/api/Monitoring/GetDeadbandMemories',
+      params
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new deadband memory configuration
+ */
+export const addDeadbandMemory = async (
+  data: AddDeadbandMemoryRequestDto
+): Promise<AddDeadbandMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddDeadbandMemoryResponseDto>(
+      '/api/Monitoring/AddDeadbandMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing deadband memory configuration
+ */
+export const editDeadbandMemory = async (
+  data: EditDeadbandMemoryRequestDto
+): Promise<EditDeadbandMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditDeadbandMemoryResponseDto>(
+      '/api/Monitoring/EditDeadbandMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a deadband memory configuration
+ */
+export const deleteDeadbandMemory = async (
+  data: DeleteDeadbandMemoryRequestDto
+): Promise<DeleteDeadbandMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteDeadbandMemoryResponseDto>(
+      '/api/Monitoring/DeleteDeadbandMemory',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
 // Re-export types for convenience
-export type { ComparisonMemory, StatisticalMemory, FormulaMemory, IfMemory };
+export type { ComparisonMemory, StatisticalMemory, FormulaMemory, IfMemory, DeadbandMemory };

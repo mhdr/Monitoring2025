@@ -49,7 +49,10 @@ public class Worker : BackgroundService
         _logger.LogInformation("Start Processing IF Memories...");
         var task12 = IfMemoryProcess.Instance.Run();
 
-        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7, task8, task9, task10, task11, task12);
+        _logger.LogInformation("Start Processing Deadband Memories...");
+        var task13 = DeadbandMemoryProcess.Instance.Run();
+
+        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7, task8, task9, task10, task11, task12, task13);
         Console.ReadKey();
     }
 }

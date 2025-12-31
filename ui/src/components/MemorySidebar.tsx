@@ -26,6 +26,7 @@ import {
   Timeline as TimelineIcon,
   Functions as FormulaIcon,
   AccountTree as IfMemoryIcon,
+  Tune as TuneIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -60,6 +61,7 @@ const MemorySidebar: React.FC<MemorySidebarProps> = ({ isOpen, onToggle }) => {
     { path: '/dashboard/memory/statistical-memory', key: 'statisticalMemory.title', icon: <TimelineIcon /> },
     { path: '/dashboard/memory/formula-memory', key: 'formulaMemory.title', icon: <FormulaIcon /> },
     { path: '/dashboard/memory/if-memory', key: 'ifMemory.title', icon: <IfMemoryIcon /> },
+    { path: '/dashboard/memory/deadband-memory', key: 'deadbandMemory.title', icon: <TuneIcon /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;

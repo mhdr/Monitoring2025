@@ -3712,3 +3712,156 @@ export interface TestIfConditionResponseDto {
   result?: boolean | null; // Boolean condition result if successful
   errorMessage?: string | null;
 }
+
+// ============================================================================
+// Deadband Memory Types
+// ============================================================================
+
+/**
+ * Deadband type for analog value filtering
+ * - Absolute: Output changes only when |current - lastOutput| exceeds threshold
+ * - Percentage: Output changes when difference exceeds threshold % of input range
+ * - RateOfChange: Output changes when rate (units/sec) exceeds threshold
+ */
+export const DeadbandType = {
+  /** Absolute deadband: output changes only when |current - lastOutput| > deadband */
+  Absolute: 0,
+  /** Percentage deadband: output changes only when |current - lastOutput| > (deadband% × span) */
+  Percentage: 1,
+  /** Rate of change deadband: output changes only when |current - lastInput| / elapsedSeconds > deadband */
+  RateOfChange: 2,
+} as const;
+export type DeadbandType = (typeof DeadbandType)[keyof typeof DeadbandType];
+
+/**
+ * Deadband/Hysteresis Memory for reducing output chatter from noisy inputs
+ * 
+ * For analog inputs: Uses value-based deadband (Absolute/Percentage/RateOfChange)
+ * For digital inputs: Uses time-based stability filtering (debounce)
+ */
+export interface DeadbandMemory {
+  id: string; // UUID
+  name?: string | null;
+  inputItemId: string; // UUID - Input item (analog or digital)
+  outputItemId: string; // UUID - Output item (must match input type category)
+  interval: number; // int - Processing interval in seconds
+  isDisabled: boolean; // bool
+  
+  // Analog deadband settings
+  deadband: number; // double - Deadband threshold value
+  deadbandType: DeadbandType; // Absolute, Percentage, or RateOfChange
+  inputMin: number; // double - Min value of input range (for percentage)
+  inputMax: number; // double - Max value of input range (for percentage)
+  
+  // Digital stability settings
+  stabilityTime: number; // double - Stability time in seconds for digital debounce
+  
+  // State fields
+  lastOutputValue?: number | null; // double - Last written output value
+  lastInputValue?: number | null; // double - Last input value
+  lastChangeTime?: number | null; // long - Unix epoch seconds when input last changed
+  pendingDigitalState?: boolean | null; // bool - Pending digital state
+  lastTimestamp?: number | null; // long - Unix epoch seconds of last processing
+}
+
+/**
+ * Extended Deadband Memory with resolved item names for UI display
+ */
+export interface DeadbandMemoryWithItems extends DeadbandMemory {
+  inputItemName?: string;
+  inputItemNameFa?: string;
+  inputItemType?: ItemType;
+  outputItemName?: string;
+  outputItemNameFa?: string;
+  outputItemType?: ItemType;
+}
+
+/**
+ * Request DTO for retrieving deadband memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetDeadbandMemoriesRequestDto {
+  // Empty - no filtering parameters needed
+}
+
+/**
+ * Response DTO containing list of deadband memory configurations
+ */
+export interface GetDeadbandMemoriesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  deadbandMemories?: DeadbandMemory[] | null;
+}
+
+/**
+ * Request DTO for creating a new deadband memory configuration
+ */
+export interface AddDeadbandMemoryRequestDto {
+  name?: string | null;
+  inputItemId: string; // UUID
+  outputItemId: string; // UUID
+  interval: number; // int - must be > 0
+  isDisabled?: boolean;
+  
+  // Analog deadband settings
+  deadband?: number; // double - threshold value
+  deadbandType?: DeadbandType; // 0=Absolute, 1=Percentage, 2=RateOfChange
+  inputMin?: number; // double - for percentage calculation
+  inputMax?: number; // double - for percentage calculation
+  
+  // Digital stability settings
+  stabilityTime?: number; // double - seconds
+}
+
+/**
+ * Response DTO for adding a deadband memory
+ */
+export interface AddDeadbandMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of created deadband memory
+}
+
+/**
+ * Request DTO for editing an existing deadband memory configuration
+ */
+export interface EditDeadbandMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  inputItemId: string; // UUID
+  outputItemId: string; // UUID
+  interval: number; // int - must be > 0
+  isDisabled?: boolean;
+  
+  // Analog deadband settings
+  deadband?: number;
+  deadbandType?: DeadbandType;
+  inputMin?: number;
+  inputMax?: number;
+  
+  // Digital stability settings
+  stabilityTime?: number;
+}
+
+/**
+ * Response DTO for editing a deadband memory
+ */
+export interface EditDeadbandMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a deadband memory
+ */
+export interface DeleteDeadbandMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a deadband memory
+ */
+export interface DeleteDeadbandMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}

@@ -12649,6 +12649,304 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     }
 
     #endregion
+
+    #region Deadband Memory
+
+    /// <summary>
+    /// Get all deadband memory configurations
+    /// </summary>
+    /// <param name="request">Empty request (filters may be added in future)</param>
+    /// <returns>List of deadband memory configurations</returns>
+    /// <remarks>
+    /// Retrieves all configured deadband memories for reducing output chatter from noisy inputs.
+    /// 
+    /// Deadband memories support two modes:
+    /// - **Analog mode**: Value-based filtering using Absolute, Percentage, or RateOfChange deadband
+    /// - **Digital mode**: Time-based stability filtering (debounce)
+    /// 
+    /// DeadbandType values:
+    /// - **0 (Absolute)**: Output changes only when |current - lastOutput| exceeds deadband threshold
+    /// - **1 (Percentage)**: Output changes only when difference exceeds deadband% of input range
+    /// - **2 (RateOfChange)**: Output changes only when rate of change (units/sec) exceeds threshold
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/GetDeadbandMemories
+    ///     {}
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns list of deadband memories</response>
+    /// <response code="401">If user is not authenticated</response>
+    [HttpPost("GetDeadbandMemories")]
+    public async Task<IActionResult> GetDeadbandMemories([FromBody] GetDeadbandMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memories = await Core.DeadbandMemories.GetDeadbandMemories();
+
+            var response = new GetDeadbandMemoriesResponseDto
+            {
+                IsSuccessful = true,
+                DeadbandMemories = memories?.Select(m => new DeadbandMemoryItemDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    InputItemId = m.InputItemId,
+                    OutputItemId = m.OutputItemId,
+                    Interval = m.Interval,
+                    IsDisabled = m.IsDisabled,
+                    Deadband = m.Deadband,
+                    DeadbandType = (int)m.DeadbandType,
+                    InputMin = m.InputMin,
+                    InputMax = m.InputMax,
+                    StabilityTime = m.StabilityTime,
+                    LastOutputValue = m.LastOutputValue,
+                    LastInputValue = m.LastInputValue,
+                    LastChangeTime = m.LastChangeTime,
+                    PendingDigitalState = m.PendingDigitalState,
+                    LastTimestamp = m.LastTimestamp
+                }).ToList()
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new deadband memory configuration
+    /// </summary>
+    /// <param name="request">Deadband memory configuration parameters</param>
+    /// <returns>ID of the newly created deadband memory</returns>
+    /// <remarks>
+    /// Creates a new deadband memory for reducing output chatter from noisy inputs.
+    /// 
+    /// Use cases:
+    /// - Noise filtering on sensor values
+    /// - Prevent relay chatter on digital outputs
+    /// - Smooth control actions
+    /// - Reduce database writes
+    /// - Communication optimization
+    /// 
+    /// For analog inputs (AnalogInput/AnalogOutput):
+    /// - Use Deadband and DeadbandType fields
+    /// - Output item must be AnalogOutput
+    /// 
+    /// For digital inputs (DigitalInput/DigitalOutput):
+    /// - Use StabilityTime field (input must remain stable for X seconds)
+    /// - Output item must be DigitalOutput
+    /// 
+    /// Sample request (analog):
+    /// 
+    ///     POST /api/monitoring/AddDeadbandMemory
+    ///     {
+    ///        "name": "Temperature Deadband",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "interval": 1,
+    ///        "deadband": 0.5,
+    ///        "deadbandType": 0,
+    ///        "inputMin": 0,
+    ///        "inputMax": 100
+    ///     }
+    /// 
+    /// Sample request (digital):
+    /// 
+    ///     POST /api/monitoring/AddDeadbandMemory
+    ///     {
+    ///        "name": "Switch Debounce",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "interval": 1,
+    ///        "stabilityTime": 2.0
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns ID of created deadband memory</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("AddDeadbandMemory")]
+    public async Task<IActionResult> AddDeadbandMemory([FromBody] AddDeadbandMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memory = new Core.Models.DeadbandMemory
+            {
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                Deadband = request.Deadband,
+                DeadbandType = (Core.Models.DeadbandType)request.DeadbandType,
+                InputMin = request.InputMin,
+                InputMax = request.InputMax,
+                StabilityTime = request.StabilityTime
+            };
+
+            var (success, id, errorMessage) = await Core.DeadbandMemories.AddDeadbandMemory(memory);
+
+            var response = new AddDeadbandMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Edit an existing deadband memory configuration
+    /// </summary>
+    /// <param name="request">Updated deadband memory configuration parameters</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Updates an existing deadband memory configuration.
+    /// 
+    /// **Important**: Changing input item, deadband type, or interval
+    /// will reset the state to ensure consistent filtering.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/EditDeadbandMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "name": "Updated Temperature Deadband",
+    ///        "inputItemId": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
+    ///        "interval": 1,
+    ///        "deadband": 1.0,
+    ///        "deadbandType": 1,
+    ///        "inputMin": 0,
+    ///        "inputMax": 200
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If validation fails</response>
+    [HttpPost("EditDeadbandMemory")]
+    public async Task<IActionResult> EditDeadbandMemory([FromBody] EditDeadbandMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var memory = new Core.Models.DeadbandMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                Interval = request.Interval,
+                IsDisabled = request.IsDisabled,
+                Deadband = request.Deadband,
+                DeadbandType = (Core.Models.DeadbandType)request.DeadbandType,
+                InputMin = request.InputMin,
+                InputMax = request.InputMax,
+                StabilityTime = request.StabilityTime
+            };
+
+            var (success, errorMessage) = await Core.DeadbandMemories.EditDeadbandMemory(memory);
+
+            var response = new EditDeadbandMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Delete a deadband memory configuration
+    /// </summary>
+    /// <param name="request">ID of the deadband memory to delete</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Deletes a deadband memory configuration.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/monitoring/DeleteDeadbandMemory
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If memory not found</response>
+    [HttpPost("DeleteDeadbandMemory")]
+    public async Task<IActionResult> DeleteDeadbandMemory([FromBody] DeleteDeadbandMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.DeadbandMemories.DeleteDeadbandMemory(request.Id);
+
+            var response = new DeleteDeadbandMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    #endregion
 }
 
 #region PID Auto-Tuning DTOs

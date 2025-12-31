@@ -5302,5 +5302,154 @@
         ]
       }
     }
+  },
+  "deadbandMemory": {
+    "title": "Deadband Memory",
+    "description": "Reduce output chatter for noisy inputs with value-based deadband (analog) or time-based stability filtering (digital).",
+    "addNew": "Add Deadband Memory",
+    "addTitle": "Add Deadband Memory",
+    "editTitle": "Edit Deadband Memory",
+    "deleteTitle": "Delete Deadband Memory",
+    "deleteConfirmation": "Are you sure you want to delete this deadband memory?",
+    "deleteWarning": "This action cannot be undone. The deadband filtering will stop immediately.",
+    "searchPlaceholder": "Search deadband memories...",
+    "name": "Name",
+    "inputItem": "Input Item",
+    "outputItem": "Output Item",
+    "interval": "Interval",
+    "enabled": "Enabled",
+    "mode": "Mode",
+    "threshold": "Threshold",
+    "lastOutput": "Last Output",
+    "deadband": "Deadband",
+    "stabilityTime": "Stability Time",
+    "inputMin": "Input Minimum",
+    "inputMax": "Input Maximum",
+    "modeAnalog": "Analog Mode: Value changes smaller than deadband threshold are filtered out.",
+    "modeDigital": "Digital Mode: State changes must remain stable for the specified time before being accepted.",
+    "digitalStability": "Digital Stability",
+    "deadbandType": {
+      "label": "Deadband Type",
+      "absolute": "Absolute",
+      "percentage": "Percentage",
+      "rateOfChange": "Rate of Change"
+    },
+    "errors": {
+      "nameRequired": "Name is required",
+      "inputItemRequired": "Input item is required",
+      "outputItemRequired": "Output item is required",
+      "intervalMinimum": "Interval must be at least 1 second",
+      "deadbandNegative": "Deadband cannot be negative",
+      "percentageMax": "Percentage deadband cannot exceed 100%",
+      "minMaxInvalid": "Minimum must be less than maximum",
+      "stabilityTimeNegative": "Stability time cannot be negative"
+    },
+    "help": {
+      "overview": {
+        "title": "Deadband/Hysteresis Memory",
+        "sections": [
+          {
+            "title": "What is Deadband Memory?",
+            "content": "Deadband Memory filters out small, insignificant changes in input values to reduce output chatter. It supports two modes based on input type:\n\n• Analog inputs: Value-based deadband filtering\n• Digital inputs: Time-based stability filtering"
+          },
+          {
+            "title": "Common Use Cases",
+            "content": [
+              "Noise filtering on sensor values",
+              "Prevent relay chatter from noisy digital signals",
+              "Smooth control actions",
+              "Reduce database writes from frequently changing values",
+              "Communication optimization"
+            ]
+          }
+        ]
+      },
+      "name": {
+        "title": "Memory Name",
+        "sections": [
+          {
+            "content": "A descriptive name to identify this deadband memory configuration."
+          }
+        ]
+      },
+      "inputItem": {
+        "title": "Input Item",
+        "sections": [
+          {
+            "content": "The source item to monitor. The type determines the filtering mode:\n\n• Analog Input: Uses value-based deadband\n• Digital Input: Uses time-based stability filtering"
+          }
+        ]
+      },
+      "outputItem": {
+        "title": "Output Item",
+        "sections": [
+          {
+            "content": "The destination item where filtered values are written. Must match the input type:\n\n• Analog Input → Analog Output\n• Digital Input → Digital Output"
+          }
+        ]
+      },
+      "interval": {
+        "title": "Evaluation Interval",
+        "sections": [
+          {
+            "content": "How often (in seconds) the input is sampled and evaluated. Typical values: 1-10 seconds."
+          }
+        ]
+      },
+      "deadbandType": {
+        "title": "Deadband Type (Analog Mode)",
+        "sections": [
+          {
+            "title": "Absolute",
+            "content": "Value change must exceed deadband amount in engineering units.\nExample: Deadband=2 means changes less than 2 units are ignored."
+          },
+          {
+            "title": "Percentage",
+            "content": "Value change must exceed percentage of input range.\nExample: 5% of 0-100 range = 5 units deadband."
+          },
+          {
+            "title": "Rate of Change",
+            "content": "Change rate (per second) must exceed threshold to update output.\nExample: 1.0/s means value must change >1 unit per second."
+          }
+        ]
+      },
+      "deadband": {
+        "title": "Deadband Value",
+        "sections": [
+          {
+            "content": "The threshold for filtering changes:\n\n• Absolute: Engineering units (e.g., 2.5 degrees)\n• Percentage: Percent of range (e.g., 5%)\n• Rate of Change: Units per second (e.g., 1.0/s)"
+          }
+        ]
+      },
+      "inputMin": {
+        "title": "Input Minimum",
+        "sections": [
+          {
+            "content": "Used for Percentage mode to calculate the actual deadband threshold from the input range."
+          }
+        ]
+      },
+      "inputMax": {
+        "title": "Input Maximum",
+        "sections": [
+          {
+            "content": "Used for Percentage mode to calculate the actual deadband threshold from the input range."
+          }
+        ]
+      },
+      "stabilityTime": {
+        "title": "Stability Time (Digital Mode)",
+        "sections": [
+          {
+            "content": "For digital inputs, the new state must remain stable for this duration (in seconds) before being accepted.\n\nExample: StabilityTime=2.0 means a button press must be held for 2 seconds."
+          },
+          {
+            "type": "tip",
+            "title": "Debouncing",
+            "content": "This is equivalent to debouncing in electronics. Use 0.1-0.5s for buttons, 1-5s for noisy digital signals."
+          }
+        ]
+      }
+    }
   }
 }

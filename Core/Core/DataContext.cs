@@ -73,6 +73,8 @@ public class DataContext : DbContext
     public DbSet<FormulaMemory> FormulaMemories { get; set; }
     
     public DbSet<IfMemory> IfMemories { get; set; }
+    
+    public DbSet<DeadbandMemory> DeadbandMemories { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -698,6 +700,43 @@ public class DataContext : DbContext
         modelBuilder.Entity<IfMemory>()
             .Property(e => e.VariableAliases)
             .HasDefaultValue("{}");
+
+        // DeadbandMemory configuration
+        modelBuilder.Entity<DeadbandMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<DeadbandMemory>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<DeadbandMemory>()
+            .Property(e => e.Interval)
+            .HasDefaultValue(1);
+        
+        modelBuilder.Entity<DeadbandMemory>()
+            .Property(e => e.Deadband)
+            .HasDefaultValue(0.0);
+        
+        modelBuilder.Entity<DeadbandMemory>()
+            .Property(e => e.DeadbandType)
+            .HasDefaultValue(DeadbandType.Absolute);
+        
+        modelBuilder.Entity<DeadbandMemory>()
+            .Property(e => e.InputMin)
+            .HasDefaultValue(0.0);
+        
+        modelBuilder.Entity<DeadbandMemory>()
+            .Property(e => e.InputMax)
+            .HasDefaultValue(100.0);
+        
+        modelBuilder.Entity<DeadbandMemory>()
+            .Property(e => e.StabilityTime)
+            .HasDefaultValue(1.0);
+        
+        modelBuilder.Entity<DeadbandMemory>()
+            .Property(e => e.DeadbandType)
+            .HasConversion<int>();
 
         // keys
 
