@@ -46,27 +46,20 @@ type OutputValueMode = 'static' | 'dynamic';
 
 interface FormData {
   name: string;
-  inputItemId: string;
   outputItemId: string;
   outputValueMode: OutputValueMode;
   outputValue: string;
   outputValueSourceItemId: string;
-  interval: number;
   duration: number;
-  maxExecutionCount: string; // String to handle empty/null state in UI
   isDisabled: boolean;
-  resetExecutionCount: boolean;
 }
 
 interface FormErrors {
   name?: string;
-  inputItemId?: string;
   outputItemId?: string;
   outputValue?: string;
   outputValueSourceItemId?: string;
-  interval?: string;
   duration?: string;
-  maxExecutionCount?: string;
 }
 
 /**
@@ -131,14 +124,11 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    inputItemId: '',
     outputItemId: '',
     outputValueMode: 'static',
     outputValue: '',
     outputValueSourceItemId: '',
-    interval: 1,
     duration: 10,
-    maxExecutionCount: '', // Empty = continuous
     isDisabled: false,
     resetExecutionCount: false,
   });
@@ -156,30 +146,22 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
 
         setFormData({
           name: writeActionMemory.name || '',
-          inputItemId: writeActionMemory.inputItemId,
           outputItemId: writeActionMemory.outputItemId,
           outputValueMode: mode,
           outputValue: writeActionMemory.outputValue || '',
           outputValueSourceItemId: writeActionMemory.outputValueSourceItemId || '',
-          interval: writeActionMemory.interval,
           duration: writeActionMemory.duration,
-          maxExecutionCount: writeActionMemory.maxExecutionCount?.toString() || '',
           isDisabled: writeActionMemory.isDisabled,
-          resetExecutionCount: false,
         });
       } else {
         setFormData({
           name: '',
-          inputItemId: '',
           outputItemId: '',
           outputValueMode: 'static',
           outputValue: '',
           outputValueSourceItemId: '',
-          interval: 1,
           duration: 10,
-          maxExecutionCount: '',
           isDisabled: false,
-          resetExecutionCount: false,
         });
       }
       setFormErrors({});
@@ -193,10 +175,6 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
   }, [items]);
 
   // Get selected items
-  const selectedInputItem = useMemo(() => {
-    return items.find((item) => item.id === formData.inputItemId) || null;
-  }, [items, formData.inputItemId]);
-
   const selectedOutputItem = useMemo(() => {
     return outputItems.find((item) => item.id === formData.outputItemId) || null;
   }, [outputItems, formData.outputItemId]);
@@ -204,13 +182,6 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
   const selectedSourceItem = useMemo(() => {
     return items.find((item) => item.id === formData.outputValueSourceItemId) || null;
   }, [items, formData.outputValueSourceItemId]);
-
-  const handleInputItemChange = (_event: React.SyntheticEvent, value: Item | null) => {
-    setFormData((prev) => ({ ...prev, inputItemId: value?.id || '' }));
-    if (formErrors.inputItemId) {
-      setFormErrors((prev) => ({ ...prev, inputItemId: undefined }));
-    }
-  };
 
   const handleOutputItemChange = (_event: React.SyntheticEvent, value: Item | null) => {
     setFormData((prev) => ({ ...prev, outputItemId: value?.id || '' }));
@@ -256,19 +227,9 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
   const validate = (): boolean => {
     const errors: FormErrors = {};
 
-    // Input item validation
-    if (!formData.inputItemId) {
-      errors.inputItemId = t('writeActionMemory.validation.inputItemRequired');
-    }
-
     // Output item validation
     if (!formData.outputItemId) {
       errors.outputItemId = t('writeActionMemory.validation.outputItemRequired');
-    }
-
-    // Validate input and output items are different
-    if (formData.inputItemId && formData.outputItemId && formData.inputItemId === formData.outputItemId) {
-      errors.outputItemId = t('writeActionMemory.validation.itemsMustBeDifferent');
     }
 
     // Output value mode validation
@@ -280,33 +241,17 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
       if (!formData.outputValueSourceItemId) {
         errors.outputValueSourceItemId = t('writeActionMemory.validation.sourceItemRequired');
       }
-      // Validate source item is different from input and output
+      // Validate source item is different from output
       if (formData.outputValueSourceItemId) {
-        if (formData.outputValueSourceItemId === formData.inputItemId) {
-          errors.outputValueSourceItemId = t('writeActionMemory.validation.sourceCannotBeInput');
-        }
         if (formData.outputValueSourceItemId === formData.outputItemId) {
           errors.outputValueSourceItemId = t('writeActionMemory.validation.sourceCannotBeOutput');
         }
       }
     }
 
-    // Interval validation
-    if (!formData.interval || formData.interval <= 0) {
-      errors.interval = t('writeActionMemory.validation.intervalRequired');
-    }
-
     // Duration validation
     if (formData.duration < 0) {
       errors.duration = t('writeActionMemory.validation.durationInvalid');
-    }
-
-    // MaxExecutionCount validation (if provided, must be > 0)
-    if (formData.maxExecutionCount && formData.maxExecutionCount !== '') {
-      const count = Number(formData.maxExecutionCount);
-      if (isNaN(count) || count <= 0) {
-        errors.maxExecutionCount = t('writeActionMemory.validation.maxExecutionCountInvalid');
-      }
     }
 
     setFormErrors(errors);
@@ -324,15 +269,10 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
     try {
       const requestData = {
         name: formData.name || undefined,
-        inputItemId: formData.inputItemId,
         outputItemId: formData.outputItemId,
         outputValue: formData.outputValueMode === 'static' ? formData.outputValue : null,
         outputValueSourceItemId: formData.outputValueMode === 'dynamic' ? formData.outputValueSourceItemId : null,
-        interval: formData.interval,
         duration: formData.duration,
-        maxExecutionCount: formData.maxExecutionCount && formData.maxExecutionCount !== '' 
-          ? Number(formData.maxExecutionCount) 
-          : null,
         isDisabled: formData.isDisabled,
       };
 
@@ -425,80 +365,6 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
                     onClick={handleHelpOpen('writeActionMemory.help.name')}
                     sx={{ p: 0.25, mt: 1 }}
                     data-id-ref="write-action-memory-name-help-btn"
-                  >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
-                </Box>
-
-                {/* Input Item Selection */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <Autocomplete
-                    options={items}
-                    getOptionLabel={getItemLabel}
-                    value={selectedInputItem}
-                    onChange={handleInputItemChange}
-                    disabled={loading}
-                    data-id-ref="write-action-memory-input-item-select"
-                    sx={{ flex: 1 }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={t('writeActionMemory.inputItem')}
-                        required
-                        error={!!formErrors.inputItemId}
-                        helperText={formErrors.inputItemId || t('writeActionMemory.inputItemHelp')}
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props} key={option.id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                            {getItemLabel(option)}
-                          </Typography>
-                          <Chip
-                            label={getItemTypeLabel(option.itemType, t)}
-                            size="small"
-                            color={getItemTypeColor(option.itemType)}
-                            sx={{ height: 20, fontSize: '0.7rem' }}
-                          />
-                        </Box>
-                      </Box>
-                    )}
-                    isOptionEqualToValue={(option, value) => option.id === value.id}
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={handleHelpOpen('writeActionMemory.help.inputItem')}
-                    sx={{ p: 0.25, mt: 1 }}
-                    data-id-ref="write-action-memory-input-item-help-btn"
-                  >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
-                </Box>
-
-                {/* Interval */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <TextField
-                    label={t('writeActionMemory.interval')}
-                    type="number"
-                    value={formData.interval}
-                    onChange={handleNumberFieldChange('interval')}
-                    disabled={loading}
-                    required
-                    error={!!formErrors.interval}
-                    helperText={formErrors.interval || t('writeActionMemory.intervalHelp')}
-                    data-id-ref="write-action-memory-interval-input"
-                    inputProps={{
-                      min: 1,
-                      step: 1,
-                    }}
-                    fullWidth
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={handleHelpOpen('writeActionMemory.help.interval')}
-                    sx={{ p: 0.25, mt: 1 }}
-                    data-id-ref="write-action-memory-interval-help-btn"
                   >
                     <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                   </IconButton>
@@ -694,71 +560,6 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
                     <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                   </IconButton>
                 </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-
-          {/* Execution Control Card */}
-          <Card variant="outlined" data-id-ref="write-action-memory-execution-card">
-            <CardContent>
-              <Typography variant="h6" gutterBottom data-id-ref="write-action-memory-execution-title">
-                {t('writeActionMemory.executionControl')}
-              </Typography>
-
-              <Stack spacing={2}>
-                {/* Max Execution Count */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <TextField
-                    label={t('writeActionMemory.maxExecutionCount')}
-                    type="number"
-                    value={formData.maxExecutionCount}
-                    onChange={handleTextFieldChange('maxExecutionCount')}
-                    disabled={loading}
-                    error={!!formErrors.maxExecutionCount}
-                    helperText={formErrors.maxExecutionCount || t('writeActionMemory.maxExecutionCountHelp')}
-                    data-id-ref="write-action-memory-max-execution-input"
-                    inputProps={{
-                      min: 1,
-                      step: 1,
-                    }}
-                    placeholder={t('writeActionMemory.continuousExecution')}
-                    fullWidth
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={handleHelpOpen('writeActionMemory.help.maxExecutionCount')}
-                    sx={{ p: 0.25, mt: 1 }}
-                    data-id-ref="write-action-memory-max-execution-help-btn"
-                  >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
-                </Box>
-
-                {/* Current Execution Count (Edit Mode Only) */}
-                {editMode && writeActionMemory && (
-                  <Box>
-                    <TextField
-                      label={t('writeActionMemory.currentExecutionCount')}
-                      value={writeActionMemory.currentExecutionCount}
-                      disabled
-                      data-id-ref="write-action-memory-current-execution-display"
-                      fullWidth
-                      helperText={t('writeActionMemory.currentExecutionCountHelp')}
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.resetExecutionCount}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, resetExecutionCount: e.target.checked }))}
-                          disabled={loading}
-                          data-id-ref="write-action-memory-reset-count-checkbox"
-                        />
-                      }
-                      label={t('writeActionMemory.resetExecutionCount')}
-                      sx={{ mt: 1 }}
-                    />
-                  </Box>
-                )}
 
                 {/* Is Disabled */}
                 <FormControlLabel
@@ -805,18 +606,6 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
         fieldKey="writeActionMemory.help.name"
       />
       <FieldHelpPopover
-        anchorEl={helpAnchorEl['writeActionMemory.help.inputItem']}
-        open={Boolean(helpAnchorEl['writeActionMemory.help.inputItem'])}
-        onClose={handleHelpClose('writeActionMemory.help.inputItem')}
-        fieldKey="writeActionMemory.help.inputItem"
-      />
-      <FieldHelpPopover
-        anchorEl={helpAnchorEl['writeActionMemory.help.interval']}
-        open={Boolean(helpAnchorEl['writeActionMemory.help.interval'])}
-        onClose={handleHelpClose('writeActionMemory.help.interval')}
-        fieldKey="writeActionMemory.help.interval"
-      />
-      <FieldHelpPopover
         anchorEl={helpAnchorEl['writeActionMemory.help.outputItem']}
         open={Boolean(helpAnchorEl['writeActionMemory.help.outputItem'])}
         onClose={handleHelpClose('writeActionMemory.help.outputItem')}
@@ -845,12 +634,6 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
         open={Boolean(helpAnchorEl['writeActionMemory.help.duration'])}
         onClose={handleHelpClose('writeActionMemory.help.duration')}
         fieldKey="writeActionMemory.help.duration"
-      />
-      <FieldHelpPopover
-        anchorEl={helpAnchorEl['writeActionMemory.help.maxExecutionCount']}
-        open={Boolean(helpAnchorEl['writeActionMemory.help.maxExecutionCount'])}
-        onClose={handleHelpClose('writeActionMemory.help.maxExecutionCount')}
-        fieldKey="writeActionMemory.help.maxExecutionCount"
       />
     </Dialog>
   );

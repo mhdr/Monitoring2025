@@ -2820,14 +2820,10 @@ export interface DeleteTimeoutMemoryResponseDto {
 export interface WriteActionMemory {
   id: string; // UUID
   name?: string | null; // Optional name for the write action memory
-  inputItemId: string; // UUID - Item to watch (can be any ItemType)
   outputItemId: string; // UUID - Item to write values (must be DigitalOutput or AnalogOutput)
   outputValue?: string | null; // Static value to write (used when outputValueSourceItemId is null)
   outputValueSourceItemId?: string | null; // UUID - Item to read dynamic value from (used when outputValue is null)
-  interval: number; // int - Interval in seconds between write actions (must be > 0)
   duration: number; // int64 - Duration parameter for WriteOrAddValue (must be >= 0)
-  maxExecutionCount?: number | null; // int - Maximum number of executions (null = continuous)
-  currentExecutionCount: number; // int - Current count of executed write actions
   isDisabled: boolean; // Whether this write action memory is disabled
 }
 
@@ -2851,13 +2847,10 @@ export interface GetWriteActionMemoriesResponseDto {
  */
 export interface AddWriteActionMemoryRequestDto {
   name?: string | null;
-  inputItemId: string; // UUID
   outputItemId: string; // UUID
   outputValue?: string | null; // Either this or outputValueSourceItemId must be provided
   outputValueSourceItemId?: string | null; // Either this or outputValue must be provided
-  interval: number; // int - must be > 0
   duration: number; // int64 - must be >= 0
-  maxExecutionCount?: number | null; // int - null = continuous
   isDisabled: boolean;
 }
 
@@ -2876,15 +2869,11 @@ export interface AddWriteActionMemoryResponseDto {
 export interface EditWriteActionMemoryRequestDto {
   id: string; // UUID
   name?: string | null;
-  inputItemId: string; // UUID
   outputItemId: string; // UUID
   outputValue?: string | null;
   outputValueSourceItemId?: string | null;
-  interval: number; // int - must be > 0
   duration: number; // int64 - must be >= 0
-  maxExecutionCount?: number | null; // int - null = continuous
   isDisabled: boolean;
-  resetExecutionCount: boolean; // When true, resets CurrentExecutionCount to 0
 }
 
 /**

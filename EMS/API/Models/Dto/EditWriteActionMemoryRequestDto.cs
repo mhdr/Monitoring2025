@@ -19,13 +19,6 @@ public class EditWriteActionMemoryRequestDto
     public string? Name { get; set; }
 
     /// <summary>
-    /// ID of the monitoring item to watch (input)
-    /// Can be any item type (DigitalInput, DigitalOutput, AnalogInput, AnalogOutput)
-    /// </summary>
-    [Required(ErrorMessage = "Input item ID is required")]
-    public Guid InputItemId { get; set; }
-
-    /// <summary>
     /// ID of the monitoring item to write values (output)
     /// Must be DigitalOutput or AnalogOutput
     /// </summary>
@@ -45,13 +38,6 @@ public class EditWriteActionMemoryRequestDto
     public Guid? OutputValueSourceItemId { get; set; }
 
     /// <summary>
-    /// Interval in seconds between write actions (must be greater than 0)
-    /// </summary>
-    [Required(ErrorMessage = "Interval is required")]
-    [Range(1, int.MaxValue, ErrorMessage = "Interval must be greater than 0")]
-    public int Interval { get; set; }
-
-    /// <summary>
     /// Duration parameter for WriteOrAddValue (must be >= 0)
     /// </summary>
     [Required(ErrorMessage = "Duration is required")]
@@ -59,19 +45,7 @@ public class EditWriteActionMemoryRequestDto
     public long Duration { get; set; }
 
     /// <summary>
-    /// Maximum number of times to execute the write action (null = continuous/unlimited)
-    /// If provided, must be greater than 0
-    /// </summary>
-    [Range(1, int.MaxValue, ErrorMessage = "MaxExecutionCount must be greater than 0")]
-    public int? MaxExecutionCount { get; set; }
-
-    /// <summary>
     /// Indicates whether this write action memory is disabled
     /// </summary>
     public bool IsDisabled { get; set; }
-
-    /// <summary>
-    /// When true, resets CurrentExecutionCount to 0
-    /// </summary>
-    public bool ResetExecutionCount { get; set; }
 }

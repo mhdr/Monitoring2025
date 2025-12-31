@@ -822,16 +822,8 @@ public class DataContext : DbContext
             .HasDefaultValue(false);
         
         modelBuilder.Entity<WriteActionMemory>()
-            .Property(e => e.Interval)
-            .HasDefaultValue(1);
-        
-        modelBuilder.Entity<WriteActionMemory>()
             .Property(e => e.Duration)
             .HasDefaultValue(10);
-        
-        modelBuilder.Entity<WriteActionMemory>()
-            .Property(e => e.CurrentExecutionCount)
-            .HasDefaultValue(0);
 
         // keys
 

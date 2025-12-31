@@ -5,9 +5,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Core.Models;
 
 /// <summary>
-/// Represents a write action memory configuration that triggers Points.WriteOrAddValue
-/// with configurable execution count, simplified trigger logic, and dynamic output value support.
-/// Monitors any input item (analog or digital) and writes either a static or dynamic value to the output.
+/// Represents a write action memory configuration that triggers Points.WriteOrAddValue.
+/// Simplified design: processes every cycle (duration handles timing), no execution limits, no input monitoring.
 /// </summary>
 [Table("write_action_memories")]
 public class WriteActionMemory
@@ -25,14 +24,6 @@ public class WriteActionMemory
     /// </summary>
     [Column("name")]
     public string? Name { get; set; }
-
-    /// <summary>
-    /// Input item ID to monitor (can be any item type - analog or digital).
-    /// The action will be triggered based on the interval, regardless of the input value.
-    /// </summary>
-    [Column("input_item_id")]
-    [Required]
-    public Guid InputItemId { get; set; }
 
     /// <summary>
     /// Output item ID where the value will be written via WriteOrAddValue.
@@ -58,15 +49,6 @@ public class WriteActionMemory
     public Guid? OutputValueSourceItemId { get; set; }
 
     /// <summary>
-    /// Processing interval in seconds (how often the action executes).
-    /// Default: 1 second. Must be greater than 0.
-    /// </summary>
-    [Column("interval")]
-    [DefaultValue(1)]
-    [Required]
-    public int Interval { get; set; } = 1;
-
-    /// <summary>
     /// Write duration in seconds for controller writes.
     /// Default: 10 seconds. Must be >= 0.
     /// 0 means instant write-and-release for supported interfaces.
@@ -75,25 +57,6 @@ public class WriteActionMemory
     [DefaultValue(10)]
     [Required]
     public long Duration { get; set; } = 10;
-
-    /// <summary>
-    /// Maximum number of times this action will execute.
-    /// Null means continuous execution (run indefinitely).
-    /// If set, must be greater than 0.
-    /// Once CurrentExecutionCount reaches this value, the action stops executing.
-    /// </summary>
-    [Column("max_execution_count")]
-    public int? MaxExecutionCount { get; set; }
-
-    /// <summary>
-    /// Current execution count - tracks how many times the action has successfully executed.
-    /// Increments after each successful write operation.
-    /// Default: 0. Can be reset via EditWriteActionMemory with resetExecutionCount flag.
-    /// </summary>
-    [Column("current_execution_count")]
-    [DefaultValue(0)]
-    [Required]
-    public int CurrentExecutionCount { get; set; } = 0;
 
     /// <summary>
     /// If true, this write action memory is disabled and will not be processed.

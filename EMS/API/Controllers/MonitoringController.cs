@@ -7312,14 +7312,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     {
                         Id = wam.Id,
                         Name = wam.Name,
-                        InputItemId = wam.InputItemId,
                         OutputItemId = wam.OutputItemId,
                         OutputValue = wam.OutputValue,
                         OutputValueSourceItemId = wam.OutputValueSourceItemId,
-                        Interval = wam.Interval,
                         Duration = wam.Duration,
-                        MaxExecutionCount = wam.MaxExecutionCount,
-                        CurrentExecutionCount = wam.CurrentExecutionCount,
                         IsDisabled = wam.IsDisabled
                     });
                 }
@@ -7358,13 +7354,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             var writeActionMemory = new Core.Models.WriteActionMemory
             {
                 Name = request.Name,
-                InputItemId = request.InputItemId,
                 OutputItemId = request.OutputItemId,
                 OutputValue = request.OutputValue,
                 OutputValueSourceItemId = request.OutputValueSourceItemId,
-                Interval = request.Interval,
                 Duration = request.Duration,
-                MaxExecutionCount = request.MaxExecutionCount,
                 IsDisabled = request.IsDisabled
             };
 
@@ -7411,19 +7404,14 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 Id = request.Id,
                 Name = request.Name,
-                InputItemId = request.InputItemId,
                 OutputItemId = request.OutputItemId,
                 OutputValue = request.OutputValue,
                 OutputValueSourceItemId = request.OutputValueSourceItemId,
-                Interval = request.Interval,
                 Duration = request.Duration,
-                MaxExecutionCount = request.MaxExecutionCount,
                 IsDisabled = request.IsDisabled
             };
 
-            var (success, errorMessage) = await Core.WriteActionMemories.EditWriteActionMemory(
-                writeActionMemory, 
-                request.ResetExecutionCount);
+            var (success, errorMessage) = await Core.WriteActionMemories.EditWriteActionMemory(writeActionMemory);
 
             var response = new EditWriteActionMemoryResponseDto
             {

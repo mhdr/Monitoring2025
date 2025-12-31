@@ -6,8 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Core;
 
 /// <summary>
-/// Processes write action memory configurations, monitoring input items and executing
-/// write operations with configurable execution limits and dynamic/static output values.
+/// Processes write action memory configurations, executing write operations every cycle.
+/// Simplified: no input monitoring, no interval checking, no execution limits.
+/// Duration parameter controls write timing in each cycle.
 /// </summary>
 public class WriteActionMemoryProcess
 {
@@ -15,9 +16,6 @@ public class WriteActionMemoryProcess
     private static readonly object _lock = new object();
     private static Task? _runTask;
     private DataContext? _context;
-
-    // Track last execution time for each memory to enforce intervals
-    private readonly Dictionary<Guid, long> _lastExecutionTimes = new();
 
     private WriteActionMemoryProcess()
     {
@@ -41,14 +39,10 @@ public class WriteActionMemoryProcess
 
     /// <summary>
     /// Invalidates cached state when a memory is edited.
+    /// Kept for compatibility but no longer maintains cache.
     /// </summary>
     public void InvalidateCache(Guid memoryId)
     {
-        lock (_lock)
-        {
-            _lastExecutionTimes.Remove(memoryId);
-        }
-        
         MyLog.Debug("WriteActionMemoryProcess: Cache invalidated", new Dictionary<string, object?>
         {
             ["MemoryId"] = memoryId
@@ -121,6 +115,7 @@ public class WriteActionMemoryProcess
 
     /// <summary>
     /// Processes all enabled write action memories that are due for execution.
+    /// Simplified: processes every cycle (no interval checking, no execution count limits).
     /// </summary>
     public async Task Process()
     {
@@ -134,40 +129,12 @@ public class WriteActionMemoryProcess
 
         long epochTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-        // 2. Filter by interval and execution count limits
-        var memoriesToProcess = new List<WriteActionMemory>();
-        
-        foreach (var memory in memories)
-        {
-            // Check if execution count limit reached
-            if (memory.MaxExecutionCount.HasValue && 
-                memory.CurrentExecutionCount >= memory.MaxExecutionCount.Value)
-            {
-                continue; // Skip - limit reached
-            }
-
-            // Check if interval has elapsed
-            if (!_lastExecutionTimes.TryGetValue(memory.Id, out var lastExecution))
-            {
-                memoriesToProcess.Add(memory); // First execution
-            }
-            else if ((epochTime - lastExecution) >= memory.Interval)
-            {
-                memoriesToProcess.Add(memory); // Interval elapsed
-            }
-        }
-
-        if (memoriesToProcess.Count == 0)
-            return;
-
-        // 3. Batch fetch all required items
-        var allInputIds = new HashSet<string>();
+        // 2. Batch fetch all required items
         var allOutputIds = new HashSet<string>();
         var allSourceIds = new HashSet<string>();
 
-        foreach (var memory in memoriesToProcess)
+        foreach (var memory in memories)
         {
-            allInputIds.Add(memory.InputItemId.ToString());
             allOutputIds.Add(memory.OutputItemId.ToString());
             if (memory.OutputValueSourceItemId.HasValue)
             {
@@ -175,24 +142,22 @@ public class WriteActionMemoryProcess
             }
         }
 
-        var inputItemsCache = await Points.GetFinalItemsBatch(allInputIds.ToList());
         var sourceItemsCache = allSourceIds.Count > 0 
             ? await Points.GetFinalItemsBatch(allSourceIds.ToList()) 
             : new Dictionary<string, FinalItemRedis>();
 
         MyLog.Debug("Batch fetched items for WriteActionMemory processing", new Dictionary<string, object?>
         {
-            ["MemoryCount"] = memoriesToProcess.Count,
-            ["InputItemsFetched"] = inputItemsCache.Count,
+            ["MemoryCount"] = memories.Count,
             ["SourceItemsFetched"] = sourceItemsCache.Count
         });
 
-        // 4. Process each memory
-        foreach (var memory in memoriesToProcess)
+        // 3. Process each memory
+        foreach (var memory in memories)
         {
             try
             {
-                await ProcessSingleMemory(memory, inputItemsCache, sourceItemsCache, epochTime);
+                await ProcessSingleMemory(memory, sourceItemsCache, epochTime);
             }
             catch (Exception ex)
             {
@@ -207,18 +172,10 @@ public class WriteActionMemoryProcess
 
     private async Task ProcessSingleMemory(
         WriteActionMemory memory,
-        Dictionary<string, FinalItemRedis> inputItemsCache,
         Dictionary<string, FinalItemRedis> sourceItemsCache,
         long epochTime)
     {
-        // 1. Get input item from cache (just for validation that it exists)
-        if (!inputItemsCache.TryGetValue(memory.InputItemId.ToString(), out var inputItem))
-        {
-            MyLog.Debug($"WriteActionMemory {memory.Id}: Input item not found in cache");
-            return;
-        }
-
-        // 2. Resolve output value
+        // 1. Resolve output value
         string? outputValue = null;
 
         if (memory.OutputValueSourceItemId.HasValue)
@@ -261,7 +218,7 @@ public class WriteActionMemoryProcess
             return;
         }
 
-        // 3. Execute write operation
+        // 2. Execute write operation
         bool success = await Points.WriteOrAddValue(
             memory.OutputItemId,
             outputValue,
@@ -271,39 +228,12 @@ public class WriteActionMemoryProcess
 
         if (success)
         {
-            // 4. Update execution tracking
-            _lastExecutionTimes[memory.Id] = epochTime;
-
-            // 5. Increment execution count in database
-            await using var context = new DataContext();
-            var memoryToUpdate = await context.WriteActionMemories.FindAsync(memory.Id);
-            if (memoryToUpdate != null)
+            MyLog.Info($"WriteActionMemory {memory.Id} executed successfully", new Dictionary<string, object?>
             {
-                memoryToUpdate.CurrentExecutionCount++;
-                await context.SaveChangesAsync();
-
-                MyLog.Info($"WriteActionMemory {memory.Id} executed successfully", new Dictionary<string, object?>
-                {
-                    ["MemoryId"] = memory.Id,
-                    ["MemoryName"] = memory.Name,
-                    ["OutputValue"] = outputValue,
-                    ["ExecutionCount"] = memoryToUpdate.CurrentExecutionCount,
-                    ["MaxExecutionCount"] = memoryToUpdate.MaxExecutionCount
-                });
-
-                // Log if execution limit reached
-                if (memoryToUpdate.MaxExecutionCount.HasValue &&
-                    memoryToUpdate.CurrentExecutionCount >= memoryToUpdate.MaxExecutionCount.Value)
-                {
-                    MyLog.Info($"WriteActionMemory {memory.Id} reached execution limit", new Dictionary<string, object?>
-                    {
-                        ["MemoryId"] = memory.Id,
-                        ["MemoryName"] = memory.Name,
-                        ["ExecutionCount"] = memoryToUpdate.CurrentExecutionCount,
-                        ["MaxExecutionCount"] = memoryToUpdate.MaxExecutionCount.Value
-                    });
-                }
-            }
+                ["MemoryId"] = memory.Id,
+                ["MemoryName"] = memory.Name,
+                ["OutputValue"] = outputValue
+            });
         }
         else
         {

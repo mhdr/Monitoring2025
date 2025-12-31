@@ -26,12 +26,6 @@ public class GetWriteActionMemoriesResponseDto
         public string? Name { get; set; }
 
         /// <summary>
-        /// ID of the monitoring item to watch (input)
-        /// Can be any item type (DigitalInput, DigitalOutput, AnalogInput, AnalogOutput)
-        /// </summary>
-        public Guid InputItemId { get; set; }
-
-        /// <summary>
         /// ID of the monitoring item to write values (output)
         /// Must be DigitalOutput or AnalogOutput
         /// </summary>
@@ -48,24 +42,9 @@ public class GetWriteActionMemoriesResponseDto
         public Guid? OutputValueSourceItemId { get; set; }
 
         /// <summary>
-        /// Interval in seconds between write actions (must be greater than 0)
-        /// </summary>
-        public int Interval { get; set; }
-
-        /// <summary>
         /// Duration parameter for WriteOrAddValue (must be >= 0)
         /// </summary>
         public long Duration { get; set; }
-
-        /// <summary>
-        /// Maximum number of times to execute the write action (null = continuous/unlimited)
-        /// </summary>
-        public int? MaxExecutionCount { get; set; }
-
-        /// <summary>
-        /// Current count of executed write actions
-        /// </summary>
-        public int CurrentExecutionCount { get; set; }
 
         /// <summary>
         /// Indicates whether this write action memory is disabled

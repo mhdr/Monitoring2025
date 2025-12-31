@@ -61,22 +61,7 @@ public class WriteActionMemories
                 return (false, null, "Output item must be AnalogOutput or DigitalOutput");
             }
 
-            // 3. Validate InputItem exists
-            var inputItem = await context.MonitoringItems.FindAsync(memory.InputItemId);
-            if (inputItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Input item not found");
-            }
-
-            // 4. Validate input != output
-            if (memory.InputItemId == memory.OutputItemId)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Input and output items must be different");
-            }
-
-            // 5. Validate exactly one of OutputValue or OutputValueSourceItemId is provided
+            // 3. Validate exactly one of OutputValue or OutputValueSourceItemId is provided
             bool hasStaticValue = !string.IsNullOrEmpty(memory.OutputValue);
             bool hasDynamicSource = memory.OutputValueSourceItemId.HasValue;
 
@@ -92,7 +77,7 @@ public class WriteActionMemories
                 return (false, null, "Cannot specify both OutputValue and OutputValueSourceItemId - choose either static or dynamic mode");
             }
 
-            // 6. If OutputValueSourceItemId is set, validate it exists and differs from input/output
+            // 4. If OutputValueSourceItemId is set, validate it exists and differs from output
             if (memory.OutputValueSourceItemId.HasValue)
             {
                 var sourceItem = await context.MonitoringItems.FindAsync(memory.OutputValueSourceItemId.Value);
@@ -102,12 +87,6 @@ public class WriteActionMemories
                     return (false, null, "Output value source item not found");
                 }
 
-                if (memory.OutputValueSourceItemId.Value == memory.InputItemId)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "Output value source item must be different from input item");
-                }
-
                 if (memory.OutputValueSourceItemId.Value == memory.OutputItemId)
                 {
                     await context.DisposeAsync();
@@ -115,29 +94,12 @@ public class WriteActionMemories
                 }
             }
 
-            // 7. Validate interval
-            if (memory.Interval <= 0)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Interval must be greater than 0");
-            }
-
-            // 8. Validate duration
+            // 5. Validate duration
             if (memory.Duration < 0)
             {
                 await context.DisposeAsync();
                 return (false, null, "Duration must be greater than or equal to 0");
             }
-
-            // 9. Validate MaxExecutionCount if set
-            if (memory.MaxExecutionCount.HasValue && memory.MaxExecutionCount.Value <= 0)
-            {
-                await context.DisposeAsync();
-                return (false, null, "MaxExecutionCount must be greater than 0 when specified");
-            }
-
-            // 10. Reset CurrentExecutionCount to 0 on add
-            memory.CurrentExecutionCount = 0;
 
             // ===== ADD TO DATABASE =====
             context.WriteActionMemories.Add(memory);
@@ -147,7 +109,6 @@ public class WriteActionMemories
             {
                 ["Id"] = memory.Id,
                 ["Name"] = memory.Name,
-                ["InputItemId"] = memory.InputItemId,
                 ["OutputItemId"] = memory.OutputItemId,
                 ["HasStaticValue"] = hasStaticValue,
                 ["HasDynamicSource"] = hasDynamicSource
@@ -167,10 +128,10 @@ public class WriteActionMemories
     }
 
     /// <summary>
-    /// Edit an existing write action memory configuration with optional execution count reset.
+    /// Edit an existing write action memory configuration.
     /// </summary>
     public static async Task<(bool Success, string? ErrorMessage)> EditWriteActionMemory(
-        WriteActionMemory memory, bool resetExecutionCount = false)
+        WriteActionMemory memory)
     {
         try
         {
@@ -199,19 +160,6 @@ public class WriteActionMemories
                 return (false, "Output item must be AnalogOutput or DigitalOutput");
             }
 
-            var inputItem = await context.MonitoringItems.FindAsync(memory.InputItemId);
-            if (inputItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, "Input item not found");
-            }
-
-            if (memory.InputItemId == memory.OutputItemId)
-            {
-                await context.DisposeAsync();
-                return (false, "Input and output items must be different");
-            }
-
             bool hasStaticValue = !string.IsNullOrEmpty(memory.OutputValue);
             bool hasDynamicSource = memory.OutputValueSourceItemId.HasValue;
 
@@ -236,23 +184,11 @@ public class WriteActionMemories
                     return (false, "Output value source item not found");
                 }
 
-                if (memory.OutputValueSourceItemId.Value == memory.InputItemId)
-                {
-                    await context.DisposeAsync();
-                    return (false, "Output value source item must be different from input item");
-                }
-
                 if (memory.OutputValueSourceItemId.Value == memory.OutputItemId)
                 {
                     await context.DisposeAsync();
                     return (false, "Output value source item must be different from output item");
                 }
-            }
-
-            if (memory.Interval <= 0)
-            {
-                await context.DisposeAsync();
-                return (false, "Interval must be greater than 0");
             }
 
             if (memory.Duration < 0)
@@ -261,34 +197,17 @@ public class WriteActionMemories
                 return (false, "Duration must be greater than or equal to 0");
             }
 
-            if (memory.MaxExecutionCount.HasValue && memory.MaxExecutionCount.Value <= 0)
-            {
-                await context.DisposeAsync();
-                return (false, "MaxExecutionCount must be greater than 0 when specified");
-            }
-
-            // 3. Reset execution count if requested
-            if (resetExecutionCount)
-            {
-                memory.CurrentExecutionCount = 0;
-                MyLog.Info("Execution count reset for WriteActionMemory", new Dictionary<string, object?>
-                {
-                    ["Id"] = memory.Id
-                });
-            }
-
-            // 4. Update
+            // 3. Update
             context.Entry(existing).State = EntityState.Detached;
             context.WriteActionMemories.Update(memory);
             await context.SaveChangesAsync();
 
-            // 5. Invalidate processor cache
+            // 4. Invalidate processor cache
             WriteActionMemoryProcess.Instance.InvalidateCache(memory.Id);
 
             MyLog.Info("WriteActionMemory edited successfully", new Dictionary<string, object?>
             {
-                ["Id"] = memory.Id,
-                ["ResetExecutionCount"] = resetExecutionCount
+                ["Id"] = memory.Id
             });
 
             await context.DisposeAsync();
