@@ -2815,6 +2815,101 @@ export interface DeleteTimeoutMemoryResponseDto {
   errorMessage?: string | null;
 }
 
+// ==================== Write Action Memory DTOs ====================
+
+export interface WriteActionMemory {
+  id: string; // UUID
+  name?: string | null; // Optional name for the write action memory
+  inputItemId: string; // UUID - Item to watch (can be any ItemType)
+  outputItemId: string; // UUID - Item to write values (must be DigitalOutput or AnalogOutput)
+  outputValue?: string | null; // Static value to write (used when outputValueSourceItemId is null)
+  outputValueSourceItemId?: string | null; // UUID - Item to read dynamic value from (used when outputValue is null)
+  interval: number; // int - Interval in seconds between write actions (must be > 0)
+  duration: number; // int64 - Duration parameter for WriteOrAddValue (must be >= 0)
+  maxExecutionCount?: number | null; // int - Maximum number of executions (null = continuous)
+  currentExecutionCount: number; // int - Current count of executed write actions
+  isDisabled: boolean; // Whether this write action memory is disabled
+}
+
+/**
+ * Request DTO for retrieving write action memory configurations
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetWriteActionMemoriesRequestDto {
+  // Empty - no filtering parameters needed currently
+}
+
+/**
+ * Response DTO containing list of write action memory configurations
+ */
+export interface GetWriteActionMemoriesResponseDto {
+  writeActionMemories: WriteActionMemory[];
+}
+
+/**
+ * Request DTO for creating a new write action memory configuration
+ */
+export interface AddWriteActionMemoryRequestDto {
+  name?: string | null;
+  inputItemId: string; // UUID
+  outputItemId: string; // UUID
+  outputValue?: string | null; // Either this or outputValueSourceItemId must be provided
+  outputValueSourceItemId?: string | null; // Either this or outputValue must be provided
+  interval: number; // int - must be > 0
+  duration: number; // int64 - must be >= 0
+  maxExecutionCount?: number | null; // int - null = continuous
+  isDisabled: boolean;
+}
+
+/**
+ * Response DTO for adding a new write action memory configuration
+ */
+export interface AddWriteActionMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null; // UUID of newly created write action memory
+}
+
+/**
+ * Request DTO for editing an existing write action memory configuration
+ */
+export interface EditWriteActionMemoryRequestDto {
+  id: string; // UUID
+  name?: string | null;
+  inputItemId: string; // UUID
+  outputItemId: string; // UUID
+  outputValue?: string | null;
+  outputValueSourceItemId?: string | null;
+  interval: number; // int - must be > 0
+  duration: number; // int64 - must be >= 0
+  maxExecutionCount?: number | null; // int - null = continuous
+  isDisabled: boolean;
+  resetExecutionCount: boolean; // When true, resets CurrentExecutionCount to 0
+}
+
+/**
+ * Response DTO for editing a write action memory configuration
+ */
+export interface EditWriteActionMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a write action memory configuration
+ */
+export interface DeleteWriteActionMemoryRequestDto {
+  id: string; // UUID
+}
+
+/**
+ * Response DTO for deleting a write action memory configuration
+ */
+export interface DeleteWriteActionMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
 // ==================== Average Memory DTOs ====================
 
 /**

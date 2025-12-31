@@ -78,6 +78,8 @@ public class DataContext : DbContext
     public DbSet<DeadbandMemory> DeadbandMemories { get; set; }
     
     public DbSet<MinMaxSelectorMemory> MinMaxSelectorMemories { get; set; }
+    
+    public DbSet<WriteActionMemory> WriteActionMemories { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -809,6 +811,27 @@ public class DataContext : DbContext
         modelBuilder.Entity<MinMaxSelectorMemory>()
             .Property(e => e.FailoverMode)
             .HasConversion<int>();
+
+        // WriteActionMemory configuration
+        modelBuilder.Entity<WriteActionMemory>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<WriteActionMemory>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<WriteActionMemory>()
+            .Property(e => e.Interval)
+            .HasDefaultValue(1);
+        
+        modelBuilder.Entity<WriteActionMemory>()
+            .Property(e => e.Duration)
+            .HasDefaultValue(10);
+        
+        modelBuilder.Entity<WriteActionMemory>()
+            .Property(e => e.CurrentExecutionCount)
+            .HasDefaultValue(0);
 
         // keys
 

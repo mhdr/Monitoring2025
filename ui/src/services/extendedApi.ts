@@ -46,6 +46,15 @@ import type {
   EditTimeoutMemoryResponseDto,
   DeleteTimeoutMemoryRequestDto,
   DeleteTimeoutMemoryResponseDto,
+  // Write Action Memory types
+  GetWriteActionMemoriesRequestDto,
+  GetWriteActionMemoriesResponseDto,
+  AddWriteActionMemoryRequestDto,
+  AddWriteActionMemoryResponseDto,
+  EditWriteActionMemoryRequestDto,
+  EditWriteActionMemoryResponseDto,
+  DeleteWriteActionMemoryRequestDto,
+  DeleteWriteActionMemoryResponseDto,
   // Average Memory types
   GetAverageMemoriesRequestDto,
   GetAverageMemoriesResponseDto,
@@ -529,6 +538,56 @@ export const editTimeoutMemory = async (data: EditTimeoutMemoryRequestDto): Prom
 export const deleteTimeoutMemory = async (data: DeleteTimeoutMemoryRequestDto): Promise<DeleteTimeoutMemoryResponseDto> => {
   try {
     const response = await apiClient.post<DeleteTimeoutMemoryResponseDto>('/api/Monitoring/DeleteTimeoutMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// ==================== Write Action Memory ====================
+
+/**
+ * Get all write action memory configurations
+ */
+export const getWriteActionMemories = async (params: GetWriteActionMemoriesRequestDto = {}): Promise<GetWriteActionMemoriesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetWriteActionMemoriesResponseDto>('/api/Monitoring/GetWriteActionMemories', params);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new write action memory configuration
+ */
+export const addWriteActionMemory = async (data: AddWriteActionMemoryRequestDto): Promise<AddWriteActionMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<AddWriteActionMemoryResponseDto>('/api/Monitoring/AddWriteActionMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing write action memory configuration
+ */
+export const editWriteActionMemory = async (data: EditWriteActionMemoryRequestDto): Promise<EditWriteActionMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<EditWriteActionMemoryResponseDto>('/api/Monitoring/EditWriteActionMemory', data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a write action memory configuration
+ */
+export const deleteWriteActionMemory = async (data: DeleteWriteActionMemoryRequestDto): Promise<DeleteWriteActionMemoryResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteWriteActionMemoryResponseDto>('/api/Monitoring/DeleteWriteActionMemory', data);
     return response.data;
   } catch (error) {
     handleApiError(error);

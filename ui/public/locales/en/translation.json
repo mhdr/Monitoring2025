@@ -1778,6 +1778,298 @@
       }
     }
   },
+  "writeActionMemory": {
+    "title": "Write Action Memory",
+    "description": "Automatically write values to output items at specified intervals with execution tracking.",
+    "addNew": "Add Write Action",
+    "addTitle": "Add Write Action Memory",
+    "editTitle": "Edit Write Action Memory",
+    "deleteTitle": "Delete Write Action Memory",
+    "deleteMessage": "Are you sure you want to delete write action \"{{name}}\"?",
+    "deleteWarning": "This action cannot be undone. All execution history will be lost.",
+    "searchPlaceholder": "Search write action memories...",
+    "name": "Name",
+    "nameHelp": "Optional descriptive name for this write action (e.g., 'Reset Daily Counter', 'Set Night Mode')",
+    "basicConfig": "Basic Configuration",
+    "writeActionConfig": "Write Action Configuration",
+    "executionControl": "Execution Control",
+    "inputItem": "Input Item",
+    "inputItemHelp": "Item to monitor that triggers periodic write operations. Can be any item type.",
+    "outputItem": "Output Item",
+    "outputItemHelp": "Target item for writing values. Must be Digital Output or Analog Output.",
+    "outputValueMode": "Output Value Mode",
+    "staticMode": "Static Value",
+    "dynamicMode": "Dynamic from Item",
+    "static": "Static",
+    "dynamic": "Dynamic",
+    "staticValue": "Static Value",
+    "staticValueHelp": "Fixed value to write each time (e.g., '100', '1', 'true'). This value will be written unchanged.",
+    "sourceItem": "Source Item",
+    "sourceItemHelp": "Item to read dynamic value from. The current value of this item will be written to the output item.",
+    "interval": "Interval (seconds)",
+    "intervalHelp": "Time between write operations. Writes occur every N seconds while the memory is active.",
+    "duration": "Duration (seconds)",
+    "durationHelp": "Duration parameter passed to WriteOrAddValue function (default: 10). Used for controller write operations.",
+    "maxExecutionCount": "Max Execution Count",
+    "maxExecutionCountHelp": "Maximum number of times to execute the write action. Leave empty for continuous operation.",
+    "currentExecutionCount": "Current Execution Count",
+    "currentExecutionCountHelp": "Number of times this write action has been executed. Increments after each successful write.",
+    "resetExecutionCount": "Reset Execution Count",
+    "continuousExecution": "Continuous",
+    "continuous": "Continuous",
+    "executionStatus": "Execution Status",
+    "isDisabled": "Disabled",
+    "valueSource": "Value Source",
+    "validation": {
+      "inputItemRequired": "Input item is required",
+      "outputItemRequired": "Output item is required",
+      "outputValueRequired": "Static value is required when using static mode",
+      "sourceItemRequired": "Source item is required when using dynamic mode",
+      "sourceCannotBeInput": "Source item cannot be the same as input item",
+      "sourceCannotBeOutput": "Source item cannot be the same as output item",
+      "itemsMustBeDifferent": "Input and output items must be different",
+      "intervalRequired": "Interval must be greater than 0",
+      "durationInvalid": "Duration must be >= 0",
+      "maxExecutionCountInvalid": "Max execution count must be greater than 0 if specified"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load write action memories",
+      "createFailed": "Failed to create write action memory",
+      "updateFailed": "Failed to update write action memory",
+      "deleteFailed": "Failed to delete write action memory"
+    },
+    "help": {
+      "overview": {
+        "title": "Write Action Memory Overview",
+        "sections": [
+          {
+            "title": "What is Write Action Memory?",
+            "content": "Write Action Memory automatically writes values to output items at regular intervals. It supports both static values and dynamic values read from other items, with execution counting and interval-based triggering."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "Monitors an input item to stay synchronized with system updates",
+              "Every N seconds (interval), writes a value to the output item",
+              "Value can be static (fixed) or dynamic (read from another item)",
+              "Tracks execution count and can stop after N executions",
+              "Calls Points.WriteOrAddValue which handles InterfaceType appropriately"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Common Use Cases",
+            "content": "Periodic Commands:\n• Reset totalizer counters daily\n• Send keepalive signals to equipment\n• Toggle outputs for testing\n• Cycle pumps or valves periodically\n\nData Replication:\n• Copy values from one PLC to another\n• Mirror sensor readings to backup systems\n• Broadcast values to multiple destinations\n\nScheduled Actions:\n• Set operation modes at intervals\n• Update setpoints periodically\n• Refresh display values"
+          },
+          {
+            "type": "tip",
+            "title": "Execution Modes",
+            "content": "Continuous Mode: Leave Max Execution Count empty. Writes will continue indefinitely every interval.\n\nLimited Mode: Set Max Execution Count (e.g., 10). After 10 writes, execution stops automatically. Use Reset Execution Count in edit dialog to restart."
+          },
+          {
+            "type": "warning",
+            "title": "Important Notes",
+            "content": "• Output item must be DigitalOutput or AnalogOutput\n• Type conversion happens automatically (value → string)\n• For controller writes (Modbus/Sharp7), duration parameter applies\n• Execution count persists across system restarts\n• Consider network load when setting short intervals"
+          }
+        ]
+      },
+      "name": {
+        "title": "Name - Descriptive Label",
+        "sections": [
+          {
+            "title": "Purpose",
+            "content": "Optional human-readable name to help identify this write action in lists and logs."
+          },
+          {
+            "type": "example",
+            "title": "Naming Examples",
+            "content": "Descriptive names:\n• 'Reset Daily Totalizer'\n• 'Pump 1 Keepalive Signal'\n• 'Copy Tank Level to Backup PLC'\n• 'Set Night Mode Every 8 Hours'\n• 'Test Valve Cycle - 5 Times'\n\nIf left empty, displays as 'WAM-{id}' in the interface."
+          }
+        ]
+      },
+      "inputItem": {
+        "title": "Input Item - Synchronization Reference",
+        "sections": [
+          {
+            "title": "What is the Input Item?",
+            "content": "The input item is monitored to keep the write action synchronized with system updates. Any item type (analog/digital, input/output) can be used."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "System checks input item periodically (1-second cycle)",
+              "When interval time has elapsed since last write, performs write operation",
+              "Input item does not need to change - it's just a timing reference",
+              "Provides synchronization with system monitoring loops"
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "Selection Guidelines",
+            "content": "• Use a stable, regularly-updated item\n• Can be the same as source item (for dynamic mode)\n• Doesn't have to be related to output item\n• Often convenient to use a system heartbeat or clock item"
+          }
+        ]
+      },
+      "interval": {
+        "title": "Interval - Write Frequency",
+        "sections": [
+          {
+            "title": "What is the Interval?",
+            "content": "Time in seconds between write operations. System checks every second whether interval has elapsed since the last write."
+          },
+          {
+            "type": "example",
+            "title": "Common Intervals",
+            "content": "Fast Operations (1-10 seconds):\n• Keepalive signals\n• High-priority data replication\n• Testing and debugging\n\nMedium Operations (30-300 seconds):\n• Periodic status updates\n• Sensor value broadcasting\n• Regular control adjustments\n\nSlow Operations (600+ seconds):\n• Daily counter resets\n• Scheduled mode changes\n• Long-term data archiving"
+          },
+          {
+            "type": "warning",
+            "title": "Performance Considerations",
+            "content": "Very short intervals (< 5 seconds) on many write actions can increase system load. Consider:\n• Network bandwidth for controller writes\n• Database write frequency\n• Overall system performance\n• Actual requirement for update frequency"
+          }
+        ]
+      },
+      "outputValueMode": {
+        "title": "Output Value Mode - Static vs Dynamic",
+        "sections": [
+          {
+            "title": "Two Value Source Modes",
+            "content": "Static Mode: Write the same fixed value every time.\nDynamic Mode: Read value from another item and write it."
+          },
+          {
+            "title": "Static Mode",
+            "content": [
+              "Specify a fixed value (e.g., '0', '100', 'true')",
+              "Same value is written every interval",
+              "Useful for commands, resets, toggles",
+              "Simple and predictable behavior"
+            ]
+          },
+          {
+            "title": "Dynamic Mode",
+            "content": [
+              "Select another item as value source",
+              "Current value of source item is read and written",
+              "Useful for data replication, mirroring",
+              "Value can change between write operations",
+              "Source item can be any type (automatic conversion)"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Mode Examples",
+            "content": "Static Mode Examples:\n• Write '1' to reset a counter → Static: '1'\n• Send keepalive → Static: 'true'\n• Set fixed setpoint → Static: '75.5'\n\nDynamic Mode Examples:\n• Copy temperature from Sensor A to PLC B → Source: Sensor A\n• Mirror tank level to backup system → Source: Tank Level Sensor\n• Broadcast pressure to multiple displays → Source: Pressure Transmitter"
+          },
+          {
+            "type": "warning",
+            "title": "Type Compatibility",
+            "content": "All values are converted to strings before writing. Digital items expect '0'/'1' or 'true'/'false'. Analog items accept numeric strings. Ensure source item type is compatible with output item type to avoid unexpected behavior."
+          }
+        ]
+      },
+      "staticValue": {
+        "title": "Static Value - Fixed Value to Write",
+        "sections": [
+          {
+            "title": "What is Static Value?",
+            "content": "A fixed value that will be written to the output item every interval. The value never changes unless you edit the configuration."
+          },
+          {
+            "type": "example",
+            "title": "Value Examples by Type",
+            "content": "Digital Output:\n• '0' or 'false' → Off/Low\n• '1' or 'true' → On/High\n\nAnalog Output:\n• '0' → Zero value\n• '100' → Set to 100\n• '75.5' → Decimal value\n• '-10.25' → Negative value"
+          },
+          {
+            "type": "tip",
+            "title": "Best Practices",
+            "content": "• Use simple, clear values\n• For digital: prefer '0'/'1' over 'false'/'true'\n• For analog: include decimal point if fractional (e.g., '75.0')\n• Test value compatibility with target item before deployment"
+          }
+        ]
+      },
+      "sourceItem": {
+        "title": "Source Item - Dynamic Value Provider",
+        "sections": [
+          {
+            "title": "What is Source Item?",
+            "content": "In dynamic mode, the source item is read every interval and its current value is written to the output item. This enables data replication and value mirroring."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "Before each write, system reads current value from source item",
+              "Value is converted to string format",
+              "Converted value is written to output item",
+              "Process repeats every interval"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Common Scenarios",
+            "content": "Cross-PLC Data Sharing:\n• Source: Temperature from PLC A\n• Output: Temperature display on PLC B\n• Result: PLC B always shows PLC A's temperature\n\nBackup/Redundancy:\n• Source: Main pressure sensor\n• Output: Backup system pressure input\n• Result: Backup system mirrors main sensor\n\nMulti-Site Broadcasting:\n• Source: Master site production count\n• Output: Remote site dashboard display\n• Result: All sites see master count"
+          },
+          {
+            "type": "warning",
+            "title": "Restrictions",
+            "content": "• Source item cannot be the input item\n• Source item cannot be the output item\n• Source item can be any type (automatic conversion)\n• Consider type compatibility to avoid data loss"
+          }
+        ]
+      },
+      "duration": {
+        "title": "Duration - WriteOrAddValue Parameter",
+        "sections": [
+          {
+            "title": "What is Duration?",
+            "content": "Duration is a parameter passed to the Points.WriteOrAddValue function (default: 10 seconds). It's used internally for controller write operations and timing."
+          },
+          {
+            "title": "When Duration Matters",
+            "content": [
+              "Modbus/Sharp7 controller writes: affects WriteItem DurationSeconds",
+              "InterfaceType.None writes: not typically relevant",
+              "System uses this for write operation timing and queuing",
+              "Most users can leave at default value of 10"
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "Configuration Guidance",
+            "content": "• Default value (10) works for most cases\n• For critical controller writes, may increase to 30-60\n• Must be >= 0 (validation enforced)\n• Consult system documentation for specific controller requirements"
+          }
+        ]
+      },
+      "maxExecutionCount": {
+        "title": "Max Execution Count - Execution Limiting",
+        "sections": [
+          {
+            "title": "Two Execution Modes",
+            "content": "Continuous (empty): Writes continue indefinitely every interval.\nLimited (number): Stops after N successful writes."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "CurrentExecutionCount starts at 0",
+              "After each successful write, count increments",
+              "When count reaches MaxExecutionCount, writes stop",
+              "Processor skips this memory once limit reached",
+              "Count persists across system restarts",
+              "Use Reset Execution Count checkbox (in edit) to restart"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Use Cases",
+            "content": "Testing/Commissioning:\n• Test valve operation 5 times → Max: 5\n• Verify pump cycles 10 times → Max: 10\n• Run diagnostic sequence 3 times → Max: 3\n\nScheduled Limited Actions:\n• Send daily report for 30 days → Max: 30\n• Periodic calibration signal 12 times (monthly for a year) → Max: 12\n• Startup sequence repeat 3 times → Max: 3\n\nContinuous Operations:\n• Keepalive signals → Max: empty (continuous)\n• Data replication → Max: empty (continuous)\n• Status broadcasting → Max: empty (continuous)"
+          },
+          {
+            "type": "tip",
+            "title": "Resetting Count",
+            "content": "When limit is reached:\n1. Edit the write action memory\n2. Check 'Reset Execution Count' checkbox\n3. Optionally adjust Max Execution Count\n4. Save\n\nCurrent count resets to 0 and writes resume."
+          }
+        ]
+      }
+    }
+  },
+```
   "pidMemory": {
     "title": "PID Memory",
     "description": "Configure PID controllers for process control and automation.",

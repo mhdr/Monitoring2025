@@ -17,6 +17,7 @@ import {
 import {
   Close as CloseIcon,
   Timer as TimerIcon,
+  PlayArrow as PlayArrowIcon,
   PrecisionManufacturing as PIDIcon,
   Calculate as CalculateIcon,
   Countertops as TotalizerIcon,
@@ -53,6 +54,7 @@ const MemorySidebar: React.FC<MemorySidebarProps> = ({ isOpen, onToggle }) => {
 
   const menuItems: MenuItem[] = [
     { path: '/dashboard/memory/timeout-memory', key: 'timeoutMemory.title', icon: <TimerIcon /> },
+    { path: '/dashboard/memory/write-action-memory', key: 'writeActionMemory.title', icon: <PlayArrowIcon /> },
     { path: '/dashboard/memory/average-memory', key: 'averageMemory.title', icon: <CalculateIcon /> },
     { path: '/dashboard/memory/pid-memory', key: 'pidMemory.title', icon: <PIDIcon /> },
     { path: '/dashboard/memory/totalizer-memory', key: 'totalizerMemory.title', icon: <TotalizerIcon /> },

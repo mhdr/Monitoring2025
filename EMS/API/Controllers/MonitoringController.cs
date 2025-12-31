@@ -7278,6 +7278,209 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
         return BadRequest(ModelState);
     }
 
+    #region Write Action Memory Management
+
+    /// <summary>
+    /// Get all write action memory configurations
+    /// </summary>
+    /// <param name="request">Get write action memories request (empty for now)</param>
+    /// <returns>List of write action memory configurations</returns>
+    /// <response code="200">Returns list of write action memory configurations</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("GetWriteActionMemories")]
+    public async Task<IActionResult> GetWriteActionMemories([FromBody] GetWriteActionMemoriesRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var response = new GetWriteActionMemoriesResponseDto();
+
+            var writeActionMemories = await Core.WriteActionMemories.GetWriteActionMemories();
+
+            if (writeActionMemories != null)
+            {
+                foreach (var wam in writeActionMemories)
+                {
+                    response.WriteActionMemories.Add(new GetWriteActionMemoriesResponseDto.WriteActionMemory()
+                    {
+                        Id = wam.Id,
+                        Name = wam.Name,
+                        InputItemId = wam.InputItemId,
+                        OutputItemId = wam.OutputItemId,
+                        OutputValue = wam.OutputValue,
+                        OutputValueSourceItemId = wam.OutputValueSourceItemId,
+                        Interval = wam.Interval,
+                        Duration = wam.Duration,
+                        MaxExecutionCount = wam.MaxExecutionCount,
+                        CurrentExecutionCount = wam.CurrentExecutionCount,
+                        IsDisabled = wam.IsDisabled
+                    });
+                }
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Add a new write action memory configuration
+    /// </summary>
+    /// <param name="request">Add write action memory request containing all configuration parameters</param>
+    /// <returns>Result indicating success or failure of the add operation with the new ID</returns>
+    /// <response code="200">Returns success status and new write action memory ID</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("AddWriteActionMemory")]
+    public async Task<IActionResult> AddWriteActionMemory([FromBody] AddWriteActionMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var writeActionMemory = new Core.Models.WriteActionMemory
+            {
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                OutputValue = request.OutputValue,
+                OutputValueSourceItemId = request.OutputValueSourceItemId,
+                Interval = request.Interval,
+                Duration = request.Duration,
+                MaxExecutionCount = request.MaxExecutionCount,
+                IsDisabled = request.IsDisabled
+            };
+
+            var (success, id, errorMessage) = await Core.WriteActionMemories.AddWriteActionMemory(writeActionMemory);
+
+            var response = new AddWriteActionMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage,
+                Id = id
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Edit an existing write action memory configuration
+    /// </summary>
+    /// <param name="request">Edit write action memory request containing updated configuration</param>
+    /// <returns>Result indicating success or failure of the edit operation</returns>
+    /// <response code="200">Returns success status of the write action memory update</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("EditWriteActionMemory")]
+    public async Task<IActionResult> EditWriteActionMemory([FromBody] EditWriteActionMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var writeActionMemory = new Core.Models.WriteActionMemory
+            {
+                Id = request.Id,
+                Name = request.Name,
+                InputItemId = request.InputItemId,
+                OutputItemId = request.OutputItemId,
+                OutputValue = request.OutputValue,
+                OutputValueSourceItemId = request.OutputValueSourceItemId,
+                Interval = request.Interval,
+                Duration = request.Duration,
+                MaxExecutionCount = request.MaxExecutionCount,
+                IsDisabled = request.IsDisabled
+            };
+
+            var (success, errorMessage) = await Core.WriteActionMemories.EditWriteActionMemory(
+                writeActionMemory, 
+                request.ResetExecutionCount);
+
+            var response = new EditWriteActionMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    /// <summary>
+    /// Delete a write action memory configuration
+    /// </summary>
+    /// <param name="request">Delete write action memory request containing the ID to delete</param>
+    /// <returns>Result indicating success or failure of the delete operation</returns>
+    /// <response code="200">Returns success status of the write action memory deletion</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="400">If there's a validation error with the request</response>
+    [HttpPost("DeleteWriteActionMemory")]
+    public async Task<IActionResult> DeleteWriteActionMemory([FromBody] DeleteWriteActionMemoryRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var (success, errorMessage) = await Core.WriteActionMemories.DeleteWriteActionMemory(request.Id);
+
+            var response = new DeleteWriteActionMemoryResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+        }
+
+        return BadRequest(ModelState);
+    }
+
+    #endregion
+
     #region Average Memory Management
 
     /// <summary>

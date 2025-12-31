@@ -55,7 +55,10 @@ public class Worker : BackgroundService
         _logger.LogInformation("Start Processing Min/Max Selector Memories...");
         var task14 = MinMaxSelectorMemoryProcess.Instance.Run();
 
-        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7, task8, task9, task10, task11, task12, task13, task14);
+        _logger.LogInformation("Start Processing Write Action Memories...");
+        var task15 = WriteActionMemoryProcess.Instance.Run();
+
+        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7, task8, task9, task10, task11, task12, task13, task14, task15);
         Console.ReadKey();
     }
 }
