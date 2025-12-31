@@ -2069,7 +2069,6 @@
       }
     }
   },
-```
   "pidMemory": {
     "title": "PID Memory",
     "description": "Configure PID controllers for process control and automation.",
