@@ -4012,3 +4012,59 @@ export interface DeleteMinMaxSelectorMemoryResponseDto {
   isSuccessful: boolean;
   errorMessage?: string | null;
 }
+
+// Schedule Memory Types
+
+/**
+ * Override expiration mode for manual override behavior
+ */
+export enum OverrideExpirationMode {
+  /**
+   * Override expires after a specified duration in minutes
+   */
+  TimeBased = 1,
+  
+  /**
+   * Override remains active until the next schedule change or manual deactivation
+   */
+  EventBased = 2
+}
+
+/**
+ * Priority levels for schedule blocks to resolve conflicts
+ * Higher priority blocks take precedence when schedules overlap
+ */
+export enum SchedulePriority {
+  /**
+   * Low priority - can be overridden by any higher priority
+   */
+  Low = 1,
+  
+  /**
+   * Normal priority - default for most schedules
+   */
+  Normal = 2,
+  
+  /**
+   * High priority - takes precedence over normal schedules
+   */
+  High = 3,
+  
+  /**
+   * Critical priority - highest precedence, for emergency or demand response
+   */
+  Critical = 4
+}
+
+/**
+ * Days of the week for schedule block configuration
+ */
+export enum ScheduleDayOfWeek {
+  Sunday = 0,
+  Monday = 1,
+  Tuesday = 2,
+  Wednesday = 3,
+  Thursday = 4,
+  Friday = 5,
+  Saturday = 6
+}
