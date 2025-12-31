@@ -41,7 +41,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import { addScheduleMemory, editScheduleMemory, getHolidayCalendars } from '../services/extendedApi';
 import type { ScheduleMemory, Item, ItemType, HolidayCalendar, AddScheduleBlockDto } from '../types/api';
-import { OverrideExpirationMode, SchedulePriority, ScheduleDayOfWeek, NullEndTimeBehavior } from '../types/api';
+import { SchedulePriority, ScheduleDayOfWeek, NullEndTimeBehavior } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -76,8 +76,6 @@ interface FormData {
   holidayCalendarId: string;
   defaultAnalogValue: number | null;
   defaultDigitalValue: boolean | null;
-  overrideExpirationMode: number;
-  overrideDurationMinutes: number;
   scheduleBlocks: ScheduleBlockForm[];
 }
 
@@ -87,7 +85,6 @@ interface FormErrors {
   interval?: string;
   duration?: string;
   defaultValue?: string;
-  overrideDurationMinutes?: string;
   scheduleBlocks?: string;
 }
 
@@ -204,8 +201,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
     holidayCalendarId: '',
     defaultAnalogValue: null,
     defaultDigitalValue: null,
-    overrideExpirationMode: OverrideExpirationMode.TimeBased,
-    overrideDurationMinutes: 60,
     scheduleBlocks: [],
   });
 
@@ -250,8 +245,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           holidayCalendarId: scheduleMemory.holidayCalendarId || '',
           defaultAnalogValue: scheduleMemory.defaultAnalogValue ?? null,
           defaultDigitalValue: scheduleMemory.defaultDigitalValue ?? null,
-          overrideExpirationMode: scheduleMemory.overrideExpirationMode,
-          overrideDurationMinutes: scheduleMemory.overrideDurationMinutes,
           scheduleBlocks: scheduleMemory.scheduleBlocks?.map((b) => ({
             tempId: b.id || generateTempId(),
             dayOfWeek: typeof b.dayOfWeek === 'number' ? b.dayOfWeek : 0,
@@ -275,8 +268,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           holidayCalendarId: '',
           defaultAnalogValue: null,
           defaultDigitalValue: null,
-          overrideExpirationMode: OverrideExpirationMode.TimeBased,
-          overrideDurationMinutes: 60,
           scheduleBlocks: [],
         });
       }
@@ -341,10 +332,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
       errors.duration = t('scheduleMemory.validation.durationInvalid');
     }
 
-    if (formData.overrideExpirationMode === OverrideExpirationMode.TimeBased && formData.overrideDurationMinutes <= 0) {
-      errors.overrideDurationMinutes = t('scheduleMemory.validation.durationRequired');
-    }
-
     // Validate schedule blocks
     for (const block of formData.scheduleBlocks) {
       if (!block.startTime || !block.endTime) {
@@ -398,8 +385,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           holidayCalendarId: formData.holidayCalendarId || null,
           defaultAnalogValue: isAnalogOutput ? formData.defaultAnalogValue : null,
           defaultDigitalValue: !isAnalogOutput ? formData.defaultDigitalValue : null,
-          overrideExpirationMode: formData.overrideExpirationMode,
-          overrideDurationMinutes: formData.overrideDurationMinutes,
           scheduleBlocks: blocks,
         });
 
@@ -419,8 +404,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           holidayCalendarId: formData.holidayCalendarId || null,
           defaultAnalogValue: isAnalogOutput ? formData.defaultAnalogValue : null,
           defaultDigitalValue: !isAnalogOutput ? formData.defaultDigitalValue : null,
-          overrideExpirationMode: formData.overrideExpirationMode,
-          overrideDurationMinutes: formData.overrideDurationMinutes,
           scheduleBlocks: blocks,
         });
 
@@ -488,7 +471,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
         <Tabs value={activeTab} onChange={handleTabChange} aria-label="schedule memory tabs">
           <Tab label={t('scheduleMemory.sections.basic')} data-id-ref="schedule-memory-tab-basic" />
           <Tab label={t('scheduleMemory.sections.blocks')} data-id-ref="schedule-memory-tab-blocks" />
-          <Tab label={t('scheduleMemory.sections.override')} data-id-ref="schedule-memory-tab-override" />
         </Tabs>
       </Box>
 
@@ -886,55 +868,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
             </Paper>
           )}
         </CustomTabPanel>
-
-        {/* Override Settings Tab */}
-        <CustomTabPanel value={activeTab} index={2}>
-          <Grid container spacing={3}>
-            <Grid size={12}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography variant="subtitle1" fontWeight="bold">{t('scheduleMemory.sections.override')}</Typography>
-                <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.override')}>
-                  <HelpOutlineIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FormControl fullWidth>
-                <InputLabel>{t('scheduleMemory.overrideMode')}</InputLabel>
-                <Select
-                  value={formData.overrideExpirationMode}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, overrideExpirationMode: Number(e.target.value) }))}
-                  label={t('scheduleMemory.overrideMode')}
-                  disabled={loading}
-                  data-id-ref="schedule-memory-override-mode-select"
-                >
-                  <MenuItem value={OverrideExpirationMode.TimeBased}>{t('scheduleMemory.overrideMode.timeBased')}</MenuItem>
-                  <MenuItem value={OverrideExpirationMode.EventBased}>{t('scheduleMemory.overrideMode.eventBased')}</MenuItem>
-                </Select>
-                <FormHelperText>{t('scheduleMemory.overrideModeHelp')}</FormHelperText>
-              </FormControl>
-            </Grid>
-
-            {formData.overrideExpirationMode === OverrideExpirationMode.TimeBased && (
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  label={t('scheduleMemory.overrideDuration')}
-                  type="number"
-                  value={formData.overrideDurationMinutes}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, overrideDurationMinutes: Number(e.target.value) }))}
-                  disabled={loading}
-                  required
-                  error={!!formErrors.overrideDurationMinutes}
-                  helperText={formErrors.overrideDurationMinutes || t('scheduleMemory.overrideDurationHelp')}
-                  inputProps={{ min: 1 }}
-                  fullWidth
-                  data-id-ref="schedule-memory-override-duration-input"
-                />
-              </Grid>
-            )}
-          </Grid>
-        </CustomTabPanel>
       </DialogContent>
 
       <DialogActions data-id-ref="schedule-memory-dialog-actions" sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider' }}>
@@ -988,12 +921,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
         open={Boolean(helpAnchorEl['scheduleMemory.help.blocks'])}
         onClose={handleHelpClose('scheduleMemory.help.blocks')}
         fieldKey="scheduleMemory.help.blocks"
-      />
-      <FieldHelpPopover
-        anchorEl={helpAnchorEl['scheduleMemory.help.override']}
-        open={Boolean(helpAnchorEl['scheduleMemory.help.override'])}
-        onClose={handleHelpClose('scheduleMemory.help.override')}
-        fieldKey="scheduleMemory.help.override"
       />
     </Dialog>
   );

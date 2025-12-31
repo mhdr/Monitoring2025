@@ -140,8 +140,6 @@ import type {
   EditScheduleMemoryResponseDto,
   DeleteScheduleMemoryRequestDto,
   DeleteScheduleMemoryResponseDto,
-  SetScheduleOverrideRequestDto,
-  SetScheduleOverrideResponseDto,
   // Holiday Calendar types
   HolidayCalendar,
   AddHolidayCalendarRequestDto,
@@ -1377,23 +1375,6 @@ export const deleteScheduleMemory = async (
   try {
     const response = await apiClient.post<DeleteScheduleMemoryResponseDto>(
       '/api/Monitoring/DeleteScheduleMemory',
-      data
-    );
-    return response.data;
-  } catch (error) {
-    handleApiError(error);
-  }
-};
-
-/**
- * Set manual override for a schedule memory
- */
-export const setScheduleOverride = async (
-  data: SetScheduleOverrideRequestDto
-): Promise<SetScheduleOverrideResponseDto> => {
-  try {
-    const response = await apiClient.post<SetScheduleOverrideResponseDto>(
-      '/api/Monitoring/SetScheduleOverride',
       data
     );
     return response.data;

@@ -88,16 +88,6 @@ public class ScheduleMemories
                 }
             }
 
-            // Validate override duration for time-based mode
-            if (scheduleMemory.OverrideExpirationMode == OverrideExpirationMode.TimeBased)
-            {
-                if (scheduleMemory.OverrideDurationMinutes <= 0)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "Override duration must be greater than 0 for time-based mode");
-                }
-            }
-
             // Validate default value based on output type
             bool isAnalogOutput = outputItem.ItemType == ItemType.AnalogOutput;
             if (isAnalogOutput)
@@ -197,16 +187,6 @@ public class ScheduleMemories
                 }
             }
 
-            // Validate override duration for time-based mode
-            if (scheduleMemory.OverrideExpirationMode == OverrideExpirationMode.TimeBased)
-            {
-                if (scheduleMemory.OverrideDurationMinutes <= 0)
-                {
-                    await context.DisposeAsync();
-                    return (false, "Override duration must be greater than 0 for time-based mode");
-                }
-            }
-
             // Validate default value based on output type
             bool isAnalogOutput = outputItem.ItemType == ItemType.AnalogOutput;
             if (isAnalogOutput)
@@ -244,8 +224,6 @@ public class ScheduleMemories
             existingMemory.HolidayCalendarId = scheduleMemory.HolidayCalendarId;
             existingMemory.DefaultAnalogValue = scheduleMemory.DefaultAnalogValue;
             existingMemory.DefaultDigitalValue = scheduleMemory.DefaultDigitalValue;
-            existingMemory.OverrideExpirationMode = scheduleMemory.OverrideExpirationMode;
-            existingMemory.OverrideDurationMinutes = scheduleMemory.OverrideDurationMinutes;
 
             // Add new blocks
             if (scheduleMemory.ScheduleBlocks != null)
@@ -302,85 +280,6 @@ public class ScheduleMemories
         }
     }
 
-    /// <summary>
-    /// Set manual override for a schedule memory
-    /// </summary>
-    public static async Task<(bool Success, string? ErrorMessage)> SetManualOverride(
-        Guid id, 
-        bool activate, 
-        double? analogValue = null, 
-        bool? digitalValue = null)
-    {
-        try
-        {
-            var context = new DataContext();
-            var memory = await context.ScheduleMemories.FindAsync(id);
-            if (memory == null)
-            {
-                await context.DisposeAsync();
-                return (false, "Schedule memory not found");
-            }
-
-            // Get output item to validate value type
-            var outputItem = await context.MonitoringItems.FindAsync(memory.OutputItemId);
-            if (outputItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, "Output item not found");
-            }
-
-            if (activate)
-            {
-                // Validate override value based on output type
-                if (outputItem.ItemType == ItemType.AnalogOutput)
-                {
-                    if (!analogValue.HasValue)
-                    {
-                        await context.DisposeAsync();
-                        return (false, "Analog override value is required for AnalogOutput");
-                    }
-                    memory.ManualOverrideAnalogValue = analogValue;
-                    memory.ManualOverrideDigitalValue = null;
-                }
-                else
-                {
-                    if (!digitalValue.HasValue)
-                    {
-                        await context.DisposeAsync();
-                        return (false, "Digital override value is required for DigitalOutput");
-                    }
-                    memory.ManualOverrideDigitalValue = digitalValue;
-                    memory.ManualOverrideAnalogValue = null;
-                }
-
-                memory.ManualOverrideActive = true;
-                memory.OverrideActivationTime = DateTime.UtcNow;
-            }
-            else
-            {
-                memory.ManualOverrideActive = false;
-                memory.OverrideActivationTime = null;
-                memory.ManualOverrideAnalogValue = null;
-                memory.ManualOverrideDigitalValue = null;
-            }
-
-            await context.SaveChangesAsync();
-            await context.DisposeAsync();
-            return (true, null);
-        }
-        catch (Exception ex)
-        {
-            MyLog.Error("Failed to set manual override", ex, new Dictionary<string, object?>
-            {
-                ["Id"] = id,
-                ["Activate"] = activate
-            });
-            return (false, $"Exception: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Validate schedule blocks for conflicts and value consistency
     /// </summary>
     private static (bool Success, string? ErrorMessage) ValidateScheduleBlocks(List<ScheduleBlock> blocks, bool isAnalogOutput)
     {

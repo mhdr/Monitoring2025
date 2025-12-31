@@ -11292,13 +11292,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     HolidayCalendarName = m.HolidayCalendar?.Name,
                     DefaultAnalogValue = m.DefaultAnalogValue,
                     DefaultDigitalValue = m.DefaultDigitalValue,
-                    ManualOverrideActive = m.ManualOverrideActive,
-                    ManualOverrideAnalogValue = m.ManualOverrideAnalogValue,
-                    ManualOverrideDigitalValue = m.ManualOverrideDigitalValue,
-                    OverrideExpirationMode = (int)m.OverrideExpirationMode,
-                    OverrideDurationMinutes = m.OverrideDurationMinutes,
-                    OverrideActivationTime = m.OverrideActivationTime,
-                    LastActiveBlockId = m.LastActiveBlockId,
                     ScheduleBlocks = m.ScheduleBlocks?.Select(b => new ScheduleBlockItemDto
                     {
                         Id = b.Id,
@@ -11381,8 +11374,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 HolidayCalendarId = request.HolidayCalendarId,
                 DefaultAnalogValue = request.DefaultAnalogValue,
                 DefaultDigitalValue = request.DefaultDigitalValue,
-                OverrideExpirationMode = (Core.Models.OverrideExpirationMode)request.OverrideExpirationMode,
-                OverrideDurationMinutes = request.OverrideDurationMinutes,
                 ScheduleBlocks = request.ScheduleBlocks?.Select(b => new Core.Models.ScheduleBlock
                 {
                     DayOfWeek = (Core.Models.ScheduleDayOfWeek)b.DayOfWeek,
@@ -11444,8 +11435,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 HolidayCalendarId = request.HolidayCalendarId,
                 DefaultAnalogValue = request.DefaultAnalogValue,
                 DefaultDigitalValue = request.DefaultDigitalValue,
-                OverrideExpirationMode = (Core.Models.OverrideExpirationMode)request.OverrideExpirationMode,
-                OverrideDurationMinutes = request.OverrideDurationMinutes,
                 ScheduleBlocks = request.ScheduleBlocks?.Select(b => new Core.Models.ScheduleBlock
                 {
                     DayOfWeek = (Core.Models.ScheduleDayOfWeek)b.DayOfWeek,
@@ -11507,69 +11496,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
         {
             _logger.LogError(e, e.Message);
             return Ok(new DeleteScheduleMemoryResponseDto
-            {
-                IsSuccessful = false,
-                ErrorMessage = e.Message
-            });
-        }
-    }
-
-    /// <summary>
-    /// Set manual override for a schedule memory
-    /// </summary>
-    /// <param name="request">Override settings</param>
-    /// <returns>Success status</returns>
-    /// <remarks>
-    /// Activates or deactivates manual override for a schedule memory.
-    /// When override is active, the specified value is used instead of the schedule.
-    /// 
-    /// Sample request to activate:
-    /// 
-    ///     POST /api/monitoring/SetScheduleOverride
-    ///     {
-    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
-    ///        "activate": true,
-    ///        "analogValue": 25.0
-    ///     }
-    ///     
-    /// Sample request to deactivate:
-    /// 
-    ///     POST /api/monitoring/SetScheduleOverride
-    ///     {
-    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
-    ///        "activate": false
-    ///     }
-    ///     
-    /// </remarks>
-    [HttpPost("SetScheduleOverride")]
-    public async Task<IActionResult> SetScheduleOverride([FromBody] SetScheduleOverrideRequestDto request)
-    {
-        try
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
-            var (success, errorMessage) = await Core.ScheduleMemories.SetManualOverride(
-                request.Id,
-                request.Activate,
-                request.AnalogValue,
-                request.DigitalValue
-            );
-
-            return Ok(new SetScheduleOverrideResponseDto
-            {
-                IsSuccessful = success,
-                ErrorMessage = errorMessage
-            });
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, e.Message);
-            return Ok(new SetScheduleOverrideResponseDto
             {
                 IsSuccessful = false,
                 ErrorMessage = e.Message

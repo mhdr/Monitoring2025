@@ -195,19 +195,6 @@ public class ScheduleMemoryProcess
         // If DefaultAnalogValue is set, it's analog output; otherwise digital
         bool isAnalogOutput = memory.DefaultAnalogValue.HasValue;
 
-        // Check and handle manual override
-        if (memory.ManualOverrideActive)
-        {
-            bool overrideExpired = await CheckOverrideExpiration(memory, utcNow);
-            
-            if (!overrideExpired)
-            {
-                // Override is active - write override value
-                await WriteOverrideValue(memory, isAnalogOutput, epochTime);
-                return;
-            }
-        }
-
         // Check if today is a holiday
         var (isHoliday, holidayDate) = await CheckHoliday(memory, utcNow);
         if (isHoliday)
@@ -224,88 +211,12 @@ public class ScheduleMemoryProcess
         {
             // Write scheduled value
             await WriteScheduledValue(memory, activeBlock, isAnalogOutput, epochTime);
-            
-            // Update last active block for event-based override detection
-            if (memory.LastActiveBlockId != activeBlock.Id)
-            {
-                memory.LastActiveBlockId = activeBlock.Id;
-                await _context!.SaveChangesAsync();
-            }
         }
         else
         {
             // No active block - write default value
             await WriteDefaultValue(memory, isAnalogOutput, epochTime);
-            
-            // Clear last active block
-            if (memory.LastActiveBlockId.HasValue)
-            {
-                memory.LastActiveBlockId = null;
-                await _context!.SaveChangesAsync();
-            }
         }
-    }
-
-    /// <summary>
-    /// Check if manual override has expired and clear it if needed
-    /// </summary>
-    private async Task<bool> CheckOverrideExpiration(ScheduleMemory memory, DateTime utcNow)
-    {
-        if (memory.OverrideExpirationMode == OverrideExpirationMode.TimeBased)
-        {
-            // Time-based expiration: check if duration has passed
-            if (memory.OverrideActivationTime.HasValue)
-            {
-                var expirationTime = memory.OverrideActivationTime.Value.AddMinutes(memory.OverrideDurationMinutes);
-                if (utcNow >= expirationTime)
-                {
-                    // Override expired - clear it
-                    await ClearManualOverride(memory);
-                    MyLog.Info("Schedule override expired (time-based)", new Dictionary<string, object?>
-                    {
-                        ["MemoryId"] = memory.Id,
-                        ["MemoryName"] = memory.Name,
-                        ["ActivationTime"] = memory.OverrideActivationTime,
-                        ["Duration"] = memory.OverrideDurationMinutes
-                    });
-                    return true;
-                }
-            }
-        }
-        else // EventBased
-        {
-            // Event-based expiration: check if active block has changed
-            var currentActiveBlock = FindActiveBlock(memory, utcNow);
-            var currentBlockId = currentActiveBlock?.Id;
-            
-            if (currentBlockId != memory.LastActiveBlockId)
-            {
-                // Schedule changed - clear override
-                await ClearManualOverride(memory);
-                MyLog.Info("Schedule override expired (event-based - schedule changed)", new Dictionary<string, object?>
-                {
-                    ["MemoryId"] = memory.Id,
-                    ["MemoryName"] = memory.Name,
-                    ["PreviousBlockId"] = memory.LastActiveBlockId,
-                    ["CurrentBlockId"] = currentBlockId
-                });
-                return true;
-            }
-        }
-
-        return false; // Override still active
-    }
-
-    /// <summary>
-    /// Clear manual override state
-    /// </summary>
-    private async Task ClearManualOverride(ScheduleMemory memory)
-    {
-        memory.ManualOverrideActive = false;
-        memory.OverrideActivationTime = null;
-        memory.ManualOverrideAnalogValue = null;
-        memory.ManualOverrideDigitalValue = null;
-        await _context!.SaveChangesAsync();
     }
 
     /// <summary>
@@ -408,30 +319,6 @@ public class ScheduleMemoryProcess
             .First();
     }
 
-    /// <summary>
-    /// Write manual override value to output
-    /// </summary>
-    private async Task WriteOverrideValue(ScheduleMemory memory, bool isAnalogOutput, long epochTime)
-    {
-        string value;
-        if (isAnalogOutput)
-        {
-            value = memory.ManualOverrideAnalogValue?.ToString() ?? "0";
-        }
-        else
-        {
-            value = memory.ManualOverrideDigitalValue == true ? "1" : "0";
-        }
-
-        await Points.WriteOrAddValue(memory.OutputItemId, value, null, memory.Duration);
-        
-        MyLog.Debug("Schedule override value written", new Dictionary<string, object?>
-        {
-            ["MemoryId"] = memory.Id,
-            ["Value"] = value,
-            ["IsAnalog"] = isAnalogOutput
-        });
-    }
 
     /// <summary>
     /// Write holiday value to output

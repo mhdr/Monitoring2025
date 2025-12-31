@@ -58,18 +58,6 @@ public class EditScheduleMemoryRequestDto
     public bool? DefaultDigitalValue { get; set; }
 
     /// <summary>
-    /// Override expiration mode (1=TimeBased, 2=EventBased)
-    /// </summary>
-    [Range(1, 2, ErrorMessage = "Override expiration mode must be 1 (TimeBased) or 2 (EventBased)")]
-    public int OverrideExpirationMode { get; set; } = 1;
-
-    /// <summary>
-    /// Duration in minutes for time-based override expiration
-    /// </summary>
-    [Range(1, int.MaxValue, ErrorMessage = "Override duration must be greater than 0")]
-    public int OverrideDurationMinutes { get; set; } = 60;
-
-    /// <summary>
     /// Schedule blocks for this memory (replaces existing blocks)
     /// </summary>
     public List<AddScheduleBlockDto>? ScheduleBlocks { get; set; }

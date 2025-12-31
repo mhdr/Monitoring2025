@@ -579,22 +579,6 @@ public class DataContext : DbContext
             .Property(e => e.Interval)
             .HasDefaultValue(10);
         
-        modelBuilder.Entity<ScheduleMemory>()
-            .Property(e => e.ManualOverrideActive)
-            .HasDefaultValue(false);
-        
-        modelBuilder.Entity<ScheduleMemory>()
-            .Property(e => e.OverrideExpirationMode)
-            .HasDefaultValue(OverrideExpirationMode.TimeBased);
-        
-        modelBuilder.Entity<ScheduleMemory>()
-            .Property(e => e.OverrideDurationMinutes)
-            .HasDefaultValue(60);
-        
-        modelBuilder.Entity<ScheduleMemory>()
-            .Property(e => e.OverrideExpirationMode)
-            .HasConversion<int>();
-        
         // ScheduleBlock configuration
         modelBuilder.Entity<ScheduleBlock>()
             .Property(e => e.Id)

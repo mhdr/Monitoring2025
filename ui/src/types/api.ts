@@ -4214,21 +4214,6 @@ export interface DeleteMinMaxSelectorMemoryResponseDto {
 // Schedule Memory Types
 
 /**
- * Override expiration mode for manual override behavior
- */
-export enum OverrideExpirationMode {
-  /**
-   * Override expires after a specified duration in minutes
-   */
-  TimeBased = 1,
-  
-  /**
-   * Override remains active until the next schedule change or manual deactivation
-   */
-  EventBased = 2
-}
-
-/**
  * Priority levels for schedule blocks to resolve conflicts
  * Higher priority blocks take precedence when schedules overlap
  */
@@ -4311,13 +4296,6 @@ export interface ScheduleMemory {
   holidayCalendarName?: string | null;
   defaultAnalogValue?: number | null;
   defaultDigitalValue?: boolean | null;
-  manualOverrideActive: boolean;
-  manualOverrideAnalogValue?: number | null;
-  manualOverrideDigitalValue?: boolean | null;
-  overrideExpirationMode: OverrideExpirationMode;
-  overrideDurationMinutes: number;
-  overrideActivationTime?: string | null;
-  lastActiveBlockId?: string | null;
   scheduleBlocks?: ScheduleBlock[] | null;
 }
 
@@ -4389,8 +4367,6 @@ export interface AddScheduleMemoryRequestDto {
   holidayCalendarId?: string | null;
   defaultAnalogValue?: number | null;
   defaultDigitalValue?: boolean | null;
-  overrideExpirationMode?: number;
-  overrideDurationMinutes?: number;
   scheduleBlocks?: AddScheduleBlockDto[] | null;
 }
 
@@ -4416,8 +4392,6 @@ export interface EditScheduleMemoryRequestDto {
   holidayCalendarId?: string | null;
   defaultAnalogValue?: number | null;
   defaultDigitalValue?: boolean | null;
-  overrideExpirationMode?: number;
-  overrideDurationMinutes?: number;
   scheduleBlocks?: AddScheduleBlockDto[] | null;
 }
 
@@ -4440,24 +4414,6 @@ export interface DeleteScheduleMemoryRequestDto {
  * Response DTO for deleting a schedule memory
  */
 export interface DeleteScheduleMemoryResponseDto {
-  isSuccessful: boolean;
-  errorMessage?: string | null;
-}
-
-/**
- * Request DTO for setting schedule override
- */
-export interface SetScheduleOverrideRequestDto {
-  id: string;
-  activate: boolean;
-  analogValue?: number | null;
-  digitalValue?: boolean | null;
-}
-
-/**
- * Response DTO for setting schedule override
- */
-export interface SetScheduleOverrideResponseDto {
   isSuccessful: boolean;
   errorMessage?: string | null;
 }

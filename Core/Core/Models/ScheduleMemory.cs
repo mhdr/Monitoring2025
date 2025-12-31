@@ -5,22 +5,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Core.Models;
 
 /// <summary>
-/// Override expiration mode for manual override behavior
-/// </summary>
-public enum OverrideExpirationMode
-{
-    /// <summary>
-    /// Override expires after a specified duration in minutes
-    /// </summary>
-    TimeBased = 1,
-    
-    /// <summary>
-    /// Override remains active until the next schedule change or manual deactivation
-    /// </summary>
-    EventBased = 2
-}
-
-/// <summary>
 /// Priority levels for schedule blocks to resolve conflicts
 /// Higher priority blocks take precedence when schedules overlap
 /// </summary>
@@ -120,51 +104,6 @@ public class ScheduleMemory
     /// </summary>
     [Column("default_digital_value")]
     public bool? DefaultDigitalValue { get; set; }
-    
-    /// <summary>
-    /// Whether manual override is currently active
-    /// </summary>
-    [DefaultValue(false)]
-    [Column("manual_override_active")]
-    public bool ManualOverrideActive { get; set; } = false;
-    
-    /// <summary>
-    /// Analog value to use during manual override (for AnalogOutput items)
-    /// </summary>
-    [Column("manual_override_analog_value")]
-    public double? ManualOverrideAnalogValue { get; set; }
-    
-    /// <summary>
-    /// Digital value to use during manual override (for DigitalOutput items)
-    /// </summary>
-    [Column("manual_override_digital_value")]
-    public bool? ManualOverrideDigitalValue { get; set; }
-    
-    /// <summary>
-    /// Mode for override expiration behavior
-    /// </summary>
-    [DefaultValue(OverrideExpirationMode.TimeBased)]
-    [Column("override_expiration_mode")]
-    public OverrideExpirationMode OverrideExpirationMode { get; set; } = OverrideExpirationMode.TimeBased;
-    
-    /// <summary>
-    /// Duration in minutes for time-based override expiration
-    /// </summary>
-    [DefaultValue(60)]
-    [Column("override_duration_minutes")]
-    public int OverrideDurationMinutes { get; set; } = 60;
-    
-    /// <summary>
-    /// Timestamp when manual override was activated (for time-based expiration calculation)
-    /// </summary>
-    [Column("override_activation_time")]
-    public DateTime? OverrideActivationTime { get; set; }
-    
-    /// <summary>
-    /// Last active schedule block ID (for event-based override expiration detection)
-    /// </summary>
-    [Column("last_active_block_id")]
-    public Guid? LastActiveBlockId { get; set; }
     
     /// <summary>
     /// Navigation property for schedule blocks (weekly time schedules)

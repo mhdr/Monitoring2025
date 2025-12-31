@@ -41,13 +41,6 @@ public class ScheduleMemoryItemDto
     public string? HolidayCalendarName { get; set; }
     public double? DefaultAnalogValue { get; set; }
     public bool? DefaultDigitalValue { get; set; }
-    public bool ManualOverrideActive { get; set; }
-    public double? ManualOverrideAnalogValue { get; set; }
-    public bool? ManualOverrideDigitalValue { get; set; }
-    public int OverrideExpirationMode { get; set; }
-    public int OverrideDurationMinutes { get; set; }
-    public DateTime? OverrideActivationTime { get; set; }
-    public Guid? LastActiveBlockId { get; set; }
     
     /// <summary>
     /// Schedule blocks for this memory
