@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
+import { formatDate } from '../utils/dateFormatting';
 import { getGlobalVariables } from '../services/extendedApi';
 import type { GlobalVariable, GlobalVariableType } from '../types/api';
 import { GlobalVariableType as GlobalVariableTypeEnum } from '../types/api';
@@ -124,7 +125,7 @@ const formatLastUpdateTime = (timestamp: number | null | undefined, t: (key: str
  * Manages lightweight in-memory global variables accessible to all memories
  */
 const GlobalVariableManagementPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // State management
   const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
@@ -413,14 +414,12 @@ const GlobalVariableManagementPage: React.FC = () => {
       {
         field: 'lastUpdateTime',
         headerText: t('globalVariables.lastUpdate'),
-        width: 120,
+        width: 180,
         textAlign: 'Center',
         template: (rowData: GlobalVariable) => (
-          <Tooltip title={rowData.lastUpdateTime ? new Date(rowData.lastUpdateTime).toLocaleString() : ''} arrow>
-            <Typography variant="caption" color="text.secondary" data-id-ref="globalvariable-lastupdate-cell">
-              {formatLastUpdateTime(rowData.lastUpdateTime, t)}
-            </Typography>
-          </Tooltip>
+          <Typography variant="body2" color="text.secondary" data-id-ref="globalvariable-lastupdate-cell">
+            {rowData.lastUpdateTime ? formatDate(rowData.lastUpdateTime, language, 'long') : t('common.never')}
+          </Typography>
         ),
       },
       {
