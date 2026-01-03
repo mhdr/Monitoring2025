@@ -6193,6 +6193,17 @@
     "currentValue": "Current Value",
     "lastUpdate": "Last Update",
     "isDisabled": "Disabled",
+    "setValue": {
+      "title": "Set Variable Value",
+      "buttonTitle": "Set Value",
+      "newValue": "New Value",
+      "newValueHelp": "Enter the new value for this variable",
+      "errors": {
+        "invalidNumber": "Please enter a valid number",
+        "failed": "Failed to set variable value",
+        "unknown": "An unknown error occurred"
+      }
+    },
     "usage": {
       "title": "Variable Usage",
       "viewUsage": "View Usage",

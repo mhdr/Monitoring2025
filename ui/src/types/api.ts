@@ -4548,3 +4548,19 @@ export interface GetGlobalVariableUsageResponseDto {
   variableName?: string | null;
   usages?: MemoryUsage[];
 }
+
+/**
+ * Request DTO for setting a global variable's runtime value
+ */
+export interface SetGlobalVariableValueRequestDto {
+  id: string;
+  value: string; // "true"/"false" or "1"/"0" for boolean, numeric string for float
+}
+
+/**
+ * Response DTO for setting a global variable's runtime value
+ */
+export interface SetGlobalVariableValueResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}

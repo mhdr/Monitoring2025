@@ -24,6 +24,7 @@ import {
   Code as CodeIcon,
   HelpOutline as HelpOutlineIcon,
   Visibility as VisibilityIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
@@ -38,6 +39,9 @@ const logger = createLogger('GlobalVariableManagementPage');
 
 // Lazy load dialog components
 const AddEditGlobalVariableDialog = lazy(() => import('./AddEditGlobalVariableDialog'));
+const DeleteGlobalVariableDialog = lazy(() => import('./DeleteGlobalVariableDialog'));
+const GlobalVariableUsageDialog = lazy(() => import('./GlobalVariableUsageDialog'));
+const SetGlobalVariableValueDialog = lazy(() => import('./SetGlobalVariableValueDialog'));
 const DeleteGlobalVariableDialog = lazy(() => import('./DeleteGlobalVariableDialog'));
 const GlobalVariableUsageDialog = lazy(() => import('./GlobalVariableUsageDialog'));
 
@@ -134,6 +138,7 @@ const GlobalVariableManagementPage: React.FC = () => {
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [usageDialogOpen, setUsageDialogOpen] = useState(false);
+  const [setValueDialogOpen, setSetValueDialogOpen] = useState(false);
   const [selectedVariable, setSelectedVariable] = useState<GlobalVariable | null>(null);
   const [editMode, setEditMode] = useState(false);
 
@@ -228,12 +233,21 @@ const GlobalVariableManagementPage: React.FC = () => {
   }, []);
 
   /**
+   * Handle set value button click
+   */
+  const handleSetValue = useCallback((variable: GlobalVariable) => {
+    setSelectedVariable(variable);
+    setSetValueDialogOpen(true);
+  }, []);
+
+  /**
    * Handle dialog close and refresh data
    */
   const handleDialogClose = useCallback((shouldRefresh: boolean) => {
     setAddEditDialogOpen(false);
     setDeleteDialogOpen(false);
     setUsageDialogOpen(false);
+    setSetValueDialogOpen(false);
     setSelectedVariable(null);
     setEditMode(false);
 
@@ -342,10 +356,20 @@ const GlobalVariableManagementPage: React.FC = () => {
       {
         field: 'actions',
         headerText: t('common.actions'),
-        width: 150,
+        width: 200,
         textAlign: 'Center',
         template: (rowData: GlobalVariable) => (
           <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }} data-id-ref="globalvariable-actions-cell">
+            <Tooltip title={t('globalVariables.setValue.buttonTitle')}>
+              <IconButton
+                size="small"
+                onClick={() => handleSetValue(rowData)}
+                color="success"
+                data-id-ref="globalvariable-setvalue-btn"
+              >
+                <SettingsIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <Tooltip title={t('common.edit')}>
               <IconButton
                 size="small"
@@ -380,7 +404,7 @@ const GlobalVariableManagementPage: React.FC = () => {
         ),
       },
     ];
-  }, [t, handleEdit, handleDelete, handleViewUsage]);
+  }, [t, handleEdit, handleDelete, handleViewUsage, handleSetValue]);
 
   return (
     <Container maxWidth={false} sx={{ py: 3, height: '100%', display: 'flex', flexDirection: 'column' }} data-id-ref="globalvariable-management-page">
@@ -520,6 +544,18 @@ const GlobalVariableManagementPage: React.FC = () => {
             onClose={handleDialogClose}
             variable={selectedVariable}
             data-id-ref="globalvariable-usage-dialog"
+          />
+        </Suspense>
+      )}
+
+      {/* Set Value Dialog */}
+      {setValueDialogOpen && selectedVariable && (
+        <Suspense fallback={<CircularProgress />}>
+          <SetGlobalVariableValueDialog
+            open={setValueDialogOpen}
+            onClose={handleDialogClose}
+            variable={selectedVariable}
+            data-id-ref="globalvariable-setvalue-dialog"
           />
         </Suspense>
       )}

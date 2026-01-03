@@ -225,6 +225,8 @@ import type {
   DeleteGlobalVariableResponseDto,
   GetGlobalVariableUsageRequestDto,
   GetGlobalVariableUsageResponseDto,
+  SetGlobalVariableValueRequestDto,
+  SetGlobalVariableValueResponseDto,
   MemoryUsage,
 } from '../types/api';
 
@@ -2020,6 +2022,23 @@ export const getGlobalVariableUsage = async (
   try {
     const response = await apiClient.post<GetGlobalVariableUsageResponseDto>(
       '/api/GlobalVariables/GetGlobalVariableUsage',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Set a global variable's runtime value
+ */
+export const setGlobalVariableValue = async (
+  data: SetGlobalVariableValueRequestDto
+): Promise<SetGlobalVariableValueResponseDto> => {
+  try {
+    const response = await apiClient.post<SetGlobalVariableValueResponseDto>(
+      '/api/GlobalVariables/SetGlobalVariableValue',
       data
     );
     return response.data;

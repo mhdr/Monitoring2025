@@ -433,4 +433,147 @@ public class GlobalVariablesController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Set a global variable's runtime value
+    /// </summary>
+    /// <param name="request">Variable ID and new value</param>
+    /// <returns>Success status</returns>
+    /// <remarks>
+    /// Sets the runtime value of a global variable. Requires Admin role.
+    /// Value must be compatible with the variable's type.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/globalvariables/SetGlobalVariableValue
+    ///     {
+    ///        "id": "550e8400-e29b-41d4-a716-446655440000",
+    ///        "value": "42.5"
+    ///     }
+    ///     
+    /// </remarks>
+    /// <response code="200">Returns success status</response>
+    /// <response code="401">If user is not authenticated</response>
+    /// <response code="403">If user is not an admin</response>
+    /// <response code="400">If value is incompatible with variable type</response>
+    [HttpPost("SetGlobalVariableValue")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(SetGlobalVariableValueResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> SetGlobalVariableValue([FromBody] SetGlobalVariableValueRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Get variable to find its name
+            var variable = await GlobalVariables.GetGlobalVariable(v => v.Id == request.Id);
+
+            if (variable == null)
+            {
+                return Ok(new SetGlobalVariableValueResponseDto
+                {
+                    IsSuccessful = false,
+                    ErrorMessage = "Global variable not found"
+                });
+            }
+
+            // Parse value based on type
+            object valueToSet;
+            if (variable.VariableType == GlobalVariableType.Boolean)
+            {
+                if (!bool.TryParse(request.Value, out var boolValue))
+                {
+                    // Try parsing as 1/0
+                    if (request.Value == "1")
+                    {
+                        valueToSet = true;
+                    }
+                    else if (request.Value == "0")
+                    {
+                        valueToSet = false;
+                    }
+                    else
+                    {
+                        return Ok(new SetGlobalVariableValueResponseDto
+                        {
+                            IsSuccessful = false,
+                            ErrorMessage = "Value must be a boolean (true/false or 1/0)"
+                        });
+                    }
+                }
+                else
+                {
+                    valueToSet = boolValue;
+                }
+            }
+            else if (variable.VariableType == GlobalVariableType.Float)
+            {
+                if (!double.TryParse(request.Value, System.Globalization.NumberStyles.Float, 
+                    System.Globalization.CultureInfo.InvariantCulture, out var doubleValue))
+                {
+                    return Ok(new SetGlobalVariableValueResponseDto
+                    {
+                        IsSuccessful = false,
+                        ErrorMessage = "Value must be a valid number"
+                    });
+                }
+                valueToSet = doubleValue;
+            }
+            else
+            {
+                return Ok(new SetGlobalVariableValueResponseDto
+                {
+                    IsSuccessful = false,
+                    ErrorMessage = "Unknown variable type"
+                });
+            }
+
+            // Set the value using GlobalVariableProcess
+            var (success, errorMessage) = await GlobalVariableProcess.SetVariable(variable.Name, valueToSet);
+
+            var response = new SetGlobalVariableValueResponseDto
+            {
+                IsSuccessful = success,
+                ErrorMessage = errorMessage
+            };
+
+            if (success)
+            {
+                // Log audit
+                await _auditService.LogAsync(
+                    LogType.EditGlobalVariable,
+                    new
+                    {
+                        Action = "SetGlobalVariableValue",
+                        VariableName = variable.Name,
+                        NewValue = request.Value,
+                        Details = $"Set global variable '{variable.Name}' value to '{request.Value}'"
+                    },
+                    itemId: request.Id,
+                    userId: string.IsNullOrEmpty(userId) ? null : Guid.Parse(userId)
+                );
+
+                _logger.LogInformation("Global variable value set: {VariableName} = {Value}", 
+                    variable.Name, request.Value);
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to set global variable value");
+            return StatusCode(500, new SetGlobalVariableValueResponseDto
+            {
+                IsSuccessful = false,
+                ErrorMessage = e.Message
+            });
+        }
+    }
 }
