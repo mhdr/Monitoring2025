@@ -213,9 +213,11 @@ const GlobalVariableManagementPage: React.FC = () => {
   /**
    * Fetch all global variable configurations
    */
-  const fetchGlobalVariables = useCallback(async (silent = false) => {
+  const fetchGlobalVariables = useCallback(async (options?: { silent?: boolean }) => {
+    // Default to silent refreshes after the first load to avoid UI flicker/spinners
+    const effectiveSilent = options?.silent ?? !isInitialLoad;
     try {
-      if (!silent) {
+      if (!effectiveSilent) {
         setLoading(true);
       }
       setError(null);
@@ -228,7 +230,7 @@ const GlobalVariableManagementPage: React.FC = () => {
       }
 
       mergeGlobalVariables(response.globalVariables || []);
-      logger.info('Global variables fetched successfully', { count: response.globalVariables?.length || 0, silent });
+      logger.info('Global variables fetched successfully', { count: response.globalVariables?.length || 0, silent: effectiveSilent });
       
       if (isInitialLoad) {
         setIsInitialLoad(false);
@@ -238,7 +240,7 @@ const GlobalVariableManagementPage: React.FC = () => {
       setError(errorMessage);
       logger.error('Failed to fetch global variables', err);
     } finally {
-      if (!silent) {
+      if (!effectiveSilent) {
         setLoading(false);
       }
     }
@@ -254,7 +256,7 @@ const GlobalVariableManagementPage: React.FC = () => {
     const handleGlobalVariablesUpdate = () => {
       logger.info('Received global variables update notification - refreshing data silently');
       // Use silent mode to avoid loading spinner and flickering
-      fetchGlobalVariables(true);
+      fetchGlobalVariables({ silent: true });
     };
 
     signalRManager.onGlobalVariablesUpdate(handleGlobalVariablesUpdate);
@@ -559,9 +561,8 @@ const GlobalVariableManagementPage: React.FC = () => {
               sx={{ 
                 flexGrow: 1, 
                 overflow: 'hidden',
-                opacity: loading ? 0.6 : 1,
-                transition: 'opacity 0.2s ease-in-out',
-                pointerEvents: loading ? 'none' : 'auto'
+                // Hide Syncfusion's built-in spinner to avoid flicker on live refreshes
+                '& .e-spinner-pane': { display: 'none !important' }
               }} 
               data-id-ref="globalvariable-grid-container"
             >
