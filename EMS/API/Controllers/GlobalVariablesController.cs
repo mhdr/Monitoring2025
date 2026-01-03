@@ -368,8 +368,8 @@ public class GlobalVariablesController : ControllerBase
     /// <returns>List of memories using this variable</returns>
     /// <remarks>
     /// Returns information about which memories reference this global variable.
-    /// Currently returns empty list as phase 1 implementation doesn't include variable resolution in memories.
-    /// This will be populated in phase 2 when memories are updated to support global variables.
+    /// Uses cached usage tracking with automatic invalidation for fast lookups.
+    /// Scans TimeoutMemory, FormulaMemory (with @GV: prefix), and IfMemory (with @GV: prefix).
     /// 
     /// Sample request:
     /// 
@@ -379,7 +379,7 @@ public class GlobalVariablesController : ControllerBase
     ///     }
     ///     
     /// </remarks>
-    /// <response code="200">Returns usage information</response>
+    /// <response code="200">Returns usage information with list of referencing memories</response>
     /// <response code="401">If user is not authenticated</response>
     [HttpPost("GetGlobalVariableUsage")]
     [ProducesResponseType(typeof(GetGlobalVariableUsageResponseDto), StatusCodes.Status200OK)]
@@ -406,51 +406,20 @@ public class GlobalVariablesController : ControllerBase
                 });
             }
 
+            // Get usage information from cache (with fallback to direct scan)
+            var usages = await GlobalVariables.FindUsages(variable.Name);
+
             var response = new GetGlobalVariableUsageResponseDto
             {
                 VariableName = variable.Name,
-                Usages = new List<GetGlobalVariableUsageResponseDto.MemoryUsage>()
-            };
-
-            // Scan TimeoutMemory for references to this variable
-            var timeoutMemories = await Core.TimeoutMemories.GetTimeoutMemories();
-            if (timeoutMemories != null)
-            {
-                foreach (var tm in timeoutMemories)
+                Usages = usages.Select(u => new GetGlobalVariableUsageResponseDto.MemoryUsage
                 {
-                    // Check if used as input
-                    if (tm.InputType == Core.Models.TimeoutSourceType.GlobalVariable && 
-                        tm.InputReference == variable.Name)
-                    {
-                        response.Usages.Add(new GetGlobalVariableUsageResponseDto.MemoryUsage
-                        {
-                            MemoryId = tm.Id,
-                            MemoryType = "TimeoutMemory",
-                            MemoryName = null,
-                            UsageContext = "Input"
-                        });
-                    }
-                    
-                    // Check if used as output
-                    if (tm.OutputType == Core.Models.TimeoutSourceType.GlobalVariable && 
-                        tm.OutputReference == variable.Name)
-                    {
-                        response.Usages.Add(new GetGlobalVariableUsageResponseDto.MemoryUsage
-                        {
-                            MemoryId = tm.Id,
-                            MemoryType = "TimeoutMemory",
-                            MemoryName = null,
-                            UsageContext = "Output"
-                        });
-                    }
-                }
-            }
-            
-            // TODO: Add other memory types in future phases:
-            // - FormulaMemory: Check VariableAliases JSON for variable name
-            // - IfMemory: Check ConditionGroups JSON for variable name
-            // - AverageMemory: Check if InputItemIds references this variable ID
-            // etc.
+                    MemoryId = u.MemoryId,
+                    MemoryType = u.MemoryType,
+                    MemoryName = u.MemoryName,
+                    UsageContext = u.UsageContext
+                }).ToList()
+            };
 
             return Ok(response);
         }

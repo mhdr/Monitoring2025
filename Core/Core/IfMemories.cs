@@ -177,6 +177,9 @@ public class IfMemories
             context.IfMemories.Add(ifMemory);
             await context.SaveChangesAsync();
 
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(ifMemory.Id, "IfMemory");
+
             await context.DisposeAsync();
             return (true, ifMemory.Id, null);
         }
@@ -350,6 +353,9 @@ public class IfMemories
             // Notify IfMemoryProcess to invalidate cache
             IfMemoryProcess.Instance.InvalidateCache(ifMemory.Id);
 
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(ifMemory.Id, "IfMemory");
+
             await context.DisposeAsync();
             return (true, null);
         }
@@ -378,6 +384,9 @@ public class IfMemories
                 await context.DisposeAsync();
                 return (false, "IF memory not found");
             }
+
+            // Invalidate usage cache for referenced global variables (before deletion)
+            await GlobalVariableUsageCache.OnMemoryChanged(id, "IfMemory");
 
             context.IfMemories.Remove(existing);
             await context.SaveChangesAsync();

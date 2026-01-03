@@ -124,6 +124,10 @@ public class TimeoutMemories
             await context.SaveChangesAsync();
             var id = timeoutMemory.Id;
             await context.DisposeAsync();
+            
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(id, "TimeoutMemory");
+            
             return (true, id, null);
         }
         catch (Exception e)
@@ -232,6 +236,10 @@ public class TimeoutMemories
             context.TimeoutMemories.Update(timeoutMemory);
             await context.SaveChangesAsync();
             await context.DisposeAsync();
+            
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(timeoutMemory.Id, "TimeoutMemory");
+            
             return (true, null);
         }
         catch (Exception e)
@@ -256,6 +264,9 @@ public class TimeoutMemories
                 await context.DisposeAsync();
                 return (false, "Timeout memory not found");
             }
+
+            // Invalidate usage cache for referenced global variables (before deletion)
+            await GlobalVariableUsageCache.OnMemoryChanged(id, "TimeoutMemory");
 
             context.TimeoutMemories.Remove(timeoutMemory);
             await context.SaveChangesAsync();

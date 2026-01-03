@@ -136,6 +136,9 @@ public class FormulaMemories
             context.FormulaMemories.Add(formulaMemory);
             await context.SaveChangesAsync();
 
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(formulaMemory.Id, "FormulaMemory");
+
             await context.DisposeAsync();
             return (true, formulaMemory.Id, null);
         }
@@ -276,6 +279,9 @@ public class FormulaMemories
             // Notify FormulaMemoryProcess to invalidate cache
             FormulaMemoryProcess.Instance.InvalidateCache(formulaMemory.Id);
 
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(formulaMemory.Id, "FormulaMemory");
+
             await context.DisposeAsync();
             return (true, null);
         }
@@ -304,6 +310,9 @@ public class FormulaMemories
                 await context.DisposeAsync();
                 return (false, "Formula memory not found");
             }
+
+            // Invalidate usage cache for referenced global variables (before deletion)
+            await GlobalVariableUsageCache.OnMemoryChanged(id, "FormulaMemory");
 
             context.FormulaMemories.Remove(existing);
             await context.SaveChangesAsync();
