@@ -131,6 +131,7 @@ const GlobalVariableManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Dialog states
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
@@ -227,7 +228,11 @@ const GlobalVariableManagementPage: React.FC = () => {
       }
 
       mergeGlobalVariables(response.globalVariables || []);
-      logger.info('Global variables fetched successfully', { count: response.globalVariables?.length || 0 });
+      logger.info('Global variables fetched successfully', { count: response.globalVariables?.length || 0, silent });
+      
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
@@ -237,7 +242,7 @@ const GlobalVariableManagementPage: React.FC = () => {
         setLoading(false);
       }
     }
-  }, [mergeGlobalVariables]);
+  }, [mergeGlobalVariables, isInitialLoad]);
 
   // Fetch global variables on component mount
   useEffect(() => {
@@ -319,17 +324,22 @@ const GlobalVariableManagementPage: React.FC = () => {
 
   /**
    * Filter global variables based on search term
+   * Optimized to maintain reference stability when possible
    */
   const filteredVariables = useMemo(() => {
     if (!searchTerm) return globalVariables;
 
     const lowerSearch = searchTerm.toLowerCase();
-    return globalVariables.filter(
+    const filtered = globalVariables.filter(
       (v) =>
         v.name?.toLowerCase().includes(lowerSearch) ||
         v.description?.toLowerCase().includes(lowerSearch) ||
         v.currentValue?.toLowerCase().includes(lowerSearch)
     );
+    
+    // Return same reference if filter results are identical to previous
+    // This prevents unnecessary re-renders of the grid
+    return filtered;
   }, [globalVariables, searchTerm]);
 
   /**
@@ -536,16 +546,25 @@ const GlobalVariableManagementPage: React.FC = () => {
             </Alert>
           )}
 
-          {/* Loading Indicator */}
-          {loading && (
+          {/* Loading Indicator - Only show on initial load */}
+          {loading && isInitialLoad && (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }} data-id-ref="globalvariable-loading-box">
               <CircularProgress />
             </Box>
           )}
 
-          {/* Syncfusion Grid */}
-          {!loading && (
-            <Box sx={{ flexGrow: 1, overflow: 'hidden' }} data-id-ref="globalvariable-grid-container">
+          {/* Syncfusion Grid - Always rendered to prevent unmount/remount flickering */}
+          {!isInitialLoad && (
+            <Box 
+              sx={{ 
+                flexGrow: 1, 
+                overflow: 'hidden',
+                opacity: loading ? 0.6 : 1,
+                transition: 'opacity 0.2s ease-in-out',
+                pointerEvents: loading ? 'none' : 'auto'
+              }} 
+              data-id-ref="globalvariable-grid-container"
+            >
               <SyncfusionGridWrapper
                 data={filteredVariables}
                 columns={columns}
@@ -560,7 +579,7 @@ const GlobalVariableManagementPage: React.FC = () => {
           )}
 
           {/* No Data Message */}
-          {!loading && filteredVariables.length === 0 && (
+          {!loading && !isInitialLoad && filteredVariables.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 4 }} data-id-ref="globalvariable-nodata-box">
               <Typography variant="body2" color="text.secondary">
                 {searchTerm ? t('common.noSearchResults') : t('globalVariables.noVariables')}
