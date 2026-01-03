@@ -42,99 +42,40 @@ public class AverageMemories
         {
             var context = new DataContext();
 
-            // Validate and parse InputItemIds JSON
-            List<Guid> inputIds;
-            try
-            {
-                var inputIdStrings = JsonSerializer.Deserialize<List<string>>(averageMemory.InputItemIds);
-                if (inputIdStrings == null || inputIdStrings.Count == 0)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "InputItemIds must contain at least one item");
-                }
-
-                inputIds = inputIdStrings.Select(s => Guid.Parse(s)).ToList();
-            }
-            catch (Exception ex)
+            // Validate input sources (mixed Points and Global Variables)
+            var (inputSuccess, inputError, inputSources) = await AverageMemoryValidator.ValidateInputSources(
+                averageMemory.InputItemIds, context);
+            if (!inputSuccess)
             {
                 await context.DisposeAsync();
-                return (false, null, $"Invalid InputItemIds JSON format: {ex.Message}");
+                return (false, null, inputError);
             }
 
-            // Validate all input items exist and are analog types
-            foreach (var inputId in inputIds)
-            {
-                var inputItem = await context.MonitoringItems.FindAsync(inputId);
-                if (inputItem == null)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, $"Input item {inputId} not found");
-                }
-
-                if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, $"Input item {inputId} must be AnalogInput or AnalogOutput");
-                }
-            }
-
-            // Validate output item exists
-            if (!averageMemory.OutputItemId.HasValue)
+            // Validate output source
+            var (outputSuccess, outputError) = await AverageMemoryValidator.ValidateOutputSource(
+                averageMemory.OutputReference, averageMemory.OutputType, context);
+            if (!outputSuccess)
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item is required");
+                return (false, null, outputError);
             }
-            
-            var outputItem = await context.MonitoringItems.FindAsync(averageMemory.OutputItemId.Value);
-            if (outputItem == null)
+
+            // Validate output is not in inputs
+            var (notInInputsSuccess, notInInputsError) = AverageMemoryValidator.ValidateOutputNotInInputs(
+                inputSources, averageMemory.OutputReference);
+            if (!notInInputsSuccess)
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item not found");
+                return (false, null, notInInputsError);
             }
 
-            // Validate output item is analog type
-            if (outputItem.ItemType != ItemType.AnalogInput && outputItem.ItemType != ItemType.AnalogOutput)
+            // Validate weights
+            var (weightsSuccess, weightsError) = AverageMemoryValidator.ValidateWeights(
+                averageMemory.Weights, inputSources.Count);
+            if (!weightsSuccess)
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item must be AnalogInput or AnalogOutput");
-            }
-
-            // Validate output item is not in input items
-            if (inputIds.Contains(averageMemory.OutputItemId.Value))
-            {
-                await context.DisposeAsync();
-                return (false, null, "Output item cannot be in the input items list");
-            }
-
-            // Validate weights if provided
-            if (!string.IsNullOrWhiteSpace(averageMemory.Weights))
-            {
-                try
-                {
-                    var weights = JsonSerializer.Deserialize<List<double>>(averageMemory.Weights);
-                    if (weights == null)
-                    {
-                        await context.DisposeAsync();
-                        return (false, null, "Weights JSON is invalid");
-                    }
-
-                    if (weights.Count != inputIds.Count)
-                    {
-                        await context.DisposeAsync();
-                        return (false, null, $"Weights array length ({weights.Count}) must match InputItemIds length ({inputIds.Count})");
-                    }
-
-                    if (weights.Any(w => w <= 0))
-                    {
-                        await context.DisposeAsync();
-                        return (false, null, "All weights must be positive numbers");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, $"Invalid Weights JSON format: {ex.Message}");
-                }
+                return (false, null, weightsError);
             }
 
             // Validate interval
@@ -165,10 +106,10 @@ public class AverageMemories
                 return (false, null, "MinimumInputs must be at least 1");
             }
 
-            if (averageMemory.MinimumInputs > inputIds.Count)
+            if (averageMemory.MinimumInputs > inputSources.Count)
             {
                 await context.DisposeAsync();
-                return (false, null, $"MinimumInputs ({averageMemory.MinimumInputs}) cannot exceed number of input items ({inputIds.Count})");
+                return (false, null, $"MinimumInputs ({averageMemory.MinimumInputs}) cannot exceed number of input sources ({inputSources.Count})");
             }
 
             // Validate moving average parameters
@@ -214,99 +155,40 @@ public class AverageMemories
                 return (false, "Average memory not found");
             }
 
-            // Validate and parse InputItemIds JSON
-            List<Guid> inputIds;
-            try
-            {
-                var inputIdStrings = JsonSerializer.Deserialize<List<string>>(averageMemory.InputItemIds);
-                if (inputIdStrings == null || inputIdStrings.Count == 0)
-                {
-                    await context.DisposeAsync();
-                    return (false, "InputItemIds must contain at least one item");
-                }
-
-                inputIds = inputIdStrings.Select(s => Guid.Parse(s)).ToList();
-            }
-            catch (Exception ex)
+            // Validate input sources (mixed Points and Global Variables)
+            var (inputSuccess, inputError, inputSources) = await AverageMemoryValidator.ValidateInputSources(
+                averageMemory.InputItemIds, context);
+            if (!inputSuccess)
             {
                 await context.DisposeAsync();
-                return (false, $"Invalid InputItemIds JSON format: {ex.Message}");
+                return (false, inputError);
             }
 
-            // Validate all input items exist and are analog types
-            foreach (var inputId in inputIds)
-            {
-                var inputItem = await context.MonitoringItems.FindAsync(inputId);
-                if (inputItem == null)
-                {
-                    await context.DisposeAsync();
-                    return (false, $"Input item {inputId} not found");
-                }
-
-                if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, $"Input item {inputId} must be AnalogInput or AnalogOutput");
-                }
-            }
-
-            // Validate output item exists
-            if (!averageMemory.OutputItemId.HasValue)
+            // Validate output source
+            var (outputSuccess, outputError) = await AverageMemoryValidator.ValidateOutputSource(
+                averageMemory.OutputReference, averageMemory.OutputType, context);
+            if (!outputSuccess)
             {
                 await context.DisposeAsync();
-                return (false, "Output item is required");
+                return (false, outputError);
             }
-            
-            var outputItem = await context.MonitoringItems.FindAsync(averageMemory.OutputItemId.Value);
-            if (outputItem == null)
+
+            // Validate output is not in inputs
+            var (notInInputsSuccess, notInInputsError) = AverageMemoryValidator.ValidateOutputNotInInputs(
+                inputSources, averageMemory.OutputReference);
+            if (!notInInputsSuccess)
             {
                 await context.DisposeAsync();
-                return (false, "Output item not found");
+                return (false, notInInputsError);
             }
 
-            // Validate output item is analog type
-            if (outputItem.ItemType != ItemType.AnalogInput && outputItem.ItemType != ItemType.AnalogOutput)
+            // Validate weights
+            var (weightsSuccess, weightsError) = AverageMemoryValidator.ValidateWeights(
+                averageMemory.Weights, inputSources.Count);
+            if (!weightsSuccess)
             {
                 await context.DisposeAsync();
-                return (false, "Output item must be AnalogInput or AnalogOutput");
-            }
-
-            // Validate output item is not in input items
-            if (inputIds.Contains(averageMemory.OutputItemId.Value))
-            {
-                await context.DisposeAsync();
-                return (false, "Output item cannot be in the input items list");
-            }
-
-            // Validate weights if provided
-            if (!string.IsNullOrWhiteSpace(averageMemory.Weights))
-            {
-                try
-                {
-                    var weights = JsonSerializer.Deserialize<List<double>>(averageMemory.Weights);
-                    if (weights == null)
-                    {
-                        await context.DisposeAsync();
-                        return (false, "Weights JSON is invalid");
-                    }
-
-                    if (weights.Count != inputIds.Count)
-                    {
-                        await context.DisposeAsync();
-                        return (false, $"Weights array length ({weights.Count}) must match InputItemIds length ({inputIds.Count})");
-                    }
-
-                    if (weights.Any(w => w <= 0))
-                    {
-                        await context.DisposeAsync();
-                        return (false, "All weights must be positive numbers");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await context.DisposeAsync();
-                    return (false, $"Invalid Weights JSON format: {ex.Message}");
-                }
+                return (false, weightsError);
             }
 
             // Validate interval
@@ -337,10 +219,10 @@ public class AverageMemories
                 return (false, "MinimumInputs must be at least 1");
             }
 
-            if (averageMemory.MinimumInputs > inputIds.Count)
+            if (averageMemory.MinimumInputs > inputSources.Count)
             {
                 await context.DisposeAsync();
-                return (false, $"MinimumInputs ({averageMemory.MinimumInputs}) cannot exceed number of input items ({inputIds.Count})");
+                return (false, $"MinimumInputs ({averageMemory.MinimumInputs}) cannot exceed number of input sources ({inputSources.Count})");
             }
 
             // Validate moving average parameters

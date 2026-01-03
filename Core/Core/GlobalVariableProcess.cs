@@ -481,7 +481,7 @@ public class GlobalVariableProcess
                 }
                 catch (Exception ex)
                 {
-                    MyLog.Warning($"Failed to deserialize GlobalVariable from Redis key {allKeys[i]}", ex);
+                    MyLog.Warning($"Failed to deserialize GlobalVariable from Redis key {allKeys[i]}: {ex.Message}");
                 }
             }
         }

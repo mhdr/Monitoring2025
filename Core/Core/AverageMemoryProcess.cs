@@ -147,6 +147,7 @@ public class AverageMemoryProcess
         // Collect all unique input and output item IDs for batch fetching
         var allInputIds = new HashSet<string>();
         var allOutputIds = new HashSet<string>();
+        var allGlobalVariableNames = new HashSet<string>();
 
         foreach (var memory in memoriesToProcess)
         {
@@ -157,10 +158,32 @@ public class AverageMemoryProcess
                 {
                     foreach (var id in inputIds)
                     {
-                        allInputIds.Add(id);
+                        var (type, reference) = Helpers.SourceReferenceParser.Parse(id);
+                        if (type == Models.TimeoutSourceType.Point)
+                        {
+                            allInputIds.Add(reference);
+                        }
+                        else
+                        {
+                            allGlobalVariableNames.Add(reference);
+                        }
                     }
                 }
-                allOutputIds.Add(memory.OutputItemId?.ToString() ?? string.Empty);
+                
+                // Handle output reference
+                if (!string.IsNullOrEmpty(memory.OutputReference))
+                {
+                    var (type, reference) = Helpers.SourceReferenceParser.Parse(memory.OutputReference);
+                    if (type == Models.TimeoutSourceType.Point)
+                    {
+                        allOutputIds.Add(reference);
+                    }
+                }
+                else if (memory.OutputItemId.HasValue)
+                {
+                    // Backward compatibility for old data
+                    allOutputIds.Add(memory.OutputItemId.Value.ToString());
+                }
             }
             catch (Exception ex)
             {
@@ -171,12 +194,15 @@ public class AverageMemoryProcess
         // Batch fetch all required Redis items (performance optimization)
         var inputItemsCache = await Points.GetFinalItemsBatch(allInputIds.ToList());
         var outputItemsCache = await Points.GetRawItemsBatch(allOutputIds.ToList());
+        var globalVariablesCache = await GlobalVariableProcess.GetGlobalVariablesBatchForMemory(allGlobalVariableNames.ToList());
 
         MyLog.Debug("Batch fetched Redis items for Average processing", new Dictionary<string, object?>
         {
             ["MemoryCount"] = memoriesToProcess.Count,
             ["InputItemsRequested"] = allInputIds.Count,
             ["InputItemsFetched"] = inputItemsCache.Count,
+            ["GlobalVariablesRequested"] = allGlobalVariableNames.Count,
+            ["GlobalVariablesFetched"] = globalVariablesCache.Count,
             ["OutputItemsRequested"] = allOutputIds.Count,
             ["OutputItemsFetched"] = outputItemsCache.Count
         });
@@ -186,7 +212,7 @@ public class AverageMemoryProcess
         {
             try
             {
-                await ProcessSingleMemory(memory, inputItemsCache, outputItemsCache, epochTime);
+                await ProcessSingleMemory(memory, inputItemsCache, globalVariablesCache, outputItemsCache, epochTime);
                 _lastExecutionTimes[memory.Id] = epochTime;
             }
             catch (Exception ex)
@@ -199,6 +225,7 @@ public class AverageMemoryProcess
     private async Task ProcessSingleMemory(
         AverageMemory memory,
         Dictionary<string, FinalItemRedis> inputItemsCache,
+        Dictionary<string, (string Value, long Time, Models.GlobalVariableType Type)> globalVariablesCache,
         Dictionary<string, RawItemRedis> outputItemsCache,
         long currentEpochTime)
     {
@@ -224,12 +251,12 @@ public class AverageMemoryProcess
         if (inputIdStrings.Count == 1)
         {
             // Time-based moving average mode (filter memory)
-            await ProcessMovingAverage(memory, inputIdStrings[0], inputItemsCache, currentEpochTime);
+            await ProcessMovingAverage(memory, inputIdStrings[0], inputItemsCache, globalVariablesCache, currentEpochTime);
         }
         else
         {
             // Multi-input averaging mode (original behavior)
-            await ProcessMultiInputAverage(memory, inputIdStrings, inputItemsCache, currentEpochTime);
+            await ProcessMultiInputAverage(memory, inputIdStrings, inputItemsCache, globalVariablesCache, currentEpochTime);
         }
     }
 
@@ -239,28 +266,56 @@ public class AverageMemoryProcess
     /// </summary>
     private async Task ProcessMovingAverage(
         AverageMemory memory,
-        string inputId,
+        string inputSource,
         Dictionary<string, FinalItemRedis> inputItemsCache,
+        Dictionary<string, (string Value, long Time, Models.GlobalVariableType Type)> globalVariablesCache,
         long currentEpochTime)
     {
+        // Parse input source
+        var (inputType, inputReference) = Helpers.SourceReferenceParser.Parse(inputSource);
+        
         // Get current input value
-        if (!inputItemsCache.TryGetValue(inputId, out var inputItem))
+        string? inputValue = null;
+        long inputTime = 0;
+        
+        if (inputType == Models.TimeoutSourceType.Point)
         {
-            MyLog.Debug($"AverageMemory {memory.Id}: Input item {inputId} not found in cache");
+            if (!inputItemsCache.TryGetValue(inputReference, out var inputItem))
+            {
+                MyLog.Debug($"AverageMemory {memory.Id}: Input Point {inputReference} not found in cache");
+                return;
+            }
+            inputValue = inputItem.Value;
+            inputTime = inputItem.Time;
+        }
+        else // GlobalVariable
+        {
+            if (!globalVariablesCache.TryGetValue(inputReference, out var gvData))
+            {
+                MyLog.Debug($"AverageMemory {memory.Id}: Input Global Variable {inputReference} not found in cache");
+                return;
+            }
+            inputValue = gvData.Value;
+            inputTime = gvData.Time;
+        }
+        
+        if (inputValue == null)
+        {
+            MyLog.Debug($"AverageMemory {memory.Id}: Input value is null");
             return;
         }
 
         // Check if input is stale
-        if (memory.IgnoreStale && (currentEpochTime - inputItem.Time) > memory.StaleTimeout)
+        if (memory.IgnoreStale && (currentEpochTime - inputTime) > memory.StaleTimeout)
         {
-            MyLog.Debug($"AverageMemory {memory.Id}: Input is stale (age: {currentEpochTime - inputItem.Time}s > {memory.StaleTimeout}s)");
+            MyLog.Debug($"AverageMemory {memory.Id}: Input is stale");
             return;
         }
 
         // Parse input value
-        if (!double.TryParse(inputItem.Value, out var currentValue))
+        if (!double.TryParse(inputValue, out var currentValue))
         {
-            MyLog.Debug($"AverageMemory {memory.Id}: Cannot parse input value '{inputItem.Value}' as double");
+            MyLog.Debug($"AverageMemory {memory.Id}: Cannot parse input value '{inputValue}' as double");
             return;
         }
 
@@ -283,8 +338,21 @@ public class AverageMemoryProcess
         }
 
         // Write to output
-        if (memory.OutputItemId.HasValue)
+        if (!string.IsNullOrEmpty(memory.OutputReference))
         {
+            var (outputType, outputRef) = Helpers.SourceReferenceParser.Parse(memory.OutputReference);
+            if (outputType == Models.TimeoutSourceType.Point && Guid.TryParse(outputRef, out var pointId))
+            {
+                await Points.WriteOrAddValue(pointId, result.ToString("F4"), currentEpochTime);
+            }
+            else if (outputType == Models.TimeoutSourceType.GlobalVariable)
+            {
+                await GlobalVariableProcess.SetVariable(outputRef, result);
+            }
+        }
+        else if (memory.OutputItemId.HasValue)
+        {
+            // Backward compatibility
             await Points.WriteOrAddValue(memory.OutputItemId.Value, result.ToString("F4"), currentEpochTime);
         }
 
@@ -418,11 +486,13 @@ public class AverageMemoryProcess
     /// <summary>
     /// Process multi-input averaging at a point in time (original behavior).
     /// Averages multiple input items together with optional weighting and outlier detection.
+    /// Supports mixed sources (Points and Global Variables).
     /// </summary>
     private async Task ProcessMultiInputAverage(
         AverageMemory memory,
-        List<string> inputIdStrings,
+        List<string> inputSources,
         Dictionary<string, FinalItemRedis> inputItemsCache,
+        Dictionary<string, (string Value, long Time, Models.GlobalVariableType Type)> globalVariablesCache,
         long currentEpochTime)
     {
         // Parse weights if provided
@@ -432,7 +502,7 @@ public class AverageMemoryProcess
             try
             {
                 weights = JsonSerializer.Deserialize<List<double>>(memory.Weights);
-                if (weights != null && weights.Count != inputIdStrings.Count)
+                if (weights != null && weights.Count != inputSources.Count)
                 {
                     MyLog.LogJson($"Weights count mismatch for AverageMemory {memory.Id}. Using equal weights.");
                     weights = null; // Fall back to equal weights
@@ -448,22 +518,51 @@ public class AverageMemoryProcess
         // Collect valid input values
         var validInputs = new List<(double Value, double Weight)>();
 
-        for (int i = 0; i < inputIdStrings.Count; i++)
+        for (int i = 0; i < inputSources.Count; i++)
         {
-            var inputId = inputIdStrings[i];
-            if (!inputItemsCache.TryGetValue(inputId, out var inputItem))
+            var inputSource = inputSources[i];
+            var (type, reference) = Helpers.SourceReferenceParser.Parse(inputSource);
+            
+            string? inputValue = null;
+            long inputTime = 0;
+            
+            // Fetch value based on source type
+            if (type == Models.TimeoutSourceType.Point)
             {
-                continue; // Input item not found in cache
+                if (inputItemsCache.TryGetValue(reference, out var inputItem))
+                {
+                    inputValue = inputItem.Value;
+                    inputTime = inputItem.Time;
+                }
+            }
+            else // GlobalVariable
+            {
+                if (globalVariablesCache.TryGetValue(reference, out var gvData))
+                {
+                    inputValue = gvData.Value;
+                    inputTime = gvData.Time;
+                    
+                    // Convert Boolean to numeric if needed
+                    if (gvData.Type == Models.GlobalVariableType.Boolean)
+                    {
+                        inputValue = inputValue.ToLower() == "true" || inputValue == "1" ? "1.0" : "0.0";
+                    }
+                }
+            }
+            
+            if (inputValue == null)
+            {
+                continue; // Input not found in cache
             }
 
             // Check if input is stale
-            if (memory.IgnoreStale && (currentEpochTime - inputItem.Time) > memory.StaleTimeout)
+            if (memory.IgnoreStale && (currentEpochTime - inputTime) > memory.StaleTimeout)
             {
                 continue; // Skip stale input
             }
 
             // Parse input value
-            if (!double.TryParse(inputItem.Value, out var value))
+            if (!double.TryParse(inputValue, out var value))
             {
                 continue; // Skip non-numeric values
             }
@@ -521,8 +620,21 @@ public class AverageMemoryProcess
         double average = weightedSum / totalWeight;
 
         // Write to output
-        if (memory.OutputItemId.HasValue)
+        if (!string.IsNullOrEmpty(memory.OutputReference))
         {
+            var (outputType, outputRef) = Helpers.SourceReferenceParser.Parse(memory.OutputReference);
+            if (outputType == Models.TimeoutSourceType.Point && Guid.TryParse(outputRef, out var pointId))
+            {
+                await Points.WriteOrAddValue(pointId, average.ToString("F4"), currentEpochTime);
+            }
+            else if (outputType == Models.TimeoutSourceType.GlobalVariable)
+            {
+                await GlobalVariableProcess.SetVariable(outputRef, average);
+            }
+        }
+        else if (memory.OutputItemId.HasValue)
+        {
+            // Backward compatibility
             await Points.WriteOrAddValue(memory.OutputItemId.Value, average.ToString("F4"), currentEpochTime);
         }
 
