@@ -219,7 +219,17 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
         let outputReference = '';
         if ((averageMemory as any).outputType !== undefined && (averageMemory as any).outputReference !== undefined) {
           outputType = (averageMemory as any).outputType;
-          outputReference = (averageMemory as any).outputReference;
+          const rawOutputRef = (averageMemory as any).outputReference;
+          
+          // Strip prefix if present (P: or GV:)
+          if (rawOutputRef.startsWith('P:')) {
+            outputReference = rawOutputRef.substring(2); // Remove "P:" prefix
+          } else if (rawOutputRef.startsWith('GV:')) {
+            outputReference = rawOutputRef.substring(3); // Remove "GV:" prefix
+          } else {
+            // No prefix, use as-is (backward compatibility)
+            outputReference = rawOutputRef;
+          }
         } else if ((averageMemory as any).outputItemId) {
           // Backward compatibility: old format had outputItemId
           outputType = TimeoutSourceType.Point;
@@ -408,11 +418,17 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
     setError(null);
 
     try {
+      // Format outputReference with prefix based on outputType
+      const outputReference =
+        formData.outputType === 0 // Point
+          ? `P:${formData.outputReference}`
+          : `GV:${formData.outputReference}`; // GlobalVariable
+
       const payload = {
         name: formData.name || null,
         inputItemIds: JSON.stringify(formData.inputItemIds),
         outputType: formData.outputType,
-        outputReference: formData.outputReference,
+        outputReference,
         outputItemId: null, // For backward compatibility
         interval: formData.interval,
         isDisabled: formData.isDisabled,

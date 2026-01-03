@@ -91,11 +91,19 @@ public static class AverageMemoryValidator
             return (false, "Output reference is required");
         }
 
-        // Use the outputType parameter directly - outputReference is already unprefixed
-        if (outputType == TimeoutSourceType.Point)
+        // Parse the output reference using the prefix format (P:guid or GV:name)
+        var (parsedType, reference) = SourceReferenceParser.Parse(outputReference);
+        
+        // Validate that parsed type matches the provided outputType
+        if (parsedType != outputType)
+        {
+            return (false, $"Output reference format mismatch: expected {outputType} but got {parsedType}");
+        }
+
+        if (parsedType == TimeoutSourceType.Point)
         {
             // Validate Point exists and is analog type
-            if (!Guid.TryParse(outputReference, out var itemId))
+            if (!Guid.TryParse(reference, out var itemId))
             {
                 return (false, "Invalid output Point GUID");
             }
@@ -114,7 +122,7 @@ public static class AverageMemoryValidator
         else // GlobalVariable
         {
             // Validate Global Variable exists, is enabled, and is Float type
-            var gv = await context.GlobalVariables.FirstOrDefaultAsync(v => v.Name == outputReference);
+            var gv = await context.GlobalVariables.FirstOrDefaultAsync(v => v.Name == reference);
             if (gv == null)
             {
                 return (false, "Output Global Variable not found");
