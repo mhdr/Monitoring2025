@@ -14,14 +14,19 @@ import {
   Chip,
   Typography,
   IconButton,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   HelpOutline as HelpOutlineIcon,
+  Memory as MemoryIcon,
+  Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addTimeoutMemory, editTimeoutMemory } from '../services/extendedApi';
-import type { TimeoutMemory, Item, ItemType } from '../types/api';
+import { addTimeoutMemory, editTimeoutMemory, getGlobalVariables } from '../services/extendedApi';
+import type { TimeoutMemory, Item, ItemType, GlobalVariable } from '../types/api';
+import { TimeoutSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -35,14 +40,16 @@ interface AddEditTimeoutMemoryDialogProps {
 }
 
 interface FormData {
-  inputItemId: string;
-  outputItemId: string;
+  inputType: number;
+  inputReference: string;
+  outputType: number;
+  outputReference: string;
   timeout: number;
 }
 
 interface FormErrors {
-  inputItemId?: string;
-  outputItemId?: string;
+  inputReference?: string;
+  outputReference?: string;
   timeout?: string;
 }
 
@@ -94,7 +101,8 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
+  const [loadingGlobalVariables, setLoadingGlobalVariables] = useState(false);
 
   // Help popover states
   const [helpAnchorEl, setHelpAnchorEl] = useState<Record<string, HTMLElement | null>>({});
@@ -108,69 +116,139 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
   };
 
   const [formData, setFormData] = useState<FormData>({
-    inputItemId: '',
-    outputItemId: '',
+    inputType: TimeoutSourceType.Point,
+    inputReference: '',
+    outputType: TimeoutSourceType.Point,
+    outputReference: '',
     timeout: 60, // Default 60 seconds
   });
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+
+  // Fetch global variables when dialog opens
+  useEffect(() => {
+    const fetchGlobalVariables = async () => {
+      if (open) {
+        setLoadingGlobalVariables(true);
+        try {
+          const response = await getGlobalVariables({});
+          if (response?.globalVariables) {
+            setGlobalVariables(response.globalVariables);
+            logger.log('Global variables loaded', { count: response.globalVariables.length });
+          }
+        } catch (err) {
+          logger.error('Failed to fetch global variables', { error: err });
+        } finally {
+          setLoadingGlobalVariables(false);
+        }
+      }
+    };
+
+    fetchGlobalVariables();
+  }, [open]);
 
   // Initialize form data when dialog opens or timeoutMemory changes
   useEffect(() => {
     if (open) {
       if (editMode && timeoutMemory) {
         setFormData({
-          inputItemId: timeoutMemory.inputItemId,
-          outputItemId: timeoutMemory.outputItemId,
+          inputType: timeoutMemory.inputType,
+          inputReference: timeoutMemory.inputReference,
+          outputType: timeoutMemory.outputType,
+          outputReference: timeoutMemory.outputReference,
           timeout: timeoutMemory.timeout,
         });
       } else {
         setFormData({
-          inputItemId: '',
-          outputItemId: '',
+          inputType: TimeoutSourceType.Point,
+          inputReference: '',
+          outputType: TimeoutSourceType.Point,
+          outputReference: '',
           timeout: 60,
         });
       }
       setFormErrors({});
       setError(null);
-      setDuplicateWarning(null);
     }
   }, [open, editMode, timeoutMemory]);
 
-  // Filter output items to only DigitalOutput (2)
+  // Filter output items to only DigitalOutput (2) for Point type
   const outputItems = useMemo(() => {
     return items.filter((item) => item.itemType === 2);
   }, [items]);
 
-  // Get selected input and output items
+  // Get selected input and output items/variables
   const selectedInputItem = useMemo(() => {
-    return items.find((item) => item.id === formData.inputItemId) || null;
-  }, [items, formData.inputItemId]);
+    if (formData.inputType === TimeoutSourceType.Point) {
+      return items.find((item) => item.id === formData.inputReference) || null;
+    }
+    return null;
+  }, [items, formData.inputType, formData.inputReference]);
 
   const selectedOutputItem = useMemo(() => {
-    return outputItems.find((item) => item.id === formData.outputItemId) || null;
-  }, [outputItems, formData.outputItemId]);
-
-  // Check for duplicate InputItemId (excluding current edit)
-  useEffect(() => {
-    if (formData.inputItemId) {
-      // In a real implementation, we'd fetch existing timeout memories and check for duplicates
-      // For now, just clear the warning when input changes
-      setDuplicateWarning(null);
+    if (formData.outputType === TimeoutSourceType.Point) {
+      return outputItems.find((item) => item.id === formData.outputReference) || null;
     }
-  }, [formData.inputItemId]);
+    return null;
+  }, [outputItems, formData.outputType, formData.outputReference]);
+
+  const selectedInputVariable = useMemo(() => {
+    if (formData.inputType === TimeoutSourceType.GlobalVariable) {
+      return globalVariables.find((v) => v.name === formData.inputReference) || null;
+    }
+    return null;
+  }, [globalVariables, formData.inputType, formData.inputReference]);
+
+  const selectedOutputVariable = useMemo(() => {
+    if (formData.outputType === TimeoutSourceType.GlobalVariable) {
+      return globalVariables.find((v) => v.name === formData.outputReference) || null;
+    }
+    return null;
+  }, [globalVariables, formData.outputType, formData.outputReference]);
+
+  const handleInputTypeChange = (_event: React.MouseEvent<HTMLElement>, newValue: number | null) => {
+    if (newValue !== null) {
+      setFormData((prev) => ({ ...prev, inputType: newValue, inputReference: '' }));
+      if (formErrors.inputReference) {
+        setFormErrors((prev) => ({ ...prev, inputReference: undefined }));
+      }
+    }
+  };
+
+  const handleOutputTypeChange = (_event: React.MouseEvent<HTMLElement>, newValue: number | null) => {
+    if (newValue !== null) {
+      setFormData((prev) => ({ ...prev, outputType: newValue, outputReference: '' }));
+      if (formErrors.outputReference) {
+        setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
+      }
+    }
+  };
 
   const handleInputItemChange = (_event: React.SyntheticEvent, value: Item | null) => {
-    setFormData((prev) => ({ ...prev, inputItemId: value?.id || '' }));
-    if (formErrors.inputItemId) {
-      setFormErrors((prev) => ({ ...prev, inputItemId: undefined }));
+    setFormData((prev) => ({ ...prev, inputReference: value?.id || '' }));
+    if (formErrors.inputReference) {
+      setFormErrors((prev) => ({ ...prev, inputReference: undefined }));
     }
   };
 
   const handleOutputItemChange = (_event: React.SyntheticEvent, value: Item | null) => {
-    setFormData((prev) => ({ ...prev, outputItemId: value?.id || '' }));
-    if (formErrors.outputItemId) {
-      setFormErrors((prev) => ({ ...prev, outputItemId: undefined }));
+    setFormData((prev) => ({ ...prev, outputReference: value?.id || '' }));
+    if (formErrors.outputReference) {
+      setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
+    }
+  };
+
+  const handleInputVariableChange = (_event: React.SyntheticEvent, value: GlobalVariable | null) => {
+    setFormData((prev) => ({ ...prev, inputReference: value?.name || '' }));
+    if (formErrors.inputReference) {
+      setFormErrors((prev) => ({ ...prev, inputReference: undefined }));
+    }
+  };
+
+  const handleOutputVariableChange = (_event: React.SyntheticEvent, value: GlobalVariable | null) => {
+    setFormData((prev) => ({ ...prev, outputReference: value?.name || '' }));
+    if (formErrors.outputReference) {
+      setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
     }
   };
 
@@ -185,19 +263,22 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
   const validate = (): boolean => {
     const errors: FormErrors = {};
 
-    // Input item validation
-    if (!formData.inputItemId) {
-      errors.inputItemId = t('timeoutMemory.validation.inputItemRequired');
+    // Input source validation
+    if (!formData.inputReference) {
+      errors.inputReference = t('timeoutMemory.validation.inputRequired');
     }
 
-    // Output item validation
-    if (!formData.outputItemId) {
-      errors.outputItemId = t('timeoutMemory.validation.outputItemRequired');
+    // Output source validation
+    if (!formData.outputReference) {
+      errors.outputReference = t('timeoutMemory.validation.outputRequired');
     }
 
-    // Validate input and output items are different
-    if (formData.inputItemId && formData.outputItemId && formData.inputItemId === formData.outputItemId) {
-      errors.outputItemId = t('timeoutMemory.validation.itemsMustBeDifferent');
+    // Validate input and output sources are different (same type and reference)
+    if (formData.inputType === formData.outputType && 
+        formData.inputReference && 
+        formData.outputReference && 
+        formData.inputReference === formData.outputReference) {
+      errors.outputReference = t('timeoutMemory.validation.sourcesMustBeDifferent');
     }
 
     // Timeout validation
@@ -223,8 +304,10 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
         logger.log('Editing timeout memory', { id: timeoutMemory.id });
         const response = await editTimeoutMemory({
           id: timeoutMemory.id,
-          inputItemId: formData.inputItemId,
-          outputItemId: formData.outputItemId,
+          inputType: formData.inputType,
+          inputReference: formData.inputReference,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
           timeout: formData.timeout,
         });
 
@@ -238,8 +321,10 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
         // Create new timeout memory
         logger.log('Creating timeout memory');
         const response = await addTimeoutMemory({
-          inputItemId: formData.inputItemId,
-          outputItemId: formData.outputItemId,
+          inputType: formData.inputType,
+          inputReference: formData.inputReference,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
           timeout: formData.timeout,
         });
 
@@ -267,6 +352,10 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
     return `${item.pointNumber} - ${name}`;
   };
 
+  const getVariableLabel = (variable: GlobalVariable): string => {
+    return variable.name;
+  };
+
   return (
     <Dialog
       open={open}
@@ -287,102 +376,266 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
             </Alert>
           )}
 
-          {duplicateWarning && (
-            <Alert severity="warning" data-id-ref="timeout-memory-duplicate-warning">
-              {duplicateWarning}
-            </Alert>
-          )}
+          {/* Input Type Selection */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom data-id-ref="timeout-memory-input-type-label">
+              {t('timeoutMemory.inputType')} *
+            </Typography>
+            <ToggleButtonGroup
+              value={formData.inputType}
+              exclusive
+              onChange={handleInputTypeChange}
+              fullWidth
+              disabled={loading}
+              data-id-ref="timeout-memory-input-type-toggle"
+              sx={{ mb: 2 }}
+            >
+              <ToggleButton value={TimeoutSourceType.Point} data-id-ref="timeout-memory-input-type-point">
+                <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                {t('timeoutMemory.sourceTypePoint')}
+              </ToggleButton>
+              <ToggleButton value={TimeoutSourceType.GlobalVariable} data-id-ref="timeout-memory-input-type-globalvariable">
+                <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                {t('timeoutMemory.sourceTypeGlobalVariable')}
+              </ToggleButton>
+            </ToggleButtonGroup>
 
-          {/* Input Item Selection */}
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-            <Autocomplete
-              options={items}
-              getOptionLabel={getItemLabel}
-              value={selectedInputItem}
-              onChange={handleInputItemChange}
-              disabled={loading}
-              data-id-ref="timeout-memory-input-item-select"
-              sx={{ flex: 1 }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={t('timeoutMemory.inputItem')}
-                  required
-                  error={!!formErrors.inputItemId}
-                  helperText={formErrors.inputItemId || t('timeoutMemory.inputItemHelp')}
-                />
-              )}
-              renderOption={(props, option) => (
-                <Box component="li" {...props} key={option.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                      {getItemLabel(option)}
-                    </Typography>
-                    <Chip
-                      label={getItemTypeLabel(option.itemType, t)}
-                      size="small"
-                      color={getItemTypeColor(option.itemType)}
-                      sx={{ height: 20, fontSize: '0.7rem' }}
+            {/* Input Item Selection (Point) */}
+            {formData.inputType === TimeoutSourceType.Point && (
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Autocomplete
+                  options={items}
+                  getOptionLabel={getItemLabel}
+                  value={selectedInputItem}
+                  onChange={handleInputItemChange}
+                  disabled={loading}
+                  data-id-ref="timeout-memory-input-item-select"
+                  sx={{ flex: 1 }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('timeoutMemory.inputItem')}
+                      required
+                      error={!!formErrors.inputReference}
+                      helperText={formErrors.inputReference || t('timeoutMemory.inputItemHelp')}
                     />
-                  </Box>
-                </Box>
-              )}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-            />
-            <IconButton
-              size="small"
-              onClick={handleHelpOpen('timeoutMemory.help.inputItem')}
-              sx={{ p: 0.25, mt: 1 }}
-              data-id-ref="timeout-memory-input-item-help-btn"
-            >
-              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-            </IconButton>
-          </Box>
-          {/* Output Item Selection - Filtered to DigitalOutput only */}
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-            <Autocomplete
-              options={outputItems}
-              getOptionLabel={getItemLabel}
-              value={selectedOutputItem}
-              onChange={handleOutputItemChange}
-              disabled={loading}
-              data-id-ref="timeout-memory-output-item-select"
-              sx={{ flex: 1 }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={t('timeoutMemory.outputItem')}
-                  required
-                  error={!!formErrors.outputItemId}
-                  helperText={formErrors.outputItemId || t('timeoutMemory.outputItemHelp')}
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {getItemLabel(option)}
+                        </Typography>
+                        <Chip
+                          label={getItemTypeLabel(option.itemType, t)}
+                          size="small"
+                          color={getItemTypeColor(option.itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
                 />
-              )}
-              renderOption={(props, option) => (
-                <Box component="li" {...props} key={option.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                      {getItemLabel(option)}
-                    </Typography>
-                    <Chip
-                      label={getItemTypeLabel(option.itemType, t)}
-                      size="small"
-                      color={getItemTypeColor(option.itemType)}
-                      sx={{ height: 20, fontSize: '0.7rem' }}
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('timeoutMemory.help.inputItem')}
+                  sx={{ p: 0.25, mt: 1 }}
+                  data-id-ref="timeout-memory-input-item-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            )}
+
+            {/* Input Global Variable Selection */}
+            {formData.inputType === TimeoutSourceType.GlobalVariable && (
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Autocomplete
+                  options={globalVariables}
+                  getOptionLabel={getVariableLabel}
+                  value={selectedInputVariable}
+                  onChange={handleInputVariableChange}
+                  disabled={loading || loadingGlobalVariables}
+                  data-id-ref="timeout-memory-input-variable-select"
+                  sx={{ flex: 1 }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('timeoutMemory.inputGlobalVariable')}
+                      required
+                      error={!!formErrors.inputReference}
+                      helperText={formErrors.inputReference || t('timeoutMemory.inputGlobalVariableHelp')}
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
                     />
-                  </Box>
-                </Box>
-              )}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-            />
-            <IconButton
-              size="small"
-              onClick={handleHelpOpen('timeoutMemory.help.outputItem')}
-              sx={{ p: 0.25, mt: 1 }}
-              data-id-ref="timeout-memory-output-item-help-btn"
-            >
-              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-            </IconButton>
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {option.name}
+                        </Typography>
+                        <Chip
+                          label={option.variableType === 0 ? t('globalVariables.type.boolean') : t('globalVariables.type.float')}
+                          size="small"
+                          color={option.variableType === 0 ? 'success' : 'info'}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.name === value.name}
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('timeoutMemory.help.inputGlobalVariable')}
+                  sx={{ p: 0.25, mt: 1 }}
+                  data-id-ref="timeout-memory-input-variable-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            )}
           </Box>
+
+          {/* Output Type Selection */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom data-id-ref="timeout-memory-output-type-label">
+              {t('timeoutMemory.outputType')} *
+            </Typography>
+            <ToggleButtonGroup
+              value={formData.outputType}
+              exclusive
+              onChange={handleOutputTypeChange}
+              fullWidth
+              disabled={loading}
+              data-id-ref="timeout-memory-output-type-toggle"
+              sx={{ mb: 2 }}
+            >
+              <ToggleButton value={TimeoutSourceType.Point} data-id-ref="timeout-memory-output-type-point">
+                <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                {t('timeoutMemory.sourceTypePoint')}
+              </ToggleButton>
+              <ToggleButton value={TimeoutSourceType.GlobalVariable} data-id-ref="timeout-memory-output-type-globalvariable">
+                <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                {t('timeoutMemory.sourceTypeGlobalVariable')}
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+            {/* Output Item Selection (Point) - Filtered to DigitalOutput only */}
+            {formData.outputType === TimeoutSourceType.Point && (
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Autocomplete
+                  options={outputItems}
+                  getOptionLabel={getItemLabel}
+                  value={selectedOutputItem}
+                  onChange={handleOutputItemChange}
+                  disabled={loading}
+                  data-id-ref="timeout-memory-output-item-select"
+                  sx={{ flex: 1 }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('timeoutMemory.outputItem')}
+                      required
+                      error={!!formErrors.outputReference}
+                      helperText={formErrors.outputReference || t('timeoutMemory.outputItemHelp')}
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {getItemLabel(option)}
+                        </Typography>
+                        <Chip
+                          label={getItemTypeLabel(option.itemType, t)}
+                          size="small"
+                          color={getItemTypeColor(option.itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('timeoutMemory.help.outputItem')}
+                  sx={{ p: 0.25, mt: 1 }}
+                  data-id-ref="timeout-memory-output-item-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            )}
+
+            {/* Output Global Variable Selection */}
+            {formData.outputType === TimeoutSourceType.GlobalVariable && (
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Autocomplete
+                  options={globalVariables}
+                  getOptionLabel={getVariableLabel}
+                  value={selectedOutputVariable}
+                  onChange={handleOutputVariableChange}
+                  disabled={loading || loadingGlobalVariables}
+                  data-id-ref="timeout-memory-output-variable-select"
+                  sx={{ flex: 1 }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('timeoutMemory.outputGlobalVariable')}
+                      required
+                      error={!!formErrors.outputReference}
+                      helperText={formErrors.outputReference || t('timeoutMemory.outputGlobalVariableHelp')}
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {option.name}
+                        </Typography>
+                        <Chip
+                          label={option.variableType === 0 ? t('globalVariables.type.boolean') : t('globalVariables.type.float')}
+                          size="small"
+                          color={option.variableType === 0 ? 'success' : 'info'}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.name === value.name}
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('timeoutMemory.help.outputGlobalVariable')}
+                  sx={{ p: 0.25, mt: 1 }}
+                  data-id-ref="timeout-memory-output-variable-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            )}
+          </Box>
+
           {/* Timeout Input */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
             <TextField
@@ -444,6 +697,18 @@ const AddEditTimeoutMemoryDialog: React.FC<AddEditTimeoutMemoryDialogProps> = ({
         open={Boolean(helpAnchorEl['timeoutMemory.help.outputItem'])}
         onClose={handleHelpClose('timeoutMemory.help.outputItem')}
         fieldKey="timeoutMemory.help.outputItem"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['timeoutMemory.help.inputGlobalVariable']}
+        open={Boolean(helpAnchorEl['timeoutMemory.help.inputGlobalVariable'])}
+        onClose={handleHelpClose('timeoutMemory.help.inputGlobalVariable')}
+        fieldKey="timeoutMemory.help.inputGlobalVariable"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['timeoutMemory.help.outputGlobalVariable']}
+        open={Boolean(helpAnchorEl['timeoutMemory.help.outputGlobalVariable'])}
+        onClose={handleHelpClose('timeoutMemory.help.outputGlobalVariable')}
+        fieldKey="timeoutMemory.help.outputGlobalVariable"
       />
       <FieldHelpPopover
         anchorEl={helpAnchorEl['timeoutMemory.help.timeout']}

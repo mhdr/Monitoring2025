@@ -120,7 +120,6 @@ const TimeoutMemoryManagementPage: React.FC = () => {
 
   // State
   const [timeoutMemories, setTimeoutMemories] = useState<TimeoutMemoryWithItems[]>([]);
-  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -155,9 +154,8 @@ const TimeoutMemoryManagementPage: React.FC = () => {
         getGlobalVariables({})
       ]);
 
-      if (gvResponse?.variables) {
-        setGlobalVariables(gvResponse.variables);
-        logger.log('Global variables fetched successfully', { count: gvResponse.variables.length });
+      if (gvResponse?.globalVariables) {
+        logger.log('Global variables fetched successfully', { count: gvResponse.globalVariables.length });
       }
 
       if (tmResponse?.timeoutMemories) {
@@ -176,7 +174,7 @@ const TimeoutMemoryManagementPage: React.FC = () => {
               inputItemType = inputItem.itemType;
             }
           } else if (tm.inputType === TimeoutSourceType.GlobalVariable) {
-            const inputVariable = gvResponse?.variables?.find((v) => v.name === tm.inputReference);
+            const inputVariable = gvResponse?.globalVariables?.find((v) => v.name === tm.inputReference);
             if (inputVariable) {
               inputSourceName = inputVariable.name;
             }
@@ -190,7 +188,7 @@ const TimeoutMemoryManagementPage: React.FC = () => {
               outputItemType = outputItem.itemType;
             }
           } else if (tm.outputType === TimeoutSourceType.GlobalVariable) {
-            const outputVariable = gvResponse?.variables?.find((v) => v.name === tm.outputReference);
+            const outputVariable = gvResponse?.globalVariables?.find((v) => v.name === tm.outputReference);
             if (outputVariable) {
               outputSourceName = outputVariable.name;
             }

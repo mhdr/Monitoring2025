@@ -1792,6 +1792,61 @@
             "content": "• Setting timeout shorter than normal scan interval\n• Not accounting for startup/initialization time\n• Ignoring network latency variations\n• Forgetting about system load impacts\n• Using same timeout for all items regardless of criticality"
           }
         ]
+      },
+      "inputGlobalVariable": {
+        "title": "Input Global Variable - What to Monitor",
+        "sections": [
+          {
+            "title": "What is the Input Global Variable?",
+            "content": "The Input Global Variable is a global variable whose update timestamp will be monitored for timeout detection. Global variables are system-wide values that can be read and written by multiple memory functions."
+          },
+          {
+            "title": "How It Works",
+            "content": [
+              "Every second, the system checks the variable's last update timestamp",
+              "If the time since last update exceeds the timeout period, the output is set to 1",
+              "When the variable starts updating again, the output resets to 0"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Common Use Cases",
+            "content": "Calculated Value Monitoring:\n• Monitor complex formula outputs\n• Track derived values from multiple sources\n• Verify calculation updates\n\nMemory Function Watchdog:\n• Check if PID loop is executing\n• Monitor statistical calculations\n• Track totalizer updates\n\nSystem Health:\n• Verify background processes\n• Monitor scheduled operations\n• Track data aggregation"
+          },
+          {
+            "type": "tip",
+            "title": "Best Practices",
+            "content": "• Use for monitoring calculated or derived values\n• Set appropriate timeout based on update frequency\n• Consider memory function execution intervals\n• Combine with Point monitoring for comprehensive coverage"
+          }
+        ]
+      },
+      "outputGlobalVariable": {
+        "title": "Output Global Variable - Timeout Status Indicator",
+        "sections": [
+          {
+            "title": "What is the Output Global Variable?",
+            "content": "The Output Global Variable is a global variable that indicates timeout status: 0 = Input updating normally, 1 = Timeout exceeded (input stale or not updating)"
+          },
+          {
+            "title": "Output Behavior",
+            "content": [
+              "Output = 0: Input source is updating within timeout period (normal operation)",
+              "Output = 1: Input source hasn't updated for longer than timeout period (failure/stale data)",
+              "Changes immediately when timeout condition occurs",
+              "Automatically resets when input resumes updating"
+            ]
+          },
+          {
+            "type": "example",
+            "title": "Integration Examples",
+            "content": "Memory Function Integration:\n• Use as input for IF Memory conditions\n• Control PID loop enable status\n• Trigger formula calculations\n\nComplex Logic:\n• Combine multiple timeout statuses\n• Create system health scores\n• Implement multi-level watchdogs\n\nData Flow:\n• Chain timeout checks\n• Create dependency monitoring\n• Build health hierarchies"
+          },
+          {
+            "type": "warning",
+            "title": "Important Notes",
+            "content": "• Output must be a Boolean or Float type global variable\n• Do not use the same variable for input and output\n• Consider using Boolean type for clearer logic\n• Test timeout detection before deployment"
+          }
+        ]
       }
     }
   },

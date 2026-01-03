@@ -2778,8 +2778,10 @@ export interface GetTimeoutMemoriesResponseDto {
  * Request DTO for creating a new timeout memory configuration
  */
 export interface AddTimeoutMemoryRequestDto {
-  inputItemId: string; // UUID
-  outputItemId: string; // UUID
+  inputType: number; // TimeoutSourceType (0=Point, 1=GlobalVariable)
+  inputReference: string; // UUID for Point, Name for GlobalVariable
+  outputType: number; // TimeoutSourceType (0=Point, 1=GlobalVariable)
+  outputReference: string; // UUID for Point, Name for GlobalVariable
   timeout: number; // int64 - must be > 0
 }
 
@@ -2797,8 +2799,10 @@ export interface AddTimeoutMemoryResponseDto {
  */
 export interface EditTimeoutMemoryRequestDto {
   id: string; // UUID
-  inputItemId: string; // UUID
-  outputItemId: string; // UUID
+  inputType: number; // TimeoutSourceType (0=Point, 1=GlobalVariable)
+  inputReference: string; // UUID for Point, Name for GlobalVariable
+  outputType: number; // TimeoutSourceType (0=Point, 1=GlobalVariable)
+  outputReference: string; // UUID for Point, Name for GlobalVariable
   timeout: number; // int64 - must be > 0
 }
 
