@@ -280,7 +280,7 @@ const GlobalVariableManagementPage: React.FC = () => {
       },
       {
         field: 'variableType',
-        headerText: t('globalVariables.type'),
+        headerText: t('globalVariables.variableType'),
         width: 100,
         textAlign: 'Center',
         template: (rowData: GlobalVariable) => (

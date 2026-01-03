@@ -40,22 +40,31 @@ const FieldHelpPopover: React.FC<FieldHelpPopoverProps> = ({
 
   // Get content from translations if sections not provided
   const helpTitle = title || t(`${fieldKey}.title`, { defaultValue: t('common.help') });
-  const helpSections = sections || [];
-
+  
+  let helpSections: HelpSection[] = [];
+  
   // Try to load sections from translations if not provided
   if (sections === undefined) {
     try {
       const translatedSections = t(`${fieldKey}.sections`, { returnObjects: true });
       if (Array.isArray(translatedSections)) {
-        helpSections.push(...translatedSections);
+        helpSections = translatedSections;
+      } else {
+        // Fallback to single content if sections is not an array
+        const content = t(`${fieldKey}.content`, { defaultValue: '' });
+        if (content) {
+          helpSections = [{ content }];
+        }
       }
     } catch {
       // Fallback to single content if sections don't exist
       const content = t(`${fieldKey}.content`, { defaultValue: '' });
       if (content) {
-        helpSections.push({ content });
+        helpSections = [{ content }];
       }
     }
+  } else {
+    helpSections = sections;
   }
 
   const getSectionIcon = (type?: string) => {

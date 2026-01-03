@@ -5568,6 +5568,7 @@
     "searchPlaceholder": "جستجوی متغیرهای سراسری...",
     "noVariables": "هیچ متغیر سراسری تعریف نشده است",
     "name": "نام متغیر",
+    "variableType": "نوع",
     "type": {
       "boolean": "بولین",
       "float": "اعشاری"

@@ -6101,6 +6101,7 @@
     "searchPlaceholder": "Search global variables...",
     "noVariables": "No global variables defined",
     "name": "Variable Name",
+    "variableType": "Type",
     "type": {
       "boolean": "Boolean",
       "float": "Float"
