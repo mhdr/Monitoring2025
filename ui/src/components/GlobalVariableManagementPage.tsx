@@ -42,8 +42,6 @@ const AddEditGlobalVariableDialog = lazy(() => import('./AddEditGlobalVariableDi
 const DeleteGlobalVariableDialog = lazy(() => import('./DeleteGlobalVariableDialog'));
 const GlobalVariableUsageDialog = lazy(() => import('./GlobalVariableUsageDialog'));
 const SetGlobalVariableValueDialog = lazy(() => import('./SetGlobalVariableValueDialog'));
-const DeleteGlobalVariableDialog = lazy(() => import('./DeleteGlobalVariableDialog'));
-const GlobalVariableUsageDialog = lazy(() => import('./GlobalVariableUsageDialog'));
 
 /**
  * Get variable type color for badge
