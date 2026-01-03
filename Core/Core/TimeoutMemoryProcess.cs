@@ -191,7 +191,7 @@ public class TimeoutMemoryProcess
                     outputValue = "0";  // Input is updating regularly
                 }
 
-                // Write output value based on source type
+                // Write output value based on source type (both use string "1"/"0" for consistency)
                 if (memory.OutputType == Models.TimeoutSourceType.Point)
                 {
                     // Write to Point item
@@ -202,7 +202,7 @@ public class TimeoutMemoryProcess
                 }
                 else if (memory.OutputType == Models.TimeoutSourceType.GlobalVariable)
                 {
-                    // Write to Global Variable
+                    // Write to Global Variable (accepts "1"/"0" strings)
                     await GlobalVariableProcess.SetVariable(memory.OutputReference, outputValue);
                 }
             }

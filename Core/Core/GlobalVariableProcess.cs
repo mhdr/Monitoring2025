@@ -293,13 +293,18 @@ public class GlobalVariableProcess
                 }
                 else if (value is string strVal)
                 {
-                    if (bool.TryParse(strVal, out var parsedBool))
+                    // Accept both "true"/"false" and "1"/"0" for consistency with Points
+                    if (strVal == "1" || strVal.Equals("true", StringComparison.OrdinalIgnoreCase))
                     {
-                        stringValue = parsedBool.ToString().ToLower();
+                        stringValue = "true";
+                    }
+                    else if (strVal == "0" || strVal.Equals("false", StringComparison.OrdinalIgnoreCase))
+                    {
+                        stringValue = "false";
                     }
                     else
                     {
-                        return (false, $"Invalid boolean value for variable '{name}': {value}");
+                        return (false, $"Invalid boolean value for variable '{name}': {value}. Expected: true/false or 1/0");
                     }
                 }
                 else
