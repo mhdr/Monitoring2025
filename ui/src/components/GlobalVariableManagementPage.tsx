@@ -414,7 +414,7 @@ const GlobalVariableManagementPage: React.FC = () => {
       {
         field: 'lastUpdateTime',
         headerText: t('globalVariables.lastUpdate'),
-        width: 180,
+        width: 220,
         textAlign: 'Center',
         template: (rowData: GlobalVariable) => (
           <Typography variant="body2" color="text.secondary" data-id-ref="globalvariable-lastupdate-cell">
