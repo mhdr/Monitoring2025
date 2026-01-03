@@ -13,20 +13,33 @@ public class AddAverageMemoryRequestDto
     public string? Name { get; set; }
 
     /// <summary>
-    /// JSON array of input item IDs to average
-    /// Format: ["guid1", "guid2", ...]
+    /// JSON array of input source references to average
+    /// Format: ["P:guid1", "GV:name1", "P:guid2", ...]
+    /// Prefixes: "P:" for Points, "GV:" for Global Variables
     /// For time-based moving average, use single input
-    /// For multi-input averaging, use multiple inputs
+    /// For multi-input averaging, use multiple inputs (can mix Points and Global Variables)
     /// </summary>
     [Required(ErrorMessage = "Input item IDs are required")]
     public string InputItemIds { get; set; } = "[]";
 
     /// <summary>
-    /// ID of the output monitoring item for averaged value
+    /// ID of the output monitoring item for averaged value (deprecated - use OutputReference and OutputType)
     /// Must be AnalogInput or AnalogOutput
     /// </summary>
-    [Required(ErrorMessage = "Output item ID is required")]
-    public Guid OutputItemId { get; set; }
+    public Guid? OutputItemId { get; set; }
+
+    /// <summary>
+    /// Output type (0=Point, 1=GlobalVariable)
+    /// </summary>
+    [Range(0, 1, ErrorMessage = "Output type must be 0 (Point) or 1 (GlobalVariable)")]
+    public int OutputType { get; set; } = 0;
+
+    /// <summary>
+    /// Output source reference
+    /// Format: "P:guid" for Points or "GV:name" for Global Variables
+    /// </summary>
+    [Required(ErrorMessage = "Output reference is required")]
+    public string OutputReference { get; set; } = string.Empty;
 
     /// <summary>
     /// Execution interval in seconds (must be greater than 0)

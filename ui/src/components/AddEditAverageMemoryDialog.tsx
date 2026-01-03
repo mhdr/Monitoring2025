@@ -23,17 +23,25 @@ import {
   AccordionDetails,
   IconButton,
   Slider,
+  ToggleButtonGroup,
+  ToggleButton,
+  CircularProgress,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   HelpOutline as HelpOutlineIcon,
+  Memory as MemoryIcon,
+  Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addAverageMemory, editAverageMemory } from '../services/extendedApi';
-import type { AverageMemory, MonitoringItem, OutlierMethod, MovingAverageType, ItemType } from '../types/api';
-import { ItemTypeEnum, MovingAverageType as MovingAverageTypeEnum } from '../types/api';
+import { addAverageMemory, editAverageMemory, getGlobalVariables } from '../services/extendedApi';
+import type { AverageMemory, MonitoringItem, OutlierMethod, MovingAverageType, ItemType, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, MovingAverageType as MovingAverageTypeEnum, TimeoutSourceType } from '../types/api';
 import FieldHelpPopover from './common/FieldHelpPopover';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('AddEditAverageMemoryDialog');
 
 interface AddEditAverageMemoryDialogProps {
   open: boolean;
@@ -44,8 +52,9 @@ interface AddEditAverageMemoryDialogProps {
 
 interface FormData {
   name: string;
-  inputItemIds: string[];
-  outputItemId: string;
+  inputItemIds: string[]; // Source references like ["P:guid1", "GV:name1", "P:guid2"]
+  outputType: TimeoutSourceType; // 0 = Point, 1 = GlobalVariable
+  outputReference: string;
   interval: number;
   isDisabled: boolean;
   weights: number[];
@@ -115,7 +124,8 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
   const [formData, setFormData] = useState<FormData>({
     name: '',
     inputItemIds: [],
-    outputItemId: '',
+    outputType: TimeoutSourceType.Point,
+    outputReference: '',
     interval: 10,
     isDisabled: false,
     weights: [],
@@ -136,6 +146,8 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [useWeights, setUseWeights] = useState(false);
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
+  const [loadingGlobalVariables, setLoadingGlobalVariables] = useState(false);
 
   // Help popover states
   const [helpAnchorEl, setHelpAnchorEl] = useState<Record<string, HTMLElement | null>>({});
@@ -148,6 +160,28 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
     setHelpAnchorEl(prev => ({ ...prev, [fieldKey]: null }));
   };
 
+  // Fetch global variables when dialog opens
+  useEffect(() => {
+    const fetchGlobalVariables = async () => {
+      if (open) {
+        setLoadingGlobalVariables(true);
+        try {
+          const response = await getGlobalVariables({});
+          if (response?.globalVariables) {
+            setGlobalVariables(response.globalVariables);
+            logger.log('Global variables loaded', { count: response.globalVariables.length });
+          }
+        } catch (err) {
+          logger.error('Failed to fetch global variables', { error: err });
+        } finally {
+          setLoadingGlobalVariables(false);
+        }
+      }
+    };
+
+    fetchGlobalVariables();
+  }, [open]);
+
   // Initialize form data
   useEffect(() => {
     if (open) {
@@ -155,6 +189,14 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
         let inputIds: string[] = [];
         try {
           inputIds = JSON.parse(averageMemory.inputItemIds);
+          // Parse existing source references - support both old (unprefixed GUIDs) and new format (prefixed)
+          inputIds = inputIds.map(id => {
+            if (id.startsWith('P:') || id.startsWith('GV:')) {
+              return id; // Already prefixed
+            }
+            // Backward compatibility: Treat unprefixed as Point GUID
+            return `P:${id}`;
+          });
         } catch {
           inputIds = [];
         }
@@ -172,10 +214,23 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
           setUseWeights(false);
         }
 
+        // Parse output fields - support new format with backward compatibility
+        let outputType = TimeoutSourceType.Point;
+        let outputReference = '';
+        if ((averageMemory as any).outputType !== undefined && (averageMemory as any).outputReference !== undefined) {
+          outputType = (averageMemory as any).outputType;
+          outputReference = (averageMemory as any).outputReference;
+        } else if ((averageMemory as any).outputItemId) {
+          // Backward compatibility: old format had outputItemId
+          outputType = TimeoutSourceType.Point;
+          outputReference = (averageMemory as any).outputItemId;
+        }
+
         setFormData({
           name: averageMemory.name || '',
           inputItemIds: inputIds,
-          outputItemId: averageMemory.outputItemId,
+          outputType,
+          outputReference,
           interval: averageMemory.interval,
           isDisabled: averageMemory.isDisabled,
           weights: weights.length > 0 ? weights : inputIds.map(() => 1.0),
@@ -196,7 +251,8 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
         setFormData({
           name: '',
           inputItemIds: [],
-          outputItemId: '',
+          outputType: TimeoutSourceType.Point,
+          outputReference: '',
           interval: 10,
           isDisabled: false,
           weights: [],
@@ -219,16 +275,79 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
     }
   }, [open, editMode, averageMemory]);
 
-  // Filter analog items only
+  // Filter analog items only (for inputs - can be AI or AO)
   const analogItems = useMemo(
     () => items.filter((item) => item.itemType === 3 || item.itemType === 4), // AnalogInput or AnalogOutput
     [items]
+  );
+
+  // Filter analog output items only (for outputs when Point type selected)
+  const analogOutputItems = useMemo(
+    () => items.filter((item) => item.itemType === 3 || item.itemType === 4), // AI or AO
+    [items]
+  );
+
+  // Filter Float global variables only (for outputs when GlobalVariable type selected)
+  const floatGlobalVariables = useMemo(
+    () => globalVariables.filter((v) => v.variableType === 1), // Float type
+    [globalVariables]
   );
 
   // Get item label
   const getItemLabel = (item: MonitoringItem) => {
     return `${item.pointNumber} - ${language === 'fa' ? item.nameFa : item.name}`;
   };
+
+  // Get variable label
+  const getVariableLabel = (variable: GlobalVariable): string => {
+    return variable.name;
+  };
+
+  // Parse source reference to get type and ID/name
+  const parseSourceReference = (ref: string): { type: 'Point' | 'GlobalVariable'; value: string } => {
+    if (ref.startsWith('P:')) {
+      return { type: 'Point', value: ref.substring(2) };
+    } else if (ref.startsWith('GV:')) {
+      return { type: 'GlobalVariable', value: ref.substring(3) };
+    }
+    // Backward compatibility: Unprefixed assumed to be Point
+    return { type: 'Point', value: ref };
+  };
+
+  // Create unified options for input Autocomplete (Points + Global Variables)
+  interface UnifiedSourceOption {
+    type: 'Point' | 'GlobalVariable';
+    reference: string;
+    label: string;
+    data: MonitoringItem | GlobalVariable;
+  }
+
+  const unifiedInputOptions = useMemo((): UnifiedSourceOption[] => {
+    const pointOptions: UnifiedSourceOption[] = analogItems.map(item => ({
+      type: 'Point' as const,
+      reference: `P:${item.id}`,
+      label: getItemLabel(item),
+      data: item,
+    }));
+
+    const gvOptions: UnifiedSourceOption[] = globalVariables
+      .filter(v => v.variableType === 1) // Float only for averaging
+      .map(v => ({
+        type: 'GlobalVariable' as const,
+        reference: `GV:${v.name}`,
+        label: v.name,
+        data: v,
+      }));
+
+    return [...pointOptions, ...gvOptions];
+  }, [analogItems, globalVariables, language]);
+
+  // Get selected input sources
+  const selectedInputSources = useMemo(() => {
+    return formData.inputItemIds.map(ref => 
+      unifiedInputOptions.find(opt => opt.reference === ref)
+    ).filter(Boolean) as UnifiedSourceOption[];
+  }, [formData.inputItemIds, unifiedInputOptions]);
 
   // Validation
   const validate = (): boolean => {
@@ -238,12 +357,18 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
       errors.inputItemIds = t('averageMemory.validation.inputItemsRequired');
     }
 
-    if (!formData.outputItemId) {
-      errors.outputItemId = t('averageMemory.validation.outputItemRequired');
+    if (!formData.outputReference) {
+      errors.outputReference = t('averageMemory.validation.outputItemRequired');
     }
 
-    if (formData.inputItemIds.includes(formData.outputItemId)) {
-      errors.outputItemId = t('averageMemory.validation.outputInInputs');
+    // Check circular reference: output should not be in inputs
+    if (formData.outputReference) {
+      const outputRef = formData.outputType === TimeoutSourceType.Point 
+        ? `P:${formData.outputReference}` 
+        : `GV:${formData.outputReference}`;
+      if (formData.inputItemIds.includes(outputRef)) {
+        errors.outputReference = t('averageMemory.validation.outputInInputs');
+      }
     }
 
     if (formData.interval <= 0) {
@@ -286,7 +411,9 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
       const payload = {
         name: formData.name || null,
         inputItemIds: JSON.stringify(formData.inputItemIds),
-        outputItemId: formData.outputItemId,
+        outputType: formData.outputType,
+        outputReference: formData.outputReference,
+        outputItemId: null, // For backward compatibility
         interval: formData.interval,
         isDisabled: formData.isDisabled,
         weights: useWeights ? JSON.stringify(formData.weights) : null,
@@ -303,17 +430,25 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
         useLinearWeights: formData.useLinearWeights,
       };
 
-      const response = editMode && averageMemory
-        ? await editAverageMemory({ ...payload, id: averageMemory.id })
-        : await addAverageMemory(payload);
-
-      if (response.isSuccessful) {
-        onClose(true); // shouldRefresh = true
+      if (editMode && averageMemory) {
+        const response = await editAverageMemory({ ...payload, id: averageMemory.id });
+        if (response.isSuccessful) {
+          logger.log('Average memory updated successfully', { id: averageMemory.id });
+          onClose(true);
+        } else {
+          setError(response.errorMessage || t('averageMemory.errors.saveFailed'));
+        }
       } else {
-        setError(response.errorMessage || t('averageMemory.errors.saveFailed'));
+        const response = await addAverageMemory(payload);
+        if (response.isSuccessful) {
+          logger.log('Average memory created successfully', { id: response.id });
+          onClose(true);
+        } else {
+          setError(response.errorMessage || t('averageMemory.errors.saveFailed'));
+        }
       }
     } catch (err: unknown) {
-      console.error('Failed to save average memory:', err);
+      logger.error('Failed to save average memory:', err);
       setError(t('averageMemory.errors.saveFailed'));
     } finally {
       setLoading(false);
@@ -321,19 +456,48 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
   };
 
   // Handle input items change
-  const handleInputItemsChange = (_: unknown, value: MonitoringItem[]) => {
-    const newIds = value.map((item) => item.id);
+  const handleInputItemsChange = (_: unknown, value: UnifiedSourceOption[]) => {
+    const newRefs = value.map((opt) => opt.reference);
     setFormData((prev) => {
-      const newWeights = newIds.map((id) => {
-        const oldIndex = prev.inputItemIds.indexOf(id);
+      const newWeights = newRefs.map((ref) => {
+        const oldIndex = prev.inputItemIds.indexOf(ref);
         return oldIndex >= 0 ? prev.weights[oldIndex] || 1.0 : 1.0;
       });
       return {
         ...prev,
-        inputItemIds: newIds,
+        inputItemIds: newRefs,
         weights: newWeights,
       };
     });
+    if (formErrors.inputItemIds) {
+      setFormErrors((prev) => ({ ...prev, inputItemIds: undefined }));
+    }
+  };
+
+  // Handle output type change
+  const handleOutputTypeChange = (_event: React.MouseEvent<HTMLElement>, newValue: number | null) => {
+    if (newValue !== null && (newValue === 0 || newValue === 1)) {
+      setFormData((prev) => ({ ...prev, outputType: newValue as TimeoutSourceType, outputReference: '' }));
+      if (formErrors.outputReference) {
+        setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
+      }
+    }
+  };
+
+  // Handle output item change (Point)
+  const handleOutputItemChange = (_event: React.SyntheticEvent, value: MonitoringItem | null) => {
+    setFormData((prev) => ({ ...prev, outputReference: value?.id || '' }));
+    if (formErrors.outputReference) {
+      setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
+    }
+  };
+
+  // Handle output variable change (Global Variable)
+  const handleOutputVariableChange = (_event: React.SyntheticEvent, value: GlobalVariable | null) => {
+    setFormData((prev) => ({ ...prev, outputReference: value?.name || '' }));
+    if (formErrors.outputReference) {
+      setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
+    }
   };
 
   // Handle weight change
@@ -385,105 +549,220 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
             </IconButton>
           </Box>
 
-          {/* Input Items */}
+          {/* Input Sources (Points AND Global Variables) */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Autocomplete
               multiple
-              options={analogItems}
-              getOptionLabel={getItemLabel}
-              value={analogItems.filter((item) => formData.inputItemIds.includes(item.id))}
+              options={unifiedInputOptions}
+              groupBy={(option) => option.type === 'Point' ? t('averageMemory.sourceGroup.points') : t('averageMemory.sourceGroup.globalVariables')}
+              getOptionLabel={(option) => option.label}
+              value={selectedInputSources}
               onChange={handleInputItemsChange}
+              loading={loadingGlobalVariables}
+              disabled={loading}
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label={t('averageMemory.inputItems')}
+                  label={t('averageMemory.inputSources')}
                   error={!!formErrors.inputItemIds}
-                  helperText={formErrors.inputItemIds || t('averageMemory.inputItemsHelp')}
+                  helperText={formErrors.inputItemIds || t('averageMemory.inputSourcesHelp')}
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
                 />
               )}
               renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    label={getItemLabel(option)}
-                    {...getTagProps({ index })}
-                    size="small"
-                    key={option.id}
-                  />
-                ))
-              }
-              renderOption={(props, option) => (
-                <Box component="li" {...props} key={option.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                      {getItemLabel(option)}
-                    </Typography>
+                value.map((option, index) => {
+                  const isPoint = option.type === 'Point';
+                  const chipProps = getTagProps({ index });
+                  return (
                     <Chip
-                      label={getItemTypeLabel(option.itemType, t)}
+                      {...chipProps}
+                      label={option.label}
                       size="small"
-                      color={getItemTypeColor(option.itemType)}
-                      sx={{ height: 20, fontSize: '0.7rem' }}
+                      key={option.reference}
+                      icon={isPoint ? <MemoryIcon /> : <FunctionsIcon />}
+                      color={isPoint ? 'primary' : 'secondary'}
                     />
+                  );
+                })
+              }
+              renderOption={(props, option) => {
+                const isPoint = option.type === 'Point';
+                return (
+                  <Box component="li" {...props} key={option.reference}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                      {isPoint ? <MemoryIcon fontSize="small" /> : <FunctionsIcon fontSize="small" />}
+                      <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                        {option.label}
+                      </Typography>
+                      {isPoint ? (
+                        <Chip
+                          label={getItemTypeLabel((option.data as MonitoringItem).itemType, t)}
+                          size="small"
+                          color={getItemTypeColor((option.data as MonitoringItem).itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      ) : (
+                        <Chip
+                          label="Float"
+                          size="small"
+                          color="info"
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      )}
+                    </Box>
                   </Box>
-                </Box>
-              )}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              data-id-ref="average-memory-input-items-select"
+                );
+              }}
+              isOptionEqualToValue={(option, value) => option.reference === value.reference}
+              data-id-ref="average-memory-input-sources-select"
               fullWidth
             />
             <IconButton
               size="small"
-              onClick={handleHelpOpen('averageMemory.help.inputItems')}
+              onClick={handleHelpOpen('averageMemory.help.inputSources')}
               sx={{ p: 0.25, mt: -3 }}
-              data-id-ref="average-memory-input-items-help-btn"
+              data-id-ref="average-memory-input-sources-help-btn"
             >
               <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
             </IconButton>
           </Box>
 
-          {/* Output Item */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Autocomplete
-              options={analogItems.filter((item) => !formData.inputItemIds.includes(item.id))}
-              getOptionLabel={getItemLabel}
-              value={analogItems.find((item) => item.id === formData.outputItemId) || null}
-              onChange={(_, value) =>
-                setFormData((prev) => ({ ...prev, outputItemId: value?.id || '' }))
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={t('averageMemory.outputItem')}
-                  error={!!formErrors.outputItemId}
-                  helperText={formErrors.outputItemId || t('averageMemory.outputItemHelp')}
-                />
-              )}
-              renderOption={(props, option) => (
-                <Box component="li" {...props} key={option.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                      {getItemLabel(option)}
-                    </Typography>
-                    <Chip
-                      label={getItemTypeLabel(option.itemType, t)}
-                      size="small"
-                      color={getItemTypeColor(option.itemType)}
-                      sx={{ height: 20, fontSize: '0.7rem' }}
-                    />
-                  </Box>
-                </Box>
-              )}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              data-id-ref="average-memory-output-item-select"
+          {/* Output Type Selection */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom data-id-ref="average-memory-output-type-label">
+              {t('averageMemory.outputType')} *
+            </Typography>
+            <ToggleButtonGroup
+              value={formData.outputType}
+              exclusive
+              onChange={handleOutputTypeChange}
               fullWidth
-            />
-            <IconButton
-              size="small"
-              onClick={handleHelpOpen('averageMemory.help.outputItem')}
-              sx={{ p: 0.25, mt: -3 }}
-              data-id-ref="average-memory-output-item-help-btn"
+              disabled={loading}
+              data-id-ref="average-memory-output-type-toggle"
+              sx={{ mb: 2 }}
             >
-              <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-            </IconButton>
+              <ToggleButton value={TimeoutSourceType.Point} data-id-ref="average-memory-output-type-point">
+                <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                {t('averageMemory.sourceTypePoint')}
+              </ToggleButton>
+              <ToggleButton value={TimeoutSourceType.GlobalVariable} data-id-ref="average-memory-output-type-globalvariable">
+                <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                {t('averageMemory.sourceTypeGlobalVariable')}
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+            {/* Output Item Selection (Point) */}
+            {formData.outputType === TimeoutSourceType.Point && (
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Autocomplete
+                  options={analogOutputItems}
+                  getOptionLabel={getItemLabel}
+                  value={analogOutputItems.find((item) => item.id === formData.outputReference) || null}
+                  onChange={handleOutputItemChange}
+                  disabled={loading}
+                  data-id-ref="average-memory-output-item-select"
+                  sx={{ flex: 1 }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('averageMemory.outputItem')}
+                      required
+                      error={!!formErrors.outputReference}
+                      helperText={formErrors.outputReference || t('averageMemory.outputItemHelp')}
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {getItemLabel(option)}
+                        </Typography>
+                        <Chip
+                          label={getItemTypeLabel(option.itemType, t)}
+                          size="small"
+                          color={getItemTypeColor(option.itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('averageMemory.help.outputItem')}
+                  sx={{ p: 0.25, mt: 1 }}
+                  data-id-ref="average-memory-output-item-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            )}
+
+            {/* Output Global Variable Selection */}
+            {formData.outputType === TimeoutSourceType.GlobalVariable && (
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Autocomplete
+                  options={floatGlobalVariables}
+                  getOptionLabel={getVariableLabel}
+                  value={floatGlobalVariables.find((v) => v.name === formData.outputReference) || null}
+                  onChange={handleOutputVariableChange}
+                  disabled={loading || loadingGlobalVariables}
+                  data-id-ref="average-memory-output-variable-select"
+                  sx={{ flex: 1 }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('averageMemory.outputGlobalVariable')}
+                      required
+                      error={!!formErrors.outputReference}
+                      helperText={formErrors.outputReference || t('averageMemory.outputGlobalVariableHelp')}
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {option.name}
+                        </Typography>
+                        <Chip
+                          label="Float"
+                          size="small"
+                          color="info"
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.name === value.name}
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('averageMemory.help.outputGlobalVariable')}
+                  sx={{ p: 0.25, mt: 1 }}
+                  data-id-ref="average-memory-output-variable-help-btn"
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            )}
           </Box>
 
           {/* Interval */}
@@ -721,14 +1000,23 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
 
                 {useWeights && formData.inputItemIds.length > 0 && (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {formData.inputItemIds.map((id, index) => {
-                      const item = items.find((i) => i.id === id);
-                      const itemLabel = item ? getItemLabel(item) : id;
+                    {formData.inputItemIds.map((ref, index) => {
+                      const parsed = parseSourceReference(ref);
+                      let sourceLabel = ref;
+                      if (parsed.type === 'Point') {
+                        const item = items.find((i) => i.id === parsed.value);
+                        sourceLabel = item ? getItemLabel(item) : parsed.value;
+                      } else {
+                        sourceLabel = parsed.value; // Global Variable name
+                      }
                       return (
-                        <Box key={id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }}>
-                            {itemLabel}
-                          </Typography>
+                        <Box key={ref} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flex: 1, minWidth: 0 }}>
+                            {parsed.type === 'Point' ? <MemoryIcon fontSize="small" /> : <FunctionsIcon fontSize="small" />}
+                            <Typography variant="body2" noWrap>
+                              {sourceLabel}
+                            </Typography>
+                          </Box>
                           <TextField
                             type="number"
                             value={formData.weights[index] || 1.0}
@@ -928,16 +1216,22 @@ const AddEditAverageMemoryDialog: React.FC<AddEditAverageMemoryDialogProps> = ({
         fieldKey="averageMemory.help.name"
       />
       <FieldHelpPopover
-        anchorEl={helpAnchorEl['averageMemory.help.inputItems']}
-        open={Boolean(helpAnchorEl['averageMemory.help.inputItems'])}
-        onClose={handleHelpClose('averageMemory.help.inputItems')}
-        fieldKey="averageMemory.help.inputItems"
+        anchorEl={helpAnchorEl['averageMemory.help.inputSources']}
+        open={Boolean(helpAnchorEl['averageMemory.help.inputSources'])}
+        onClose={handleHelpClose('averageMemory.help.inputSources')}
+        fieldKey="averageMemory.help.inputSources"
       />
       <FieldHelpPopover
         anchorEl={helpAnchorEl['averageMemory.help.outputItem']}
         open={Boolean(helpAnchorEl['averageMemory.help.outputItem'])}
         onClose={handleHelpClose('averageMemory.help.outputItem')}
         fieldKey="averageMemory.help.outputItem"
+      />
+      <FieldHelpPopover
+        anchorEl={helpAnchorEl['averageMemory.help.outputGlobalVariable']}
+        open={Boolean(helpAnchorEl['averageMemory.help.outputGlobalVariable'])}
+        onClose={handleHelpClose('averageMemory.help.outputGlobalVariable')}
+        fieldKey="averageMemory.help.outputGlobalVariable"
       />
       <FieldHelpPopover
         anchorEl={helpAnchorEl['averageMemory.help.interval']}

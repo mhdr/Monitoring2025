@@ -36,14 +36,25 @@ public class GetAverageMemoriesResponseDto
         public string? Name { get; set; }
 
         /// <summary>
-        /// JSON array of input item IDs
+        /// JSON array of input source references
+        /// Format: ["P:guid1", "GV:name1", ...]
         /// </summary>
         public string InputItemIds { get; set; } = "[]";
 
         /// <summary>
-        /// Output item ID
+        /// Output item ID (deprecated - use OutputReference and OutputType)
         /// </summary>
-        public Guid OutputItemId { get; set; }
+        public Guid? OutputItemId { get; set; }
+
+        /// <summary>
+        /// Output type (0=Point, 1=GlobalVariable)
+        /// </summary>
+        public int OutputType { get; set; }
+
+        /// <summary>
+        /// Output source reference (P:guid or GV:name)
+        /// </summary>
+        public string OutputReference { get; set; } = string.Empty;
 
         /// <summary>
         /// Processing interval in seconds

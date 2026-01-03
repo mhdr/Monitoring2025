@@ -7509,7 +7509,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         Id = am.Id,
                         Name = am.Name,
                         InputItemIds = am.InputItemIds,
-                        OutputItemId = am.OutputItemId,
+                        OutputItemId = am.OutputItemId, // Deprecated field for backward compatibility
+                        OutputType = (int)am.OutputType,
+                        OutputReference = am.OutputReference,
                         Interval = am.Interval,
                         IsDisabled = am.IsDisabled,
                         Weights = am.Weights,
@@ -7583,7 +7585,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 Name = request.Name,
                 InputItemIds = request.InputItemIds,
-                OutputItemId = request.OutputItemId,
+                OutputItemId = request.OutputItemId, // Deprecated field for backward compatibility
+                OutputType = (Core.Models.TimeoutSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 Weights = request.Weights,
@@ -7662,7 +7666,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 Id = request.Id,
                 Name = request.Name,
                 InputItemIds = request.InputItemIds,
-                OutputItemId = request.OutputItemId,
+                OutputItemId = request.OutputItemId, // Deprecated field for backward compatibility
+                OutputType = (Core.Models.TimeoutSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 Weights = request.Weights,

@@ -2754,10 +2754,11 @@ export interface TimeoutMemory {
 /**
  * Enum for TimeoutMemory source types
  */
-export enum TimeoutSourceType {
-  Point = 0,
-  GlobalVariable = 1,
-}
+export type TimeoutSourceType = 0 | 1;
+export const TimeoutSourceType = {
+  Point: 0 as const,
+  GlobalVariable: 1 as const,
+};
 
 /**
  * Request DTO for retrieving timeout memory configurations
@@ -2942,8 +2943,10 @@ export type OutlierMethod = (typeof OutlierMethod)[keyof typeof OutlierMethod];
 export interface AverageMemory {
   id: string; // UUID
   name?: string | null;
-  inputItemIds: string; // JSON array of UUIDs - ["guid1", "guid2", ...]
-  outputItemId: string; // UUID - Must be AnalogInput or AnalogOutput
+  inputItemIds: string; // JSON array of source references - ["P:guid1", "GV:name1", ...]
+  outputItemId?: string | null; // UUID - Deprecated, use outputReference and outputType
+  outputType: TimeoutSourceType; // Output type (Point or GlobalVariable)
+  outputReference: string; // Output source reference (P:guid or GV:name)
   interval: number; // Processing interval in seconds
   isDisabled: boolean;
   weights?: string | null; // Optional JSON array of weights - [1.0, 2.0, ...]
@@ -2980,8 +2983,10 @@ export interface GetAverageMemoriesResponseDto {
  */
 export interface AddAverageMemoryRequestDto {
   name?: string | null;
-  inputItemIds: string; // JSON array - ["guid1", "guid2", ...]
-  outputItemId: string; // UUID
+  inputItemIds: string; // JSON array - ["P:guid1", "GV:name1", ...]
+  outputItemId?: string | null; // UUID - Deprecated
+  outputType: TimeoutSourceType; // Output type (Point or GlobalVariable)
+  outputReference: string; // Output source reference (P:guid or GV:name)
   interval: number; // Must be > 0
   isDisabled?: boolean;
   weights?: string | null; // Optional JSON array
@@ -3013,8 +3018,10 @@ export interface AddAverageMemoryResponseDto {
 export interface EditAverageMemoryRequestDto {
   id: string; // UUID
   name?: string | null;
-  inputItemIds: string; // JSON array
-  outputItemId: string; // UUID
+  inputItemIds: string; // JSON array - ["P:guid1", "GV:name1", ...]
+  outputItemId?: string | null; // UUID - Deprecated
+  outputType: TimeoutSourceType; // Output type (Point or GlobalVariable)
+  outputReference: string; // Output source reference (P:guid or GV:name)
   interval: number; // Must be > 0
   isDisabled?: boolean;
   weights?: string | null;
@@ -3702,12 +3709,13 @@ export interface TestFormulaExpressionResponseDto {
 /**
  * Output type for IF Memory determining how values are written.
  */
-export enum IfMemoryOutputType {
+export type IfMemoryOutputType = 0 | 1;
+export const IfMemoryOutputType = {
   /** Digital mode: Output is clamped to 0 (false/off) or 1 (true/on) */
-  Digital = 0,
+  Digital: 0 as const,
   /** Analog mode: Output value is written directly as a numeric value */
-  Analog = 1,
-}
+  Analog: 1 as const,
+};
 
 /**
  * Represents a conditional branch within an IF memory.
@@ -4231,55 +4239,58 @@ export interface DeleteMinMaxSelectorMemoryResponseDto {
  * Priority levels for schedule blocks to resolve conflicts
  * Higher priority blocks take precedence when schedules overlap
  */
-export enum SchedulePriority {
+export type SchedulePriority = 1 | 2 | 3 | 4;
+export const SchedulePriority = {
   /**
    * Low priority - can be overridden by any higher priority
    */
-  Low = 1,
+  Low: 1 as const,
   
   /**
    * Normal priority - default for most schedules
    */
-  Normal = 2,
+  Normal: 2 as const,
   
   /**
    * High priority - takes precedence over normal schedules
    */
-  High = 3,
+  High: 3 as const,
   
   /**
    * Critical priority - highest precedence, for emergency or demand response
    */
-  Critical = 4
-}
+  Critical: 4 as const
+};
 
 /**
  * Behavior when EndTime is null in a schedule block
  */
-export enum NullEndTimeBehavior {
+export type NullEndTimeBehavior = 1 | 2;
+export const NullEndTimeBehavior = {
   /**
    * Use memory's default value when EndTime is null (block activates then immediately reverts to default)
    */
-  UseDefault = 1,
+  UseDefault: 1 as const,
   
   /**
    * Extend block to end of day (23:59:59) when EndTime is null
    */
-  ExtendToEndOfDay = 2
-}
+  ExtendToEndOfDay: 2 as const
+};
 
 /**
  * Days of the week for schedule block configuration
  */
-export enum ScheduleDayOfWeek {
-  Sunday = 0,
-  Monday = 1,
-  Tuesday = 2,
-  Wednesday = 3,
-  Thursday = 4,
-  Friday = 5,
-  Saturday = 6
-}
+export type ScheduleDayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export const ScheduleDayOfWeek = {
+  Sunday: 0 as const,
+  Monday: 1 as const,
+  Tuesday: 2 as const,
+  Wednesday: 3 as const,
+  Thursday: 4 as const,
+  Friday: 5 as const,
+  Saturday: 6 as const
+};
 /**
  * A time block within a schedule that defines when a specific output value should be active
  */
@@ -4433,10 +4444,11 @@ export interface DeleteScheduleMemoryResponseDto {
 }
 // ============= Global Variables Types =============
 
-export enum GlobalVariableType {
-  Boolean = 0,
-  Float = 1
-}
+export type GlobalVariableType = 0 | 1;
+export const GlobalVariableType = {
+  Boolean: 0 as const,
+  Float: 1 as const
+};
 
 /**
  * Global Variable with current value from Redis
