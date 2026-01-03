@@ -8,12 +8,12 @@ public class AddControllerRequestDto
     /// <summary>
     /// Display name of the controller
     /// </summary>
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     /// <summary>
     /// IP address of the controller for network communication
     /// </summary>
-    public string IPAddress { get; set; }
+    public required string IPAddress { get; set; }
 
     /// <summary>
     /// Database address or ID for controller identification

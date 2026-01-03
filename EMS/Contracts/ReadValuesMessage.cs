@@ -13,7 +13,7 @@ public class ReadValuesMessage
     {
         public Guid ItemId { get; set; }
 
-        public string Value { get; set; }
+        public required string Value { get; set; }
         public long Time { get; set; }
     }
 }

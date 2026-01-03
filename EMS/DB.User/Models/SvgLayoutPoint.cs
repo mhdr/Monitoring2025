@@ -19,7 +19,7 @@ public class SvgLayoutPoint
     [Column("y")] public int Y { get; set; }
     
     [Column("box_color")]
-    public string BoxColor { get; set; }
+    public required string BoxColor { get; set; }
     
     [Column("box_opacity")]
     public double BoxOpacity { get; set; }

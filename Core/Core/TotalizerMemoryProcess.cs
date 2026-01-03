@@ -201,8 +201,9 @@ public class TotalizerMemoryProcess
         if (await CheckAndExecuteScheduledReset(memory, utcNow))
         {
             // Reset occurred, reload memory from database for updated state
-            memory = await _context!.TotalizerMemories.FindAsync(memory.Id);
-            if (memory == null) return;
+            var reloadedMemory = await _context!.TotalizerMemories.FindAsync(memory.Id);
+            if (reloadedMemory == null) return;
+            memory = reloadedMemory;
         }
 
         double newAccumulation = 0.0;

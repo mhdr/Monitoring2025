@@ -297,10 +297,11 @@ public class ScheduleMemoryProcess
         // Check blocks from previous day that cross midnight (we're in the "after midnight" portion)
         foreach (var block in memory.ScheduleBlocks.Where(b => b.DayOfWeek == previousDay && b.EndTime.HasValue))
         {
-            if (block.StartTime > block.EndTime.Value)
+            var endTime = block.EndTime!.Value;
+            if (block.StartTime > endTime)
             {
                 // Cross-midnight block from previous day
-                if (currentTime < block.EndTime.Value)
+                if (currentTime < endTime)
                 {
                     matchingBlocks.Add(block);
                 }

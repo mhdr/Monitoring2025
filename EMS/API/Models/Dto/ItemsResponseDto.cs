@@ -31,7 +31,7 @@ public class ItemsResponseDto
         /// Unique identifier for the item
         /// </summary>
         /// <example>550e8400-e29b-41d4-a716-446655440000</example>
-        public string Id { get; set; }
+        public required string Id { get; set; }
 
         /// <summary>
         /// Group ID that this item belongs to

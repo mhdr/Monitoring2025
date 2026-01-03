@@ -9,7 +9,7 @@ public class TestIfConditionRequestDto
 {
     /// <summary>
     /// The NCalc condition expression to test.
-    /// Example: "[temperature] >= 50 && [pressure] < 100"
+    /// Example: "[temperature] >= 50 &amp;&amp; [pressure] &lt; 100"
     /// </summary>
     [Required(ErrorMessage = "Condition is required")]
     [StringLength(2000, ErrorMessage = "Condition must not exceed 2000 characters")]

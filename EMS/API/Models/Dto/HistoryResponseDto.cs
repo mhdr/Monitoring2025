@@ -23,7 +23,7 @@ public class HistoryResponseDto
         /// <summary>
         /// The historical value as a string
         /// </summary>
-        public string Value { get; set; }
+        public required string Value { get; set; }
 
         /// <summary>
         /// Unix timestamp when the value was recorded

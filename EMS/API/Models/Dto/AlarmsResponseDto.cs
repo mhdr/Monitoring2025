@@ -54,13 +54,13 @@ public class AlarmsResponseDto
         /// Unique identifier for the alarm
         /// </summary>
         /// <example>550e8400-e29b-41d4-a716-446655440000</example>
-        public string Id { get; set; }
+        public required string Id { get; set; }
 
         /// <summary>
         /// ID of the monitoring item this alarm is configured for
         /// </summary>
         /// <example>550e8400-e29b-41d4-a716-446655440001</example>
-        public string ItemId { get; set; }
+        public required string ItemId { get; set; }
 
         /// <summary>
         /// Type of alarm (High, Low, Critical, etc.)

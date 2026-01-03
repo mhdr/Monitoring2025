@@ -29,13 +29,13 @@ public class GroupsResponseDto
         /// Unique identifier for the group
         /// </summary>
         /// <example>550e8400-e29b-41d4-a716-446655440000</example>
-        public string Id { get; set; }
+        public required string Id { get; set; }
 
         /// <summary>
         /// Name of the group
         /// </summary>
         /// <example>Cold Room</example>
-        public string Name { get; set; }
+        public required string Name { get; set; }
         
         /// <summary>
         /// Name of the group in Farsi
@@ -47,6 +47,6 @@ public class GroupsResponseDto
         /// Parent group ID if this group has a parent
         /// </summary>
         /// <example>550e8400-e29b-41d4-a716-446655440001</example>
-        public string ParentId { get; set; }
+        public required string ParentId { get; set; }
     }
 }

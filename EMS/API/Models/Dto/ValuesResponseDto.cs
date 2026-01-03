@@ -29,13 +29,13 @@ public class ValuesResponseDto
         /// ID of the monitoring item this value belongs to
         /// </summary>
         /// <example>550e8400-e29b-41d4-a716-446655440000</example>
-        public string ItemId { get; set; }
+        public required string ItemId { get; set; }
 
         /// <summary>
         /// Current value as a string (supports numeric and text values)
         /// </summary>
         /// <example>25.6</example>
-        public string Value { get; set; }
+        public required string Value { get; set; }
 
         /// <summary>
         /// Unix timestamp when this value was recorded

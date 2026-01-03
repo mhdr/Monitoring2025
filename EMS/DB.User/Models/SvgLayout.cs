@@ -14,10 +14,10 @@ public class SvgLayout
     public string? Name { get; set; }
     
     [Column("content")] 
-    public string Content { get; set; }
+    public required string Content { get; set; }
     
     [Column("font_size")] 
-    public string FontSize { get; set; }
+    public required string FontSize { get; set; }
     
     [Column("is_disabled")] 
     public bool IsDisabled { get; set; }

@@ -10,7 +10,7 @@ public class Group
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public Guid Id { get; set; }
 
-    [Column("name")] public string Name { get; set; }
+    [Column("name")] public required string Name { get; set; }
 
     [Column("name_fa")] public string? NameFa { get; set; }
     

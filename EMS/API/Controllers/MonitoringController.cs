@@ -118,7 +118,7 @@ public class MonitoringController : ControllerBase
                 var parentId = "";
                 if (g.ParentId != null && g.ParentId != Guid.Empty)
                 {
-                    parentId = g.ParentId.ToString();
+                    parentId = g.ParentId.Value.ToString();
                 }
 
                 groupList.Add(new GroupsResponseDto.Group()
@@ -186,7 +186,7 @@ public class MonitoringController : ControllerBase
 
             foreach (var item in items)
             {
-                if (user.UserName.ToLower() == "admin")
+                if (user!.UserName!.ToLower() == "admin")
                 {
                     var groupItem = groupItems.FirstOrDefault(x => x.ItemId == item.Id);
 
@@ -460,7 +460,6 @@ public class MonitoringController : ControllerBase
 
             var userGuid = Guid.Parse(userId);
             bool hasAccess = false;
-            bool isEditable = false;
 
             // Check access permissions
             if (user.UserName?.ToLower() == "admin")
@@ -9443,16 +9442,16 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 return Unauthorized();
             }
 
-            var response = new GetSvgLayoutResponseDto();
-
-            response.Id = request.Id;
-
             var svg = await _context.SvgLayouts.FirstOrDefaultAsync(x => x.Id == request.Id);
             var svgPoints = await _context.SvgLayoutPoints.Where(x => x.SvgLayoutId == request.Id).ToListAsync();
 
-            response.Content = svg.Content;
-            response.FontSize = svg.FontSize;
-            response.Name = svg.Name;
+            var response = new GetSvgLayoutResponseDto
+            {
+                Id = request.Id,
+                Content = svg.Content,
+                FontSize = svg.FontSize,
+                Name = svg.Name
+            };
 
             foreach (var point in svgPoints)
             {
@@ -12708,24 +12707,22 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// 
     /// Features:
     /// - Ordered IF/ELSE IF/ELSE branches (max 20)
-    /// - NCalc expression engine with comparison operators (>=, <=, ==, !=, >, <)
-    /// - Logical operators (&&, ||, !) for compound conditions
+    /// - NCalc expression engine with comparison operators (greater-than-or-equal, less-than-or-equal, equal, not-equal, greater-than, less-than)
+    /// - Logical operators (AND, OR, NOT) for compound conditions
     /// - Per-branch hysteresis for analog threshold comparisons
     /// - Digital (0/1) and Analog (numeric) output modes
     /// 
-    /// Sample request:
+    /// Sample request (Note: JSON in XML comments requires escaping):
     /// 
-    ///     POST /api/monitoring/AddIfMemory
-    ///     {
-    ///        "name": "Temperature State",
-    ///        "branches": "[{\"id\":\"1\",\"order\":0,\"condition\":\"[temp] >= 80\",\"outputValue\":3,\"name\":\"High\"},{\"id\":\"2\",\"order\":1,\"condition\":\"[temp] >= 50\",\"outputValue\":2,\"name\":\"Medium\"}]",
-    ///        "defaultValue": 1,
-    ///        "variableAliases": "{\"temp\": \"550e8400-e29b-41d4-a716-446655440000\"}",
-    ///        "outputItemId": "660e8400-e29b-41d4-a716-446655440001",
-    ///        "outputType": 1,
-    ///        "interval": 1,
-    ///        "description": "Output temperature state as numeric value"
-    ///     }
+    /// POST /api/monitoring/AddIfMemory with body:
+    /// - name: Temperature State
+    /// - branches: JSON array with conditions like [temp] greater-than-or-equal 80
+    /// - defaultValue: 1
+    /// - variableAliases: JSON object mapping temp to item ID
+    /// - outputItemId: 660e8400-e29b-41d4-a716-446655440001
+    /// - outputType: 1 (Analog)
+    /// - interval: 1
+    /// - description: Output temperature state as numeric value
     ///     
     /// </remarks>
     /// <response code="200">Returns ID of created IF memory</response>
@@ -12907,20 +12904,15 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
     /// Useful for validating conditions before saving.
     /// 
     /// Supported Operators:
-    /// - Comparison: >=, <=, ==, !=, >, <
-    /// - Logical: && (AND), || (OR), ! (NOT)
-    /// - Arithmetic: +, -, *, /, %
+    /// - Comparison: greater-than-or-equal, less-than-or-equal, equal, not-equal, greater-than, less-than
+    /// - Logical: AND, OR, NOT
+    /// - Arithmetic: plus, minus, multiply, divide, modulo
     /// 
-    /// Sample request:
+    /// Sample request (Note: JSON in XML comments requires escaping):
     /// 
-    ///     POST /api/monitoring/TestIfCondition
-    ///     {
-    ///        "condition": "[temp] >= 50 && [pressure] < 100",
-    ///        "variableAliases": [
-    ///           {"alias": "temp", "itemId": "550e8400-e29b-41d4-a716-446655440000"},
-    ///           {"alias": "pressure", "itemId": "550e8400-e29b-41d4-a716-446655440001"}
-    ///        ]
-    ///     }
+    /// POST /api/monitoring/TestIfCondition with body:
+    /// - condition: [temp] greater-than-or-equal 50 AND [pressure] less-than 100
+    /// - variableAliases: Array of alias-to-itemId mappings
     ///     
     /// </remarks>
     /// <response code="200">Returns boolean result or error</response>

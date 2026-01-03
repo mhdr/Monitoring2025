@@ -18,7 +18,7 @@ public class ConditionalBranchDto
     /// <summary>
     /// NCalc condition expression that must evaluate to true for this branch.
     /// Uses [alias] syntax to reference input variables.
-    /// Example: "[temperature] >= 50 && [pressure] < 100"
+    /// Example: "[temperature] >= 50 &amp;&amp; [pressure] &lt; 100"
     /// </summary>
     public string Condition { get; set; } = "";
 

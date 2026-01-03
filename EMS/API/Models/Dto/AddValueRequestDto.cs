@@ -13,7 +13,7 @@ public class AddValueRequestDto
     /// <summary>
     /// Value to add (as string, will be converted based on item type)
     /// </summary>
-    public string Value { get; set; }
+    public required string Value { get; set; }
 
     /// <summary>
     /// Unix timestamp when the value was recorded

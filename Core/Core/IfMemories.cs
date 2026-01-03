@@ -102,7 +102,7 @@ public class IfMemories
                 }
 
                 // Validate condition syntax
-                var conditionValidation = ValidateCondition(branch.Condition, ifMemory.VariableAliases);
+                var conditionValidation = ValidateCondition(branch.Condition, ifMemory.VariableAliases ?? "{}");
                 if (!conditionValidation.IsValid)
                 {
                     await context.DisposeAsync();
@@ -261,7 +261,7 @@ public class IfMemories
                 }
 
                 // Validate condition syntax
-                var conditionValidation = ValidateCondition(branch.Condition, ifMemory.VariableAliases);
+                var conditionValidation = ValidateCondition(branch.Condition, ifMemory.VariableAliases ?? "{}");
                 if (!conditionValidation.IsValid)
                 {
                     await context.DisposeAsync();
@@ -337,7 +337,7 @@ public class IfMemories
             existing.Name = ifMemory.Name;
             existing.Branches = ifMemory.Branches;
             existing.DefaultValue = ifMemory.DefaultValue;
-            existing.VariableAliases = ifMemory.VariableAliases;
+            existing.VariableAliases = ifMemory.VariableAliases ?? "{}";
             existing.OutputItemId = ifMemory.OutputItemId;
             existing.OutputType = ifMemory.OutputType;
             existing.Interval = ifMemory.Interval;
