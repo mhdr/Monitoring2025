@@ -190,6 +190,8 @@
     "off": "OFF",
     "none": "None",
     "disabled": "Disabled",
+    "enabled": "Enabled",
+    "status": "Status",
     "close": "Close",
     "cancel": "Cancel",
     "save": "Save",

@@ -142,7 +142,7 @@ const pulseAnimation = keyframes`
   const menuItems: MenuItem[] = [
     { path: '/dashboard/monitoring', key: 'monitoring', icon: <DashboardIcon /> },
     // { path: '/dashboard/plots', key: 'plots', icon: <PlotsIcon /> },
-    { path: '/dashboard/memory/timeout-memory', key: 'memory', icon: <MemoryIcon /> },
+    { path: '/dashboard/memory/global-variables', key: 'memory', icon: <MemoryIcon /> },
     { path: '/dashboard/active-alarms', key: 'activeAlarms', icon: <ActiveAlarmsIcon /> },
     { path: '/dashboard/alarm-log', key: 'alarmLog', icon: <AlarmLogIcon /> },
     { path: '/dashboard/audit-trail', key: 'auditTrail', icon: <AuditTrailIcon /> },
@@ -157,7 +157,7 @@ const pulseAnimation = keyframes`
       return location.pathname.startsWith('/dashboard/management');
     }
     // For memory routes, check if current path starts with /dashboard/memory
-    if (path === '/dashboard/memory/timeout-memory') {
+    if (path === '/dashboard/memory/global-variables') {
       return location.pathname.startsWith('/dashboard/memory');
     }
     return location.pathname === path;
