@@ -383,8 +383,8 @@ const GlobalVariableManagementPage: React.FC = () => {
   }, [t, handleEdit, handleDelete, handleViewUsage]);
 
   return (
-    <Container maxWidth={false} sx={{ py: 3 }} data-id-ref="globalvariable-management-page">
-      <Card elevation={3} data-id-ref="globalvariable-management-card">
+    <Container maxWidth={false} sx={{ py: 3, height: '100%', display: 'flex', flexDirection: 'column' }} data-id-ref="globalvariable-management-page">
+      <Card elevation={3} sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }} data-id-ref="globalvariable-management-card">
         <CardHeader
           title={
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -410,7 +410,7 @@ const GlobalVariableManagementPage: React.FC = () => {
           data-id-ref="globalvariable-management-header"
         />
 
-        <CardContent data-id-ref="globalvariable-management-content">
+        <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }} data-id-ref="globalvariable-management-content">
           {/* Search Bar */}
           <Box sx={{ mb: 2 }} data-id-ref="globalvariable-search-box">
             <TextField
@@ -453,15 +453,18 @@ const GlobalVariableManagementPage: React.FC = () => {
 
           {/* Syncfusion Grid */}
           {!loading && (
-            <SyncfusionGridWrapper
-              data={filteredVariables}
-              columns={columns}
-              allowPaging
-              allowSorting
-              allowFiltering
-              pageSettings={{ pageSize: 20, pageSizes: [10, 20, 50, 100] }}
-              data-id-ref="globalvariable-grid"
-            />
+            <Box sx={{ flexGrow: 1, overflow: 'hidden' }} data-id-ref="globalvariable-grid-container">
+              <SyncfusionGridWrapper
+                data={filteredVariables}
+                columns={columns}
+                allowPaging
+                allowSorting
+                allowFiltering
+                pageSettings={{ pageSize: 20, pageSizes: [10, 20, 50, 100] }}
+                height="100%"
+                data-id-ref="globalvariable-grid"
+              />
+            </Box>
           )}
 
           {/* No Data Message */}

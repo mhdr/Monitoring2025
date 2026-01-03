@@ -54,6 +54,7 @@ const MemorySidebar: React.FC<MemorySidebarProps> = ({ isOpen, onToggle }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
   const menuItems: MenuItem[] = [
+    { path: '/dashboard/memory/global-variables', key: 'globalVariables.title', icon: <CodeIcon /> },
     { path: '/dashboard/memory/timeout-memory', key: 'timeoutMemory.title', icon: <TimerIcon /> },
     { path: '/dashboard/memory/write-action-memory', key: 'writeActionMemory.title', icon: <PlayArrowIcon /> },
     { path: '/dashboard/memory/average-memory', key: 'averageMemory.title', icon: <CalculateIcon /> },
@@ -67,7 +68,6 @@ const MemorySidebar: React.FC<MemorySidebarProps> = ({ isOpen, onToggle }) => {
     { path: '/dashboard/memory/if-memory', key: 'ifMemory.title', icon: <IfMemoryIcon /> },
     { path: '/dashboard/memory/deadband-memory', key: 'deadbandMemory.title', icon: <TuneIcon /> },
     { path: '/dashboard/memory/minmax-selector-memory', key: 'minMaxSelectorMemory.title', icon: <SwapVertIcon /> },
-    { path: '/dashboard/memory/global-variables', key: 'globalVariables.title', icon: <CodeIcon /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;
