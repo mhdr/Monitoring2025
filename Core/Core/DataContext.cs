@@ -80,6 +80,8 @@ public class DataContext : DbContext
     public DbSet<MinMaxSelectorMemory> MinMaxSelectorMemories { get; set; }
     
     public DbSet<WriteActionMemory> WriteActionMemories { get; set; }
+    
+    public DbSet<GlobalVariable> GlobalVariables { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -808,6 +810,23 @@ public class DataContext : DbContext
         modelBuilder.Entity<WriteActionMemory>()
             .Property(e => e.Duration)
             .HasDefaultValue(10);
+
+        // GlobalVariable configuration
+        modelBuilder.Entity<GlobalVariable>()
+            .Property(e => e.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
+        
+        modelBuilder.Entity<GlobalVariable>()
+            .Property(e => e.IsDisabled)
+            .HasDefaultValue(false);
+        
+        modelBuilder.Entity<GlobalVariable>()
+            .Property(e => e.CreatedAt)
+            .HasDefaultValueSql("NOW()");
+        
+        modelBuilder.Entity<GlobalVariable>()
+            .Property(e => e.UpdatedAt)
+            .HasDefaultValueSql("NOW()");
 
         // keys
 

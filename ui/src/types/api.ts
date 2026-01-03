@@ -4417,3 +4417,120 @@ export interface DeleteScheduleMemoryResponseDto {
   isSuccessful: boolean;
   errorMessage?: string | null;
 }
+// ============= Global Variables Types =============
+
+export enum GlobalVariableType {
+  Boolean = 0,
+  Float = 1
+}
+
+/**
+ * Global Variable with current value from Redis
+ */
+export interface GlobalVariable {
+  id: string;
+  name: string;
+  variableType: GlobalVariableType;
+  description?: string | null;
+  isDisabled: boolean;
+  currentValue: string; // "true"/"false" for boolean, numeric string for float
+  lastUpdateTime: number; // Unix timestamp in milliseconds
+  createdAt: string; // ISO 8601 date string
+  updatedAt: string; // ISO 8601 date string
+}
+
+/**
+ * Request DTO for getting all global variables
+ */
+export interface GetGlobalVariablesRequestDto {
+  // No parameters for now
+}
+
+/**
+ * Response DTO for getting all global variables
+ */
+export interface GetGlobalVariablesResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  globalVariables?: GlobalVariable[];
+}
+
+/**
+ * Request DTO for adding a new global variable
+ */
+export interface AddGlobalVariableRequestDto {
+  name: string;
+  variableType: GlobalVariableType;
+  description?: string | null;
+  isDisabled: boolean;
+}
+
+/**
+ * Response DTO for adding a global variable
+ */
+export interface AddGlobalVariableResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null;
+}
+
+/**
+ * Request DTO for editing a global variable
+ */
+export interface EditGlobalVariableRequestDto {
+  id: string;
+  name: string;
+  variableType: GlobalVariableType;
+  description?: string | null;
+  isDisabled: boolean;
+}
+
+/**
+ * Response DTO for editing a global variable
+ */
+export interface EditGlobalVariableResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a global variable
+ */
+export interface DeleteGlobalVariableRequestDto {
+  id: string;
+}
+
+/**
+ * Response DTO for deleting a global variable
+ */
+export interface DeleteGlobalVariableResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for getting global variable usage
+ */
+export interface GetGlobalVariableUsageRequestDto {
+  id: string;
+}
+
+/**
+ * Memory usage information for a global variable
+ */
+export interface MemoryUsage {
+  memoryId: string;
+  memoryType: string; // e.g., "FormulaMemory", "IfMemory"
+  memoryName?: string | null;
+  usageContext: string; // e.g., "Input", "Output", "Condition"
+}
+
+/**
+ * Response DTO for getting global variable usage
+ */
+export interface GetGlobalVariableUsageResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  variableName?: string | null;
+  usages?: MemoryUsage[];
+}

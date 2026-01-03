@@ -359,6 +359,7 @@ builder.Services.AddMassTransit(x =>
 });
 
 builder.Services.AddHostedService<ActiveAlarmsBackgroundWorker>();
+builder.Services.AddHostedService<ActiveGlobalVariablesBackgroundWorker>();
 builder.Services.AddHostedService<StartupWorker>();
 
 var app = builder.Build();

@@ -6088,4 +6088,57 @@
       }
     }
   }
+,
+  "globalVariables": {
+    "title": "Global Variables",
+    "description": "Lightweight in-memory variables accessible to all memories for data sharing",
+    "addNew": "Add Global Variable",
+    "createVariable": "Create Global Variable",
+    "editVariable": "Edit Global Variable",
+    "deleteTitle": "Delete Global Variable",
+    "deleteMessage": "Are you sure you want to delete this global variable?",
+    "deleteWarning": "This action cannot be undone. The variable will be permanently removed from the system.",
+    "searchPlaceholder": "Search global variables...",
+    "noVariables": "No global variables defined",
+    "name": "Variable Name",
+    "type": {
+      "boolean": "Boolean",
+      "float": "Float"
+    },
+    "description": "Description",
+    "currentValue": "Current Value",
+    "lastUpdate": "Last Update",
+    "isDisabled": "Disabled",
+    "usage": {
+      "title": "Variable Usage",
+      "viewUsage": "View Usage",
+      "usedIn": "Used in {{count}} memory configuration(s)",
+      "noUsage": "This variable is not currently used in any memory configuration",
+      "phase2Notice": "Usage tracking will be fully implemented in Phase 2"
+    },
+    "hints": {
+      "name": "Unique variable name (alphanumeric, underscore, and hyphen only)",
+      "type": "Data type: Boolean (true/false) or Float (decimal number)",
+      "description": "Optional description of the variable's purpose (max 500 characters)",
+      "editInfo": "Variable name and type cannot be changed after creation. Only description and disabled status can be updated."
+    },
+    "validation": {
+      "nameRequired": "Variable name is required",
+      "nameFormat": "Name must contain only letters, numbers, underscores, and hyphens",
+      "nameMinLength": "Name must be at least 2 characters",
+      "nameMaxLength": "Name cannot exceed 100 characters",
+      "descriptionMaxLength": "Description cannot exceed 500 characters"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load global variables",
+      "createFailed": "Failed to create global variable",
+      "editFailed": "Failed to update global variable",
+      "deleteFailed": "Failed to delete global variable",
+      "usageFetchFailed": "Failed to load variable usage information"
+    },
+    "help": {
+      "title": "Global Variables Overview",
+      "content": "Global Variables are lightweight, in-memory variables accessible to all memory types. They provide a simple alternative to the Point system for sharing data between memories without complex configuration."
+    }
+  }
 }

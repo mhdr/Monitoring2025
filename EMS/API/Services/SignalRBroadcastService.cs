@@ -250,4 +250,49 @@ public class SignalRBroadcastService
             _logger.LogError(ex, "{Operation}: Error broadcasting gateway status for {GatewayId}", operation, gatewayId);
         }
     }
-}
+
+    /// <summary>
+    /// Broadcasts global variables update to all connected SignalR clients.
+    /// Notifies clients that global variable values have changed so they can refresh their display.
+    /// </summary>
+    /// <param name="variables">List of all global variables with their current values</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Task completing when broadcast is done</returns>
+    public async Task BroadcastGlobalVariablesUpdateAsync(
+        List<(GlobalVariable Config, string CurrentValue, long LastUpdateTime)> variables,
+        CancellationToken cancellationToken = default)
+    {
+        const string operation = nameof(BroadcastGlobalVariablesUpdateAsync);
+
+        if (variables == null)
+        {
+            throw new ArgumentNullException(nameof(variables));
+        }
+
+        try
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var variableCount = variables.Count;
+
+            await _hubContext.Clients.All.SendAsync(
+                "ReceiveGlobalVariablesUpdate",
+                new
+                {
+                    variableCount = variableCount,
+                    timestamp = timestamp
+                },
+                cancellationToken);
+
+            _logger.LogDebug(
+                "{Operation}: Broadcasted global variables update. Total variables: {VariableCount}",
+                operation, variableCount);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning("{Operation}: Broadcast cancelled", operation);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Operation}: Error broadcasting global variables update", operation);
+        }
+    }

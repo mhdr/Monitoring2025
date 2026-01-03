@@ -29,6 +29,7 @@ import {
   AccountTree as IfMemoryIcon,
   Tune as TuneIcon,
   SwapVert as SwapVertIcon,
+  Code as CodeIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -66,6 +67,7 @@ const MemorySidebar: React.FC<MemorySidebarProps> = ({ isOpen, onToggle }) => {
     { path: '/dashboard/memory/if-memory', key: 'ifMemory.title', icon: <IfMemoryIcon /> },
     { path: '/dashboard/memory/deadband-memory', key: 'deadbandMemory.title', icon: <TuneIcon /> },
     { path: '/dashboard/memory/minmax-selector-memory', key: 'minMaxSelectorMemory.title', icon: <SwapVertIcon /> },
+    { path: '/dashboard/memory/global-variables', key: 'globalVariables.title', icon: <CodeIcon /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;

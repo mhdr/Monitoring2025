@@ -212,6 +212,20 @@ import type {
   EditMinMaxSelectorMemoryResponseDto,
   DeleteMinMaxSelectorMemoryRequestDto,
   DeleteMinMaxSelectorMemoryResponseDto,
+  // Global Variables types
+  GlobalVariable,
+  GlobalVariableType,
+  GetGlobalVariablesRequestDto,
+  GetGlobalVariablesResponseDto,
+  AddGlobalVariableRequestDto,
+  AddGlobalVariableResponseDto,
+  EditGlobalVariableRequestDto,
+  EditGlobalVariableResponseDto,
+  DeleteGlobalVariableRequestDto,
+  DeleteGlobalVariableResponseDto,
+  GetGlobalVariableUsageRequestDto,
+  GetGlobalVariableUsageResponseDto,
+  MemoryUsage,
 } from '../types/api';
 
 /**
@@ -1923,3 +1937,96 @@ export const deleteMinMaxSelectorMemory = async (
 
 // Re-export types for convenience
 export type { ComparisonMemory, StatisticalMemory, FormulaMemory, IfMemory, DeadbandMemory, MinMaxSelectorMemory };
+
+// ==========================================
+// Global Variables API Functions
+// ==========================================
+
+/**
+ * Get all global variables with their current values
+ */
+export const getGlobalVariables = async (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  params: GetGlobalVariablesRequestDto = {}
+): Promise<GetGlobalVariablesResponseDto> => {
+  try {
+    const response = await apiClient.post<GetGlobalVariablesResponseDto>(
+      '/api/GlobalVariables/GetGlobalVariables',
+      params
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Add a new global variable
+ */
+export const addGlobalVariable = async (
+  data: AddGlobalVariableRequestDto
+): Promise<AddGlobalVariableResponseDto> => {
+  try {
+    const response = await apiClient.post<AddGlobalVariableResponseDto>(
+      '/api/GlobalVariables/AddGlobalVariable',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Edit an existing global variable
+ */
+export const editGlobalVariable = async (
+  data: EditGlobalVariableRequestDto
+): Promise<EditGlobalVariableResponseDto> => {
+  try {
+    const response = await apiClient.post<EditGlobalVariableResponseDto>(
+      '/api/GlobalVariables/EditGlobalVariable',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Delete a global variable
+ */
+export const deleteGlobalVariable = async (
+  data: DeleteGlobalVariableRequestDto
+): Promise<DeleteGlobalVariableResponseDto> => {
+  try {
+    const response = await apiClient.post<DeleteGlobalVariableResponseDto>(
+      '/api/GlobalVariables/DeleteGlobalVariable',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+/**
+ * Get global variable usage information
+ */
+export const getGlobalVariableUsage = async (
+  data: GetGlobalVariableUsageRequestDto
+): Promise<GetGlobalVariableUsageResponseDto> => {
+  try {
+    const response = await apiClient.post<GetGlobalVariableUsageResponseDto>(
+      '/api/GlobalVariables/GetGlobalVariableUsage',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+// Re-export GlobalVariable types for convenience
+export type { GlobalVariable, GlobalVariableType, MemoryUsage };

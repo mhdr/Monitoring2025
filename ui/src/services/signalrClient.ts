@@ -34,6 +34,19 @@ export type SettingsUpdateCallback = () => void;
 export type GatewayStatusUpdateCallback = (update: GatewayStatusUpdate) => void;
 
 /**
+ * Global variables update message from SignalR hub
+ */
+export interface GlobalVariablesUpdate {
+  variableCount: number;
+  timestamp: number;
+}
+
+/**
+ * Global variables update callback type
+ */
+export type GlobalVariablesUpdateCallback = (update: GlobalVariablesUpdate) => void;
+
+/**
  * SignalR connection manager
  */
 class SignalRConnectionManager {
@@ -238,6 +251,30 @@ class SignalRConnectionManager {
     if (this.connection) {
       this.connection.off('ReceiveGatewayStatusUpdate');
       logger.log('Unsubscribed from gateway status updates');
+    }
+  }
+
+  /**
+   * Subscribe to global variables updates
+   * This is triggered when global variable values change
+   * Clients should refresh their variable list to get latest values
+   */
+  onGlobalVariablesUpdate(callback: GlobalVariablesUpdateCallback): void {
+    const connection = this.getConnection();
+    
+    connection.on('ReceiveGlobalVariablesUpdate', (data: GlobalVariablesUpdate) => {
+      logger.log('Received global variables update:', data);
+      callback(data);
+    });
+  }
+
+  /**
+   * Unsubscribe from global variables updates
+   */
+  offGlobalVariablesUpdate(): void {
+    if (this.connection) {
+      this.connection.off('ReceiveGlobalVariablesUpdate');
+      logger.log('Unsubscribed from global variables updates');
     }
   }
 

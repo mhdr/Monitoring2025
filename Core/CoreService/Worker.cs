@@ -56,9 +56,12 @@ public class Worker : BackgroundService
         var task14 = MinMaxSelectorMemoryProcess.Instance.Run();
 
         _logger.LogInformation("Start Processing Write Action Memories...");
+
+        _logger.LogInformation("Start Processing Global Variables...");
+        var task16 = GlobalVariableProcess.Instance.Run();
         var task15 = WriteActionMemoryProcess.Instance.Run();
 
-        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7, task8, task9, task10, task11, task12, task13, task14, task15);
+        await Task.WhenAll(task1, task2, task3, task4, task5, task6, task7, task8, task9, task10, task11, task12, task13, task14, task15, task16);
         Console.ReadKey();
     }
 }

@@ -1500,4 +1500,47 @@ public static class Points
     }
 
     #endregion
+    #region Global Variables
+
+    /// <summary>
+    /// Get a global variable value by name.
+    /// </summary>
+    /// <param name="name">Variable name</param>
+    /// <returns>Tuple of (found, value, type)</returns>
+    public static async Task<(bool Found, object? Value, GlobalVariableType? Type)> GetGlobalVariableByName(string name)
+    {
+        return await GlobalVariableProcess.GetVariable(name);
+    }
+
+    /// <summary>
+    /// Get multiple global variables in a batch (optimized for performance).
+    /// </summary>
+    /// <param name="names">List of variable names</param>
+    /// <returns>Dictionary mapping name to (value, type)</returns>
+    public static async Task<Dictionary<string, (object? Value, GlobalVariableType Type)>> GetGlobalVariablesBatch(List<string> names)
+    {
+        return await GlobalVariableProcess.GetVariablesBatch(names);
+    }
+
+    /// <summary>
+    /// Set a global variable value by name with validation.
+    /// </summary>
+    /// <param name="name">Variable name</param>
+    /// <param name="value">Value to set (bool or double)</param>
+    /// <returns>Tuple of (success, errorMessage)</returns>
+    public static async Task<(bool Success, string? ErrorMessage)> SetGlobalVariable(string name, object value)
+    {
+        return await GlobalVariableProcess.SetVariable(name, value);
+    }
+
+    /// <summary>
+    /// Get all global variables with their current values (for UI display).
+    /// </summary>
+    /// <returns>List of global variables with their runtime values</returns>
+    public static async Task<List<(GlobalVariable Config, string CurrentValue, long LastUpdateTime)>> GetAllGlobalVariablesWithValues()
+    {
+        return await GlobalVariableProcess.GetAllVariablesWithValues();
+    }
+
+    #endregion
 }
