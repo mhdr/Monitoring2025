@@ -69,22 +69,42 @@ public class AverageMemory
     public string? Name { get; set; }
 
     /// <summary>
-    /// JSON array of input MonitoringItem GUIDs to average.
-    /// Format: ["guid1", "guid2", "guid3", ...]
-    /// All items must be AnalogInput or AnalogOutput type.
-    /// Minimum: 1 item (average of single item returns that value).
-    /// No maximum limit - can handle indefinite number of inputs.
+    /// JSON array of input source references (mixed Points and Global Variables).
+    /// Format: ["P:guid1", "P:guid2", "GV:temp_setpoint", "GV:pressure_avg"]
+    /// - "P:" prefix = Point reference (GUID follows)
+    /// - "GV:" prefix = Global Variable reference (name follows)
+    /// - No prefix = Point GUID (backward compatible with old data)
+    /// All items must be analog/numeric types.
     /// </summary>
     [Column("input_item_ids")]
     public string InputItemIds { get; set; } = "[]";
 
     /// <summary>
-    /// The MonitoringItem to receive the computed average value.
-    /// Must be AnalogInput or AnalogOutput type.
+    /// Type of the output source: Point or GlobalVariable
+    /// </summary>
+    [DefaultValue(0)]
+    [Column("output_type")]
+    public TimeoutSourceType OutputType { get; set; } = TimeoutSourceType.Point;
+
+    /// <summary>
+    /// Reference to the output source that receives the computed average.
+    /// - If OutputType = Point: GUID string of the MonitoringItem
+    /// - If OutputType = GlobalVariable: Name of the Global Variable
+    /// Format matches InputItemIds: "P:guid" or "GV:name"
+    /// Must be AnalogInput/AnalogOutput (for Points) or Float type (for GlobalVariables).
     /// Cannot be in the InputItemIds list.
     /// </summary>
+    [Column("output_reference")]
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Legacy field: The MonitoringItem to receive the computed average value.
+    /// DEPRECATED: Use OutputReference and OutputType instead.
+    /// Kept for backward compatibility during migration.
+    /// </summary>
     [Column("output_item_id")]
-    public Guid OutputItemId { get; set; }
+    [Obsolete("Use OutputReference and OutputType instead")]
+    public Guid? OutputItemId { get; set; }
 
     /// <summary>
     /// Processing interval in seconds. The average is recalculated at this frequency.

@@ -83,7 +83,7 @@ public class GlobalVariablesController : ControllerBase
                         Description = config.Description,
                         IsDisabled = config.IsDisabled,
                         CurrentValue = currentValue,
-                        LastUpdateTime = lastUpdateTime,
+                        LastUpdateTime = lastUpdateTime * 1000, // Convert seconds → milliseconds for API
                         CreatedAt = config.CreatedAt,
                         UpdatedAt = config.UpdatedAt
                     });

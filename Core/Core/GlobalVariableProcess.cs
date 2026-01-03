@@ -60,6 +60,9 @@ public class GlobalVariableProcess
                     // Wait for database to be ready at startup
                     await WaitForDatabaseConnection();
                     
+                    // Run timestamp migration (safe to run multiple times)
+                    await Migrations.MigrateGlobalVariableTimestamps.Run();
+                    
                     while (true)
                     {
                         try
@@ -165,7 +168,7 @@ public class GlobalVariableProcess
                     Name = variable.Name,
                     VariableType = variable.VariableType,
                     Value = variable.VariableType == GlobalVariableType.Boolean ? "false" : "0",
-                    LastUpdateTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                    LastUpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                 };
             }
 
@@ -359,7 +362,7 @@ public class GlobalVariableProcess
 
             // Update Redis
             redisVar.Value = stringValue;
-            redisVar.LastUpdateTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            redisVar.LastUpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             var db2 = RedisConnection.Instance.GetDatabase();
             var key2 = $"GlobalVariable:{redisVar.Id}";
@@ -432,6 +435,61 @@ public class GlobalVariableProcess
             MyLog.Error("Failed to batch retrieve global variables", ex, new Dictionary<string, object?>
             {
                 ["RequestedCount"] = names.Count
+            });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Get multiple global variables in batch optimized for memory processes.
+    /// Returns values with timestamps in SECONDS (not milliseconds) for staleness checking.
+    /// </summary>
+    /// <param name="names">List of variable names to fetch</param>
+    /// <returns>Dictionary mapping name to (Value, Time in seconds, Type)</returns>
+    public static async Task<Dictionary<string, (string Value, long Time, GlobalVariableType Type)>> GetGlobalVariablesBatchForMemory(List<string> names)
+    {
+        var result = new Dictionary<string, (string, long, GlobalVariableType)>();
+        
+        if (names == null || names.Count == 0)
+            return result;
+
+        try
+        {
+            var db = RedisConnection.Instance.GetDatabase();
+            var server = RedisConnection.Instance.GetServer();
+            
+            // Get all GlobalVariable keys
+            var allKeys = server.Keys(pattern: "GlobalVariable:*").ToArray();
+            
+            // Fetch all in batch
+            var values = await db.StringGetAsync(allKeys);
+            
+            // Parse and filter by requested names
+            for (int i = 0; i < allKeys.Length; i++)
+            {
+                if (!values[i].HasValue) continue;
+                
+                try
+                {
+                    var gv = JsonConvert.DeserializeObject<GlobalVariableRedis>(values[i].ToString());
+                    if (gv != null && names.Contains(gv.Name))
+                    {
+                        // Return timestamp in SECONDS (matching Point behavior)
+                        result[gv.Name] = (gv.Value, gv.LastUpdateTime, gv.VariableType);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MyLog.Warning($"Failed to deserialize GlobalVariable from Redis key {allKeys[i]}", ex);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MyLog.Error("Failed to batch fetch global variables for memory", ex, new Dictionary<string, object?>
+            {
+                ["RequestedNames"] = string.Join(", ", names)
             });
         }
 

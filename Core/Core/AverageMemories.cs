@@ -79,7 +79,13 @@ public class AverageMemories
             }
 
             // Validate output item exists
-            var outputItem = await context.MonitoringItems.FindAsync(averageMemory.OutputItemId);
+            if (!averageMemory.OutputItemId.HasValue)
+            {
+                await context.DisposeAsync();
+                return (false, null, "Output item is required");
+            }
+            
+            var outputItem = await context.MonitoringItems.FindAsync(averageMemory.OutputItemId.Value);
             if (outputItem == null)
             {
                 await context.DisposeAsync();
@@ -94,7 +100,7 @@ public class AverageMemories
             }
 
             // Validate output item is not in input items
-            if (inputIds.Contains(averageMemory.OutputItemId))
+            if (inputIds.Contains(averageMemory.OutputItemId.Value))
             {
                 await context.DisposeAsync();
                 return (false, null, "Output item cannot be in the input items list");
@@ -245,7 +251,13 @@ public class AverageMemories
             }
 
             // Validate output item exists
-            var outputItem = await context.MonitoringItems.FindAsync(averageMemory.OutputItemId);
+            if (!averageMemory.OutputItemId.HasValue)
+            {
+                await context.DisposeAsync();
+                return (false, "Output item is required");
+            }
+            
+            var outputItem = await context.MonitoringItems.FindAsync(averageMemory.OutputItemId.Value);
             if (outputItem == null)
             {
                 await context.DisposeAsync();
@@ -260,7 +272,7 @@ public class AverageMemories
             }
 
             // Validate output item is not in input items
-            if (inputIds.Contains(averageMemory.OutputItemId))
+            if (inputIds.Contains(averageMemory.OutputItemId.Value))
             {
                 await context.DisposeAsync();
                 return (false, "Output item cannot be in the input items list");

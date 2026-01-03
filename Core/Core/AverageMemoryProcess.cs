@@ -160,7 +160,7 @@ public class AverageMemoryProcess
                         allInputIds.Add(id);
                     }
                 }
-                allOutputIds.Add(memory.OutputItemId.ToString());
+                allOutputIds.Add(memory.OutputItemId?.ToString() ?? string.Empty);
             }
             catch (Exception ex)
             {
@@ -283,7 +283,10 @@ public class AverageMemoryProcess
         }
 
         // Write to output
-        await Points.WriteOrAddValue(memory.OutputItemId, result.ToString("F4"), currentEpochTime);
+        if (memory.OutputItemId.HasValue)
+        {
+            await Points.WriteOrAddValue(memory.OutputItemId.Value, result.ToString("F4"), currentEpochTime);
+        }
 
         MyLog.Debug($"AverageMemory {memory.Id}: {memory.AverageType} = {result:F4} (input: {currentValue:F4})");
     }
@@ -518,7 +521,10 @@ public class AverageMemoryProcess
         double average = weightedSum / totalWeight;
 
         // Write to output
-        await Points.WriteOrAddValue(memory.OutputItemId, average.ToString("F4"), currentEpochTime);
+        if (memory.OutputItemId.HasValue)
+        {
+            await Points.WriteOrAddValue(memory.OutputItemId.Value, average.ToString("F4"), currentEpochTime);
+        }
 
         MyLog.Debug($"AverageMemory {memory.Id}: Computed average = {average:F4} from {filteredInputs.Count} inputs");
     }

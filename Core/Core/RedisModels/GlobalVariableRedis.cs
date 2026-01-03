@@ -29,7 +29,8 @@ public class GlobalVariableRedis
     public string Value { get; set; } = string.Empty;
     
     /// <summary>
-    /// Unix timestamp (milliseconds) when the value was last updated
+    /// Unix timestamp (seconds) when the value was last updated.
+    /// Changed from milliseconds to match Point behavior for consistent staleness checks.
     /// </summary>
     public long LastUpdateTime { get; set; }
 }
