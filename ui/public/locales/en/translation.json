@@ -210,7 +210,18 @@
     "apply": "Apply",
     "moveUp": "Move Up",
     "moveDown": "Move Down",
-    "more": "more"
+    "more": "more",
+    "never": "Never",
+    "unnamed": "Unnamed",
+    "secondsAgo": "s ago",
+    "minutesAgo": "m ago",
+    "hoursAgo": "h ago",
+    "daysAgo": "d ago",
+    "true": "True",
+    "false": "False",
+    "noSearchResults": "No results found",
+    "input": "Input",
+    "output": "Output"
   },
   "cron": {
     "builderTitle": "Cron Expression Builder",

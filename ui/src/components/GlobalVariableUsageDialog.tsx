@@ -211,7 +211,7 @@ const GlobalVariableUsageDialog: React.FC<GlobalVariableUsageDialogProps> = ({
                       >
                         <InfoIcon fontSize="small" color="action" sx={{ mt: 0.3 }} />
                         <Typography variant="caption" color="text.secondary">
-                          {usage.usageContext}
+                          {t(`common.${usage.usageContext.toLowerCase()}`)}
                         </Typography>
                       </Box>
                     )}

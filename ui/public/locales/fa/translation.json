@@ -210,7 +210,18 @@
     "apply": "اعمال",
     "moveUp": "انتقال به بالا",
     "moveDown": "انتقال به پایین",
-    "more": "بیشتر"
+    "more": "بیشتر",
+    "never": "هرگز",
+    "unnamed": "بدون نام",
+    "secondsAgo": " ث پیش",
+    "minutesAgo": " د پیش",
+    "hoursAgo": " س پیش",
+    "daysAgo": " روز پیش",
+    "true": "صحیح",
+    "false": "غلط",
+    "noSearchResults": "نتیجه‌ای یافت نشد",
+    "input": "ورودی",
+    "output": "خروجی"
   },
   "cron": {
     "builderTitle": "ساخت عبارت زمان‌بندی",
