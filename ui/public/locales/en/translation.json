@@ -6197,8 +6197,7 @@
       "title": "Variable Usage",
       "viewUsage": "View Usage",
       "usedIn": "Used in {{count}} memory configuration(s)",
-      "noUsage": "This variable is not currently used in any memory configuration",
-      "phase2Notice": "Usage tracking will be fully implemented in Phase 2"
+      "noUsage": "This variable is not currently used in any memory configuration"
     },
     "hints": {
       "name": "Unique variable name (alphanumeric, underscore, and hyphen only)",

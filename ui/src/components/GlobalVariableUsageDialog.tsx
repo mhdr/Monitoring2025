@@ -232,15 +232,6 @@ const GlobalVariableUsageDialog: React.FC<GlobalVariableUsageDialogProps> = ({
             {t('globalVariables.usage.noUsage')}
           </Alert>
         )}
-
-        {/* Phase 2 Notice */}
-        <Alert 
-          severity="info" 
-          sx={{ mt: 2 }}
-          data-id-ref="globalvariable-usage-phase2-notice"
-        >
-          {t('globalVariables.usage.phase2Notice')}
-        </Alert>
       </DialogContent>
 
       <DialogActions data-id-ref="globalvariable-usage-dialog-actions">
