@@ -296,3 +296,4 @@ public class SignalRBroadcastService
             _logger.LogError(ex, "{Operation}: Error broadcasting global variables update", operation);
         }
     }
+}
