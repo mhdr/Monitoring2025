@@ -50,7 +50,10 @@ public enum LogType
     DeleteUser = 17,
     EditRole = 18,
     AddRole = 19,
-    DeleteRole = 20    
+    DeleteRole = 20,
+    AddGlobalVariable = 21,
+    EditGlobalVariable = 22,
+    DeleteGlobalVariable = 23
 }
 
 public enum DataType

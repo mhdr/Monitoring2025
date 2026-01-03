@@ -8,6 +8,7 @@ using Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Share.Libs;
 
 namespace API.Controllers;
 
@@ -162,11 +163,16 @@ public class GlobalVariablesController : ControllerBase
             {
                 // Log audit
                 await _auditService.LogAsync(
-                    userId: userId,
-                    action: "AddGlobalVariable",
-                    entity: "GlobalVariable",
-                    entityId: id.Value.ToString(),
-                    details: $"Added global variable '{request.Name}' (Type: {request.VariableType})"
+                    LogType.AddGlobalVariable,
+                    new
+                    {
+                        Action = "AddGlobalVariable",
+                        VariableName = request.Name,
+                        VariableType = request.VariableType.ToString(),
+                        Details = $"Added global variable '{request.Name}' (Type: {request.VariableType})"
+                    },
+                    itemId: id.Value,
+                    userId: string.IsNullOrEmpty(userId) ? null : Guid.Parse(userId)
                 );
 
                 // Trigger settings update broadcast
@@ -247,11 +253,15 @@ public class GlobalVariablesController : ControllerBase
             {
                 // Log audit
                 await _auditService.LogAsync(
-                    userId: userId,
-                    action: "EditGlobalVariable",
-                    entity: "GlobalVariable",
-                    entityId: request.Id.ToString(),
-                    details: $"Edited global variable '{request.Name}'"
+                    LogType.EditGlobalVariable,
+                    new
+                    {
+                        Action = "EditGlobalVariable",
+                        VariableName = request.Name,
+                        Details = $"Edited global variable '{request.Name}'"
+                    },
+                    itemId: request.Id,
+                    userId: string.IsNullOrEmpty(userId) ? null : Guid.Parse(userId)
                 );
 
                 // Trigger settings update broadcast
@@ -323,11 +333,15 @@ public class GlobalVariablesController : ControllerBase
             {
                 // Log audit
                 await _auditService.LogAsync(
-                    userId: userId,
-                    action: "DeleteGlobalVariable",
-                    entity: "GlobalVariable",
-                    entityId: request.Id.ToString(),
-                    details: $"Deleted global variable '{variableName}'"
+                    LogType.DeleteGlobalVariable,
+                    new
+                    {
+                        Action = "DeleteGlobalVariable",
+                        VariableName = variableName,
+                        Details = $"Deleted global variable '{variableName}'"
+                    },
+                    itemId: request.Id,
+                    userId: string.IsNullOrEmpty(userId) ? null : Guid.Parse(userId)
                 );
 
                 // Trigger settings update broadcast
