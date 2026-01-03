@@ -26,9 +26,9 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
-import { getTimeoutMemories } from '../services/extendedApi';
-import type { TimeoutMemory, ItemType } from '../types/api';
-import { ItemTypeEnum } from '../types/api';
+import { getTimeoutMemories, getGlobalVariables } from '../services/extendedApi';
+import type { TimeoutMemory, ItemType, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, TimeoutSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -107,9 +107,9 @@ const getItemTypeLabel = (itemType: ItemType, t: (key: string) => string): strin
 };
 
 interface TimeoutMemoryWithItems extends TimeoutMemory {
-  inputItemName?: string;
+  inputSourceName?: string;
   inputItemType?: ItemType;
-  outputItemName?: string;
+  outputSourceName?: string;
   outputItemType?: ItemType;
 }
 
@@ -120,6 +120,7 @@ const TimeoutMemoryManagementPage: React.FC = () => {
 
   // State
   const [timeoutMemories, setTimeoutMemories] = useState<TimeoutMemoryWithItems[]>([]);
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -146,21 +147,61 @@ const TimeoutMemoryManagementPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      logger.log('Fetching timeout memories');
-      const response = await getTimeoutMemories();
+      logger.log('Fetching timeout memories and global variables');
+      
+      // Fetch both timeout memories and global variables in parallel
+      const [tmResponse, gvResponse] = await Promise.all([
+        getTimeoutMemories(),
+        getGlobalVariables({})
+      ]);
 
-      if (response?.timeoutMemories) {
-        // Enhance timeout memories with item names and types
-        const enhancedMemories: TimeoutMemoryWithItems[] = response.timeoutMemories.map((tm) => {
-          const inputItem = items.find((item) => item.id === tm.inputItemId);
-          const outputItem = items.find((item) => item.id === tm.outputItemId);
+      if (gvResponse?.variables) {
+        setGlobalVariables(gvResponse.variables);
+        logger.log('Global variables fetched successfully', { count: gvResponse.variables.length });
+      }
+
+      if (tmResponse?.timeoutMemories) {
+        // Enhance timeout memories with source names and types
+        const enhancedMemories: TimeoutMemoryWithItems[] = tmResponse.timeoutMemories.map((tm) => {
+          let inputSourceName: string | undefined;
+          let inputItemType: ItemType | undefined;
+          let outputSourceName: string | undefined;
+          let outputItemType: ItemType | undefined;
+
+          // Resolve input source
+          if (tm.inputType === TimeoutSourceType.Point) {
+            const inputItem = items.find((item) => item.id === tm.inputReference);
+            if (inputItem) {
+              inputSourceName = language === 'fa' && inputItem.nameFa ? inputItem.nameFa : inputItem.name;
+              inputItemType = inputItem.itemType;
+            }
+          } else if (tm.inputType === TimeoutSourceType.GlobalVariable) {
+            const inputVariable = gvResponse?.variables?.find((v) => v.name === tm.inputReference);
+            if (inputVariable) {
+              inputSourceName = inputVariable.name;
+            }
+          }
+
+          // Resolve output source
+          if (tm.outputType === TimeoutSourceType.Point) {
+            const outputItem = items.find((item) => item.id === tm.outputReference);
+            if (outputItem) {
+              outputSourceName = language === 'fa' && outputItem.nameFa ? outputItem.nameFa : outputItem.name;
+              outputItemType = outputItem.itemType;
+            }
+          } else if (tm.outputType === TimeoutSourceType.GlobalVariable) {
+            const outputVariable = gvResponse?.variables?.find((v) => v.name === tm.outputReference);
+            if (outputVariable) {
+              outputSourceName = outputVariable.name;
+            }
+          }
 
           return {
             ...tm,
-            inputItemName: inputItem ? (language === 'fa' && inputItem.nameFa ? inputItem.nameFa : inputItem.name) : undefined,
-            inputItemType: inputItem?.itemType,
-            outputItemName: outputItem ? (language === 'fa' && outputItem.nameFa ? outputItem.nameFa : outputItem.name) : undefined,
-            outputItemType: outputItem?.itemType,
+            inputSourceName,
+            inputItemType,
+            outputSourceName,
+            outputItemType,
           };
         });
 
@@ -190,8 +231,8 @@ const TimeoutMemoryManagementPage: React.FC = () => {
     const lowerSearch = searchTerm.toLowerCase();
     return timeoutMemories.filter(
       (tm) =>
-        tm.inputItemName?.toLowerCase().includes(lowerSearch) ||
-        tm.outputItemName?.toLowerCase().includes(lowerSearch) ||
+        tm.inputSourceName?.toLowerCase().includes(lowerSearch) ||
+        tm.outputSourceName?.toLowerCase().includes(lowerSearch) ||
         formatTimeout(tm.timeout).toLowerCase().includes(lowerSearch)
     );
   }, [timeoutMemories, searchTerm]);
@@ -236,13 +277,19 @@ const TimeoutMemoryManagementPage: React.FC = () => {
   const columns: SyncfusionColumnDef[] = useMemo(
     () => [
       {
-        field: 'inputItemName',
-        headerText: t('timeoutMemory.inputItem'),
+        field: 'inputSourceName',
+        headerText: t('timeoutMemory.inputSource'),
         width: 250,
         template: (rowData: TimeoutMemoryWithItems) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              label={rowData.inputType === TimeoutSourceType.Point ? t('timeoutMemory.sourceTypePoint') : t('timeoutMemory.sourceTypeGlobalVariable')}
+              size="small"
+              color={rowData.inputType === TimeoutSourceType.Point ? 'primary' : 'secondary'}
+              sx={{ height: 20, fontSize: '0.7rem' }}
+            />
             <Typography variant="body2" noWrap>
-              {rowData.inputItemName || rowData.inputItemId}
+              {rowData.inputSourceName || rowData.inputReference}
             </Typography>
             {rowData.inputItemType !== undefined && (
               <Chip
@@ -256,13 +303,19 @@ const TimeoutMemoryManagementPage: React.FC = () => {
         ),
       },
       {
-        field: 'outputItemName',
-        headerText: t('timeoutMemory.outputItem'),
+        field: 'outputSourceName',
+        headerText: t('timeoutMemory.outputSource'),
         width: 250,
         template: (rowData: TimeoutMemoryWithItems) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              label={rowData.outputType === TimeoutSourceType.Point ? t('timeoutMemory.sourceTypePoint') : t('timeoutMemory.sourceTypeGlobalVariable')}
+              size="small"
+              color={rowData.outputType === TimeoutSourceType.Point ? 'primary' : 'secondary'}
+              sx={{ height: 20, fontSize: '0.7rem' }}
+            />
             <Typography variant="body2" noWrap>
-              {rowData.outputItemName || rowData.outputItemId}
+              {rowData.outputSourceName || rowData.outputReference}
             </Typography>
             {rowData.outputItemType !== undefined && (
               <Chip

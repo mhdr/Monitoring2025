@@ -7130,8 +7130,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     response.TimeoutMemories.Add(new GetTimeoutMemoriesResponseDto.TimeoutMemory()
                     {
                         Id = tm.Id,
-                        InputItemId = tm.InputItemId,
-                        OutputItemId = tm.OutputItemId,
+                        InputType = (int)tm.InputType,
+                        InputReference = tm.InputReference,
+                        OutputType = (int)tm.OutputType,
+                        OutputReference = tm.OutputReference,
                         Timeout = tm.Timeout
                     });
                 }
@@ -7169,8 +7171,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
 
             var timeoutMemory = new Core.Models.TimeoutMemory
             {
-                InputItemId = request.InputItemId,
-                OutputItemId = request.OutputItemId,
+                InputType = (Core.Models.TimeoutSourceType)request.InputType,
+                InputReference = request.InputReference,
+                OutputType = (Core.Models.TimeoutSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
                 Timeout = request.Timeout
             };
 
@@ -7216,8 +7220,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             var timeoutMemory = new Core.Models.TimeoutMemory
             {
                 Id = request.Id,
-                InputItemId = request.InputItemId,
-                OutputItemId = request.OutputItemId,
+                InputType = (Core.Models.TimeoutSourceType)request.InputType,
+                InputReference = request.InputReference,
+                OutputType = (Core.Models.TimeoutSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
                 Timeout = request.Timeout
             };
 

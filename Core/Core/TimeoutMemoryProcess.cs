@@ -3,6 +3,7 @@ using Core.Libs;
 using Core.Models;
 using Core.RedisModels;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace Core;
 
@@ -108,66 +109,101 @@ public class TimeoutMemoryProcess
         if (memories.Count == 0)
             return;
 
-        // Batch fetch all required Redis items (10-40× performance improvement)
-        var inputItemIds = memories.Select(m => m.InputItemId.ToString()).Distinct().ToList();
-        var outputItemIds = memories.Select(m => m.OutputItemId.ToString()).Distinct().ToList();
+        // Separate Point and GlobalVariable references for batch fetching
+        var inputPointIds = memories
+            .Where(m => m.InputType == Models.TimeoutSourceType.Point)
+            .Select(m => m.InputReference)
+            .Distinct()
+            .ToList();
         
-        // Single batch read for all input items
-        var inputItemsCache = await Points.GetFinalItemsBatch(inputItemIds);
+        var outputPointIds = memories
+            .Where(m => m.OutputType == Models.TimeoutSourceType.Point)
+            .Select(m => m.OutputReference)
+            .Distinct()
+            .ToList();
         
-        // Single batch read for all output items
-        var outputItemsCache = await Points.GetRawItemsBatch(outputItemIds);
+        // Batch fetch all Point items from Redis
+        var inputItemsCache = await Points.GetFinalItemsBatch(inputPointIds);
+        var outputItemsCache = await Points.GetRawItemsBatch(outputPointIds);
         
         MyLog.Debug("Batch fetched Redis items for Timeout processing", new Dictionary<string, object?>
         {
             ["MemoryCount"] = memories.Count,
-            ["InputItemsRequested"] = inputItemIds.Count,
-            ["InputItemsFetched"] = inputItemsCache.Count,
-            ["OutputItemsRequested"] = outputItemIds.Count,
-            ["OutputItemsFetched"] = outputItemsCache.Count
+            ["InputPointsRequested"] = inputPointIds.Count,
+            ["InputPointsFetched"] = inputItemsCache.Count,
+            ["OutputPointsRequested"] = outputPointIds.Count,
+            ["OutputPointsFetched"] = outputItemsCache.Count
         });
 
         foreach (var memory in memories)
         {
             try
             {
-                // Use cached batch-fetched items instead of individual Redis calls
-                inputItemsCache.TryGetValue(memory.InputItemId.ToString(), out var input);
-                outputItemsCache.TryGetValue(memory.OutputItemId.ToString(), out var output);
-
-                if (input == null)
+                // Fetch input value and timestamp based on source type
+                string? inputValue = null;
+                long inputTime = 0;
+                
+                if (memory.InputType == Models.TimeoutSourceType.Point)
                 {
-                    continue;
+                    // Use cached batch-fetched Point item
+                    if (inputItemsCache.TryGetValue(memory.InputReference, out var inputItem))
+                    {
+                        inputValue = inputItem.Value;
+                        inputTime = inputItem.Time;
+                    }
+                }
+                else if (memory.InputType == Models.TimeoutSourceType.GlobalVariable)
+                {
+                    // Fetch Global Variable directly (fresh read each cycle)
+                    // We need to get the full Redis object to access LastUpdateTime
+                    var db = RedisConnection.Instance.GetDatabase();
+                    var key = $"GlobalVariable:{memory.InputReference}";
+                    var json = await db.StringGetAsync(key);
+                    
+                    if (json.HasValue)
+                    {
+                        var gvRedis = JsonConvert.DeserializeObject<RedisModels.GlobalVariableRedis>(json.ToString());
+                        if (gvRedis != null)
+                        {
+                            inputValue = gvRedis.Value;
+                            inputTime = gvRedis.LastUpdateTime / 1000; // Convert milliseconds to seconds
+                        }
+                    }
                 }
 
-                if (output == null)
+                if (inputValue == null)
                 {
-                    // Create a new raw item if it doesn't exist
-                    output = new RawItemRedis()
-                    {
-                        ItemId = memory.OutputItemId,
-                    };
+                    continue; // Skip if input not found
                 }
 
                 DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
                 long epochTime = currentTimeUtc.ToUnixTimeSeconds();
 
-                // Check if input item has timed out
-                // If timeout exceeded: set output to "1"
-                // If input is fresh: set output to "0"
-                if (epochTime - input.Time > memory.Timeout)
+                // Check if input has timed out
+                string outputValue;
+                if (epochTime - inputTime > memory.Timeout)
                 {
-                    output.Value = "1";  // Timeout exceeded
+                    outputValue = "1";  // Timeout exceeded
                 }
                 else
                 {
-                    output.Value = "0";  // Input is updating regularly
+                    outputValue = "0";  // Input is updating regularly
                 }
 
-                output.Time = epochTime;
-
-                // await Points.SetRawItem(output);
-                await Points.WriteOrAddValue(output.ItemId, output.Value, output.Time);
+                // Write output value based on source type
+                if (memory.OutputType == Models.TimeoutSourceType.Point)
+                {
+                    // Write to Point item
+                    if (Guid.TryParse(memory.OutputReference, out var outputItemId))
+                    {
+                        await Points.WriteOrAddValue(outputItemId, outputValue, epochTime);
+                    }
+                }
+                else if (memory.OutputType == Models.TimeoutSourceType.GlobalVariable)
+                {
+                    // Write to Global Variable
+                    await GlobalVariableProcess.SetVariable(memory.OutputReference, outputValue);
+                }
             }
             catch (Exception e)
             {

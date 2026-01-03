@@ -2744,9 +2744,19 @@ export interface GatewayStatusUpdate {
  */
 export interface TimeoutMemory {
   id: string; // UUID
-  inputItemId: string; // UUID - Item to watch for timeout (can be any ItemType)
-  outputItemId: string; // UUID - Item to write timeout status (must be DigitalOutput)
+  inputType: number; // 0=Point, 1=GlobalVariable
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable
   timeout: number; // int64 - Timeout duration in seconds
+}
+
+/**
+ * Enum for TimeoutMemory source types
+ */
+export enum TimeoutSourceType {
+  Point = 0,
+  GlobalVariable = 1,
 }
 
 /**

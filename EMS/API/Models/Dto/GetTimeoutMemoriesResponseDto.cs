@@ -21,16 +21,24 @@ public class GetTimeoutMemoriesResponseDto
         public Guid Id { get; set; }
 
         /// <summary>
-        /// ID of the monitoring item to watch for timeout (input)
-        /// Can be DigitalInput, DigitalOutput, AnalogInput, or AnalogOutput
+        /// Type of the input source: 0=Point, 1=GlobalVariable
         /// </summary>
-        public Guid InputItemId { get; set; }
+        public int InputType { get; set; }
 
         /// <summary>
-        /// ID of the monitoring item to write timeout status (output)
-        /// Must be DigitalOutput
+        /// Reference to the input source (GUID string for Point, name for GlobalVariable)
         /// </summary>
-        public Guid OutputItemId { get; set; }
+        public string InputReference { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Type of the output source: 0=Point, 1=GlobalVariable
+        /// </summary>
+        public int OutputType { get; set; }
+
+        /// <summary>
+        /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+        /// </summary>
+        public string OutputReference { get; set; } = string.Empty;
 
         /// <summary>
         /// Timeout duration in seconds

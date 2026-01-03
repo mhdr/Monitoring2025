@@ -412,10 +412,41 @@ public class GlobalVariablesController : ControllerBase
                 Usages = new List<GetGlobalVariableUsageResponseDto.MemoryUsage>()
             };
 
-            // TODO: In phase 2, scan all memory types for references to this variable
-            // For now, return empty list as memories don't yet support global variables
+            // Scan TimeoutMemory for references to this variable
+            var timeoutMemories = await Core.TimeoutMemories.GetTimeoutMemories();
+            if (timeoutMemories != null)
+            {
+                foreach (var tm in timeoutMemories)
+                {
+                    // Check if used as input
+                    if (tm.InputType == Core.Models.TimeoutSourceType.GlobalVariable && 
+                        tm.InputReference == variable.Name)
+                    {
+                        response.Usages.Add(new GetGlobalVariableUsageResponseDto.MemoryUsage
+                        {
+                            MemoryId = tm.Id,
+                            MemoryType = "TimeoutMemory",
+                            MemoryName = null,
+                            UsageContext = "Input"
+                        });
+                    }
+                    
+                    // Check if used as output
+                    if (tm.OutputType == Core.Models.TimeoutSourceType.GlobalVariable && 
+                        tm.OutputReference == variable.Name)
+                    {
+                        response.Usages.Add(new GetGlobalVariableUsageResponseDto.MemoryUsage
+                        {
+                            MemoryId = tm.Id,
+                            MemoryType = "TimeoutMemory",
+                            MemoryName = null,
+                            UsageContext = "Output"
+                        });
+                    }
+                }
+            }
             
-            // Example of what phase 2 will include:
+            // TODO: Add other memory types in future phases:
             // - FormulaMemory: Check VariableAliases JSON for variable name
             // - IfMemory: Check ConditionGroups JSON for variable name
             // - AverageMemory: Check if InputItemIds references this variable ID

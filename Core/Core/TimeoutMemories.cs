@@ -41,34 +41,83 @@ public class TimeoutMemories
         {
             var context = new DataContext();
             
-            // Validate InputItem exists
-            var inputItem = await context.MonitoringItems.FindAsync(timeoutMemory.InputItemId);
-            if (inputItem == null)
+            // Validate Input source
+            if (timeoutMemory.InputType == Models.TimeoutSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Input item not found");
+                if (!Guid.TryParse(timeoutMemory.InputReference, out var inputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Invalid input item GUID");
+                }
+                
+                var inputItem = await context.MonitoringItems.FindAsync(inputItemId);
+                if (inputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input item not found");
+                }
+            }
+            else if (timeoutMemory.InputType == Models.TimeoutSourceType.GlobalVariable)
+            {
+                var inputVariable = await GlobalVariables.GetGlobalVariableByName(timeoutMemory.InputReference);
+                if (inputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input global variable not found");
+                }
+                
+                if (inputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input global variable is disabled");
+                }
             }
 
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(timeoutMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate Output source
+            if (timeoutMemory.OutputType == Models.TimeoutSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Output item not found");
+                if (!Guid.TryParse(timeoutMemory.OutputReference, out var outputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Invalid output item GUID");
+                }
+                
+                var outputItem = await context.MonitoringItems.FindAsync(outputItemId);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item not found");
+                }
+
+                // Validate OutputItem is DigitalOutput
+                if (outputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item must be DigitalOutput");
+                }
+            }
+            else if (timeoutMemory.OutputType == Models.TimeoutSourceType.GlobalVariable)
+            {
+                var outputVariable = await GlobalVariables.GetGlobalVariableByName(timeoutMemory.OutputReference);
+                if (outputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable not found");
+                }
+                
+                if (outputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable is disabled");
+                }
             }
 
-            // Validate OutputItem is DigitalOutput
-            if (outputItem.ItemType != ItemType.DigitalOutput)
+            // Validate Input != Output (same type and reference)
+            if (timeoutMemory.InputType == timeoutMemory.OutputType && 
+                timeoutMemory.InputReference == timeoutMemory.OutputReference)
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item must be DigitalOutput");
-            }
-
-            // Validate InputItemId != OutputItemId
-            if (timeoutMemory.InputItemId == timeoutMemory.OutputItemId)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Input and output items must be different");
+                return (false, null, "Input and output sources must be different");
             }
 
             context.TimeoutMemories.Add(timeoutMemory);
@@ -101,34 +150,83 @@ public class TimeoutMemories
                 return (false, "Timeout memory not found");
             }
 
-            // Validate InputItem exists
-            var inputItem = await context.MonitoringItems.FindAsync(timeoutMemory.InputItemId);
-            if (inputItem == null)
+            // Validate Input source
+            if (timeoutMemory.InputType == Models.TimeoutSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, "Input item not found");
+                if (!Guid.TryParse(timeoutMemory.InputReference, out var inputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Invalid input item GUID");
+                }
+                
+                var inputItem = await context.MonitoringItems.FindAsync(inputItemId);
+                if (inputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input item not found");
+                }
+            }
+            else if (timeoutMemory.InputType == Models.TimeoutSourceType.GlobalVariable)
+            {
+                var inputVariable = await GlobalVariables.GetGlobalVariableByName(timeoutMemory.InputReference);
+                if (inputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input global variable not found");
+                }
+                
+                if (inputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input global variable is disabled");
+                }
             }
 
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(timeoutMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate Output source
+            if (timeoutMemory.OutputType == Models.TimeoutSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, "Output item not found");
+                if (!Guid.TryParse(timeoutMemory.OutputReference, out var outputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Invalid output item GUID");
+                }
+                
+                var outputItem = await context.MonitoringItems.FindAsync(outputItemId);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item not found");
+                }
+
+                // Validate OutputItem is DigitalOutput
+                if (outputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item must be DigitalOutput");
+                }
+            }
+            else if (timeoutMemory.OutputType == Models.TimeoutSourceType.GlobalVariable)
+            {
+                var outputVariable = await GlobalVariables.GetGlobalVariableByName(timeoutMemory.OutputReference);
+                if (outputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable not found");
+                }
+                
+                if (outputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable is disabled");
+                }
             }
 
-            // Validate OutputItem is DigitalOutput
-            if (outputItem.ItemType != ItemType.DigitalOutput)
+            // Validate Input != Output (same type and reference)
+            if (timeoutMemory.InputType == timeoutMemory.OutputType && 
+                timeoutMemory.InputReference == timeoutMemory.OutputReference)
             {
                 await context.DisposeAsync();
-                return (false, "Output item must be DigitalOutput");
-            }
-
-            // Validate InputItemId != OutputItemId
-            if (timeoutMemory.InputItemId == timeoutMemory.OutputItemId)
-            {
-                await context.DisposeAsync();
-                return (false, "Input and output items must be different");
+                return (false, "Input and output sources must be different");
             }
 
             context.TimeoutMemories.Update(timeoutMemory);

@@ -21,7 +21,7 @@ const logger = createLogger('DeleteTimeoutMemoryDialog');
 
 interface DeleteTimeoutMemoryDialogProps {
   open: boolean;
-  timeoutMemory: (TimeoutMemory & { inputItemName?: string; outputItemName?: string }) | null;
+  timeoutMemory: (TimeoutMemory & { inputSourceName?: string; outputSourceName?: string }) | null;
   onClose: (shouldRefresh: boolean) => void;
 }
 
@@ -36,8 +36,8 @@ const DeleteTimeoutMemoryDialog: React.FC<DeleteTimeoutMemoryDialogProps> = ({
 
   const getTimeoutMemoryDisplayName = (): string => {
     if (!timeoutMemory) return '';
-    const inputName = timeoutMemory.inputItemName || timeoutMemory.inputItemId;
-    const outputName = timeoutMemory.outputItemName || timeoutMemory.outputItemId;
+    const inputName = timeoutMemory.inputSourceName || timeoutMemory.inputReference;
+    const outputName = timeoutMemory.outputSourceName || timeoutMemory.outputReference;
     return `${inputName} → ${outputName}`;
   };
 

@@ -4,13 +4,30 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Core.Models;
 
 /// <summary>
-/// Represents a timeout monitoring configuration that tracks an input item's update frequency
-/// and sets an output item's value based on whether the input is being updated regularly.
+/// Specifies the source type for timeout memory input or output
+/// </summary>
+public enum TimeoutSourceType
+{
+    /// <summary>
+    /// Reference is a Point (MonitoringItem) GUID
+    /// </summary>
+    Point = 0,
+    
+    /// <summary>
+    /// Reference is a Global Variable name
+    /// </summary>
+    GlobalVariable = 1
+}
+
+/// <summary>
+/// Represents a timeout monitoring configuration that tracks an input source's update frequency
+/// and sets an output source's value based on whether the input is being updated regularly.
 /// </summary>
 /// <remarks>
-/// The TimeoutMemoryProcess checks the input item every second:
-/// - If (CurrentTime - InputItemTime) > Timeout: Output is set to "1" (timeout exceeded)
+/// The TimeoutMemoryProcess checks the input source every second:
+/// - If (CurrentTime - InputSourceTime) > Timeout: Output is set to "1" (timeout exceeded)
 /// - Otherwise: Output is set to "0" (input is updating regularly)
+/// Input and output sources can be either Points (MonitoringItems) or Global Variables.
 /// </remarks>
 [Table("timeout_memory")]
 public class TimeoutMemory
@@ -20,22 +37,39 @@ public class TimeoutMemory
     public Guid Id { get; set; }
 
     /// <summary>
-    /// The item to monitor for timeout. Its last update timestamp is checked every second.
-    /// Can be any ItemType (DigitalInput, DigitalOutput, AnalogInput, AnalogOutput).
+    /// Type of the input source: Point or GlobalVariable
     /// </summary>
-    [Column("input_item_id")] public Guid InputItemId { get; set; }
+    [Column("input_type")] 
+    public TimeoutSourceType InputType { get; set; } = TimeoutSourceType.Point;
     
     /// <summary>
-    /// The Digital Output item that receives the timeout status:
-    /// - Value "0" = Input item is being updated regularly
-    /// - Value "1" = Input item timeout exceeded
-    /// Must be ItemType.DigitalOutput.
+    /// Reference to the input source to monitor for timeout.
+    /// - If InputType = Point: GUID string of the MonitoringItem
+    /// - If InputType = GlobalVariable: Name of the Global Variable
     /// </summary>
-    [Column("output_item_id")] public Guid OutputItemId { get; set; }
+    [Column("input_reference")] 
+    public string InputReference { get; set; } = string.Empty;
     
     /// <summary>
-    /// Timeout duration in seconds. If the input item is not updated within this time,
-    /// the output item will be set to "1".
+    /// Type of the output source: Point or GlobalVariable
     /// </summary>
-    [Column("timeout")] public long Timeout { get; set; }
+    [Column("output_type")] 
+    public TimeoutSourceType OutputType { get; set; } = TimeoutSourceType.Point;
+    
+    /// <summary>
+    /// Reference to the output source that receives the timeout status:
+    /// - Value "0" = Input source is being updated regularly
+    /// - Value "1" = Input source timeout exceeded
+    /// - If OutputType = Point: GUID string of the MonitoringItem (must be DigitalOutput)
+    /// - If OutputType = GlobalVariable: Name of the Global Variable (Boolean or Float type)
+    /// </summary>
+    [Column("output_reference")] 
+    public string OutputReference { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Timeout duration in seconds. If the input source is not updated within this time,
+    /// the output source will be set to "1".
+    /// </summary>
+    [Column("timeout")] 
+    public long Timeout { get; set; }
 }
