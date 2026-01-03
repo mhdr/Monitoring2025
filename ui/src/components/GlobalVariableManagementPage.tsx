@@ -152,11 +152,71 @@ const GlobalVariableManagementPage: React.FC = () => {
   };
 
   /**
+   * Merge new global variables with existing ones to prevent flickering
+   * Only updates changed items, preserving array reference stability
+   */
+  const mergeGlobalVariables = useCallback((newVariables: GlobalVariable[]) => {
+    setGlobalVariables((prevVariables) => {
+      // If previous is empty or first load, just set the new data
+      if (prevVariables.length === 0) {
+        return newVariables;
+      }
+
+      // Create a map of previous variables by ID for quick lookup
+      const prevMap = new Map(prevVariables.map((v) => [v.id, v]));
+
+      // Check if we need to update at all
+      let hasChanges = prevVariables.length !== newVariables.length;
+
+      if (!hasChanges) {
+        // Check if any variable has actually changed
+        for (const newVar of newVariables) {
+          const prevVar = prevMap.get(newVar.id);
+          if (!prevVar || 
+              prevVar.currentValue !== newVar.currentValue ||
+              prevVar.lastUpdateTime !== newVar.lastUpdateTime ||
+              prevVar.name !== newVar.name ||
+              prevVar.description !== newVar.description ||
+              prevVar.isDisabled !== newVar.isDisabled ||
+              prevVar.variableType !== newVar.variableType) {
+            hasChanges = true;
+            break;
+          }
+        }
+      }
+
+      // If nothing changed, return the same reference to prevent re-render
+      if (!hasChanges) {
+        return prevVariables;
+      }
+
+      // Build new array, reusing unchanged objects to maintain reference equality
+      return newVariables.map((newVar) => {
+        const prevVar = prevMap.get(newVar.id);
+        if (prevVar &&
+            prevVar.currentValue === newVar.currentValue &&
+            prevVar.lastUpdateTime === newVar.lastUpdateTime &&
+            prevVar.name === newVar.name &&
+            prevVar.description === newVar.description &&
+            prevVar.isDisabled === newVar.isDisabled &&
+            prevVar.variableType === newVar.variableType) {
+          // Variable unchanged, reuse previous object reference
+          return prevVar;
+        }
+        // Variable changed, use new object
+        return newVar;
+      });
+    });
+  }, []);
+
+  /**
    * Fetch all global variable configurations
    */
-  const fetchGlobalVariables = useCallback(async () => {
+  const fetchGlobalVariables = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       setError(null);
 
       const response = await getGlobalVariables();
@@ -166,16 +226,18 @@ const GlobalVariableManagementPage: React.FC = () => {
         return;
       }
 
-      setGlobalVariables(response.globalVariables || []);
+      mergeGlobalVariables(response.globalVariables || []);
       logger.info('Global variables fetched successfully', { count: response.globalVariables?.length || 0 });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       logger.error('Failed to fetch global variables', err);
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, [mergeGlobalVariables]);
 
   // Fetch global variables on component mount
   useEffect(() => {
@@ -185,8 +247,9 @@ const GlobalVariableManagementPage: React.FC = () => {
   // Subscribe to SignalR real-time updates
   useEffect(() => {
     const handleGlobalVariablesUpdate = () => {
-      logger.info('Received global variables update notification - refreshing data');
-      fetchGlobalVariables();
+      logger.info('Received global variables update notification - refreshing data silently');
+      // Use silent mode to avoid loading spinner and flickering
+      fetchGlobalVariables(true);
     };
 
     signalRManager.onGlobalVariablesUpdate(handleGlobalVariablesUpdate);
@@ -274,6 +337,13 @@ const GlobalVariableManagementPage: React.FC = () => {
    */
   const columns: SyncfusionColumnDef[] = useMemo(() => {
     return [
+      {
+        field: 'id',
+        headerText: 'ID',
+        width: 0,
+        visible: false,
+        isPrimaryKey: true,
+      },
       {
         field: 'name',
         headerText: t('globalVariables.name'),
