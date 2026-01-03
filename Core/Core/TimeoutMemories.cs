@@ -143,7 +143,7 @@ public class TimeoutMemories
             var context = new DataContext();
 
             // Validate timeout memory exists
-            var existing = await context.TimeoutMemories.FindAsync(timeoutMemory.Id);
+            var existing = await context.TimeoutMemories.AsNoTracking().FirstOrDefaultAsync(t => t.Id == timeoutMemory.Id);
             if (existing == null)
             {
                 await context.DisposeAsync();

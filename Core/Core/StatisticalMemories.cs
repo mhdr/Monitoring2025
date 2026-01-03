@@ -247,7 +247,7 @@ public class StatisticalMemories
             var context = new DataContext();
 
             // Validate statistical memory exists
-            var existing = await context.StatisticalMemories.FindAsync(statisticalMemory.Id);
+            var existing = await context.StatisticalMemories.AsNoTracking().FirstOrDefaultAsync(s => s.Id == statisticalMemory.Id);
             if (existing == null)
             {
                 await context.DisposeAsync();

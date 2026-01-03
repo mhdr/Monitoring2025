@@ -194,7 +194,7 @@ public class MinMaxSelectorMemories
             var context = new DataContext();
 
             // Validate memory exists
-            var existing = await context.MinMaxSelectorMemories.FindAsync(memory.Id);
+            var existing = await context.MinMaxSelectorMemories.AsNoTracking().FirstOrDefaultAsync(m => m.Id == memory.Id);
             if (existing == null)
             {
                 await context.DisposeAsync();

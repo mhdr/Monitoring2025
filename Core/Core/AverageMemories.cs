@@ -201,7 +201,7 @@ public class AverageMemories
             var context = new DataContext();
 
             // Validate average memory exists
-            var existing = await context.AverageMemories.FindAsync(averageMemory.Id);
+            var existing = await context.AverageMemories.AsNoTracking().FirstOrDefaultAsync(a => a.Id == averageMemory.Id);
             if (existing == null)
             {
                 await context.DisposeAsync();

@@ -361,7 +361,7 @@ public class PIDMemories
             var context = new DataContext();
 
             // Validate PID memory exists
-            var existing = await context.PIDMemories.FindAsync(pidMemory.Id);
+            var existing = await context.PIDMemories.AsNoTracking().FirstOrDefaultAsync(p => p.Id == pidMemory.Id);
             if (existing == null)
             {
                 await context.DisposeAsync();
