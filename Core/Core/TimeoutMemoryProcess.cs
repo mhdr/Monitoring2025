@@ -171,17 +171,18 @@ public class TimeoutMemoryProcess
                     }
                 }
 
-                if (inputValue == null)
-                {
-                    continue; // Skip if input not found
-                }
-
                 DateTimeOffset currentTimeUtc = DateTimeOffset.UtcNow;
                 long epochTime = currentTimeUtc.ToUnixTimeSeconds();
 
                 // Check if input has timed out
                 string outputValue;
-                if (epochTime - inputTime > memory.Timeout)
+                
+                // If input has never been updated (null value or zero timestamp), treat as timeout
+                if (inputValue == null || inputTime == 0)
+                {
+                    outputValue = "1";  // Input never updated = timeout exceeded
+                }
+                else if (epochTime - inputTime > memory.Timeout)
                 {
                     outputValue = "1";  // Timeout exceeded
                 }
