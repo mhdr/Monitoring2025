@@ -207,72 +207,60 @@ public class PIDMemories
                 return (false, null, "Input and output items must be different");
             }
 
-            // Validate SetPointId if provided
-            if (pidMemory.SetPointId.HasValue && pidMemory.SetPointId.Value != Guid.Empty)
+            // Validate SetPointId (required)
+            var setPointItem = await context.MonitoringItems.FindAsync(pidMemory.SetPointId);
+            if (setPointItem == null)
             {
-                var setPointItem = await context.MonitoringItems.FindAsync(pidMemory.SetPointId.Value);
-                if (setPointItem == null)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "SetPoint item not found");
-                }
-                
-                if (setPointItem.ItemType != ItemType.AnalogInput && setPointItem.ItemType != ItemType.AnalogOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "SetPoint item must be AnalogInput or AnalogOutput");
-                }
+                await context.DisposeAsync();
+                return (false, null, "SetPoint item not found");
+            }
+            
+            if (setPointItem.ItemType != ItemType.AnalogInput && setPointItem.ItemType != ItemType.AnalogOutput)
+            {
+                await context.DisposeAsync();
+                return (false, null, "SetPoint item must be AnalogInput or AnalogOutput");
             }
 
-            // Validate IsAutoId if provided
-            if (pidMemory.IsAutoId.HasValue && pidMemory.IsAutoId.Value != Guid.Empty)
+            // Validate IsAutoId (required)
+            var isAutoItem = await context.MonitoringItems.FindAsync(pidMemory.IsAutoId);
+            if (isAutoItem == null)
             {
-                var isAutoItem = await context.MonitoringItems.FindAsync(pidMemory.IsAutoId.Value);
-                if (isAutoItem == null)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "IsAuto item not found");
-                }
-                
-                if (isAutoItem.ItemType != ItemType.DigitalInput && isAutoItem.ItemType != ItemType.DigitalOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "IsAuto item must be DigitalInput or DigitalOutput");
-                }
+                await context.DisposeAsync();
+                return (false, null, "IsAuto item not found");
+            }
+            
+            if (isAutoItem.ItemType != ItemType.DigitalInput && isAutoItem.ItemType != ItemType.DigitalOutput)
+            {
+                await context.DisposeAsync();
+                return (false, null, "IsAuto item must be DigitalInput or DigitalOutput");
             }
 
-            // Validate ManualValueId if provided
-            if (pidMemory.ManualValueId.HasValue && pidMemory.ManualValueId.Value != Guid.Empty)
+            // Validate ManualValueId (required)
+            var manualValueItem = await context.MonitoringItems.FindAsync(pidMemory.ManualValueId);
+            if (manualValueItem == null)
             {
-                var manualValueItem = await context.MonitoringItems.FindAsync(pidMemory.ManualValueId.Value);
-                if (manualValueItem == null)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "ManualValue item not found");
-                }
-                
-                if (manualValueItem.ItemType != ItemType.AnalogInput && manualValueItem.ItemType != ItemType.AnalogOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "ManualValue item must be AnalogInput or AnalogOutput");
-                }
+                await context.DisposeAsync();
+                return (false, null, "ManualValue item not found");
+            }
+            
+            if (manualValueItem.ItemType != ItemType.AnalogInput && manualValueItem.ItemType != ItemType.AnalogOutput)
+            {
+                await context.DisposeAsync();
+                return (false, null, "ManualValue item must be AnalogInput or AnalogOutput");
             }
 
-            // Validate ReverseOutputId if provided
-            if (pidMemory.ReverseOutputId.HasValue && pidMemory.ReverseOutputId.Value != Guid.Empty)
+            // Validate ReverseOutputId (required)
+            var reverseOutputItem = await context.MonitoringItems.FindAsync(pidMemory.ReverseOutputId);
+            if (reverseOutputItem == null)
             {
-                var reverseOutputItem = await context.MonitoringItems.FindAsync(pidMemory.ReverseOutputId.Value);
-                if (reverseOutputItem == null)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "ReverseOutput item not found");
-                }
-                
-                if (reverseOutputItem.ItemType != ItemType.DigitalInput && reverseOutputItem.ItemType != ItemType.DigitalOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "ReverseOutput item must be DigitalInput or DigitalOutput");
-                }
+                await context.DisposeAsync();
+                return (false, null, "ReverseOutput item not found");
+            }
+            
+            if (reverseOutputItem.ItemType != ItemType.DigitalInput && reverseOutputItem.ItemType != ItemType.DigitalOutput)
+            {
+                await context.DisposeAsync();
+                return (false, null, "ReverseOutput item must be DigitalInput or DigitalOutput");
             }
 
             // Validate DigitalOutputItemId if provided
@@ -405,72 +393,60 @@ public class PIDMemories
                 return (false, "Input and output items must be different");
             }
 
-            // Validate SetPointId if provided
-            if (pidMemory.SetPointId.HasValue && pidMemory.SetPointId.Value != Guid.Empty)
+            // Validate SetPointId (required)
+            var setPointItem = await context.MonitoringItems.FindAsync(pidMemory.SetPointId);
+            if (setPointItem == null)
             {
-                var setPointItem = await context.MonitoringItems.FindAsync(pidMemory.SetPointId.Value);
-                if (setPointItem == null)
-                {
-                    await context.DisposeAsync();
-                    return (false, "SetPoint item not found");
-                }
-                
-                if (setPointItem.ItemType != ItemType.AnalogInput && setPointItem.ItemType != ItemType.AnalogOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, "SetPoint item must be AnalogInput or AnalogOutput");
-                }
+                await context.DisposeAsync();
+                return (false, "SetPoint item not found");
+            }
+            
+            if (setPointItem.ItemType != ItemType.AnalogInput && setPointItem.ItemType != ItemType.AnalogOutput)
+            {
+                await context.DisposeAsync();
+                return (false, "SetPoint item must be AnalogInput or AnalogOutput");
             }
 
-            // Validate IsAutoId if provided
-            if (pidMemory.IsAutoId.HasValue && pidMemory.IsAutoId.Value != Guid.Empty)
+            // Validate IsAutoId (required)
+            var isAutoItem = await context.MonitoringItems.FindAsync(pidMemory.IsAutoId);
+            if (isAutoItem == null)
             {
-                var isAutoItem = await context.MonitoringItems.FindAsync(pidMemory.IsAutoId.Value);
-                if (isAutoItem == null)
-                {
-                    await context.DisposeAsync();
-                    return (false, "IsAuto item not found");
-                }
-                
-                if (isAutoItem.ItemType != ItemType.DigitalInput && isAutoItem.ItemType != ItemType.DigitalOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, "IsAuto item must be DigitalInput or DigitalOutput");
-                }
+                await context.DisposeAsync();
+                return (false, "IsAuto item not found");
+            }
+            
+            if (isAutoItem.ItemType != ItemType.DigitalInput && isAutoItem.ItemType != ItemType.DigitalOutput)
+            {
+                await context.DisposeAsync();
+                return (false, "IsAuto item must be DigitalInput or DigitalOutput");
             }
 
-            // Validate ManualValueId if provided
-            if (pidMemory.ManualValueId.HasValue && pidMemory.ManualValueId.Value != Guid.Empty)
+            // Validate ManualValueId (required)
+            var manualValueItem = await context.MonitoringItems.FindAsync(pidMemory.ManualValueId);
+            if (manualValueItem == null)
             {
-                var manualValueItem = await context.MonitoringItems.FindAsync(pidMemory.ManualValueId.Value);
-                if (manualValueItem == null)
-                {
-                    await context.DisposeAsync();
-                    return (false, "ManualValue item not found");
-                }
-                
-                if (manualValueItem.ItemType != ItemType.AnalogInput && manualValueItem.ItemType != ItemType.AnalogOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, "ManualValue item must be AnalogInput or AnalogOutput");
-                }
+                await context.DisposeAsync();
+                return (false, "ManualValue item not found");
+            }
+            
+            if (manualValueItem.ItemType != ItemType.AnalogInput && manualValueItem.ItemType != ItemType.AnalogOutput)
+            {
+                await context.DisposeAsync();
+                return (false, "ManualValue item must be AnalogInput or AnalogOutput");
             }
 
-            // Validate ReverseOutputId if provided
-            if (pidMemory.ReverseOutputId.HasValue && pidMemory.ReverseOutputId.Value != Guid.Empty)
+            // Validate ReverseOutputId (required)
+            var reverseOutputItem = await context.MonitoringItems.FindAsync(pidMemory.ReverseOutputId);
+            if (reverseOutputItem == null)
             {
-                var reverseOutputItem = await context.MonitoringItems.FindAsync(pidMemory.ReverseOutputId.Value);
-                if (reverseOutputItem == null)
-                {
-                    await context.DisposeAsync();
-                    return (false, "ReverseOutput item not found");
-                }
-                
-                if (reverseOutputItem.ItemType != ItemType.DigitalInput && reverseOutputItem.ItemType != ItemType.DigitalOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, "ReverseOutput item must be DigitalInput or DigitalOutput");
-                }
+                await context.DisposeAsync();
+                return (false, "ReverseOutput item not found");
+            }
+            
+            if (reverseOutputItem.ItemType != ItemType.DigitalInput && reverseOutputItem.ItemType != ItemType.DigitalOutput)
+            {
+                await context.DisposeAsync();
+                return (false, "ReverseOutput item must be DigitalInput or DigitalOutput");
             }
 
             // Validate DigitalOutputItemId if provided

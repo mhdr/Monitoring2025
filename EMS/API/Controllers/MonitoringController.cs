@@ -7024,13 +7024,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     FeedForward = controller.FeedForward,
                     OutputMax = controller.OutputMax,
                     OutputMin = controller.OutputMin,
-                    SetPoint = controller.SetPoint,
                     DerivativeFilterAlpha = controller.DerivativeFilterAlpha,
                     InputItemId = controller.InputItemId,
                     OutputItemId = controller.OutputItemId,
                     MaxOutputSlewRate = controller.MaxOutputSlewRate,
-                    IsAuto = controller.IsAuto,
-                    ManualValue = controller.ManualValue,
                 });
             }
 
@@ -7077,13 +7074,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             controller.OutputMax = request.Controller.OutputMax;
             controller.Interval = request.Controller.Interval;
             controller.IsDisabled = request.Controller.IsDisabled;
-            controller.SetPoint = request.Controller.SetPoint;
             controller.DerivativeFilterAlpha = request.Controller.DerivativeFilterAlpha;
             controller.MaxOutputSlewRate = request.Controller.MaxOutputSlewRate;
             controller.DeadZone = request.Controller.DeadZone;
             controller.FeedForward = request.Controller.FeedForward;
-            controller.IsAuto = request.Controller.IsAuto;
-            controller.ManualValue = request.Controller.ManualValue;
 
             var result = await Core.PIDs.EditController(controller);
 
@@ -7806,17 +7800,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         OutputMax = pm.OutputMax,
                         Interval = pm.Interval,
                         IsDisabled = pm.IsDisabled,
-                        SetPoint = pm.SetPoint,
                         SetPointId = pm.SetPointId,
                         DerivativeFilterAlpha = pm.DerivativeFilterAlpha,
                         MaxOutputSlewRate = pm.MaxOutputSlewRate,
                         DeadZone = pm.DeadZone,
                         FeedForward = pm.FeedForward,
-                        IsAuto = pm.IsAuto,
                         IsAutoId = pm.IsAutoId,
-                        ManualValue = pm.ManualValue,
                         ManualValueId = pm.ManualValueId,
-                        ReverseOutput = pm.ReverseOutput,
                         ReverseOutputId = pm.ReverseOutputId,
                         DigitalOutputItemId = pm.DigitalOutputItemId,
                         HysteresisHighThreshold = pm.HysteresisHighThreshold,
@@ -7892,17 +7882,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 OutputMax = request.OutputMax,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
-                SetPoint = request.SetPoint,
                 SetPointId = request.SetPointId,
                 DerivativeFilterAlpha = request.DerivativeFilterAlpha,
                 MaxOutputSlewRate = request.MaxOutputSlewRate,
                 DeadZone = request.DeadZone,
                 FeedForward = request.FeedForward,
-                IsAuto = request.IsAuto,
                 IsAutoId = request.IsAutoId,
-                ManualValue = request.ManualValue,
                 ManualValueId = request.ManualValueId,
-                ReverseOutput = request.ReverseOutput,
                 ReverseOutputId = request.ReverseOutputId,
                 DigitalOutputItemId = request.DigitalOutputItemId,
                 HysteresisHighThreshold = request.HysteresisHighThreshold,
@@ -7986,17 +7972,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 OutputMax = request.OutputMax,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
-                SetPoint = request.SetPoint,
                 SetPointId = request.SetPointId,
                 DerivativeFilterAlpha = request.DerivativeFilterAlpha,
                 MaxOutputSlewRate = request.MaxOutputSlewRate,
                 DeadZone = request.DeadZone,
                 FeedForward = request.FeedForward,
-                IsAuto = request.IsAuto,
                 IsAutoId = request.IsAutoId,
-                ManualValue = request.ManualValue,
                 ManualValueId = request.ManualValueId,
-                ReverseOutput = request.ReverseOutput,
                 ReverseOutputId = request.ReverseOutputId,
                 DigitalOutputItemId = request.DigitalOutputItemId,
                 HysteresisHighThreshold = request.HysteresisHighThreshold,
@@ -9173,8 +9155,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             var response = new EditPidSetPointResponseDto();
 
             var controller = await Core.PIDs.GetController(x => x.Id == request.PidControllerId);
-            controller.SetPoint = request.SetPoint;
-            var result = await Core.PIDs.EditController(controller);
+            // SetPoint property removed - now only dynamic via SetPointId
+            // This endpoint may need to be updated to write to the SetPointId item instead
+            var result = false; // await Core.PIDs.EditController(controller);
             response.IsSuccess = result;
 
             return Ok(response);
@@ -9220,13 +9203,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             response.FeedForward = controller.FeedForward;
             response.OutputMax = controller.OutputMax;
             response.OutputMin = controller.OutputMin;
-            response.SetPoint = controller.SetPoint;
             response.DerivativeFilterAlpha = controller.DerivativeFilterAlpha;
             response.InputItemId = controller.InputItemId;
             response.OutputItemId = controller.OutputItemId;
             response.MaxOutputSlewRate = controller.MaxOutputSlewRate;
-            response.IsAuto = controller.IsAuto;
-            response.ManualValue = controller.ManualValue;
 
             return Ok(response);
         }

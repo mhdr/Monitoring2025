@@ -152,24 +152,11 @@ public class PIDTuningProcess
             }
         }
 
-        // Determine setpoint
-        double setpoint;
-        if (pidMemory.SetPoint.HasValue)
+        // Determine setpoint from dynamic item (required)
+        var setPointItem = await Points.GetFinalItem(pidMemory.SetPointId.ToString());
+        if (setPointItem == null || !double.TryParse(setPointItem.Value, out var setpoint))
         {
-            setpoint = pidMemory.SetPoint.Value;
-        }
-        else if (pidMemory.SetPointId.HasValue)
-        {
-            var setPointItem = await Points.GetFinalItem(pidMemory.SetPointId.Value.ToString());
-            if (setPointItem == null || !double.TryParse(setPointItem.Value, out setpoint))
-            {
-                await FailSession(session, "Cannot read setpoint value");
-                return;
-            }
-        }
-        else
-        {
-            await FailSession(session, "No setpoint configured for PID");
+            await FailSession(session, "Cannot read setpoint value");
             return;
         }
 

@@ -55,18 +55,10 @@ interface FormData {
   outputMax: number;
   interval: number;
   isDisabled: boolean;
-  // Dual-mode fields
-  useSetPointItem: boolean;
-  setPoint: number;
+  // Required item reference fields
   setPointId: string;
-  useIsAutoItem: boolean;
-  isAuto: boolean;
   isAutoId: string;
-  useManualValueItem: boolean;
-  manualValue: number;
   manualValueId: string;
-  useReverseOutputItem: boolean;
-  reverseOutput: boolean;
   reverseOutputId: string;
   // Hysteresis Control
   useDigitalOutputItem: boolean;
@@ -166,17 +158,9 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
     outputMax: 100.0,
     interval: 10,
     isDisabled: false,
-    useSetPointItem: false,
-    setPoint: 0.0,
     setPointId: '',
-    useIsAutoItem: false,
-    isAuto: true,
     isAutoId: '',
-    useManualValueItem: false,
-    manualValue: 0.0,
     manualValueId: '',
-    useReverseOutputItem: false,
-    reverseOutput: false,
     reverseOutputId: '',
     useDigitalOutputItem: false,
     digitalOutputItemId: '',
@@ -210,17 +194,9 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           outputMax: pidMemory.outputMax,
           interval: pidMemory.interval,
           isDisabled: pidMemory.isDisabled,
-          useSetPointItem: !!pidMemory.setPointId,
-          setPoint: pidMemory.setPoint ?? 0.0,
           setPointId: pidMemory.setPointId ?? '',
-          useIsAutoItem: !!pidMemory.isAutoId,
-          isAuto: pidMemory.isAuto,
           isAutoId: pidMemory.isAutoId ?? '',
-          useManualValueItem: !!pidMemory.manualValueId,
-          manualValue: pidMemory.manualValue ?? 0.0,
           manualValueId: pidMemory.manualValueId ?? '',
-          useReverseOutputItem: !!pidMemory.reverseOutputId,
-          reverseOutput: pidMemory.reverseOutput,
           reverseOutputId: pidMemory.reverseOutputId ?? '',
           useDigitalOutputItem: !!pidMemory.digitalOutputItemId,
           digitalOutputItemId: pidMemory.digitalOutputItemId ?? '',
@@ -247,17 +223,9 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           outputMax: 100.0,
           interval: 10,
           isDisabled: false,
-          useSetPointItem: false,
-          setPoint: 0.0,
           setPointId: '',
-          useIsAutoItem: false,
-          isAuto: true,
           isAutoId: '',
-          useManualValueItem: false,
-          manualValue: 0.0,
           manualValueId: '',
-          useReverseOutputItem: false,
-          reverseOutput: false,
           reverseOutputId: '',
           useDigitalOutputItem: false,
           digitalOutputItemId: '',
@@ -364,12 +332,18 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
       errors.hysteresisHighThreshold = t('pidMemory.validation.hysteresisHighOutOfRange');
     }
 
+    // Required ID fields validation
+    if (!formData.setPointId) errors.setPointId = t('pidMemory.validation.setPointIdRequired');
+    if (!formData.isAutoId) errors.isAutoId = t('pidMemory.validation.isAutoIdRequired');
+    if (!formData.manualValueId) errors.manualValueId = t('pidMemory.validation.manualValueIdRequired');
+    if (!formData.reverseOutputId) errors.reverseOutputId = t('pidMemory.validation.reverseOutputIdRequired');
+
     // Cascade validation
     if (formData.useParentPID) {
       if (!formData.parentPIDId) {
         errors.parentPIDId = t('pidMemory.validation.parentPIDRequired');
       }
-      if (!formData.useSetPointItem || !formData.setPointId) {
+      if (!formData.setPointId) {
         errors.setPointId = t('pidMemory.validation.cascadeRequiresSetpointItem');
       }
     }
@@ -401,18 +375,14 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           outputMax: formData.outputMax,
           interval: formData.interval,
           isDisabled: formData.isDisabled,
-          setPoint: formData.useSetPointItem ? null : formData.setPoint,
-          setPointId: formData.useSetPointItem ? (formData.setPointId || null) : null,
+          setPointId: formData.setPointId,
+          isAutoId: formData.isAutoId,
+          manualValueId: formData.manualValueId,
+          reverseOutputId: formData.reverseOutputId,
           derivativeFilterAlpha: formData.derivativeFilterAlpha,
           maxOutputSlewRate: formData.maxOutputSlewRate,
           deadZone: formData.deadZone,
           feedForward: formData.feedForward,
-          isAuto: formData.isAuto,
-          isAutoId: formData.useIsAutoItem ? (formData.isAutoId || null) : null,
-          manualValue: formData.useManualValueItem ? null : formData.manualValue,
-          manualValueId: formData.useManualValueItem ? (formData.manualValueId || null) : null,
-          reverseOutput: formData.reverseOutput,
-          reverseOutputId: formData.useReverseOutputItem ? (formData.reverseOutputId || null) : null,
           digitalOutputItemId: formData.useDigitalOutputItem ? (formData.digitalOutputItemId || null) : null,
           hysteresisHighThreshold: formData.hysteresisHighThreshold,
           hysteresisLowThreshold: formData.hysteresisLowThreshold,
@@ -441,18 +411,14 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           outputMax: formData.outputMax,
           interval: formData.interval,
           isDisabled: formData.isDisabled,
-          setPoint: formData.useSetPointItem ? null : formData.setPoint,
-          setPointId: formData.useSetPointItem ? (formData.setPointId || null) : null,
+          setPointId: formData.setPointId,
+          isAutoId: formData.isAutoId,
+          manualValueId: formData.manualValueId,
+          reverseOutputId: formData.reverseOutputId,
           derivativeFilterAlpha: formData.derivativeFilterAlpha,
           maxOutputSlewRate: formData.maxOutputSlewRate,
           deadZone: formData.deadZone,
           feedForward: formData.feedForward,
-          isAuto: formData.isAuto,
-          isAutoId: formData.useIsAutoItem ? (formData.isAutoId || null) : null,
-          manualValue: formData.useManualValueItem ? null : formData.manualValue,
-          manualValueId: formData.useManualValueItem ? (formData.manualValueId || null) : null,
-          reverseOutput: formData.reverseOutput,
-          reverseOutputId: formData.useReverseOutputItem ? (formData.reverseOutputId || null) : null,
           digitalOutputItemId: formData.useDigitalOutputItem ? (formData.digitalOutputItemId || null) : null,
           hysteresisHighThreshold: formData.hysteresisHighThreshold,
           hysteresisLowThreshold: formData.hysteresisLowThreshold,
@@ -697,7 +663,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   </Box>
                 </Box>
 
-                {/* SetPoint - Dual Mode */}
+                {/* SetPoint - Required Item Reference */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     {t('pidMemory.setpointConfiguration')}
@@ -711,65 +677,39 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                   </IconButton>
                 </Box>
-                <Box>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.useSetPointItem}
-                        onChange={(e) => handleFieldChange('useSetPointItem', e.target.checked)}
-                        disabled={isSaving}
-                        data-id-ref="pid-memory-use-setpoint-item-switch"
-                      />
-                    }
-                    label={t('pidMemory.useSetPointItem')}
-                    data-id-ref="pid-memory-use-setpoint-item-field"
-                  />
-                  {formData.useSetPointItem ? (
-                    <Autocomplete
-                      options={analogItems}
-                      getOptionLabel={getItemLabel}
-                      value={selectedSetPointItem}
-                      onChange={(_, newValue) => handleFieldChange('setPointId', newValue?.id || '')}
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-setpoint-item-select"
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label={t('pidMemory.setPointItem')}
-                          helperText={t('pidMemory.setPointItemHelp')}
-                        />
-                      )}
-                      renderOption={(props, option) => (
-                        <Box component="li" {...props} key={option.id}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                              {getItemLabel(option)}
-                            </Typography>
-                            <Chip
-                              label={getItemTypeLabel(option.itemType, t)}
-                              size="small"
-                              color={getItemTypeColor(option.itemType)}
-                              sx={{ height: 20, fontSize: '0.7rem' }}
-                            />
-                          </Box>
-                        </Box>
-                      )}
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
-                    />
-                  ) : (
+                <Autocomplete
+                  options={analogItems}
+                  getOptionLabel={getItemLabel}
+                  value={selectedSetPointItem}
+                  onChange={(_, newValue) => handleFieldChange('setPointId', newValue?.id || '')}
+                  disabled={isSaving}
+                  data-id-ref="pid-memory-setpoint-item-select"
+                  renderInput={(params) => (
                     <TextField
-                      fullWidth
-                      label={t('pidMemory.setPoint')}
-                      type="number"
-                      value={formData.setPoint}
-                      onChange={(e) => handleFieldChange('setPoint', parseFloat(e.target.value) || 0)}
-                      disabled={isSaving}
-                      helperText={t('pidMemory.setPointHelp')}
-                      inputProps={{ step: 0.1 }}
-                      data-id-ref="pid-memory-setpoint-input"
+                      {...params}
+                      label={t('pidMemory.setPointItem')}
+                      required
+                      error={!!formErrors.setPointId}
+                      helperText={formErrors.setPointId || t('pidMemory.setPointItemHelp')}
                     />
                   )}
-                </Box>
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {getItemLabel(option)}
+                        </Typography>
+                        <Chip
+                          label={getItemTypeLabel(option.itemType, t)}
+                          size="small"
+                          color={getItemTypeColor(option.itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
               </Box>
             </CardContent>
           </Collapse>
@@ -914,7 +854,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   </IconButton>
                 </Box>
 
-                {/* IsAuto - Dual Mode */}
+                {/* IsAuto - Required Item Reference */}
                 <Divider sx={{ my: 1 }} />
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Typography variant="subtitle2" color="text.secondary">
@@ -929,68 +869,41 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                   </IconButton>
                 </Box>
-                <Box>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.useIsAutoItem}
-                        onChange={(e) => handleFieldChange('useIsAutoItem', e.target.checked)}
-                        disabled={isSaving}
-                        data-id-ref="pid-memory-use-is-auto-item-switch"
-                      />
-                    }
-                    label={t('pidMemory.useIsAutoItem')}
-                    data-id-ref="pid-memory-use-is-auto-item-field"
-                  />
-                  {formData.useIsAutoItem ? (
-                    <Autocomplete
-                      options={digitalItems}
-                      getOptionLabel={getItemLabel}
-                      value={selectedIsAutoItem}
-                      onChange={(_, newValue) => handleFieldChange('isAutoId', newValue?.id || '')}
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-is-auto-item-select"
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label={t('pidMemory.isAutoItem')}
-                          helperText={t('pidMemory.isAutoItemHelp')}
-                        />
-                      )}
-                      renderOption={(props, option) => (
-                        <Box component="li" {...props} key={option.id}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                              {getItemLabel(option)}
-                            </Typography>
-                            <Chip
-                              label={getItemTypeLabel(option.itemType, t)}
-                              size="small"
-                              color={getItemTypeColor(option.itemType)}
-                              sx={{ height: 20, fontSize: '0.7rem' }}
-                            />
-                          </Box>
-                        </Box>
-                      )}
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
-                    />
-                  ) : (
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={formData.isAuto}
-                          onChange={(e) => handleFieldChange('isAuto', e.target.checked)}
-                          disabled={isSaving}
-                          data-id-ref="pid-memory-is-auto-switch"
-                        />
-                      }
-                      label={t('pidMemory.isAuto')}
-                      data-id-ref="pid-memory-is-auto-field"
+                <Autocomplete
+                  options={digitalItems}
+                  getOptionLabel={getItemLabel}
+                  value={selectedIsAutoItem}
+                  onChange={(_, newValue) => handleFieldChange('isAutoId', newValue?.id || '')}
+                  disabled={isSaving}
+                  data-id-ref="pid-memory-is-auto-item-select"
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('pidMemory.isAutoItem')}
+                      required
+                      error={!!formErrors.isAutoId}
+                      helperText={formErrors.isAutoId || t('pidMemory.isAutoItemHelp')}
                     />
                   )}
-                </Box>
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {getItemLabel(option)}
+                        </Typography>
+                        <Chip
+                          label={getItemTypeLabel(option.itemType, t)}
+                          size="small"
+                          color={getItemTypeColor(option.itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
 
-                {/* ManualValue - Dual Mode */}
+                {/* ManualValue - Required Item Reference */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     {t('pidMemory.manualModeConfiguration')}
@@ -1004,65 +917,39 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                   </IconButton>
                 </Box>
-                <Box>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.useManualValueItem}
-                        onChange={(e) => handleFieldChange('useManualValueItem', e.target.checked)}
-                        disabled={isSaving}
-                        data-id-ref="pid-memory-use-manual-value-item-switch"
-                      />
-                    }
-                    label={t('pidMemory.useManualValueItem')}
-                    data-id-ref="pid-memory-use-manual-value-item-field"
-                  />
-                  {formData.useManualValueItem ? (
-                    <Autocomplete
-                      options={analogItems}
-                      getOptionLabel={getItemLabel}
-                      value={selectedManualValueItem}
-                      onChange={(_, newValue) => handleFieldChange('manualValueId', newValue?.id || '')}
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-manual-value-item-select"
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label={t('pidMemory.manualValueItem')}
-                          helperText={t('pidMemory.manualValueItemHelp')}
-                        />
-                      )}
-                      renderOption={(props, option) => (
-                        <Box component="li" {...props} key={option.id}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                              {getItemLabel(option)}
-                            </Typography>
-                            <Chip
-                              label={getItemTypeLabel(option.itemType, t)}
-                              size="small"
-                              color={getItemTypeColor(option.itemType)}
-                              sx={{ height: 20, fontSize: '0.7rem' }}
-                            />
-                          </Box>
-                        </Box>
-                      )}
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
-                    />
-                  ) : (
+                <Autocomplete
+                  options={analogItems}
+                  getOptionLabel={getItemLabel}
+                  value={selectedManualValueItem}
+                  onChange={(_, newValue) => handleFieldChange('manualValueId', newValue?.id || '')}
+                  disabled={isSaving}
+                  data-id-ref="pid-memory-manual-value-item-select"
+                  renderInput={(params) => (
                     <TextField
-                      fullWidth
-                      label={t('pidMemory.manualValue')}
-                      type="number"
-                      value={formData.manualValue}
-                      onChange={(e) => handleFieldChange('manualValue', parseFloat(e.target.value) || 0)}
-                      disabled={isSaving}
-                      helperText={t('pidMemory.manualValueHelp')}
-                      inputProps={{ step: 0.1 }}
-                      data-id-ref="pid-memory-manual-value-input"
+                      {...params}
+                      label={t('pidMemory.manualValueItem')}
+                      required
+                      error={!!formErrors.manualValueId}
+                      helperText={formErrors.manualValueId || t('pidMemory.manualValueItemHelp')}
                     />
                   )}
-                </Box>
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {getItemLabel(option)}
+                        </Typography>
+                        <Chip
+                          label={getItemTypeLabel(option.itemType, t)}
+                          size="small"
+                          color={getItemTypeColor(option.itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
               </Box>
             </CardContent>
           </Collapse>
@@ -1162,7 +1049,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   />
                 </Box>
 
-                {/* ReverseOutput - Dual Mode */}
+                {/* ReverseOutput - Required Item Reference */}
                 <Divider sx={{ my: 1 }} />
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Typography variant="subtitle2" color="text.secondary">
@@ -1177,66 +1064,39 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                   </IconButton>
                 </Box>
-                <Box>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.useReverseOutputItem}
-                        onChange={(e) => handleFieldChange('useReverseOutputItem', e.target.checked)}
-                        disabled={isSaving}
-                        data-id-ref="pid-memory-use-reverse-output-item-switch"
-                      />
-                    }
-                    label={t('pidMemory.useReverseOutputItem')}
-                    data-id-ref="pid-memory-use-reverse-output-item-field"
-                  />
-                  {formData.useReverseOutputItem ? (
-                    <Autocomplete
-                      options={digitalItems}
-                      getOptionLabel={getItemLabel}
-                      value={selectedReverseOutputItem}
-                      onChange={(_, newValue) => handleFieldChange('reverseOutputId', newValue?.id || '')}
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-reverse-output-item-select"
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label={t('pidMemory.reverseOutputItem')}
-                          helperText={t('pidMemory.reverseOutputItemHelp')}
-                        />
-                      )}
-                      renderOption={(props, option) => (
-                        <Box component="li" {...props} key={option.id}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                              {getItemLabel(option)}
-                            </Typography>
-                            <Chip
-                              label={getItemTypeLabel(option.itemType, t)}
-                              size="small"
-                              color={getItemTypeColor(option.itemType)}
-                              sx={{ height: 20, fontSize: '0.7rem' }}
-                            />
-                          </Box>
-                        </Box>
-                      )}
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
-                    />
-                  ) : (
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={formData.reverseOutput}
-                          onChange={(e) => handleFieldChange('reverseOutput', e.target.checked)}
-                          disabled={isSaving}
-                          data-id-ref="pid-memory-reverse-output-switch"
-                        />
-                      }
-                      label={t('pidMemory.reverseOutput')}
-                      data-id-ref="pid-memory-reverse-output-field"
+                <Autocomplete
+                  options={digitalItems}
+                  getOptionLabel={getItemLabel}
+                  value={selectedReverseOutputItem}
+                  onChange={(_, newValue) => handleFieldChange('reverseOutputId', newValue?.id || '')}
+                  disabled={isSaving}
+                  data-id-ref="pid-memory-reverse-output-item-select"
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('pidMemory.reverseOutputItem')}
+                      required
+                      error={!!formErrors.reverseOutputId}
+                      helperText={formErrors.reverseOutputId || t('pidMemory.reverseOutputItemHelp')}
                     />
                   )}
-                </Box>
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {getItemLabel(option)}
+                        </Typography>
+                        <Chip
+                          label={getItemTypeLabel(option.itemType, t)}
+                          size="small"
+                          color={getItemTypeColor(option.itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
               </Box>
             </CardContent>
           </Collapse>

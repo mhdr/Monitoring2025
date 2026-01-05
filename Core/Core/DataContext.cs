@@ -271,10 +271,6 @@ public class DataContext : DbContext
             .Property(e => e.ShouldScale)
             .HasDefaultValue(ShouldScaleType.Off)
             .HasSentinel((ShouldScaleType)0);
-
-        modelBuilder.Entity<PIDMemory>()
-            .Property(e => e.IsAuto)
-            .HasDefaultValue(true);
         
         modelBuilder.Entity<MonitoringItem>()
             .Property(e => e.InterfaceType)
@@ -285,10 +281,7 @@ public class DataContext : DbContext
             .HasDefaultValue(false);
         
         modelBuilder.Entity<PIDMemory>()
-            .Property(e => e.ReverseOutput)
-            .HasDefaultValue(false);
-        
-        modelBuilder.Entity<AverageMemory>()
+
             .Property(e => e.IsDisabled)
             .HasDefaultValue(false);
         

@@ -73,14 +73,9 @@ public class GetPIDMemoriesResponseDto
         public bool IsDisabled { get; set; }
 
         /// <summary>
-        /// Static setpoint value
-        /// </summary>
-        public double? SetPoint { get; set; }
-
-        /// <summary>
         /// ID of monitoring item for dynamic setpoint (AnalogInput or AnalogOutput)
         /// </summary>
-        public Guid? SetPointId { get; set; }
+        public Guid SetPointId { get; set; }
 
         /// <summary>
         /// Derivative filter alpha (0-1)
@@ -103,34 +98,19 @@ public class GetPIDMemoriesResponseDto
         public double FeedForward { get; set; }
 
         /// <summary>
-        /// Static auto/manual mode flag
-        /// </summary>
-        public bool IsAuto { get; set; }
-
-        /// <summary>
         /// ID of monitoring item for dynamic auto/manual mode (DigitalInput or DigitalOutput)
         /// </summary>
-        public Guid? IsAutoId { get; set; }
-
-        /// <summary>
-        /// Static manual mode output value
-        /// </summary>
-        public double? ManualValue { get; set; }
+        public Guid IsAutoId { get; set; }
 
         /// <summary>
         /// ID of monitoring item for dynamic manual value (AnalogInput or AnalogOutput)
         /// </summary>
-        public Guid? ManualValueId { get; set; }
-
-        /// <summary>
-        /// Static reverse output flag
-        /// </summary>
-        public bool ReverseOutput { get; set; }
+        public Guid ManualValueId { get; set; }
 
         /// <summary>
         /// ID of monitoring item for dynamic reverse output (DigitalInput or DigitalOutput)
         /// </summary>
-        public Guid? ReverseOutputId { get; set; }
+        public Guid ReverseOutputId { get; set; }
 
         /// <summary>
         /// ID of digital output item for hysteresis control (optional)

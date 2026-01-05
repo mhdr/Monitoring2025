@@ -151,17 +151,10 @@ public class PIDMemoryProcess
                 finalItemIds.Add(memory.InputItemId.ToString());
                 rawItemIds.Add(memory.OutputItemId.ToString());
                 
-                if (memory.SetPointId.HasValue && memory.SetPointId.Value != Guid.Empty)
-                    finalItemIds.Add(memory.SetPointId.Value.ToString());
-                    
-                if (memory.IsAutoId.HasValue && memory.IsAutoId.Value != Guid.Empty)
-                    finalItemIds.Add(memory.IsAutoId.Value.ToString());
-                    
-                if (memory.ManualValueId.HasValue && memory.ManualValueId.Value != Guid.Empty)
-                    finalItemIds.Add(memory.ManualValueId.Value.ToString());
-                    
-                if (memory.ReverseOutputId.HasValue && memory.ReverseOutputId.Value != Guid.Empty)
-                    finalItemIds.Add(memory.ReverseOutputId.Value.ToString());
+                finalItemIds.Add(memory.SetPointId.ToString());
+                finalItemIds.Add(memory.IsAutoId.ToString());
+                finalItemIds.Add(memory.ManualValueId.ToString());
+                finalItemIds.Add(memory.ReverseOutputId.ToString());
             }
             
             // Single batch read for all final items at this cascade level
@@ -224,95 +217,49 @@ public class PIDMemoryProcess
                 return;
             }
 
-            // SetPoint
-
-            FinalItemRedis? setPointItem = null;
-            double? setPoint = null;
-
-            if (memory.SetPointId.HasValue)
+            // SetPoint - always from dynamic item
+            finalItemsCache.TryGetValue(memory.SetPointId.ToString(), out var setPointItem);
+            
+            if (setPointItem == null)
             {
-                if (memory.SetPointId.Value != Guid.Empty)
-                {
-                    finalItemsCache.TryGetValue(memory.SetPointId.Value.ToString(), out setPointItem);
-                }
-            }
-
-            if (setPointItem != null)
-            {
-                setPoint = double.Parse(setPointItem.Value);
-            }
-            else
-            {
-                setPoint = memory.SetPoint;
-            }
-
-            // IsAuto
-
-            FinalItemRedis? isAutoItem = null;
-            bool? isAuto = null;
-
-            if (memory.IsAutoId.HasValue)
-            {
-                if (memory.IsAutoId.Value != Guid.Empty)
-                {
-                    finalItemsCache.TryGetValue(memory.IsAutoId.Value.ToString(), out isAutoItem);
-                }
-            }
-
-            if (isAutoItem != null)
-            {
-                bool auto = isAutoItem.Value == "1";
-                isAuto = auto;
-            }
-            else
-            {
-                isAuto = memory.IsAuto;
-            }
-
-            // ManualValue
-
-            FinalItemRedis? manualValueItem = null;
-            double? manualValue = null;
-
-            if (memory.ManualValueId.HasValue)
-            {
-                if (memory.ManualValueId.Value != Guid.Empty)
-                {
-                    finalItemsCache.TryGetValue(memory.ManualValueId.Value.ToString(), out manualValueItem);
-                }
-            }
-
-            if (manualValueItem != null)
-            {
-                manualValue = double.Parse(manualValueItem.Value);
-            }
-            else
-            {
-                manualValue = memory.ManualValue;
+                MyLog.Warning($"SetPoint item not found for PID {memory.Id}");
+                return;
             }
             
-            // ReverseOutput
+            double setPoint = double.Parse(setPointItem.Value);
 
-            FinalItemRedis? reverseOutputItem = null;
-            bool? reverseOutput = null;
+            // IsAuto - always from dynamic item
+            finalItemsCache.TryGetValue(memory.IsAutoId.ToString(), out var isAutoItem);
+            
+            if (isAutoItem == null)
+            {
+                MyLog.Warning($"IsAuto item not found for PID {memory.Id}");
+                return;
+            }
+            
+            bool isAuto = isAutoItem.Value == "1";
 
-            if (memory.ReverseOutputId.HasValue)
+            // ManualValue - always from dynamic item
+            finalItemsCache.TryGetValue(memory.ManualValueId.ToString(), out var manualValueItem);
+            
+            if (manualValueItem == null)
             {
-                if (memory.ReverseOutputId.Value != Guid.Empty)
-                {
-                    finalItemsCache.TryGetValue(memory.ReverseOutputId.Value.ToString(), out reverseOutputItem);
-                }
+                MyLog.Warning($"ManualValue item not found for PID {memory.Id}");
+                return;
             }
-
-            if (reverseOutputItem != null)
+            
+            double manualValue = double.Parse(manualValueItem.Value);
+            
+            // ReverseOutput - always from dynamic item
+            finalItemsCache.TryGetValue(memory.ReverseOutputId.ToString(), out var reverseOutputItem);
+            
+            if (reverseOutputItem == null)
             {
-                bool r = reverseOutputItem.Value == "1";
-                reverseOutput = r;
+                MyLog.Warning($"ReverseOutput item not found for PID {memory.Id}");
+                return;
             }
-            else
-            {
-                reverseOutput = memory.ReverseOutput;
-            }
+            
+            bool reverseOutput = reverseOutputItem.Value == "1";
 
             double processVariable = Convert.ToDouble(input.Value);
 
@@ -347,7 +294,7 @@ public class PIDMemoryProcess
                     Id = memory.Id,
                     Timestamp = epochTime,
                     PidController = new PIDController(memory.Kp, memory.Ki, memory.Kd, memory.OutputMin,
-                        memory.OutputMax,reverseOutput.Value)
+                        memory.OutputMax, reverseOutput)
                     {
                         DerivativeFilterAlpha = memory.DerivativeFilterAlpha,
                         MaxOutputSlewRate = memory.MaxOutputSlewRate,
@@ -357,7 +304,7 @@ public class PIDMemoryProcess
                 };
 
                 // Attempt to restore state from Redis
-                var configHash = GenerateConfigurationHash(memory, reverseOutput.Value);
+                var configHash = GenerateConfigurationHash(memory, reverseOutput);
                 var stateRestored = await LoadPIDState(memory, matched, configHash);
                 
                 if (!stateRestored)
@@ -368,7 +315,7 @@ public class PIDMemoryProcess
                         matched.PidController.InitializeForBumplessTransfer(
                             Convert.ToDouble(output.Value),
                             processVariable, 
-                            setPoint!.Value
+                            setPoint
                         );
                         
                         MyLog.Info("Initialized PID for bumpless transfer", new Dictionary<string, object?>
@@ -377,7 +324,7 @@ public class PIDMemoryProcess
                             ["PIDMemoryName"] = memory.Name,
                             ["CurrentOutput"] = output.Value,
                             ["ProcessVariable"] = processVariable,
-                            ["SetPoint"] = setPoint.Value
+                            ["SetPoint"] = setPoint
                         });
                     }
                 }
@@ -447,7 +394,7 @@ public class PIDMemoryProcess
                     changes++;
                 }
 
-                if (matched.PidController.ReverseOutput != reverseOutput.Value)
+                if (matched.PidController.ReverseOutput != reverseOutput)
                 {
                     changes++;
                 }
@@ -456,7 +403,7 @@ public class PIDMemoryProcess
                 {
                     matched.PidController.Reset();
                     matched.PidController = new PIDController(memory.Kp, memory.Ki, memory.Kd, memory.OutputMin,
-                        memory.OutputMax,reverseOutput.Value)
+                        memory.OutputMax, reverseOutput)
                     {
                         DerivativeFilterAlpha = memory.DerivativeFilterAlpha,
                         MaxOutputSlewRate = memory.MaxOutputSlewRate,
@@ -465,19 +412,19 @@ public class PIDMemoryProcess
                     };
 
                     matched.PidController.InitializeForBumplessTransfer(Convert.ToDouble(output.Value),
-                        processVariable, setPoint!.Value);
+                        processVariable, setPoint);
                 }
             }
 
             double result;
 
-            if (isAuto!.Value)
+            if (isAuto)
             {
-                result = matched.PidController.Compute(setPoint!.Value, processVariable, deltaTime);
+                result = matched.PidController.Compute(setPoint, processVariable, deltaTime);
             }
             else
             {
-                result = manualValue!.Value;
+                result = manualValue;
             }
 
             // Hysteresis logic for digital output
@@ -509,7 +456,7 @@ public class PIDMemoryProcess
                     matched.DigitalOutputState = newDigitalState;
                     
                     // Apply ReverseOutput by inverting the digital bit
-                    bool finalDigitalState = reverseOutput!.Value ? !newDigitalState : newDigitalState;
+                    bool finalDigitalState = reverseOutput ? !newDigitalState : newDigitalState;
                     
                     // Write digital output value
                     await Points.WriteOrAddValue(

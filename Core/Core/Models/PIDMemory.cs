@@ -38,8 +38,7 @@ public class PIDMemory
     [Column("is_disabled")]
     public bool IsDisabled { get; set; }
 
-    [Column("set_point")] public double? SetPoint { get; set; }
-    [Column("set_point_id")] public Guid? SetPointId { get; set; }
+    [Column("set_point_id")] public Guid SetPointId { get; set; }
 
     [DefaultValue(1.0)]
     [Column("derivative_filter_alpha")]
@@ -57,23 +56,12 @@ public class PIDMemory
     [Column("feed_forward")]
     public double FeedForward { get; set; }
 
-    [DefaultValue(true)]
-    [Column("is_auto")]
-    public bool IsAuto { get; set; }
+    [Column("is_auto_id")] public Guid IsAutoId { get; set; }
 
-    [Column("is_auto_id")] public Guid? IsAutoId { get; set; }
-
-    [Column("manual_value")] public double? ManualValue { get; set; }
-
-    [Column("manual_value_id")] public Guid? ManualValueId { get; set; }
-    
-    
-    [DefaultValue(false)]
-    [Column("reverse_output")]
-    public bool ReverseOutput { get; set; }
+    [Column("manual_value_id")] public Guid ManualValueId { get; set; }
     
     [Column("reverse_output_id")]
-    public Guid? ReverseOutputId { get; set; }
+    public Guid ReverseOutputId { get; set; }
     
     // Hysteresis Control for Digital Output
     [Column("digital_output_item_id")]

@@ -17,12 +17,9 @@ public class GetPidControllersResponseDto
         public double OutputMax { get; set; }
         public int Interval { get; set; }
         public bool IsDisabled { get; set; }
-        public double? SetPoint { get; set; }
         public double DerivativeFilterAlpha { get; set; }
         public double MaxOutputSlewRate { get; set; }
         public double DeadZone { get; set; }
         public double FeedForward { get; set; }
-        public bool IsAuto { get; set; }
-        public double? ManualValue { get; set; }
     }
 }

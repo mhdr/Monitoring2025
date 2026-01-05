@@ -3078,18 +3078,14 @@ export interface PIDMemory {
   outputMax: number; // double - Maximum output value
   interval: number; // int - Execution interval in seconds
   isDisabled: boolean; // bool - Whether PID is disabled
-  setPoint?: number | null; // double - Static setpoint value
-  setPointId?: string | null; // UUID - Dynamic setpoint item (AnalogInput/AnalogOutput)
+  setPointId: string; // UUID - Dynamic setpoint item (AnalogInput/AnalogOutput) - Required
   derivativeFilterAlpha: number; // double - Derivative filter alpha (0-1)
   maxOutputSlewRate: number; // double - Maximum output slew rate
   deadZone: number; // double - Dead zone around setpoint
   feedForward: number; // double - Feed-forward term
-  isAuto: boolean; // bool - Static auto/manual mode
-  isAutoId?: string | null; // UUID - Dynamic auto/manual item (DigitalInput/DigitalOutput)
-  manualValue?: number | null; // double - Static manual mode value
-  manualValueId?: string | null; // UUID - Dynamic manual value item (AnalogInput/AnalogOutput)
-  reverseOutput: boolean; // bool - Static reverse output flag
-  reverseOutputId?: string | null; // UUID - Dynamic reverse output item (DigitalInput/DigitalOutput)
+  isAutoId: string; // UUID - Dynamic auto/manual item (DigitalInput/DigitalOutput) - Required
+  manualValueId: string; // UUID - Dynamic manual value item (AnalogInput/AnalogOutput) - Required
+  reverseOutputId: string; // UUID - Dynamic reverse output item (DigitalInput/DigitalOutput) - Required
   digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control (DigitalOutput)
   hysteresisHighThreshold: number; // double - High threshold for hysteresis (turn ON)
   hysteresisLowThreshold: number; // double - Low threshold for hysteresis (turn OFF)
@@ -3286,18 +3282,14 @@ export interface AddPIDMemoryRequestDto {
   outputMax: number; // double
   interval: number; // int - must be > 0
   isDisabled: boolean; // bool
-  setPoint?: number | null; // double
-  setPointId?: string | null; // UUID
+  setPointId: string; // UUID - Required
   derivativeFilterAlpha: number; // double (0-1)
   maxOutputSlewRate: number; // double
   deadZone: number; // double
   feedForward: number; // double
-  isAuto: boolean; // bool
-  isAutoId?: string | null; // UUID
-  manualValue?: number | null; // double
-  manualValueId?: string | null; // UUID
-  reverseOutput: boolean; // bool
-  reverseOutputId?: string | null; // UUID
+  isAutoId: string; // UUID - Required
+  manualValueId: string; // UUID - Required
+  reverseOutputId: string; // UUID - Required
   digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control
   hysteresisHighThreshold: number; // double - High threshold (default 75.0)
   hysteresisLowThreshold: number; // double - Low threshold (default 25.0)
@@ -3329,18 +3321,14 @@ export interface EditPIDMemoryRequestDto {
   outputMax: number; // double
   interval: number; // int - must be > 0
   isDisabled: boolean; // bool
-  setPoint?: number | null; // double
-  setPointId?: string | null; // UUID
+  setPointId: string; // UUID - Required
   derivativeFilterAlpha: number; // double (0-1)
   maxOutputSlewRate: number; // double
   deadZone: number; // double
   feedForward: number; // double
-  isAuto: boolean; // bool
-  isAutoId?: string | null; // UUID
-  manualValue?: number | null; // double
-  manualValueId?: string | null; // UUID
-  reverseOutput: boolean; // bool
-  reverseOutputId?: string | null; // UUID
+  isAutoId: string; // UUID - Required
+  manualValueId: string; // UUID - Required
+  reverseOutputId: string; // UUID - Required
   digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control
   hysteresisHighThreshold: number; // double - High threshold
   hysteresisLowThreshold: number; // double - Low threshold

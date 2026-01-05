@@ -324,26 +324,15 @@ const PIDMemoryManagementPage: React.FC = () => {
         ),
       },
       {
-        field: 'setPoint',
+        field: 'setPointItemName',
         headerText: t('pidMemory.columnHeaders.setPoint'),
         headerTooltip: t('pidMemory.columnHeaders.setPointTooltip'),
-        width: 140,
+        width: 200,
         template: (rowData: PIDMemoryWithItems) => (
           <Box data-id-ref="pid-memory-setpoint-cell">
-            {rowData.setPointId ? (
-              <Box>
-                <Typography variant="body2" fontSize="0.75rem" color="text.secondary">
-                  {t('pidMemory.dynamic')}
-                </Typography>
-                <Typography variant="body2" noWrap>
-                  {rowData.setPointItemName || t('common.unknown')}
-                </Typography>
-              </Box>
-            ) : (
-              <Typography variant="body2">
-                {rowData.setPoint?.toFixed(2) ?? t('common.notSet')}
-              </Typography>
-            )}
+            <Typography variant="body2" noWrap>
+              {rowData.setPointItemName || '-'}
+            </Typography>
           </Box>
         ),
       },
@@ -377,21 +366,6 @@ const PIDMemoryManagementPage: React.FC = () => {
           <Typography variant="body2" data-id-ref="pid-memory-interval-cell">
             {rowData.interval}s
           </Typography>
-        ),
-      },
-      {
-        field: 'isAuto',
-        headerText: t('pidMemory.columnHeaders.mode'),
-        headerTooltip: t('pidMemory.columnHeaders.modeTooltip'),
-        width: 100,
-        template: (rowData: PIDMemoryWithItems) => (
-          <Chip
-            label={rowData.isAuto ? t('pidMemory.auto') : t('pidMemory.manual')}
-            size="small"
-            color={rowData.isAuto ? 'success' : 'warning'}
-            sx={{ height: 20, fontSize: '0.7rem' }}
-            data-id-ref="pid-memory-mode-cell"
-          />
         ),
       },
       {

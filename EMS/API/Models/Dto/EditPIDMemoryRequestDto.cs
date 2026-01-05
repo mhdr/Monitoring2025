@@ -75,14 +75,11 @@ public class EditPIDMemoryRequestDto
     public bool IsDisabled { get; set; }
 
     /// <summary>
-    /// Static setpoint value
-    /// </summary>
-    public double? SetPoint { get; set; }
-
-    /// <summary>
     /// ID of monitoring item for dynamic setpoint (AnalogInput or AnalogOutput)
+    /// Required for PID operation
     /// </summary>
-    public Guid? SetPointId { get; set; }
+    [Required(ErrorMessage = "SetPoint item ID is required")]
+    public Guid SetPointId { get; set; }
 
     /// <summary>
     /// Derivative filter alpha (0-1)
@@ -108,34 +105,25 @@ public class EditPIDMemoryRequestDto
     public double FeedForward { get; set; }
 
     /// <summary>
-    /// Static auto/manual mode flag
-    /// </summary>
-    public bool IsAuto { get; set; }
-
-    /// <summary>
     /// ID of monitoring item for dynamic auto/manual mode (DigitalInput or DigitalOutput)
+    /// Required for PID operation
     /// </summary>
-    public Guid? IsAutoId { get; set; }
-
-    /// <summary>
-    /// Static manual mode output value
-    /// </summary>
-    public double? ManualValue { get; set; }
+    [Required(ErrorMessage = "IsAuto item ID is required")]
+    public Guid IsAutoId { get; set; }
 
     /// <summary>
     /// ID of monitoring item for dynamic manual value (AnalogInput or AnalogOutput)
+    /// Required for PID operation
     /// </summary>
-    public Guid? ManualValueId { get; set; }
-
-    /// <summary>
-    /// Static reverse output flag
-    /// </summary>
-    public bool ReverseOutput { get; set; }
+    [Required(ErrorMessage = "ManualValue item ID is required")]
+    public Guid ManualValueId { get; set; }
 
     /// <summary>
     /// ID of monitoring item for dynamic reverse output (DigitalInput or DigitalOutput)
+    /// Required for PID operation
     /// </summary>
-    public Guid? ReverseOutputId { get; set; }
+    [Required(ErrorMessage = "ReverseOutput item ID is required")]
+    public Guid ReverseOutputId { get; set; }
 
     /// <summary>
     /// ID of digital output item for hysteresis control (optional)
