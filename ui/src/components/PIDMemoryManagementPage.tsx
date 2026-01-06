@@ -27,9 +27,9 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
-import { getPIDMemories, getPIDTuningStatus } from '../services/extendedApi';
-import type { PIDMemory, PIDMemoryWithItems, ItemType, TuningStatus, PIDTuningSession } from '../types/api';
-import { ItemTypeEnum } from '../types/api';
+import { getPIDMemories, getPIDTuningStatus, getGlobalVariables } from '../services/extendedApi';
+import type { PIDMemory, ItemType, TuningStatus, PIDTuningSession, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, PIDSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('PIDMemoryManagementPage');
@@ -77,6 +77,27 @@ const getItemTypeLabel = (itemType: ItemType, t: (key: string) => string): strin
 };
 
 /**
+ * Enhanced PID Memory interface with resolved source names
+ */
+interface EnhancedPIDMemory extends PIDMemory {
+  inputSourceName?: string;
+  inputItemType?: ItemType;
+  outputSourceName?: string;
+  outputItemType?: ItemType;
+  setPointSourceName?: string;
+  setPointItemType?: ItemType;
+  isAutoSourceName?: string;
+  isAutoItemType?: ItemType;
+  manualValueSourceName?: string;
+  manualValueItemType?: ItemType;
+  reverseOutputSourceName?: string;
+  reverseOutputItemType?: ItemType;
+  digitalOutputSourceName?: string;
+  digitalOutputItemType?: ItemType;
+  parentPIDName?: string;
+}
+
+/**
  * PID Memory Management Page Component
  * Manages PID controller configurations with tuning parameters
  */
@@ -86,7 +107,7 @@ const PIDMemoryManagementPage: React.FC = () => {
   const { items } = state;
 
   // State management
-  const [pidMemories, setPIDMemories] = useState<PIDMemoryWithItems[]>([]);
+  const [pidMemories, setPIDMemories] = useState<EnhancedPIDMemory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,7 +118,7 @@ const PIDMemoryManagementPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [startTuningDialogOpen, setStartTuningDialogOpen] = useState(false);
   const [tuningStatusDialogOpen, setTuningStatusDialogOpen] = useState(false);
-  const [selectedPIDMemory, setSelectedPIDMemory] = useState<PIDMemoryWithItems | null>(null);
+  const [selectedPIDMemory, setSelectedPIDMemory] = useState<EnhancedPIDMemory | null>(null);
   const [editMode, setEditMode] = useState(false);
 
   /**
@@ -108,42 +129,73 @@ const PIDMemoryManagementPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await getPIDMemories();
+      logger.info('Fetching PID memories and global variables');
 
-      // Enhance with item details from monitoring context
-      const enhancedMemories: PIDMemoryWithItems[] = response.pidMemories.map((pm: PIDMemory) => {
-        const inputItem = items.find((item) => item.id === pm.inputItemId);
-        const outputItem = items.find((item) => item.id === pm.outputItemId);
-        const setPointItem = pm.setPointId ? items.find((item) => item.id === pm.setPointId) : undefined;
-        const isAutoItem = pm.isAutoId ? items.find((item) => item.id === pm.isAutoId) : undefined;
-        const manualValueItem = pm.manualValueId ? items.find((item) => item.id === pm.manualValueId) : undefined;
-        const reverseOutputItem = pm.reverseOutputId ? items.find((item) => item.id === pm.reverseOutputId) : undefined;
+      // Fetch both PID memories and global variables in parallel
+      const [pmResponse, gvResponse] = await Promise.all([
+        getPIDMemories(),
+        getGlobalVariables({})
+      ]);
+
+      const globalVariables = gvResponse?.globalVariables || [];
+      logger.info('Global variables fetched', { count: globalVariables.length });
+
+      // Helper function to resolve source name
+      const resolveSourceName = (
+        sourceType: number,
+        sourceReference: string,
+        variables: GlobalVariable[]
+      ): { name?: string; itemType?: ItemType } => {
+        if (sourceType === PIDSourceType.Point) {
+          const item = items.find((i) => i.id === sourceReference);
+          if (item) {
+            return {
+              name: language === 'fa' && item.nameFa ? item.nameFa : item.name,
+              itemType: item.itemType
+            };
+          }
+        } else if (sourceType === PIDSourceType.GlobalVariable) {
+          const variable = variables.find((v) => v.name === sourceReference);
+          if (variable) {
+            return { name: variable.name };
+          }
+        }
+        return {};
+      };
+
+      // Enhance with resolved source names
+      const enhancedMemories: EnhancedPIDMemory[] = pmResponse.pidMemories.map((pm: PIDMemory) => {
+        const input = resolveSourceName(pm.inputType, pm.inputReference, globalVariables);
+        const output = resolveSourceName(pm.outputType, pm.outputReference, globalVariables);
+        const setPoint = resolveSourceName(pm.setPointType, pm.setPointReference, globalVariables);
+        const isAuto = resolveSourceName(pm.isAutoType, pm.isAutoReference, globalVariables);
+        const manualValue = resolveSourceName(pm.manualValueType, pm.manualValueReference, globalVariables);
+        const reverseOutput = resolveSourceName(pm.reverseOutputType, pm.reverseOutputReference, globalVariables);
+        const digitalOutput = pm.digitalOutputReference
+          ? resolveSourceName(pm.digitalOutputType ?? PIDSourceType.Point, pm.digitalOutputReference, globalVariables)
+          : {};
 
         return {
           ...pm,
-          inputItemName: inputItem ? (language === 'fa' ? inputItem.nameFa : inputItem.name) || undefined : undefined,
-          inputItemNameFa: inputItem?.nameFa || undefined,
-          inputItemType: inputItem?.itemType,
-          outputItemName: outputItem ? (language === 'fa' ? outputItem.nameFa : outputItem.name) || undefined : undefined,
-          outputItemNameFa: outputItem?.nameFa || undefined,
-          outputItemType: outputItem?.itemType,
-          setPointItemName: setPointItem ? (language === 'fa' ? setPointItem.nameFa : setPointItem.name) || undefined : undefined,
-          setPointItemNameFa: setPointItem?.nameFa || undefined,
-          setPointItemType: setPointItem?.itemType,
-          isAutoItemName: isAutoItem ? (language === 'fa' ? isAutoItem.nameFa : isAutoItem.name) || undefined : undefined,
-          isAutoItemNameFa: isAutoItem?.nameFa || undefined,
-          isAutoItemType: isAutoItem?.itemType,
-          manualValueItemName: manualValueItem ? (language === 'fa' ? manualValueItem.nameFa : manualValueItem.name) || undefined : undefined,
-          manualValueItemNameFa: manualValueItem?.nameFa || undefined,
-          manualValueItemType: manualValueItem?.itemType,
-          reverseOutputItemName: reverseOutputItem ? (language === 'fa' ? reverseOutputItem.nameFa : reverseOutputItem.name) || undefined : undefined,
-          reverseOutputItemNameFa: reverseOutputItem?.nameFa || undefined,
-          reverseOutputItemType: reverseOutputItem?.itemType,
+          inputSourceName: input.name,
+          inputItemType: input.itemType,
+          outputSourceName: output.name,
+          outputItemType: output.itemType,
+          setPointSourceName: setPoint.name,
+          setPointItemType: setPoint.itemType,
+          isAutoSourceName: isAuto.name,
+          isAutoItemType: isAuto.itemType,
+          manualValueSourceName: manualValue.name,
+          manualValueItemType: manualValue.itemType,
+          reverseOutputSourceName: reverseOutput.name,
+          reverseOutputItemType: reverseOutput.itemType,
+          digitalOutputSourceName: digitalOutput.name,
+          digitalOutputItemType: digitalOutput.itemType,
         };
       });
 
       setPIDMemories(enhancedMemories);
-      logger.info('PID memories fetched successfully', { count: enhancedMemories.length });
+      logger.info('PID memories enhanced successfully', { count: enhancedMemories.length });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
@@ -243,8 +295,8 @@ const PIDMemoryManagementPage: React.FC = () => {
     const lowerSearch = searchTerm.toLowerCase();
     return pidMemories.filter((pm) => {
       const name = pm.name?.toLowerCase() || '';
-      const inputName = pm.inputItemName?.toLowerCase() || '';
-      const outputName = pm.outputItemName?.toLowerCase() || '';
+      const inputName = pm.inputSourceName?.toLowerCase() || '';
+      const outputName = pm.outputSourceName?.toLowerCase() || '';
       
       return (
         name.includes(lowerSearch) ||
@@ -265,7 +317,7 @@ const PIDMemoryManagementPage: React.FC = () => {
         headerText: t('pidMemory.columnHeaders.name'),
         headerTooltip: t('pidMemory.columnHeaders.nameTooltip'),
         width: 180,
-        template: (rowData: PIDMemoryWithItems) => (
+        template: (rowData: EnhancedPIDMemory) => (
           <Box data-id-ref="pid-memory-name-cell">
             <Typography variant="body2" fontWeight="medium">
               {rowData.name || t('common.unnamed')}
@@ -282,14 +334,14 @@ const PIDMemoryManagementPage: React.FC = () => {
         ),
       },
       {
-        field: 'inputItemName',
+        field: 'inputSourceName',
         headerText: t('pidMemory.columnHeaders.inputItem'),
         headerTooltip: t('pidMemory.columnHeaders.inputItemTooltip'),
         width: 200,
-        template: (rowData: PIDMemoryWithItems) => (
+        template: (rowData: EnhancedPIDMemory) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-id-ref="pid-memory-input-item-cell">
             <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-              {rowData.inputItemName || t('common.unknown')}
+              {rowData.inputSourceName || t('common.unknown')}
             </Typography>
             {rowData.inputItemType && (
               <Chip
@@ -303,14 +355,14 @@ const PIDMemoryManagementPage: React.FC = () => {
         ),
       },
       {
-        field: 'outputItemName',
+        field: 'outputSourceName',
         headerText: t('pidMemory.columnHeaders.outputItem'),
         headerTooltip: t('pidMemory.columnHeaders.outputItemTooltip'),
         width: 200,
-        template: (rowData: PIDMemoryWithItems) => (
+        template: (rowData: EnhancedPIDMemory) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-id-ref="pid-memory-output-item-cell">
             <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-              {rowData.outputItemName || t('common.unknown')}
+              {rowData.outputSourceName || t('common.unknown')}
             </Typography>
             {rowData.outputItemType && (
               <Chip
@@ -324,14 +376,14 @@ const PIDMemoryManagementPage: React.FC = () => {
         ),
       },
       {
-        field: 'setPointItemName',
+        field: 'setPointSourceName',
         headerText: t('pidMemory.columnHeaders.setPoint'),
         headerTooltip: t('pidMemory.columnHeaders.setPointTooltip'),
         width: 200,
-        template: (rowData: PIDMemoryWithItems) => (
+        template: (rowData: EnhancedPIDMemory) => (
           <Box data-id-ref="pid-memory-setpoint-cell">
             <Typography variant="body2" noWrap>
-              {rowData.setPointItemName || '-'}
+              {rowData.setPointSourceName || '-'}
             </Typography>
           </Box>
         ),
@@ -362,7 +414,7 @@ const PIDMemoryManagementPage: React.FC = () => {
         headerText: t('pidMemory.columnHeaders.interval'),
         headerTooltip: t('pidMemory.columnHeaders.intervalTooltip'),
         width: 100,
-        template: (rowData: PIDMemoryWithItems) => (
+        template: (rowData: EnhancedPIDMemory) => (
           <Typography variant="body2" data-id-ref="pid-memory-interval-cell">
             {rowData.interval}s
           </Typography>
@@ -373,7 +425,7 @@ const PIDMemoryManagementPage: React.FC = () => {
         headerText: t('pidMemory.columnHeaders.cascadeLevel'),
         headerTooltip: t('pidMemory.columnHeaders.cascadeLevelTooltip'),
         width: 160,
-        template: (rowData: PIDMemoryWithItems) => (
+        template: (rowData: EnhancedPIDMemory) => (
           <Box data-id-ref="pid-memory-cascade-cell">
             {rowData.cascadeLevel > 0 ? (
               <Box>
@@ -404,7 +456,7 @@ const PIDMemoryManagementPage: React.FC = () => {
         field: 'tuningStatus',
         headerText: t('pidMemory.autoTuning.statusTitle'),
         width: 150,
-        template: (rowData: PIDMemoryWithItems) => {
+        template: (rowData: EnhancedPIDMemory) => {
           const session = tuningSessions.get(rowData.id);
           return (
             <Box data-id-ref="pid-memory-tuning-status-cell">
@@ -430,7 +482,7 @@ const PIDMemoryManagementPage: React.FC = () => {
         field: 'actions',
         headerText: t('common.actions'),
         width: 160,
-        template: (rowData: PIDMemoryWithItems) => {
+        template: (rowData: EnhancedPIDMemory) => {
           const session = tuningSessions.get(rowData.id);
           const isActiveTuning = session && (session.status === 1 || session.status === 2 || session.status === 3);
 
@@ -496,7 +548,7 @@ const PIDMemoryManagementPage: React.FC = () => {
   /**
    * Handle edit button click
    */
-  const handleEdit = (pidMemory: PIDMemoryWithItems) => {
+  const handleEdit = (pidMemory: EnhancedPIDMemory) => {
     setSelectedPIDMemory(pidMemory);
     setEditMode(true);
     setAddEditDialogOpen(true);
@@ -505,7 +557,7 @@ const PIDMemoryManagementPage: React.FC = () => {
   /**
    * Handle delete button click
    */
-  const handleDelete = (pidMemory: PIDMemoryWithItems) => {
+  const handleDelete = (pidMemory: EnhancedPIDMemory) => {
     setSelectedPIDMemory(pidMemory);
     setDeleteDialogOpen(true);
   };
@@ -513,7 +565,7 @@ const PIDMemoryManagementPage: React.FC = () => {
   /**
    * Handle start tuning button click
    */
-  const handleStartTuning = (pidMemory: PIDMemoryWithItems) => {
+  const handleStartTuning = (pidMemory: EnhancedPIDMemory) => {
     setSelectedPIDMemory(pidMemory);
     setStartTuningDialogOpen(true);
   };
@@ -521,7 +573,7 @@ const PIDMemoryManagementPage: React.FC = () => {
   /**
    * Handle view tuning status button click
    */
-  const handleViewTuningStatus = (pidMemory: PIDMemoryWithItems) => {
+  const handleViewTuningStatus = (pidMemory: EnhancedPIDMemory) => {
     setSelectedPIDMemory(pidMemory);
     setTuningStatusDialogOpen(true);
   };

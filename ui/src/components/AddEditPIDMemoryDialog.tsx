@@ -20,18 +20,22 @@ import {
   Alert,
   CircularProgress,
   Divider,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   Save as SaveIcon,
   Close as CloseIcon,
   HelpOutline as HelpOutlineIcon,
+  Memory as MemoryIcon,
+  Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addPIDMemory, editPIDMemory, getPotentialParentPIDs } from '../services/extendedApi';
-import type { PIDMemoryWithItems, MonitoringItem, ItemType, AddPIDMemoryRequestDto, EditPIDMemoryRequestDto, PotentialParentPID } from '../types/api';
-import { ItemTypeEnum } from '../types/api';
+import { addPIDMemory, editPIDMemory, getPotentialParentPIDs, getGlobalVariables } from '../services/extendedApi';
+import type { PIDMemoryWithItems, MonitoringItem, ItemType, AddPIDMemoryRequestDto, EditPIDMemoryRequestDto, PotentialParentPID, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, PIDSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -46,8 +50,10 @@ interface AddEditPIDMemoryDialogProps {
 
 interface FormData {
   name: string;
-  inputItemId: string;
-  outputItemId: string;
+  inputType: number;
+  inputReference: string;
+  outputType: number;
+  outputReference: string;
   kp: number;
   ki: number;
   kd: number;
@@ -56,13 +62,18 @@ interface FormData {
   interval: number;
   isDisabled: boolean;
   // Required item reference fields
-  setPointId: string;
-  isAutoId: string;
-  manualValueId: string;
-  reverseOutputId: string;
+  setPointType: number;
+  setPointReference: string;
+  isAutoType: number;
+  isAutoReference: string;
+  manualValueType: number;
+  manualValueReference: string;
+  reverseOutputType: number;
+  reverseOutputReference: string;
   // Hysteresis Control
   useDigitalOutputItem: boolean;
-  digitalOutputItemId: string;
+  digitalOutputType: number;
+  digitalOutputReference: string;
   hysteresisHighThreshold: number;
   hysteresisLowThreshold: number;
   // Cascade Control
@@ -124,6 +135,10 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   const { state } = useMonitoring();
   const { items } = state;
 
+  // Global variables state
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
+  const [loadingGlobalVariables, setLoadingGlobalVariables] = useState(false);
+
   // Section expansion states
   const [basicExpanded, setBasicExpanded] = useState(true);
   const [tuningExpanded, setTuningExpanded] = useState(true);
@@ -149,8 +164,10 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   // Form state
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    inputItemId: '',
-    outputItemId: '',
+    inputType: PIDSourceType.Point,
+    inputReference: '',
+    outputType: PIDSourceType.Point,
+    outputReference: '',
     kp: 1.0,
     ki: 0.1,
     kd: 0.05,
@@ -158,12 +175,17 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
     outputMax: 100.0,
     interval: 10,
     isDisabled: false,
-    setPointId: '',
-    isAutoId: '',
-    manualValueId: '',
-    reverseOutputId: '',
+    setPointType: PIDSourceType.Point,
+    setPointReference: '',
+    isAutoType: PIDSourceType.Point,
+    isAutoReference: '',
+    manualValueType: PIDSourceType.Point,
+    manualValueReference: '',
+    reverseOutputType: PIDSourceType.Point,
+    reverseOutputReference: '',
     useDigitalOutputItem: false,
-    digitalOutputItemId: '',
+    digitalOutputType: PIDSourceType.Point,
+    digitalOutputReference: '',
     hysteresisHighThreshold: 75.0,
     hysteresisLowThreshold: 25.0,
     useParentPID: false,
@@ -185,8 +207,10 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
       if (editMode && pidMemory) {
         setFormData({
           name: pidMemory.name || '',
-          inputItemId: pidMemory.inputItemId,
-          outputItemId: pidMemory.outputItemId,
+          inputType: pidMemory.inputType,
+          inputReference: pidMemory.inputReference,
+          outputType: pidMemory.outputType,
+          outputReference: pidMemory.outputReference,
           kp: pidMemory.kp,
           ki: pidMemory.ki,
           kd: pidMemory.kd,
@@ -194,12 +218,17 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           outputMax: pidMemory.outputMax,
           interval: pidMemory.interval,
           isDisabled: pidMemory.isDisabled,
-          setPointId: pidMemory.setPointId ?? '',
-          isAutoId: pidMemory.isAutoId ?? '',
-          manualValueId: pidMemory.manualValueId ?? '',
-          reverseOutputId: pidMemory.reverseOutputId ?? '',
-          useDigitalOutputItem: !!pidMemory.digitalOutputItemId,
-          digitalOutputItemId: pidMemory.digitalOutputItemId ?? '',
+          setPointType: pidMemory.setPointType,
+          setPointReference: pidMemory.setPointReference ?? '',
+          isAutoType: pidMemory.isAutoType,
+          isAutoReference: pidMemory.isAutoReference ?? '',
+          manualValueType: pidMemory.manualValueType,
+          manualValueReference: pidMemory.manualValueReference ?? '',
+          reverseOutputType: pidMemory.reverseOutputType,
+          reverseOutputReference: pidMemory.reverseOutputReference ?? '',
+          useDigitalOutputItem: !!pidMemory.digitalOutputReference,
+          digitalOutputType: pidMemory.digitalOutputType ?? PIDSourceType.Point,
+          digitalOutputReference: pidMemory.digitalOutputReference ?? '',
           hysteresisHighThreshold: pidMemory.hysteresisHighThreshold,
           hysteresisLowThreshold: pidMemory.hysteresisLowThreshold,
           useParentPID: !!pidMemory.parentPIDId,
@@ -214,8 +243,10 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
         // Reset to defaults for add mode
         setFormData({
           name: '',
-          inputItemId: '',
-          outputItemId: '',
+          inputType: PIDSourceType.Point,
+          inputReference: '',
+          outputType: PIDSourceType.Point,
+          outputReference: '',
           kp: 1.0,
           ki: 0.1,
           kd: 0.05,
@@ -223,12 +254,17 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           outputMax: 100.0,
           interval: 10,
           isDisabled: false,
-          setPointId: '',
-          isAutoId: '',
-          manualValueId: '',
-          reverseOutputId: '',
+          setPointType: PIDSourceType.Point,
+          setPointReference: '',
+          isAutoType: PIDSourceType.Point,
+          isAutoReference: '',
+          manualValueType: PIDSourceType.Point,
+          manualValueReference: '',
+          reverseOutputType: PIDSourceType.Point,
+          reverseOutputReference: '',
           useDigitalOutputItem: false,
-          digitalOutputItemId: '',
+          digitalOutputType: PIDSourceType.Point,
+          digitalOutputReference: '',
           hysteresisHighThreshold: 75.0,
           hysteresisLowThreshold: 25.0,
           useParentPID: false,
@@ -244,6 +280,26 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
       setSaveError(null);
     }
   }, [open, editMode, pidMemory]);
+
+  // Load global variables when dialog opens
+  useEffect(() => {
+    const loadGlobalVariables = async () => {
+      if (!open) return;
+      
+      setLoadingGlobalVariables(true);
+      try {
+        const result = await getGlobalVariables(false);
+        setGlobalVariables(result.globalVariables.filter((v: GlobalVariable) => !v.isDisabled));
+      } catch (error) {
+        console.error('Failed to load global variables:', error);
+        setGlobalVariables([]);
+      } finally {
+        setLoadingGlobalVariables(false);
+      }
+    };
+
+    loadGlobalVariables();
+  }, [open]);
 
   // Fetch potential parent PIDs when cascade level changes
   useEffect(() => {
@@ -279,13 +335,68 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   const digitalOutputItems = useMemo(() => items.filter((item) => item.itemType === ItemTypeEnum.DigitalOutput), [items]);
 
   // Get selected items
-  const selectedInputItem = useMemo(() => items.find((item) => item.id === formData.inputItemId) || null, [items, formData.inputItemId]);
-  const selectedOutputItem = useMemo(() => items.find((item) => item.id === formData.outputItemId) || null, [items, formData.outputItemId]);
-  const selectedSetPointItem = useMemo(() => items.find((item) => item.id === formData.setPointId) || null, [items, formData.setPointId]);
-  const selectedIsAutoItem = useMemo(() => items.find((item) => item.id === formData.isAutoId) || null, [items, formData.isAutoId]);
-  const selectedManualValueItem = useMemo(() => items.find((item) => item.id === formData.manualValueId) || null, [items, formData.manualValueId]);
-  const selectedReverseOutputItem = useMemo(() => items.find((item) => item.id === formData.reverseOutputId) || null, [items, formData.reverseOutputId]);
-  const selectedDigitalOutputItem = useMemo(() => items.find((item) => item.id === formData.digitalOutputItemId) || null, [items, formData.digitalOutputItemId]);
+  const selectedInputItem = useMemo(() => 
+    formData.inputType === PIDSourceType.Point ? items.find((item) => item.id === formData.inputReference) || null : null, 
+    [items, formData.inputType, formData.inputReference]
+  );
+  const selectedInputVariable = useMemo(() => 
+    formData.inputType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.inputReference) || null : null,
+    [globalVariables, formData.inputType, formData.inputReference]
+  );
+  
+  const selectedOutputItem = useMemo(() => 
+    formData.outputType === PIDSourceType.Point ? items.find((item) => item.id === formData.outputReference) || null : null,
+    [items, formData.outputType, formData.outputReference]
+  );
+  const selectedOutputVariable = useMemo(() => 
+    formData.outputType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.outputReference) || null : null,
+    [globalVariables, formData.outputType, formData.outputReference]
+  );
+  
+  const selectedSetPointItem = useMemo(() => 
+    formData.setPointType === PIDSourceType.Point ? items.find((item) => item.id === formData.setPointReference) || null : null,
+    [items, formData.setPointType, formData.setPointReference]
+  );
+  const selectedSetPointVariable = useMemo(() => 
+    formData.setPointType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.setPointReference) || null : null,
+    [globalVariables, formData.setPointType, formData.setPointReference]
+  );
+  
+  const selectedIsAutoItem = useMemo(() => 
+    formData.isAutoType === PIDSourceType.Point ? items.find((item) => item.id === formData.isAutoReference) || null : null,
+    [items, formData.isAutoType, formData.isAutoReference]
+  );
+  const selectedIsAutoVariable = useMemo(() => 
+    formData.isAutoType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.isAutoReference) || null : null,
+    [globalVariables, formData.isAutoType, formData.isAutoReference]
+  );
+  
+  const selectedManualValueItem = useMemo(() => 
+    formData.manualValueType === PIDSourceType.Point ? items.find((item) => item.id === formData.manualValueReference) || null : null,
+    [items, formData.manualValueType, formData.manualValueReference]
+  );
+  const selectedManualValueVariable = useMemo(() => 
+    formData.manualValueType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.manualValueReference) || null : null,
+    [globalVariables, formData.manualValueType, formData.manualValueReference]
+  );
+  
+  const selectedReverseOutputItem = useMemo(() => 
+    formData.reverseOutputType === PIDSourceType.Point ? items.find((item) => item.id === formData.reverseOutputReference) || null : null,
+    [items, formData.reverseOutputType, formData.reverseOutputReference]
+  );
+  const selectedReverseOutputVariable = useMemo(() => 
+    formData.reverseOutputType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.reverseOutputReference) || null : null,
+    [globalVariables, formData.reverseOutputType, formData.reverseOutputReference]
+  );
+  
+  const selectedDigitalOutputItem = useMemo(() => 
+    formData.digitalOutputType === PIDSourceType.Point ? items.find((item) => item.id === formData.digitalOutputReference) || null : null,
+    [items, formData.digitalOutputType, formData.digitalOutputReference]
+  );
+  const selectedDigitalOutputVariable = useMemo(() => 
+    formData.digitalOutputType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.digitalOutputReference) || null : null,
+    [globalVariables, formData.digitalOutputType, formData.digitalOutputReference]
+  );
 
   /**
    * Get item label for display
@@ -293,6 +404,13 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   const getItemLabel = (item: MonitoringItem): string => {
     const name = language === 'fa' ? item.nameFa : item.name;
     return `${item.pointNumber} - ${name}`;
+  };
+
+  /**
+   * Get global variable label for display
+   */
+  const getVariableLabel = (variable: GlobalVariable): string => {
+    return variable.name;
   };
 
   /**
@@ -307,14 +425,38 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   };
 
   /**
+   * Handle source type change (Point/GlobalVariable)
+   */
+  const handleTypeChange = (typeField: keyof FormData, referenceField: keyof FormData) => (
+    _: React.MouseEvent<HTMLElement>,
+    newValue: number | null
+  ) => {
+    if (newValue !== null) {
+      setFormData((prev) => ({
+        ...prev,
+        [typeField]: newValue,
+        [referenceField]: '', // Clear reference when type changes
+      }));
+      // Clear errors for both fields
+      setFormErrors((prev) => ({
+        ...prev,
+        [typeField]: undefined,
+        [referenceField]: undefined,
+      }));
+    }
+  };
+
+  /**
    * Validate form
    */
   const validate = (): boolean => {
     const errors: FormErrors = {};
 
-    if (!formData.inputItemId) errors.inputItemId = t('pidMemory.validation.inputItemRequired');
-    if (!formData.outputItemId) errors.outputItemId = t('pidMemory.validation.outputItemRequired');
-    if (formData.inputItemId === formData.outputItemId) errors.outputItemId = t('pidMemory.validation.itemsMustBeDifferent');
+    if (!formData.inputReference) errors.inputReference = t('pidMemory.validation.inputItemRequired');
+    if (!formData.outputReference) errors.outputReference = t('pidMemory.validation.outputItemRequired');
+    if (formData.inputType === formData.outputType && formData.inputReference === formData.outputReference) {
+      errors.outputReference = t('pidMemory.validation.itemsMustBeDifferent');
+    }
     if (formData.interval < 1) errors.interval = t('pidMemory.validation.intervalMin');
     if (formData.outputMin >= formData.outputMax) errors.outputMax = t('pidMemory.validation.outputMaxGreater');
     if (formData.derivativeFilterAlpha < 0 || formData.derivativeFilterAlpha > 1) errors.derivativeFilterAlpha = t('pidMemory.validation.derivativeFilterRange');
@@ -332,19 +474,19 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
       errors.hysteresisHighThreshold = t('pidMemory.validation.hysteresisHighOutOfRange');
     }
 
-    // Required ID fields validation
-    if (!formData.setPointId) errors.setPointId = t('pidMemory.validation.setPointIdRequired');
-    if (!formData.isAutoId) errors.isAutoId = t('pidMemory.validation.isAutoIdRequired');
-    if (!formData.manualValueId) errors.manualValueId = t('pidMemory.validation.manualValueIdRequired');
-    if (!formData.reverseOutputId) errors.reverseOutputId = t('pidMemory.validation.reverseOutputIdRequired');
+    // Required reference fields validation
+    if (!formData.setPointReference) errors.setPointReference = t('pidMemory.validation.setPointIdRequired');
+    if (!formData.isAutoReference) errors.isAutoReference = t('pidMemory.validation.isAutoIdRequired');
+    if (!formData.manualValueReference) errors.manualValueReference = t('pidMemory.validation.manualValueIdRequired');
+    if (!formData.reverseOutputReference) errors.reverseOutputReference = t('pidMemory.validation.reverseOutputIdRequired');
 
     // Cascade validation
     if (formData.useParentPID) {
       if (!formData.parentPIDId) {
         errors.parentPIDId = t('pidMemory.validation.parentPIDRequired');
       }
-      if (!formData.setPointId) {
-        errors.setPointId = t('pidMemory.validation.cascadeRequiresSetpointItem');
+      if (!formData.setPointReference) {
+        errors.setPointReference = t('pidMemory.validation.cascadeRequiresSetpointItem');
       }
     }
 
@@ -366,8 +508,10 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
         const requestData: EditPIDMemoryRequestDto = {
           id: pidMemory.id,
           name: formData.name || null,
-          inputItemId: formData.inputItemId,
-          outputItemId: formData.outputItemId,
+          inputType: formData.inputType,
+          inputReference: formData.inputReference,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
           kp: formData.kp,
           ki: formData.ki,
           kd: formData.kd,
@@ -375,15 +519,20 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           outputMax: formData.outputMax,
           interval: formData.interval,
           isDisabled: formData.isDisabled,
-          setPointId: formData.setPointId,
-          isAutoId: formData.isAutoId,
-          manualValueId: formData.manualValueId,
-          reverseOutputId: formData.reverseOutputId,
+          setPointType: formData.setPointType,
+          setPointReference: formData.setPointReference,
+          isAutoType: formData.isAutoType,
+          isAutoReference: formData.isAutoReference,
+          manualValueType: formData.manualValueType,
+          manualValueReference: formData.manualValueReference,
+          reverseOutputType: formData.reverseOutputType,
+          reverseOutputReference: formData.reverseOutputReference,
           derivativeFilterAlpha: formData.derivativeFilterAlpha,
           maxOutputSlewRate: formData.maxOutputSlewRate,
           deadZone: formData.deadZone,
           feedForward: formData.feedForward,
-          digitalOutputItemId: formData.useDigitalOutputItem ? (formData.digitalOutputItemId || null) : null,
+          digitalOutputType: formData.useDigitalOutputItem ? formData.digitalOutputType : 0,
+          digitalOutputReference: formData.useDigitalOutputItem ? (formData.digitalOutputReference || null) : null,
           hysteresisHighThreshold: formData.hysteresisHighThreshold,
           hysteresisLowThreshold: formData.hysteresisLowThreshold,
           parentPIDId: formData.useParentPID ? (formData.parentPIDId || null) : null,
@@ -402,8 +551,10 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
       } else {
         const requestData: AddPIDMemoryRequestDto = {
           name: formData.name || null,
-          inputItemId: formData.inputItemId,
-          outputItemId: formData.outputItemId,
+          inputType: formData.inputType,
+          inputReference: formData.inputReference,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
           kp: formData.kp,
           ki: formData.ki,
           kd: formData.kd,
@@ -411,15 +562,20 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
           outputMax: formData.outputMax,
           interval: formData.interval,
           isDisabled: formData.isDisabled,
-          setPointId: formData.setPointId,
-          isAutoId: formData.isAutoId,
-          manualValueId: formData.manualValueId,
-          reverseOutputId: formData.reverseOutputId,
+          setPointType: formData.setPointType,
+          setPointReference: formData.setPointReference,
+          isAutoType: formData.isAutoType,
+          isAutoReference: formData.isAutoReference,
+          manualValueType: formData.manualValueType,
+          manualValueReference: formData.manualValueReference,
+          reverseOutputType: formData.reverseOutputType,
+          reverseOutputReference: formData.reverseOutputReference,
           derivativeFilterAlpha: formData.derivativeFilterAlpha,
           maxOutputSlewRate: formData.maxOutputSlewRate,
           deadZone: formData.deadZone,
           feedForward: formData.feedForward,
-          digitalOutputItemId: formData.useDigitalOutputItem ? (formData.digitalOutputItemId || null) : null,
+          digitalOutputType: formData.useDigitalOutputItem ? formData.digitalOutputType : 0,
+          digitalOutputReference: formData.useDigitalOutputItem ? (formData.digitalOutputReference || null) : null,
           hysteresisHighThreshold: formData.hysteresisHighThreshold,
           hysteresisLowThreshold: formData.hysteresisLowThreshold,
           parentPIDId: formData.useParentPID ? (formData.parentPIDId || null) : null,
@@ -517,96 +673,206 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   </IconButton>
                 </Box>
 
-                {/* Input Item with Help */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Autocomplete
-                    fullWidth
-                    options={analogInputItems}
-                    getOptionLabel={getItemLabel}
-                    value={selectedInputItem}
-                    onChange={(_, newValue) => handleFieldChange('inputItemId', newValue?.id || '')}
-                    disabled={isSaving}
-                    data-id-ref="pid-memory-input-item-select"
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={t('pidMemory.inputItem')}
-                        required
-                        error={!!formErrors.inputItemId}
-                        helperText={formErrors.inputItemId || t('pidMemory.inputItemHelp')}
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props} key={option.id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                            {getItemLabel(option)}
-                          </Typography>
-                          <Chip
-                            label={getItemTypeLabel(option.itemType, t)}
-                            size="small"
-                            color={getItemTypeColor(option.itemType)}
-                            sx={{ height: 20, fontSize: '0.7rem' }}
-                          />
+                {/* Input Item/Variable with Help */}
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {t('pidMemory.inputItem')}
+                    </Typography>
+                    <ToggleButtonGroup
+                      value={formData.inputType}
+                      exclusive
+                      onChange={handleTypeChange('inputType', 'inputReference')}
+                      size="small"
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-input-type-toggle"
+                    >
+                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-input-type-point">
+                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.point')}
+                      </ToggleButton>
+                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-input-type-variable">
+                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.globalVariable')}
+                      </ToggleButton>
+                    </ToggleButtonGroup>
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('pidMemory.help.inputItem')}
+                      sx={{ p: 0.25 }}
+                      data-id-ref="pid-memory-input-item-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
+
+                  {formData.inputType === PIDSourceType.Point ? (
+                    <Autocomplete
+                      fullWidth
+                      options={analogInputItems}
+                      getOptionLabel={getItemLabel}
+                      value={selectedInputItem}
+                      onChange={(_, newValue) => handleFieldChange('inputReference', newValue?.id || '')}
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-input-item-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('pidMemory.inputItem')}
+                          required
+                          error={!!formErrors.inputReference}
+                          helperText={formErrors.inputReference || t('pidMemory.inputItemHelp')}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {getItemLabel(option)}
+                            </Typography>
+                            <Chip
+                              label={getItemTypeLabel(option.itemType, t)}
+                              size="small"
+                              color={getItemTypeColor(option.itemType)}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
                         </Box>
-                      </Box>
-                    )}
-                    isOptionEqualToValue={(option, value) => option.id === value.id}
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={handleHelpOpen('pidMemory.help.inputItem')}
-                    sx={{ p: 0.25, mt: -3 }}
-                    data-id-ref="pid-memory-input-item-help-btn"
-                  >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
+                      )}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                    />
+                  ) : (
+                    <Autocomplete
+                      fullWidth
+                      options={globalVariables}
+                      getOptionLabel={getVariableLabel}
+                      value={selectedInputVariable}
+                      onChange={(_, newValue) => handleFieldChange('inputReference', newValue?.name || '')}
+                      disabled={isSaving || loadingGlobalVariables}
+                      loading={loadingGlobalVariables}
+                      data-id-ref="pid-memory-input-variable-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('common.globalVariable')}
+                          required
+                          error={!!formErrors.inputReference}
+                          helperText={formErrors.inputReference}
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      isOptionEqualToValue={(option, value) => option.name === value.name}
+                    />
+                  )}
                 </Box>
 
-                {/* Output Item with Help */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Autocomplete
-                    fullWidth
-                    options={analogOutputItems}
-                    getOptionLabel={getItemLabel}
-                    value={selectedOutputItem}
-                    onChange={(_, newValue) => handleFieldChange('outputItemId', newValue?.id || '')}
-                    disabled={isSaving}
-                    data-id-ref="pid-memory-output-item-select"
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={t('pidMemory.outputItem')}
-                        required
-                        error={!!formErrors.outputItemId}
-                        helperText={formErrors.outputItemId || t('pidMemory.outputItemHelp')}
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props} key={option.id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                            {getItemLabel(option)}
-                          </Typography>
-                          <Chip
-                            label={getItemTypeLabel(option.itemType, t)}
-                            size="small"
-                            color={getItemTypeColor(option.itemType)}
-                            sx={{ height: 20, fontSize: '0.7rem' }}
-                          />
+                {/* Output Item/Variable with Help */}
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {t('pidMemory.outputItem')}
+                    </Typography>
+                    <ToggleButtonGroup
+                      value={formData.outputType}
+                      exclusive
+                      onChange={handleTypeChange('outputType', 'outputReference')}
+                      size="small"
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-output-type-toggle"
+                    >
+                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-output-type-point">
+                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.point')}
+                      </ToggleButton>
+                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-output-type-variable">
+                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.globalVariable')}
+                      </ToggleButton>
+                    </ToggleButtonGroup>
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('pidMemory.help.outputItem')}
+                      sx={{ p: 0.25 }}
+                      data-id-ref="pid-memory-output-item-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
+
+                  {formData.outputType === PIDSourceType.Point ? (
+                    <Autocomplete
+                      fullWidth
+                      options={analogOutputItems}
+                      getOptionLabel={getItemLabel}
+                      value={selectedOutputItem}
+                      onChange={(_, newValue) => handleFieldChange('outputReference', newValue?.id || '')}
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-output-item-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('pidMemory.outputItem')}
+                          required
+                          error={!!formErrors.outputReference}
+                          helperText={formErrors.outputReference || t('pidMemory.outputItemHelp')}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {getItemLabel(option)}
+                            </Typography>
+                            <Chip
+                              label={getItemTypeLabel(option.itemType, t)}
+                              size="small"
+                              color={getItemTypeColor(option.itemType)}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
                         </Box>
-                      </Box>
-                    )}
-                    isOptionEqualToValue={(option, value) => option.id === value.id}
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={handleHelpOpen('pidMemory.help.outputItem')}
-                    sx={{ p: 0.25, mt: -3 }}
-                    data-id-ref="pid-memory-output-item-help-btn"
-                  >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
+                      )}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                    />
+                  ) : (
+                    <Autocomplete
+                      fullWidth
+                      options={globalVariables}
+                      getOptionLabel={getVariableLabel}
+                      value={selectedOutputVariable}
+                      onChange={(_, newValue) => handleFieldChange('outputReference', newValue?.name || '')}
+                      disabled={isSaving || loadingGlobalVariables}
+                      loading={loadingGlobalVariables}
+                      data-id-ref="pid-memory-output-variable-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('common.globalVariable')}
+                          required
+                          error={!!formErrors.outputReference}
+                          helperText={formErrors.outputReference}
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      isOptionEqualToValue={(option, value) => option.name === value.name}
+                    />
+                  )}
                 </Box>
 
                 <Box sx={{ display: 'flex', gap: 2 }}>
@@ -663,53 +929,104 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   </Box>
                 </Box>
 
-                {/* SetPoint - Required Item Reference */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    {t('pidMemory.setpointConfiguration')}
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={handleHelpOpen('pidMemory.help.setpointMode')}
-                    sx={{ p: 0.25 }}
-                    data-id-ref="pid-memory-setpoint-mode-help-btn"
-                  >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
-                </Box>
-                <Autocomplete
-                  options={analogItems}
-                  getOptionLabel={getItemLabel}
-                  value={selectedSetPointItem}
-                  onChange={(_, newValue) => handleFieldChange('setPointId', newValue?.id || '')}
-                  disabled={isSaving}
-                  data-id-ref="pid-memory-setpoint-item-select"
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('pidMemory.setPointItem')}
-                      required
-                      error={!!formErrors.setPointId}
-                      helperText={formErrors.setPointId || t('pidMemory.setPointItemHelp')}
+                {/* SetPoint - Required Item/Variable Reference */}
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      {t('pidMemory.setpointConfiguration')}
+                    </Typography>
+                    <ToggleButtonGroup
+                      value={formData.setPointType}
+                      exclusive
+                      onChange={handleTypeChange('setPointType', 'setPointReference')}
+                      size="small"
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-setpoint-type-toggle"
+                    >
+                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-setpoint-type-point">
+                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.point')}
+                      </ToggleButton>
+                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-setpoint-type-variable">
+                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.globalVariable')}
+                      </ToggleButton>
+                    </ToggleButtonGroup>
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('pidMemory.help.setpointMode')}
+                      sx={{ p: 0.25 }}
+                      data-id-ref="pid-memory-setpoint-mode-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
+
+                  {formData.setPointType === PIDSourceType.Point ? (
+                    <Autocomplete
+                      options={analogItems}
+                      getOptionLabel={getItemLabel}
+                      value={selectedSetPointItem}
+                      onChange={(_, newValue) => handleFieldChange('setPointReference', newValue?.id || '')}
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-setpoint-item-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('pidMemory.setPointItem')}
+                          required
+                          error={!!formErrors.setPointReference}
+                          helperText={formErrors.setPointReference || t('pidMemory.setPointItemHelp')}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {getItemLabel(option)}
+                            </Typography>
+                            <Chip
+                              label={getItemTypeLabel(option.itemType, t)}
+                              size="small"
+                              color={getItemTypeColor(option.itemType)}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                    />
+                  ) : (
+                    <Autocomplete
+                      options={globalVariables}
+                      getOptionLabel={getVariableLabel}
+                      value={selectedSetPointVariable}
+                      onChange={(_, newValue) => handleFieldChange('setPointReference', newValue?.name || '')}
+                      disabled={isSaving || loadingGlobalVariables}
+                      loading={loadingGlobalVariables}
+                      data-id-ref="pid-memory-setpoint-variable-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('common.globalVariable')}
+                          required
+                          error={!!formErrors.setPointReference}
+                          helperText={formErrors.setPointReference}
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      isOptionEqualToValue={(option, value) => option.name === value.name}
                     />
                   )}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType, t)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
-                      </Box>
-                    </Box>
-                  )}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                />
+                </Box>
               </Box>
             </CardContent>
           </Collapse>
@@ -854,102 +1171,204 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   </IconButton>
                 </Box>
 
-                {/* IsAuto - Required Item Reference */}
+                {/* IsAuto - Required Item/Variable Reference */}
                 <Divider sx={{ my: 1 }} />
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    {t('pidMemory.modeSettings')}
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={handleHelpOpen('pidMemory.help.isAuto')}
-                    sx={{ p: 0.25 }}
-                    data-id-ref="pid-memory-is-auto-help-btn"
-                  >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
-                </Box>
-                <Autocomplete
-                  options={digitalItems}
-                  getOptionLabel={getItemLabel}
-                  value={selectedIsAutoItem}
-                  onChange={(_, newValue) => handleFieldChange('isAutoId', newValue?.id || '')}
-                  disabled={isSaving}
-                  data-id-ref="pid-memory-is-auto-item-select"
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('pidMemory.isAutoItem')}
-                      required
-                      error={!!formErrors.isAutoId}
-                      helperText={formErrors.isAutoId || t('pidMemory.isAutoItemHelp')}
-                    />
-                  )}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType, t)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
-                      </Box>
-                    </Box>
-                  )}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                />
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      {t('pidMemory.modeSettings')}
+                    </Typography>
+                    <ToggleButtonGroup
+                      value={formData.isAutoType}
+                      exclusive
+                      onChange={handleTypeChange('isAutoType', 'isAutoReference')}
+                      size="small"
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-isauto-type-toggle"
+                    >
+                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-isauto-type-point">
+                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.point')}
+                      </ToggleButton>
+                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-isauto-type-variable">
+                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.globalVariable')}
+                      </ToggleButton>
+                    </ToggleButtonGroup>
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('pidMemory.help.isAuto')}
+                      sx={{ p: 0.25 }}
+                      data-id-ref="pid-memory-is-auto-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
 
-                {/* ManualValue - Required Item Reference */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    {t('pidMemory.manualModeConfiguration')}
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={handleHelpOpen('pidMemory.help.manualMode')}
-                    sx={{ p: 0.25 }}
-                    data-id-ref="pid-memory-manual-mode-help-btn"
-                  >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
-                </Box>
-                <Autocomplete
-                  options={analogItems}
-                  getOptionLabel={getItemLabel}
-                  value={selectedManualValueItem}
-                  onChange={(_, newValue) => handleFieldChange('manualValueId', newValue?.id || '')}
-                  disabled={isSaving}
-                  data-id-ref="pid-memory-manual-value-item-select"
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('pidMemory.manualValueItem')}
-                      required
-                      error={!!formErrors.manualValueId}
-                      helperText={formErrors.manualValueId || t('pidMemory.manualValueItemHelp')}
+                  {formData.isAutoType === PIDSourceType.Point ? (
+                    <Autocomplete
+                      options={digitalItems}
+                      getOptionLabel={getItemLabel}
+                      value={selectedIsAutoItem}
+                      onChange={(_, newValue) => handleFieldChange('isAutoReference', newValue?.id || '')}
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-is-auto-item-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('pidMemory.isAutoItem')}
+                          required
+                          error={!!formErrors.isAutoReference}
+                          helperText={formErrors.isAutoReference || t('pidMemory.isAutoItemHelp')}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {getItemLabel(option)}
+                            </Typography>
+                            <Chip
+                              label={getItemTypeLabel(option.itemType, t)}
+                              size="small"
+                              color={getItemTypeColor(option.itemType)}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                    />
+                  ) : (
+                    <Autocomplete
+                      options={globalVariables}
+                      getOptionLabel={getVariableLabel}
+                      value={selectedIsAutoVariable}
+                      onChange={(_, newValue) => handleFieldChange('isAutoReference', newValue?.name || '')}
+                      disabled={isSaving || loadingGlobalVariables}
+                      loading={loadingGlobalVariables}
+                      data-id-ref="pid-memory-isauto-variable-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('common.globalVariable')}
+                          required
+                          error={!!formErrors.isAutoReference}
+                          helperText={formErrors.isAutoReference}
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      isOptionEqualToValue={(option, value) => option.name === value.name}
                     />
                   )}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType, t)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
+                </Box>
+
+                {/* ManualValue - Required Item/Variable Reference */}
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      {t('pidMemory.manualModeConfiguration')}
+                    </Typography>
+                    <ToggleButtonGroup
+                      value={formData.manualValueType}
+                      exclusive
+                      onChange={handleTypeChange('manualValueType', 'manualValueReference')}
+                      size="small"
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-manualvalue-type-toggle"
+                    >
+                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-manualvalue-type-point">
+                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.point')}
+                      </ToggleButton>
+                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-manualvalue-type-variable">
+                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.globalVariable')}
+                      </ToggleButton>
+                    </ToggleButtonGroup>
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('pidMemory.help.manualMode')}
+                      sx={{ p: 0.25 }}
+                      data-id-ref="pid-memory-manual-mode-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
+
+                  {formData.manualValueType === PIDSourceType.Point ? (
+                    <Autocomplete
+                      options={analogItems}
+                      getOptionLabel={getItemLabel}
+                      value={selectedManualValueItem}
+                      onChange={(_, newValue) => handleFieldChange('manualValueReference', newValue?.id || '')}
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-manual-value-item-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('pidMemory.manualValueItem')}
+                          required
+                          error={!!formErrors.manualValueReference}
+                          helperText={formErrors.manualValueReference || t('pidMemory.manualValueItemHelp')}
                         />
-                      </Box>
-                    </Box>
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {getItemLabel(option)}
+                            </Typography>
+                            <Chip
+                              label={getItemTypeLabel(option.itemType, t)}
+                              size="small"
+                              color={getItemTypeColor(option.itemType)}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                    />
+                  ) : (
+                    <Autocomplete
+                      options={globalVariables}
+                      getOptionLabel={getVariableLabel}
+                      value={selectedManualValueVariable}
+                      onChange={(_, newValue) => handleFieldChange('manualValueReference', newValue?.name || '')}
+                      disabled={isSaving || loadingGlobalVariables}
+                      loading={loadingGlobalVariables}
+                      data-id-ref="pid-memory-manualvalue-variable-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('common.globalVariable')}
+                          required
+                          error={!!formErrors.manualValueReference}
+                          helperText={formErrors.manualValueReference}
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      isOptionEqualToValue={(option, value) => option.name === value.name}
+                    />
                   )}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                />
+                </Box>
               </Box>
             </CardContent>
           </Collapse>
@@ -1049,54 +1468,105 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   />
                 </Box>
 
-                {/* ReverseOutput - Required Item Reference */}
+                {/* ReverseOutput - Required Item/Variable Reference */}
                 <Divider sx={{ my: 1 }} />
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    {t('pidMemory.reverseOutputSettings')}
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={handleHelpOpen('pidMemory.help.reverseOutput')}
-                    sx={{ p: 0.25 }}
-                    data-id-ref="pid-memory-reverse-output-help-btn"
-                  >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
-                </Box>
-                <Autocomplete
-                  options={digitalItems}
-                  getOptionLabel={getItemLabel}
-                  value={selectedReverseOutputItem}
-                  onChange={(_, newValue) => handleFieldChange('reverseOutputId', newValue?.id || '')}
-                  disabled={isSaving}
-                  data-id-ref="pid-memory-reverse-output-item-select"
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('pidMemory.reverseOutputItem')}
-                      required
-                      error={!!formErrors.reverseOutputId}
-                      helperText={formErrors.reverseOutputId || t('pidMemory.reverseOutputItemHelp')}
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      {t('pidMemory.reverseOutputSettings')}
+                    </Typography>
+                    <ToggleButtonGroup
+                      value={formData.reverseOutputType}
+                      exclusive
+                      onChange={handleTypeChange('reverseOutputType', 'reverseOutputReference')}
+                      size="small"
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-reverseoutput-type-toggle"
+                    >
+                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-reverseoutput-type-point">
+                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.point')}
+                      </ToggleButton>
+                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-reverseoutput-type-variable">
+                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        {t('common.globalVariable')}
+                      </ToggleButton>
+                    </ToggleButtonGroup>
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('pidMemory.help.reverseOutput')}
+                      sx={{ p: 0.25 }}
+                      data-id-ref="pid-memory-reverse-output-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
+
+                  {formData.reverseOutputType === PIDSourceType.Point ? (
+                    <Autocomplete
+                      options={digitalItems}
+                      getOptionLabel={getItemLabel}
+                      value={selectedReverseOutputItem}
+                      onChange={(_, newValue) => handleFieldChange('reverseOutputReference', newValue?.id || '')}
+                      disabled={isSaving}
+                      data-id-ref="pid-memory-reverse-output-item-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('pidMemory.reverseOutputItem')}
+                          required
+                          error={!!formErrors.reverseOutputReference}
+                          helperText={formErrors.reverseOutputReference || t('pidMemory.reverseOutputItemHelp')}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {getItemLabel(option)}
+                            </Typography>
+                            <Chip
+                              label={getItemTypeLabel(option.itemType, t)}
+                              size="small"
+                              color={getItemTypeColor(option.itemType)}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                    />
+                  ) : (
+                    <Autocomplete
+                      options={globalVariables}
+                      getOptionLabel={getVariableLabel}
+                      value={selectedReverseOutputVariable}
+                      onChange={(_, newValue) => handleFieldChange('reverseOutputReference', newValue?.name || '')}
+                      disabled={isSaving || loadingGlobalVariables}
+                      loading={loadingGlobalVariables}
+                      data-id-ref="pid-memory-reverseoutput-variable-select"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('common.globalVariable')}
+                          required
+                          error={!!formErrors.reverseOutputReference}
+                          helperText={formErrors.reverseOutputReference}
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      isOptionEqualToValue={(option, value) => option.name === value.name}
                     />
                   )}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType, t)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
-                      </Box>
-                    </Box>
-                  )}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                />
+                </Box>
               </Box>
             </CardContent>
           </Collapse>
@@ -1273,37 +1743,91 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
 
                 {formData.useDigitalOutputItem && (
                   <>
-                    <Autocomplete
-                      options={digitalOutputItems}
-                      getOptionLabel={getItemLabel}
-                      value={selectedDigitalOutputItem}
-                      onChange={(_, newValue) => handleFieldChange('digitalOutputItemId', newValue?.id || '')}
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-digital-output-item-select"
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label={t('pidMemory.digitalOutputItem')}
-                          helperText={t('pidMemory.digitalOutputItemHelp')}
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {t('pidMemory.digitalOutputItem')}
+                        </Typography>
+                        <ToggleButtonGroup
+                          value={formData.digitalOutputType}
+                          exclusive
+                          onChange={handleTypeChange('digitalOutputType', 'digitalOutputReference')}
+                          size="small"
+                          disabled={isSaving}
+                          data-id-ref="pid-memory-digitaloutput-type-toggle"
+                        >
+                          <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-digitaloutput-type-point">
+                            <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                            {t('common.point')}
+                          </ToggleButton>
+                          <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-digitaloutput-type-variable">
+                            <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                            {t('common.globalVariable')}
+                          </ToggleButton>
+                        </ToggleButtonGroup>
+                      </Box>
+
+                      {formData.digitalOutputType === PIDSourceType.Point ? (
+                        <Autocomplete
+                          options={digitalOutputItems}
+                          getOptionLabel={getItemLabel}
+                          value={selectedDigitalOutputItem}
+                          onChange={(_, newValue) => handleFieldChange('digitalOutputReference', newValue?.id || '')}
+                          disabled={isSaving}
+                          data-id-ref="pid-memory-digital-output-item-select"
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={t('pidMemory.digitalOutputItem')}
+                              helperText={t('pidMemory.digitalOutputItemHelp')}
+                            />
+                          )}
+                          renderOption={(props, option) => (
+                            <Box component="li" {...props} key={option.id}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                                <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                                  {getItemLabel(option)}
+                                </Typography>
+                                <Chip
+                                  label={getItemTypeLabel(option.itemType, t)}
+                                  size="small"
+                                  color={getItemTypeColor(option.itemType)}
+                                  sx={{ height: 20, fontSize: '0.7rem' }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+                          isOptionEqualToValue={(option, value) => option.id === value.id}
+                        />
+                      ) : (
+                        <Autocomplete
+                          options={globalVariables}
+                          getOptionLabel={getVariableLabel}
+                          value={selectedDigitalOutputVariable}
+                          onChange={(_, newValue) => handleFieldChange('digitalOutputReference', newValue?.name || '')}
+                          disabled={isSaving || loadingGlobalVariables}
+                          loading={loadingGlobalVariables}
+                          data-id-ref="pid-memory-digitaloutput-variable-select"
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={t('common.globalVariable')}
+                              helperText={t('pidMemory.digitalOutputItemHelp')}
+                              InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                  <>
+                                    {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                                    {params.InputProps.endAdornment}
+                                  </>
+                                ),
+                              }}
+                            />
+                          )}
+                          isOptionEqualToValue={(option, value) => option.name === value.name}
                         />
                       )}
-                      renderOption={(props, option) => (
-                        <Box component="li" {...props} key={option.id}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                              {getItemLabel(option)}
-                            </Typography>
-                            <Chip
-                              label={getItemTypeLabel(option.itemType, t)}
-                              size="small"
-                              color={getItemTypeColor(option.itemType)}
-                              sx={{ height: 20, fontSize: '0.7rem' }}
-                            />
-                          </Box>
-                        </Box>
-                      )}
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
-                    />
+                    </Box>
 
                     {/* Hysteresis Thresholds with Help */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>

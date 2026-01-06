@@ -4,6 +4,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Core.Models;
 
+/// <summary>
+/// Specifies the source type for PID memory inputs and outputs
+/// </summary>
+public enum PIDSourceType
+{
+    /// <summary>
+    /// Reference is a Point (MonitoringItem) GUID
+    /// </summary>
+    Point = 0,
+    
+    /// <summary>
+    /// Reference is a Global Variable name
+    /// </summary>
+    GlobalVariable = 1
+}
+
 [Table("pid_memory")]
 public class PIDMemory
 {
@@ -13,8 +29,19 @@ public class PIDMemory
     
     [Column("name")] public string? Name { get; set; }
 
-    [Column("input_item_id")] public Guid InputItemId { get; set; }
-    [Column("output_item_id")] public Guid OutputItemId { get; set; }
+    // Input (Process Variable)
+    [Column("input_type")] 
+    public PIDSourceType InputType { get; set; } = PIDSourceType.Point;
+    
+    [Column("input_reference")] 
+    public string InputReference { get; set; } = string.Empty;
+    
+    // Output (Control Variable)
+    [Column("output_type")] 
+    public PIDSourceType OutputType { get; set; } = PIDSourceType.Point;
+    
+    [Column("output_reference")] 
+    public string OutputReference { get; set; } = string.Empty;
 
     [DefaultValue(1.0)] [Column("kp")] public double Kp { get; set; }
 
@@ -38,7 +65,12 @@ public class PIDMemory
     [Column("is_disabled")]
     public bool IsDisabled { get; set; }
 
-    [Column("set_point_id")] public Guid SetPointId { get; set; }
+    // SetPoint
+    [Column("set_point_type")] 
+    public PIDSourceType SetPointType { get; set; } = PIDSourceType.Point;
+    
+    [Column("set_point_reference")] 
+    public string SetPointReference { get; set; } = string.Empty;
 
     [DefaultValue(1.0)]
     [Column("derivative_filter_alpha")]
@@ -56,16 +88,33 @@ public class PIDMemory
     [Column("feed_forward")]
     public double FeedForward { get; set; }
 
-    [Column("is_auto_id")] public Guid IsAutoId { get; set; }
-
-    [Column("manual_value_id")] public Guid ManualValueId { get; set; }
+    // Auto/Manual Mode
+    [Column("is_auto_type")] 
+    public PIDSourceType IsAutoType { get; set; } = PIDSourceType.Point;
     
-    [Column("reverse_output_id")]
-    public Guid ReverseOutputId { get; set; }
+    [Column("is_auto_reference")] 
+    public string IsAutoReference { get; set; } = string.Empty;
+
+    // Manual Value
+    [Column("manual_value_type")] 
+    public PIDSourceType ManualValueType { get; set; } = PIDSourceType.Point;
+    
+    [Column("manual_value_reference")] 
+    public string ManualValueReference { get; set; } = string.Empty;
+    
+    // Reverse Output Flag
+    [Column("reverse_output_type")] 
+    public PIDSourceType ReverseOutputType { get; set; } = PIDSourceType.Point;
+    
+    [Column("reverse_output_reference")] 
+    public string ReverseOutputReference { get; set; } = string.Empty;
     
     // Hysteresis Control for Digital Output
-    [Column("digital_output_item_id")]
-    public Guid? DigitalOutputItemId { get; set; }
+    [Column("digital_output_type")] 
+    public PIDSourceType? DigitalOutputType { get; set; }
+    
+    [Column("digital_output_reference")] 
+    public string? DigitalOutputReference { get; set; }
     
     [DefaultValue(75.0)]
     [Column("hysteresis_high_threshold")]
@@ -90,4 +139,111 @@ public class PIDMemory
     [DefaultValue(0)]
     [Column("cascade_level")]
     public int CascadeLevel { get; set; }
+    
+    // Backward compatibility helpers (NotMapped - for code compatibility during transition)
+    /// <summary>
+    /// Backward compatibility: Gets the Input Item ID if InputType is Point
+    /// </summary>
+    [NotMapped]
+    public Guid InputItemId
+    {
+        get => InputType == PIDSourceType.Point && Guid.TryParse(InputReference, out var id) ? id : Guid.Empty;
+        set
+        {
+            InputType = PIDSourceType.Point;
+            InputReference = value.ToString();
+        }
+    }
+    
+    /// <summary>
+    /// Backward compatibility: Gets the Output Item ID if OutputType is Point
+    /// </summary>
+    [NotMapped]
+    public Guid OutputItemId
+    {
+        get => OutputType == PIDSourceType.Point && Guid.TryParse(OutputReference, out var id) ? id : Guid.Empty;
+        set
+        {
+            OutputType = PIDSourceType.Point;
+            OutputReference = value.ToString();
+        }
+    }
+    
+    /// <summary>
+    /// Backward compatibility: Gets the SetPoint Item ID if SetPointType is Point
+    /// </summary>
+    [NotMapped]
+    public Guid SetPointId
+    {
+        get => SetPointType == PIDSourceType.Point && Guid.TryParse(SetPointReference, out var id) ? id : Guid.Empty;
+        set
+        {
+            SetPointType = PIDSourceType.Point;
+            SetPointReference = value.ToString();
+        }
+    }
+    
+    /// <summary>
+    /// Backward compatibility: Gets the IsAuto Item ID if IsAutoType is Point
+    /// </summary>
+    [NotMapped]
+    public Guid IsAutoId
+    {
+        get => IsAutoType == PIDSourceType.Point && Guid.TryParse(IsAutoReference, out var id) ? id : Guid.Empty;
+        set
+        {
+            IsAutoType = PIDSourceType.Point;
+            IsAutoReference = value.ToString();
+        }
+    }
+    
+    /// <summary>
+    /// Backward compatibility: Gets the ManualValue Item ID if ManualValueType is Point
+    /// </summary>
+    [NotMapped]
+    public Guid ManualValueId
+    {
+        get => ManualValueType == PIDSourceType.Point && Guid.TryParse(ManualValueReference, out var id) ? id : Guid.Empty;
+        set
+        {
+            ManualValueType = PIDSourceType.Point;
+            ManualValueReference = value.ToString();
+        }
+    }
+    
+    /// <summary>
+    /// Backward compatibility: Gets the ReverseOutput Item ID if ReverseOutputType is Point
+    /// </summary>
+    [NotMapped]
+    public Guid ReverseOutputId
+    {
+        get => ReverseOutputType == PIDSourceType.Point && Guid.TryParse(ReverseOutputReference, out var id) ? id : Guid.Empty;
+        set
+        {
+            ReverseOutputType = PIDSourceType.Point;
+            ReverseOutputReference = value.ToString();
+        }
+    }
+    
+    /// <summary>
+    /// Backward compatibility: Gets the DigitalOutput Item ID if DigitalOutputType is Point
+    /// </summary>
+    [NotMapped]
+    public Guid? DigitalOutputItemId
+    {
+        get => DigitalOutputType == PIDSourceType.Point && Guid.TryParse(DigitalOutputReference ?? string.Empty, out var id) ? id : null;
+        set
+        {
+            if (value.HasValue && value.Value != Guid.Empty)
+            {
+                DigitalOutputType = PIDSourceType.Point;
+                DigitalOutputReference = value.Value.ToString();
+            }
+            else
+            {
+                DigitalOutputType = null;
+                DigitalOutputReference = null;
+            }
+        }
+    }
 }

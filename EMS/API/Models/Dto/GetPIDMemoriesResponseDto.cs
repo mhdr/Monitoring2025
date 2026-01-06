@@ -26,16 +26,26 @@ public class GetPIDMemoriesResponseDto
         public string? Name { get; set; }
 
         /// <summary>
-        /// ID of the monitoring item for process variable (input)
-        /// Must be AnalogInput
+        /// Type of the input source: 0=Point, 1=GlobalVariable
         /// </summary>
-        public Guid InputItemId { get; set; }
+        public int InputType { get; set; }
 
         /// <summary>
-        /// ID of the monitoring item for control output
-        /// Must be AnalogOutput
+        /// Reference to the input source (GUID string for Point, name for GlobalVariable)
+        /// Must be AnalogInput when InputType=Point
         /// </summary>
-        public Guid OutputItemId { get; set; }
+        public string InputReference { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Type of the output source: 0=Point, 1=GlobalVariable
+        /// </summary>
+        public int OutputType { get; set; }
+
+        /// <summary>
+        /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+        /// Must be AnalogOutput when OutputType=Point
+        /// </summary>
+        public string OutputReference { get; set; } = string.Empty;
 
         /// <summary>
         /// Proportional gain (Kp)
@@ -73,9 +83,15 @@ public class GetPIDMemoriesResponseDto
         public bool IsDisabled { get; set; }
 
         /// <summary>
-        /// ID of monitoring item for dynamic setpoint (AnalogInput or AnalogOutput)
+        /// Type of the setpoint source: 0=Point, 1=GlobalVariable
         /// </summary>
-        public Guid SetPointId { get; set; }
+        public int SetPointType { get; set; }
+
+        /// <summary>
+        /// Reference to the setpoint source (GUID string for Point, name for GlobalVariable)
+        /// Must be AnalogInput or AnalogOutput when SetPointType=Point
+        /// </summary>
+        public string SetPointReference { get; set; } = string.Empty;
 
         /// <summary>
         /// Derivative filter alpha (0-1)
@@ -98,25 +114,48 @@ public class GetPIDMemoriesResponseDto
         public double FeedForward { get; set; }
 
         /// <summary>
-        /// ID of monitoring item for dynamic auto/manual mode (DigitalInput or DigitalOutput)
+        /// Type of the auto/manual mode source: 0=Point, 1=GlobalVariable
         /// </summary>
-        public Guid IsAutoId { get; set; }
+        public int IsAutoType { get; set; }
 
         /// <summary>
-        /// ID of monitoring item for dynamic manual value (AnalogInput or AnalogOutput)
+        /// Reference to the auto/manual mode source (GUID string for Point, name for GlobalVariable)
+        /// Must be DigitalInput or DigitalOutput when IsAutoType=Point
         /// </summary>
-        public Guid ManualValueId { get; set; }
+        public string IsAutoReference { get; set; } = string.Empty;
 
         /// <summary>
-        /// ID of monitoring item for dynamic reverse output (DigitalInput or DigitalOutput)
+        /// Type of the manual value source: 0=Point, 1=GlobalVariable
         /// </summary>
-        public Guid ReverseOutputId { get; set; }
+        public int ManualValueType { get; set; }
 
         /// <summary>
-        /// ID of digital output item for hysteresis control (optional)
-        /// Must be DigitalOutput type. When configured, enables on/off control based on thresholds.
+        /// Reference to the manual value source (GUID string for Point, name for GlobalVariable)
+        /// Must be AnalogInput or AnalogOutput when ManualValueType=Point
         /// </summary>
-        public Guid? DigitalOutputItemId { get; set; }
+        public string ManualValueReference { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Type of the reverse output source: 0=Point, 1=GlobalVariable
+        /// </summary>
+        public int ReverseOutputType { get; set; }
+
+        /// <summary>
+        /// Reference to the reverse output source (GUID string for Point, name for GlobalVariable)
+        /// Must be DigitalInput or DigitalOutput when ReverseOutputType=Point
+        /// </summary>
+        public string ReverseOutputReference { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Type of the digital output source for hysteresis control: 0=Point, 1=GlobalVariable (optional)
+        /// </summary>
+        public int? DigitalOutputType { get; set; }
+
+        /// <summary>
+        /// Reference to the digital output source for hysteresis control (GUID string for Point, name for GlobalVariable)
+        /// Must be DigitalOutput when DigitalOutputType=Point. When configured, enables on/off control based on thresholds.
+        /// </summary>
+        public string? DigitalOutputReference { get; set; }
 
         /// <summary>
         /// High threshold for hysteresis control (turn ON when output >= this value)

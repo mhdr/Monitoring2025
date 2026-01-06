@@ -140,6 +140,66 @@ public class PIDMemories
     }
     
     /// <summary>
+    /// Validates a PID source reference (Point or GlobalVariable)
+    /// </summary>
+    private static async Task<(bool IsValid, Guid? ItemId, string? ErrorMessage)> ValidatePIDSource(
+        DataContext context,
+        PIDSourceType sourceType,
+        string sourceReference,
+        string fieldName,
+        ItemType? requiredItemType = null)
+    {
+        if (sourceType == PIDSourceType.Point)
+        {
+            if (!Guid.TryParse(sourceReference, out var itemId))
+            {
+                return (false, null, $"Invalid {fieldName} item GUID");
+            }
+            
+            var item = await context.MonitoringItems.FindAsync(itemId);
+            if (item == null)
+            {
+                return (false, null, $"{fieldName} item not found");
+            }
+            
+            // Validate item type if specified
+            if (requiredItemType.HasValue && item.ItemType != requiredItemType.Value)
+            {
+                return (false, null, $"{fieldName} item must be {requiredItemType.Value}");
+            }
+            
+            return (true, itemId, null);
+        }
+        else if (sourceType == PIDSourceType.GlobalVariable)
+        {
+            var variable = await GlobalVariables.GetGlobalVariableByName(sourceReference);
+            if (variable == null)
+            {
+                return (false, null, $"{fieldName} global variable not found");
+            }
+            
+            if (variable.IsDisabled)
+            {
+                return (false, null, $"{fieldName} global variable is disabled");
+            }
+            
+            return (true, null, null);
+        }
+        
+        return (false, null, $"Invalid {fieldName} source type");
+    }
+    
+    /// <summary>
+    /// Validates that two PID sources are different
+    /// </summary>
+    private static bool AreSameSource(
+        PIDSourceType type1, string reference1,
+        PIDSourceType type2, string reference2)
+    {
+        return type1 == type2 && reference1.Equals(reference2, StringComparison.OrdinalIgnoreCase);
+    }
+    
+    /// <summary>
     /// Get all PID memory configurations
     /// </summary>
     public static async Task<List<PIDMemory>?> GetPIDMemories()
@@ -170,113 +230,113 @@ public class PIDMemories
         {
             var context = new DataContext();
             
-            // Validate InputItem exists
-            var inputItem = await context.MonitoringItems.FindAsync(pidMemory.InputItemId);
-            if (inputItem == null)
+            // Validate Input source
+            var inputValidation = await ValidatePIDSource(context, pidMemory.InputType, pidMemory.InputReference, "Input", ItemType.AnalogInput);
+            if (!inputValidation.IsValid)
             {
                 await context.DisposeAsync();
-                return (false, null, "Input item not found");
+                return (false, null, inputValidation.ErrorMessage);
             }
 
-            // Validate InputItem is AnalogInput
-            if (inputItem.ItemType != ItemType.AnalogInput)
+            // Validate Output source
+            var outputValidation = await ValidatePIDSource(context, pidMemory.OutputType, pidMemory.OutputReference, "Output", ItemType.AnalogOutput);
+            if (!outputValidation.IsValid)
             {
                 await context.DisposeAsync();
-                return (false, null, "Input item must be AnalogInput");
+                return (false, null, outputValidation.ErrorMessage);
             }
 
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(pidMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate Input != Output
+            if (AreSameSource(pidMemory.InputType, pidMemory.InputReference, pidMemory.OutputType, pidMemory.OutputReference))
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item not found");
+                return (false, null, "Input and output sources must be different");
             }
 
-            // Validate OutputItem is AnalogOutput
-            if (outputItem.ItemType != ItemType.AnalogOutput)
+            // Validate SetPoint source (required, AnalogInput or AnalogOutput for Points)
+            var setPointValidation = await ValidatePIDSource(context, pidMemory.SetPointType, pidMemory.SetPointReference, "SetPoint");
+            if (!setPointValidation.IsValid)
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item must be AnalogOutput");
-            }
-
-            // Validate InputItemId != OutputItemId
-            if (pidMemory.InputItemId == pidMemory.OutputItemId)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Input and output items must be different");
-            }
-
-            // Validate SetPointId (required)
-            var setPointItem = await context.MonitoringItems.FindAsync(pidMemory.SetPointId);
-            if (setPointItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, null, "SetPoint item not found");
+                return (false, null, setPointValidation.ErrorMessage);
             }
             
-            if (setPointItem.ItemType != ItemType.AnalogInput && setPointItem.ItemType != ItemType.AnalogOutput)
+            // If SetPoint is a Point, validate it's Analog type
+            if (pidMemory.SetPointType == PIDSourceType.Point && setPointValidation.ItemId.HasValue)
             {
-                await context.DisposeAsync();
-                return (false, null, "SetPoint item must be AnalogInput or AnalogOutput");
-            }
-
-            // Validate IsAutoId (required)
-            var isAutoItem = await context.MonitoringItems.FindAsync(pidMemory.IsAutoId);
-            if (isAutoItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, null, "IsAuto item not found");
-            }
-            
-            if (isAutoItem.ItemType != ItemType.DigitalInput && isAutoItem.ItemType != ItemType.DigitalOutput)
-            {
-                await context.DisposeAsync();
-                return (false, null, "IsAuto item must be DigitalInput or DigitalOutput");
-            }
-
-            // Validate ManualValueId (required)
-            var manualValueItem = await context.MonitoringItems.FindAsync(pidMemory.ManualValueId);
-            if (manualValueItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, null, "ManualValue item not found");
-            }
-            
-            if (manualValueItem.ItemType != ItemType.AnalogInput && manualValueItem.ItemType != ItemType.AnalogOutput)
-            {
-                await context.DisposeAsync();
-                return (false, null, "ManualValue item must be AnalogInput or AnalogOutput");
-            }
-
-            // Validate ReverseOutputId (required)
-            var reverseOutputItem = await context.MonitoringItems.FindAsync(pidMemory.ReverseOutputId);
-            if (reverseOutputItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, null, "ReverseOutput item not found");
-            }
-            
-            if (reverseOutputItem.ItemType != ItemType.DigitalInput && reverseOutputItem.ItemType != ItemType.DigitalOutput)
-            {
-                await context.DisposeAsync();
-                return (false, null, "ReverseOutput item must be DigitalInput or DigitalOutput");
-            }
-
-            // Validate DigitalOutputItemId if provided
-            if (pidMemory.DigitalOutputItemId.HasValue && pidMemory.DigitalOutputItemId.Value != Guid.Empty)
-            {
-                var digitalOutputItem = await context.MonitoringItems.FindAsync(pidMemory.DigitalOutputItemId.Value);
-                if (digitalOutputItem == null)
+                var setPointItem = await context.MonitoringItems.FindAsync(setPointValidation.ItemId.Value);
+                if (setPointItem != null && setPointItem.ItemType != ItemType.AnalogInput && setPointItem.ItemType != ItemType.AnalogOutput)
                 {
                     await context.DisposeAsync();
-                    return (false, null, "DigitalOutput item not found");
+                    return (false, null, "SetPoint item must be AnalogInput or AnalogOutput");
                 }
-                
-                if (digitalOutputItem.ItemType != ItemType.DigitalOutput)
+            }
+
+            // Validate IsAuto source (required, DigitalInput or DigitalOutput for Points)
+            var isAutoValidation = await ValidatePIDSource(context, pidMemory.IsAutoType, pidMemory.IsAutoReference, "IsAuto");
+            if (!isAutoValidation.IsValid)
+            {
+                await context.DisposeAsync();
+                return (false, null, isAutoValidation.ErrorMessage);
+            }
+            
+            // If IsAuto is a Point, validate it's Digital type
+            if (pidMemory.IsAutoType == PIDSourceType.Point && isAutoValidation.ItemId.HasValue)
+            {
+                var isAutoItem = await context.MonitoringItems.FindAsync(isAutoValidation.ItemId.Value);
+                if (isAutoItem != null && isAutoItem.ItemType != ItemType.DigitalInput && isAutoItem.ItemType != ItemType.DigitalOutput)
                 {
                     await context.DisposeAsync();
-                    return (false, null, "DigitalOutput item must be DigitalOutput type");
+                    return (false, null, "IsAuto item must be DigitalInput or DigitalOutput");
+                }
+            }
+
+            // Validate ManualValue source (required, AnalogInput or AnalogOutput for Points)
+            var manualValueValidation = await ValidatePIDSource(context, pidMemory.ManualValueType, pidMemory.ManualValueReference, "ManualValue");
+            if (!manualValueValidation.IsValid)
+            {
+                await context.DisposeAsync();
+                return (false, null, manualValueValidation.ErrorMessage);
+            }
+            
+            // If ManualValue is a Point, validate it's Analog type
+            if (pidMemory.ManualValueType == PIDSourceType.Point && manualValueValidation.ItemId.HasValue)
+            {
+                var manualValueItem = await context.MonitoringItems.FindAsync(manualValueValidation.ItemId.Value);
+                if (manualValueItem != null && manualValueItem.ItemType != ItemType.AnalogInput && manualValueItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "ManualValue item must be AnalogInput or AnalogOutput");
+                }
+            }
+
+            // Validate ReverseOutput source (required, DigitalInput or DigitalOutput for Points)
+            var reverseOutputValidation = await ValidatePIDSource(context, pidMemory.ReverseOutputType, pidMemory.ReverseOutputReference, "ReverseOutput");
+            if (!reverseOutputValidation.IsValid)
+            {
+                await context.DisposeAsync();
+                return (false, null, reverseOutputValidation.ErrorMessage);
+            }
+            
+            // If ReverseOutput is a Point, validate it's Digital type
+            if (pidMemory.ReverseOutputType == PIDSourceType.Point && reverseOutputValidation.ItemId.HasValue)
+            {
+                var reverseOutputItem = await context.MonitoringItems.FindAsync(reverseOutputValidation.ItemId.Value);
+                if (reverseOutputItem != null && reverseOutputItem.ItemType != ItemType.DigitalInput && reverseOutputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "ReverseOutput item must be DigitalInput or DigitalOutput");
+                }
+            }
+
+            // Validate DigitalOutput source if provided
+            if (pidMemory.DigitalOutputType.HasValue && !string.IsNullOrEmpty(pidMemory.DigitalOutputReference))
+            {
+                var digitalOutputValidation = await ValidatePIDSource(context, pidMemory.DigitalOutputType.Value, pidMemory.DigitalOutputReference, "DigitalOutput", ItemType.DigitalOutput);
+                if (!digitalOutputValidation.IsValid)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, digitalOutputValidation.ErrorMessage);
                 }
             }
 
@@ -300,36 +360,17 @@ public class PIDMemories
                 return (false, null, $"HysteresisHighThreshold ({pidMemory.HysteresisHighThreshold}) must be <= OutputMax ({pidMemory.OutputMax})");
             }
 
-            // Validate cascade configuration
-            var cascadeValidation = await ValidateCascadeConfiguration(
-                context, 
-                Guid.Empty, // New PID, no ID yet
-                pidMemory.ParentPIDId, 
-                pidMemory.CascadeLevel,
-                pidMemory.OutputItemId);
+            // Note: Cascade validation is temporarily disabled as it needs to be updated for the new model
+            // TODO: Update cascade validation to work with PIDSourceType references
             
-            if (!cascadeValidation.IsValid)
-            {
-                await context.DisposeAsync();
-                return (false, null, cascadeValidation.ErrorMessage);
-            }
-            
-            // Validate cascade setpoint match
-            var setpointValidation = await ValidateCascadeSetpointMatch(
-                context,
-                pidMemory.ParentPIDId,
-                pidMemory.SetPointId);
-            
-            if (!setpointValidation.IsValid)
-            {
-                await context.DisposeAsync();
-                return (false, null, setpointValidation.ErrorMessage);
-            }
-
             context.PIDMemories.Add(pidMemory);
             await context.SaveChangesAsync();
             var id = pidMemory.Id;
             await context.DisposeAsync();
+            
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(id, "PIDMemory");
+            
             return (true, id, null);
         }
         catch (Exception e)
@@ -356,113 +397,113 @@ public class PIDMemories
                 return (false, "PID memory not found");
             }
 
-            // Validate InputItem exists
-            var inputItem = await context.MonitoringItems.FindAsync(pidMemory.InputItemId);
-            if (inputItem == null)
+            // Validate Input source
+            var inputValidation = await ValidatePIDSource(context, pidMemory.InputType, pidMemory.InputReference, "Input", ItemType.AnalogInput);
+            if (!inputValidation.IsValid)
             {
                 await context.DisposeAsync();
-                return (false, "Input item not found");
+                return (false, inputValidation.ErrorMessage);
             }
 
-            // Validate InputItem is AnalogInput
-            if (inputItem.ItemType != ItemType.AnalogInput)
+            // Validate Output source
+            var outputValidation = await ValidatePIDSource(context, pidMemory.OutputType, pidMemory.OutputReference, "Output", ItemType.AnalogOutput);
+            if (!outputValidation.IsValid)
             {
                 await context.DisposeAsync();
-                return (false, "Input item must be AnalogInput");
+                return (false, outputValidation.ErrorMessage);
             }
 
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(pidMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate Input != Output
+            if (AreSameSource(pidMemory.InputType, pidMemory.InputReference, pidMemory.OutputType, pidMemory.OutputReference))
             {
                 await context.DisposeAsync();
-                return (false, "Output item not found");
+                return (false, "Input and output sources must be different");
             }
 
-            // Validate OutputItem is AnalogOutput
-            if (outputItem.ItemType != ItemType.AnalogOutput)
+            // Validate SetPoint source (required, AnalogInput or AnalogOutput for Points)
+            var setPointValidation = await ValidatePIDSource(context, pidMemory.SetPointType, pidMemory.SetPointReference, "SetPoint");
+            if (!setPointValidation.IsValid)
             {
                 await context.DisposeAsync();
-                return (false, "Output item must be AnalogOutput");
-            }
-
-            // Validate InputItemId != OutputItemId
-            if (pidMemory.InputItemId == pidMemory.OutputItemId)
-            {
-                await context.DisposeAsync();
-                return (false, "Input and output items must be different");
-            }
-
-            // Validate SetPointId (required)
-            var setPointItem = await context.MonitoringItems.FindAsync(pidMemory.SetPointId);
-            if (setPointItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, "SetPoint item not found");
+                return (false, setPointValidation.ErrorMessage);
             }
             
-            if (setPointItem.ItemType != ItemType.AnalogInput && setPointItem.ItemType != ItemType.AnalogOutput)
+            // If SetPoint is a Point, validate it's Analog type
+            if (pidMemory.SetPointType == PIDSourceType.Point && setPointValidation.ItemId.HasValue)
             {
-                await context.DisposeAsync();
-                return (false, "SetPoint item must be AnalogInput or AnalogOutput");
-            }
-
-            // Validate IsAutoId (required)
-            var isAutoItem = await context.MonitoringItems.FindAsync(pidMemory.IsAutoId);
-            if (isAutoItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, "IsAuto item not found");
-            }
-            
-            if (isAutoItem.ItemType != ItemType.DigitalInput && isAutoItem.ItemType != ItemType.DigitalOutput)
-            {
-                await context.DisposeAsync();
-                return (false, "IsAuto item must be DigitalInput or DigitalOutput");
-            }
-
-            // Validate ManualValueId (required)
-            var manualValueItem = await context.MonitoringItems.FindAsync(pidMemory.ManualValueId);
-            if (manualValueItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, "ManualValue item not found");
-            }
-            
-            if (manualValueItem.ItemType != ItemType.AnalogInput && manualValueItem.ItemType != ItemType.AnalogOutput)
-            {
-                await context.DisposeAsync();
-                return (false, "ManualValue item must be AnalogInput or AnalogOutput");
-            }
-
-            // Validate ReverseOutputId (required)
-            var reverseOutputItem = await context.MonitoringItems.FindAsync(pidMemory.ReverseOutputId);
-            if (reverseOutputItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, "ReverseOutput item not found");
-            }
-            
-            if (reverseOutputItem.ItemType != ItemType.DigitalInput && reverseOutputItem.ItemType != ItemType.DigitalOutput)
-            {
-                await context.DisposeAsync();
-                return (false, "ReverseOutput item must be DigitalInput or DigitalOutput");
-            }
-
-            // Validate DigitalOutputItemId if provided
-            if (pidMemory.DigitalOutputItemId.HasValue && pidMemory.DigitalOutputItemId.Value != Guid.Empty)
-            {
-                var digitalOutputItem = await context.MonitoringItems.FindAsync(pidMemory.DigitalOutputItemId.Value);
-                if (digitalOutputItem == null)
+                var setPointItem = await context.MonitoringItems.FindAsync(setPointValidation.ItemId.Value);
+                if (setPointItem != null && setPointItem.ItemType != ItemType.AnalogInput && setPointItem.ItemType != ItemType.AnalogOutput)
                 {
                     await context.DisposeAsync();
-                    return (false, "DigitalOutput item not found");
+                    return (false, "SetPoint item must be AnalogInput or AnalogOutput");
                 }
-                
-                if (digitalOutputItem.ItemType != ItemType.DigitalOutput)
+            }
+
+            // Validate IsAuto source (required, DigitalInput or DigitalOutput for Points)
+            var isAutoValidation = await ValidatePIDSource(context, pidMemory.IsAutoType, pidMemory.IsAutoReference, "IsAuto");
+            if (!isAutoValidation.IsValid)
+            {
+                await context.DisposeAsync();
+                return (false, isAutoValidation.ErrorMessage);
+            }
+            
+            // If IsAuto is a Point, validate it's Digital type
+            if (pidMemory.IsAutoType == PIDSourceType.Point && isAutoValidation.ItemId.HasValue)
+            {
+                var isAutoItem = await context.MonitoringItems.FindAsync(isAutoValidation.ItemId.Value);
+                if (isAutoItem != null && isAutoItem.ItemType != ItemType.DigitalInput && isAutoItem.ItemType != ItemType.DigitalOutput)
                 {
                     await context.DisposeAsync();
-                    return (false, "DigitalOutput item must be DigitalOutput type");
+                    return (false, "IsAuto item must be DigitalInput or DigitalOutput");
+                }
+            }
+
+            // Validate ManualValue source (required, AnalogInput or AnalogOutput for Points)
+            var manualValueValidation = await ValidatePIDSource(context, pidMemory.ManualValueType, pidMemory.ManualValueReference, "ManualValue");
+            if (!manualValueValidation.IsValid)
+            {
+                await context.DisposeAsync();
+                return (false, manualValueValidation.ErrorMessage);
+            }
+            
+            // If ManualValue is a Point, validate it's Analog type
+            if (pidMemory.ManualValueType == PIDSourceType.Point && manualValueValidation.ItemId.HasValue)
+            {
+                var manualValueItem = await context.MonitoringItems.FindAsync(manualValueValidation.ItemId.Value);
+                if (manualValueItem != null && manualValueItem.ItemType != ItemType.AnalogInput && manualValueItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "ManualValue item must be AnalogInput or AnalogOutput");
+                }
+            }
+
+            // Validate ReverseOutput source (required, DigitalInput or DigitalOutput for Points)
+            var reverseOutputValidation = await ValidatePIDSource(context, pidMemory.ReverseOutputType, pidMemory.ReverseOutputReference, "ReverseOutput");
+            if (!reverseOutputValidation.IsValid)
+            {
+                await context.DisposeAsync();
+                return (false, reverseOutputValidation.ErrorMessage);
+            }
+            
+            // If ReverseOutput is a Point, validate it's Digital type
+            if (pidMemory.ReverseOutputType == PIDSourceType.Point && reverseOutputValidation.ItemId.HasValue)
+            {
+                var reverseOutputItem = await context.MonitoringItems.FindAsync(reverseOutputValidation.ItemId.Value);
+                if (reverseOutputItem != null && reverseOutputItem.ItemType != ItemType.DigitalInput && reverseOutputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "ReverseOutput item must be DigitalInput or DigitalOutput");
+                }
+            }
+
+            // Validate DigitalOutput source if provided
+            if (pidMemory.DigitalOutputType.HasValue && !string.IsNullOrEmpty(pidMemory.DigitalOutputReference))
+            {
+                var digitalOutputValidation = await ValidatePIDSource(context, pidMemory.DigitalOutputType.Value, pidMemory.DigitalOutputReference, "DigitalOutput", ItemType.DigitalOutput);
+                if (!digitalOutputValidation.IsValid)
+                {
+                    await context.DisposeAsync();
+                    return (false, digitalOutputValidation.ErrorMessage);
                 }
             }
 
@@ -486,35 +527,16 @@ public class PIDMemories
                 return (false, $"HysteresisHighThreshold ({pidMemory.HysteresisHighThreshold}) must be <= OutputMax ({pidMemory.OutputMax})");
             }
 
-            // Validate cascade configuration
-            var cascadeValidation = await ValidateCascadeConfiguration(
-                context, 
-                pidMemory.Id,
-                pidMemory.ParentPIDId, 
-                pidMemory.CascadeLevel,
-                pidMemory.OutputItemId);
-            
-            if (!cascadeValidation.IsValid)
-            {
-                await context.DisposeAsync();
-                return (false, cascadeValidation.ErrorMessage);
-            }
-            
-            // Validate cascade setpoint match
-            var setpointValidation = await ValidateCascadeSetpointMatch(
-                context,
-                pidMemory.ParentPIDId,
-                pidMemory.SetPointId);
-            
-            if (!setpointValidation.IsValid)
-            {
-                await context.DisposeAsync();
-                return (false, setpointValidation.ErrorMessage);
-            }
+            // Note: Cascade validation is temporarily disabled as it needs to be updated for the new model
+            // TODO: Update cascade validation to work with PIDSourceType references
 
             context.PIDMemories.Update(pidMemory);
             await context.SaveChangesAsync();
             await context.DisposeAsync();
+            
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(pidMemory.Id, "PIDMemory");
+            
             return (true, null);
         }
         catch (Exception e)

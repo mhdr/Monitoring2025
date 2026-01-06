@@ -13,18 +13,28 @@ public class AddPIDMemoryRequestDto
     public string? Name { get; set; }
 
     /// <summary>
-    /// ID of the monitoring item for process variable (input)
-    /// Must be AnalogInput
+    /// Type of the input source: 0=Point, 1=GlobalVariable
     /// </summary>
-    [Required(ErrorMessage = "Input item ID is required")]
-    public Guid InputItemId { get; set; }
+    public int InputType { get; set; } = 0;
 
     /// <summary>
-    /// ID of the monitoring item for control output
-    /// Must be AnalogOutput
+    /// Reference to the input source (GUID string for Point, name for GlobalVariable)
+    /// Must be AnalogInput when InputType=Point
     /// </summary>
-    [Required(ErrorMessage = "Output item ID is required")]
-    public Guid OutputItemId { get; set; }
+    [Required(ErrorMessage = "Input reference is required")]
+    public string InputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Type of the output source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int OutputType { get; set; } = 0;
+
+    /// <summary>
+    /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+    /// Must be AnalogOutput when OutputType=Point
+    /// </summary>
+    [Required(ErrorMessage = "Output reference is required")]
+    public string OutputReference { get; set; } = string.Empty;
 
     /// <summary>
     /// Proportional gain (Kp)
@@ -69,11 +79,17 @@ public class AddPIDMemoryRequestDto
     public bool IsDisabled { get; set; } = false;
 
     /// <summary>
-    /// ID of monitoring item for dynamic setpoint (AnalogInput or AnalogOutput)
+    /// Type of the setpoint source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int SetPointType { get; set; } = 0;
+
+    /// <summary>
+    /// Reference to the setpoint source (GUID string for Point, name for GlobalVariable)
+    /// Must be AnalogInput or AnalogOutput when SetPointType=Point
     /// Required for PID operation
     /// </summary>
-    [Required(ErrorMessage = "SetPoint item ID is required")]
-    public Guid SetPointId { get; set; }
+    [Required(ErrorMessage = "SetPoint reference is required")]
+    public string SetPointReference { get; set; } = string.Empty;
 
     /// <summary>
     /// Derivative filter alpha (0-1)
@@ -99,31 +115,54 @@ public class AddPIDMemoryRequestDto
     public double FeedForward { get; set; } = 0.0;
 
     /// <summary>
-    /// ID of monitoring item for dynamic auto/manual mode (DigitalInput or DigitalOutput)
-    /// Required for PID operation
+    /// Type of the auto/manual mode source: 0=Point, 1=GlobalVariable
     /// </summary>
-    [Required(ErrorMessage = "IsAuto item ID is required")]
-    public Guid IsAutoId { get; set; }
+    public int IsAutoType { get; set; } = 0;
 
     /// <summary>
-    /// ID of monitoring item for dynamic manual value (AnalogInput or AnalogOutput)
+    /// Reference to the auto/manual mode source (GUID string for Point, name for GlobalVariable)
+    /// Must be DigitalInput or DigitalOutput when IsAutoType=Point
     /// Required for PID operation
     /// </summary>
-    [Required(ErrorMessage = "ManualValue item ID is required")]
-    public Guid ManualValueId { get; set; }
+    [Required(ErrorMessage = "IsAuto reference is required")]
+    public string IsAutoReference { get; set; } = string.Empty;
 
     /// <summary>
-    /// ID of monitoring item for dynamic reverse output (DigitalInput or DigitalOutput)
+    /// Type of the manual value source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int ManualValueType { get; set; } = 0;
+
+    /// <summary>
+    /// Reference to the manual value source (GUID string for Point, name for GlobalVariable)
+    /// Must be AnalogInput or AnalogOutput when ManualValueType=Point
     /// Required for PID operation
     /// </summary>
-    [Required(ErrorMessage = "ReverseOutput item ID is required")]
-    public Guid ReverseOutputId { get; set; }
+    [Required(ErrorMessage = "ManualValue reference is required")]
+    public string ManualValueReference { get; set; } = string.Empty;
 
     /// <summary>
-    /// ID of digital output item for hysteresis control (optional)
-    /// Must be DigitalOutput type. When configured, enables on/off control based on thresholds.
+    /// Type of the reverse output source: 0=Point, 1=GlobalVariable
     /// </summary>
-    public Guid? DigitalOutputItemId { get; set; }
+    public int ReverseOutputType { get; set; } = 0;
+
+    /// <summary>
+    /// Reference to the reverse output source (GUID string for Point, name for GlobalVariable)
+    /// Must be DigitalInput or DigitalOutput when ReverseOutputType=Point
+    /// Required for PID operation
+    /// </summary>
+    [Required(ErrorMessage = "ReverseOutput reference is required")]
+    public string ReverseOutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Type of the digital output source for hysteresis control: 0=Point, 1=GlobalVariable (optional)
+    /// </summary>
+    public int? DigitalOutputType { get; set; }
+
+    /// <summary>
+    /// Reference to the digital output source for hysteresis control (GUID string for Point, name for GlobalVariable)
+    /// Must be DigitalOutput when DigitalOutputType=Point. When configured, enables on/off control based on thresholds.
+    /// </summary>
+    public string? DigitalOutputReference { get; set; }
 
     /// <summary>
     /// High threshold for hysteresis control (turn ON when output >= this value)

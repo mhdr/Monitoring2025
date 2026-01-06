@@ -2761,6 +2761,15 @@ export const TimeoutSourceType = {
 };
 
 /**
+ * Enum for PIDMemory source types
+ */
+export type PIDSourceType = 0 | 1;
+export const PIDSourceType = {
+  Point: 0 as const,
+  GlobalVariable: 1 as const,
+};
+
+/**
  * Request DTO for retrieving timeout memory configurations
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -3069,8 +3078,12 @@ export interface DeleteAverageMemoryResponseDto {
 export interface PIDMemory {
   id: string; // UUID
   name?: string | null;
-  inputItemId: string; // UUID - Process Variable (must be AnalogInput)
-  outputItemId: string; // UUID - Control Output (must be AnalogOutput)
+  // Input (Process Variable)
+  inputType: number; // 0=Point, 1=GlobalVariable
+  inputReference: string; // GUID string for Point, name for GlobalVariable (must be AnalogInput for Point)
+  // Output (Control Variable)
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable (must be AnalogOutput for Point)
   kp: number; // double - Proportional gain
   ki: number; // double - Integral gain
   kd: number; // double - Derivative gain
@@ -3078,15 +3091,25 @@ export interface PIDMemory {
   outputMax: number; // double - Maximum output value
   interval: number; // int - Execution interval in seconds
   isDisabled: boolean; // bool - Whether PID is disabled
-  setPointId: string; // UUID - Dynamic setpoint item (AnalogInput/AnalogOutput) - Required
+  // SetPoint
+  setPointType: number; // 0=Point, 1=GlobalVariable
+  setPointReference: string; // GUID string for Point, name for GlobalVariable - Required
   derivativeFilterAlpha: number; // double - Derivative filter alpha (0-1)
   maxOutputSlewRate: number; // double - Maximum output slew rate
   deadZone: number; // double - Dead zone around setpoint
   feedForward: number; // double - Feed-forward term
-  isAutoId: string; // UUID - Dynamic auto/manual item (DigitalInput/DigitalOutput) - Required
-  manualValueId: string; // UUID - Dynamic manual value item (AnalogInput/AnalogOutput) - Required
-  reverseOutputId: string; // UUID - Dynamic reverse output item (DigitalInput/DigitalOutput) - Required
-  digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control (DigitalOutput)
+  // Auto/Manual Mode
+  isAutoType: number; // 0=Point, 1=GlobalVariable
+  isAutoReference: string; // GUID string for Point, name for GlobalVariable (must be DigitalInput/DigitalOutput for Point) - Required
+  // Manual Value
+  manualValueType: number; // 0=Point, 1=GlobalVariable
+  manualValueReference: string; // GUID string for Point, name for GlobalVariable (must be AnalogInput/AnalogOutput for Point) - Required
+  // Reverse Output
+  reverseOutputType: number; // 0=Point, 1=GlobalVariable
+  reverseOutputReference: string; // GUID string for Point, name for GlobalVariable (must be DigitalInput/DigitalOutput for Point) - Required
+  // Digital Output for Hysteresis Control
+  digitalOutputType?: number | null; // 0=Point, 1=GlobalVariable (optional)
+  digitalOutputReference?: string | null; // GUID string for Point, name for GlobalVariable (must be DigitalOutput for Point)
   hysteresisHighThreshold: number; // double - High threshold for hysteresis (turn ON)
   hysteresisLowThreshold: number; // double - Low threshold for hysteresis (turn OFF)
   parentPIDId?: string | null; // UUID - Parent PID for cascaded control
@@ -3273,8 +3296,10 @@ export interface GetPIDMemoriesResponseDto {
  */
 export interface AddPIDMemoryRequestDto {
   name?: string | null;
-  inputItemId: string; // UUID
-  outputItemId: string; // UUID
+  inputType: number; // PIDSourceType
+  inputReference: string; // UUID or variable name
+  outputType: number; // PIDSourceType
+  outputReference: string; // UUID or variable name
   kp: number; // double
   ki: number; // double
   kd: number; // double
@@ -3282,15 +3307,20 @@ export interface AddPIDMemoryRequestDto {
   outputMax: number; // double
   interval: number; // int - must be > 0
   isDisabled: boolean; // bool
-  setPointId: string; // UUID - Required
+  setPointType: number; // PIDSourceType - Required
+  setPointReference: string; // UUID or variable name - Required
   derivativeFilterAlpha: number; // double (0-1)
   maxOutputSlewRate: number; // double
   deadZone: number; // double
   feedForward: number; // double
-  isAutoId: string; // UUID - Required
-  manualValueId: string; // UUID - Required
-  reverseOutputId: string; // UUID - Required
-  digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control
+  isAutoType: number; // PIDSourceType - Required
+  isAutoReference: string; // UUID or variable name - Required
+  manualValueType: number; // PIDSourceType - Required
+  manualValueReference: string; // UUID or variable name - Required
+  reverseOutputType: number; // PIDSourceType - Required
+  reverseOutputReference: string; // UUID or variable name - Required
+  digitalOutputType: number; // PIDSourceType
+  digitalOutputReference?: string | null; // UUID or variable name - Digital output for hysteresis control
   hysteresisHighThreshold: number; // double - High threshold (default 75.0)
   hysteresisLowThreshold: number; // double - Low threshold (default 25.0)
   parentPIDId?: string | null; // UUID - Parent PID for cascaded control
@@ -3312,8 +3342,10 @@ export interface AddPIDMemoryResponseDto {
 export interface EditPIDMemoryRequestDto {
   id: string; // UUID
   name?: string | null;
-  inputItemId: string; // UUID
-  outputItemId: string; // UUID
+  inputType: number; // PIDSourceType
+  inputReference: string; // UUID or variable name
+  outputType: number; // PIDSourceType
+  outputReference: string; // UUID or variable name
   kp: number; // double
   ki: number; // double
   kd: number; // double
@@ -3321,15 +3353,20 @@ export interface EditPIDMemoryRequestDto {
   outputMax: number; // double
   interval: number; // int - must be > 0
   isDisabled: boolean; // bool
-  setPointId: string; // UUID - Required
+  setPointType: number; // PIDSourceType - Required
+  setPointReference: string; // UUID or variable name - Required
   derivativeFilterAlpha: number; // double (0-1)
   maxOutputSlewRate: number; // double
   deadZone: number; // double
   feedForward: number; // double
-  isAutoId: string; // UUID - Required
-  manualValueId: string; // UUID - Required
-  reverseOutputId: string; // UUID - Required
-  digitalOutputItemId?: string | null; // UUID - Digital output for hysteresis control
+  isAutoType: number; // PIDSourceType - Required
+  isAutoReference: string; // UUID or variable name - Required
+  manualValueType: number; // PIDSourceType - Required
+  manualValueReference: string; // UUID or variable name - Required
+  reverseOutputType: number; // PIDSourceType - Required
+  reverseOutputReference: string; // UUID or variable name - Required
+  digitalOutputType: number; // PIDSourceType
+  digitalOutputReference?: string | null; // UUID or variable name - Digital output for hysteresis control
   hysteresisHighThreshold: number; // double - High threshold
   hysteresisLowThreshold: number; // double - Low threshold
   parentPIDId?: string | null; // UUID - Parent PID for cascaded control
