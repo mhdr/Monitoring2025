@@ -239,6 +239,9 @@ const PIDMemoryManagementPage: React.FC = () => {
 
   /**
    * Auto-refresh tuning sessions for active tunings
+   * NOTE: We intentionally omit 'fetchTuningSessions' from deps to avoid infinite loop.
+   * fetchTuningSessions depends on pidMemories, which would cause the effect to re-run
+   * every time pidMemories changes, potentially creating excessive polling restarts.
    */
   useEffect(() => {
     if (pidMemories.length === 0) return;
@@ -252,7 +255,8 @@ const PIDMemoryManagementPage: React.FC = () => {
     }, 3000); // Poll every 3 seconds
 
     return () => clearInterval(intervalId);
-  }, [pidMemories, fetchTuningSessions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pidMemories.length]); // Only depend on count changing, not array reference
 
   /**
    * Get tuning status label
@@ -297,7 +301,7 @@ const PIDMemoryManagementPage: React.FC = () => {
       const name = pm.name?.toLowerCase() || '';
       const inputName = pm.inputSourceName?.toLowerCase() || '';
       const outputName = pm.outputSourceName?.toLowerCase() || '';
-      
+
       return (
         name.includes(lowerSearch) ||
         inputName.includes(lowerSearch) ||

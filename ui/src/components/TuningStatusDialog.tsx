@@ -92,6 +92,8 @@ const TuningStatusDialog: React.FC<TuningStatusDialogProps> = ({
 
   /**
    * Auto-refresh status while tuning is active
+   * NOTE: We intentionally omit 'session' from deps to avoid infinite loop.
+   * The session state is checked inside the interval using functional setState pattern.
    */
   useEffect(() => {
     if (!open || !pidMemoryId) return;
@@ -101,13 +103,19 @@ const TuningStatusDialog: React.FC<TuningStatusDialogProps> = ({
 
     // Set up polling interval
     const intervalId = setInterval(() => {
-      if (session && isActiveTuning(session.status)) {
-        fetchStatus();
-      }
+      // Use functional setState to read current session state without adding it to deps
+      // This avoids infinite loop where session change -> effect runs -> fetchStatus -> session change
+      setSession(currentSession => {
+        if (currentSession && isActiveTuning(currentSession.status)) {
+          fetchStatus();
+        }
+        return currentSession; // Return unchanged to avoid unnecessary re-render
+      });
     }, 2000);
 
     return () => clearInterval(intervalId);
-  }, [open, pidMemoryId, session, fetchStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, pidMemoryId, fetchStatus]);
 
   /**
    * Check if tuning is currently active
@@ -256,8 +264,8 @@ const TuningStatusDialog: React.FC<TuningStatusDialogProps> = ({
                   color={getStatusColor(session.status)}
                   icon={
                     session.status === 4 ? <SuccessIcon /> :
-                    session.status === 6 ? <ErrorIcon /> :
-                    session.status === 5 ? <AbortIcon /> : undefined
+                      session.status === 6 ? <ErrorIcon /> :
+                        session.status === 5 ? <AbortIcon /> : undefined
                   }
                   data-id-ref="tuning-status-chip"
                 />
