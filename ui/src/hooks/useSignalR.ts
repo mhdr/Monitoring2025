@@ -74,7 +74,7 @@ export function useSignalR(
     (update: ActiveAlarmsUpdate) => {
       logger.log('Received active alarms update via SignalR:', update);
       logger.log('Fetching filtered active alarm list (will update count after fetch)...');
-      
+
       // Fetch full active alarm list with itemIds filter
       // This will update the count with the filtered value, ensuring badge matches page
       fetchActiveAlarmCount().catch((error) => {
@@ -118,22 +118,35 @@ export function useSignalR(
     try {
       isConnectingRef.current = true;
       setActiveAlarmsStreamStatus(StreamStatus.CONNECTING);
-      
+
       logger.log('Connecting to SignalR...');
-      
+
       // Subscribe to active alarms updates before connecting
       signalRManager.onActiveAlarmsUpdate(handleActiveAlarmsUpdate);
-      
+
       // Subscribe to settings updates before connecting
       signalRManager.onSettingsUpdate(handleSettingsUpdate);
-      
+
+      // Register silent handlers for other SignalR messages to prevent console warnings
+      // These messages are handled by specific page components (GlobalVariableManagementPage, ModbusGatewayPage)
+      // when they mount, but we need base handlers to prevent "No client method found" warnings
+      // which cause CPU overhead from the SignalR library continuously searching for handlers
+      signalRManager.onGlobalVariablesUpdate(() => {
+        // Silent handler - specific pages subscribe with their own handlers when mounted
+        logger.log('Received global variables update (silent handler)');
+      });
+      signalRManager.onGatewayStatusUpdate(() => {
+        // Silent handler - ModbusGatewayPage subscribes with its own handler when mounted
+        logger.log('Received gateway status update (silent handler)');
+      });
+
       // Start the connection
       await signalRManager.start();
-      
+
       // Update status based on actual connection state
       const state = signalRManager.getState();
       setActiveAlarmsStreamStatus(mapConnectionState(state));
-      
+
       logger.log('SignalR connected successfully', { state });
     } catch (error) {
       logger.error('Failed to connect to SignalR:', error);
@@ -152,14 +165,16 @@ export function useSignalR(
   const disconnect = useCallback(async () => {
     try {
       logger.log('Disconnecting from SignalR...');
-      
+
       // Unsubscribe from updates
       signalRManager.offActiveAlarmsUpdate();
       signalRManager.offSettingsUpdate();
-      
+      signalRManager.offGlobalVariablesUpdate();
+      signalRManager.offGatewayStatusUpdate();
+
       // Stop the connection
       await signalRManager.stop();
-      
+
       setActiveAlarmsStreamStatus(StreamStatus.DISCONNECTED);
       logger.log('SignalR disconnected');
     } catch (error) {
@@ -204,7 +219,7 @@ export function useSignalR(
     });
 
     connectionAttemptedRef.current = true;
-    
+
     // Add small delay to ensure auth storage is completely settled
     setTimeout(() => {
       connect();
