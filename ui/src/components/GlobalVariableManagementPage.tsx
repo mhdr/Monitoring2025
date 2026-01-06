@@ -109,13 +109,13 @@ const formatLastUpdateTime = (timestamp: number | null | undefined, t: (key: str
   const seconds = Math.floor(diff / 1000);
 
   if (seconds < 60) return `${seconds}${t('common.secondsAgo')}`;
-  
+
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}${t('common.minutesAgo')}`;
-  
+
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}${t('common.hoursAgo')}`;
-  
+
   const days = Math.floor(hours / 24);
   return `${days}${t('common.daysAgo')}`;
 };
@@ -174,13 +174,13 @@ const GlobalVariableManagementPage: React.FC = () => {
         // Check if any variable has actually changed
         for (const newVar of newVariables) {
           const prevVar = prevMap.get(newVar.id);
-          if (!prevVar || 
-              prevVar.currentValue !== newVar.currentValue ||
-              prevVar.lastUpdateTime !== newVar.lastUpdateTime ||
-              prevVar.name !== newVar.name ||
-              prevVar.description !== newVar.description ||
-              prevVar.isDisabled !== newVar.isDisabled ||
-              prevVar.variableType !== newVar.variableType) {
+          if (!prevVar ||
+            prevVar.currentValue !== newVar.currentValue ||
+            prevVar.lastUpdateTime !== newVar.lastUpdateTime ||
+            prevVar.name !== newVar.name ||
+            prevVar.description !== newVar.description ||
+            prevVar.isDisabled !== newVar.isDisabled ||
+            prevVar.variableType !== newVar.variableType) {
             hasChanges = true;
             break;
           }
@@ -196,12 +196,12 @@ const GlobalVariableManagementPage: React.FC = () => {
       return newVariables.map((newVar) => {
         const prevVar = prevMap.get(newVar.id);
         if (prevVar &&
-            prevVar.currentValue === newVar.currentValue &&
-            prevVar.lastUpdateTime === newVar.lastUpdateTime &&
-            prevVar.name === newVar.name &&
-            prevVar.description === newVar.description &&
-            prevVar.isDisabled === newVar.isDisabled &&
-            prevVar.variableType === newVar.variableType) {
+          prevVar.currentValue === newVar.currentValue &&
+          prevVar.lastUpdateTime === newVar.lastUpdateTime &&
+          prevVar.name === newVar.name &&
+          prevVar.description === newVar.description &&
+          prevVar.isDisabled === newVar.isDisabled &&
+          prevVar.variableType === newVar.variableType) {
           // Variable unchanged, reuse previous object reference
           return prevVar;
         }
@@ -213,9 +213,13 @@ const GlobalVariableManagementPage: React.FC = () => {
 
   /**
    * Fetch all global variable configurations
+   * NOTE: We intentionally omit 'isInitialLoad' from deps to avoid infinite loop.
+   * When isInitialLoad changes from true to false, it would recreate fetchGlobalVariables,
+   * which would trigger the useEffect that calls it, causing another fetch.
    */
   const fetchGlobalVariables = useCallback(async (options?: { silent?: boolean }) => {
     // Default to silent refreshes after the first load to avoid UI flicker/spinners
+    // Access isInitialLoad via closure - it's read-only here, changes don't need to recreate this callback
     const effectiveSilent = options?.silent ?? !isInitialLoad;
     try {
       if (!effectiveSilent) {
@@ -232,7 +236,7 @@ const GlobalVariableManagementPage: React.FC = () => {
 
       mergeGlobalVariables(response.globalVariables || []);
       logger.info('Global variables fetched successfully', { count: response.globalVariables?.length || 0, silent: effectiveSilent });
-      
+
       if (isInitialLoad) {
         setIsInitialLoad(false);
       }
@@ -245,7 +249,8 @@ const GlobalVariableManagementPage: React.FC = () => {
         setLoading(false);
       }
     }
-  }, [mergeGlobalVariables, isInitialLoad]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mergeGlobalVariables]); // Intentionally omit isInitialLoad to prevent infinite loop
 
   // Fetch global variables on component mount
   useEffect(() => {
@@ -339,7 +344,7 @@ const GlobalVariableManagementPage: React.FC = () => {
         v.description?.toLowerCase().includes(lowerSearch) ||
         v.currentValue?.toLowerCase().includes(lowerSearch)
     );
-    
+
     // Return same reference if filter results are identical to previous
     // This prevents unnecessary re-renders of the grid
     return filtered;
@@ -396,12 +401,12 @@ const GlobalVariableManagementPage: React.FC = () => {
         textAlign: 'Center',
         template: (rowData: GlobalVariable) => (
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }} data-id-ref="globalvariable-value-cell">
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 fontWeight: 'bold',
                 fontFamily: 'monospace',
-                color: rowData.variableType === GlobalVariableTypeEnum.Boolean 
+                color: rowData.variableType === GlobalVariableTypeEnum.Boolean
                   ? (rowData.currentValue === 'true' || rowData.currentValue === '1' ? 'success.main' : 'error.main')
                   : 'text.primary'
               }}
@@ -556,13 +561,13 @@ const GlobalVariableManagementPage: React.FC = () => {
 
           {/* Syncfusion Grid - Always rendered to prevent unmount/remount flickering */}
           {!isInitialLoad && (
-            <Box 
-              sx={{ 
-                flexGrow: 1, 
+            <Box
+              sx={{
+                flexGrow: 1,
                 overflow: 'hidden',
                 // Hide Syncfusion's built-in spinner to avoid flicker on live refreshes
                 '& .e-spinner-pane': { display: 'none !important' }
-              }} 
+              }}
               data-id-ref="globalvariable-grid-container"
             >
               <SyncfusionGridWrapper
