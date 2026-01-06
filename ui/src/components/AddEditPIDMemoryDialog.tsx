@@ -289,7 +289,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
       setLoadingGlobalVariables(true);
       try {
         const result = await getGlobalVariables({});
-        setGlobalVariables(result.globalVariables.filter((v: GlobalVariable) => !v.isDisabled));
+        setGlobalVariables((result.globalVariables ?? []).filter((v: GlobalVariable) => !v.isDisabled));
       } catch (error) {
         console.error('Failed to load global variables:', error);
         setGlobalVariables([]);
@@ -333,6 +333,11 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   const analogItems = useMemo(() => items.filter((item) => item.itemType === ItemTypeEnum.AnalogInput || item.itemType === ItemTypeEnum.AnalogOutput), [items]);
   const digitalItems = useMemo(() => items.filter((item) => item.itemType === ItemTypeEnum.DigitalInput || item.itemType === ItemTypeEnum.DigitalOutput), [items]);
   const digitalOutputItems = useMemo(() => items.filter((item) => item.itemType === ItemTypeEnum.DigitalOutput), [items]);
+
+  // Filter global variables by type (0 = Boolean, 1 = Float)
+  // Analog items -> Float global variables, Digital items -> Boolean global variables
+  const floatGlobalVariables = useMemo(() => globalVariables.filter((v) => v.variableType === 1), [globalVariables]);
+  const booleanGlobalVariables = useMemo(() => globalVariables.filter((v) => v.variableType === 0), [globalVariables]);
 
   // Get selected items
   const selectedInputItem = useMemo(() =>
@@ -745,7 +750,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   ) : (
                     <Autocomplete
                       fullWidth
-                      options={globalVariables}
+                      options={floatGlobalVariables}
                       getOptionLabel={getVariableLabel}
                       value={selectedInputVariable}
                       onChange={(_, newValue) => handleFieldChange('inputReference', newValue?.name || '')}
@@ -862,7 +867,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                   ) : (
                     <Autocomplete
                       fullWidth
-                      options={globalVariables}
+                      options={floatGlobalVariables}
                       getOptionLabel={getVariableLabel}
                       value={selectedOutputVariable}
                       onChange={(_, newValue) => handleFieldChange('outputReference', newValue?.name || '')}
@@ -1031,7 +1036,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     />
                   ) : (
                     <Autocomplete
-                      options={globalVariables}
+                      options={floatGlobalVariables}
                       getOptionLabel={getVariableLabel}
                       value={selectedSetPointVariable}
                       onChange={(_, newValue) => handleFieldChange('setPointReference', newValue?.name || '')}
@@ -1290,7 +1295,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     />
                   ) : (
                     <Autocomplete
-                      options={globalVariables}
+                      options={booleanGlobalVariables}
                       getOptionLabel={getVariableLabel}
                       value={selectedIsAutoVariable}
                       onChange={(_, newValue) => handleFieldChange('isAutoReference', newValue?.name || '')}
@@ -1405,7 +1410,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     />
                   ) : (
                     <Autocomplete
-                      options={globalVariables}
+                      options={floatGlobalVariables}
                       getOptionLabel={getVariableLabel}
                       value={selectedManualValueVariable}
                       onChange={(_, newValue) => handleFieldChange('manualValueReference', newValue?.name || '')}
@@ -1619,7 +1624,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                     />
                   ) : (
                     <Autocomplete
-                      options={globalVariables}
+                      options={booleanGlobalVariables}
                       getOptionLabel={getVariableLabel}
                       value={selectedReverseOutputVariable}
                       onChange={(_, newValue) => handleFieldChange('reverseOutputReference', newValue?.name || '')}
@@ -1898,7 +1903,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                         />
                       ) : (
                         <Autocomplete
-                          options={globalVariables}
+                          options={booleanGlobalVariables}
                           getOptionLabel={getVariableLabel}
                           value={selectedDigitalOutputVariable}
                           onChange={(_, newValue) => handleFieldChange('digitalOutputReference', newValue?.name || '')}
