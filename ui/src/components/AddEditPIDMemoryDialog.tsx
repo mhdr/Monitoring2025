@@ -288,7 +288,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
 
       setLoadingGlobalVariables(true);
       try {
-        const result = await getGlobalVariables(false);
+        const result = await getGlobalVariables({});
         setGlobalVariables(result.globalVariables.filter((v: GlobalVariable) => !v.isDisabled));
       } catch (error) {
         console.error('Failed to load global variables:', error);
