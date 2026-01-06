@@ -281,3 +281,89 @@ body.rtl input[data-id-ref="audit-trail-end-datetime-time"] {
   display: block;
   width: 100%;
 }
+
+/* 
+  Optimized Alarm Animations 
+  Uses opacity animation on pseudo-elements to avoid expensive box-shadow repaints 
+  and layout thrashing. GPU accelerated.
+*/
+
+.alarm-card {
+  position: relative;
+  z-index: 0; /* Create stacking context */
+  border: 2px solid transparent !important; /* Reserve space for border */
+  transition: border-color 0.3s ease;
+}
+
+/* Pseudo-element for the glowing effect */
+.alarm-card::before {
+  content: "";
+  position: absolute;
+  inset: -2px; /* Cover the border area and slightly outside */
+  z-index: -1; /* Behind the card content */
+  border-radius: inherit; /* Match card border radius */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  will-change: opacity; /* Hint to browser to promote to layer */
+  pointer-events: none; /* Let clicks pass through */
+}
+
+/* Low Priority Alarm (Warning) */
+.alarm-card.alarm-warning {
+  border-color: rgba(237, 108, 2, 0.5) !important; /* warning.main 50% */
+}
+
+.alarm-card.alarm-warning::before {
+  box-shadow: 0 0 0 0 rgba(237, 108, 2, 0.2); /* warning.main 20% */
+  animation: pulse-warning 2s infinite ease-in-out;
+}
+
+@keyframes pulse-warning {
+  0% {
+    box-shadow: 0 0 0 0 rgba(237, 108, 2, 0.4);
+    opacity: 0.5;
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(237, 108, 2, 0.2);
+    opacity: 1;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(237, 108, 2, 0.4);
+    opacity: 0.5;
+  }
+}
+
+/* High Priority Alarm (Error) */
+.alarm-card.alarm-error {
+  border-color: rgba(211, 47, 47, 0.5) !important; /* error.main 50% */
+}
+
+.alarm-card.alarm-error::before {
+  box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.2); /* error.main 20% */
+  animation: pulse-error 1.5s infinite ease-in-out; /* Faster pulse for critical */
+}
+
+@keyframes pulse-error {
+  0% {
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.5);
+    opacity: 0.6;
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(211, 47, 47, 0.3);
+    opacity: 1;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.5);
+    opacity: 0.6;
+  }
+}
+
+/* Badge pulse animation - optimized */
+.alarm-badge-pulse {
+  animation: badge-pulse 2s infinite ease-in-out;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}

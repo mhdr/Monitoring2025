@@ -57,6 +57,7 @@ export function useSignalR(
 
   const connectionAttemptedRef = useRef(false);
   const isConnectingRef = useRef(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Handle active alarms update from SignalR
@@ -69,17 +70,28 @@ export function useSignalR(
    * 
    * Solution: Only fetch the filtered alarm list and let the API response update
    * the count. This ensures badge and page always show the same filtered count.
+   * 
+   * OPTIMIZATION: Debounced to prevent multiple API calls when a burst of updates arrives.
    */
   const handleActiveAlarmsUpdate = useCallback(
     (update: ActiveAlarmsUpdate) => {
       logger.log('Received active alarms update via SignalR:', update);
-      logger.log('Fetching filtered active alarm list (will update count after fetch)...');
 
-      // Fetch full active alarm list with itemIds filter
-      // This will update the count with the filtered value, ensuring badge matches page
-      fetchActiveAlarmCount().catch((error) => {
-        logger.error('Failed to fetch active alarms after SignalR update:', error);
-      });
+      // Debounce the fetch to prevent API flooding during burst updates
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(() => {
+        logger.log('Fetching filtered active alarm list (debounced)...');
+
+        // Fetch full active alarm list with itemIds filter
+        // This will update the count with the filtered value, ensuring badge matches page
+        fetchActiveAlarmCount().catch((error) => {
+          logger.error('Failed to fetch active alarms after SignalR update:', error);
+        });
+        debounceTimerRef.current = null;
+      }, 500); // 500ms debounce
     },
     [fetchActiveAlarmCount]
   );
