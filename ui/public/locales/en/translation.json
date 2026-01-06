@@ -223,7 +223,9 @@
     "false": "False",
     "noSearchResults": "No results found",
     "input": "Input",
-    "output": "Output"
+    "output": "Output",
+    "point": "Point",
+    "globalVariable": "Global Variable"
   },
   "cron": {
     "builderTitle": "Cron Expression Builder",
@@ -2385,7 +2387,6 @@
       "calculatedKd": "Calculated Kd",
       "refreshStatus": "Refresh Status",
       "tuningInProgress": "Tuning in progress...",
-      "seconds": "seconds",
       "percentage": "%"
     },
     "help": {
@@ -4542,7 +4543,11 @@
     "name": "Name",
     "outputItem": "Output Item",
     "outputItemHelp": "Digital output that receives the comparison result (1 = condition met, 0 = condition not met)",
-    "groupOperator": "Group Operator",
+    "groupOperator": {
+      "and": "AND (All groups true)",
+      "or": "OR (Any group true)",
+      "xor": "XOR (Exactly one group true)"
+    },
     "interval": "Processing Interval",
     "intervalHelp": "How often the comparison is evaluated (in seconds)",
     "duration": "Write Duration",
@@ -4583,11 +4588,6 @@
     "digitalValue": "Digital Value to Match",
     "digitalValue.on": "ON (1)",
     "digitalValue.off": "OFF (0)",
-    "groupOperator": {
-      "and": "AND (All groups true)",
-      "or": "OR (Any group true)",
-      "xor": "XOR (Exactly one group true)"
-    },
     "validation": {
       "outputItemRequired": "Output item is required",
       "intervalPositive": "Interval must be greater than 0",
@@ -6188,11 +6188,10 @@
         ]
       }
     }
-  }
-,
+  },
   "globalVariables": {
     "title": "Global Variables",
-    "description": "Lightweight in-memory variables accessible to all memories for data sharing",
+    "description": "Description",
     "addNew": "Add Global Variable",
     "createVariable": "Create Global Variable",
     "editVariable": "Edit Global Variable",
@@ -6207,7 +6206,6 @@
       "boolean": "Boolean",
       "float": "Float"
     },
-    "description": "Description",
     "currentValue": "Current Value",
     "lastUpdate": "Last Update",
     "isDisabled": "Disabled",
