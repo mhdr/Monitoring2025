@@ -148,11 +148,11 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
 
   // Help popover states
   const [helpAnchorEl, setHelpAnchorEl] = useState<Record<string, HTMLElement | null>>({});
-  
+
   const handleHelpOpen = (fieldKey: string) => (event: React.MouseEvent<HTMLElement>) => {
     setHelpAnchorEl(prev => ({ ...prev, [fieldKey]: event.currentTarget }));
   };
-  
+
   const handleHelpClose = (fieldKey: string) => () => {
     setHelpAnchorEl(prev => ({ ...prev, [fieldKey]: null }));
   };
@@ -285,7 +285,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   useEffect(() => {
     const loadGlobalVariables = async () => {
       if (!open) return;
-      
+
       setLoadingGlobalVariables(true);
       try {
         const result = await getGlobalVariables(false);
@@ -335,65 +335,65 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   const digitalOutputItems = useMemo(() => items.filter((item) => item.itemType === ItemTypeEnum.DigitalOutput), [items]);
 
   // Get selected items
-  const selectedInputItem = useMemo(() => 
-    formData.inputType === PIDSourceType.Point ? items.find((item) => item.id === formData.inputReference) || null : null, 
+  const selectedInputItem = useMemo(() =>
+    formData.inputType === PIDSourceType.Point ? items.find((item) => item.id === formData.inputReference) || null : null,
     [items, formData.inputType, formData.inputReference]
   );
-  const selectedInputVariable = useMemo(() => 
+  const selectedInputVariable = useMemo(() =>
     formData.inputType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.inputReference) || null : null,
     [globalVariables, formData.inputType, formData.inputReference]
   );
-  
-  const selectedOutputItem = useMemo(() => 
+
+  const selectedOutputItem = useMemo(() =>
     formData.outputType === PIDSourceType.Point ? items.find((item) => item.id === formData.outputReference) || null : null,
     [items, formData.outputType, formData.outputReference]
   );
-  const selectedOutputVariable = useMemo(() => 
+  const selectedOutputVariable = useMemo(() =>
     formData.outputType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.outputReference) || null : null,
     [globalVariables, formData.outputType, formData.outputReference]
   );
-  
-  const selectedSetPointItem = useMemo(() => 
+
+  const selectedSetPointItem = useMemo(() =>
     formData.setPointType === PIDSourceType.Point ? items.find((item) => item.id === formData.setPointReference) || null : null,
     [items, formData.setPointType, formData.setPointReference]
   );
-  const selectedSetPointVariable = useMemo(() => 
+  const selectedSetPointVariable = useMemo(() =>
     formData.setPointType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.setPointReference) || null : null,
     [globalVariables, formData.setPointType, formData.setPointReference]
   );
-  
-  const selectedIsAutoItem = useMemo(() => 
+
+  const selectedIsAutoItem = useMemo(() =>
     formData.isAutoType === PIDSourceType.Point ? items.find((item) => item.id === formData.isAutoReference) || null : null,
     [items, formData.isAutoType, formData.isAutoReference]
   );
-  const selectedIsAutoVariable = useMemo(() => 
+  const selectedIsAutoVariable = useMemo(() =>
     formData.isAutoType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.isAutoReference) || null : null,
     [globalVariables, formData.isAutoType, formData.isAutoReference]
   );
-  
-  const selectedManualValueItem = useMemo(() => 
+
+  const selectedManualValueItem = useMemo(() =>
     formData.manualValueType === PIDSourceType.Point ? items.find((item) => item.id === formData.manualValueReference) || null : null,
     [items, formData.manualValueType, formData.manualValueReference]
   );
-  const selectedManualValueVariable = useMemo(() => 
+  const selectedManualValueVariable = useMemo(() =>
     formData.manualValueType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.manualValueReference) || null : null,
     [globalVariables, formData.manualValueType, formData.manualValueReference]
   );
-  
-  const selectedReverseOutputItem = useMemo(() => 
+
+  const selectedReverseOutputItem = useMemo(() =>
     formData.reverseOutputType === PIDSourceType.Point ? items.find((item) => item.id === formData.reverseOutputReference) || null : null,
     [items, formData.reverseOutputType, formData.reverseOutputReference]
   );
-  const selectedReverseOutputVariable = useMemo(() => 
+  const selectedReverseOutputVariable = useMemo(() =>
     formData.reverseOutputType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.reverseOutputReference) || null : null,
     [globalVariables, formData.reverseOutputType, formData.reverseOutputReference]
   );
-  
-  const selectedDigitalOutputItem = useMemo(() => 
+
+  const selectedDigitalOutputItem = useMemo(() =>
     formData.digitalOutputType === PIDSourceType.Point ? items.find((item) => item.id === formData.digitalOutputReference) || null : null,
     [items, formData.digitalOutputType, formData.digitalOutputReference]
   );
-  const selectedDigitalOutputVariable = useMemo(() => 
+  const selectedDigitalOutputVariable = useMemo(() =>
     formData.digitalOutputType === PIDSourceType.GlobalVariable ? globalVariables.find((v) => v.name === formData.digitalOutputReference) || null : null,
     [globalVariables, formData.digitalOutputType, formData.digitalOutputReference]
   );
@@ -462,7 +462,7 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
     if (formData.derivativeFilterAlpha < 0 || formData.derivativeFilterAlpha > 1) errors.derivativeFilterAlpha = t('pidMemory.validation.derivativeFilterRange');
     if (formData.maxOutputSlewRate < 0) errors.maxOutputSlewRate = t('pidMemory.validation.maxOutputSlewRateMin');
     if (formData.deadZone < 0) errors.deadZone = t('pidMemory.validation.deadZoneMin');
-    
+
     // Hysteresis validation
     if (formData.hysteresisLowThreshold >= formData.hysteresisHighThreshold) {
       errors.hysteresisLowThreshold = t('pidMemory.validation.hysteresisLowLessThanHigh');
@@ -602,10 +602,10 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={() => onClose(false)} 
-      maxWidth="md" 
+    <Dialog
+      open={open}
+      onClose={() => onClose(false)}
+      maxWidth="md"
       fullWidth
       data-id-ref="pid-memory-dialog"
     >
@@ -675,36 +675,37 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
 
                 {/* Input Item/Variable with Help */}
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {t('pidMemory.inputItem')}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="subtitle2" gutterBottom data-id-ref="pid-memory-input-type-label">
+                      {t('pidMemory.inputItem')} *
                     </Typography>
-                    <ToggleButtonGroup
-                      value={formData.inputType}
-                      exclusive
-                      onChange={handleTypeChange('inputType', 'inputReference')}
-                      size="small"
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-input-type-toggle"
-                    >
-                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-input-type-point">
-                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.point')}
-                      </ToggleButton>
-                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-input-type-variable">
-                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.globalVariable')}
-                      </ToggleButton>
-                    </ToggleButtonGroup>
                     <IconButton
                       size="small"
                       onClick={handleHelpOpen('pidMemory.help.inputItem')}
-                      sx={{ p: 0.25 }}
+                      sx={{ p: 0.25, mb: 0.5 }}
                       data-id-ref="pid-memory-input-item-help-btn"
                     >
                       <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                     </IconButton>
                   </Box>
+                  <ToggleButtonGroup
+                    value={formData.inputType}
+                    exclusive
+                    onChange={handleTypeChange('inputType', 'inputReference')}
+                    fullWidth
+                    disabled={isSaving}
+                    data-id-ref="pid-memory-input-type-toggle"
+                    sx={{ mb: 2 }}
+                  >
+                    <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-input-type-point">
+                      <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.point')}
+                    </ToggleButton>
+                    <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-input-type-variable">
+                      <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.globalVariable')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
 
                   {formData.inputType === PIDSourceType.Point ? (
                     <Autocomplete
@@ -769,6 +770,21 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                           }}
                         />
                       )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {option.name}
+                            </Typography>
+                            <Chip
+                              label={option.variableType === 0 ? t('globalVariables.type.boolean') : t('globalVariables.type.float')}
+                              size="small"
+                              color={option.variableType === 0 ? 'success' : 'info'}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
                       isOptionEqualToValue={(option, value) => option.name === value.name}
                     />
                   )}
@@ -776,36 +792,37 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
 
                 {/* Output Item/Variable with Help */}
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {t('pidMemory.outputItem')}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="subtitle2" gutterBottom data-id-ref="pid-memory-output-type-label">
+                      {t('pidMemory.outputItem')} *
                     </Typography>
-                    <ToggleButtonGroup
-                      value={formData.outputType}
-                      exclusive
-                      onChange={handleTypeChange('outputType', 'outputReference')}
-                      size="small"
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-output-type-toggle"
-                    >
-                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-output-type-point">
-                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.point')}
-                      </ToggleButton>
-                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-output-type-variable">
-                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.globalVariable')}
-                      </ToggleButton>
-                    </ToggleButtonGroup>
                     <IconButton
                       size="small"
                       onClick={handleHelpOpen('pidMemory.help.outputItem')}
-                      sx={{ p: 0.25 }}
+                      sx={{ p: 0.25, mb: 0.5 }}
                       data-id-ref="pid-memory-output-item-help-btn"
                     >
                       <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                     </IconButton>
                   </Box>
+                  <ToggleButtonGroup
+                    value={formData.outputType}
+                    exclusive
+                    onChange={handleTypeChange('outputType', 'outputReference')}
+                    fullWidth
+                    disabled={isSaving}
+                    data-id-ref="pid-memory-output-type-toggle"
+                    sx={{ mb: 2 }}
+                  >
+                    <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-output-type-point">
+                      <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.point')}
+                    </ToggleButton>
+                    <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-output-type-variable">
+                      <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.globalVariable')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
 
                   {formData.outputType === PIDSourceType.Point ? (
                     <Autocomplete
@@ -870,6 +887,21 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                           }}
                         />
                       )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {option.name}
+                            </Typography>
+                            <Chip
+                              label={option.variableType === 0 ? t('globalVariables.type.boolean') : t('globalVariables.type.float')}
+                              size="small"
+                              color={option.variableType === 0 ? 'success' : 'info'}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
                       isOptionEqualToValue={(option, value) => option.name === value.name}
                     />
                   )}
@@ -931,36 +963,37 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
 
                 {/* SetPoint - Required Item/Variable Reference */}
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      {t('pidMemory.setpointConfiguration')}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="subtitle2" gutterBottom data-id-ref="pid-memory-setpoint-type-label">
+                      {t('pidMemory.setpointConfiguration')} *
                     </Typography>
-                    <ToggleButtonGroup
-                      value={formData.setPointType}
-                      exclusive
-                      onChange={handleTypeChange('setPointType', 'setPointReference')}
-                      size="small"
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-setpoint-type-toggle"
-                    >
-                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-setpoint-type-point">
-                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.point')}
-                      </ToggleButton>
-                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-setpoint-type-variable">
-                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.globalVariable')}
-                      </ToggleButton>
-                    </ToggleButtonGroup>
                     <IconButton
                       size="small"
                       onClick={handleHelpOpen('pidMemory.help.setpointMode')}
-                      sx={{ p: 0.25 }}
+                      sx={{ p: 0.25, mb: 0.5 }}
                       data-id-ref="pid-memory-setpoint-mode-help-btn"
                     >
                       <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                     </IconButton>
                   </Box>
+                  <ToggleButtonGroup
+                    value={formData.setPointType}
+                    exclusive
+                    onChange={handleTypeChange('setPointType', 'setPointReference')}
+                    fullWidth
+                    disabled={isSaving}
+                    data-id-ref="pid-memory-setpoint-type-toggle"
+                    sx={{ mb: 2 }}
+                  >
+                    <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-setpoint-type-point">
+                      <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.point')}
+                    </ToggleButton>
+                    <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-setpoint-type-variable">
+                      <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.globalVariable')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
 
                   {formData.setPointType === PIDSourceType.Point ? (
                     <Autocomplete
@@ -1022,6 +1055,21 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                             ),
                           }}
                         />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {option.name}
+                            </Typography>
+                            <Chip
+                              label={option.variableType === 0 ? t('globalVariables.type.boolean') : t('globalVariables.type.float')}
+                              size="small"
+                              color={option.variableType === 0 ? 'success' : 'info'}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
                       )}
                       isOptionEqualToValue={(option, value) => option.name === value.name}
                     />
@@ -1174,36 +1222,37 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                 {/* IsAuto - Required Item/Variable Reference */}
                 <Divider sx={{ my: 1 }} />
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      {t('pidMemory.modeSettings')}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="subtitle2" gutterBottom data-id-ref="pid-memory-isauto-type-label">
+                      {t('pidMemory.modeSettings')} *
                     </Typography>
-                    <ToggleButtonGroup
-                      value={formData.isAutoType}
-                      exclusive
-                      onChange={handleTypeChange('isAutoType', 'isAutoReference')}
-                      size="small"
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-isauto-type-toggle"
-                    >
-                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-isauto-type-point">
-                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.point')}
-                      </ToggleButton>
-                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-isauto-type-variable">
-                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.globalVariable')}
-                      </ToggleButton>
-                    </ToggleButtonGroup>
                     <IconButton
                       size="small"
                       onClick={handleHelpOpen('pidMemory.help.isAuto')}
-                      sx={{ p: 0.25 }}
+                      sx={{ p: 0.25, mb: 0.5 }}
                       data-id-ref="pid-memory-is-auto-help-btn"
                     >
                       <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                     </IconButton>
                   </Box>
+                  <ToggleButtonGroup
+                    value={formData.isAutoType}
+                    exclusive
+                    onChange={handleTypeChange('isAutoType', 'isAutoReference')}
+                    fullWidth
+                    disabled={isSaving}
+                    data-id-ref="pid-memory-isauto-type-toggle"
+                    sx={{ mb: 2 }}
+                  >
+                    <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-isauto-type-point">
+                      <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.point')}
+                    </ToggleButton>
+                    <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-isauto-type-variable">
+                      <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.globalVariable')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
 
                   {formData.isAutoType === PIDSourceType.Point ? (
                     <Autocomplete
@@ -1266,6 +1315,21 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                           }}
                         />
                       )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {option.name}
+                            </Typography>
+                            <Chip
+                              label={option.variableType === 0 ? t('globalVariables.type.boolean') : t('globalVariables.type.float')}
+                              size="small"
+                              color={option.variableType === 0 ? 'success' : 'info'}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
                       isOptionEqualToValue={(option, value) => option.name === value.name}
                     />
                   )}
@@ -1273,36 +1337,37 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
 
                 {/* ManualValue - Required Item/Variable Reference */}
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      {t('pidMemory.manualModeConfiguration')}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="subtitle2" gutterBottom data-id-ref="pid-memory-manualvalue-type-label">
+                      {t('pidMemory.manualModeConfiguration')} *
                     </Typography>
-                    <ToggleButtonGroup
-                      value={formData.manualValueType}
-                      exclusive
-                      onChange={handleTypeChange('manualValueType', 'manualValueReference')}
-                      size="small"
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-manualvalue-type-toggle"
-                    >
-                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-manualvalue-type-point">
-                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.point')}
-                      </ToggleButton>
-                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-manualvalue-type-variable">
-                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.globalVariable')}
-                      </ToggleButton>
-                    </ToggleButtonGroup>
                     <IconButton
                       size="small"
                       onClick={handleHelpOpen('pidMemory.help.manualMode')}
-                      sx={{ p: 0.25 }}
+                      sx={{ p: 0.25, mb: 0.5 }}
                       data-id-ref="pid-memory-manual-mode-help-btn"
                     >
                       <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                     </IconButton>
                   </Box>
+                  <ToggleButtonGroup
+                    value={formData.manualValueType}
+                    exclusive
+                    onChange={handleTypeChange('manualValueType', 'manualValueReference')}
+                    fullWidth
+                    disabled={isSaving}
+                    data-id-ref="pid-memory-manualvalue-type-toggle"
+                    sx={{ mb: 2 }}
+                  >
+                    <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-manualvalue-type-point">
+                      <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.point')}
+                    </ToggleButton>
+                    <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-manualvalue-type-variable">
+                      <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.globalVariable')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
 
                   {formData.manualValueType === PIDSourceType.Point ? (
                     <Autocomplete
@@ -1364,6 +1429,21 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                             ),
                           }}
                         />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {option.name}
+                            </Typography>
+                            <Chip
+                              label={option.variableType === 0 ? t('globalVariables.type.boolean') : t('globalVariables.type.float')}
+                              size="small"
+                              color={option.variableType === 0 ? 'success' : 'info'}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
                       )}
                       isOptionEqualToValue={(option, value) => option.name === value.name}
                     />
@@ -1471,36 +1551,37 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                 {/* ReverseOutput - Required Item/Variable Reference */}
                 <Divider sx={{ my: 1 }} />
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      {t('pidMemory.reverseOutputSettings')}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="subtitle2" gutterBottom data-id-ref="pid-memory-reverseoutput-type-label">
+                      {t('pidMemory.reverseOutputSettings')} *
                     </Typography>
-                    <ToggleButtonGroup
-                      value={formData.reverseOutputType}
-                      exclusive
-                      onChange={handleTypeChange('reverseOutputType', 'reverseOutputReference')}
-                      size="small"
-                      disabled={isSaving}
-                      data-id-ref="pid-memory-reverseoutput-type-toggle"
-                    >
-                      <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-reverseoutput-type-point">
-                        <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.point')}
-                      </ToggleButton>
-                      <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-reverseoutput-type-variable">
-                        <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {t('common.globalVariable')}
-                      </ToggleButton>
-                    </ToggleButtonGroup>
                     <IconButton
                       size="small"
                       onClick={handleHelpOpen('pidMemory.help.reverseOutput')}
-                      sx={{ p: 0.25 }}
+                      sx={{ p: 0.25, mb: 0.5 }}
                       data-id-ref="pid-memory-reverse-output-help-btn"
                     >
                       <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                     </IconButton>
                   </Box>
+                  <ToggleButtonGroup
+                    value={formData.reverseOutputType}
+                    exclusive
+                    onChange={handleTypeChange('reverseOutputType', 'reverseOutputReference')}
+                    fullWidth
+                    disabled={isSaving}
+                    data-id-ref="pid-memory-reverseoutput-type-toggle"
+                    sx={{ mb: 2 }}
+                  >
+                    <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-reverseoutput-type-point">
+                      <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.point')}
+                    </ToggleButton>
+                    <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-reverseoutput-type-variable">
+                      <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('common.globalVariable')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
 
                   {formData.reverseOutputType === PIDSourceType.Point ? (
                     <Autocomplete
@@ -1562,6 +1643,21 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                             ),
                           }}
                         />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {option.name}
+                            </Typography>
+                            <Chip
+                              label={option.variableType === 0 ? t('globalVariables.type.boolean') : t('globalVariables.type.float')}
+                              size="small"
+                              color={option.variableType === 0 ? 'success' : 'info'}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
                       )}
                       isOptionEqualToValue={(option, value) => option.name === value.name}
                     />
@@ -1744,28 +1840,29 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                 {formData.useDigitalOutputItem && (
                   <>
                     <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Typography variant="subtitle2" gutterBottom data-id-ref="pid-memory-digitaloutput-type-label">
                           {t('pidMemory.digitalOutputItem')}
                         </Typography>
-                        <ToggleButtonGroup
-                          value={formData.digitalOutputType}
-                          exclusive
-                          onChange={handleTypeChange('digitalOutputType', 'digitalOutputReference')}
-                          size="small"
-                          disabled={isSaving}
-                          data-id-ref="pid-memory-digitaloutput-type-toggle"
-                        >
-                          <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-digitaloutput-type-point">
-                            <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                            {t('common.point')}
-                          </ToggleButton>
-                          <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-digitaloutput-type-variable">
-                            <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                            {t('common.globalVariable')}
-                          </ToggleButton>
-                        </ToggleButtonGroup>
                       </Box>
+                      <ToggleButtonGroup
+                        value={formData.digitalOutputType}
+                        exclusive
+                        onChange={handleTypeChange('digitalOutputType', 'digitalOutputReference')}
+                        fullWidth
+                        disabled={isSaving}
+                        data-id-ref="pid-memory-digitaloutput-type-toggle"
+                        sx={{ mb: 2 }}
+                      >
+                        <ToggleButton value={PIDSourceType.Point} data-id-ref="pid-memory-digitaloutput-type-point">
+                          <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                          {t('common.point')}
+                        </ToggleButton>
+                        <ToggleButton value={PIDSourceType.GlobalVariable} data-id-ref="pid-memory-digitaloutput-type-variable">
+                          <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                          {t('common.globalVariable')}
+                        </ToggleButton>
+                      </ToggleButtonGroup>
 
                       {formData.digitalOutputType === PIDSourceType.Point ? (
                         <Autocomplete
@@ -1824,6 +1921,21 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                               }}
                             />
                           )}
+                          renderOption={(props, option) => (
+                            <Box component="li" {...props} key={option.id}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                                <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                                  {option.name}
+                                </Typography>
+                                <Chip
+                                  label={option.variableType === 0 ? t('globalVariables.type.boolean') : t('globalVariables.type.float')}
+                                  size="small"
+                                  color={option.variableType === 0 ? 'success' : 'info'}
+                                  sx={{ height: 20, fontSize: '0.7rem' }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
                           isOptionEqualToValue={(option, value) => option.name === value.name}
                         />
                       )}
@@ -1853,16 +1965,16 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                       disabled={isSaving}
                       error={!!formErrors.hysteresisHighThreshold}
                       helperText={
-                        formErrors.hysteresisHighThreshold || 
-                        t('pidMemory.hysteresisHighThresholdHelp', { 
-                          min: formData.outputMin, 
-                          max: formData.outputMax 
+                        formErrors.hysteresisHighThreshold ||
+                        t('pidMemory.hysteresisHighThresholdHelp', {
+                          min: formData.outputMin,
+                          max: formData.outputMax
                         })
                       }
-                      inputProps={{ 
-                        min: formData.outputMin, 
+                      inputProps={{
+                        min: formData.outputMin,
                         max: formData.outputMax,
-                        step: 1 
+                        step: 1
                       }}
                       data-id-ref="pid-memory-hysteresis-high-threshold-input"
                     />
@@ -1876,16 +1988,16 @@ const AddEditPIDMemoryDialog: React.FC<AddEditPIDMemoryDialogProps> = ({ open, o
                       disabled={isSaving}
                       error={!!formErrors.hysteresisLowThreshold}
                       helperText={
-                        formErrors.hysteresisLowThreshold || 
-                        t('pidMemory.hysteresisLowThresholdHelp', { 
-                          min: formData.outputMin, 
-                          max: formData.outputMax 
+                        formErrors.hysteresisLowThreshold ||
+                        t('pidMemory.hysteresisLowThresholdHelp', {
+                          min: formData.outputMin,
+                          max: formData.outputMax
                         })
                       }
-                      inputProps={{ 
-                        min: formData.outputMin, 
+                      inputProps={{
+                        min: formData.outputMin,
                         max: formData.outputMax,
-                        step: 1 
+                        step: 1
                       }}
                       data-id-ref="pid-memory-hysteresis-low-threshold-input"
                     />
