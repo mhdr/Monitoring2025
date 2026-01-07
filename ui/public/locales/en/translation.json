@@ -4985,7 +4985,11 @@
     "deleteWarning": "This will also delete all stored sample data. This action cannot be undone.",
     "searchPlaceholder": "Search statistical memories...",
     "name": "Name",
+    "inputType": "Input Type",
     "inputItem": "Input Item",
+    "inputGlobalVariable": "Input Global Variable",
+    "sourceTypePoint": "Point",
+    "sourceTypeGlobalVariable": "Global Variable",
     "outputItem": "Output Item",
     "outputs": "Configured Outputs",
     "interval": "Sampling Interval",
@@ -5092,14 +5096,31 @@
         "title": "Input Item",
         "sections": [
           {
-            "content": "The analog input or output item from which samples are collected at each interval."
+            "content": "The analog input or output item from which samples are collected at each interval. You can choose between a monitoring point (analog input/output) or a global variable."
           },
           {
             "title": "Requirements",
             "content": [
-              "Must be an Analog Input or Analog Output item",
+              "Point: Must be an Analog Input or Analog Output item",
+              "Global Variable: Must be enabled and of Float or Boolean type",
               "Samples are collected at the configured interval",
               "Only numeric values are stored"
+            ]
+          }
+        ]
+      },
+      "inputGlobalVariable": {
+        "title": "Input Global Variable",
+        "sections": [
+          {
+            "content": "Select a global variable as the data source for statistical calculations. Global variables allow you to compute statistics on calculated values or system metrics."
+          },
+          {
+            "title": "Requirements",
+            "content": [
+              "Global variable must be enabled",
+              "Supports both Float and Boolean types",
+              "Value is sampled at each interval"
             ]
           }
         ]

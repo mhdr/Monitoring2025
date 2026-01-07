@@ -28,6 +28,8 @@ import {
   Autocomplete,
   Checkbox,
   Grid,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   HelpOutline as HelpOutlineIcon,
@@ -35,12 +37,14 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Timeline as TimelineIcon,
+  Memory as MemoryIcon,
+  Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addStatisticalMemory, editStatisticalMemory } from '../services/extendedApi';
-import type { StatisticalMemory, StatisticalWindowType, PercentileConfig, MonitoringItem, ItemType } from '../types/api';
-import { ItemTypeEnum, StatisticalWindowType as StatisticalWindowTypeEnum } from '../types/api';
+import { addStatisticalMemory, editStatisticalMemory, getGlobalVariables } from '../services/extendedApi';
+import type { StatisticalMemory, StatisticalWindowType, PercentileConfig, MonitoringItem, ItemType, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, StatisticalWindowType as StatisticalWindowTypeEnum, StatisticalSourceType } from '../types/api';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
 interface AddEditStatisticalMemoryDialogProps {
@@ -58,6 +62,8 @@ interface PercentileConfigForm {
 
 interface FormData {
   name: string;
+  inputType: number;
+  inputReference: string;
   inputItemId: string;
   interval: number;
   duration: number;
@@ -87,6 +93,7 @@ interface FormData {
 
 interface FormErrors {
   name?: string;
+  inputReference?: string;
   inputItemId?: string;
   interval?: string;
   duration?: string;
@@ -153,6 +160,8 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
+  const [loadingGlobalVariables, setLoadingGlobalVariables] = useState(false);
 
   // Section expansion states
   const [basicExpanded, setBasicExpanded] = useState(true);
@@ -174,6 +183,8 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
   // Form state
   const [formData, setFormData] = useState<FormData>({
     name: '',
+    inputType: StatisticalSourceType.Point,
+    inputReference: '',
     inputItemId: '',
     interval: 10,
     duration: 10,
@@ -222,6 +233,27 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
     return items.find((item) => item.id === itemId) || null;
   }, [items]);
 
+  // Fetch global variables when dialog opens
+  useEffect(() => {
+    const fetchGlobalVariables = async () => {
+      if (open) {
+        setLoadingGlobalVariables(true);
+        try {
+          const response = await getGlobalVariables({});
+          if (response?.globalVariables) {
+            setGlobalVariables(response.globalVariables);
+          }
+        } catch (err) {
+          console.error('Failed to fetch global variables', err);
+        } finally {
+          setLoadingGlobalVariables(false);
+        }
+      }
+    };
+
+    fetchGlobalVariables();
+  }, [open]);
+
   // Initialize form data
   useEffect(() => {
     if (open) {
@@ -240,6 +272,8 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
 
         setFormData({
           name: statisticalMemory.name || '',
+          inputType: statisticalMemory.inputType ?? StatisticalSourceType.Point,
+          inputReference: statisticalMemory.inputReference || '',
           inputItemId: statisticalMemory.inputItemId,
           interval: statisticalMemory.interval,
           duration: statisticalMemory.duration ?? 10,
@@ -271,6 +305,8 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
         // Reset to defaults for add mode
         setFormData({
           name: '',
+          inputType: StatisticalSourceType.Point,
+          inputReference: '',
           inputItemId: '',
           interval: 10,
           duration: 10,
@@ -369,9 +405,9 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
   const validate = (): boolean => {
     const errors: FormErrors = { percentiles: {} };
 
-    // Input item required
-    if (!formData.inputItemId) {
-      errors.inputItemId = t('statisticalMemory.validation.inputItemRequired');
+    // Input reference required
+    if (!formData.inputReference) {
+      errors.inputReference = t('statisticalMemory.validation.inputItemRequired');
     }
 
     // Interval must be positive
@@ -478,6 +514,8 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
 
       const payload = {
         name: formData.name || null,
+        inputType: formData.inputType,
+        inputReference: formData.inputReference,
         inputItemId: formData.inputItemId,
         interval: formData.interval,
         duration: formData.duration,
@@ -795,49 +833,153 @@ const AddEditStatisticalMemoryDialog: React.FC<AddEditStatisticalMemoryDialogPro
                 </Box>
 
                 {/* Input Item */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <Autocomplete
-                    options={analogItems}
-                    getOptionLabel={getItemLabel}
-                    value={getItemById(formData.inputItemId)}
-                    onChange={(_, value) => setFormData((prev) => ({ ...prev, inputItemId: value?.id || '' }))}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={t('statisticalMemory.inputItem')}
-                        error={!!formErrors.inputItemId}
-                        helperText={formErrors.inputItemId}
-                        size="small"
-                        required
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props} key={option.id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                            {getItemLabel(option)}
-                          </Typography>
-                          <Chip
-                            label={getItemTypeLabel(option.itemType, t)}
-                            size="small"
-                            color={getItemTypeColor(option.itemType)}
-                            sx={{ height: 20, fontSize: '0.7rem' }}
-                          />
-                        </Box>
-                      </Box>
-                    )}
-                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom data-id-ref="statistical-memory-input-type-label">
+                    {t('statisticalMemory.inputType')} *
+                  </Typography>
+                  <ToggleButtonGroup
+                    value={formData.inputType}
+                    exclusive
+                    onChange={(_, value) => {
+                      if (value !== null) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          inputType: value,
+                          inputReference: '',
+                          inputItemId: '',
+                        }));
+                      }
+                    }}
                     fullWidth
-                    data-id-ref="statistical-memory-input-item-select"
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={handleHelpOpen('statisticalMemory.help.inputItem')}
-                    sx={{ p: 0.25, mt: 1 }}
-                    data-id-ref="statistical-memory-input-item-help-btn"
+                    disabled={loading}
+                    data-id-ref="statistical-memory-input-type-toggle"
+                    sx={{ mb: 2 }}
                   >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
+                    <ToggleButton value={StatisticalSourceType.Point} data-id-ref="statistical-memory-input-type-point">
+                      <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('statisticalMemory.sourceTypePoint')}
+                    </ToggleButton>
+                    <ToggleButton value={StatisticalSourceType.GlobalVariable} data-id-ref="statistical-memory-input-type-globalvariable">
+                      <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                      {t('statisticalMemory.sourceTypeGlobalVariable')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+
+                  {/* Point Selection */}
+                  {formData.inputType === StatisticalSourceType.Point && (
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                      <Autocomplete
+                        options={analogItems}
+                        getOptionLabel={getItemLabel}
+                        value={getItemById(formData.inputReference)}
+                        onChange={(_, value) => setFormData((prev) => ({ 
+                          ...prev, 
+                          inputReference: value?.id || '',
+                          inputItemId: value?.id || ''
+                        }))}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label={t('statisticalMemory.inputItem')}
+                            error={!!formErrors.inputReference}
+                            helperText={formErrors.inputReference}
+                            size="small"
+                            required
+                          />
+                        )}
+                        renderOption={(props, option) => (
+                          <Box component="li" {...props} key={option.id}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                              <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                                {getItemLabel(option)}
+                              </Typography>
+                              <Chip
+                                label={getItemTypeLabel(option.itemType, t)}
+                                size="small"
+                                color={getItemTypeColor(option.itemType)}
+                                sx={{ height: 20, fontSize: '0.7rem' }}
+                              />
+                            </Box>
+                          </Box>
+                        )}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                        fullWidth
+                        disabled={loading}
+                        data-id-ref="statistical-memory-input-item-select"
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={handleHelpOpen('statisticalMemory.help.inputItem')}
+                        sx={{ p: 0.25, mt: 1 }}
+                        data-id-ref="statistical-memory-input-item-help-btn"
+                      >
+                        <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                      </IconButton>
+                    </Box>
+                  )}
+
+                  {/* Global Variable Selection */}
+                  {formData.inputType === StatisticalSourceType.GlobalVariable && (
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                      <Autocomplete
+                        options={globalVariables.filter(gv => !gv.isDisabled)}
+                        getOptionLabel={(gv) => gv.name}
+                        value={globalVariables.find(gv => gv.name === formData.inputReference) || null}
+                        onChange={(_, value) => setFormData((prev) => ({ 
+                          ...prev, 
+                          inputReference: value?.name || ''
+                        }))}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label={t('statisticalMemory.inputGlobalVariable')}
+                            error={!!formErrors.inputReference}
+                            helperText={formErrors.inputReference}
+                            size="small"
+                            required
+                            InputProps={{
+                              ...params.InputProps,
+                              startAdornment: (
+                                <>
+                                  {loadingGlobalVariables && <CircularProgress size={20} sx={{ mr: 1 }} />}
+                                  {params.InputProps.startAdornment}
+                                </>
+                              ),
+                            }}
+                          />
+                        )}
+                        renderOption={(props, option) => (
+                          <Box component="li" {...props} key={option.name}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                              <FunctionsIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                              <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                                {option.name}
+                              </Typography>
+                              <Chip
+                                label={option.dataType === 0 ? 'Bool' : 'Float'}
+                                size="small"
+                                color="info"
+                                sx={{ height: 20, fontSize: '0.7rem' }}
+                              />
+                            </Box>
+                          </Box>
+                        )}
+                        isOptionEqualToValue={(option, value) => option.name === value.name}
+                        fullWidth
+                        disabled={loading || loadingGlobalVariables}
+                        loading={loadingGlobalVariables}
+                        data-id-ref="statistical-memory-input-globalvariable-select"
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={handleHelpOpen('statisticalMemory.help.inputGlobalVariable')}
+                        sx={{ p: 0.25, mt: 1 }}
+                        data-id-ref="statistical-memory-input-globalvariable-help-btn"
+                      >
+                        <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                      </IconButton>
+                    </Box>
+                  )}
                 </Box>
 
                 {/* Interval */}

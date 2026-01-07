@@ -23,6 +23,22 @@ public enum StatisticalWindowType
 }
 
 /// <summary>
+/// Specifies the source type for statistical memory input
+/// </summary>
+public enum StatisticalSourceType
+{
+    /// <summary>
+    /// Reference is a Point (MonitoringItem) GUID
+    /// </summary>
+    Point = 0,
+    
+    /// <summary>
+    /// Reference is a Global Variable name
+    /// </summary>
+    GlobalVariable = 1
+}
+
+/// <summary>
 /// Statistical Memory for computing statistical metrics (min, max, avg, stddev, range, median, percentiles, CV)
 /// over a configurable rolling or tumbling time window. Supports multiple optional outputs and custom percentiles.
 /// </summary>
@@ -57,8 +73,23 @@ public class StatisticalMemory
     public string? Name { get; set; }
 
     /// <summary>
-    /// The analog input item to collect samples from.
+    /// Type of the input source: Point or GlobalVariable
+    /// </summary>
+    [Column("input_type")] 
+    public StatisticalSourceType InputType { get; set; } = StatisticalSourceType.Point;
+
+    /// <summary>
+    /// Reference to the input source for statistical calculations.
+    /// - If InputType = Point: GUID string of the MonitoringItem
+    /// - If InputType = GlobalVariable: Name of the Global Variable
+    /// </summary>
+    [Column("input_reference")] 
+    public string InputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// [DEPRECATED - Use InputReference instead] The analog input item to collect samples from.
     /// Must be AnalogInput or AnalogOutput type.
+    /// Kept for backward compatibility.
     /// </summary>
     [Column("input_item_id")]
     public Guid InputItemId { get; set; }

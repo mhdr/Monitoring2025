@@ -42,18 +42,48 @@ public class StatisticalMemories
         {
             var context = new DataContext();
 
-            // Validate input item exists and is analog type
-            var inputItem = await context.MonitoringItems.FindAsync(statisticalMemory.InputItemId);
-            if (inputItem == null)
+            // Validate input source
+            if (statisticalMemory.InputType == Models.StatisticalSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Input item not found");
-            }
+                if (!Guid.TryParse(statisticalMemory.InputReference, out var inputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Invalid input item GUID");
+                }
+                
+                var inputItem = await context.MonitoringItems.FindAsync(inputItemId);
+                if (inputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input item not found");
+                }
 
-            if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input item must be AnalogInput or AnalogOutput");
+                }
+                
+                // Keep InputItemId for backward compatibility
+                statisticalMemory.InputItemId = inputItemId;
+            }
+            else if (statisticalMemory.InputType == Models.StatisticalSourceType.GlobalVariable)
             {
-                await context.DisposeAsync();
-                return (false, null, "Input item must be AnalogInput or AnalogOutput");
+                var inputVariable = await GlobalVariables.GetGlobalVariableByName(statisticalMemory.InputReference);
+                if (inputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input global variable not found");
+                }
+                
+                if (inputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input global variable is disabled");
+                }
+                
+                // Set a default GUID for backward compatibility
+                statisticalMemory.InputItemId = Guid.Empty;
             }
 
             // Collect all output item IDs for validation
@@ -75,7 +105,9 @@ public class StatisticalMemories
                 }
                 outputItemIds.Add(outputId.Value);
                 
-                if (outputId.Value == statisticalMemory.InputItemId)
+                // Only check against input item if InputType is Point
+                if (statisticalMemory.InputType == Models.StatisticalSourceType.Point && 
+                    outputId.Value == statisticalMemory.InputItemId)
                 {
                     return $"{fieldName}: Output item cannot be the same as input item";
                 }
@@ -153,8 +185,9 @@ public class StatisticalMemories
                             }
                             outputItemIds.Add(percentile.OutputItemId);
                             
-                            // Check not same as input
-                            if (percentile.OutputItemId == statisticalMemory.InputItemId)
+                            // Check not same as input (only for Point type)
+                            if (statisticalMemory.InputType == Models.StatisticalSourceType.Point && 
+                                percentile.OutputItemId == statisticalMemory.InputItemId)
                             {
                                 await context.DisposeAsync();
                                 return (false, null, $"Percentile {percentile.Percentile}: Output item cannot be the same as input item");
@@ -254,18 +287,48 @@ public class StatisticalMemories
                 return (false, "Statistical memory not found");
             }
 
-            // Validate input item exists and is analog type
-            var inputItem = await context.MonitoringItems.FindAsync(statisticalMemory.InputItemId);
-            if (inputItem == null)
+            // Validate input source
+            if (statisticalMemory.InputType == Models.StatisticalSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, "Input item not found");
-            }
+                if (!Guid.TryParse(statisticalMemory.InputReference, out var inputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Invalid input item GUID");
+                }
+                
+                var inputItem = await context.MonitoringItems.FindAsync(inputItemId);
+                if (inputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input item not found");
+                }
 
-            if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input item must be AnalogInput or AnalogOutput");
+                }
+                
+                // Keep InputItemId for backward compatibility
+                statisticalMemory.InputItemId = inputItemId;
+            }
+            else if (statisticalMemory.InputType == Models.StatisticalSourceType.GlobalVariable)
             {
-                await context.DisposeAsync();
-                return (false, "Input item must be AnalogInput or AnalogOutput");
+                var inputVariable = await GlobalVariables.GetGlobalVariableByName(statisticalMemory.InputReference);
+                if (inputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input global variable not found");
+                }
+                
+                if (inputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input global variable is disabled");
+                }
+                
+                // Set a default GUID for backward compatibility
+                statisticalMemory.InputItemId = Guid.Empty;
             }
 
             // Collect all output item IDs for validation
@@ -287,7 +350,9 @@ public class StatisticalMemories
                 }
                 outputItemIds.Add(outputId.Value);
                 
-                if (outputId.Value == statisticalMemory.InputItemId)
+                // Only check against input item if InputType is Point
+                if (statisticalMemory.InputType == Models.StatisticalSourceType.Point && 
+                    outputId.Value == statisticalMemory.InputItemId)
                 {
                     return $"{fieldName}: Output item cannot be the same as input item";
                 }
@@ -365,8 +430,9 @@ public class StatisticalMemories
                             }
                             outputItemIds.Add(percentile.OutputItemId);
                             
-                            // Check not same as input
-                            if (percentile.OutputItemId == statisticalMemory.InputItemId)
+                            // Check not same as input (only for Point type)
+                            if (statisticalMemory.InputType == Models.StatisticalSourceType.Point && 
+                                percentile.OutputItemId == statisticalMemory.InputItemId)
                             {
                                 await context.DisposeAsync();
                                 return (false, $"Percentile {percentile.Percentile}: Output item cannot be the same as input item");

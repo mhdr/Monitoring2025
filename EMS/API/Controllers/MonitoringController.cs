@@ -12044,6 +12044,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     {
                         Id = memory.Id,
                         Name = memory.Name,
+                        InputType = (int)memory.InputType,
+                        InputReference = memory.InputReference,
                         InputItemId = memory.InputItemId,
                         Interval = memory.Interval,
                         IsDisabled = memory.IsDisabled,
@@ -12133,6 +12135,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             var statisticalMemory = new Core.Models.StatisticalMemory
             {
                 Name = request.Name,
+                InputType = (Core.Models.StatisticalSourceType)request.InputType,
+                InputReference = request.InputReference,
                 InputItemId = request.InputItemId,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
@@ -12213,6 +12217,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 Id = request.Id,
                 Name = request.Name,
+                InputType = (Core.Models.StatisticalSourceType)request.InputType,
+                InputReference = request.InputReference,
                 InputItemId = request.InputItemId,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,

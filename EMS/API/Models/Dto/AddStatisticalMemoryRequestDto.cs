@@ -13,10 +13,22 @@ public class AddStatisticalMemoryRequestDto
     public string? Name { get; set; }
 
     /// <summary>
-    /// ID of the input monitoring item to collect samples from
-    /// Must be AnalogInput or AnalogOutput type
+    /// Type of the input source: 0=Point, 1=GlobalVariable
     /// </summary>
-    [Required(ErrorMessage = "Input item ID is required")]
+    public int InputType { get; set; } = 0;
+
+    /// <summary>
+    /// Reference to the input source for statistical calculations.
+    /// - If InputType = 0 (Point): GUID string of the MonitoringItem
+    /// - If InputType = 1 (GlobalVariable): Name of the Global Variable
+    /// </summary>
+    [Required(ErrorMessage = "Input reference is required")]
+    public string InputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// [DEPRECATED - Use InputReference instead] ID of the input monitoring item to collect samples from
+    /// Must be AnalogInput or AnalogOutput type. Kept for backward compatibility.
+    /// </summary>
     public Guid InputItemId { get; set; }
 
     /// <summary>

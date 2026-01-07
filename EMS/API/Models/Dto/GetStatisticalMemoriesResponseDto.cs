@@ -28,7 +28,22 @@ public class StatisticalMemoryItemDto
 {
     public Guid Id { get; set; }
     public string? Name { get; set; }
+    
+    /// <summary>
+    /// Type of the input source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int InputType { get; set; }
+
+    /// <summary>
+    /// Reference to the input source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    public string InputReference { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// [DEPRECATED] Use InputReference instead. Kept for backward compatibility.
+    /// </summary>
     public Guid InputItemId { get; set; }
+    
     public int Interval { get; set; }
     public bool IsDisabled { get; set; }
 

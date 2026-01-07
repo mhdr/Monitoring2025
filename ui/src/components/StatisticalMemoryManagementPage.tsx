@@ -27,8 +27,9 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
-import { getStatisticalMemories } from '../services/extendedApi';
-import type { StatisticalMemory, StatisticalWindowType, PercentileConfig } from '../types/api';
+import { getStatisticalMemories, getGlobalVariables } from '../services/extendedApi';
+import type { StatisticalMemory, StatisticalWindowType, PercentileConfig, GlobalVariable } from '../types/api';
+import { StatisticalSourceType } from '../types/api';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
 // Lazy load dialog components for code splitting
@@ -88,7 +89,12 @@ const StatisticalMemoryManagementPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await getStatisticalMemories();
+      // Fetch both statistical memories and global variables in parallel
+      const [response, gvResponse] = await Promise.all([
+        getStatisticalMemories(),
+        getGlobalVariables({})
+      ]);
+
       // Enhance with item details from monitoring context
       const enhanced = (response.statisticalMemories || []).map((sm): StatisticalMemoryWithItems => {
         // Parse percentiles config
@@ -105,9 +111,18 @@ const StatisticalMemoryManagementPage: React.FC = () => {
           outputItemName: getItemName(pc.outputItemId),
         }));
 
+        // Resolve input source name
+        let inputItemName: string = '';
+        if (sm.inputType === StatisticalSourceType.Point) {
+          inputItemName = getItemName(sm.inputReference);
+        } else if (sm.inputType === StatisticalSourceType.GlobalVariable) {
+          const inputVariable = gvResponse?.globalVariables?.find((v) => v.name === sm.inputReference);
+          inputItemName = inputVariable ? inputVariable.name : sm.inputReference;
+        }
+
         return {
           ...sm,
-          inputItemName: getItemName(sm.inputItemId),
+          inputItemName,
           outputMinItemName: getItemName(sm.outputMinItemId),
           outputMaxItemName: getItemName(sm.outputMaxItemId),
           outputAvgItemName: getItemName(sm.outputAvgItemId),

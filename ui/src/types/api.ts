@@ -2761,6 +2761,15 @@ export const TimeoutSourceType = {
 };
 
 /**
+ * Enum for StatisticalMemory source types
+ */
+export type StatisticalSourceType = 0 | 1;
+export const StatisticalSourceType = {
+  Point: 0 as const,
+  GlobalVariable: 1 as const,
+};
+
+/**
  * Enum for TotalizerMemory source types
  */
 export type TotalizerSourceType = 0 | 1;
@@ -3619,7 +3628,9 @@ export interface PercentileConfig {
 export interface StatisticalMemory {
   id: string; // UUID
   name?: string | null;
-  inputItemId: string; // UUID - Input item to collect samples from
+  inputType: number; // StatisticalSourceType (0=Point, 1=GlobalVariable)
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  inputItemId: string; // UUID - [DEPRECATED] Use inputReference instead
   interval: number; // int - Execution interval in seconds
   isDisabled: boolean; // bool - Whether statistical memory is disabled
   duration: number; // long - Write duration in seconds for controller writes. Default: 10
@@ -3668,7 +3679,9 @@ export interface GetStatisticalMemoriesResponseDto {
  */
 export interface AddStatisticalMemoryRequestDto {
   name?: string | null;
-  inputItemId: string; // UUID
+  inputType?: number; // StatisticalSourceType (0=Point, 1=GlobalVariable)
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  inputItemId?: string; // UUID - [DEPRECATED] Use inputReference instead
   interval: number; // int - must be > 0
   isDisabled?: boolean;
   duration?: number; // long - Write duration in seconds. Default: 10
@@ -3706,7 +3719,9 @@ export interface AddStatisticalMemoryResponseDto {
 export interface EditStatisticalMemoryRequestDto {
   id: string; // UUID
   name?: string | null;
-  inputItemId: string; // UUID
+  inputType?: number; // StatisticalSourceType (0=Point, 1=GlobalVariable)
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  inputItemId?: string; // UUID - [DEPRECATED] Use inputReference instead
   interval: number; // int - must be > 0
   isDisabled?: boolean;
   duration?: number; // long - Write duration in seconds. Default: 10
