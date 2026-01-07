@@ -67,43 +67,86 @@ public class ComparisonMemories
                 var group = groups[i];
                 var groupLabel = string.IsNullOrEmpty(group.Name) ? $"Group {i + 1}" : group.Name;
 
+                // Support backward compatibility: use InputReferences if present, otherwise use InputItemIds
+                var inputReferences = group.InputReferences.Count > 0 ? group.InputReferences : group.InputItemIds;
+
                 // Validate input items exist and match the comparison mode
-                if (group.InputItemIds.Count == 0)
+                if (inputReferences.Count == 0)
                 {
                     await context.DisposeAsync();
                     return (false, null, $"{groupLabel}: Must have at least one input item");
                 }
 
-                foreach (var inputIdStr in group.InputItemIds)
+                // Validate inputs based on InputType
+                if (group.InputType == ComparisonSourceType.Point)
                 {
-                    if (!Guid.TryParse(inputIdStr, out var inputId))
+                    foreach (var inputIdStr in inputReferences)
                     {
-                        await context.DisposeAsync();
-                        return (false, null, $"{groupLabel}: Invalid input item ID format: {inputIdStr}");
-                    }
-
-                    var inputItem = await context.MonitoringItems.FindAsync(inputId);
-                    if (inputItem == null)
-                    {
-                        await context.DisposeAsync();
-                        return (false, null, $"{groupLabel}: Input item {inputIdStr} not found");
-                    }
-
-                    // Validate input type matches comparison mode
-                    if (group.ComparisonMode == ComparisonMode.Analog)
-                    {
-                        if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                        if (!Guid.TryParse(inputIdStr, out var inputId))
                         {
                             await context.DisposeAsync();
-                            return (false, null, $"{groupLabel}: Input item {inputIdStr} must be AnalogInput or AnalogOutput for Analog mode");
+                            return (false, null, $"{groupLabel}: Invalid input item ID format: {inputIdStr}");
+                        }
+
+                        var inputItem = await context.MonitoringItems.FindAsync(inputId);
+                        if (inputItem == null)
+                        {
+                            await context.DisposeAsync();
+                            return (false, null, $"{groupLabel}: Input item {inputIdStr} not found");
+                        }
+
+                        // Validate input type matches comparison mode
+                        if (group.ComparisonMode == ComparisonMode.Analog)
+                        {
+                            if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                            {
+                                await context.DisposeAsync();
+                                return (false, null, $"{groupLabel}: Input item {inputIdStr} must be AnalogInput or AnalogOutput for Analog mode");
+                            }
+                        }
+                        else // Digital mode
+                        {
+                            if (inputItem.ItemType != ItemType.DigitalInput && inputItem.ItemType != ItemType.DigitalOutput)
+                            {
+                                await context.DisposeAsync();
+                                return (false, null, $"{groupLabel}: Input item {inputIdStr} must be DigitalInput or DigitalOutput for Digital mode");
+                            }
                         }
                     }
-                    else // Digital mode
+                }
+                else if (group.InputType == ComparisonSourceType.GlobalVariable)
+                {
+                    foreach (var inputName in inputReferences)
                     {
-                        if (inputItem.ItemType != ItemType.DigitalInput && inputItem.ItemType != ItemType.DigitalOutput)
+                        var inputVariable = await GlobalVariables.GetGlobalVariableByName(inputName);
+                        if (inputVariable == null)
                         {
                             await context.DisposeAsync();
-                            return (false, null, $"{groupLabel}: Input item {inputIdStr} must be DigitalInput or DigitalOutput for Digital mode");
+                            return (false, null, $"{groupLabel}: Input global variable '{inputName}' not found");
+                        }
+
+                        if (inputVariable.IsDisabled)
+                        {
+                            await context.DisposeAsync();
+                            return (false, null, $"{groupLabel}: Input global variable '{inputName}' is disabled");
+                        }
+
+                        // Validate variable type matches comparison mode
+                        if (group.ComparisonMode == ComparisonMode.Analog)
+                        {
+                            if (inputVariable.VariableType != GlobalVariableType.Float)
+                            {
+                                await context.DisposeAsync();
+                                return (false, null, $"{groupLabel}: Global variable '{inputName}' must be Float type for Analog mode");
+                            }
+                        }
+                        else // Digital mode
+                        {
+                            if (inputVariable.VariableType != GlobalVariableType.Boolean && inputVariable.VariableType != GlobalVariableType.Float)
+                            {
+                                await context.DisposeAsync();
+                                return (false, null, $"{groupLabel}: Global variable '{inputName}' must be Boolean or Float type for Digital mode");
+                            }
                         }
                     }
                 }
@@ -115,10 +158,10 @@ public class ComparisonMemories
                     return (false, null, $"{groupLabel}: RequiredVotes must be at least 1");
                 }
 
-                if (group.RequiredVotes > group.InputItemIds.Count)
+                if (group.RequiredVotes > inputReferences.Count)
                 {
                     await context.DisposeAsync();
-                    return (false, null, $"{groupLabel}: RequiredVotes ({group.RequiredVotes}) cannot exceed number of inputs ({group.InputItemIds.Count})");
+                    return (false, null, $"{groupLabel}: RequiredVotes ({group.RequiredVotes}) cannot exceed number of inputs ({inputReferences.Count})");
                 }
 
                 // Validate analog thresholds
@@ -164,35 +207,67 @@ public class ComparisonMemories
                 if (group.VotingHysteresis > 0)
                 {
                     var minVotesToTurnOn = group.RequiredVotes + group.VotingHysteresis;
-                    if (minVotesToTurnOn > group.InputItemIds.Count)
+                    if (minVotesToTurnOn > inputReferences.Count)
                     {
                         await context.DisposeAsync();
-                        return (false, null, $"{groupLabel}: VotingHysteresis too high - would require {minVotesToTurnOn} votes but only {group.InputItemIds.Count} inputs available");
+                        return (false, null, $"{groupLabel}: VotingHysteresis too high - would require {minVotesToTurnOn} votes but only {inputReferences.Count} inputs available");
                     }
                 }
             }
 
-            // Validate output item exists
-            var outputItem = await context.MonitoringItems.FindAsync(comparisonMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate output source
+            // Support backward compatibility: use OutputReference if present, otherwise use OutputItemId
+            var outputReference = !string.IsNullOrEmpty(comparisonMemory.OutputReference) 
+                ? comparisonMemory.OutputReference 
+                : comparisonMemory.OutputItemId.ToString();
+
+            if (comparisonMemory.OutputType == ComparisonSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Output item not found");
+                if (!Guid.TryParse(outputReference, out var outputId))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Invalid output item GUID");
+                }
+
+                var outputItem = await context.MonitoringItems.FindAsync(outputId);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item not found");
+                }
+
+                // Validate output item is DigitalOutput
+                if (outputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item must be DigitalOutput");
+                }
+            }
+            else if (comparisonMemory.OutputType == ComparisonSourceType.GlobalVariable)
+            {
+                var outputVariable = await GlobalVariables.GetGlobalVariableByName(outputReference);
+                if (outputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable not found");
+                }
+
+                if (outputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable is disabled");
+                }
             }
 
-            // Validate output item is DigitalOutput
-            if (outputItem.ItemType != ItemType.DigitalOutput)
+            // Validate output is not in any input items
+            var allInputReferences = groups.SelectMany(g => 
+                g.InputReferences.Count > 0 ? g.InputReferences : g.InputItemIds
+            ).Distinct().ToList();
+            
+            if (allInputReferences.Contains(outputReference))
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item must be DigitalOutput");
-            }
-
-            // Validate output item is not in any input items
-            var allInputIds = groups.SelectMany(g => g.InputItemIds).Distinct().ToList();
-            if (allInputIds.Contains(comparisonMemory.OutputItemId.ToString()))
-            {
-                await context.DisposeAsync();
-                return (false, null, "Output item cannot be in any group's input items list");
+                return (false, null, "Output cannot be in any group's input list");
             }
 
             // Validate interval
@@ -264,41 +339,84 @@ public class ComparisonMemories
                 var group = groups[i];
                 var groupLabel = string.IsNullOrEmpty(group.Name) ? $"Group {i + 1}" : group.Name;
 
-                if (group.InputItemIds.Count == 0)
+                // Support backward compatibility: use InputReferences if present, otherwise use InputItemIds
+                var inputReferences = group.InputReferences.Count > 0 ? group.InputReferences : group.InputItemIds;
+
+                if (inputReferences.Count == 0)
                 {
                     await context.DisposeAsync();
                     return (false, $"{groupLabel}: Must have at least one input item");
                 }
 
-                foreach (var inputIdStr in group.InputItemIds)
+                // Validate inputs based on InputType
+                if (group.InputType == ComparisonSourceType.Point)
                 {
-                    if (!Guid.TryParse(inputIdStr, out var inputId))
+                    foreach (var inputIdStr in inputReferences)
                     {
-                        await context.DisposeAsync();
-                        return (false, $"{groupLabel}: Invalid input item ID format: {inputIdStr}");
-                    }
-
-                    var inputItem = await context.MonitoringItems.FindAsync(inputId);
-                    if (inputItem == null)
-                    {
-                        await context.DisposeAsync();
-                        return (false, $"{groupLabel}: Input item {inputIdStr} not found");
-                    }
-
-                    if (group.ComparisonMode == ComparisonMode.Analog)
-                    {
-                        if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                        if (!Guid.TryParse(inputIdStr, out var inputId))
                         {
                             await context.DisposeAsync();
-                            return (false, $"{groupLabel}: Input item {inputIdStr} must be AnalogInput or AnalogOutput for Analog mode");
+                            return (false, $"{groupLabel}: Invalid input item ID format: {inputIdStr}");
+                        }
+
+                        var inputItem = await context.MonitoringItems.FindAsync(inputId);
+                        if (inputItem == null)
+                        {
+                            await context.DisposeAsync();
+                            return (false, $"{groupLabel}: Input item {inputIdStr} not found");
+                        }
+
+                        if (group.ComparisonMode == ComparisonMode.Analog)
+                        {
+                            if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                            {
+                                await context.DisposeAsync();
+                                return (false, $"{groupLabel}: Input item {inputIdStr} must be AnalogInput or AnalogOutput for Analog mode");
+                            }
+                        }
+                        else
+                        {
+                            if (inputItem.ItemType != ItemType.DigitalInput && inputItem.ItemType != ItemType.DigitalOutput)
+                            {
+                                await context.DisposeAsync();
+                                return (false, $"{groupLabel}: Input item {inputIdStr} must be DigitalInput or DigitalOutput for Digital mode");
+                            }
                         }
                     }
-                    else
+                }
+                else if (group.InputType == ComparisonSourceType.GlobalVariable)
+                {
+                    foreach (var inputName in inputReferences)
                     {
-                        if (inputItem.ItemType != ItemType.DigitalInput && inputItem.ItemType != ItemType.DigitalOutput)
+                        var inputVariable = await GlobalVariables.GetGlobalVariableByName(inputName);
+                        if (inputVariable == null)
                         {
                             await context.DisposeAsync();
-                            return (false, $"{groupLabel}: Input item {inputIdStr} must be DigitalInput or DigitalOutput for Digital mode");
+                            return (false, $"{groupLabel}: Input global variable '{inputName}' not found");
+                        }
+
+                        if (inputVariable.IsDisabled)
+                        {
+                            await context.DisposeAsync();
+                            return (false, $"{groupLabel}: Input global variable '{inputName}' is disabled");
+                        }
+
+                        // Validate variable type matches comparison mode
+                        if (group.ComparisonMode == ComparisonMode.Analog)
+                        {
+                            if (inputVariable.VariableType != GlobalVariableType.Float)
+                            {
+                                await context.DisposeAsync();
+                                return (false, $"{groupLabel}: Global variable '{inputName}' must be Float type for Analog mode");
+                            }
+                        }
+                        else // Digital mode
+                        {
+                            if (inputVariable.VariableType != GlobalVariableType.Boolean && inputVariable.VariableType != GlobalVariableType.Float)
+                            {
+                                await context.DisposeAsync();
+                                return (false, $"{groupLabel}: Global variable '{inputName}' must be Boolean or Float type for Digital mode");
+                            }
                         }
                     }
                 }
@@ -309,10 +427,10 @@ public class ComparisonMemories
                     return (false, $"{groupLabel}: RequiredVotes must be at least 1");
                 }
 
-                if (group.RequiredVotes > group.InputItemIds.Count)
+                if (group.RequiredVotes > inputReferences.Count)
                 {
                     await context.DisposeAsync();
-                    return (false, $"{groupLabel}: RequiredVotes ({group.RequiredVotes}) cannot exceed number of inputs ({group.InputItemIds.Count})");
+                    return (false, $"{groupLabel}: RequiredVotes ({group.RequiredVotes}) cannot exceed number of inputs ({inputReferences.Count})");
                 }
 
                 if (group.ComparisonMode == ComparisonMode.Analog)
@@ -354,32 +472,65 @@ public class ComparisonMemories
                 if (group.VotingHysteresis > 0)
                 {
                     var minVotesToTurnOn = group.RequiredVotes + group.VotingHysteresis;
-                    if (minVotesToTurnOn > group.InputItemIds.Count)
+                    if (minVotesToTurnOn > inputReferences.Count)
                     {
                         await context.DisposeAsync();
-                        return (false, $"{groupLabel}: VotingHysteresis too high - would require {minVotesToTurnOn} votes but only {group.InputItemIds.Count} inputs available");
+                        return (false, $"{groupLabel}: VotingHysteresis too high - would require {minVotesToTurnOn} votes but only {inputReferences.Count} inputs available");
                     }
                 }
             }
 
-            var outputItem = await context.MonitoringItems.FindAsync(comparisonMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate output source
+            // Support backward compatibility: use OutputReference if present, otherwise use OutputItemId
+            var outputReference = !string.IsNullOrEmpty(comparisonMemory.OutputReference) 
+                ? comparisonMemory.OutputReference 
+                : comparisonMemory.OutputItemId.ToString();
+
+            if (comparisonMemory.OutputType == ComparisonSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, "Output item not found");
+                if (!Guid.TryParse(outputReference, out var outputId))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Invalid output item GUID");
+                }
+
+                var outputItem = await context.MonitoringItems.FindAsync(outputId);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item not found");
+                }
+
+                if (outputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item must be DigitalOutput");
+                }
+            }
+            else if (comparisonMemory.OutputType == ComparisonSourceType.GlobalVariable)
+            {
+                var outputVariable = await GlobalVariables.GetGlobalVariableByName(outputReference);
+                if (outputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable not found");
+                }
+
+                if (outputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable is disabled");
+                }
             }
 
-            if (outputItem.ItemType != ItemType.DigitalOutput)
+            var allInputReferences = groups.SelectMany(g => 
+                g.InputReferences.Count > 0 ? g.InputReferences : g.InputItemIds
+            ).Distinct().ToList();
+            
+            if (allInputReferences.Contains(outputReference))
             {
                 await context.DisposeAsync();
-                return (false, "Output item must be DigitalOutput");
-            }
-
-            var allInputIds = groups.SelectMany(g => g.InputItemIds).Distinct().ToList();
-            if (allInputIds.Contains(comparisonMemory.OutputItemId.ToString()))
-            {
-                await context.DisposeAsync();
-                return (false, "Output item cannot be in any group's input items list");
+                return (false, "Output cannot be in any group's input list");
             }
 
             if (comparisonMemory.Interval <= 0)

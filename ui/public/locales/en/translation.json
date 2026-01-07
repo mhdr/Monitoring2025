@@ -4550,8 +4550,11 @@
     "deleteWarning": "This action cannot be undone.",
     "searchPlaceholder": "Search comparison memories...",
     "name": "Name",
-    "outputItem": "Output Item",
+    "outputSource": "Output Source",
+    "outputItem": "Output Point",
     "outputItemHelp": "Digital output that receives the comparison result (1 = condition met, 0 = condition not met)",
+    "outputGlobalVariable": "Output Global Variable",
+    "outputGlobalVariableHelp": "Global variable (Boolean type) that receives the comparison result",
     "groupOperator": {
       "and": "AND (All groups true)",
       "or": "OR (Any group true)",
@@ -4598,6 +4601,7 @@
     "digitalValue.on": "ON (1)",
     "digitalValue.off": "OFF (0)",
     "validation": {
+      "outputRequired": "Output source is required",
       "outputItemRequired": "Output item is required",
       "intervalPositive": "Interval must be greater than 0",
       "durationInvalid": "Duration must be a non-negative number",

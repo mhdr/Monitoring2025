@@ -4213,7 +4213,9 @@ export interface ComparisonMemory {
   name?: string | null;
   comparisonGroups: string; // JSON array of comparison groups
   groupOperator: number; // 1=AND, 2=OR, 3=XOR - Operator to combine group results
-  outputItemId: string; // UUID - Output item (must be DigitalOutput)
+  outputType: number; // 0=Point, 1=GlobalVariable - Type of the output source
+  outputReference: string; // Output reference (GUID for Point, name for GlobalVariable)
+  outputItemId: string; // UUID - [DEPRECATED] Output item (use outputType/outputReference)
   interval: number; // int - Execution interval in seconds
   isDisabled: boolean;
   invertOutput: boolean; // Whether to invert the final output
@@ -4244,7 +4246,9 @@ export interface AddComparisonMemoryRequestDto {
   name?: string | null;
   comparisonGroups: string; // JSON array of comparison groups
   groupOperator: number; // 1=AND, 2=OR, 3=XOR
-  outputItemId: string; // UUID
+  outputType: number; // 0=Point, 1=GlobalVariable - Type of the output source
+  outputReference: string; // Output reference (GUID for Point, name for GlobalVariable)
+  outputItemId?: string; // UUID - [DEPRECATED] use outputType/outputReference
   interval: number; // int - must be > 0
   isDisabled?: boolean;
   invertOutput?: boolean;
@@ -4268,7 +4272,9 @@ export interface EditComparisonMemoryRequestDto {
   name?: string | null;
   comparisonGroups: string; // JSON array of comparison groups
   groupOperator: number; // 1=AND, 2=OR, 3=XOR
-  outputItemId: string; // UUID
+  outputType: number; // 0=Point, 1=GlobalVariable - Type of the output source
+  outputReference: string; // Output reference (GUID for Point, name for GlobalVariable)
+  outputItemId?: string; // UUID - [DEPRECATED] use outputType/outputReference
   interval: number; // int - must be > 0
   isDisabled?: boolean;
   invertOutput?: boolean;

@@ -36,7 +36,8 @@ const AddEditComparisonMemoryDialog = lazy(() => import('./AddEditComparisonMemo
 const DeleteComparisonMemoryDialog = lazy(() => import('./DeleteComparisonMemoryDialog'));
 
 interface ComparisonMemoryWithItems extends ComparisonMemory {
-  outputItemName?: string;
+  outputSourceName?: string;
+  outputSourceType?: string;
   parsedGroups?: Array<ComparisonGroup & { inputItemNames?: string[] }>;
 }
 
@@ -90,14 +91,26 @@ const ComparisonMemoryManagementPage: React.FC = () => {
           parsedGroups = [];
         }
 
-        const outputItem = items.find((item) => item.id === cm.outputItemId);
-        const outputItemName = outputItem
-          ? (language === 'fa' ? outputItem.nameFa : outputItem.name) || ''
-          : '';
+        const outputItem = items.find((item) => item.id === (cm.outputReference || cm.outputItemId));
+        let outputSourceName = '';
+        let outputSourceType = '';
+        
+        if (cm.outputType === 1) {
+          // GlobalVariable
+          outputSourceName = cm.outputReference;
+          outputSourceType = t('common.globalVariable');
+        } else {
+          // Point
+          outputSourceName = outputItem
+            ? (language === 'fa' ? outputItem.nameFa : outputItem.name) || ''
+            : '';
+          outputSourceType = t('common.point');
+        }
 
         return {
           ...cm,
-          outputItemName,
+          outputSourceName,
+          outputSourceType,
           parsedGroups,
         };
       });
@@ -149,7 +162,7 @@ const ComparisonMemoryManagementPage: React.FC = () => {
     const term = searchTerm.toLowerCase();
     return memories.filter((memory) => {
       const nameMatch = memory.name?.toLowerCase().includes(term);
-      const outputMatch = memory.outputItemName?.toLowerCase().includes(term);
+      const outputMatch = memory.outputSourceName?.toLowerCase().includes(term);
       const groupMatch = memory.parsedGroups?.some((group) =>
         group.name?.toLowerCase().includes(term) ||
         group.inputItemNames?.some((name) => name.toLowerCase().includes(term))
@@ -257,11 +270,21 @@ const ComparisonMemoryManagementPage: React.FC = () => {
           ),
         },
         {
-          field: 'outputItemName',
-          headerText: t('comparisonMemory.outputItem'),
-          width: 180,
+          field: 'outputSourceName',
+          headerText: t('comparisonMemory.outputSource'),
+          width: 200,
           template: (rowData: ComparisonMemoryWithItems) => (
-            <Typography variant="body2">{rowData.outputItemName || '-'}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2">{rowData.outputSourceName || '-'}</Typography>
+              {rowData.outputSourceType && (
+                <Chip
+                  label={rowData.outputSourceType}
+                  size="small"
+                  color={rowData.outputType === 1 ? 'secondary' : 'primary'}
+                  sx={{ height: 18, fontSize: '0.65rem' }}
+                />
+              )}
+            </Box>
           ),
         },
         {

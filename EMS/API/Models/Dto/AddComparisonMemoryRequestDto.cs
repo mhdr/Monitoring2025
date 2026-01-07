@@ -36,9 +36,20 @@ public class AddComparisonMemoryRequestDto
     public int GroupOperator { get; set; } = 1;
 
     /// <summary>
-    /// ID of the output monitoring item (must be DigitalOutput)
+    /// Type of the output source: 0=Point, 1=GlobalVariable
     /// </summary>
-    [Required(ErrorMessage = "Output item ID is required")]
+    public int OutputType { get; set; } = 0;
+
+    /// <summary>
+    /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    [Required(ErrorMessage = "Output reference is required")]
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// [DEPRECATED] ID of the output monitoring item (must be DigitalOutput).
+    /// Use OutputType and OutputReference instead. Kept for backward compatibility.
+    /// </summary>
     public Guid OutputItemId { get; set; }
 
     /// <summary>

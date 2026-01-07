@@ -11786,7 +11786,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         Name = cm.Name,
                         ComparisonGroups = cm.ComparisonGroups,
                         GroupOperator = (int)cm.GroupOperator,
-                        OutputItemId = cm.OutputItemId,
+                        OutputType = (int)cm.OutputType,
+                        OutputReference = cm.OutputReference,
+                        OutputItemId = cm.OutputItemId, // For backward compatibility
                         Interval = cm.Interval,
                         IsDisabled = cm.IsDisabled,
                         InvertOutput = cm.InvertOutput,
@@ -11861,7 +11863,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 Name = request.Name,
                 ComparisonGroups = request.ComparisonGroups,
                 GroupOperator = (Core.Models.GroupOperator)request.GroupOperator,
-                OutputItemId = request.OutputItemId,
+                OutputType = (Core.Models.ComparisonSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
+                OutputItemId = request.OutputItemId, // For backward compatibility
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 InvertOutput = request.InvertOutput,
@@ -11919,7 +11923,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 Name = request.Name,
                 ComparisonGroups = request.ComparisonGroups,
                 GroupOperator = (Core.Models.GroupOperator)request.GroupOperator,
-                OutputItemId = request.OutputItemId,
+                OutputType = (Core.Models.ComparisonSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
+                OutputItemId = request.OutputItemId, // For backward compatibility
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 InvertOutput = request.InvertOutput,

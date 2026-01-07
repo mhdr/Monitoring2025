@@ -4133,8 +4133,11 @@
     "deleteWarning": "این عمل قابل بازگشت نیست.",
     "searchPlaceholder": "جستجوی حافظه‌های مقایسه...",
     "name": "نام",
-    "outputItem": "آیتم خروجی",
+    "outputSource": "منبع خروجی",
+    "outputItem": "نقطه خروجی",
     "outputItemHelp": "خروجی دیجیتال که نتیجه مقایسه را دریافت می‌کند (۱ = شرط برقرار، ۰ = شرط برقرار نیست)",
+    "outputGlobalVariable": "متغیر سراسری خروجی",
+    "outputGlobalVariableHelp": "متغیر سراسری (نوع Boolean) که نتیجه مقایسه را دریافت می‌کند",
     "groupOperator": {
       "and": "AND (همه گروه‌ها درست)",
       "or": "OR (حداقل یک گروه درست)",
@@ -4181,6 +4184,7 @@
     "digitalValue.on": "روشن (۱)",
     "digitalValue.off": "خاموش (۰)",
     "validation": {
+      "outputRequired": "منبع خروجی الزامی است",
       "outputItemRequired": "آیتم خروجی الزامی است",
       "intervalPositive": "فاصله باید بزرگتر از ۰ باشد",
       "durationInvalid": "مدت باید یک عدد غیرمنفی باشد",

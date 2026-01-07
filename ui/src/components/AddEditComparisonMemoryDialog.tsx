@@ -28,17 +28,21 @@ import {
   Stack,
   Autocomplete,
   Divider,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   HelpOutline as HelpOutlineIcon,
   ExpandMore as ExpandMoreIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
+  Memory as MemoryIcon,
+  Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addComparisonMemory, editComparisonMemory } from '../services/extendedApi';
-import type { ComparisonMemory, ComparisonGroup, MonitoringItem, ItemType, CompareType } from '../types/api';
+import { addComparisonMemory, editComparisonMemory, getGlobalVariables } from '../services/extendedApi';
+import type { ComparisonMemory, ComparisonGroup, MonitoringItem, ItemType, CompareType, GlobalVariable } from '../types/api';
 import { ItemTypeEnum, GroupOperator, ComparisonMode, CompareTypeEnum } from '../types/api';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -67,6 +71,8 @@ interface FormData {
   name: string;
   comparisonGroups: ComparisonGroupForm[];
   groupOperator: number;
+  outputType: number;
+  outputReference: string;
   outputItemId: string;
   interval: number;
   duration: number;
@@ -76,6 +82,7 @@ interface FormData {
 
 interface FormErrors {
   name?: string;
+  outputReference?: string;
   outputItemId?: string;
   interval?: string;
   duration?: string;
@@ -133,6 +140,8 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
+  const [loadingGlobalVariables, setLoadingGlobalVariables] = useState(false);
 
   // Section expansion states
   const [basicExpanded, setBasicExpanded] = useState(true);
@@ -185,6 +194,27 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
     return `${item.pointNumber} - ${language === 'fa' ? item.nameFa : item.name}`;
   }, [language]);
 
+  // Fetch global variables when dialog opens
+  useEffect(() => {
+    const fetchGlobalVariables = async () => {
+      if (open) {
+        setLoadingGlobalVariables(true);
+        try {
+          const response = await getGlobalVariables({});
+          if (response?.globalVariables) {
+            setGlobalVariables(response.globalVariables);
+          }
+        } catch (err) {
+          console.error('Failed to fetch global variables', err);
+        } finally {
+          setLoadingGlobalVariables(false);
+        }
+      }
+    };
+
+    fetchGlobalVariables();
+  }, [open]);
+
   // Initialize form data
   useEffect(() => {
     if (open) {
@@ -213,6 +243,8 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
           name: comparisonMemory.name || '',
           comparisonGroups: groups,
           groupOperator: comparisonMemory.groupOperator || GroupOperator.And,
+          outputType: comparisonMemory.outputType ?? 0,
+          outputReference: comparisonMemory.outputReference || comparisonMemory.outputItemId,
           outputItemId: comparisonMemory.outputItemId,
           interval: comparisonMemory.interval,
           duration: comparisonMemory.duration ?? 10,
@@ -225,6 +257,8 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
           name: '',
           comparisonGroups: [],
           groupOperator: GroupOperator.And,
+          outputType: 0,
+          outputReference: '',
           outputItemId: '',
           interval: 1,
           duration: 10,
@@ -298,8 +332,9 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
   const validate = (): boolean => {
     const errors: FormErrors = { groups: {} };
 
-    if (!formData.outputItemId) {
-      errors.outputItemId = t('comparisonMemory.validation.outputItemRequired');
+    // Output source validation
+    if (!formData.outputReference) {
+      errors.outputReference = t('comparisonMemory.validation.outputRequired');
     }
 
     if (formData.interval <= 0) {
@@ -407,6 +442,8 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
         name: formData.name || null,
         comparisonGroups: JSON.stringify(groups),
         groupOperator: formData.groupOperator as typeof GroupOperator[keyof typeof GroupOperator],
+        outputType: formData.outputType,
+        outputReference: formData.outputReference,
         outputItemId: formData.outputItemId,
         interval: formData.interval,
         duration: formData.duration,
@@ -861,48 +898,129 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
                   </IconButton>
                 </Box>
 
-                {/* Output Item */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <Autocomplete
-                    options={digitalOutputItems}
-                    getOptionLabel={getItemLabel}
-                    value={digitalOutputItems.find((item) => item.id === formData.outputItemId) || null}
-                    onChange={(_, value) => setFormData((prev) => ({ ...prev, outputItemId: value?.id || '' }))}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={t('comparisonMemory.outputItem')}
-                        error={!!formErrors.outputItemId}
-                        helperText={formErrors.outputItemId || t('comparisonMemory.outputItemHelp')}
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props} key={option.id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                            {getItemLabel(option)}
-                          </Typography>
-                          <Chip
-                            label={getItemTypeLabel(option.itemType, t)}
-                            size="small"
-                            color={getItemTypeColor(option.itemType)}
-                            sx={{ height: 20, fontSize: '0.7rem' }}
-                          />
-                        </Box>
-                      </Box>
-                    )}
-                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                {/* Output Source */}
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('comparisonMemory.outputSource')}
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('comparisonMemory.help.outputItem')}
+                      sx={{ p: 0.25 }}
+                      data-id-ref="comparison-memory-output-source-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
+                  
+                  <ToggleButtonGroup
+                    value={formData.outputType}
+                    exclusive
+                    onChange={(_, value) => {
+                      if (value !== null) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          outputType: value,
+                          outputReference: '',
+                        }));
+                      }
+                    }}
                     fullWidth
-                    data-id-ref="comparison-memory-output-item-select"
-                  />
-                  <IconButton
                     size="small"
-                    onClick={handleHelpOpen('comparisonMemory.help.outputItem')}
-                    sx={{ p: 0.25, mt: 2 }}
-                    data-id-ref="comparison-memory-output-item-help-btn"
+                    sx={{ mb: 2 }}
+                    data-id-ref="comparison-memory-output-type-toggle"
                   >
-                    <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                  </IconButton>
+                    <ToggleButton value={0} data-id-ref="comparison-memory-output-type-point-btn">
+                      <MemoryIcon sx={{ mr: 0.5, fontSize: 18 }} />
+                      {t('common.point')}
+                    </ToggleButton>
+                    <ToggleButton value={1} data-id-ref="comparison-memory-output-type-globalvar-btn">
+                      <FunctionsIcon sx={{ mr: 0.5, fontSize: 18 }} />
+                      {t('common.globalVariable')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+
+                  {formData.outputType === 0 ? (
+                    <Autocomplete
+                      options={digitalOutputItems}
+                      getOptionLabel={getItemLabel}
+                      value={digitalOutputItems.find((item) => item.id === formData.outputReference) || null}
+                      onChange={(_, value) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          outputReference: value?.id || '',
+                          outputItemId: value?.id || '',
+                        }));
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('comparisonMemory.outputItem')}
+                          error={!!formErrors.outputReference}
+                          helperText={formErrors.outputReference || t('comparisonMemory.outputItemHelp')}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {getItemLabel(option)}
+                            </Typography>
+                            <Chip
+                              label={getItemTypeLabel(option.itemType, t)}
+                              size="small"
+                              color={getItemTypeColor(option.itemType)}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      fullWidth
+                      data-id-ref="comparison-memory-output-item-select"
+                    />
+                  ) : (
+                    <Autocomplete
+                      options={globalVariables}
+                      getOptionLabel={(option) => option.name}
+                      value={globalVariables.find((v) => v.name === formData.outputReference) || null}
+                      onChange={(_, value) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          outputReference: value?.name || '',
+                        }));
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('comparisonMemory.outputGlobalVariable')}
+                          error={!!formErrors.outputReference}
+                          helperText={formErrors.outputReference || t('comparisonMemory.outputGlobalVariableHelp')}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.name}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <FunctionsIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                            <Typography variant="body2" sx={{ flex: 1 }}>
+                              {option.name}
+                            </Typography>
+                            <Chip
+                              label={option.variableType === 0 ? 'Boolean' : 'Float'}
+                              size="small"
+                              color={option.variableType === 0 ? 'info' : 'primary'}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      loading={loadingGlobalVariables}
+                      isOptionEqualToValue={(option, value) => option.name === value.name}
+                      fullWidth
+                      data-id-ref="comparison-memory-output-globalvar-select"
+                    />
+                  )}
                 </Box>
 
                 {/* Group Operator */}

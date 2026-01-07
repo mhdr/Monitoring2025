@@ -5,6 +5,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Core.Models;
 
 /// <summary>
+/// Specifies the source type for comparison memory input or output
+/// </summary>
+public enum ComparisonSourceType
+{
+    /// <summary>
+    /// Reference is a Point (MonitoringItem) GUID
+    /// </summary>
+    Point = 0,
+    
+    /// <summary>
+    /// Reference is a Global Variable name
+    /// </summary>
+    GlobalVariable = 1
+}
+
+/// <summary>
 /// Represents a comparison/logic memory configuration that evaluates multiple inputs
 /// using configurable N-out-of-M voting logic with AND/OR/XOR operators between groups.
 /// Supports both analog threshold comparisons and digital logic modes.
@@ -58,9 +74,25 @@ public class ComparisonMemory
     public GroupOperator GroupOperator { get; set; } = GroupOperator.And;
 
     /// <summary>
-    /// The DigitalOutput item that receives the comparison result.
-    /// Value "1" = condition met, Value "0" = condition not met.
-    /// Must be ItemType.DigitalOutput.
+    /// Type of the output source: Point or GlobalVariable
+    /// </summary>
+    [Column("output_type")] 
+    public ComparisonSourceType OutputType { get; set; } = ComparisonSourceType.Point;
+    
+    /// <summary>
+    /// Reference to the output source that receives the comparison result.
+    /// - Value "0" = condition not met
+    /// - Value "1" = condition met
+    /// - If OutputType = Point: GUID string of the MonitoringItem (must be DigitalOutput)
+    /// - If OutputType = GlobalVariable: Name of the Global Variable (Boolean or Float type)
+    /// </summary>
+    [Column("output_reference")] 
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// [DEPRECATED] The DigitalOutput item that receives the comparison result.
+    /// Use OutputType and OutputReference instead.
+    /// This is kept for backward compatibility and will be used if OutputReference is empty.
     /// </summary>
     [Column("output_item_id")]
     public Guid OutputItemId { get; set; }
@@ -140,14 +172,28 @@ public class ComparisonGroup
     public string Id { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>
-    /// List of input item GUIDs to evaluate in this group.
+    /// Type of the input sources: Point or GlobalVariable
+    /// </summary>
+    public ComparisonSourceType InputType { get; set; } = ComparisonSourceType.Point;
+
+    /// <summary>
+    /// List of input references to evaluate in this group.
+    /// - If InputType = Point: Array of MonitoringItem GUIDs
+    /// - If InputType = GlobalVariable: Array of Global Variable names
+    /// </summary>
+    public List<string> InputReferences { get; set; } = new();
+
+    /// <summary>
+    /// [DEPRECATED] List of input item GUIDs to evaluate in this group.
+    /// Use InputType and InputReferences instead.
+    /// This is kept for backward compatibility.
     /// </summary>
     public List<string> InputItemIds { get; set; } = new();
 
     /// <summary>
     /// Number of inputs that must satisfy the comparison condition (N in N-out-of-M).
-    /// Must be between 1 and InputItemIds.Count (inclusive).
-    /// Example: requiredVotes=2, inputItemIds.Count=3 means "2-out-of-3" voting.
+    /// Must be between 1 and InputReferences.Count (inclusive).
+    /// Example: requiredVotes=2, inputReferences.Count=3 means "2-out-of-3" voting.
     /// </summary>
     public int RequiredVotes { get; set; } = 1;
 

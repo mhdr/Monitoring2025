@@ -46,7 +46,18 @@ public class GetComparisonMemoriesResponseDto
         public int GroupOperator { get; set; }
 
         /// <summary>
-        /// Output item ID (must be DigitalOutput)
+        /// Type of the output source: 0=Point, 1=GlobalVariable
+        /// </summary>
+        public int OutputType { get; set; }
+
+        /// <summary>
+        /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+        /// </summary>
+        public string OutputReference { get; set; } = string.Empty;
+
+        /// <summary>
+        /// [DEPRECATED] Output item ID (must be DigitalOutput).
+        /// Use OutputType and OutputReference instead. Kept for backward compatibility.
         /// </summary>
         public Guid OutputItemId { get; set; }
 

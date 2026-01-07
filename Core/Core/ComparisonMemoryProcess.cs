@@ -3,6 +3,7 @@ using Core.Libs;
 using Core.Models;
 using Core.RedisModels;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace Core;
 
@@ -152,23 +153,51 @@ public class ComparisonMemoryProcess
         // Collect all unique input and output item IDs for batch fetching
         var allInputIds = new HashSet<string>();
         var allOutputIds = new HashSet<string>();
+        var allInputGlobalVarNames = new HashSet<string>();
+        var allOutputGlobalVarNames = new HashSet<string>();
 
         foreach (var memory in memoriesToProcess)
         {
             try
             {
-                var groups = JsonSerializer.Deserialize<List<ComparisonGroup>>(memory.ComparisonGroups);
+                var groups = System.Text.Json.JsonSerializer.Deserialize<List<ComparisonGroup>>(memory.ComparisonGroups);
                 if (groups != null)
                 {
                     foreach (var group in groups)
                     {
-                        foreach (var id in group.InputItemIds)
+                        // Support backward compatibility: use InputReferences if present, otherwise use InputItemIds
+                        var inputReferences = group.InputReferences.Count > 0 ? group.InputReferences : group.InputItemIds;
+                        
+                        if (group.InputType == ComparisonSourceType.Point)
                         {
-                            allInputIds.Add(id);
+                            foreach (var id in inputReferences)
+                            {
+                                allInputIds.Add(id);
+                            }
+                        }
+                        else if (group.InputType == ComparisonSourceType.GlobalVariable)
+                        {
+                            foreach (var name in inputReferences)
+                            {
+                                allInputGlobalVarNames.Add(name);
+                            }
                         }
                     }
                 }
-                allOutputIds.Add(memory.OutputItemId.ToString());
+                
+                // Support backward compatibility: use OutputReference if present, otherwise use OutputItemId
+                var outputReference = !string.IsNullOrEmpty(memory.OutputReference) 
+                    ? memory.OutputReference 
+                    : memory.OutputItemId.ToString();
+                
+                if (memory.OutputType == ComparisonSourceType.Point)
+                {
+                    allOutputIds.Add(outputReference);
+                }
+                else if (memory.OutputType == ComparisonSourceType.GlobalVariable)
+                {
+                    allOutputGlobalVarNames.Add(outputReference);
+                }
             }
             catch (Exception ex)
             {
@@ -176,17 +205,22 @@ public class ComparisonMemoryProcess
             }
         }
 
-        // Batch fetch all required Redis items
+        // Batch fetch all required Redis items and global variables
         var inputItemsCache = await Points.GetFinalItemsBatch(allInputIds.ToList());
         var outputItemsCache = await Points.GetRawItemsBatch(allOutputIds.ToList());
+        
+        // For global variables, we'll fetch them directly in ProcessSingleMemory
+        // (no batch fetching for global variables since they come from Redis directly)
 
         MyLog.Debug("Batch fetched Redis items for Comparison processing", new Dictionary<string, object?>
         {
             ["MemoryCount"] = memoriesToProcess.Count,
             ["InputItemsRequested"] = allInputIds.Count,
             ["InputItemsFetched"] = inputItemsCache.Count,
+            ["InputGlobalVarsCount"] = allInputGlobalVarNames.Count,
             ["OutputItemsRequested"] = allOutputIds.Count,
-            ["OutputItemsFetched"] = outputItemsCache.Count
+            ["OutputItemsFetched"] = outputItemsCache.Count,
+            ["OutputGlobalVarsCount"] = allOutputGlobalVarNames.Count
         });
 
         // Process each memory
@@ -213,7 +247,7 @@ public class ComparisonMemoryProcess
         List<ComparisonGroup> groups;
         try
         {
-            groups = JsonSerializer.Deserialize<List<ComparisonGroup>>(memory.ComparisonGroups) ?? new List<ComparisonGroup>();
+            groups = System.Text.Json.JsonSerializer.Deserialize<List<ComparisonGroup>>(memory.ComparisonGroups) ?? new List<ComparisonGroup>();
         }
         catch (Exception ex)
         {
@@ -242,7 +276,7 @@ public class ComparisonMemoryProcess
                 memoryState.GroupStates[group.Id] = groupState;
             }
 
-            var groupResult = EvaluateGroup(group, groupState, inputItemsCache);
+            var groupResult = await EvaluateGroup(group, groupState, inputItemsCache);
             groupResults.Add(groupResult);
         }
 
@@ -255,16 +289,65 @@ public class ComparisonMemoryProcess
             finalResult = !finalResult;
         }
 
-        // Update output item
-        var outputIdStr = memory.OutputItemId.ToString();
-        if (outputItemsCache.TryGetValue(outputIdStr, out var outputItem))
+        // Update output based on OutputType
+        // Support backward compatibility: use OutputReference if present, otherwise use OutputItemId
+        var outputReference = !string.IsNullOrEmpty(memory.OutputReference) 
+            ? memory.OutputReference 
+            : memory.OutputItemId.ToString();
+        
+        var newValue = finalResult ? "1" : "0";
+
+        if (memory.OutputType == ComparisonSourceType.Point)
         {
-            var newValue = finalResult ? "1" : "0";
-            
-            // Only update if value changed
-            if (outputItem.Value != newValue)
+            if (outputItemsCache.TryGetValue(outputReference, out var outputItem))
             {
-                MyLog.Debug($"ComparisonMemory {memory.Id}: Output changed from {outputItem.Value} to {newValue}", new Dictionary<string, object?>
+                // Only update if value changed
+                if (outputItem.Value != newValue)
+                {
+                    MyLog.Debug($"ComparisonMemory {memory.Id}: Output changed from {outputItem.Value} to {newValue}", new Dictionary<string, object?>
+                    {
+                        ["MemoryName"] = memory.Name,
+                        ["GroupResults"] = groupResults,
+                        ["GroupOperator"] = memory.GroupOperator.ToString(),
+                        ["FinalResult"] = finalResult
+                    });
+
+                    if (Guid.TryParse(outputReference, out var outputId))
+                    {
+                        await Points.WriteOrAddValue(
+                            outputId,
+                            newValue,
+                            null,
+                            memory.Duration);
+                    }
+                }
+            }
+            else
+            {
+                MyLog.Warning($"ComparisonMemory {memory.Id}: Output item {outputReference} not found in cache");
+            }
+        }
+        else if (memory.OutputType == ComparisonSourceType.GlobalVariable)
+        {
+            // Get current value from Redis to check if it changed
+            var db = RedisConnection.Instance.GetDatabase();
+            var key = $"GlobalVariable:{outputReference}";
+            var json = await db.StringGetAsync(key);
+            
+            string? currentValue = null;
+            if (json.HasValue)
+            {
+                var gvRedis = Newtonsoft.Json.JsonConvert.DeserializeObject<RedisModels.GlobalVariableRedis>(json.ToString());
+                if (gvRedis != null)
+                {
+                    currentValue = gvRedis.Value;
+                }
+            }
+
+            // Only update if value changed
+            if (currentValue != newValue)
+            {
+                MyLog.Debug($"ComparisonMemory {memory.Id}: Output changed from {currentValue} to {newValue}", new Dictionary<string, object?>
                 {
                     ["MemoryName"] = memory.Name,
                     ["GroupResults"] = groupResults,
@@ -272,16 +355,8 @@ public class ComparisonMemoryProcess
                     ["FinalResult"] = finalResult
                 });
 
-                await Points.WriteOrAddValue(
-                    memory.OutputItemId,
-                    newValue,
-                    null,
-                    memory.Duration);
+                await GlobalVariableProcess.SetVariable(outputReference, newValue);
             }
-        }
-        else
-        {
-            MyLog.Warning($"ComparisonMemory {memory.Id}: Output item {outputIdStr} not found in cache");
         }
 
         // Update memory state
@@ -291,24 +366,54 @@ public class ComparisonMemoryProcess
     /// <summary>
     /// Evaluates a single comparison group using N-out-of-M voting logic with hysteresis.
     /// </summary>
-    private bool EvaluateGroup(
+    private async Task<bool> EvaluateGroup(
         ComparisonGroup group,
         GroupState groupState,
         Dictionary<string, FinalItemRedis> inputItemsCache)
     {
         int votesTrue = 0;
-        int totalInputs = group.InputItemIds.Count;
+        
+        // Support backward compatibility: use InputReferences if present, otherwise use InputItemIds
+        var inputReferences = group.InputReferences.Count > 0 ? group.InputReferences : group.InputItemIds;
+        int totalInputs = inputReferences.Count;
 
-        foreach (var inputIdStr in group.InputItemIds)
+        foreach (var inputRef in inputReferences)
         {
             // Initialize input state if not exists
-            if (!groupState.InputStates.TryGetValue(inputIdStr, out var currentInputState))
+            if (!groupState.InputStates.TryGetValue(inputRef, out var currentInputState))
             {
                 currentInputState = false;
-                groupState.InputStates[inputIdStr] = currentInputState;
+                groupState.InputStates[inputRef] = currentInputState;
             }
 
-            if (!inputItemsCache.TryGetValue(inputIdStr, out var inputItem))
+            string? inputValue = null;
+            
+            // Get input value based on InputType
+            if (group.InputType == ComparisonSourceType.Point)
+            {
+                if (inputItemsCache.TryGetValue(inputRef, out var inputItem))
+                {
+                    inputValue = inputItem.Value;
+                }
+            }
+            else if (group.InputType == ComparisonSourceType.GlobalVariable)
+            {
+                // Fetch Global Variable directly from Redis
+                var db = RedisConnection.Instance.GetDatabase();
+                var key = $"GlobalVariable:{inputRef}";
+                var json = await db.StringGetAsync(key);
+                
+                if (json.HasValue)
+                {
+                    var gvRedis = Newtonsoft.Json.JsonConvert.DeserializeObject<RedisModels.GlobalVariableRedis>(json.ToString());
+                    if (gvRedis != null)
+                    {
+                        inputValue = gvRedis.Value;
+                    }
+                }
+            }
+            
+            if (inputValue == null)
             {
                 // Input not found, treat as false
                 continue;
@@ -319,7 +424,7 @@ public class ComparisonMemoryProcess
             if (group.ComparisonMode == ComparisonMode.Analog)
             {
                 inputMeetsCondition = EvaluateAnalogInput(
-                    inputItem.Value,
+                    inputValue,
                     group.CompareType,
                     group.Threshold1 ?? 0,
                     group.Threshold2,
@@ -328,11 +433,11 @@ public class ComparisonMemoryProcess
             }
             else // Digital mode
             {
-                inputMeetsCondition = EvaluateDigitalInput(inputItem.Value, group.DigitalValue ?? "1");
+                inputMeetsCondition = EvaluateDigitalInput(inputValue, group.DigitalValue ?? "1");
             }
 
             // Update input state
-            groupState.InputStates[inputIdStr] = inputMeetsCondition;
+            groupState.InputStates[inputRef] = inputMeetsCondition;
 
             if (inputMeetsCondition)
             {
