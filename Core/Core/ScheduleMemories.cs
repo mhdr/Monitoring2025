@@ -48,19 +48,52 @@ public class ScheduleMemories
         {
             var context = new DataContext();
             
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(scheduleMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate output based on OutputType
+            bool isAnalogOutput = false;
+            
+            if (scheduleMemory.OutputType == ScheduleSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Output item not found");
-            }
+                // Validate OutputReference is a valid GUID for Point type
+                if (!Guid.TryParse(scheduleMemory.OutputReference, out var outputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Invalid output item ID format");
+                }
+                
+                // Validate OutputItem exists
+                var outputItem = await context.MonitoringItems.FindAsync(outputItemId);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item not found");
+                }
 
-            // Validate OutputItem is AnalogOutput or DigitalOutput
-            if (outputItem.ItemType != ItemType.AnalogOutput && outputItem.ItemType != ItemType.DigitalOutput)
+                // Validate OutputItem is AnalogOutput or DigitalOutput
+                if (outputItem.ItemType != ItemType.AnalogOutput && outputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item must be AnalogOutput or DigitalOutput");
+                }
+                
+                isAnalogOutput = outputItem.ItemType == ItemType.AnalogOutput;
+            }
+            else if (scheduleMemory.OutputType == ScheduleSourceType.GlobalVariable)
+            {
+                // Validate GlobalVariable exists
+                var globalVariable = await context.GlobalVariables.FirstOrDefaultAsync(gv => gv.Name == scheduleMemory.OutputReference);
+                if (globalVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Global variable not found");
+                }
+                
+                // For global variables, Float = Analog, Boolean = Digital
+                isAnalogOutput = globalVariable.VariableType == GlobalVariableType.Float;
+            }
+            else
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item must be AnalogOutput or DigitalOutput");
+                return (false, null, "Invalid output type");
             }
 
             // Validate Interval > 0
@@ -89,7 +122,6 @@ public class ScheduleMemories
             }
 
             // Validate default value based on output type
-            bool isAnalogOutput = outputItem.ItemType == ItemType.AnalogOutput;
             if (isAnalogOutput)
             {
                 // For analog output, default analog value should be set (digital value ignored)
@@ -147,19 +179,52 @@ public class ScheduleMemories
                 return (false, "Schedule memory not found");
             }
             
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(scheduleMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate output based on OutputType
+            bool isAnalogOutput = false;
+            
+            if (scheduleMemory.OutputType == ScheduleSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, "Output item not found");
-            }
+                // Validate OutputReference is a valid GUID for Point type
+                if (!Guid.TryParse(scheduleMemory.OutputReference, out var outputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Invalid output item ID format");
+                }
+                
+                // Validate OutputItem exists
+                var outputItem = await context.MonitoringItems.FindAsync(outputItemId);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item not found");
+                }
 
-            // Validate OutputItem is AnalogOutput or DigitalOutput
-            if (outputItem.ItemType != ItemType.AnalogOutput && outputItem.ItemType != ItemType.DigitalOutput)
+                // Validate OutputItem is AnalogOutput or DigitalOutput
+                if (outputItem.ItemType != ItemType.AnalogOutput && outputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item must be AnalogOutput or DigitalOutput");
+                }
+                
+                isAnalogOutput = outputItem.ItemType == ItemType.AnalogOutput;
+            }
+            else if (scheduleMemory.OutputType == ScheduleSourceType.GlobalVariable)
+            {
+                // Validate GlobalVariable exists
+                var globalVariable = await context.GlobalVariables.FirstOrDefaultAsync(gv => gv.Name == scheduleMemory.OutputReference);
+                if (globalVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Global variable not found");
+                }
+                
+                // For global variables, Float = Analog, Boolean = Digital
+                isAnalogOutput = globalVariable.VariableType == GlobalVariableType.Float;
+            }
+            else
             {
                 await context.DisposeAsync();
-                return (false, "Output item must be AnalogOutput or DigitalOutput");
+                return (false, "Invalid output type");
             }
 
             // Validate Interval > 0
@@ -188,7 +253,6 @@ public class ScheduleMemories
             }
 
             // Validate default value based on output type
-            bool isAnalogOutput = outputItem.ItemType == ItemType.AnalogOutput;
             if (isAnalogOutput)
             {
                 scheduleMemory.DefaultDigitalValue = null;
@@ -217,7 +281,8 @@ public class ScheduleMemories
 
             // Update properties
             existingMemory.Name = scheduleMemory.Name;
-            existingMemory.OutputItemId = scheduleMemory.OutputItemId;
+            existingMemory.OutputType = scheduleMemory.OutputType;
+            existingMemory.OutputReference = scheduleMemory.OutputReference;
             existingMemory.Interval = scheduleMemory.Interval;
             existingMemory.IsDisabled = scheduleMemory.IsDisabled;
             existingMemory.Duration = scheduleMemory.Duration;

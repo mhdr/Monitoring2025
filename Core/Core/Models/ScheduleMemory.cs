@@ -5,6 +5,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Core.Models;
 
 /// <summary>
+/// Specifies the source type for schedule memory output
+/// </summary>
+public enum ScheduleSourceType
+{
+    /// <summary>
+    /// Reference is a Point (MonitoringItem) GUID
+    /// </summary>
+    Point = 0,
+    
+    /// <summary>
+    /// Reference is a Global Variable name
+    /// </summary>
+    GlobalVariable = 1
+}
+
+/// <summary>
 /// Priority levels for schedule blocks to resolve conflicts
 /// Higher priority blocks take precedence when schedules overlap
 /// </summary>
@@ -50,11 +66,18 @@ public class ScheduleMemory
     public string? Name { get; set; }
 
     /// <summary>
-    /// Output monitoring item ID where scheduled value is written
-    /// Must be AnalogOutput (for setpoints) or DigitalOutput (for on/off commands)
+    /// Type of the output source: Point or GlobalVariable
     /// </summary>
-    [Column("output_item_id")]
-    public Guid OutputItemId { get; set; }
+    [Column("output_type")] 
+    public ScheduleSourceType OutputType { get; set; } = ScheduleSourceType.Point;
+    
+    /// <summary>
+    /// Reference to the output source that receives the scheduled value:
+    /// - If OutputType = Point: GUID string of the MonitoringItem (AnalogOutput or DigitalOutput)
+    /// - If OutputType = GlobalVariable: Name of the Global Variable (Boolean or Float type)
+    /// </summary>
+    [Column("output_reference")] 
+    public string OutputReference { get; set; } = string.Empty;
 
     /// <summary>
     /// Processing interval in seconds for schedule evaluation

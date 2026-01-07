@@ -31,17 +31,21 @@ import {
   Tab,
   Grid,
   Paper,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   HelpOutline as HelpOutlineIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
+  Memory as MemoryIcon,
+  Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addScheduleMemory, editScheduleMemory, getHolidayCalendars } from '../services/extendedApi';
-import type { ScheduleMemory, Item, ItemType, HolidayCalendar, AddScheduleBlockDto } from '../types/api';
-import { SchedulePriority, ScheduleDayOfWeek, NullEndTimeBehavior } from '../types/api';
+import { addScheduleMemory, editScheduleMemory, getHolidayCalendars, getGlobalVariables } from '../services/extendedApi';
+import type { ScheduleMemory, Item, ItemType, HolidayCalendar, AddScheduleBlockDto, GlobalVariable } from '../types/api';
+import { SchedulePriority, ScheduleDayOfWeek, NullEndTimeBehavior, ScheduleSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -69,7 +73,8 @@ interface ScheduleBlockForm {
 
 interface FormData {
   name: string;
-  outputItemId: string;
+  outputType: number;
+  outputReference: string;
   interval: number;
   duration: number;
   isDisabled: boolean;
@@ -81,7 +86,7 @@ interface FormData {
 
 interface FormErrors {
   name?: string;
-  outputItemId?: string;
+  outputReference?: string;
   interval?: string;
   duration?: string;
   defaultValue?: string;
@@ -175,10 +180,12 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
   const { t, language } = useLanguage();
   const { state } = useMonitoring();
   const items = state.items;
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [holidayCalendars, setHolidayCalendars] = useState<HolidayCalendar[]>([]);
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
+  const [loadingGlobalVariables, setLoadingGlobalVariables] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
   // Help popover states
@@ -194,7 +201,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    outputItemId: '',
+    outputType: ScheduleSourceType.Point,
+    outputReference: '',
     interval: 10,
     duration: 10,
     isDisabled: false,
@@ -206,27 +214,58 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  // Determine if output item is analog or digital
+  // Determine if output is analog or digital based on selected item/variable
   const selectedOutputItem = useMemo(() => {
-    return items.find((item) => item.id === formData.outputItemId) || null;
-  }, [items, formData.outputItemId]);
+    if (formData.outputType === ScheduleSourceType.Point) {
+      return items.find((item) => item.id === formData.outputReference) || null;
+    }
+    return null;
+  }, [items, formData.outputType, formData.outputReference]);
 
-  const isAnalogOutput = selectedOutputItem?.itemType === 4; // AnalogOutput
+  const selectedOutputVariable = useMemo(() => {
+    if (formData.outputType === ScheduleSourceType.GlobalVariable) {
+      return globalVariables.find((v) => v.name === formData.outputReference) || null;
+    }
+    return null;
+  }, [globalVariables, formData.outputType, formData.outputReference]);
+
+  // Determine if output is analog: for Points, itemType=4 is AnalogOutput; for GlobalVariables, variableType=1 is Float
+  const isAnalogOutput = useMemo(() => {
+    if (formData.outputType === ScheduleSourceType.Point) {
+      return selectedOutputItem?.itemType === 4; // AnalogOutput
+    } else if (formData.outputType === ScheduleSourceType.GlobalVariable) {
+      return selectedOutputVariable?.variableType === 1; // Float
+    }
+    return false;
+  }, [formData.outputType, selectedOutputItem, selectedOutputVariable]);
 
   // Filter output items to AnalogOutput (4) or DigitalOutput (2)
   const outputItems = useMemo(() => {
     return items.filter((item) => item.itemType === 2 || item.itemType === 4);
   }, [items]);
 
-  // Load holiday calendars
+  // Load holiday calendars and global variables
   useEffect(() => {
     if (open) {
+      // Load holiday calendars
       getHolidayCalendars({}).then((response) => {
         if (response.isSuccessful && response.holidayCalendars) {
           setHolidayCalendars(response.holidayCalendars);
         }
       }).catch((err) => {
         logger.error('Failed to load holiday calendars', err);
+      });
+
+      // Load global variables
+      setLoadingGlobalVariables(true);
+      getGlobalVariables({}).then((response) => {
+        if (response.isSuccessful && response.globalVariables) {
+          setGlobalVariables(response.globalVariables);
+        }
+      }).catch((err) => {
+        logger.error('Failed to load global variables', err);
+      }).finally(() => {
+        setLoadingGlobalVariables(false);
       });
     }
   }, [open]);
@@ -238,7 +277,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
       if (editMode && scheduleMemory) {
         setFormData({
           name: scheduleMemory.name || '',
-          outputItemId: scheduleMemory.outputItemId,
+          outputType: scheduleMemory.outputType ?? ScheduleSourceType.Point,
+          outputReference: scheduleMemory.outputReference || '',
           interval: scheduleMemory.interval,
           duration: scheduleMemory.duration ?? 10,
           isDisabled: scheduleMemory.isDisabled,
@@ -261,7 +301,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
       } else {
         setFormData({
           name: '',
-          outputItemId: '',
+          outputType: ScheduleSourceType.Point,
+          outputReference: '',
           interval: 10,
           duration: 10,
           isDisabled: false,
@@ -320,8 +361,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
   const validate = (): boolean => {
     const errors: FormErrors = {};
 
-    if (!formData.outputItemId) {
-      errors.outputItemId = t('scheduleMemory.validation.outputItemRequired');
+    if (!formData.outputReference) {
+      errors.outputReference = t('scheduleMemory.validation.outputItemRequired');
     }
 
     if (formData.interval <= 0) {
@@ -378,7 +419,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
         const response = await editScheduleMemory({
           id: scheduleMemory.id,
           name: formData.name || null,
-          outputItemId: formData.outputItemId,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
           interval: formData.interval,
           duration: formData.duration,
           isDisabled: formData.isDisabled,
@@ -397,7 +439,8 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
       } else {
         const response = await addScheduleMemory({
           name: formData.name || null,
-          outputItemId: formData.outputItemId,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
           interval: formData.interval,
           duration: formData.duration,
           isDisabled: formData.isDisabled,
@@ -510,39 +553,116 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                   <HelpOutlineIcon fontSize="small" />
                 </IconButton>
               </Box>
-              <Autocomplete
-                options={outputItems}
-                getOptionLabel={getItemLabel}
-                value={selectedOutputItem}
-                onChange={(_, value) => setFormData((prev) => ({ ...prev, outputItemId: value?.id || '' }))}
-                disabled={loading}
-                data-id-ref="schedule-memory-output-item-select"
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={t('scheduleMemory.outputItem')}
-                    required
-                    error={!!formErrors.outputItemId}
-                    helperText={formErrors.outputItemId}
-                  />
-                )}
-                renderOption={(props, option) => (
-                  <Box component="li" {...props} key={option.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                      <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                        {getItemLabel(option)}
-                      </Typography>
-                      <Chip
-                        label={getItemTypeLabel(option.itemType, t)}
-                        size="small"
-                        color={getItemTypeColor(option.itemType)}
-                        sx={{ height: 20, fontSize: '0.7rem' }}
-                      />
+
+              {/* Output Type Toggle */}
+              <ToggleButtonGroup
+                value={formData.outputType}
+                exclusive
+                onChange={(_: React.MouseEvent<HTMLElement>, newValue: number | null) => {
+                  if (newValue !== null) {
+                    setFormData((prev) => ({
+                      ...prev,
+                      outputType: newValue,
+                      outputReference: '', // Reset reference when switching type
+                    }));
+                  }
+                }}
+                fullWidth
+                sx={{ mb: 2 }}
+                data-id-ref="schedule-memory-output-type-toggle"
+              >
+                <ToggleButton value={ScheduleSourceType.Point} data-id-ref="schedule-memory-output-type-point">
+                  <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                  {t('timeoutMemory.sourceTypePoint')}
+                </ToggleButton>
+                <ToggleButton value={ScheduleSourceType.GlobalVariable} data-id-ref="schedule-memory-output-type-globalvariable">
+                  <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                  {t('timeoutMemory.sourceTypeGlobalVariable')}
+                </ToggleButton>
+              </ToggleButtonGroup>
+
+              {/* Point Selection */}
+              {formData.outputType === ScheduleSourceType.Point && (
+                <Autocomplete
+                  options={outputItems}
+                  getOptionLabel={getItemLabel}
+                  value={selectedOutputItem}
+                  onChange={(_, value) => setFormData((prev) => ({ ...prev, outputReference: value?.id || '' }))}
+                  disabled={loading}
+                  data-id-ref="schedule-memory-output-item-select"
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('scheduleMemory.outputItem')}
+                      required
+                      error={!!formErrors.outputReference}
+                      helperText={formErrors.outputReference}
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {getItemLabel(option)}
+                        </Typography>
+                        <Chip
+                          label={getItemTypeLabel(option.itemType, t)}
+                          size="small"
+                          color={getItemTypeColor(option.itemType)}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
                     </Box>
-                  </Box>
-                )}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-              />
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
+              )}
+
+              {/* Global Variable Selection */}
+              {formData.outputType === ScheduleSourceType.GlobalVariable && (
+                <Autocomplete
+                  options={globalVariables}
+                  getOptionLabel={(gv) => `${gv.name} (${gv.variableType === 0 ? 'Boolean' : 'Float'})`}
+                  value={selectedOutputVariable}
+                  onChange={(_, value) => setFormData((prev) => ({ ...prev, outputReference: value?.name || '' }))}
+                  disabled={loading || loadingGlobalVariables}
+                  data-id-ref="schedule-memory-output-globalvariable-select"
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('scheduleMemory.outputGlobalVariable')}
+                      required
+                      error={!!formErrors.outputReference}
+                      helperText={formErrors.outputReference}
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {loadingGlobalVariables ? <CircularProgress color="inherit" size={20} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                          {option.name}
+                        </Typography>
+                        <Chip
+                          label={option.variableType === 0 ? 'Boolean' : 'Float'}
+                          size="small"
+                          color={option.variableType === 0 ? 'primary' : 'secondary'}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.name === value.name}
+                />
+              )}
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
@@ -676,7 +796,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
               size="small"
               startIcon={<AddIcon />}
               onClick={handleAddBlock}
-              disabled={loading || !formData.outputItemId}
+              disabled={loading || !formData.outputReference}
               data-id-ref="schedule-memory-add-block-btn"
             >
               {t('scheduleMemory.addBlock')}
@@ -696,7 +816,7 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                 variant="outlined"
                 startIcon={<AddIcon />}
                 onClick={handleAddBlock}
-                disabled={loading || !formData.outputItemId}
+                disabled={loading || !formData.outputReference}
                 sx={{ mt: 2 }}
               >
                 {t('scheduleMemory.addBlock')}

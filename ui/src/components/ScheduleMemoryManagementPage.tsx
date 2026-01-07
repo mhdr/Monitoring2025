@@ -27,9 +27,9 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
-import { getScheduleMemories } from '../services/extendedApi';
-import type { ScheduleMemory, ItemType } from '../types/api';
-import { ItemTypeEnum } from '../types/api';
+import { getScheduleMemories, getGlobalVariables } from '../services/extendedApi';
+import type { ScheduleMemory, ItemType, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, ScheduleSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -87,6 +87,7 @@ const ScheduleMemoryManagementPage: React.FC = () => {
 
   // State
   const [scheduleMemories, setScheduleMemories] = useState<EnhancedScheduleMemory[]>([]);
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,6 +109,17 @@ const ScheduleMemoryManagementPage: React.FC = () => {
     setOverviewHelpAnchor(null);
   };
 
+  // Fetch global variables on mount
+  useEffect(() => {
+    getGlobalVariables({}).then((response) => {
+      if (response.isSuccessful && response.globalVariables) {
+        setGlobalVariables(response.globalVariables);
+      }
+    }).catch((err) => {
+      logger.error('Failed to load global variables', err);
+    });
+  }, []);
+
   // Fetch schedule memories
   const fetchScheduleMemories = useCallback(async () => {
     setLoading(true);
@@ -117,15 +129,27 @@ const ScheduleMemoryManagementPage: React.FC = () => {
       const response = await getScheduleMemories({});
 
       if (response?.scheduleMemories) {
-        // Enhance schedule memories with item names
+        // Enhance schedule memories with item/variable names based on outputType
         const enhancedMemories: EnhancedScheduleMemory[] = response.scheduleMemories.map((sm) => {
-          const outputItem = items.find((item) => item.id === sm.outputItemId);
+          let outputItemName: string | undefined;
+          let outputItemType: ItemType | undefined;
+
+          if (sm.outputType === ScheduleSourceType.Point) {
+            // Find the Point item
+            const outputItem = items.find((item) => item.id === sm.outputReference);
+            outputItemName = outputItem ? (language === 'fa' && outputItem.nameFa ? outputItem.nameFa : outputItem.name) : sm.outputReference;
+            outputItemType = outputItem?.itemType;
+          } else if (sm.outputType === ScheduleSourceType.GlobalVariable) {
+            // Find the GlobalVariable
+            const gv = globalVariables.find((v) => v.name === sm.outputReference);
+            outputItemName = gv ? `${gv.name} (${gv.variableType === 0 ? 'Boolean' : 'Float'})` : sm.outputReference;
+            outputItemType = undefined; // Global variables don't have itemType
+          }
 
           return {
             ...sm,
-            outputItemName: outputItem ? (language === 'fa' && outputItem.nameFa ? outputItem.nameFa : outputItem.name) : undefined,
-            outputItemType: outputItem?.itemType,
-            // Use holidayCalendarName from response directly
+            outputItemName,
+            outputItemType,
           };
         });
 
@@ -140,7 +164,7 @@ const ScheduleMemoryManagementPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [items, language, t]);
+  }, [items, globalVariables, language, t]);
 
   useEffect(() => {
     if (items.length > 0) {
@@ -190,7 +214,7 @@ const ScheduleMemoryManagementPage: React.FC = () => {
     if (shouldRefresh) {
       await fetchScheduleMemories();
     }
-    
+
     setAddEditDialogOpen(false);
     setDeleteDialogOpen(false);
     setSelectedScheduleMemory(null);
@@ -222,7 +246,7 @@ const ScheduleMemoryManagementPage: React.FC = () => {
         template: (rowData: EnhancedScheduleMemory) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" noWrap>
-              {rowData.outputItemName || rowData.outputItemId}
+              {rowData.outputItemName || rowData.outputReference}
             </Typography>
             {rowData.outputItemType !== undefined && (
               <Chip

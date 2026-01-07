@@ -4261,6 +4261,17 @@ export interface DeleteMinMaxSelectorMemoryResponseDto {
 // Schedule Memory Types
 
 /**
+ * Specifies the source type for schedule memory output
+ */
+export type ScheduleSourceType = 0 | 1;
+export const ScheduleSourceType = {
+  /** Reference is a Point (MonitoringItem) GUID */
+  Point: 0 as const,
+  /** Reference is a Global Variable name */
+  GlobalVariable: 1 as const,
+};
+
+/**
  * Priority levels for schedule blocks to resolve conflicts
  * Higher priority blocks take precedence when schedules overlap
  */
@@ -4338,7 +4349,8 @@ export interface ScheduleBlock {
 export interface ScheduleMemory {
   id: string;
   name?: string | null;
-  outputItemId: string;
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable
   interval: number;
   isDisabled: boolean;
   duration: number; // long - Write duration in seconds for controller writes. Default: 10
@@ -4410,7 +4422,8 @@ export interface GetScheduleMemoriesResponseDto {
  */
 export interface AddScheduleMemoryRequestDto {
   name?: string | null;
-  outputItemId: string;
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable
   interval: number;
   isDisabled?: boolean;
   duration?: number; // long - Write duration in seconds. Default: 10
@@ -4435,7 +4448,8 @@ export interface AddScheduleMemoryResponseDto {
 export interface EditScheduleMemoryRequestDto {
   id: string;
   name?: string | null;
-  outputItemId: string;
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable
   interval: number;
   isDisabled?: boolean;
   duration?: number; // long - Write duration in seconds. Default: 10

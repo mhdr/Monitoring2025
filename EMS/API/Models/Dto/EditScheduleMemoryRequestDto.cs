@@ -19,10 +19,16 @@ public class EditScheduleMemoryRequestDto
     public string? Name { get; set; }
 
     /// <summary>
-    /// ID of the output monitoring item (must be AnalogOutput or DigitalOutput)
+    /// Type of the output source: 0=Point, 1=GlobalVariable
     /// </summary>
-    [Required(ErrorMessage = "Output item ID is required")]
-    public Guid OutputItemId { get; set; }
+    [Required(ErrorMessage = "Output type is required")]
+    public int OutputType { get; set; }
+
+    /// <summary>
+    /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    [Required(ErrorMessage = "Output reference is required")]
+    public string OutputReference { get; set; } = string.Empty;
 
     /// <summary>
     /// Execution interval in seconds

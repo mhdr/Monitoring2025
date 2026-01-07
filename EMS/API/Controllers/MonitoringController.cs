@@ -11296,7 +11296,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 {
                     Id = m.Id,
                     Name = m.Name,
-                    OutputItemId = m.OutputItemId,
+                    OutputType = (int)m.OutputType,
+                    OutputReference = m.OutputReference,
                     Interval = m.Interval,
                     IsDisabled = m.IsDisabled,
                     Duration = m.Duration,
@@ -11383,7 +11384,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             var memory = new Core.Models.ScheduleMemory
             {
                 Name = request.Name,
-                OutputItemId = request.OutputItemId,
+                OutputType = (Core.Models.ScheduleSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 Duration = request.Duration,
@@ -11444,7 +11446,8 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 Id = request.Id,
                 Name = request.Name,
-                OutputItemId = request.OutputItemId,
+                OutputType = (Core.Models.ScheduleSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 Duration = request.Duration,
