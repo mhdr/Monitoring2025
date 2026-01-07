@@ -28,9 +28,9 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
-import { getRateOfChangeMemories } from '../services/extendedApi';
-import type { RateOfChangeMemory, RateOfChangeMemoryWithItems, ItemType } from '../types/api';
-import { ItemTypeEnum, RateCalculationMethod, RateTimeUnit } from '../types/api';
+import { getRateOfChangeMemories, getGlobalVariables } from '../services/extendedApi';
+import type { RateOfChangeMemory, RateOfChangeMemoryWithItems, ItemType, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, RateCalculationMethod, RateTimeUnit, RateOfChangeSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -150,30 +150,87 @@ const RateOfChangeMemoryManagementPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await getRateOfChangeMemories();
+      logger.log('Fetching rate of change memories and global variables');
+      
+      // Fetch both rate of change memories and global variables in parallel
+      const [response, gvResponse] = await Promise.all([
+        getRateOfChangeMemories(),
+        getGlobalVariables({})
+      ]);
+
+      if (gvResponse?.globalVariables) {
+        logger.log('Global variables fetched successfully', { count: gvResponse.globalVariables.length });
+      }
 
       if (!response.isSuccessful) {
         setError(response.errorMessage || 'Failed to fetch rate of change memories');
         return;
       }
 
-      // Enhance with item details from monitoring context
+      // Enhance with item and global variable details from monitoring context
       const enhancedMemories: RateOfChangeMemoryWithItems[] = (response.rateOfChangeMemories || []).map((m: RateOfChangeMemory) => {
-        const inputItem = items.find((item) => item.id === m.inputItemId);
-        const outputItem = items.find((item) => item.id === m.outputItemId);
-        const alarmOutputItem = m.alarmOutputItemId ? items.find((item) => item.id === m.alarmOutputItemId) : null;
+        let inputItemName: string | undefined;
+        let inputItemType: ItemType | undefined;
+        let outputItemName: string | undefined;
+        let outputItemType: ItemType | undefined;
+        let alarmOutputItemName: string | undefined;
+        let alarmOutputItemType: ItemType | undefined;
+
+        // Resolve input source
+        if (m.inputType === 0) { // Point
+          const inputItem = items.find((item) => item.id === m.inputReference);
+          if (inputItem) {
+            inputItemName = (language === 'fa' ? inputItem.nameFa : inputItem.name) || undefined;
+            inputItemType = inputItem.itemType;
+          }
+        } else if (m.inputType === 1) { // GlobalVariable
+          const inputVariable = gvResponse?.globalVariables?.find((v) => v.name === m.inputReference);
+          if (inputVariable) {
+            inputItemName = inputVariable.name;
+          }
+        }
+
+        // Resolve output source
+        if (m.outputType === 0) { // Point
+          const outputItem = items.find((item) => item.id === m.outputReference);
+          if (outputItem) {
+            outputItemName = (language === 'fa' ? outputItem.nameFa : outputItem.name) || undefined;
+            outputItemType = outputItem.itemType;
+          }
+        } else if (m.outputType === 1) { // GlobalVariable
+          const outputVariable = gvResponse?.globalVariables?.find((v) => v.name === m.outputReference);
+          if (outputVariable) {
+            outputItemName = outputVariable.name;
+          }
+        }
+
+        // Resolve alarm output source if provided
+        if (m.alarmOutputType !== null && m.alarmOutputType !== undefined) {
+          if (m.alarmOutputType === 0 && m.alarmOutputReference) { // Point
+            const alarmOutputItem = items.find((item) => item.id === m.alarmOutputReference);
+            if (alarmOutputItem) {
+              alarmOutputItemName = (language === 'fa' ? alarmOutputItem.nameFa : alarmOutputItem.name) || undefined;
+              alarmOutputItemType = alarmOutputItem.itemType;
+            }
+          } else if (m.alarmOutputType === 1 && m.alarmOutputReference) { // GlobalVariable
+            const alarmOutputVariable = gvResponse?.globalVariables?.find((v) => v.name === m.alarmOutputReference);
+            if (alarmOutputVariable) {
+              alarmOutputItemName = alarmOutputVariable.name;
+            }
+          }
+        }
 
         return {
           ...m,
-          inputItemName: inputItem ? (language === 'fa' ? inputItem.nameFa : inputItem.name) || undefined : undefined,
-          inputItemNameFa: inputItem?.nameFa || undefined,
-          inputItemType: inputItem?.itemType,
-          outputItemName: outputItem ? (language === 'fa' ? outputItem.nameFa : outputItem.name) || undefined : undefined,
-          outputItemNameFa: outputItem?.nameFa || undefined,
-          outputItemType: outputItem?.itemType,
-          alarmOutputItemName: alarmOutputItem ? (language === 'fa' ? alarmOutputItem.nameFa : alarmOutputItem.name) || undefined : undefined,
-          alarmOutputItemNameFa: alarmOutputItem?.nameFa || undefined,
-          alarmOutputItemType: alarmOutputItem?.itemType,
+          inputItemName,
+          inputItemNameFa: undefined, // Keep for backward compatibility
+          inputItemType,
+          outputItemName,
+          outputItemNameFa: undefined, // Keep for backward compatibility
+          outputItemType,
+          alarmOutputItemName,
+          alarmOutputItemNameFa: undefined, // Keep for backward compatibility
+          alarmOutputItemType,
         };
       });
 

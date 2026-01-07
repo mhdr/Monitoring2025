@@ -2848,6 +2848,161 @@ export interface DeleteTimeoutMemoryResponseDto {
   errorMessage?: string | null;
 }
 
+// ==================== Rate of Change Memory DTOs ====================
+
+/**
+ * Enum for Rate of Change Memory source types
+ */
+export type RateOfChangeSourceType = 0 | 1;
+export const RateOfChangeSourceType = {
+  Point: 0 as const,
+  GlobalVariable: 1 as const,
+};
+
+/**
+ * Rate of Change Memory configuration
+ */
+export interface RateOfChangeMemory {
+  id: string;
+  name?: string | null;
+  inputType: number; // 0=Point, 1=GlobalVariable
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable
+  alarmOutputType?: number | null; // 0=Point, 1=GlobalVariable
+  alarmOutputReference?: string | null; // GUID string for Point, name for GlobalVariable
+  // Legacy fields for backward compatibility
+  inputItemId: string;
+  outputItemId: string;
+  alarmOutputItemId?: string | null;
+  interval: number;
+  isDisabled: boolean;
+  calculationMethod: number; // 1=SimpleDifference, 2=MovingAverage, 3=WeightedAverage, 4=LinearRegression
+  timeWindowSeconds: number;
+  smoothingFilterAlpha: number;
+  highRateThreshold?: number | null;
+  lowRateThreshold?: number | null;
+  highRateHysteresis: number;
+  lowRateHysteresis: number;
+  alarmState?: boolean | null;
+  baselineSampleCount: number;
+  accumulatedSamples: number;
+  timeUnit: number; // 1=PerSecond, 60=PerMinute, 3600=PerHour
+  rateUnitDisplay?: string | null;
+  decimalPlaces: number;
+  lastSmoothedRate?: number | null;
+  lastInputValue?: number | null;
+  lastTimestamp?: number | null;
+}
+
+/**
+ * Extended rate of change memory with item details
+ */
+export interface RateOfChangeMemoryWithItems extends RateOfChangeMemory {
+  inputItemName?: string;
+  inputItemNameFa?: string;
+  inputItemType?: ItemType;
+  outputItemName?: string;
+  outputItemNameFa?: string;
+  outputItemType?: ItemType;
+  alarmOutputItemName?: string;
+  alarmOutputItemNameFa?: string;
+  alarmOutputItemType?: ItemType;
+}
+
+/**
+ * Request DTO for creating a new rate of change memory
+ */
+export interface AddRateOfChangeMemoryRequestDto {
+  name?: string | null;
+  inputType: number; // 0=Point, 1=GlobalVariable
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable
+  alarmOutputType?: number | null; // 0=Point, 1=GlobalVariable
+  alarmOutputReference?: string | null; // GUID string for Point, name for GlobalVariable
+  // Legacy fields - deprecated
+  inputItemId?: string | null;
+  outputItemId?: string | null;
+  alarmOutputItemId?: string | null;
+  interval: number;
+  isDisabled: boolean;
+  calculationMethod: number;
+  timeWindowSeconds: number;
+  smoothingFilterAlpha: number;
+  highRateThreshold?: number | null;
+  lowRateThreshold?: number | null;
+  highRateHysteresis: number;
+  lowRateHysteresis: number;
+  baselineSampleCount: number;
+  timeUnit: number;
+  rateUnitDisplay?: string | null;
+  decimalPlaces: number;
+}
+
+/**
+ * Response DTO for adding a new rate of change memory
+ */
+export interface AddRateOfChangeMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null;
+}
+
+/**
+ * Request DTO for editing a rate of change memory
+ */
+export interface EditRateOfChangeMemoryRequestDto {
+  id: string;
+  name?: string | null;
+  inputType: number; // 0=Point, 1=GlobalVariable
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable
+  alarmOutputType?: number | null; // 0=Point, 1=GlobalVariable
+  alarmOutputReference?: string | null; // GUID string for Point, name for GlobalVariable
+  // Legacy fields - deprecated
+  inputItemId?: string | null;
+  outputItemId?: string | null;
+  alarmOutputItemId?: string | null;
+  interval: number;
+  isDisabled: boolean;
+  calculationMethod: number;
+  timeWindowSeconds: number;
+  smoothingFilterAlpha: number;
+  highRateThreshold?: number | null;
+  lowRateThreshold?: number | null;
+  highRateHysteresis: number;
+  lowRateHysteresis: number;
+  baselineSampleCount: number;
+  timeUnit: number;
+  rateUnitDisplay?: string | null;
+  decimalPlaces: number;
+}
+
+/**
+ * Response DTO for editing a rate of change memory
+ */
+export interface EditRateOfChangeMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a rate of change memory
+ */
+export interface DeleteRateOfChangeMemoryRequestDto {
+  id: string;
+}
+
+/**
+ * Response DTO for deleting a rate of change memory
+ */
+export interface DeleteRateOfChangeMemoryResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
 // ==================== Write Action Memory DTOs ====================
 
 export interface WriteActionMemory {

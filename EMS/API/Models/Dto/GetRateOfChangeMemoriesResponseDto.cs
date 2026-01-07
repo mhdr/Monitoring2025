@@ -28,9 +28,42 @@ public class RateOfChangeMemoryItemDto
 {
     public Guid Id { get; set; }
     public string? Name { get; set; }
+    
+    /// <summary>
+    /// Type of the input source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int InputType { get; set; }
+    
+    /// <summary>
+    /// Reference to the input source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    public string InputReference { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Type of the output source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int OutputType { get; set; }
+    
+    /// <summary>
+    /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    public string OutputReference { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Type of the alarm output source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int? AlarmOutputType { get; set; }
+    
+    /// <summary>
+    /// Reference to the alarm output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    public string? AlarmOutputReference { get; set; }
+    
+    // Legacy fields for backward compatibility - deprecated
     public Guid InputItemId { get; set; }
     public Guid OutputItemId { get; set; }
     public Guid? AlarmOutputItemId { get; set; }
+    
     public int Interval { get; set; }
     public bool IsDisabled { get; set; }
     public int CalculationMethod { get; set; }

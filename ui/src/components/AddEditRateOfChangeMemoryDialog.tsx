@@ -25,18 +25,22 @@ import {
   InputLabel,
   FormHelperText,
   Grid,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   Save as SaveIcon,
   Close as CloseIcon,
   HelpOutline as HelpOutlineIcon,
+  Memory as MemoryIcon,
+  Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addRateOfChangeMemory, editRateOfChangeMemory } from '../services/extendedApi';
-import type { RateOfChangeMemoryWithItems, MonitoringItem, ItemType } from '../types/api';
-import { ItemTypeEnum, RateCalculationMethod, RateTimeUnit } from '../types/api';
+import { addRateOfChangeMemory, editRateOfChangeMemory, getGlobalVariables } from '../services/extendedApi';
+import type { RateOfChangeMemoryWithItems, MonitoringItem, ItemType, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, RateCalculationMethod, RateTimeUnit, RateOfChangeSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -51,12 +55,15 @@ interface AddEditRateOfChangeMemoryDialogProps {
 
 interface FormData {
   name: string;
-  inputItemId: string;
-  outputItemId: string;
-  alarmOutputItemId: string;
+  inputType: number;
+  inputReference: string;
+  outputType: number;
+  outputReference: string;
+  alarmOutputType: number | null;
+  alarmOutputReference: string;
   interval: number;
   isDisabled: boolean;
-  calculationMethod: RateCalculationMethod;
+  calculationMethod: number;
   timeWindowSeconds: number;
   smoothingFilterAlpha: number;
   highRateThreshold: number | null;
@@ -64,7 +71,7 @@ interface FormData {
   highRateHysteresis: number;
   lowRateHysteresis: number;
   baselineSampleCount: number;
-  timeUnit: RateTimeUnit;
+  timeUnit: number;
   rateUnitDisplay: string;
   decimalPlaces: number;
 }
@@ -101,18 +108,23 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
     setHelpAnchorEl((prev) => ({ ...prev, [fieldKey]: null }));
   };
 
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
+  const [loadingGlobalVariables, setLoadingGlobalVariables] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    inputItemId: '',
-    outputItemId: '',
-    alarmOutputItemId: '',
+    inputType: RateOfChangeSourceType.Point,
+    inputReference: '',
+    outputType: RateOfChangeSourceType.Point,
+    outputReference: '',
+    alarmOutputType: null,
+    alarmOutputReference: '',
     interval: 10,
     isDisabled: false,
-    calculationMethod: RateCalculationMethod.SimpleDifference,
+    calculationMethod: 1, // SimpleDifference
     timeWindowSeconds: 60,
     smoothingFilterAlpha: 0.3,
     highRateThreshold: null,
@@ -120,19 +132,44 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
     highRateHysteresis: 0.9,
     lowRateHysteresis: 0.9,
     baselineSampleCount: 5,
-    timeUnit: RateTimeUnit.PerMinute,
+    timeUnit: 60, // PerMinute
     rateUnitDisplay: '',
     decimalPlaces: 2,
   });
+
+  // Fetch global variables when dialog opens
+  useEffect(() => {
+    const fetchGlobalVariables = async () => {
+      if (open) {
+        setLoadingGlobalVariables(true);
+        try {
+          const response = await getGlobalVariables({});
+          if (response?.globalVariables) {
+            setGlobalVariables(response.globalVariables);
+            logger.log('Global variables loaded', { count: response.globalVariables.length });
+          }
+        } catch (err) {
+          logger.error('Failed to fetch global variables', { error: err });
+        } finally {
+          setLoadingGlobalVariables(false);
+        }
+      }
+    };
+
+    fetchGlobalVariables();
+  }, [open]);
 
   // Initialize form data from rate of change memory in edit mode
   useEffect(() => {
     if (editMode && rateOfChangeMemory) {
       setFormData({
         name: rateOfChangeMemory.name || '',
-        inputItemId: rateOfChangeMemory.inputItemId,
-        outputItemId: rateOfChangeMemory.outputItemId,
-        alarmOutputItemId: rateOfChangeMemory.alarmOutputItemId || '',
+        inputType: rateOfChangeMemory.inputType,
+        inputReference: rateOfChangeMemory.inputReference,
+        outputType: rateOfChangeMemory.outputType,
+        outputReference: rateOfChangeMemory.outputReference,
+        alarmOutputType: rateOfChangeMemory.alarmOutputType ?? null,
+        alarmOutputReference: rateOfChangeMemory.alarmOutputReference ?? '',
         interval: rateOfChangeMemory.interval,
         isDisabled: rateOfChangeMemory.isDisabled,
         calculationMethod: rateOfChangeMemory.calculationMethod,
@@ -150,12 +187,7 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
     }
   }, [editMode, rateOfChangeMemory]);
 
-  // Filter items by type
-  const analogInputItems = useMemo(
-    () => items.filter((item) => item.itemType === ItemTypeEnum.AnalogInput),
-    [items]
-  );
-
+  // Filter items by type (for legacy support)
   const analogOutputItems = useMemo(
     () => items.filter((item) => item.itemType === ItemTypeEnum.AnalogOutput),
     [items]
@@ -166,21 +198,68 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
     [items]
   );
 
-  // Get selected items
-  const selectedInputItem = useMemo(
-    () => items.find((item) => item.id === formData.inputItemId),
-    [items, formData.inputItemId]
+  // Filter analog items for input (both AnalogInput and AnalogOutput)
+  const analogItems = useMemo(
+    () => items.filter((item) => 
+      item.itemType === ItemTypeEnum.AnalogInput || 
+      item.itemType === ItemTypeEnum.AnalogOutput
+    ),
+    [items]
   );
 
-  const selectedOutputItem = useMemo(
-    () => items.find((item) => item.id === formData.outputItemId),
-    [items, formData.outputItemId]
+  // Filter global variables by type
+  const floatGlobalVariables = useMemo(
+    () => globalVariables.filter((gv) => gv.variableType === 1), // Float type
+    [globalVariables]
   );
 
-  const selectedAlarmOutputItem = useMemo(
-    () => items.find((item) => item.id === formData.alarmOutputItemId),
-    [items, formData.alarmOutputItemId]
+  const booleanAndFloatGlobalVariables = useMemo(
+    () => globalVariables.filter((gv) => gv.variableType === 0 || gv.variableType === 1), // Boolean or Float
+    [globalVariables]
   );
+
+  // Get selected items or global variables
+  const selectedInputItem = useMemo(() => {
+    if (formData.inputType === RateOfChangeSourceType.Point) {
+      return items.find((item) => item.id === formData.inputReference);
+    }
+    return null;
+  }, [items, formData.inputType, formData.inputReference]);
+
+  const selectedInputGlobalVariable = useMemo(() => {
+    if (formData.inputType === RateOfChangeSourceType.GlobalVariable) {
+      return globalVariables.find((gv) => gv.name === formData.inputReference);
+    }
+    return null;
+  }, [globalVariables, formData.inputType, formData.inputReference]);
+
+  const selectedOutputItem = useMemo(() => {
+    if (formData.outputType === RateOfChangeSourceType.Point) {
+      return items.find((item) => item.id === formData.outputReference);
+    }
+    return null;
+  }, [items, formData.outputType, formData.outputReference]);
+
+  const selectedOutputGlobalVariable = useMemo(() => {
+    if (formData.outputType === RateOfChangeSourceType.GlobalVariable) {
+      return globalVariables.find((gv) => gv.name === formData.outputReference);
+    }
+    return null;
+  }, [globalVariables, formData.outputType, formData.outputReference]);
+
+  const selectedAlarmOutputItem = useMemo(() => {
+    if (formData.alarmOutputType === RateOfChangeSourceType.Point && formData.alarmOutputReference) {
+      return items.find((item) => item.id === formData.alarmOutputReference);
+    }
+    return null;
+  }, [items, formData.alarmOutputType, formData.alarmOutputReference]);
+
+  const selectedAlarmOutputGlobalVariable = useMemo(() => {
+    if (formData.alarmOutputType === RateOfChangeSourceType.GlobalVariable && formData.alarmOutputReference) {
+      return globalVariables.find((gv) => gv.name === formData.alarmOutputReference);
+    }
+    return null;
+  }, [globalVariables, formData.alarmOutputType, formData.alarmOutputReference]);
 
   // Helper to get item label
   const getItemLabel = (item: MonitoringItem): string => {
@@ -238,16 +317,16 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
   const validate = (): boolean => {
     const errors: FormErrors = {};
 
-    if (!formData.inputItemId) {
-      errors.inputItemId = t('rateOfChangeMemory.validation.inputItemRequired');
+    if (!formData.inputReference) {
+      errors.inputReference = t('rateOfChangeMemory.validation.inputItemRequired');
     }
 
-    if (!formData.outputItemId) {
-      errors.outputItemId = t('rateOfChangeMemory.validation.outputItemRequired');
+    if (!formData.outputReference) {
+      errors.outputReference = t('rateOfChangeMemory.validation.outputItemRequired');
     }
 
-    if (formData.inputItemId === formData.outputItemId) {
-      errors.outputItemId = t('rateOfChangeMemory.validation.inputOutputSame');
+    if (formData.inputType === formData.outputType && formData.inputReference === formData.outputReference) {
+      errors.outputReference = t('rateOfChangeMemory.validation.inputOutputSame');
     }
 
     if (formData.interval < 1) {
@@ -259,7 +338,7 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
     }
 
     // Linear regression needs minimum 5 samples
-    if (formData.calculationMethod === RateCalculationMethod.LinearRegression) {
+    if (formData.calculationMethod === 4) { // LinearRegression
       const samplesInWindow = Math.floor(formData.timeWindowSeconds / formData.interval);
       if (samplesInWindow < 5) {
         errors.timeWindowSeconds = t('rateOfChangeMemory.validation.linearRegressionMinSamples');
@@ -304,9 +383,12 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
         const editPayload = {
           id: rateOfChangeMemory.id,
           name: formData.name || undefined,
-          inputItemId: formData.inputItemId,
-          outputItemId: formData.outputItemId,
-          alarmOutputItemId: formData.alarmOutputItemId || undefined,
+          inputType: formData.inputType,
+          inputReference: formData.inputReference,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
+          alarmOutputType: formData.alarmOutputType,
+          alarmOutputReference: formData.alarmOutputReference || undefined,
           interval: formData.interval,
           isDisabled: formData.isDisabled,
           calculationMethod: formData.calculationMethod,
@@ -331,9 +413,12 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
       } else {
         const addPayload = {
           name: formData.name || undefined,
-          inputItemId: formData.inputItemId,
-          outputItemId: formData.outputItemId,
-          alarmOutputItemId: formData.alarmOutputItemId || undefined,
+          inputType: formData.inputType,
+          inputReference: formData.inputReference,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
+          alarmOutputType: formData.alarmOutputType,
+          alarmOutputReference: formData.alarmOutputReference || undefined,
           interval: formData.interval,
           isDisabled: formData.isDisabled,
           calculationMethod: formData.calculationMethod,
@@ -445,40 +530,104 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
                 </IconButton>
               </Box>
 
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  {t('rateOfChangeMemory.inputSource')}
+                </Typography>
+                <ToggleButtonGroup
+                  value={formData.inputType}
+                  exclusive
+                  onChange={(_, value) => {
+                    if (value !== null) {
+                      handleFieldChange('inputType', value);
+                      handleFieldChange('inputReference', '');
+                    }
+                  }}
+                  size="small"
+                  sx={{ ml: 'auto' }}
+                  data-id-ref="rateofchange-memory-input-type-toggle"
+                >
+                  <ToggleButton value={RateOfChangeSourceType.Point} data-id-ref="input-type-point-btn">
+                    <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                    {t('common.point')}
+                  </ToggleButton>
+                  <ToggleButton value={RateOfChangeSourceType.GlobalVariable} data-id-ref="input-type-globalvar-btn">
+                    <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                    {t('common.globalVariable')}
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Autocomplete
-                  fullWidth
-                  options={analogInputItems}
-                  value={selectedInputItem || null}
-                  onChange={(_, newValue) => handleFieldChange('inputItemId', newValue?.id || '')}
-                  getOptionLabel={getItemLabel}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
+                {formData.inputType === RateOfChangeSourceType.Point ? (
+                  <Autocomplete
+                    fullWidth
+                    options={analogItems}
+                    value={selectedInputItem || null}
+                    onChange={(_, newValue) => handleFieldChange('inputReference', newValue?.id || '')}
+                    getOptionLabel={getItemLabel}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                            {getItemLabel(option)}
+                          </Typography>
+                          <Chip
+                            label={getItemTypeLabel(option.itemType)}
+                            size="small"
+                            color={getItemTypeColor(option.itemType)}
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </Box>
                       </Box>
-                    </Box>
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('rateOfChangeMemory.inputItem')}
-                      error={!!formErrors.inputItemId}
-                      helperText={formErrors.inputItemId || t('rateOfChangeMemory.inputItemHelp')}
-                      required
-                    />
-                  )}
-                  sx={{ mb: 2 }}
-                  data-id-ref="rateofchange-memory-input-item-select"
-                />
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('rateOfChangeMemory.inputItem')}
+                        error={!!formErrors.inputReference}
+                        helperText={formErrors.inputReference || t('rateOfChangeMemory.inputItemHelp')}
+                        required
+                      />
+                    )}
+                    sx={{ mb: 2 }}
+                    data-id-ref="rateofchange-memory-input-item-select"
+                  />
+                ) : (
+                  <Autocomplete
+                    fullWidth
+                    options={floatGlobalVariables}
+                    value={selectedInputGlobalVariable || null}
+                    onChange={(_, newValue) => handleFieldChange('inputReference', newValue?.name || '')}
+                    getOptionLabel={(option) => option.name}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                          <Typography variant="body2" fontWeight={500}>
+                            {option.name}
+                          </Typography>
+                          {option.description && (
+                            <Typography variant="caption" color="text.secondary">
+                              {option.description}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('rateOfChangeMemory.inputGlobalVariable')}
+                        error={!!formErrors.inputReference}
+                        helperText={formErrors.inputReference || t('rateOfChangeMemory.inputGlobalVariableHelp')}
+                        required
+                      />
+                    )}
+                    loading={loadingGlobalVariables}
+                    sx={{ mb: 2 }}
+                    data-id-ref="rateofchange-memory-input-globalvar-select"
+                  />
+                )}
                 <IconButton
                   size="small"
                   onClick={handleHelpOpen('rateOfChangeMemory.help.inputItem')}
@@ -489,40 +638,104 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
                 </IconButton>
               </Box>
 
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  {t('rateOfChangeMemory.outputSource')}
+                </Typography>
+                <ToggleButtonGroup
+                  value={formData.outputType}
+                  exclusive
+                  onChange={(_, value) => {
+                    if (value !== null) {
+                      handleFieldChange('outputType', value);
+                      handleFieldChange('outputReference', '');
+                    }
+                  }}
+                  size="small"
+                  sx={{ ml: 'auto' }}
+                  data-id-ref="rateofchange-memory-output-type-toggle"
+                >
+                  <ToggleButton value={RateOfChangeSourceType.Point} data-id-ref="output-type-point-btn">
+                    <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                    {t('common.point')}
+                  </ToggleButton>
+                  <ToggleButton value={RateOfChangeSourceType.GlobalVariable} data-id-ref="output-type-globalvar-btn">
+                    <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                    {t('common.globalVariable')}
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Autocomplete
-                  fullWidth
-                  options={analogOutputItems}
-                  value={selectedOutputItem || null}
-                  onChange={(_, newValue) => handleFieldChange('outputItemId', newValue?.id || '')}
-                  getOptionLabel={getItemLabel}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
+                {formData.outputType === RateOfChangeSourceType.Point ? (
+                  <Autocomplete
+                    fullWidth
+                    options={analogOutputItems}
+                    value={selectedOutputItem || null}
+                    onChange={(_, newValue) => handleFieldChange('outputReference', newValue?.id || '')}
+                    getOptionLabel={getItemLabel}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                            {getItemLabel(option)}
+                          </Typography>
+                          <Chip
+                            label={getItemTypeLabel(option.itemType)}
+                            size="small"
+                            color={getItemTypeColor(option.itemType)}
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </Box>
                       </Box>
-                    </Box>
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('rateOfChangeMemory.outputItem')}
-                      error={!!formErrors.outputItemId}
-                      helperText={formErrors.outputItemId || t('rateOfChangeMemory.outputItemHelp')}
-                      required
-                    />
-                  )}
-                  sx={{ mb: 2 }}
-                  data-id-ref="rateofchange-memory-output-item-select"
-                />
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('rateOfChangeMemory.outputItem')}
+                        error={!!formErrors.outputReference}
+                        helperText={formErrors.outputReference || t('rateOfChangeMemory.outputItemHelp')}
+                        required
+                      />
+                    )}
+                    sx={{ mb: 2 }}
+                    data-id-ref="rateofchange-memory-output-item-select"
+                  />
+                ) : (
+                  <Autocomplete
+                    fullWidth
+                    options={floatGlobalVariables}
+                    value={selectedOutputGlobalVariable || null}
+                    onChange={(_, newValue) => handleFieldChange('outputReference', newValue?.name || '')}
+                    getOptionLabel={(option) => option.name}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                          <Typography variant="body2" fontWeight={500}>
+                            {option.name}
+                          </Typography>
+                          {option.description && (
+                            <Typography variant="caption" color="text.secondary">
+                              {option.description}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('rateOfChangeMemory.outputGlobalVariable')}
+                        error={!!formErrors.outputReference}
+                        helperText={formErrors.outputReference || t('rateOfChangeMemory.outputGlobalVariableHelp')}
+                        required
+                      />
+                    )}
+                    loading={loadingGlobalVariables}
+                    sx={{ mb: 2 }}
+                    data-id-ref="rateofchange-memory-output-globalvar-select"
+                  />
+                )}
                 <IconButton
                   size="small"
                   onClick={handleHelpOpen('rateOfChangeMemory.help.outputItem')}
@@ -873,38 +1086,100 @@ const AddEditRateOfChangeMemoryDialog: React.FC<AddEditRateOfChangeMemoryDialogP
           />
           <Collapse in={alarmsExpanded} timeout="auto" unmountOnExit>
             <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  {t('rateOfChangeMemory.alarmOutputSource')}
+                </Typography>
+                <ToggleButtonGroup
+                  value={formData.alarmOutputType}
+                  exclusive
+                  onChange={(_, value) => {
+                    if (value !== null) {
+                      handleFieldChange('alarmOutputType', value);
+                      handleFieldChange('alarmOutputReference', '');
+                    }
+                  }}
+                  size="small"
+                  sx={{ ml: 'auto' }}
+                  data-id-ref="rateofchange-memory-alarm-output-type-toggle"
+                >
+                  <ToggleButton value={RateOfChangeSourceType.Point} data-id-ref="alarm-output-type-point-btn">
+                    <MemoryIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                    {t('common.point')}
+                  </ToggleButton>
+                  <ToggleButton value={RateOfChangeSourceType.GlobalVariable} data-id-ref="alarm-output-type-globalvar-btn">
+                    <FunctionsIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                    {t('common.globalVariable')}
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Autocomplete
-                  fullWidth
-                  options={digitalOutputItems}
-                  value={selectedAlarmOutputItem || null}
-                  onChange={(_, newValue) => handleFieldChange('alarmOutputItemId', newValue?.id || '')}
-                  getOptionLabel={getItemLabel}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
+                {formData.alarmOutputType === RateOfChangeSourceType.Point ? (
+                  <Autocomplete
+                    fullWidth
+                    options={digitalOutputItems}
+                    value={selectedAlarmOutputItem || null}
+                    onChange={(_, newValue) => handleFieldChange('alarmOutputReference', newValue?.id || '')}
+                    getOptionLabel={getItemLabel}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                            {getItemLabel(option)}
+                          </Typography>
+                          <Chip
+                            label={getItemTypeLabel(option.itemType)}
+                            size="small"
+                            color={getItemTypeColor(option.itemType)}
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </Box>
                       </Box>
-                    </Box>
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('rateOfChangeMemory.alarmOutputItem')}
-                      helperText={t('rateOfChangeMemory.alarmOutputItemHelp')}
-                    />
-                  )}
-                  sx={{ mb: 2 }}
-                  data-id-ref="rateofchange-memory-alarm-output-item-select"
-                />
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('rateOfChangeMemory.alarmOutputItem')}
+                        helperText={t('rateOfChangeMemory.alarmOutputItemHelp')}
+                      />
+                    )}
+                    sx={{ mb: 2 }}
+                    data-id-ref="rateofchange-memory-alarm-output-item-select"
+                  />
+                ) : (
+                  <Autocomplete
+                    fullWidth
+                    options={booleanAndFloatGlobalVariables}
+                    value={selectedAlarmOutputGlobalVariable || null}
+                    onChange={(_, newValue) => handleFieldChange('alarmOutputReference', newValue?.name || '')}
+                    getOptionLabel={(option) => option.name}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                          <Typography variant="body2" fontWeight={500}>
+                            {option.name}
+                          </Typography>
+                          {option.description && (
+                            <Typography variant="caption" color="text.secondary">
+                              {option.description}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('rateOfChangeMemory.alarmOutputGlobalVariable')}
+                        helperText={t('rateOfChangeMemory.alarmOutputGlobalVariableHelp')}
+                      />
+                    )}
+                    loading={loadingGlobalVariables}
+                    sx={{ mb: 2 }}
+                    data-id-ref="rateofchange-memory-alarm-output-globalvar-select"
+                  />
+                )}
                 <IconButton
                   size="small"
                   onClick={handleHelpOpen('rateOfChangeMemory.help.alarmOutputItem')}

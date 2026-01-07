@@ -57,6 +57,22 @@ public enum RateTimeUnit
 }
 
 /// <summary>
+/// Source type for rate of change memory input/output
+/// </summary>
+public enum RateOfChangeSourceType
+{
+    /// <summary>
+    /// Reference is a Point (MonitoringItem) GUID
+    /// </summary>
+    Point = 0,
+    
+    /// <summary>
+    /// Reference is a Global Variable name
+    /// </summary>
+    GlobalVariable = 1
+}
+
+/// <summary>
 /// Rate of Change Memory for calculating derivatives of analog values
 /// Use cases: Temperature rise/fall rate, pressure change rate, leak detection, predictive alerts
 /// </summary>
@@ -74,19 +90,62 @@ public class RateOfChangeMemory
     public string? Name { get; set; }
 
     /// <summary>
-    /// Input monitoring item ID (must be AnalogInput or AnalogOutput)
+    /// Type of the input source: Point or GlobalVariable
+    /// </summary>
+    [Column("input_type")]
+    public RateOfChangeSourceType InputType { get; set; } = RateOfChangeSourceType.Point;
+
+    /// <summary>
+    /// Reference to the input source to monitor.
+    /// - If InputType = Point: GUID string of the MonitoringItem
+    /// - If InputType = GlobalVariable: Name of the Global Variable
+    /// </summary>
+    [Column("input_reference")]
+    public string InputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Type of the output source: Point or GlobalVariable
+    /// </summary>
+    [Column("output_type")]
+    public RateOfChangeSourceType OutputType { get; set; } = RateOfChangeSourceType.Point;
+
+    /// <summary>
+    /// Reference to the output source where calculated rate is written.
+    /// - If OutputType = Point: GUID string of the MonitoringItem (must be AnalogOutput)
+    /// - If OutputType = GlobalVariable: Name of the Global Variable
+    /// </summary>
+    [Column("output_reference")]
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Type of the alarm output source: Point or GlobalVariable
+    /// </summary>
+    [Column("alarm_output_type")]
+    public RateOfChangeSourceType? AlarmOutputType { get; set; }
+
+    /// <summary>
+    /// Reference to the alarm output source for threshold violations.
+    /// - If AlarmOutputType = Point: GUID string of the MonitoringItem (must be DigitalOutput)
+    /// - If AlarmOutputType = GlobalVariable: Name of the Global Variable
+    /// </summary>
+    [Column("alarm_output_reference")]
+    public string? AlarmOutputReference { get; set; }
+
+    // Legacy fields for backward compatibility - will be deprecated
+    /// <summary>
+    /// [DEPRECATED] Use InputReference instead. Input monitoring item ID (must be AnalogInput or AnalogOutput)
     /// </summary>
     [Column("input_item_id")]
     public Guid InputItemId { get; set; }
     
     /// <summary>
-    /// Output monitoring item ID where calculated rate is written (must be AnalogOutput)
+    /// [DEPRECATED] Use OutputReference instead. Output monitoring item ID where calculated rate is written (must be AnalogOutput)
     /// </summary>
     [Column("output_item_id")]
     public Guid OutputItemId { get; set; }
     
     /// <summary>
-    /// Optional alarm output item ID for threshold violations (must be DigitalOutput)
+    /// [DEPRECATED] Use AlarmOutputReference instead. Optional alarm output item ID for threshold violations (must be DigitalOutput)
     /// </summary>
     [Column("alarm_output_item_id")]
     public Guid? AlarmOutputItemId { get; set; }

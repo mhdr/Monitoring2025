@@ -8485,6 +8485,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 {
                     Id = m.Id,
                     Name = m.Name,
+                    InputType = (int)m.InputType,
+                    InputReference = m.InputReference,
+                    OutputType = (int)m.OutputType,
+                    OutputReference = m.OutputReference,
+                    AlarmOutputType = m.AlarmOutputType.HasValue ? (int)m.AlarmOutputType.Value : null,
+                    AlarmOutputReference = m.AlarmOutputReference,
+                    // Legacy fields for backward compatibility
                     InputItemId = m.InputItemId,
                     OutputItemId = m.OutputItemId,
                     AlarmOutputItemId = m.AlarmOutputItemId,
@@ -8573,8 +8580,15 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             var memory = new Core.Models.RateOfChangeMemory
             {
                 Name = request.Name,
-                InputItemId = request.InputItemId,
-                OutputItemId = request.OutputItemId,
+                InputType = (Core.Models.RateOfChangeSourceType)request.InputType,
+                InputReference = request.InputReference,
+                OutputType = (Core.Models.RateOfChangeSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
+                AlarmOutputType = request.AlarmOutputType.HasValue ? (Core.Models.RateOfChangeSourceType)request.AlarmOutputType.Value : null,
+                AlarmOutputReference = request.AlarmOutputReference,
+                // Legacy fields for backward compatibility
+                InputItemId = request.InputItemId ?? Guid.Empty,
+                OutputItemId = request.OutputItemId ?? Guid.Empty,
                 AlarmOutputItemId = request.AlarmOutputItemId,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
@@ -8658,8 +8672,15 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 Id = request.Id,
                 Name = request.Name,
-                InputItemId = request.InputItemId,
-                OutputItemId = request.OutputItemId,
+                InputType = (Core.Models.RateOfChangeSourceType)request.InputType,
+                InputReference = request.InputReference,
+                OutputType = (Core.Models.RateOfChangeSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
+                AlarmOutputType = request.AlarmOutputType.HasValue ? (Core.Models.RateOfChangeSourceType)request.AlarmOutputType.Value : null,
+                AlarmOutputReference = request.AlarmOutputReference,
+                // Legacy fields for backward compatibility
+                InputItemId = request.InputItemId ?? Guid.Empty,
+                OutputItemId = request.OutputItemId ?? Guid.Empty,
                 AlarmOutputItemId = request.AlarmOutputItemId,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,

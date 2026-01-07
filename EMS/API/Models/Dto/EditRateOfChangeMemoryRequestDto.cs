@@ -19,19 +19,52 @@ public class EditRateOfChangeMemoryRequestDto
     public string? Name { get; set; }
 
     /// <summary>
-    /// ID of the input monitoring item (must be AnalogInput or AnalogOutput)
+    /// Type of the input source: 0=Point, 1=GlobalVariable
     /// </summary>
-    [Required(ErrorMessage = "Input item ID is required")]
-    public Guid InputItemId { get; set; }
+    [Required(ErrorMessage = "Input type is required")]
+    public int InputType { get; set; } = 0;
 
     /// <summary>
-    /// ID of the output monitoring item for rate value (must be AnalogOutput)
+    /// Reference to the input source (GUID string for Point, name for GlobalVariable)
     /// </summary>
-    [Required(ErrorMessage = "Output item ID is required")]
-    public Guid OutputItemId { get; set; }
+    [Required(ErrorMessage = "Input reference is required")]
+    public string InputReference { get; set; } = string.Empty;
 
     /// <summary>
-    /// ID of the optional alarm output item (must be DigitalOutput)
+    /// Type of the output source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    [Required(ErrorMessage = "Output type is required")]
+    public int OutputType { get; set; } = 0;
+
+    /// <summary>
+    /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    [Required(ErrorMessage = "Output reference is required")]
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Type of the alarm output source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int? AlarmOutputType { get; set; }
+
+    /// <summary>
+    /// Reference to the alarm output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    public string? AlarmOutputReference { get; set; }
+
+    // Legacy fields for backward compatibility - deprecated
+    /// <summary>
+    /// [DEPRECATED] Use InputReference instead. ID of the input monitoring item (must be AnalogInput or AnalogOutput)
+    /// </summary>
+    public Guid? InputItemId { get; set; }
+
+    /// <summary>
+    /// [DEPRECATED] Use OutputReference instead. ID of the output monitoring item for rate value (must be AnalogOutput)
+    /// </summary>
+    public Guid? OutputItemId { get; set; }
+
+    /// <summary>
+    /// [DEPRECATED] Use AlarmOutputReference instead. ID of the optional alarm output item (must be DigitalOutput)
     /// </summary>
     public Guid? AlarmOutputItemId { get; set; }
 

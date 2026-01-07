@@ -41,58 +41,167 @@ public class RateOfChangeMemories
         {
             var context = new DataContext();
             
-            // Validate InputItem exists
-            var inputItem = await context.MonitoringItems.FindAsync(memory.InputItemId);
-            if (inputItem == null)
+            // Validate Input source
+            if (memory.InputType == RateOfChangeSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Input item not found");
-            }
-
-            // Validate InputItem type (must be analog)
-            if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Input item must be AnalogInput or AnalogOutput");
-            }
-
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(memory.OutputItemId);
-            if (outputItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Output item not found");
-            }
-
-            // Validate OutputItem is AnalogOutput
-            if (outputItem.ItemType != ItemType.AnalogOutput)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Output item must be AnalogOutput");
-            }
-
-            // Validate AlarmOutputItem if provided
-            if (memory.AlarmOutputItemId.HasValue)
-            {
-                var alarmOutputItem = await context.MonitoringItems.FindAsync(memory.AlarmOutputItemId.Value);
-                if (alarmOutputItem == null)
+                if (!Guid.TryParse(memory.InputReference, out var inputItemId))
                 {
                     await context.DisposeAsync();
-                    return (false, null, "Alarm output item not found");
+                    return (false, null, "Invalid input item ID format");
                 }
-
-                if (alarmOutputItem.ItemType != ItemType.DigitalOutput)
+                
+                var inputItem = await context.MonitoringItems.FindAsync(inputItemId);
+                if (inputItem == null)
                 {
                     await context.DisposeAsync();
-                    return (false, null, "Alarm output item must be DigitalOutput");
+                    return (false, null, "Input item not found");
+                }
+
+                // Validate InputItem type (must be analog)
+                if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input item must be AnalogInput or AnalogOutput");
+                }
+                
+                // Set legacy field for backward compatibility
+                memory.InputItemId = inputItemId;
+            }
+            else if (memory.InputType == RateOfChangeSourceType.GlobalVariable)
+            {
+                if (string.IsNullOrWhiteSpace(memory.InputReference))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input global variable name cannot be empty");
+                }
+                
+                var globalVariable = await context.GlobalVariables.FirstOrDefaultAsync(gv => gv.Name == memory.InputReference);
+                if (globalVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input global variable not found");
+                }
+
+                // Validate GlobalVariable type (must be numeric)
+                if (globalVariable.VariableType != GlobalVariableType.Float)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input global variable must be Float type");
                 }
             }
 
-            // Validate InputItemId != OutputItemId
-            if (memory.InputItemId == memory.OutputItemId)
+            // Validate Output source
+            if (memory.OutputType == RateOfChangeSourceType.Point)
+            {
+                if (!Guid.TryParse(memory.OutputReference, out var outputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Invalid output item ID format");
+                }
+                
+                var outputItem = await context.MonitoringItems.FindAsync(outputItemId);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item not found");
+                }
+
+                // Validate OutputItem is AnalogOutput
+                if (outputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item must be AnalogOutput");
+                }
+                
+                // Set legacy field for backward compatibility
+                memory.OutputItemId = outputItemId;
+            }
+            else if (memory.OutputType == RateOfChangeSourceType.GlobalVariable)
+            {
+                if (string.IsNullOrWhiteSpace(memory.OutputReference))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable name cannot be empty");
+                }
+                
+                var globalVariable = await context.GlobalVariables.FirstOrDefaultAsync(gv => gv.Name == memory.OutputReference);
+                if (globalVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable not found");
+                }
+
+                // Validate GlobalVariable type (must be numeric)
+                if (globalVariable.VariableType != GlobalVariableType.Float)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable must be Float type");
+                }
+            }
+
+            // Validate AlarmOutput source if provided
+            if (memory.AlarmOutputType.HasValue)
+            {
+                if (memory.AlarmOutputType.Value == RateOfChangeSourceType.Point)
+                {
+                    if (string.IsNullOrWhiteSpace(memory.AlarmOutputReference))
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Alarm output reference cannot be empty when alarm output type is set");
+                    }
+                    
+                    if (!Guid.TryParse(memory.AlarmOutputReference, out var alarmOutputItemId))
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Invalid alarm output item ID format");
+                    }
+                    
+                    var alarmOutputItem = await context.MonitoringItems.FindAsync(alarmOutputItemId);
+                    if (alarmOutputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Alarm output item not found");
+                    }
+
+                    if (alarmOutputItem.ItemType != ItemType.DigitalOutput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Alarm output item must be DigitalOutput");
+                    }
+                    
+                    // Set legacy field for backward compatibility
+                    memory.AlarmOutputItemId = alarmOutputItemId;
+                }
+                else if (memory.AlarmOutputType.Value == RateOfChangeSourceType.GlobalVariable)
+                {
+                    if (string.IsNullOrWhiteSpace(memory.AlarmOutputReference))
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Alarm output global variable name cannot be empty");
+                    }
+                    
+                    var globalVariable = await context.GlobalVariables.FirstOrDefaultAsync(gv => gv.Name == memory.AlarmOutputReference);
+                    if (globalVariable == null)
+                    {
+                    await context.DisposeAsync();
+                        return (false, null, "Alarm output global variable not found");
+                    }
+
+                    // Validate GlobalVariable type (must be boolean or numeric)
+                    if (globalVariable.VariableType != GlobalVariableType.Boolean && 
+                        globalVariable.VariableType != GlobalVariableType.Float)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Alarm output global variable must be Boolean or Float type");
+                    }
+                }
+            }
+
+            // Validate Input != Output
+            if (memory.InputType == memory.OutputType && memory.InputReference == memory.OutputReference)
             {
                 await context.DisposeAsync();
-                return (false, null, "Input and output items must be different");
+                return (false, null, "Input and output sources must be different");
             }
 
             // Validate Interval > 0
@@ -156,7 +265,7 @@ public class RateOfChangeMemories
             }
 
             // Validate thresholds - if alarm output is set, at least one threshold must be set
-            if (memory.AlarmOutputItemId.HasValue)
+            if (memory.AlarmOutputType.HasValue)
             {
                 if (!memory.HighRateThreshold.HasValue && !memory.LowRateThreshold.HasValue)
                 {
@@ -198,58 +307,176 @@ public class RateOfChangeMemories
                 return (false, "Rate of change memory not found");
             }
 
-            // Validate InputItem exists
-            var inputItem = await context.MonitoringItems.FindAsync(memory.InputItemId);
-            if (inputItem == null)
+            // Validate Input source
+            if (memory.InputType == RateOfChangeSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, "Input item not found");
-            }
-
-            // Validate InputItem type (must be analog)
-            if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
-            {
-                await context.DisposeAsync();
-                return (false, "Input item must be AnalogInput or AnalogOutput");
-            }
-
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(memory.OutputItemId);
-            if (outputItem == null)
-            {
-                await context.DisposeAsync();
-                return (false, "Output item not found");
-            }
-
-            // Validate OutputItem is AnalogOutput
-            if (outputItem.ItemType != ItemType.AnalogOutput)
-            {
-                await context.DisposeAsync();
-                return (false, "Output item must be AnalogOutput");
-            }
-
-            // Validate AlarmOutputItem if provided
-            if (memory.AlarmOutputItemId.HasValue)
-            {
-                var alarmOutputItem = await context.MonitoringItems.FindAsync(memory.AlarmOutputItemId.Value);
-                if (alarmOutputItem == null)
+                if (!Guid.TryParse(memory.InputReference, out var inputItemId))
                 {
                     await context.DisposeAsync();
-                    return (false, "Alarm output item not found");
+                    return (false, "Invalid input item ID format");
                 }
-
-                if (alarmOutputItem.ItemType != ItemType.DigitalOutput)
+                
+                var inputItem = await context.MonitoringItems.FindAsync(inputItemId);
+                if (inputItem == null)
                 {
                     await context.DisposeAsync();
-                    return (false, "Alarm output item must be DigitalOutput");
+                    return (false, "Input item not found");
+                }
+
+                // Validate InputItem type (must be analog)
+                if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input item must be AnalogInput or AnalogOutput");
+                }
+                
+                // Set legacy field for backward compatibility
+                memory.InputItemId = inputItemId;
+            }
+            else if (memory.InputType == RateOfChangeSourceType.GlobalVariable)
+            {
+                if (string.IsNullOrWhiteSpace(memory.InputReference))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input global variable name cannot be empty");
+                }
+                
+                var globalVariable = await context.GlobalVariables.FirstOrDefaultAsync(gv => gv.Name == memory.InputReference);
+                if (globalVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input global variable not found");
+                }
+
+                // Validate GlobalVariable type (must be numeric)
+                if (globalVariable.VariableType != GlobalVariableType.Float)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input global variable must be Float type");
                 }
             }
 
-            // Validate InputItemId != OutputItemId
-            if (memory.InputItemId == memory.OutputItemId)
+            // Validate Output source
+            if (memory.OutputType == RateOfChangeSourceType.Point)
+            {
+                if (!Guid.TryParse(memory.OutputReference, out var outputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Invalid output item ID format");
+                }
+                
+                var outputItem = await context.MonitoringItems.FindAsync(outputItemId);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item not found");
+                }
+
+                // Validate OutputItem is AnalogOutput
+                if (outputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item must be AnalogOutput");
+                }
+                
+                // Set legacy field for backward compatibility
+                memory.OutputItemId = outputItemId;
+            }
+            else if (memory.OutputType == RateOfChangeSourceType.GlobalVariable)
+            {
+                if (string.IsNullOrWhiteSpace(memory.OutputReference))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable name cannot be empty");
+                }
+                
+                var globalVariable = await context.GlobalVariables.FirstOrDefaultAsync(gv => gv.Name == memory.OutputReference);
+                if (globalVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable not found");
+                }
+
+                // Validate GlobalVariable type (must be numeric)
+                if (globalVariable.VariableType != GlobalVariableType.Float)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable must be Float type");
+                }
+            }
+
+            // Validate AlarmOutput source if provided
+            if (memory.AlarmOutputType.HasValue)
+            {
+                if (memory.AlarmOutputType.Value == RateOfChangeSourceType.Point)
+                {
+                    if (string.IsNullOrWhiteSpace(memory.AlarmOutputReference))
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Alarm output reference cannot be empty when alarm output type is set");
+                    }
+                    
+                    if (!Guid.TryParse(memory.AlarmOutputReference, out var alarmOutputItemId))
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Invalid alarm output item ID format");
+                    }
+                    
+                    var alarmOutputItem = await context.MonitoringItems.FindAsync(alarmOutputItemId);
+                    if (alarmOutputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Alarm output item not found");
+                    }
+
+                    if (alarmOutputItem.ItemType != ItemType.DigitalOutput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Alarm output item must be DigitalOutput");
+                    }
+                    
+                    // Set legacy field for backward compatibility
+                    memory.AlarmOutputItemId = alarmOutputItemId;
+                }
+                else if (memory.AlarmOutputType.Value == RateOfChangeSourceType.GlobalVariable)
+                {
+                    if (string.IsNullOrWhiteSpace(memory.AlarmOutputReference))
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Alarm output global variable name cannot be empty");
+                    }
+                    
+                    var globalVariable = await context.GlobalVariables.FirstOrDefaultAsync(gv => gv.Name == memory.AlarmOutputReference);
+                    if (globalVariable == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Alarm output global variable not found");
+                    }
+
+                    // Validate GlobalVariable type (must be boolean or numeric)
+                    if (globalVariable.VariableType != GlobalVariableType.Boolean && 
+                        globalVariable.VariableType != GlobalVariableType.Float)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Alarm output global variable must be Boolean or Float type");
+                    }
+                    
+                    // Clear legacy field
+                    memory.AlarmOutputItemId = null;
+                }
+            }
+            else
+            {
+                // Clear both if alarm output is not set
+                memory.AlarmOutputReference = null;
+                memory.AlarmOutputItemId = null;
+            }
+
+            // Validate Input != Output
+            if (memory.InputType == memory.OutputType && memory.InputReference == memory.OutputReference)
             {
                 await context.DisposeAsync();
-                return (false, "Input and output items must be different");
+                return (false, "Input and output sources must be different");
             }
 
             // Validate Interval > 0
@@ -312,7 +539,7 @@ public class RateOfChangeMemories
             }
 
             // Validate thresholds - if alarm output is set, at least one threshold must be set
-            if (memory.AlarmOutputItemId.HasValue)
+            if (memory.AlarmOutputType.HasValue)
             {
                 if (!memory.HighRateThreshold.HasValue && !memory.LowRateThreshold.HasValue)
                 {
@@ -322,7 +549,8 @@ public class RateOfChangeMemories
             }
 
             // Check if configuration changed significantly - if so, reset samples and baseline
-            bool configChanged = existingMemory.InputItemId != memory.InputItemId ||
+            bool configChanged = existingMemory.InputType != memory.InputType ||
+                                 existingMemory.InputReference != memory.InputReference ||
                                  existingMemory.TimeWindowSeconds != memory.TimeWindowSeconds ||
                                  existingMemory.CalculationMethod != memory.CalculationMethod ||
                                  existingMemory.Interval != memory.Interval;
