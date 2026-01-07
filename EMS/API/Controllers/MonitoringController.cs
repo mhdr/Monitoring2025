@@ -8123,8 +8123,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     {
                         Id = memory.Id,
                         Name = memory.Name,
-                        InputItemId = memory.InputItemId,
-                        OutputItemId = memory.OutputItemId,
+                        InputType = (int)memory.InputType,
+                        InputReference = memory.InputReference,
+                        OutputType = (int)memory.OutputType,
+                        OutputReference = memory.OutputReference,
                         Interval = memory.Interval,
                         IsDisabled = memory.IsDisabled,
                         AccumulationType = (int)memory.AccumulationType,
@@ -8206,9 +8208,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             var totalizerMemory = new Core.Models.TotalizerMemory
             {
                 Name = request.Name,
-                InputType = request.InputType,
+                InputType = (Core.Models.TotalizerSourceType)request.InputType,
                 InputReference = request.InputReference,
-                OutputType = request.OutputType,
+                OutputType = (Core.Models.TotalizerSourceType)request.OutputType,
                 OutputReference = request.OutputReference,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
@@ -8287,9 +8289,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 Id = request.Id,
                 Name = request.Name,
-                InputType = request.InputType,
+                InputType = (Core.Models.TotalizerSourceType)request.InputType,
                 InputReference = request.InputReference,
-                OutputType = request.OutputType,
+                OutputType = (Core.Models.TotalizerSourceType)request.OutputType,
                 OutputReference = request.OutputReference,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
