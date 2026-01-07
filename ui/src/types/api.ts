@@ -3950,7 +3950,9 @@ export interface IfMemory {
   branches: string; // JSON array of ConditionalBranch objects
   defaultValue: number; // ELSE value when no branch matches
   variableAliases: string; // JSON object mapping alias -> item GUID
-  outputItemId: string; // UUID - Output item for result
+  outputDestinationType: number; // TimeoutSourceType (0=Point, 1=GlobalVariable)
+  outputReference: string; // UUID for Point, Name for GlobalVariable
+  outputItemId?: string | null; // DEPRECATED - UUID - Output item for result
   outputType: IfMemoryOutputType; // Digital (0/1) or Analog (numeric)
   interval: number; // int - Evaluation interval in seconds
   isDisabled: boolean;
@@ -3986,7 +3988,9 @@ export interface AddIfMemoryRequestDto {
   branches: string; // JSON array of ConditionalBranch objects
   defaultValue?: number; // Default 0
   variableAliases: string; // JSON object {"alias": "guid", ...}
-  outputItemId: string; // UUID
+  outputDestinationType: number; // TimeoutSourceType (0=Point, 1=GlobalVariable)
+  outputReference: string; // UUID for Point, Name for GlobalVariable
+  outputItemId?: string | null; // DEPRECATED - UUID
   outputType?: number; // 0 = Digital, 1 = Analog (default 0)
   interval?: number; // int - must be > 0, default 1
   isDisabled?: boolean;
@@ -4011,7 +4015,9 @@ export interface EditIfMemoryRequestDto {
   branches: string;
   defaultValue?: number;
   variableAliases: string;
-  outputItemId: string; // UUID
+  outputDestinationType: number; // TimeoutSourceType (0=Point, 1=GlobalVariable)
+  outputReference: string; // UUID for Point, Name for GlobalVariable
+  outputItemId?: string | null; // DEPRECATED - UUID
   outputType?: number;
   interval?: number;
   isDisabled?: boolean;

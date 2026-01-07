@@ -66,12 +66,28 @@ public class IfMemory
     public string VariableAliases { get; set; } = "{}";
 
     /// <summary>
+    /// Type of the output destination: Point or GlobalVariable
+    /// </summary>
+    [Column("output_destination_type")]
+    public TimeoutSourceType OutputDestinationType { get; set; } = TimeoutSourceType.Point;
+
+    /// <summary>
+    /// Reference to the output destination:
+    /// - If OutputDestinationType = Point: GUID string of the MonitoringItem (DigitalOutput or AnalogOutput)
+    /// - If OutputDestinationType = GlobalVariable: Name of the Global Variable
+    /// </summary>
+    [Column("output_reference")]
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// DEPRECATED: Use OutputDestinationType and OutputReference instead.
     /// The output item that receives the computed result.
     /// For Digital mode: must be ItemType.DigitalOutput.
     /// For Analog mode: must be ItemType.AnalogOutput.
+    /// Kept for backward compatibility with existing database records.
     /// </summary>
     [Column("output_item_id")]
-    public Guid OutputItemId { get; set; }
+    public Guid? OutputItemId { get; set; }
 
     /// <summary>
     /// Output type determining how values are written.

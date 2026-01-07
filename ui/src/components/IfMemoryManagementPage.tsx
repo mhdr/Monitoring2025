@@ -27,9 +27,9 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
-import { getIfMemories } from '../services/extendedApi';
+import { getIfMemories, getGlobalVariables } from '../services/extendedApi';
 import type { IfMemory, ItemType } from '../types/api';
-import { ItemTypeEnum, IfMemoryOutputType } from '../types/api';
+import { ItemTypeEnum, IfMemoryOutputType, TimeoutSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('IfMemoryManagementPage');
@@ -134,18 +134,44 @@ const IfMemoryManagementPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await getIfMemories();
+      logger.log('Fetching IF memories and global variables');
+      
+      // Fetch both IF memories and global variables in parallel
+      const [response, gvResponse] = await Promise.all([
+        getIfMemories(),
+        getGlobalVariables({})
+      ]);
+
+      if (gvResponse?.globalVariables) {
+        logger.log('Global variables fetched successfully', { count: gvResponse.globalVariables.length });
+      }
 
       // Enhance with item details from monitoring context
       const enhancedMemories: IfMemoryWithItems[] = (response.ifMemories || []).map((im: IfMemory) => {
-        const outputItem = items.find((item) => item.id === im.outputItemId);
+        let outputSourceName: string | undefined;
+        let outputItemType: ItemType | undefined;
+
+        // Resolve output source
+        if (im.outputDestinationType === TimeoutSourceType.Point) {
+          const outputItem = items.find((item) => item.id === im.outputReference);
+          if (outputItem) {
+            outputSourceName = language === 'fa' && outputItem.nameFa ? outputItem.nameFa : outputItem.name;
+            outputItemType = outputItem.itemType;
+          }
+        } else if (im.outputDestinationType === TimeoutSourceType.GlobalVariable) {
+          const outputVariable = gvResponse?.globalVariables?.find((v) => v.name === im.outputReference);
+          if (outputVariable) {
+            outputSourceName = outputVariable.name;
+          }
+        }
+
         const branches = parseBranches(im.branches);
 
         return {
           ...im,
-          outputItemName: outputItem ? (language === 'fa' ? outputItem.nameFa : outputItem.name) || undefined : undefined,
-          outputItemNameFa: outputItem?.nameFa || undefined,
-          outputItemType: outputItem?.itemType,
+          outputItemName: outputSourceName,
+          outputItemNameFa: outputSourceName,
+          outputItemType,
           branchCount: branches.length,
         };
       });

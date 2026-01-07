@@ -117,29 +117,132 @@ public class IfMemories
                 }
             }
 
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(ifMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate output destination (Point or Global Variable)
+            if (ifMemory.OutputDestinationType == TimeoutSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Output item not found");
-            }
-
-            // Validate OutputItem type matches OutputType
-            if (ifMemory.OutputType == IfMemoryOutputType.Digital)
-            {
-                if (outputItem.ItemType != ItemType.DigitalOutput)
+                // Validate Point output
+                if (string.IsNullOrEmpty(ifMemory.OutputReference))
                 {
-                    await context.DisposeAsync();
-                    return (false, null, "Output item must be DigitalOutput for Digital output type");
+                    // Backward compatibility: check OutputItemId
+                    if (!ifMemory.OutputItemId.HasValue)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Output reference is required");
+                    }
+                    // Use OutputItemId for validation
+                    var outputItem = await context.MonitoringItems.FindAsync(ifMemory.OutputItemId.Value);
+                    if (outputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Output item not found");
+                    }
+                    // Validate OutputItem type matches OutputType
+                    if (ifMemory.OutputType == IfMemoryOutputType.Digital)
+                    {
+                        if (outputItem.ItemType != ItemType.DigitalOutput)
+                        {
+                            await context.DisposeAsync();
+                            return (false, null, "Output item must be DigitalOutput for Digital output type");
+                        }
+                    }
+                    else // Analog
+                    {
+                        if (outputItem.ItemType != ItemType.AnalogOutput)
+                        {
+                            await context.DisposeAsync();
+                            return (false, null, "Output item must be AnalogOutput for Analog output type");
+                        }
+                    }
+                }
+                else
+                {
+                    // Validate OutputReference as GUID
+                    if (!Guid.TryParse(ifMemory.OutputReference, out var outputGuid))
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Output reference must be a valid GUID for Point output");
+                    }
+                    var outputItem = await context.MonitoringItems.FindAsync(outputGuid);
+                    if (outputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Output item not found");
+                    }
+                    // Validate OutputItem type matches OutputType
+                    if (ifMemory.OutputType == IfMemoryOutputType.Digital)
+                    {
+                        if (outputItem.ItemType != ItemType.DigitalOutput)
+                        {
+                            await context.DisposeAsync();
+                            return (false, null, "Output item must be DigitalOutput for Digital output type");
+                        }
+                    }
+                    else // Analog
+                    {
+                        if (outputItem.ItemType != ItemType.AnalogOutput)
+                        {
+                            await context.DisposeAsync();
+                            return (false, null, "Output item must be AnalogOutput for Analog output type");
+                        }
+                    }
                 }
             }
-            else // Analog
+            else if (ifMemory.OutputDestinationType == TimeoutSourceType.GlobalVariable)
             {
-                if (outputItem.ItemType != ItemType.AnalogOutput)
+                // Validate Global Variable output
+                if (string.IsNullOrEmpty(ifMemory.OutputReference))
                 {
                     await context.DisposeAsync();
-                    return (false, null, "Output item must be AnalogOutput for Analog output type");
+                    return (false, null, "Output reference (Global Variable name) is required");
+                }
+                
+                var globalVariable = await GlobalVariables.GetGlobalVariableByName(ifMemory.OutputReference);
+                if (globalVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, $"Global Variable '{ifMemory.OutputReference}' not found");
+                }
+                
+                if (globalVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, $"Global Variable '{ifMemory.OutputReference}' is disabled");
+                }
+                
+                // Global Variable type validation based on OutputType
+                if (ifMemory.OutputType == IfMemoryOutputType.Digital)
+                {
+                    // Digital output can use Boolean or Float type
+                    if (globalVariable.VariableType != GlobalVariableType.Boolean && 
+                        globalVariable.VariableType != GlobalVariableType.Float)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, $"Output Global Variable must be Boolean or Float type for Digital output");
+                    }
+                }
+                else // Analog
+                {
+                    // Analog output must use Float type
+                    if (globalVariable.VariableType != GlobalVariableType.Float)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, $"Output Global Variable must be Float type for Analog output, but '{ifMemory.OutputReference}' is Boolean");
+                    }
+                }
+            }
+
+            // Validate each input item exists (legacy validation with OutputItemId)
+            Guid? legacyOutputItemId = null;
+            if (ifMemory.OutputDestinationType == TimeoutSourceType.Point)
+            {
+                if (!string.IsNullOrEmpty(ifMemory.OutputReference))
+                {
+                    Guid.TryParse(ifMemory.OutputReference, out var outputGuid);
+                    legacyOutputItemId = outputGuid;
+                }
+                else if (ifMemory.OutputItemId.HasValue)
+                {
+                    legacyOutputItemId = ifMemory.OutputItemId.Value;
                 }
             }
 
@@ -159,8 +262,8 @@ public class IfMemories
                     return (false, null, $"Input item not found for variable '{alias}'");
                 }
 
-                // Validate input is not the same as output
-                if (itemId == ifMemory.OutputItemId)
+                // Validate input is not the same as output (for Point output)
+                if (legacyOutputItemId.HasValue && itemId == legacyOutputItemId.Value)
                 {
                     await context.DisposeAsync();
                     return (false, null, $"Input item for variable '{alias}' cannot be the same as output item");
@@ -279,29 +382,132 @@ public class IfMemories
                 }
             }
 
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(ifMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate output destination (Point or Global Variable)
+            if (ifMemory.OutputDestinationType == TimeoutSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, "Output item not found");
-            }
-
-            // Validate OutputItem type matches OutputType
-            if (ifMemory.OutputType == IfMemoryOutputType.Digital)
-            {
-                if (outputItem.ItemType != ItemType.DigitalOutput)
+                // Validate Point output
+                if (string.IsNullOrEmpty(ifMemory.OutputReference))
                 {
-                    await context.DisposeAsync();
-                    return (false, "Output item must be DigitalOutput for Digital output type");
+                    // Backward compatibility: check OutputItemId
+                    if (!ifMemory.OutputItemId.HasValue)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Output reference is required");
+                    }
+                    // Use OutputItemId for validation
+                    var outputItem = await context.MonitoringItems.FindAsync(ifMemory.OutputItemId.Value);
+                    if (outputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Output item not found");
+                    }
+                    // Validate OutputItem type matches OutputType
+                    if (ifMemory.OutputType == IfMemoryOutputType.Digital)
+                    {
+                        if (outputItem.ItemType != ItemType.DigitalOutput)
+                        {
+                            await context.DisposeAsync();
+                            return (false, "Output item must be DigitalOutput for Digital output type");
+                        }
+                    }
+                    else // Analog
+                    {
+                        if (outputItem.ItemType != ItemType.AnalogOutput)
+                        {
+                            await context.DisposeAsync();
+                            return (false, "Output item must be AnalogOutput for Analog output type");
+                        }
+                    }
+                }
+                else
+                {
+                    // Validate OutputReference as GUID
+                    if (!Guid.TryParse(ifMemory.OutputReference, out var outputGuid))
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Output reference must be a valid GUID for Point output");
+                    }
+                    var outputItem = await context.MonitoringItems.FindAsync(outputGuid);
+                    if (outputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Output item not found");
+                    }
+                    // Validate OutputItem type matches OutputType
+                    if (ifMemory.OutputType == IfMemoryOutputType.Digital)
+                    {
+                        if (outputItem.ItemType != ItemType.DigitalOutput)
+                        {
+                            await context.DisposeAsync();
+                            return (false, "Output item must be DigitalOutput for Digital output type");
+                        }
+                    }
+                    else // Analog
+                    {
+                        if (outputItem.ItemType != ItemType.AnalogOutput)
+                        {
+                            await context.DisposeAsync();
+                            return (false, "Output item must be AnalogOutput for Analog output type");
+                        }
+                    }
                 }
             }
-            else // Analog
+            else if (ifMemory.OutputDestinationType == TimeoutSourceType.GlobalVariable)
             {
-                if (outputItem.ItemType != ItemType.AnalogOutput)
+                // Validate Global Variable output
+                if (string.IsNullOrEmpty(ifMemory.OutputReference))
                 {
                     await context.DisposeAsync();
-                    return (false, "Output item must be AnalogOutput for Analog output type");
+                    return (false, "Output reference (Global Variable name) is required");
+                }
+                
+                var globalVariable = await GlobalVariables.GetGlobalVariableByName(ifMemory.OutputReference);
+                if (globalVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, $"Global Variable '{ifMemory.OutputReference}' not found");
+                }
+                
+                if (globalVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, $"Global Variable '{ifMemory.OutputReference}' is disabled");
+                }
+                
+                // Global Variable type validation based on OutputType
+                if (ifMemory.OutputType == IfMemoryOutputType.Digital)
+                {
+                    // Digital output can use Boolean or Float type
+                    if (globalVariable.VariableType != GlobalVariableType.Boolean && 
+                        globalVariable.VariableType != GlobalVariableType.Float)
+                    {
+                        await context.DisposeAsync();
+                        return (false, $"Output Global Variable must be Boolean or Float type for Digital output");
+                    }
+                }
+                else // Analog
+                {
+                    // Analog output must use Float type
+                    if (globalVariable.VariableType != GlobalVariableType.Float)
+                    {
+                        await context.DisposeAsync();
+                        return (false, $"Output Global Variable must be Float type for Analog output, but '{ifMemory.OutputReference}' is Boolean");
+                    }
+                }
+            }
+
+            // Validate each input item exists (legacy validation with OutputItemId)
+            Guid? legacyOutputItemId = null;
+            if (ifMemory.OutputDestinationType == TimeoutSourceType.Point)
+            {
+                if (!string.IsNullOrEmpty(ifMemory.OutputReference))
+                {
+                    Guid.TryParse(ifMemory.OutputReference, out var outputGuid);
+                    legacyOutputItemId = outputGuid;
+                }
+                else if (ifMemory.OutputItemId.HasValue)
+                {
+                    legacyOutputItemId = ifMemory.OutputItemId.Value;
                 }
             }
 
@@ -321,8 +527,8 @@ public class IfMemories
                     return (false, $"Input item not found for variable '{alias}'");
                 }
 
-                // Validate input is not the same as output
-                if (itemId == ifMemory.OutputItemId)
+                // Validate input is not the same as output (for Point output)
+                if (legacyOutputItemId.HasValue && itemId == legacyOutputItemId.Value)
                 {
                     await context.DisposeAsync();
                     return (false, $"Input item for variable '{alias}' cannot be the same as output item");
@@ -341,6 +547,8 @@ public class IfMemories
             existing.Branches = ifMemory.Branches;
             existing.DefaultValue = ifMemory.DefaultValue;
             existing.VariableAliases = ifMemory.VariableAliases ?? "{}";
+            existing.OutputDestinationType = ifMemory.OutputDestinationType;
+            existing.OutputReference = ifMemory.OutputReference;
             existing.OutputItemId = ifMemory.OutputItemId;
             existing.OutputType = ifMemory.OutputType;
             existing.Interval = ifMemory.Interval;

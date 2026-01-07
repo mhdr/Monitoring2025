@@ -51,9 +51,21 @@ public class GetIfMemoriesResponseDto
         public string VariableAliases { get; set; } = "{}";
 
         /// <summary>
-        /// Output item ID that receives the computed result
+        /// Type of the output destination: 0=Point, 1=GlobalVariable
         /// </summary>
-        public Guid OutputItemId { get; set; }
+        public int OutputDestinationType { get; set; }
+
+        /// <summary>
+        /// Reference to the output destination (GUID string for Point, name for GlobalVariable)
+        /// </summary>
+        public string OutputReference { get; set; } = string.Empty;
+
+        /// <summary>
+        /// DEPRECATED: Use OutputDestinationType and OutputReference instead.
+        /// Output item ID that receives the computed result.
+        /// Kept for backward compatibility.
+        /// </summary>
+        public Guid? OutputItemId { get; set; }
 
         /// <summary>
         /// Output type: 1=Digital, 2=Analog

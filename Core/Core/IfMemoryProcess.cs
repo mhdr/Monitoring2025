@@ -363,8 +363,25 @@ public class IfMemoryProcess
             formattedValue = outputValue.ToString("G");
         }
 
-        // Write to output
-        await Points.WriteOrAddValue(memory.OutputItemId, formattedValue, epochTime);
+        // Write to output based on OutputDestinationType
+        if (memory.OutputDestinationType == TimeoutSourceType.Point)
+        {
+            // Write to Point using OutputReference (or fallback to OutputItemId for backward compatibility)
+            if (!string.IsNullOrEmpty(memory.OutputReference) && Guid.TryParse(memory.OutputReference, out var outputGuid))
+            {
+                await Points.WriteOrAddValue(outputGuid, formattedValue, epochTime);
+            }
+            else if (memory.OutputItemId.HasValue)
+            {
+                // Backward compatibility: use OutputItemId if OutputReference is not set
+                await Points.WriteOrAddValue(memory.OutputItemId.Value, formattedValue, epochTime);
+            }
+        }
+        else if (memory.OutputDestinationType == TimeoutSourceType.GlobalVariable)
+        {
+            // Write to Global Variable
+            await GlobalVariableProcess.SetVariable(memory.OutputReference, double.Parse(formattedValue));
+        }
 
         MyLog.Debug("IF Memory evaluated successfully", new Dictionary<string, object?>
         {

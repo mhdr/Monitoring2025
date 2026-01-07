@@ -34,11 +34,22 @@ public class AddIfMemoryRequestDto
     public string VariableAliases { get; set; } = "{}";
 
     /// <summary>
-    /// ID of the output monitoring item to write result to.
-    /// Must match OutputType (DigitalOutput for Digital, AnalogOutput for Analog).
+    /// Type of the output destination: 0=Point, 1=GlobalVariable
     /// </summary>
-    [Required(ErrorMessage = "Output item ID is required")]
-    public Guid OutputItemId { get; set; }
+    public int OutputDestinationType { get; set; } = 0;
+
+    /// <summary>
+    /// Reference to the output destination (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    [Required(ErrorMessage = "Output reference is required")]
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// DEPRECATED: Use OutputDestinationType and OutputReference instead.
+    /// ID of the output monitoring item to write result to.
+    /// Kept for backward compatibility.
+    /// </summary>
+    public Guid? OutputItemId { get; set; }
 
     /// <summary>
     /// Output type: 0 = Digital (0/1), 1 = Analog (numeric)

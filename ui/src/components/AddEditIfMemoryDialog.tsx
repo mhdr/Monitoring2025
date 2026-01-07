@@ -51,9 +51,9 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addIfMemory, editIfMemory, testIfCondition } from '../services/extendedApi';
-import type { IfMemory, MonitoringItem, VariableAlias } from '../types/api';
-import { ItemTypeEnum, IfMemoryOutputType } from '../types/api';
+import { addIfMemory, editIfMemory, testIfCondition, getGlobalVariables } from '../services/extendedApi';
+import type { IfMemory, MonitoringItem, VariableAlias, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, IfMemoryOutputType, TimeoutSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -90,7 +90,9 @@ interface FormData {
   branches: BranchForm[];
   defaultValue: number;
   variableMappings: VariableMapping[];
-  outputItemId: string;
+  outputDestinationType: number;
+  outputReference: string;
+  outputItemId?: string | null;
   outputType: number;
   interval: number;
   isDisabled: boolean;
