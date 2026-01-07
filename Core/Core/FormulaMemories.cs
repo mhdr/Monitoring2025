@@ -54,19 +54,80 @@ public class FormulaMemories
                 return (false, null, validationResult.ErrorMessage);
             }
 
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(formulaMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate output destination (Point or Global Variable)
+            if (formulaMemory.OutputType == TimeoutSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Output item not found");
+                // Validate Point output
+                if (string.IsNullOrEmpty(formulaMemory.OutputReference))
+                {
+                    // Backward compatibility: check OutputItemId
+                    if (!formulaMemory.OutputItemId.HasValue)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Output reference is required");
+                    }
+                    // Use OutputItemId for validation
+                    var outputItem = await context.MonitoringItems.FindAsync(formulaMemory.OutputItemId.Value);
+                    if (outputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Output item not found");
+                    }
+                    if (outputItem.ItemType != ItemType.AnalogOutput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Output item must be AnalogOutput");
+                    }
+                }
+                else
+                {
+                    // Validate OutputReference as GUID
+                    if (!Guid.TryParse(formulaMemory.OutputReference, out var outputGuid))
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Output reference must be a valid GUID for Point output");
+                    }
+                    var outputItem = await context.MonitoringItems.FindAsync(outputGuid);
+                    if (outputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Output item not found");
+                    }
+                    if (outputItem.ItemType != ItemType.AnalogOutput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Output item must be AnalogOutput");
+                    }
+                }
             }
-
-            // Validate OutputItem is AnalogOutput
-            if (outputItem.ItemType != ItemType.AnalogOutput)
+            else if (formulaMemory.OutputType == TimeoutSourceType.GlobalVariable)
             {
-                await context.DisposeAsync();
-                return (false, null, "Output item must be AnalogOutput");
+                // Validate Global Variable output
+                if (string.IsNullOrEmpty(formulaMemory.OutputReference))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output reference (Global Variable name) is required");
+                }
+                
+                var globalVariable = await GlobalVariables.GetGlobalVariableByName(formulaMemory.OutputReference);
+                if (globalVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, $"Global Variable '{formulaMemory.OutputReference}' not found");
+                }
+                
+                if (globalVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, $"Global Variable '{formulaMemory.OutputReference}' is disabled");
+                }
+                
+                // Global Variable must be Float type for formula output
+                if (globalVariable.VariableType != GlobalVariableType.Float)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, $"Output Global Variable must be Float type, but '{formulaMemory.OutputReference}' is Boolean");
+                }
             }
 
             // Parse and validate variable aliases

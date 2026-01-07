@@ -363,7 +363,26 @@ public class FormulaMemoryProcess
 
         // Format and write result to output
         var formattedValue = Math.Round(result, memory.DecimalPlaces).ToString($"F{memory.DecimalPlaces}");
-        await Points.WriteOrAddValue(memory.OutputItemId, formattedValue, epochTime);
+        
+        // Write to output destination (Point or Global Variable)
+        if (memory.OutputType == TimeoutSourceType.Point)
+        {
+            // Write to Point using OutputReference (or fallback to OutputItemId for backward compatibility)
+            if (!string.IsNullOrEmpty(memory.OutputReference) && Guid.TryParse(memory.OutputReference, out var outputGuid))
+            {
+                await Points.WriteOrAddValue(outputGuid, formattedValue, epochTime);
+            }
+            else if (memory.OutputItemId.HasValue)
+            {
+                // Backward compatibility: use OutputItemId if OutputReference is not set
+                await Points.WriteOrAddValue(memory.OutputItemId.Value, formattedValue, epochTime);
+            }
+        }
+        else if (memory.OutputType == TimeoutSourceType.GlobalVariable)
+        {
+            // Write to Global Variable
+            await GlobalVariableProcess.SetVariable(memory.OutputReference, double.Parse(formattedValue));
+        }
 
         // Update last evaluation time and clear any previous error
         if (memory.LastError != null || memory.LastEvaluationTime != epochTime)

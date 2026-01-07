@@ -4960,6 +4960,9 @@
     "expressionPlaceholder": "مثلاً ([v1] + [v2]) / 2 یا sqrt([temp] * [pressure])",
     "outputItem": "آیتم خروجی",
     "outputItemHelp": "آیتم خروجی آنالوگ که نتیجه محاسبه‌شده در آن نوشته می‌شود",
+    "outputType": "نوع خروجی",
+    "outputGlobalVariable": "متغیر سراسری خروجی",
+    "outputGlobalVariableHelp": "متغیر سراسری اعشاری که نتیجه محاسبه را دریافت خواهد کرد",
     "interval": "بازه محاسبه",
     "intervalHelp": "هر چند ثانیه فرمول ارزیابی می‌شود",
     "isDisabled": "غیرفعال",
@@ -5011,6 +5014,8 @@
     "validation": {
       "expressionRequired": "عبارت الزامی است",
       "outputItemRequired": "آیتم خروجی الزامی است",
+      "outputReferenceRequired": "ارجاع خروجی الزامی است",
+      "outputGlobalVariableRequired": "متغیر سراسری خروجی الزامی است",
       "aliasRequired": "نام مستعار متغیر الزامی است",
       "duplicateAlias": "نام مستعار تکراری - هر متغیر باید نام یکتا داشته باشد",
       "itemRequired": "آیتم ورودی برای هر متغیر الزامی است",

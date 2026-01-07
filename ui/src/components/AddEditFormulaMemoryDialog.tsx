@@ -81,7 +81,9 @@ interface FormData {
   name: string;
   expression: string;
   variableMappings: VariableMapping[];
-  outputItemId: string;
+  outputType: VariableSourceType;
+  outputReference: string; // itemId for Point, name for GlobalVariable
+  outputItemId: string; // Deprecated, for backward compatibility
   interval: number;
   isDisabled: boolean;
   units: string;
@@ -199,7 +201,9 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
     name: '',
     expression: '',
     variableMappings: [],
-    outputItemId: '',
+    outputType: VariableSourceType.Point,
+    outputReference: '',
+    outputItemId: '', // For backward compatibility
     interval: 10,
     isDisabled: false,
     units: '',
@@ -242,7 +246,9 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
         name: formulaMemory.name || '',
         expression: formulaMemory.expression || '',
         variableMappings: mappings,
-        outputItemId: formulaMemory.outputItemId,
+        outputType: (formulaMemory.outputType ?? VariableSourceType.Point) as VariableSourceType,
+        outputReference: formulaMemory.outputReference || (formulaMemory.outputItemId ? formulaMemory.outputItemId : ''),
+        outputItemId: formulaMemory.outputItemId || '', // For backward compatibility
         interval: formulaMemory.interval,
         isDisabled: formulaMemory.isDisabled,
         units: formulaMemory.units || '',
@@ -255,6 +261,8 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
         name: '',
         expression: '',
         variableMappings: [],
+        outputType: VariableSourceType.Point,
+        outputReference: '',
         outputItemId: '',
         interval: 10,
         isDisabled: false,
@@ -279,16 +287,27 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
   );
 
   // Filter items by type for output (analog outputs only)
+  // Filter output items (analog outputs only for Point type)
   const outputItems = useMemo(
     () => items.filter((item) => item.itemType === ItemTypeEnum.AnalogOutput),
     [items]
   );
 
-  // Get selected output item
-  const selectedOutputItem = useMemo(
-    () => items.find((item) => item.id === formData.outputItemId),
-    [items, formData.outputItemId]
-  );
+  // Get selected output item (for Point output type)
+  const selectedOutputItem = useMemo(() => {
+    if (formData.outputType === VariableSourceType.Point) {
+      return items.find((item) => item.id === formData.outputReference) || null;
+    }
+    return null;
+  }, [items, formData.outputType, formData.outputReference]);
+
+  // Get selected output global variable (for GlobalVariable output type)
+  const selectedOutputVariable = useMemo(() => {
+    if (formData.outputType === VariableSourceType.GlobalVariable) {
+      return globalVariables.find((v) => v.name === formData.outputReference) || null;
+    }
+    return null;
+  }, [globalVariables, formData.outputType, formData.outputReference]);
 
   // Helper to get item label
   const getItemLabel = useCallback(
@@ -416,6 +435,38 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
     []
   );
 
+  /**
+   * Handle output type toggle (Point vs Global Variable)
+   */
+  const handleOutputTypeChange = (_event: React.MouseEvent<HTMLElement>, newValue: number | null) => {
+    if (newValue !== null) {
+      setFormData((prev) => ({ ...prev, outputType: newValue as VariableSourceType, outputReference: '' }));
+      if (formErrors.outputReference) {
+        setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
+      }
+    }
+  };
+
+  /**
+   * Handle output item change (for Point output type)
+   */
+  const handleOutputItemChange = (_event: React.SyntheticEvent, value: MonitoringItem | null) => {
+    setFormData((prev) => ({ ...prev, outputReference: value?.id || '' }));
+    if (formErrors.outputReference) {
+      setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
+    }
+  };
+
+  /**
+   * Handle output global variable change (for GlobalVariable output type)
+   */
+  const handleOutputVariableChange = (_event: React.SyntheticEvent, value: GlobalVariable | null) => {
+    setFormData((prev) => ({ ...prev, outputReference: value?.name || '' }));
+    if (formErrors.outputReference) {
+      setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
+    }
+  };
+
   const handleFieldChange = (
     field: keyof FormData,
     value: string | number | boolean | VariableMapping[]
@@ -449,8 +500,8 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
       errors.expression = t('formulaMemory.validation.expressionRequired');
     }
 
-    if (!formData.outputItemId) {
-      errors.outputItemId = t('formulaMemory.validation.outputItemRequired');
+    if (!formData.outputReference) {
+      errors.outputReference = t('formulaMemory.validation.outputItemRequired');
     }
 
     // Validate variable mappings
@@ -469,10 +520,10 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
       }
     });
 
-    // Check that output item is not used as input (only for Point type)
+    // Check that output is not used as input (check both type and reference)
     if (formData.variableMappings.some((m) => 
-      m.sourceType === VariableSourceType.Point && m.reference === formData.outputItemId)) {
-      errors.outputItemId = t('formulaMemory.validation.outputUsedAsInput');
+      m.sourceType === formData.outputType && m.reference === formData.outputReference)) {
+      errors.outputReference = t('formulaMemory.validation.outputUsedAsInput');
     }
 
     if (formData.interval < 1) {
@@ -558,7 +609,9 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
           name: formData.name || undefined,
           expression: formData.expression,
           variableAliases: variableAliasesJson,
-          outputItemId: formData.outputItemId,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
+          outputItemId: formData.outputType === VariableSourceType.Point ? formData.outputReference : undefined,
           interval: formData.interval,
           isDisabled: formData.isDisabled,
           units: formData.units || undefined,
@@ -577,7 +630,9 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
           name: formData.name || undefined,
           expression: formData.expression,
           variableAliases: variableAliasesJson,
-          outputItemId: formData.outputItemId,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
+          outputItemId: formData.outputType === VariableSourceType.Point ? formData.outputReference : undefined,
           interval: formData.interval,
           isDisabled: formData.isDisabled,
           units: formData.units || undefined,
@@ -715,48 +770,132 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
                 </IconButton>
               </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Autocomplete
+              {/* Output Type Selection */}
+              <Box>
+                <Typography variant="subtitle2" gutterBottom data-id-ref="formula-memory-output-type-label">
+                  {t('formulaMemory.outputType')} *
+                </Typography>
+                <ToggleButtonGroup
+                  value={formData.outputType}
+                  exclusive
+                  onChange={handleOutputTypeChange}
                   fullWidth
-                  options={outputItems}
-                  value={selectedOutputItem || null}
-                  onChange={(_, newValue) => handleFieldChange('outputItemId', newValue?.id || '')}
-                  getOptionLabel={getItemLabel}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
-                      </Box>
-                    </Box>
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('formulaMemory.outputItem')}
-                      error={!!formErrors.outputItemId}
-                      helperText={formErrors.outputItemId || t('formulaMemory.outputItemHelp')}
-                      required
-                    />
-                  )}
+                  disabled={loading}
+                  data-id-ref="formula-memory-output-type-toggle"
                   sx={{ mb: 2 }}
-                  data-id-ref="formula-memory-output-item-select"
-                />
-                <IconButton
-                  size="small"
-                  onClick={handleHelpOpen('formulaMemory.help.outputItem')}
-                  sx={{ p: 0.25, mt: -3 }}
-                  data-id-ref="formula-memory-output-item-help-btn"
                 >
-                  <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                </IconButton>
+                  <ToggleButton value={VariableSourceType.Point} data-id-ref="formula-memory-output-type-point">
+                    <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                    {t('formulaMemory.sourceTypePoint')}
+                  </ToggleButton>
+                  <ToggleButton value={VariableSourceType.GlobalVariable} data-id-ref="formula-memory-output-type-globalvariable">
+                    <FormulaIcon sx={{ mr: 1 }} fontSize="small" />
+                    {t('formulaMemory.sourceTypeGlobalVariable')}
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
+                {/* Output Item Selection (Point) */}
+                {formData.outputType === VariableSourceType.Point && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Autocomplete
+                      fullWidth
+                      options={outputItems}
+                      value={selectedOutputItem}
+                      onChange={handleOutputItemChange}
+                      getOptionLabel={getItemLabel}
+                      disabled={loading}
+                      data-id-ref="formula-memory-output-item-select"
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {getItemLabel(option)}
+                            </Typography>
+                            <Chip
+                              label={getItemTypeLabel(option.itemType)}
+                              size="small"
+                              color={getItemTypeColor(option.itemType)}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('formulaMemory.outputItem')}
+                          error={!!formErrors.outputReference}
+                          helperText={formErrors.outputReference || t('formulaMemory.outputItemHelp')}
+                          required
+                        />
+                      )}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('formulaMemory.help.outputItem')}
+                      sx={{ p: 0.25, mt: -3 }}
+                      data-id-ref="formula-memory-output-item-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
+                )}
+
+                {/* Output Global Variable Selection */}
+                {formData.outputType === VariableSourceType.GlobalVariable && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Autocomplete
+                      fullWidth
+                      options={globalVariables.filter(v => v.variableType === 1)} // Only Float type for output
+                      value={selectedOutputVariable}
+                      onChange={handleOutputVariableChange}
+                      getOptionLabel={(option) => option.name}
+                      disabled={loading || loadingGlobalVariables}
+                      data-id-ref="formula-memory-output-variable-select"
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {option.name}
+                            </Typography>
+                            <Chip
+                              label={t('globalVariables.type.float')}
+                              size="small"
+                              color="primary"
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={t('formulaMemory.outputGlobalVariable')}
+                          error={!!formErrors.outputReference}
+                          helperText={formErrors.outputReference || t('formulaMemory.outputGlobalVariableHelp')}
+                          required
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={handleHelpOpen('formulaMemory.help.outputGlobalVariable')}
+                      sx={{ p: 0.25, mt: -3 }}
+                      data-id-ref="formula-memory-output-variable-help-btn"
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
+                    </IconButton>
+                  </Box>
+                )}
               </Box>
 
               <Box sx={{ display: 'flex', gap: 2 }}>

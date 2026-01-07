@@ -5376,6 +5376,9 @@
     "expressionPlaceholder": "e.g., ([v1] + [v2]) / 2 or sqrt([temp] * [pressure])",
     "outputItem": "Output Item",
     "outputItemHelp": "The analog output item where the calculated result will be written",
+    "outputType": "Output Type",
+    "outputGlobalVariable": "Output Global Variable",
+    "outputGlobalVariableHelp": "Float Global Variable that will receive the calculated result",
     "interval": "Calculation Interval",
     "intervalHelp": "How often the formula is evaluated (in seconds)",
     "isDisabled": "Disabled",
@@ -5427,6 +5430,8 @@
     "validation": {
       "expressionRequired": "Expression is required",
       "outputItemRequired": "Output item is required",
+      "outputReferenceRequired": "Output reference is required",
+      "outputGlobalVariableRequired": "Output global variable is required",
       "aliasRequired": "Variable alias is required",
       "duplicateAlias": "Duplicate alias - each variable must have a unique alias",
       "itemRequired": "Input item is required for each variable",

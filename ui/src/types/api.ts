@@ -3783,8 +3783,10 @@ export interface FormulaMemory {
   id: string; // UUID
   name?: string | null;
   expression: string; // NCalc expression using [alias] syntax for variables
-  variableAliases: string; // JSON object mapping alias -> item GUID
-  outputItemId: string; // UUID - Output item for computed result
+  variableAliases: string; // JSON object mapping alias -> item GUID or @GV:variableName
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string (Point) or variable name (GlobalVariable)
+  outputItemId?: string | null; // UUID - Deprecated, for backward compatibility
   interval: number; // int - Evaluation interval in seconds
   isDisabled: boolean;
   decimalPlaces: number; // int - Decimal places for formatting (0-10)
@@ -3833,7 +3835,9 @@ export interface AddFormulaMemoryRequestDto {
   name?: string | null;
   expression: string; // NCalc expression
   variableAliases: string; // JSON object {"alias": "guid", ...}
-  outputItemId: string; // UUID
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // Point ID (UUID) or Global Variable name
+  outputItemId?: string | null; // UUID - for backward compatibility
   interval: number; // int - must be > 0
   isDisabled?: boolean;
   decimalPlaces?: number; // int - 0-10, default 2
@@ -3858,7 +3862,9 @@ export interface EditFormulaMemoryRequestDto {
   name?: string | null;
   expression: string;
   variableAliases: string;
-  outputItemId: string; // UUID
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // Point ID (UUID) or Global Variable name
+  outputItemId?: string | null; // UUID - for backward compatibility
   interval: number; // int - must be > 0
   isDisabled?: boolean;
   decimalPlaces?: number;

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Core.Models;
 
 namespace API.Models.Dto;
 
@@ -33,10 +34,24 @@ public class EditFormulaMemoryRequestDto
     public string VariableAliases { get; set; } = "{}";
 
     /// <summary>
-    /// ID of the output monitoring item to write computed result to.
+    /// Type of the output destination: Point or GlobalVariable
     /// </summary>
-    [Required(ErrorMessage = "Output item ID is required")]
-    public Guid OutputItemId { get; set; }
+    public TimeoutSourceType OutputType { get; set; } = TimeoutSourceType.Point;
+
+    /// <summary>
+    /// Reference to the output destination:
+    /// - If OutputType = Point: GUID string of the AnalogOutput MonitoringItem
+    /// - If OutputType = GlobalVariable: Name of the Global Variable (Float type)
+    /// </summary>
+    [Required(ErrorMessage = "Output reference is required")]
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// DEPRECATED: Use OutputType and OutputReference instead.
+    /// ID of the output monitoring item to write computed result to.
+    /// Kept for backward compatibility.
+    /// </summary>
+    public Guid? OutputItemId { get; set; }
 
     /// <summary>
     /// Execution interval in seconds (must be greater than 0)

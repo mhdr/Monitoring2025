@@ -1,3 +1,5 @@
+using Core.Models;
+
 namespace API.Models.Dto;
 
 /// <summary>
@@ -30,7 +32,9 @@ public class FormulaMemoryItemDto
     public string? Name { get; set; }
     public string Expression { get; set; } = "";
     public string VariableAliases { get; set; } = "{}";
-    public Guid OutputItemId { get; set; }
+    public TimeoutSourceType OutputType { get; set; }
+    public string OutputReference { get; set; } = string.Empty;
+    public Guid? OutputItemId { get; set; } // Deprecated, for backward compatibility
     public int Interval { get; set; }
     public bool IsDisabled { get; set; }
     public int DecimalPlaces { get; set; }

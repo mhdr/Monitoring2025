@@ -53,11 +53,26 @@ public class FormulaMemory
     public string VariableAliases { get; set; } = "{}";
 
     /// <summary>
+    /// Type of the output destination: Point or GlobalVariable
+    /// </summary>
+    [Column("output_type")]
+    public TimeoutSourceType OutputType { get; set; } = TimeoutSourceType.Point;
+
+    /// <summary>
+    /// Reference to the output destination:
+    /// - If OutputType = Point: GUID string of the AnalogOutput MonitoringItem
+    /// - If OutputType = GlobalVariable: Name of the Global Variable (Float type)
+    /// </summary>
+    [Column("output_reference")]
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// DEPRECATED: Use OutputType and OutputReference instead.
     /// The AnalogOutput item that receives the computed result.
-    /// Must be ItemType.AnalogOutput.
+    /// Kept for backward compatibility with existing database records.
     /// </summary>
     [Column("output_item_id")]
-    public Guid OutputItemId { get; set; }
+    public Guid? OutputItemId { get; set; }
 
     /// <summary>
     /// Processing interval in seconds. The expression is evaluated at this frequency.

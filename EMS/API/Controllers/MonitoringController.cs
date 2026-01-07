@@ -12360,7 +12360,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         Name = memory.Name,
                         Expression = memory.Expression,
                         VariableAliases = memory.VariableAliases,
-                        OutputItemId = memory.OutputItemId,
+                        OutputType = memory.OutputType,
+                        OutputReference = memory.OutputReference,
+                        OutputItemId = memory.OutputItemId, // For backward compatibility
                         Interval = memory.Interval,
                         IsDisabled = memory.IsDisabled,
                         DecimalPlaces = memory.DecimalPlaces,
@@ -12439,7 +12441,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 Name = request.Name,
                 Expression = request.Expression,
                 VariableAliases = request.VariableAliases,
-                OutputItemId = request.OutputItemId,
+                OutputType = request.OutputType,
+                OutputReference = request.OutputReference,
+                OutputItemId = request.OutputItemId, // For backward compatibility
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 DecimalPlaces = request.DecimalPlaces,
@@ -12510,7 +12514,9 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 Name = request.Name,
                 Expression = request.Expression,
                 VariableAliases = request.VariableAliases,
-                OutputItemId = request.OutputItemId,
+                OutputType = request.OutputType,
+                OutputReference = request.OutputReference,
+                OutputItemId = request.OutputItemId, // For backward compatibility
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 DecimalPlaces = request.DecimalPlaces,
