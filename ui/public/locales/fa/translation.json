@@ -5495,6 +5495,8 @@
     "name": "نام",
     "inputItem": "آیتم ورودی",
     "outputItem": "آیتم خروجی",
+    "inputSource": "منبع ورودی",
+    "outputSource": "منبع خروجی",
     "interval": "بازه",
     "enabled": "فعال",
     "mode": "حالت",

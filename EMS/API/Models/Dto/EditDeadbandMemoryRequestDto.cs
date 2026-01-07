@@ -19,15 +19,37 @@ public class EditDeadbandMemoryRequestDto
     public string? Name { get; set; }
 
     /// <summary>
-    /// ID of the input monitoring item (AnalogInput, AnalogOutput, DigitalInput, or DigitalOutput)
+    /// Type of the input source: 0=Point, 1=GlobalVariable
     /// </summary>
-    [Required(ErrorMessage = "Input item ID is required")]
+    [Range(0, 1, ErrorMessage = "Input type must be 0 (Point) or 1 (GlobalVariable)")]
+    public int InputType { get; set; } = 0;
+    
+    /// <summary>
+    /// Reference to the input source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    [Required(ErrorMessage = "Input reference is required")]
+    public string InputReference { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Type of the output source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    [Range(0, 1, ErrorMessage = "Output type must be 0 (Point) or 1 (GlobalVariable)")]
+    public int OutputType { get; set; } = 0;
+    
+    /// <summary>
+    /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    [Required(ErrorMessage = "Output reference is required")]
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// [DEPRECATED] ID of the input monitoring item - Use InputReference and InputType instead
+    /// </summary>
     public Guid InputItemId { get; set; }
 
     /// <summary>
-    /// ID of the output monitoring item (AnalogOutput for analog inputs, DigitalOutput for digital inputs)
+    /// [DEPRECATED] ID of the output monitoring item - Use OutputReference and OutputType instead
     /// </summary>
-    [Required(ErrorMessage = "Output item ID is required")]
     public Guid OutputItemId { get; set; }
 
     /// <summary>

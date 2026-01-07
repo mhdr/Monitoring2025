@@ -57,57 +57,127 @@ public class DeadbandMemories
         {
             var context = new DataContext();
             
-            // Validate InputItem exists
-            var inputItem = await context.MonitoringItems.FindAsync(memory.InputItemId);
-            if (inputItem == null)
+            // Validate input source
+            bool inputIsAnalog = false;
+            bool inputIsDigital = false;
+            
+            if (memory.InputType == DeadbandSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Input item not found");
+                // Validate InputItem exists
+                if (!Guid.TryParse(memory.InputReference, out Guid inputItemGuid))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input item reference is invalid");
+                }
+
+                var inputItem = await context.MonitoringItems.FindAsync(inputItemGuid);
+                if (inputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input item not found");
+                }
+
+                // Validate InputItem type (must be analog or digital input/output)
+                if (!IsAnalogType(inputItem.ItemType) && !IsDigitalType(inputItem.ItemType))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input item must be AnalogInput, AnalogOutput, DigitalInput, or DigitalOutput");
+                }
+                
+                inputIsAnalog = IsAnalogType(inputItem.ItemType);
+                inputIsDigital = IsDigitalType(inputItem.ItemType);
+            }
+            else if (memory.InputType == DeadbandSourceType.GlobalVariable)
+            {
+                // Validate GlobalVariable exists
+                var inputVariable = await context.GlobalVariables
+                    .FirstOrDefaultAsync(g => g.Name == memory.InputReference);
+                    
+                if (inputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input global variable not found");
+                }
+                
+                // Variable type: Boolean=Digital, Float=Analog
+                inputIsAnalog = inputVariable.VariableType == GlobalVariableType.Float;
+                inputIsDigital = inputVariable.VariableType == GlobalVariableType.Boolean;
             }
 
-            // Validate InputItem type (must be analog or digital input/output)
-            if (!IsAnalogType(inputItem.ItemType) && !IsDigitalType(inputItem.ItemType))
+            // Validate output source
+            if (memory.OutputType == DeadbandSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Input item must be AnalogInput, AnalogOutput, DigitalInput, or DigitalOutput");
+                // Validate OutputItem exists
+                if (!Guid.TryParse(memory.OutputReference, out Guid outputItemGuid))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item reference is invalid");
+                }
+
+                var outputItem = await context.MonitoringItems.FindAsync(outputItemGuid);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item not found");
+                }
+
+                // Validate OutputItem type matches InputItem category
+                bool outputIsAnalog = IsAnalogType(outputItem.ItemType);
+                bool outputIsOutput = outputItem.ItemType == ItemType.AnalogOutput || outputItem.ItemType == ItemType.DigitalOutput;
+
+                if (!outputIsOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item must be AnalogOutput or DigitalOutput");
+                }
+
+                if (inputIsAnalog && outputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Analog input requires AnalogOutput as output item");
+                }
+
+                if (inputIsDigital && outputItem.ItemType != ItemType.DigitalOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Digital input requires DigitalOutput as output item");
+                }
+            }
+            else if (memory.OutputType == DeadbandSourceType.GlobalVariable)
+            {
+                // Validate GlobalVariable exists
+                var outputVariable = await context.GlobalVariables
+                    .FirstOrDefaultAsync(g => g.Name == memory.OutputReference);
+                    
+                if (outputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable not found");
+                }
+                
+                // Validate type match
+                bool outputIsAnalog = outputVariable.VariableType == GlobalVariableType.Float;
+                bool outputIsDigital = outputVariable.VariableType == GlobalVariableType.Boolean;
+                
+                if (inputIsAnalog && !outputIsAnalog)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Analog input requires analog output global variable");
+                }
+
+                if (inputIsDigital && !outputIsDigital)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Digital input requires digital output global variable");
+                }
             }
 
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(memory.OutputItemId);
-            if (outputItem == null)
+            // Validate input != output (if both are same type and reference)
+            if (memory.InputType == memory.OutputType && 
+                memory.InputReference == memory.OutputReference)
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item not found");
-            }
-
-            // Validate OutputItem type matches InputItem category
-            bool inputIsAnalog = IsAnalogType(inputItem.ItemType);
-            bool outputIsAnalog = IsAnalogType(outputItem.ItemType);
-            bool outputIsOutput = outputItem.ItemType == ItemType.AnalogOutput || outputItem.ItemType == ItemType.DigitalOutput;
-
-            if (!outputIsOutput)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Output item must be AnalogOutput or DigitalOutput");
-            }
-
-            if (inputIsAnalog && outputItem.ItemType != ItemType.AnalogOutput)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Analog input requires AnalogOutput as output item");
-            }
-
-            if (!inputIsAnalog && outputItem.ItemType != ItemType.DigitalOutput)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Digital input requires DigitalOutput as output item");
-            }
-
-            // Validate InputItemId != OutputItemId
-            if (memory.InputItemId == memory.OutputItemId)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Input and output items must be different");
+                return (false, null, "Input and output sources must be different");
             }
 
             // Validate Interval > 0

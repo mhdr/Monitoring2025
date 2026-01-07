@@ -13103,8 +13103,12 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 {
                     Id = m.Id,
                     Name = m.Name,
-                    InputItemId = m.InputItemId,
-                    OutputItemId = m.OutputItemId,
+                    InputType = (int)m.InputType,
+                    InputReference = m.InputReference,
+                    OutputType = (int)m.OutputType,
+                    OutputReference = m.OutputReference,
+                    InputItemId = m.InputItemId,  // Backward compatibility
+                    OutputItemId = m.OutputItemId, // Backward compatibility
                     Interval = m.Interval,
                     IsDisabled = m.IsDisabled,
                     Deadband = m.Deadband,
@@ -13197,8 +13201,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             var memory = new Core.Models.DeadbandMemory
             {
                 Name = request.Name,
-                InputItemId = request.InputItemId,
-                OutputItemId = request.OutputItemId,
+                InputType = (Core.Models.DeadbandSourceType)request.InputType,
+                InputReference = request.InputReference,
+                OutputType = (Core.Models.DeadbandSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 Deadband = request.Deadband,
@@ -13273,8 +13279,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 Id = request.Id,
                 Name = request.Name,
-                InputItemId = request.InputItemId,
-                OutputItemId = request.OutputItemId,
+                InputType = (Core.Models.DeadbandSourceType)request.InputType,
+                InputReference = request.InputReference,
+                OutputType = (Core.Models.DeadbandSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 Deadband = request.Deadband,

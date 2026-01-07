@@ -2761,6 +2761,15 @@ export const TimeoutSourceType = {
 };
 
 /**
+ * Enum for DeadbandMemory source types
+ */
+export type DeadbandSourceType = 0 | 1;
+export const DeadbandSourceType = {
+  Point: 0 as const,
+  GlobalVariable: 1 as const,
+};
+
+/**
  * Enum for StatisticalMemory source types
  */
 export type StatisticalSourceType = 0 | 1;
@@ -4089,12 +4098,23 @@ export type DeadbandType = (typeof DeadbandType)[keyof typeof DeadbandType];
  * 
  * For analog inputs: Uses value-based deadband (Absolute/Percentage/RateOfChange)
  * For digital inputs: Uses time-based stability filtering (debounce)
+ * 
+ * Input and output sources can be either Points (MonitoringItems) or Global Variables.
  */
 export interface DeadbandMemory {
   id: string; // UUID
   name?: string | null;
-  inputItemId: string; // UUID - Input item (analog or digital)
-  outputItemId: string; // UUID - Output item (must match input type category)
+  
+  // Source type fields (new flexible design)
+  inputType: number; // 0=Point, 1=GlobalVariable
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable
+  
+  // Legacy fields (backward compatibility)
+  inputItemId: string; // UUID - Input item (analog or digital) - DEPRECATED
+  outputItemId: string; // UUID - Output item (must match input type category) - DEPRECATED
+  
   interval: number; // int - Processing interval in seconds
   isDisabled: boolean; // bool
   
@@ -4119,12 +4139,16 @@ export interface DeadbandMemory {
  * Extended Deadband Memory with resolved item names for UI display
  */
 export interface DeadbandMemoryWithItems extends DeadbandMemory {
+  inputSourceName?: string; // Resolved name of input (Point name or GlobalVariable name)
+  inputItemType?: ItemType; // Only applicable when inputType=Point
+  outputSourceName?: string; // Resolved name of output (Point name or GlobalVariable name)
+  outputItemType?: ItemType; // Only applicable when outputType=Point
+  
+  // Legacy fields (backward compatibility)
   inputItemName?: string;
   inputItemNameFa?: string;
-  inputItemType?: ItemType;
   outputItemName?: string;
   outputItemNameFa?: string;
-  outputItemType?: ItemType;
 }
 
 /**
@@ -4149,8 +4173,17 @@ export interface GetDeadbandMemoriesResponseDto {
  */
 export interface AddDeadbandMemoryRequestDto {
   name?: string | null;
-  inputItemId: string; // UUID
-  outputItemId: string; // UUID
+  
+  // Source type fields (new flexible design)
+  inputType: number; // 0=Point, 1=GlobalVariable
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable
+  
+  // Legacy fields (backward compatibility)
+  inputItemId?: string; // UUID - DEPRECATED
+  outputItemId?: string; // UUID - DEPRECATED
+  
   interval: number; // int - must be > 0
   isDisabled?: boolean;
   
@@ -4179,8 +4212,17 @@ export interface AddDeadbandMemoryResponseDto {
 export interface EditDeadbandMemoryRequestDto {
   id: string; // UUID
   name?: string | null;
-  inputItemId: string; // UUID
-  outputItemId: string; // UUID
+  
+  // Source type fields (new flexible design)
+  inputType: number; // 0=Point, 1=GlobalVariable
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  outputType: number; // 0=Point, 1=GlobalVariable
+  outputReference: string; // GUID string for Point, name for GlobalVariable
+  
+  // Legacy fields (backward compatibility)
+  inputItemId?: string; // UUID - DEPRECATED
+  outputItemId?: string; // UUID - DEPRECATED
+  
   interval: number; // int - must be > 0
   isDisabled?: boolean;
   

@@ -28,6 +28,22 @@ public enum DeadbandType
 }
 
 /// <summary>
+/// Specifies the source type for deadband memory input or output
+/// </summary>
+public enum DeadbandSourceType
+{
+    /// <summary>
+    /// Reference is a Point (MonitoringItem) GUID
+    /// </summary>
+    Point = 0,
+    
+    /// <summary>
+    /// Reference is a Global Variable name
+    /// </summary>
+    GlobalVariable = 1
+}
+
+/// <summary>
 /// Deadband/Hysteresis Memory for reducing output chatter from noisy inputs
 /// 
 /// Use cases:
@@ -39,6 +55,8 @@ public enum DeadbandType
 /// 
 /// For analog inputs: Uses value-based deadband (Absolute/Percentage/RateOfChange)
 /// For digital inputs: Uses time-based stability filtering (must remain stable for StabilityTime seconds)
+/// 
+/// Input and output sources can be either Points (MonitoringItems) or Global Variables.
 /// </summary>
 [Table("deadband_memory")]
 public class DeadbandMemory
@@ -54,18 +72,32 @@ public class DeadbandMemory
     public string? Name { get; set; }
 
     /// <summary>
-    /// Input monitoring item ID (can be AnalogInput, AnalogOutput, DigitalInput, or DigitalOutput)
+    /// Type of the input source: Point or GlobalVariable
     /// </summary>
-    [Column("input_item_id")]
-    public Guid InputItemId { get; set; }
+    [Column("input_type")] 
+    public DeadbandSourceType InputType { get; set; } = DeadbandSourceType.Point;
     
     /// <summary>
-    /// Output monitoring item ID where filtered value is written
-    /// For analog inputs: must be AnalogOutput
-    /// For digital inputs: must be DigitalOutput
+    /// Reference to the input source to monitor.
+    /// - If InputType = Point: GUID string of the MonitoringItem (AnalogInput, AnalogOutput, DigitalInput, or DigitalOutput)
+    /// - If InputType = GlobalVariable: Name of the Global Variable
     /// </summary>
-    [Column("output_item_id")]
-    public Guid OutputItemId { get; set; }
+    [Column("input_reference")] 
+    public string InputReference { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Type of the output source: Point or GlobalVariable
+    /// </summary>
+    [Column("output_type")] 
+    public DeadbandSourceType OutputType { get; set; } = DeadbandSourceType.Point;
+    
+    /// <summary>
+    /// Reference to the output source that receives the filtered value.
+    /// - If OutputType = Point: GUID string of the MonitoringItem (AnalogOutput for analog, DigitalOutput for digital)
+    /// - If OutputType = GlobalVariable: Name of the Global Variable (Boolean or Float type)
+    /// </summary>
+    [Column("output_reference")] 
+    public string OutputReference { get; set; } = string.Empty;
 
     /// <summary>
     /// Processing interval in seconds
@@ -156,4 +188,38 @@ public class DeadbandMemory
     /// </summary>
     [Column("last_timestamp")]
     public long? LastTimestamp { get; set; }
+    
+    // ==================== Backward Compatibility Properties ====================
+    
+    /// <summary>
+    /// [OBSOLETE] Use InputReference and InputType instead.
+    /// For backward compatibility only. When InputType is Point, this returns InputReference as GUID.
+    /// </summary>
+    [Obsolete("Use InputReference and InputType instead")]
+    [NotMapped]
+    public Guid InputItemId
+    {
+        get => InputType == DeadbandSourceType.Point && Guid.TryParse(InputReference, out var guid) ? guid : Guid.Empty;
+        set
+        {
+            InputType = DeadbandSourceType.Point;
+            InputReference = value.ToString();
+        }
+    }
+    
+    /// <summary>
+    /// [OBSOLETE] Use OutputReference and OutputType instead.
+    /// For backward compatibility only. When OutputType is Point, this returns OutputReference as GUID.
+    /// </summary>
+    [Obsolete("Use OutputReference and OutputType instead")]
+    [NotMapped]
+    public Guid OutputItemId
+    {
+        get => OutputType == DeadbandSourceType.Point && Guid.TryParse(OutputReference, out var guid) ? guid : Guid.Empty;
+        set
+        {
+            OutputType = DeadbandSourceType.Point;
+            OutputReference = value.ToString();
+        }
+    }
 }

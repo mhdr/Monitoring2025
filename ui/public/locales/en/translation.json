@@ -5911,6 +5911,8 @@
     "name": "Name",
     "inputItem": "Input Item",
     "outputItem": "Output Item",
+    "inputSource": "Input Source",
+    "outputSource": "Output Source",
     "interval": "Interval",
     "enabled": "Enabled",
     "mode": "Mode",

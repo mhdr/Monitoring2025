@@ -19,18 +19,22 @@ import {
   Chip,
   IconButton,
   InputAdornment,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   Tune as TuneIcon,
   HelpOutline as HelpOutlineIcon,
   Speed as SpeedIcon,
   Timer as TimerIcon,
+  Memory as MemoryIcon,
+  Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addDeadbandMemory, editDeadbandMemory } from '../services/extendedApi';
-import type { DeadbandMemoryWithItems, Item, ItemType } from '../types/api';
-import { ItemTypeEnum, DeadbandType } from '../types/api';
+import { addDeadbandMemory, editDeadbandMemory, getGlobalVariables } from '../services/extendedApi';
+import type { DeadbandMemoryWithItems, Item, ItemType, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, DeadbandType, DeadbandSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -133,8 +137,16 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
 
   // Form state
   const [name, setName] = useState('');
+  
+  // Source type toggles
+  const [inputType, setInputType] = useState<number>(DeadbandSourceType.Point);
+  const [outputType, setOutputType] = useState<number>(DeadbandSourceType.Point);
+  
   const [inputItem, setInputItem] = useState<Item | null>(null);
   const [outputItem, setOutputItem] = useState<Item | null>(null);
+  const [inputVariable, setInputVariable] = useState<GlobalVariable | null>(null);
+  const [outputVariable, setOutputVariable] = useState<GlobalVariable | null>(null);
+  
   const [interval, setInterval] = useState(1);
   const [isDisabled, setIsDisabled] = useState(false);
 
@@ -147,6 +159,10 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
   // Digital-specific fields
   const [stabilityTime, setStabilityTime] = useState(1);
 
+  // Global variables
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
+  const [loadingGlobalVariables, setLoadingGlobalVariables] = useState(false);
+
   // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,12 +172,20 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
    * Detect if current input is analog or digital
    */
   const isAnalogInput = useMemo(() => {
+    if (inputType === DeadbandSourceType.GlobalVariable && inputVariable) {
+      // For global variables, check the variableType: Float=1 (Analog), Boolean=0 (Digital)
+      return inputVariable.variableType === 1; // Float = Analog
+    }
     return inputItem ? isAnalogType(inputItem.itemType) : null;
-  }, [inputItem]);
+  }, [inputItem, inputType, inputVariable]);
 
   const isDigitalInput = useMemo(() => {
+    if (inputType === DeadbandSourceType.GlobalVariable && inputVariable) {
+      // For global variables, check the variableType: Float=1 (Analog), Boolean=0 (Digital)
+      return inputVariable.variableType === 0; // Boolean = Digital
+    }
     return inputItem ? isDigitalType(inputItem.itemType) : null;
-  }, [inputItem]);
+  }, [inputItem, inputType, inputVariable]);
 
   /**
    * Filter items for input selection (only input types)
@@ -174,19 +198,33 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
    * Filter items for output selection based on selected input type
    */
   const outputItems = useMemo(() => {
-    if (!inputItem) {
+    // When output type is GlobalVariable, this filter is not used
+    if (outputType === DeadbandSourceType.GlobalVariable) {
+      return [];
+    }
+
+    // Check input source type and determine analog/digital
+    let inputIsAnalog: boolean | null = null;
+    if (inputType === DeadbandSourceType.Point && inputItem) {
+      inputIsAnalog = isAnalogType(inputItem.itemType);
+    } else if (inputType === DeadbandSourceType.GlobalVariable && inputVariable) {
+      inputIsAnalog = inputVariable.variableType === 1;
+    }
+
+    if (inputIsAnalog === null) {
       // If no input selected, show all output types
       return items.filter((item) => isOutputType(item.itemType));
     }
 
     // Filter to matching output type (analog→analogOut, digital→digitalOut)
-    const matchingOutputType = getMatchingOutputType(inputItem.itemType);
-    if (!matchingOutputType) {
-      return items.filter((item) => isOutputType(item.itemType));
+    if (inputIsAnalog) {
+      // Analog input needs Analog Output
+      return items.filter((item) => item.itemType === 3); // AnalogOutput = 3
+    } else {
+      // Digital input needs Digital Output
+      return items.filter((item) => item.itemType === 2); // DigitalOutput = 2
     }
-
-    return items.filter((item) => item.itemType === matchingOutputType);
-  }, [items, inputItem]);
+  }, [items, inputItem, inputVariable, inputType, outputType]);
 
   /**
    * Handle help popover
@@ -200,12 +238,38 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
   };
 
   /**
+   * Fetch global variables when dialog opens
+   */
+  useEffect(() => {
+    const fetchGlobalVariables = async () => {
+      if (open) {
+        setLoadingGlobalVariables(true);
+        try {
+          const response = await getGlobalVariables({});
+          if (response?.globalVariables) {
+            setGlobalVariables(response.globalVariables);
+            logger.log('Global variables loaded', { count: response.globalVariables.length });
+          }
+        } catch (err) {
+          logger.error('Failed to fetch global variables', { error: err });
+        } finally {
+          setLoadingGlobalVariables(false);
+        }
+      }
+    };
+
+    fetchGlobalVariables();
+  }, [open]);
+
+  /**
    * Initialize form when dialog opens or memory changes
    */
   useEffect(() => {
     if (open) {
       if (editMode && deadbandMemory) {
         setName(deadbandMemory.name || '');
+        setInputType(deadbandMemory.inputType);
+        setOutputType(deadbandMemory.outputType);
         setInterval(deadbandMemory.interval);
         setIsDisabled(deadbandMemory.isDisabled);
         setDeadband(deadbandMemory.deadband);
@@ -214,16 +278,36 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
         setInputMax(deadbandMemory.inputMax);
         setStabilityTime(deadbandMemory.stabilityTime);
 
-        // Find items
-        const foundInputItem = items.find((item) => item.id === deadbandMemory.inputItemId) || null;
-        const foundOutputItem = items.find((item) => item.id === deadbandMemory.outputItemId) || null;
-        setInputItem(foundInputItem);
-        setOutputItem(foundOutputItem);
+        // Handle input source
+        if (deadbandMemory.inputType === DeadbandSourceType.Point) {
+          const foundInputItem = items.find((item) => item.id === deadbandMemory.inputReference) || null;
+          setInputItem(foundInputItem);
+          setInputVariable(null);
+        } else {
+          const foundInputVar = globalVariables.find((v) => v.name === deadbandMemory.inputReference) || null;
+          setInputVariable(foundInputVar);
+          setInputItem(null);
+        }
+
+        // Handle output source
+        if (deadbandMemory.outputType === DeadbandSourceType.Point) {
+          const foundOutputItem = items.find((item) => item.id === deadbandMemory.outputReference) || null;
+          setOutputItem(foundOutputItem);
+          setOutputVariable(null);
+        } else {
+          const foundOutputVar = globalVariables.find((v) => v.name === deadbandMemory.outputReference) || null;
+          setOutputVariable(foundOutputVar);
+          setOutputItem(null);
+        }
       } else {
         // Reset for add mode
         setName('');
+        setInputType(DeadbandSourceType.Point);
+        setOutputType(DeadbandSourceType.Point);
         setInputItem(null);
         setOutputItem(null);
+        setInputVariable(null);
+        setOutputVariable(null);
         setInterval(1);
         setIsDisabled(false);
         setDeadband(0);
@@ -234,7 +318,7 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
       }
       setError(null);
     }
-  }, [open, editMode, deadbandMemory, items]);
+  }, [open, editMode, deadbandMemory, items, globalVariables]);
 
   /**
    * Clear output item when input item type changes (to ensure matching types)
@@ -262,12 +346,22 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
         return;
       }
 
-      if (!inputItem) {
+      // Validate input source
+      const inputReference = inputType === DeadbandSourceType.Point 
+        ? (inputItem?.id || '') 
+        : (inputVariable?.name || '');
+      
+      if (!inputReference) {
         setError(t('deadbandMemory.errors.inputItemRequired'));
         return;
       }
 
-      if (!outputItem) {
+      // Validate output source
+      const outputReference = outputType === DeadbandSourceType.Point
+        ? (outputItem?.id || '')
+        : (outputVariable?.name || '');
+      
+      if (!outputReference) {
         setError(t('deadbandMemory.errors.outputItemRequired'));
         return;
       }
@@ -305,8 +399,10 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
         const response = await editDeadbandMemory({
           id: deadbandMemory.id,
           name: name.trim(),
-          inputItemId: inputItem.id,
-          outputItemId: outputItem.id,
+          inputType,
+          inputReference,
+          outputType,
+          outputReference,
           interval,
           isDisabled,
           deadband: isAnalogInput ? deadband : 0,
@@ -326,8 +422,10 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
         // Add new
         const response = await addDeadbandMemory({
           name: name.trim(),
-          inputItemId: inputItem.id,
-          outputItemId: outputItem.id,
+          inputType,
+          inputReference,
+          outputType,
+          outputReference,
           interval,
           isDisabled,
           deadband: isAnalogInput ? deadband : 0,
@@ -355,8 +453,12 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
     }
   }, [
     name,
+    inputType,
     inputItem,
+    inputVariable,
+    outputType,
     outputItem,
+    outputVariable,
     interval,
     isDisabled,
     deadband,
@@ -509,86 +611,254 @@ const AddEditDeadbandMemoryDialog: React.FC<Props> = ({ open, onClose, deadbandM
             <Divider sx={{ my: 1 }} />
           </Grid>
 
-          {/* Input Item */}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-              <Autocomplete
-                options={inputItems}
-                value={inputItem}
-                onChange={(_, newValue) => setInputItem(newValue)}
-                getOptionLabel={getItemLabel}
-                renderOption={renderItemOption}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={t('deadbandMemory.inputItem')}
-                    required
-                    data-id-ref="deadband-memory-input-item-input"
-                  />
-                )}
-                disabled={loading}
-                fullWidth
-                data-id-ref="deadband-memory-input-item-autocomplete"
-              />
-              <IconButton
-                size="small"
-                onClick={handleHelpOpen('inputItem')}
-                sx={{ mt: 1 }}
-                data-id-ref="deadband-memory-input-item-help-btn"
-              >
-                <HelpOutlineIcon fontSize="small" />
-              </IconButton>
-            </Box>
-            <FieldHelpPopover
-              anchorEl={helpAnchorEl['inputItem']}
-              open={Boolean(helpAnchorEl['inputItem'])}
-              onClose={handleHelpClose('inputItem')}
-              fieldKey="deadbandMemory.help.inputItem"
-            />
+          {/* Input Source Type */}
+          <Grid size={{ xs: 12 }}>
+            <Typography variant="subtitle2" gutterBottom data-id-ref="deadband-memory-input-type-label">
+              {t('deadbandMemory.inputSource')} *
+            </Typography>
+            <ToggleButtonGroup
+              value={inputType}
+              exclusive
+              onChange={(_, value) => {
+                if (value !== null) {
+                  setInputType(value);
+                  setInputItem(null);
+                  setInputVariable(null);
+                }
+              }}
+              fullWidth
+              disabled={loading}
+              data-id-ref="deadband-memory-input-type-toggle"
+              sx={{ mb: 2 }}
+            >
+              <ToggleButton value={DeadbandSourceType.Point} data-id-ref="deadband-memory-input-type-point">
+                <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                {t('common.point')}
+              </ToggleButton>
+              <ToggleButton value={DeadbandSourceType.GlobalVariable} data-id-ref="deadband-memory-input-type-globalvariable">
+                <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                {t('common.globalVariable')}
+              </ToggleButton>
+            </ToggleButtonGroup>
           </Grid>
 
-          {/* Output Item */}
+          {/* Input Source Selection */}
           <Grid size={{ xs: 12, sm: 6 }}>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-              <Autocomplete
-                options={outputItems}
-                value={outputItem}
-                onChange={(_, newValue) => setOutputItem(newValue)}
-                getOptionLabel={getItemLabel}
-                renderOption={renderItemOption}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={t('deadbandMemory.outputItem')}
-                    required
-                    data-id-ref="deadband-memory-output-item-input"
+            <>
+              {inputType === DeadbandSourceType.Point ? (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <Autocomplete
+                    options={inputItems}
+                    value={inputItem}
+                    onChange={(_, newValue) => setInputItem(newValue)}
+                    getOptionLabel={getItemLabel}
+                    renderOption={renderItemOption}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                    renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('deadbandMemory.inputItem')}
+                      required
+                      data-id-ref="deadband-memory-input-item-input"
+                    />
+                  )}
+                  disabled={loading}
+                  fullWidth
+                  data-id-ref="deadband-memory-input-item-autocomplete"
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('inputItem')}
+                  sx={{ mt: 1 }}
+                  data-id-ref="deadband-memory-input-item-help-btn"
+                >
+                  <HelpOutlineIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <Autocomplete
+                    options={globalVariables}
+                    value={inputVariable}
+                    onChange={(_, newValue) => setInputVariable(newValue)}
+                    getOptionLabel={(option) => option.name}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.name}>
+                        <Chip
+                          icon={<FunctionsIcon fontSize="small" />}
+                          label={option.variableType}
+                          size="small"
+                          sx={{ mr: 1, height: 20, fontSize: '0.7rem' }}
+                        />
+                        {option.name}
+                      </Box>
+                    )}
+                    isOptionEqualToValue={(option, value) => option.name === value.name}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('common.globalVariable')}
+                        required
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        }}
+                        data-id-ref="deadband-memory-input-variable-input"
+                      />
+                    )}
+                    disabled={loading || loadingGlobalVariables}
+                    fullWidth
+                    data-id-ref="deadband-memory-input-variable-autocomplete"
                   />
-                )}
-                disabled={loading}
-                fullWidth
-                data-id-ref="deadband-memory-output-item-autocomplete"
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('inputVariable')}
+                    sx={{ mt: 1 }}
+                    data-id-ref="deadband-memory-input-variable-help-btn"
+                  >
+                    <HelpOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              )}
+              <FieldHelpPopover
+                anchorEl={helpAnchorEl['inputItem']}
+                open={Boolean(helpAnchorEl['inputItem'])}
+                onClose={handleHelpClose('inputItem')}
+                fieldKey="deadbandMemory.help.inputItem"
               />
-              <IconButton
-                size="small"
-                onClick={handleHelpOpen('outputItem')}
-                sx={{ mt: 1 }}
-                data-id-ref="deadband-memory-output-item-help-btn"
-              >
-                <HelpOutlineIcon fontSize="small" />
-              </IconButton>
-            </Box>
-            <FieldHelpPopover
-              anchorEl={helpAnchorEl['outputItem']}
-              open={Boolean(helpAnchorEl['outputItem'])}
-              onClose={handleHelpClose('outputItem')}
-              fieldKey="deadbandMemory.help.outputItem"
-            />
+            </>
+          </Grid>
+
+          {/* Output Source Type */}
+          <Grid size={{ xs: 12 }}>
+            <Typography variant="subtitle2" gutterBottom data-id-ref="deadband-memory-output-type-label">
+              {t('deadbandMemory.outputSource')} *
+            </Typography>
+            <ToggleButtonGroup
+              value={outputType}
+              exclusive
+              onChange={(_, value) => {
+                if (value !== null) {
+                  setOutputType(value);
+                  setOutputItem(null);
+                  setOutputVariable(null);
+                }
+              }}
+              fullWidth
+              disabled={loading}
+              data-id-ref="deadband-memory-output-type-toggle"
+              sx={{ mb: 2 }}
+            >
+              <ToggleButton value={DeadbandSourceType.Point} data-id-ref="deadband-memory-output-type-point">
+                <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                {t('common.point')}
+              </ToggleButton>
+              <ToggleButton value={DeadbandSourceType.GlobalVariable} data-id-ref="deadband-memory-output-type-globalvariable">
+                <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                {t('common.globalVariable')}
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Grid>
+
+          {/* Output Source Selection */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <>
+              {outputType === DeadbandSourceType.Point ? (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <Autocomplete
+                    options={outputItems}
+                    value={outputItem}
+                    onChange={(_, newValue) => setOutputItem(newValue)}
+                  getOptionLabel={getItemLabel}
+                  renderOption={renderItemOption}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('deadbandMemory.outputItem')}
+                      required
+                      data-id-ref="deadband-memory-output-item-input"
+                    />
+                  )}
+                  disabled={loading}
+                  fullWidth
+                  data-id-ref="deadband-memory-output-item-autocomplete"
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleHelpOpen('outputItem')}
+                  sx={{ mt: 1 }}
+                  data-id-ref="deadband-memory-output-item-help-btn"
+                >
+                  <HelpOutlineIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <Autocomplete
+                    options={globalVariables}
+                    value={outputVariable}
+                    onChange={(_, newValue) => setOutputVariable(newValue)}
+                    getOptionLabel={(option) => option.name}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.name}>
+                        <Chip
+                          icon={<FunctionsIcon fontSize="small" />}
+                          label={option.variableType}
+                          size="small"
+                          sx={{ mr: 1, height: 20, fontSize: '0.7rem' }}
+                        />
+                        {option.name}
+                      </Box>
+                    )}
+                    isOptionEqualToValue={(option, value) => option.name === value.name}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('common.globalVariable')}
+                        required
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {loadingGlobalVariables ? <CircularProgress size={20} /> : null}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        }}
+                        data-id-ref="deadband-memory-output-variable-input"
+                      />
+                    )}
+                    disabled={loading || loadingGlobalVariables}
+                    fullWidth
+                    data-id-ref="deadband-memory-output-variable-autocomplete"
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleHelpOpen('outputVariable')}
+                    sx={{ mt: 1 }}
+                    data-id-ref="deadband-memory-output-variable-help-btn"
+                  >
+                    <HelpOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              )}
+              <FieldHelpPopover
+                anchorEl={helpAnchorEl['outputItem']}
+                open={Boolean(helpAnchorEl['outputItem'])}
+                onClose={handleHelpClose('outputItem')}
+                fieldKey="deadbandMemory.help.outputItem"
+              />
+            </>
           </Grid>
 
           {/* Mode Indicator */}
-          {inputItem && (
+          {(inputItem || inputVariable) && (isAnalogInput !== null || isDigitalInput !== null) && (
             <Grid size={{ xs: 12 }}>
               <Alert
                 severity="info"

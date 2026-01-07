@@ -23,13 +23,14 @@ import {
   Delete as DeleteIcon,
   Tune as TuneIcon,
   HelpOutline as HelpOutlineIcon,
+  Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
-import { getDeadbandMemories } from '../services/extendedApi';
+import { getDeadbandMemories, getGlobalVariables } from '../services/extendedApi';
 import type { DeadbandMemory, DeadbandMemoryWithItems, ItemType } from '../types/api';
-import { ItemTypeEnum, DeadbandType } from '../types/api';
+import { ItemTypeEnum, DeadbandType, DeadbandSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -138,26 +139,69 @@ const DeadbandMemoryManagementPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await getDeadbandMemories();
+      logger.log('Fetching deadband memories and global variables');
+      
+      // Fetch both deadband memories and global variables in parallel
+      const [memoriesResponse, gvResponse] = await Promise.all([
+        getDeadbandMemories(),
+        getGlobalVariables({})
+      ]);
 
-      if (!response.isSuccessful) {
-        setError(response.errorMessage || 'Failed to fetch deadband memories');
+      if (gvResponse?.globalVariables) {
+        logger.log('Global variables fetched successfully', { count: gvResponse.globalVariables.length });
+      }
+
+      if (!memoriesResponse.isSuccessful) {
+        setError(memoriesResponse.errorMessage || 'Failed to fetch deadband memories');
         return;
       }
 
-      // Enhance with item details from monitoring context
-      const enhancedMemories: DeadbandMemoryWithItems[] = (response.deadbandMemories || []).map((m: DeadbandMemory) => {
-        const inputItem = items.find((item) => item.id === m.inputItemId);
-        const outputItem = items.find((item) => item.id === m.outputItemId);
+      // Enhance with item details from monitoring context and global variables
+      const enhancedMemories: DeadbandMemoryWithItems[] = (memoriesResponse.deadbandMemories || []).map((m: DeadbandMemory) => {
+        let inputSourceName: string | undefined;
+        let inputItemType: ItemType | undefined;
+        let outputSourceName: string | undefined;
+        let outputItemType: ItemType | undefined;
+
+        // Resolve input source
+        if (m.inputType === DeadbandSourceType.Point) {
+          const inputItem = items.find((item) => item.id === m.inputReference);
+          if (inputItem) {
+            inputSourceName = (language === 'fa' && inputItem.nameFa) ? inputItem.nameFa : inputItem.name;
+            inputItemType = inputItem.itemType;
+          }
+        } else if (m.inputType === DeadbandSourceType.GlobalVariable) {
+          const inputVariable = gvResponse?.globalVariables?.find((v) => v.name === m.inputReference);
+          if (inputVariable) {
+            inputSourceName = inputVariable.name;
+          }
+        }
+
+        // Resolve output source
+        if (m.outputType === DeadbandSourceType.Point) {
+          const outputItem = items.find((item) => item.id === m.outputReference);
+          if (outputItem) {
+            outputSourceName = (language === 'fa' && outputItem.nameFa) ? outputItem.nameFa : outputItem.name;
+            outputItemType = outputItem.itemType;
+          }
+        } else if (m.outputType === DeadbandSourceType.GlobalVariable) {
+          const outputVariable = gvResponse?.globalVariables?.find((v) => v.name === m.outputReference);
+          if (outputVariable) {
+            outputSourceName = outputVariable.name;
+          }
+        }
 
         return {
           ...m,
-          inputItemName: inputItem ? (language === 'fa' ? inputItem.nameFa : inputItem.name) || undefined : undefined,
-          inputItemNameFa: inputItem?.nameFa || undefined,
-          inputItemType: inputItem?.itemType,
-          outputItemName: outputItem ? (language === 'fa' ? outputItem.nameFa : outputItem.name) || undefined : undefined,
-          outputItemNameFa: outputItem?.nameFa || undefined,
-          outputItemType: outputItem?.itemType,
+          inputSourceName,
+          inputItemType,
+          outputSourceName,
+          outputItemType,
+          // Legacy fields for backward compatibility
+          inputItemName: inputSourceName,
+          inputItemNameFa: inputSourceName,
+          outputItemName: outputSourceName,
+          outputItemNameFa: outputSourceName,
         };
       });
 
@@ -259,14 +303,23 @@ const DeadbandMemoryManagementPage: React.FC = () => {
       },
       {
         field: 'inputItemName',
-        headerText: t('deadbandMemory.inputItem'),
-        width: 200,
+        headerText: t('deadbandMemory.inputSource'),
+        width: 220,
         template: (rowData: DeadbandMemoryWithItems) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-id-ref="deadband-memory-input-cell">
+            {rowData.inputType === DeadbandSourceType.GlobalVariable ? (
+              <Chip
+                icon={<FunctionsIcon fontSize="small" />}
+                label={t('common.globalVariable')}
+                size="small"
+                color="warning"
+                sx={{ height: 18, fontSize: '0.65rem' }}
+              />
+            ) : null}
             <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-              {rowData.inputItemName || t('common.notSet')}
+              {rowData.inputSourceName || t('common.notSet')}
             </Typography>
-            {rowData.inputItemType && (
+            {rowData.inputItemType && rowData.inputType === DeadbandSourceType.Point && (
               <Chip
                 label={getItemTypeLabel(rowData.inputItemType, t)}
                 size="small"
@@ -279,14 +332,23 @@ const DeadbandMemoryManagementPage: React.FC = () => {
       },
       {
         field: 'outputItemName',
-        headerText: t('deadbandMemory.outputItem'),
-        width: 200,
+        headerText: t('deadbandMemory.outputSource'),
+        width: 220,
         template: (rowData: DeadbandMemoryWithItems) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-id-ref="deadband-memory-output-cell">
+            {rowData.outputType === DeadbandSourceType.GlobalVariable ? (
+              <Chip
+                icon={<FunctionsIcon fontSize="small" />}
+                label={t('common.globalVariable')}
+                size="small"
+                color="warning"
+                sx={{ height: 18, fontSize: '0.65rem' }}
+              />
+            ) : null}
             <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-              {rowData.outputItemName || t('common.notSet')}
+              {rowData.outputSourceName || t('common.notSet')}
             </Typography>
-            {rowData.outputItemType && (
+            {rowData.outputItemType && rowData.outputType === DeadbandSourceType.Point && (
               <Chip
                 label={getItemTypeLabel(rowData.outputItemType, t)}
                 size="small"
