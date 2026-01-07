@@ -392,6 +392,66 @@ public class GlobalVariableProcess
     }
 
     /// <summary>
+    /// Get multiple global variables by name in batch (returns Redis objects for memory processing).
+    /// Optimized for FormulaMemory and IfMemory processing.
+    /// </summary>
+    /// <param name="names">List of variable names to fetch</param>
+    /// <returns>Dictionary mapping name to GlobalVariableRedis object</returns>
+    public static async Task<Dictionary<string, GlobalVariableRedis>> GetVariablesByNameBatch(List<string> names)
+    {
+        var result = new Dictionary<string, GlobalVariableRedis>();
+        
+        if (names == null || names.Count == 0)
+            return result;
+
+        try
+        {
+            var db = RedisConnection.Instance.GetDatabase();
+            var server = RedisConnection.Instance.GetServer();
+            
+            // Get all GlobalVariable keys
+            var allKeys = server.Keys(pattern: "GlobalVariable:*").ToArray();
+            
+            // Fetch all in batch
+            var values = await db.StringGetAsync(allKeys);
+            
+            // Parse and filter by requested names
+            for (int i = 0; i < allKeys.Length; i++)
+            {
+                if (!values[i].HasValue) continue;
+                
+                try
+                {
+                    var gv = JsonConvert.DeserializeObject<GlobalVariableRedis>(values[i].ToString());
+                    if (gv != null && names.Contains(gv.Name))
+                    {
+                        result[gv.Name] = gv;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MyLog.Warning($"Failed to deserialize GlobalVariable from Redis key {allKeys[i]}: {ex.Message}");
+                }
+            }
+            
+            MyLog.Debug("Batch retrieved global variables by name", new Dictionary<string, object?>
+            {
+                ["RequestedCount"] = names.Count,
+                ["FoundCount"] = result.Count
+            });
+        }
+        catch (Exception ex)
+        {
+            MyLog.Error("Failed to batch fetch global variables by name", ex, new Dictionary<string, object?>
+            {
+                ["RequestedNames"] = string.Join(", ", names)
+            });
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// Get multiple global variables in a batch (optimized for performance)
     /// </summary>
     /// <param name="names">List of variable names</param>

@@ -86,33 +86,55 @@ public class FormulaMemories
                 return (false, null, $"Invalid variable aliases JSON format: {ex.Message}");
             }
 
-            // Validate each input item exists and is analog type
-            foreach (var (alias, itemIdStr) in aliases)
+            // Validate each input - can be Point (GUID) or Global Variable (@GV:name)
+            foreach (var (alias, reference) in aliases)
             {
-                if (!Guid.TryParse(itemIdStr, out var itemId))
+                // Check if it's a Global Variable reference
+                if (reference.StartsWith("@GV:"))
                 {
-                    await context.DisposeAsync();
-                    return (false, null, $"Invalid item ID format for variable '{alias}'");
+                    var gvName = reference.Substring(4); // Remove @GV: prefix
+                    var globalVariable = await GlobalVariables.GetGlobalVariableByName(gvName);
+                    
+                    if (globalVariable == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, $"Global Variable '{gvName}' not found for variable '{alias}'");
+                    }
+                    
+                    if (globalVariable.IsDisabled)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, $"Global Variable '{gvName}' is disabled");
+                    }
                 }
-
-                var inputItem = await context.MonitoringItems.FindAsync(itemId);
-                if (inputItem == null)
+                else
                 {
-                    await context.DisposeAsync();
-                    return (false, null, $"Input item not found for variable '{alias}'");
-                }
+                    // It's a Point reference (GUID)
+                    if (!Guid.TryParse(reference, out var itemId))
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, $"Invalid item ID format for variable '{alias}': must be GUID or @GV:variableName");
+                    }
 
-                if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, $"Input item for variable '{alias}' must be AnalogInput or AnalogOutput");
-                }
+                    var inputItem = await context.MonitoringItems.FindAsync(itemId);
+                    if (inputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, $"Input item not found for variable '{alias}'");
+                    }
 
-                // Validate input is not the same as output
-                if (itemId == formulaMemory.OutputItemId)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, $"Input item for variable '{alias}' cannot be the same as output item");
+                    if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, $"Input item for variable '{alias}' must be AnalogInput or AnalogOutput");
+                    }
+
+                    // Validate input is not the same as output
+                    if (itemId == formulaMemory.OutputItemId)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, $"Input item for variable '{alias}' cannot be the same as output item");
+                    }
                 }
             }
 
@@ -209,33 +231,55 @@ public class FormulaMemories
                 return (false, $"Invalid variable aliases JSON format: {ex.Message}");
             }
 
-            // Validate each input item exists and is analog type
-            foreach (var (alias, itemIdStr) in aliases)
+            // Validate each input - can be Point (GUID) or Global Variable (@GV:name)
+            foreach (var (alias, reference) in aliases)
             {
-                if (!Guid.TryParse(itemIdStr, out var itemId))
+                // Check if it's a Global Variable reference
+                if (reference.StartsWith("@GV:"))
                 {
-                    await context.DisposeAsync();
-                    return (false, $"Invalid item ID format for variable '{alias}'");
+                    var gvName = reference.Substring(4); // Remove @GV: prefix
+                    var globalVariable = await GlobalVariables.GetGlobalVariableByName(gvName);
+                    
+                    if (globalVariable == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, $"Global Variable '{gvName}' not found for variable '{alias}'");
+                    }
+                    
+                    if (globalVariable.IsDisabled)
+                    {
+                        await context.DisposeAsync();
+                        return (false, $"Global Variable '{gvName}' is disabled");
+                    }
                 }
-
-                var inputItem = await context.MonitoringItems.FindAsync(itemId);
-                if (inputItem == null)
+                else
                 {
-                    await context.DisposeAsync();
-                    return (false, $"Input item not found for variable '{alias}'");
-                }
+                    // It's a Point reference (GUID)
+                    if (!Guid.TryParse(reference, out var itemId))
+                    {
+                        await context.DisposeAsync();
+                        return (false, $"Invalid item ID format for variable '{alias}': must be GUID or @GV:variableName");
+                    }
 
-                if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, $"Input item for variable '{alias}' must be AnalogInput or AnalogOutput");
-                }
+                    var inputItem = await context.MonitoringItems.FindAsync(itemId);
+                    if (inputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, $"Input item not found for variable '{alias}'");
+                    }
 
-                // Validate input is not the same as output
-                if (itemId == formulaMemory.OutputItemId)
-                {
-                    await context.DisposeAsync();
-                    return (false, $"Input item for variable '{alias}' cannot be the same as output item");
+                    if (inputItem.ItemType != ItemType.AnalogInput && inputItem.ItemType != ItemType.AnalogOutput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, $"Input item for variable '{alias}' must be AnalogInput or AnalogOutput");
+                    }
+
+                    // Validate input is not the same as output
+                    if (itemId == formulaMemory.OutputItemId)
+                    {
+                        await context.DisposeAsync();
+                        return (false, $"Input item for variable '{alias}' cannot be the same as output item");
+                    }
                 }
             }
 

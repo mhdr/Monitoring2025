@@ -28,6 +28,8 @@ import {
   Paper,
   Tooltip,
   Divider,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -40,11 +42,12 @@ import {
   CheckCircle as SuccessIcon,
   Error as ErrorIcon,
   Functions as FormulaIcon,
+  Memory as MemoryIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addFormulaMemory, editFormulaMemory, testFormulaExpression } from '../services/extendedApi';
-import type { FormulaMemory, MonitoringItem, ItemType, VariableAlias } from '../types/api';
+import { addFormulaMemory, editFormulaMemory, testFormulaExpression, getGlobalVariables } from '../services/extendedApi';
+import type { FormulaMemory, MonitoringItem, ItemType, VariableAlias, GlobalVariable } from '../types/api';
 import { ItemTypeEnum } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
@@ -59,9 +62,18 @@ interface AddEditFormulaMemoryDialogProps {
   editMode: boolean;
 }
 
+// 0 = Point, 1 = GlobalVariable
+const VariableSourceType = {
+  Point: 0,
+  GlobalVariable: 1,
+} as const;
+
+type VariableSourceType = typeof VariableSourceType[keyof typeof VariableSourceType];
+
 interface VariableMapping {
   alias: string;
-  itemId: string;
+  sourceType: VariableSourceType;
+  reference: string; // itemId for Point, name for GlobalVariable
   itemName?: string;
 }
 
@@ -89,16 +101,32 @@ interface TestResult {
 
 /**
  * Parse variable aliases JSON string to VariableMapping array
+ * Supports both Point (GUID) and GlobalVariable (@GV:name) references
  */
 const parseVariableAliases = (variableAliasesJson: string): VariableMapping[] => {
   try {
     const parsed = JSON.parse(variableAliasesJson || '{}');
     if (typeof parsed !== 'object') return [];
     
-    return Object.entries(parsed).map(([alias, itemId]) => ({
-      alias,
-      itemId: itemId as string,
-    }));
+    return Object.entries(parsed).map(([alias, reference]) => {
+      const refStr = reference as string;
+      
+      // Check if it's a Global Variable reference
+      if (refStr.startsWith('@GV:')) {
+        return {
+          alias,
+          sourceType: VariableSourceType.GlobalVariable,
+          reference: refStr.substring(4), // Remove @GV: prefix
+        };
+      } else {
+        // It's a Point reference
+        return {
+          alias,
+          sourceType: VariableSourceType.Point,
+          reference: refStr,
+        };
+      }
+    });
   } catch {
     return [];
   }
@@ -106,12 +134,18 @@ const parseVariableAliases = (variableAliasesJson: string): VariableMapping[] =>
 
 /**
  * Convert VariableMapping array to JSON string for API
+ * Converts back to the format expected by backend: Point GUID or @GV:name
  */
 const variableMappingsToJson = (mappings: VariableMapping[]): string => {
   const obj: Record<string, string> = {};
   mappings.forEach((m) => {
-    if (m.alias && m.itemId) {
-      obj[m.alias] = m.itemId;
+    if (m.alias && m.reference) {
+      // Add @GV: prefix for Global Variables
+      if (m.sourceType === VariableSourceType.GlobalVariable) {
+        obj[m.alias] = `@GV:${m.reference}`;
+      } else {
+        obj[m.alias] = m.reference;
+      }
     }
   });
   return JSON.stringify(obj);
@@ -152,6 +186,10 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+  
+  // Global Variables state
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
+  const [loadingGlobalVariables, setLoadingGlobalVariables] = useState(false);
 
   // Test expression states
   const [testing, setTesting] = useState(false);
@@ -168,6 +206,28 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
     decimalPlaces: 2,
     description: '',
   });
+
+  // Fetch global variables when dialog opens
+  useEffect(() => {
+    const fetchGlobalVariables = async () => {
+      if (open) {
+        setLoadingGlobalVariables(true);
+        try {
+          const response = await getGlobalVariables({});
+          if (response?.globalVariables) {
+            setGlobalVariables(response.globalVariables);
+            logger.log('Global variables loaded', { count: response.globalVariables.length });
+          }
+        } catch (err) {
+          logger.error('Failed to fetch global variables', { error: err });
+        } finally {
+          setLoadingGlobalVariables(false);
+        }
+      }
+    };
+
+    fetchGlobalVariables();
+  }, [open]);
 
   // Initialize form data from formula memory in edit mode
   useEffect(() => {
@@ -298,7 +358,11 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
     const newAlias = advancedAliasMode ? '' : getNextAutoAlias();
     setFormData((prev) => ({
       ...prev,
-      variableMappings: [...prev.variableMappings, { alias: newAlias, itemId: '' }],
+      variableMappings: [...prev.variableMappings, { 
+        alias: newAlias, 
+        sourceType: VariableSourceType.Point,
+        reference: '' 
+      }],
     }));
   }, [advancedAliasMode, getNextAutoAlias]);
 
@@ -316,10 +380,15 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
    * Update variable mapping
    */
   const handleVariableChange = useCallback(
-    (index: number, field: 'alias' | 'itemId', value: string) => {
+    (index: number, field: 'alias' | 'sourceType' | 'reference', value: string | VariableSourceType) => {
       setFormData((prev) => {
         const newMappings = [...prev.variableMappings];
-        newMappings[index] = { ...newMappings[index], [field]: value };
+        if (field === 'sourceType') {
+          // When changing source type, reset the reference
+          newMappings[index] = { ...newMappings[index], sourceType: value as VariableSourceType, reference: '' };
+        } else {
+          newMappings[index] = { ...newMappings[index], [field]: value };
+        }
         return { ...prev, variableMappings: newMappings };
       });
     },
@@ -395,13 +464,14 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
         aliasSet.add(mapping.alias);
       }
 
-      if (!mapping.itemId) {
-        errors[`variable_${index}_item`] = t('formulaMemory.validation.itemRequired');
+      if (!mapping.reference) {
+        errors[`variable_${index}_reference`] = t('formulaMemory.validation.itemRequired');
       }
     });
 
-    // Check that output item is not used as input
-    if (formData.variableMappings.some((m) => m.itemId === formData.outputItemId)) {
+    // Check that output item is not used as input (only for Point type)
+    if (formData.variableMappings.some((m) => 
+      m.sourceType === VariableSourceType.Point && m.reference === formData.outputItemId)) {
       errors.outputItemId = t('formulaMemory.validation.outputUsedAsInput');
     }
 
@@ -436,7 +506,7 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
       // Convert variable mappings to the format expected by the API
       const variableAliases: VariableAlias[] = formData.variableMappings.map((m) => ({
         alias: m.alias,
-        itemId: m.itemId,
+        itemId: m.sourceType === VariableSourceType.Point ? m.reference : `@GV:${m.reference}`,
       }));
 
       const response = await testFormulaExpression({
@@ -548,14 +618,22 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
     formData.variableMappings.forEach((m) => {
       if (m.alias) {
         const regex = new RegExp(`\\[${m.alias}\\]`, 'g');
-        const item = items.find((i) => i.id === m.itemId);
-        const itemLabel = item ? getItemLabel(item) : t('common.unknown');
-        preview = preview.replace(regex, `【${m.alias}: ${itemLabel}】`);
+        
+        let label: string;
+        if (m.sourceType === VariableSourceType.Point) {
+          const item = items.find((i) => i.id === m.reference);
+          label = item ? getItemLabel(item) : t('common.unknown');
+        } else {
+          const variable = globalVariables.find((v) => v.name === m.reference);
+          label = variable ? `@GV:${variable.name}` : t('common.unknown');
+        }
+        
+        preview = preview.replace(regex, `【${m.alias}: ${label}】`);
       }
     });
 
     return preview;
-  }, [formData.expression, formData.variableMappings, items, getItemLabel, t]);
+  }, [formData.expression, formData.variableMappings, items, globalVariables, getItemLabel, t]);
 
   return (
     <Dialog
@@ -815,7 +893,13 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
                   </TableHead>
                   <TableBody>
                     {formData.variableMappings.map((mapping, index) => {
-                      const selectedItem = items.find((i) => i.id === mapping.itemId);
+                      const selectedItem = mapping.sourceType === VariableSourceType.Point 
+                        ? items.find((i) => i.id === mapping.reference)
+                        : null;
+                      const selectedVariable = mapping.sourceType === VariableSourceType.GlobalVariable
+                        ? globalVariables.find((v) => v.name === mapping.reference)
+                        : null;
+                      
                       return (
                         <TableRow key={index}>
                           <TableCell>
@@ -842,46 +926,118 @@ const AddEditFormulaMemoryDialog: React.FC<AddEditFormulaMemoryDialogProps> = ({
                             )}
                           </TableCell>
                           <TableCell>
-                            <Autocomplete
+                            {/* Source Type Toggle */}
+                            <ToggleButtonGroup
                               size="small"
+                              value={mapping.sourceType}
+                              exclusive
+                              onChange={(_, newValue) => {
+                                if (newValue !== null) {
+                                  handleVariableChange(index, 'sourceType', newValue);
+                                }
+                              }}
                               fullWidth
-                              options={inputItems}
-                              value={selectedItem || null}
-                              onChange={(_, newValue) =>
-                                handleVariableChange(index, 'itemId', newValue?.id || '')
-                              }
-                              getOptionLabel={getItemLabel}
-                              renderOption={(props, option) => (
-                                <Box component="li" {...props} key={option.id}>
-                                  <Box
-                                    sx={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 1,
-                                      width: '100%',
-                                    }}
-                                  >
-                                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                                      {getItemLabel(option)}
-                                    </Typography>
-                                    <Chip
-                                      label={getItemTypeLabel(option.itemType)}
-                                      size="small"
-                                      color={getItemTypeColor(option.itemType)}
-                                      sx={{ height: 18, fontSize: '0.65rem' }}
-                                    />
+                              sx={{ mb: 1 }}
+                              data-id-ref={`formula-memory-variable-${index}-source-type-toggle`}
+                            >
+                              <ToggleButton value={VariableSourceType.Point} data-id-ref={`formula-memory-variable-${index}-source-type-point`}>
+                                <MemoryIcon sx={{ mr: 0.5 }} fontSize="small" />
+                                {t('formulaMemory.sourceTypePoint')}
+                              </ToggleButton>
+                              <ToggleButton value={VariableSourceType.GlobalVariable} data-id-ref={`formula-memory-variable-${index}-source-type-globalvariable`}>
+                                <FormulaIcon sx={{ mr: 0.5 }} fontSize="small" />
+                                {t('formulaMemory.sourceTypeGlobalVariable')}
+                              </ToggleButton>
+                            </ToggleButtonGroup>
+                            
+                            {/* Point Selection */}
+                            {mapping.sourceType === VariableSourceType.Point && (
+                              <Autocomplete
+                                size="small"
+                                fullWidth
+                                options={inputItems}
+                                value={selectedItem || null}
+                                onChange={(_, newValue) =>
+                                  handleVariableChange(index, 'reference', newValue?.id || '')
+                                }
+                                getOptionLabel={getItemLabel}
+                                renderOption={(props, option) => (
+                                  <Box component="li" {...props} key={option.id}>
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        width: '100%',
+                                      }}
+                                    >
+                                      <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                                        {getItemLabel(option)}
+                                      </Typography>
+                                      <Chip
+                                        label={getItemTypeLabel(option.itemType)}
+                                        size="small"
+                                        color={getItemTypeColor(option.itemType)}
+                                        sx={{ height: 18, fontSize: '0.65rem' }}
+                                      />
+                                    </Box>
                                   </Box>
-                                </Box>
-                              )}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  error={!!formErrors[`variable_${index}_item`]}
-                                  placeholder={t('formulaMemory.selectItem')}
-                                />
-                              )}
-                              data-id-ref={`formula-memory-variable-${index}-item-select`}
-                            />
+                                )}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    error={!!formErrors[`variable_${index}_reference`]}
+                                    placeholder={t('formulaMemory.selectItem')}
+                                  />
+                                )}
+                                data-id-ref={`formula-memory-variable-${index}-item-select`}
+                              />
+                            )}
+                            
+                            {/* Global Variable Selection */}
+                            {mapping.sourceType === VariableSourceType.GlobalVariable && (
+                              <Autocomplete
+                                size="small"
+                                fullWidth
+                                options={globalVariables}
+                                value={selectedVariable || null}
+                                onChange={(_, newValue) =>
+                                  handleVariableChange(index, 'reference', newValue?.name || '')
+                                }
+                                getOptionLabel={(option) => option.name}
+                                renderOption={(props, option) => (
+                                  <Box component="li" {...props} key={option.id}>
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        width: '100%',
+                                      }}
+                                    >
+                                      <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                                        {option.name}
+                                      </Typography>
+                                      <Chip
+                                        label={option.variableType === 0 ? 'Boolean' : 'Float'}
+                                        size="small"
+                                        color={option.variableType === 0 ? 'info' : 'primary'}
+                                        sx={{ height: 18, fontSize: '0.65rem' }}
+                                      />
+                                    </Box>
+                                  </Box>
+                                )}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    error={!!formErrors[`variable_${index}_reference`]}
+                                    placeholder={t('formulaMemory.selectGlobalVariable')}
+                                  />
+                                )}
+                                loading={loadingGlobalVariables}
+                                data-id-ref={`formula-memory-variable-${index}-globalvariable-select`}
+                              />
+                            )}
                           </TableCell>
                           <TableCell align="center">
                             <IconButton

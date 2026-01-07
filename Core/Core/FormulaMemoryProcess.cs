@@ -157,8 +157,9 @@ public class FormulaMemoryProcess
         if (memoriesToProcess.Count == 0)
             return;
 
-        // Collect all unique input item IDs for batch fetching
+        // Collect all unique input item IDs and Global Variable names for batch fetching
         var allInputIds = new HashSet<string>();
+        var allGlobalVariableNames = new HashSet<string>();
 
         foreach (var memory in memoriesToProcess)
         {
@@ -167,9 +168,18 @@ public class FormulaMemoryProcess
                 var aliases = JsonSerializer.Deserialize<Dictionary<string, string>>(memory.VariableAliases);
                 if (aliases != null)
                 {
-                    foreach (var itemId in aliases.Values)
+                    foreach (var reference in aliases.Values)
                     {
-                        allInputIds.Add(itemId);
+                        // Check if it's a Global Variable reference (starts with @GV:)
+                        if (reference.StartsWith("@GV:"))
+                        {
+                            var gvName = reference.Substring(4); // Remove @GV: prefix
+                            allGlobalVariableNames.Add(gvName);
+                        }
+                        else
+                        {
+                            allInputIds.Add(reference);
+                        }
                     }
                 }
             }
@@ -181,12 +191,17 @@ public class FormulaMemoryProcess
 
         // Batch fetch all required Redis items (performance optimization)
         var inputItemsCache = await Points.GetFinalItemsBatch(allInputIds.ToList());
+        
+        // Batch fetch all required Global Variables
+        var globalVariablesCache = await GlobalVariableProcess.GetVariablesByNameBatch(allGlobalVariableNames.ToList());
 
         MyLog.Debug("Batch fetched Redis items for Formula processing", new Dictionary<string, object?>
         {
             ["MemoryCount"] = memoriesToProcess.Count,
             ["InputItemsRequested"] = allInputIds.Count,
-            ["InputItemsFetched"] = inputItemsCache.Count
+            ["InputItemsFetched"] = inputItemsCache.Count,
+            ["GlobalVariablesRequested"] = allGlobalVariableNames.Count,
+            ["GlobalVariablesFetched"] = globalVariablesCache.Count
         });
 
         // Process each memory
@@ -194,7 +209,7 @@ public class FormulaMemoryProcess
         {
             try
             {
-                await ProcessSingleFormula(memory, inputItemsCache, epochTime);
+                await ProcessSingleFormula(memory, inputItemsCache, globalVariablesCache, epochTime);
                 _lastExecutionTimes[memory.Id] = epochTime;
             }
             catch (Exception ex)
@@ -223,6 +238,7 @@ public class FormulaMemoryProcess
     private async Task ProcessSingleFormula(
         FormulaMemory memory,
         Dictionary<string, FinalItemRedis> inputItemsCache,
+        Dictionary<string, RedisModels.GlobalVariableRedis> globalVariablesCache,
         long epochTime)
     {
         // Parse variable aliases
@@ -250,33 +266,74 @@ public class FormulaMemoryProcess
             return;
         }
 
-        // Build variable values dictionary from cached input items
+        // Build variable values dictionary from cached input items and global variables
         var variableValues = new Dictionary<string, double>();
         var missingVariables = new List<string>();
 
-        foreach (var (alias, itemIdStr) in aliases)
+        foreach (var (alias, reference) in aliases)
         {
-            if (inputItemsCache.TryGetValue(itemIdStr, out var item))
+            // Check if it's a Global Variable reference
+            if (reference.StartsWith("@GV:"))
             {
-                if (double.TryParse(item.Value, out var value))
+                var gvName = reference.Substring(4); // Remove @GV: prefix
+                
+                if (globalVariablesCache.TryGetValue(gvName, out var gv))
                 {
-                    variableValues[alias] = value;
+                    if (double.TryParse(gv.Value, out var value))
+                    {
+                        variableValues[alias] = value;
+                    }
+                    else
+                    {
+                        // For boolean variables: "true" -> 1, "false" -> 0
+                        if (bool.TryParse(gv.Value, out var boolValue))
+                        {
+                            variableValues[alias] = boolValue ? 1.0 : 0.0;
+                        }
+                        else
+                        {
+                            MyLog.Warning("Failed to parse Global Variable value", new Dictionary<string, object?>
+                            {
+                                ["MemoryId"] = memory.Id,
+                                ["Alias"] = alias,
+                                ["GlobalVariable"] = gvName,
+                                ["Value"] = gv.Value
+                            });
+                            variableValues[alias] = 0.0; // Default to 0 for invalid values
+                        }
+                    }
                 }
                 else
                 {
-                    MyLog.Warning("Failed to parse input value for variable", new Dictionary<string, object?>
-                    {
-                        ["MemoryId"] = memory.Id,
-                        ["Alias"] = alias,
-                        ["Value"] = item.Value
-                    });
-                    variableValues[alias] = 0.0; // Default to 0 for invalid values
+                    missingVariables.Add($"@GV:{gvName}");
+                    variableValues[alias] = 0.0; // Default to 0 for missing variables
                 }
             }
             else
             {
-                missingVariables.Add(alias);
-                variableValues[alias] = 0.0; // Default to 0 for missing values
+                // It's a Point reference (item ID)
+                if (inputItemsCache.TryGetValue(reference, out var item))
+                {
+                    if (double.TryParse(item.Value, out var value))
+                    {
+                        variableValues[alias] = value;
+                    }
+                    else
+                    {
+                        MyLog.Warning("Failed to parse input value for variable", new Dictionary<string, object?>
+                        {
+                            ["MemoryId"] = memory.Id,
+                            ["Alias"] = alias,
+                            ["Value"] = item.Value
+                        });
+                        variableValues[alias] = 0.0; // Default to 0 for invalid values
+                    }
+                }
+                else
+                {
+                    missingVariables.Add(alias);
+                    variableValues[alias] = 0.0; // Default to 0 for missing values
+                }
             }
         }
 
