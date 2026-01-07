@@ -3,6 +3,8 @@ using Core.Libs;
 using Core.Models;
 using Core.RedisModels;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using StackExchange.Redis;
 
 namespace Core;
 
@@ -141,8 +143,15 @@ public class TotalizerMemoryProcess
 
         foreach (var memory in memoriesToProcess)
         {
-            allInputIds.Add(memory.InputItemId.ToString());
-            allOutputIds.Add(memory.OutputItemId.ToString());
+            // Only add Point references for batch fetching
+            if (memory.InputType == TotalizerSourceType.Point)
+            {
+                allInputIds.Add(memory.InputReference);
+            }
+            if (memory.OutputType == TotalizerSourceType.Point)
+            {
+                allOutputIds.Add(memory.OutputReference);
+            }
         }
 
         // Batch fetch all required Redis items (performance optimization)
@@ -152,10 +161,10 @@ public class TotalizerMemoryProcess
         MyLog.Debug("Batch fetched Redis items for Totalizer processing", new Dictionary<string, object?>
         {
             ["MemoryCount"] = memoriesToProcess.Count,
-            ["InputItemsRequested"] = allInputIds.Count,
-            ["InputItemsFetched"] = inputItemsCache.Count,
-            ["OutputItemsRequested"] = allOutputIds.Count,
-            ["OutputItemsFetched"] = outputItemsCache.Count
+            ["InputPointsRequested"] = allInputIds.Count,
+            ["InputPointsFetched"] = inputItemsCache.Count,
+            ["OutputPointsRequested"] = allOutputIds.Count,
+            ["OutputPointsFetched"] = outputItemsCache.Count
         });
 
         // Process each memory
@@ -184,16 +193,58 @@ public class TotalizerMemoryProcess
         long epochTime,
         DateTime utcNow)
     {
-        var inputKey = memory.InputItemId.ToString();
+        // Get input value based on source type
+        string? inputValue = null;
+        long inputTime = 0;
         
-        // Get input item from cache
-        if (!inputItemsCache.TryGetValue(inputKey, out var inputItem))
+        if (memory.InputType == TotalizerSourceType.Point)
         {
-            MyLog.Warning("Input item not found in cache", new Dictionary<string, object?>
+            // Use cached batch-fetched Point item
+            if (inputItemsCache.TryGetValue(memory.InputReference, out var inputItem))
             {
-                ["MemoryId"] = memory.Id,
-                ["InputItemId"] = memory.InputItemId
-            });
+                inputValue = inputItem.Value;
+                inputTime = inputItem.Time;
+            }
+            else
+            {
+                MyLog.Warning("Input item not found in cache", new Dictionary<string, object?>
+                {
+                    ["MemoryId"] = memory.Id,
+                    ["InputReference"] = memory.InputReference
+                });
+                return;
+            }
+        }
+        else if (memory.InputType == TotalizerSourceType.GlobalVariable)
+        {
+            // Fetch Global Variable directly
+            var db = RedisConnection.Instance.GetDatabase();
+            var key = $"GlobalVariable:{memory.InputReference}";
+            var json = await db.StringGetAsync(key);
+            
+            if (json.HasValue)
+            {
+                var gvRedis = JsonConvert.DeserializeObject<RedisModels.GlobalVariableRedis>(json.ToString());
+                if (gvRedis != null)
+                {
+                    inputValue = gvRedis.Value;
+                    inputTime = gvRedis.LastUpdateTime / 1000; // Convert milliseconds to seconds
+                }
+            }
+            
+            if (inputValue == null)
+            {
+                MyLog.Warning("Input global variable not found", new Dictionary<string, object?>
+                {
+                    ["MemoryId"] = memory.Id,
+                    ["InputReference"] = memory.InputReference
+                });
+                return;
+            }
+        }
+        
+        if (inputValue == null)
+        {
             return;
         }
 
@@ -213,19 +264,19 @@ public class TotalizerMemoryProcess
         switch (memory.AccumulationType)
         {
             case AccumulationType.RateIntegration:
-                newAccumulation = ProcessRateIntegration(memory, inputItem, epochTime, out shouldUpdateDatabase);
+                newAccumulation = ProcessRateIntegration(memory, inputValue, epochTime, out shouldUpdateDatabase);
                 break;
                 
             case AccumulationType.EventCountRising:
-                newAccumulation = ProcessEventCounting(memory, inputItem, true, false, out shouldUpdateDatabase);
+                newAccumulation = ProcessEventCounting(memory, inputValue, true, false, out shouldUpdateDatabase);
                 break;
                 
             case AccumulationType.EventCountFalling:
-                newAccumulation = ProcessEventCounting(memory, inputItem, false, true, out shouldUpdateDatabase);
+                newAccumulation = ProcessEventCounting(memory, inputValue, false, true, out shouldUpdateDatabase);
                 break;
                 
             case AccumulationType.EventCountBoth:
-                newAccumulation = ProcessEventCounting(memory, inputItem, true, true, out shouldUpdateDatabase);
+                newAccumulation = ProcessEventCounting(memory, inputValue, true, true, out shouldUpdateDatabase);
                 break;
         }
 
@@ -252,9 +303,20 @@ public class TotalizerMemoryProcess
             shouldUpdateDatabase = true;
         }
 
-        // Write accumulated value to output
+        // Write accumulated value to output based on source type
         var formattedValue = Math.Round(memory.AccumulatedValue, memory.DecimalPlaces).ToString($"F{memory.DecimalPlaces}");
-        await Points.WriteOrAddValue(memory.OutputItemId, formattedValue, epochTime);
+        
+        if (memory.OutputType == TotalizerSourceType.Point)
+        {
+            if (Guid.TryParse(memory.OutputReference, out var outputItemId))
+            {
+                await Points.WriteOrAddValue(outputItemId, formattedValue, epochTime);
+            }
+        }
+        else if (memory.OutputType == TotalizerSourceType.GlobalVariable)
+        {
+            await GlobalVariableProcess.SetVariable(memory.OutputReference, formattedValue);
+        }
 
         // Persist state to database if needed
         if (shouldUpdateDatabase)
@@ -267,16 +329,16 @@ public class TotalizerMemoryProcess
     /// <summary>
     /// Process rate integration using trapezoidal rule
     /// </summary>
-    private double ProcessRateIntegration(TotalizerMemory memory, FinalItemRedis inputItem, long epochTime, out bool shouldUpdateDatabase)
+    private double ProcessRateIntegration(TotalizerMemory memory, string inputValue, long epochTime, out bool shouldUpdateDatabase)
     {
         shouldUpdateDatabase = false;
         
-        if (!double.TryParse(inputItem.Value, out double currentValue))
+        if (!double.TryParse(inputValue, out double currentValue))
         {
             MyLog.Warning("Failed to parse input value for rate integration", new Dictionary<string, object?>
             {
                 ["MemoryId"] = memory.Id,
-                ["InputValue"] = inputItem.Value
+                ["InputValue"] = inputValue
             });
             return memory.AccumulatedValue;
         }
@@ -309,7 +371,7 @@ public class TotalizerMemoryProcess
     /// </summary>
     private double ProcessEventCounting(
         TotalizerMemory memory, 
-        FinalItemRedis inputItem, 
+        string inputValue, 
         bool countRising, 
         bool countFalling, 
         out bool shouldUpdateDatabase)
@@ -319,19 +381,19 @@ public class TotalizerMemoryProcess
         bool currentState;
         
         // Parse digital state (true/false, 1/0, on/off, etc.)
-        if (bool.TryParse(inputItem.Value, out bool boolValue))
+        if (bool.TryParse(inputValue, out bool boolValue))
         {
             currentState = boolValue;
         }
-        else if (int.TryParse(inputItem.Value, out int intValue))
+        else if (int.TryParse(inputValue, out int intValue))
         {
             currentState = intValue != 0;
         }
-        else if (inputItem.Value?.ToLower() == "on" || inputItem.Value?.ToLower() == "high")
+        else if (inputValue?.ToLower() == "on" || inputValue?.ToLower() == "high")
         {
             currentState = true;
         }
-        else if (inputItem.Value?.ToLower() == "off" || inputItem.Value?.ToLower() == "low")
+        else if (inputValue?.ToLower() == "off" || inputValue?.ToLower() == "low")
         {
             currentState = false;
         }
@@ -340,7 +402,7 @@ public class TotalizerMemoryProcess
             MyLog.Warning("Failed to parse input value for event counting", new Dictionary<string, object?>
             {
                 ["MemoryId"] = memory.Id,
-                ["InputValue"] = inputItem.Value
+                ["InputValue"] = inputValue
             });
             return memory.AccumulatedValue;
         }
@@ -435,8 +497,18 @@ public class TotalizerMemoryProcess
                 _context!.TotalizerMemories.Update(memory);
                 await _context.SaveChangesAsync();
 
-                // Write zero to output
-                await Points.WriteOrAddValue(memory.OutputItemId, "0");
+                // Write zero to output based on source type
+                if (memory.OutputType == TotalizerSourceType.Point)
+                {
+                    if (Guid.TryParse(memory.OutputReference, out var outputItemId))
+                    {
+                        await Points.WriteOrAddValue(outputItemId, "0");
+                    }
+                }
+                else if (memory.OutputType == TotalizerSourceType.GlobalVariable)
+                {
+                    await GlobalVariableProcess.SetVariable(memory.OutputReference, "0");
+                }
 
                 return true;
             }

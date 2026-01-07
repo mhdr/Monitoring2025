@@ -25,9 +25,9 @@ import {
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
-import { getTotalizerMemories } from '../services/extendedApi';
-import type { TotalizerMemory, TotalizerMemoryWithItems, ItemType } from '../types/api';
-import { ItemTypeEnum, AccumulationType } from '../types/api';
+import { getTotalizerMemories, getGlobalVariables } from '../services/extendedApi';
+import type { TotalizerMemory, TotalizerMemoryWithItems, ItemType, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, AccumulationType, TotalizerSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('TotalizerMemoryManagementPage');
@@ -119,21 +119,59 @@ const TotalizerMemoryManagementPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await getTotalizerMemories();
+      logger.log('Fetching totalizer memories and global variables');
+      
+      // Fetch both totalizer memories and global variables in parallel
+      const [tmResponse, gvResponse] = await Promise.all([
+        getTotalizerMemories(),
+        getGlobalVariables({})
+      ]);
 
-      // Enhance with item details from monitoring context
-      const enhancedMemories: TotalizerMemoryWithItems[] = (response.totalizerMemories || []).map((tm: TotalizerMemory) => {
-        const inputItem = items.find((item) => item.id === tm.inputItemId);
-        const outputItem = items.find((item) => item.id === tm.outputItemId);
+      if (gvResponse?.globalVariables) {
+        logger.log('Global variables fetched successfully', { count: gvResponse.globalVariables.length });
+      }
+
+      // Enhance with item/variable details from monitoring context
+      const enhancedMemories: TotalizerMemoryWithItems[] = (tmResponse.totalizerMemories || []).map((tm: TotalizerMemory) => {
+        let inputSourceName: string | undefined;
+        let inputItemType: ItemType | undefined;
+        let outputSourceName: string | undefined;
+        let outputItemType: ItemType | undefined;
+
+        // Resolve input source
+        if (tm.inputType === TotalizerSourceType.Point) {
+          const inputItem = items.find((item) => item.id === tm.inputReference);
+          if (inputItem) {
+            inputSourceName = language === 'fa' && inputItem.nameFa ? inputItem.nameFa : inputItem.name;
+            inputItemType = inputItem.itemType;
+          }
+        } else if (tm.inputType === TotalizerSourceType.GlobalVariable) {
+          const inputVariable = gvResponse?.globalVariables?.find((v) => v.name === tm.inputReference);
+          if (inputVariable) {
+            inputSourceName = inputVariable.name;
+          }
+        }
+
+        // Resolve output source
+        if (tm.outputType === TotalizerSourceType.Point) {
+          const outputItem = items.find((item) => item.id === tm.outputReference);
+          if (outputItem) {
+            outputSourceName = language === 'fa' && outputItem.nameFa ? outputItem.nameFa : outputItem.name;
+            outputItemType = outputItem.itemType;
+          }
+        } else if (tm.outputType === TotalizerSourceType.GlobalVariable) {
+          const outputVariable = gvResponse?.globalVariables?.find((v) => v.name === tm.outputReference);
+          if (outputVariable) {
+            outputSourceName = outputVariable.name;
+          }
+        }
 
         return {
           ...tm,
-          inputItemName: inputItem ? (language === 'fa' ? inputItem.nameFa : inputItem.name) || undefined : undefined,
-          inputItemNameFa: inputItem?.nameFa || undefined,
-          inputItemType: inputItem?.itemType,
-          outputItemName: outputItem ? (language === 'fa' ? outputItem.nameFa : outputItem.name) || undefined : undefined,
-          outputItemNameFa: outputItem?.nameFa || undefined,
-          outputItemType: outputItem?.itemType,
+          inputSourceName,
+          inputItemType,
+          outputSourceName,
+          outputItemType,
         };
       });
 
@@ -215,10 +253,8 @@ const TotalizerMemoryManagementPage: React.FC = () => {
     return totalizerMemories.filter(
       (tm) =>
         tm.name?.toLowerCase().includes(lowerSearch) ||
-        tm.inputItemName?.toLowerCase().includes(lowerSearch) ||
-        tm.inputItemNameFa?.toLowerCase().includes(lowerSearch) ||
-        tm.outputItemName?.toLowerCase().includes(lowerSearch) ||
-        tm.outputItemNameFa?.toLowerCase().includes(lowerSearch) ||
+        tm.inputSourceName?.toLowerCase().includes(lowerSearch) ||
+        tm.outputSourceName?.toLowerCase().includes(lowerSearch) ||
         tm.units?.toLowerCase().includes(lowerSearch)
     );
   }, [totalizerMemories, searchTerm]);
@@ -245,44 +281,68 @@ const TotalizerMemoryManagementPage: React.FC = () => {
         ),
       },
       {
-        field: 'inputItemName',
-        headerText: t('totalizerMemory.inputItem'),
+        field: 'inputSourceName',
+        headerText: t('totalizerMemory.inputSource'),
         width: 200,
-        template: (rowData: TotalizerMemoryWithItems) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-              {rowData.inputItemName || t('common.notSet')}
-            </Typography>
-            {rowData.inputItemType && (
-              <Chip
-                label={getItemTypeLabel(rowData.inputItemType, t)}
-                size="small"
-                color={getItemTypeColor(rowData.inputItemType)}
-                sx={{ height: 18, fontSize: '0.65rem' }}
-              />
-            )}
-          </Box>
-        ),
+        template: (rowData: TotalizerMemoryWithItems) => {
+          const isGlobalVariable = rowData.inputType === TotalizerSourceType.GlobalVariable;
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                {rowData.inputSourceName || t('common.notSet')}
+              </Typography>
+              {isGlobalVariable ? (
+                <Chip
+                  label={t('common.globalVariable')}
+                  size="small"
+                  color="warning"
+                  sx={{ height: 18, fontSize: '0.65rem' }}
+                />
+              ) : (
+                rowData.inputItemType && (
+                  <Chip
+                    label={getItemTypeLabel(rowData.inputItemType, t)}
+                    size="small"
+                    color={getItemTypeColor(rowData.inputItemType)}
+                    sx={{ height: 18, fontSize: '0.65rem' }}
+                  />
+                )
+              )}
+            </Box>
+          );
+        },
       },
       {
-        field: 'outputItemName',
-        headerText: t('totalizerMemory.outputItem'),
+        field: 'outputSourceName',
+        headerText: t('totalizerMemory.outputSource'),
         width: 200,
-        template: (rowData: TotalizerMemoryWithItems) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-              {rowData.outputItemName || t('common.notSet')}
-            </Typography>
-            {rowData.outputItemType && (
-              <Chip
-                label={getItemTypeLabel(rowData.outputItemType, t)}
-                size="small"
-                color={getItemTypeColor(rowData.outputItemType)}
-                sx={{ height: 18, fontSize: '0.65rem' }}
-              />
-            )}
-          </Box>
-        ),
+        template: (rowData: TotalizerMemoryWithItems) => {
+          const isGlobalVariable = rowData.outputType === TotalizerSourceType.GlobalVariable;
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                {rowData.outputSourceName || t('common.notSet')}
+              </Typography>
+              {isGlobalVariable ? (
+                <Chip
+                  label={t('common.globalVariable')}
+                  size="small"
+                  color="warning"
+                  sx={{ height: 18, fontSize: '0.65rem' }}
+                />
+              ) : (
+                rowData.outputItemType && (
+                  <Chip
+                    label={getItemTypeLabel(rowData.outputItemType, t)}
+                    size="small"
+                    color={getItemTypeColor(rowData.outputItemType)}
+                    sx={{ height: 18, fontSize: '0.65rem' }}
+                  />
+                )
+              )}
+            </Box>
+          );
+        },
       },
       {
         field: 'accumulationType',

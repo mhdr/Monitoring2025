@@ -42,52 +42,101 @@ public class TotalizerMemories
         {
             var context = new DataContext();
             
-            // Validate InputItem exists
-            var inputItem = await context.MonitoringItems.FindAsync(totalizerMemory.InputItemId);
-            if (inputItem == null)
+            // Validate Input source
+            if (totalizerMemory.InputType == TotalizerSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Input item not found");
-            }
-
-            // Validate InputItem type based on AccumulationType
-            if (totalizerMemory.AccumulationType == AccumulationType.RateIntegration)
-            {
-                if (inputItem.ItemType != ItemType.AnalogInput)
+                if (!Guid.TryParse(totalizerMemory.InputReference, out var inputItemId))
                 {
                     await context.DisposeAsync();
-                    return (false, null, "Input item must be AnalogInput for rate integration");
+                    return (false, null, "Invalid input item GUID");
                 }
-            }
-            else // Event counting modes
-            {
-                if (inputItem.ItemType != ItemType.DigitalInput)
+                
+                var inputItem = await context.MonitoringItems.FindAsync(inputItemId);
+                if (inputItem == null)
                 {
                     await context.DisposeAsync();
-                    return (false, null, "Input item must be DigitalInput for event counting");
+                    return (false, null, "Input item not found");
+                }
+
+                // Validate InputItem type based on AccumulationType
+                if (totalizerMemory.AccumulationType == AccumulationType.RateIntegration)
+                {
+                    if (inputItem.ItemType != ItemType.AnalogInput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Input item must be AnalogInput for rate integration");
+                    }
+                }
+                else // Event counting modes
+                {
+                    if (inputItem.ItemType != ItemType.DigitalInput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Input item must be DigitalInput for event counting");
+                    }
+                }
+            }
+            else if (totalizerMemory.InputType == TotalizerSourceType.GlobalVariable)
+            {
+                var inputVariable = await GlobalVariables.GetGlobalVariableByName(totalizerMemory.InputReference);
+                if (inputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input global variable not found");
+                }
+                
+                if (inputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Input global variable is disabled");
                 }
             }
 
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(totalizerMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate Output source
+            if (totalizerMemory.OutputType == TotalizerSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Output item not found");
+                if (!Guid.TryParse(totalizerMemory.OutputReference, out var outputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Invalid output item GUID");
+                }
+                
+                var outputItem = await context.MonitoringItems.FindAsync(outputItemId);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item not found");
+                }
+
+                // Validate OutputItem is AnalogOutput
+                if (outputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item must be AnalogOutput");
+                }
+            }
+            else if (totalizerMemory.OutputType == TotalizerSourceType.GlobalVariable)
+            {
+                var outputVariable = await GlobalVariables.GetGlobalVariableByName(totalizerMemory.OutputReference);
+                if (outputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable not found");
+                }
+                
+                if (outputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable is disabled");
+                }
             }
 
-            // Validate OutputItem is AnalogOutput
-            if (outputItem.ItemType != ItemType.AnalogOutput)
+            // Validate Input != Output (same type and reference)
+            if (totalizerMemory.InputType == totalizerMemory.OutputType && 
+                totalizerMemory.InputReference == totalizerMemory.OutputReference)
             {
                 await context.DisposeAsync();
-                return (false, null, "Output item must be AnalogOutput");
-            }
-
-            // Validate InputItemId != OutputItemId
-            if (totalizerMemory.InputItemId == totalizerMemory.OutputItemId)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Input and output items must be different");
+                return (false, null, "Input and output sources must be different");
             }
 
             // Validate Interval > 0
@@ -136,9 +185,13 @@ public class TotalizerMemories
 
             context.TotalizerMemories.Add(totalizerMemory);
             await context.SaveChangesAsync();
-            
+            var id = totalizerMemory.Id;
             await context.DisposeAsync();
-            return (true, totalizerMemory.Id, null);
+            
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(id, "TotalizerMemory");
+            
+            return (true, id, null);
         }
         catch (Exception ex)
         {
@@ -159,52 +212,109 @@ public class TotalizerMemories
         {
             var context = new DataContext();
             
-            // Validate InputItem exists
-            var inputItem = await context.MonitoringItems.FindAsync(totalizerMemory.InputItemId);
-            if (inputItem == null)
+            // Validate totalizer memory exists
+            var existing = await context.TotalizerMemories.AsNoTracking().FirstOrDefaultAsync(t => t.Id == totalizerMemory.Id);
+            if (existing == null)
             {
                 await context.DisposeAsync();
-                return (false, "Input item not found");
+                return (false, "Totalizer memory not found");
             }
-
-            // Validate InputItem type based on AccumulationType
-            if (totalizerMemory.AccumulationType == AccumulationType.RateIntegration)
+            
+            // Validate Input source
+            if (totalizerMemory.InputType == TotalizerSourceType.Point)
             {
-                if (inputItem.ItemType != ItemType.AnalogInput)
+                if (!Guid.TryParse(totalizerMemory.InputReference, out var inputItemId))
                 {
                     await context.DisposeAsync();
-                    return (false, "Input item must be AnalogInput for rate integration");
+                    return (false, "Invalid input item GUID");
                 }
-            }
-            else // Event counting modes
-            {
-                if (inputItem.ItemType != ItemType.DigitalInput)
+                
+                var inputItem = await context.MonitoringItems.FindAsync(inputItemId);
+                if (inputItem == null)
                 {
                     await context.DisposeAsync();
-                    return (false, "Input item must be DigitalInput for event counting");
+                    return (false, "Input item not found");
+                }
+
+                // Validate InputItem type based on AccumulationType
+                if (totalizerMemory.AccumulationType == AccumulationType.RateIntegration)
+                {
+                    if (inputItem.ItemType != ItemType.AnalogInput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Input item must be AnalogInput for rate integration");
+                    }
+                }
+                else // Event counting modes
+                {
+                    if (inputItem.ItemType != ItemType.DigitalInput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Input item must be DigitalInput for event counting");
+                    }
+                }
+            }
+            else if (totalizerMemory.InputType == TotalizerSourceType.GlobalVariable)
+            {
+                var inputVariable = await GlobalVariables.GetGlobalVariableByName(totalizerMemory.InputReference);
+                if (inputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input global variable not found");
+                }
+                
+                if (inputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Input global variable is disabled");
                 }
             }
 
-            // Validate OutputItem exists
-            var outputItem = await context.MonitoringItems.FindAsync(totalizerMemory.OutputItemId);
-            if (outputItem == null)
+            // Validate Output source
+            if (totalizerMemory.OutputType == TotalizerSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, "Output item not found");
+                if (!Guid.TryParse(totalizerMemory.OutputReference, out var outputItemId))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Invalid output item GUID");
+                }
+                
+                var outputItem = await context.MonitoringItems.FindAsync(outputItemId);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item not found");
+                }
+
+                // Validate OutputItem is AnalogOutput
+                if (outputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item must be AnalogOutput");
+                }
+            }
+            else if (totalizerMemory.OutputType == TotalizerSourceType.GlobalVariable)
+            {
+                var outputVariable = await GlobalVariables.GetGlobalVariableByName(totalizerMemory.OutputReference);
+                if (outputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable not found");
+                }
+                
+                if (outputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable is disabled");
+                }
             }
 
-            // Validate OutputItem is AnalogOutput
-            if (outputItem.ItemType != ItemType.AnalogOutput)
+            // Validate Input != Output (same type and reference)
+            if (totalizerMemory.InputType == totalizerMemory.OutputType && 
+                totalizerMemory.InputReference == totalizerMemory.OutputReference)
             {
                 await context.DisposeAsync();
-                return (false, "Output item must be AnalogOutput");
-            }
-
-            // Validate InputItemId != OutputItemId
-            if (totalizerMemory.InputItemId == totalizerMemory.OutputItemId)
-            {
-                await context.DisposeAsync();
-                return (false, "Input and output items must be different");
+                return (false, "Input and output sources must be different");
             }
 
             // Validate Interval > 0
@@ -255,6 +365,10 @@ public class TotalizerMemories
             await context.SaveChangesAsync();
             
             await context.DisposeAsync();
+            
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(totalizerMemory.Id, "TotalizerMemory");
+            
             return (true, null);
         }
         catch (Exception ex)
@@ -287,6 +401,10 @@ public class TotalizerMemories
             await context.SaveChangesAsync();
             
             await context.DisposeAsync();
+            
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(id, "TotalizerMemory");
+            
             return (true, null);
         }
         catch (Exception ex)
@@ -338,8 +456,18 @@ public class TotalizerMemories
             context.TotalizerMemories.Update(totalizerMemory);
             await context.SaveChangesAsync();
             
-            // Write zero to output item
-            await Points.WriteOrAddValue(totalizerMemory.OutputItemId, "0");
+            // Write zero to output based on source type
+            if (totalizerMemory.OutputType == TotalizerSourceType.Point)
+            {
+                if (Guid.TryParse(totalizerMemory.OutputReference, out var outputItemId))
+                {
+                    await Points.WriteOrAddValue(outputItemId, "0");
+                }
+            }
+            else if (totalizerMemory.OutputType == TotalizerSourceType.GlobalVariable)
+            {
+                await GlobalVariableProcess.SetVariable(totalizerMemory.OutputReference, "0");
+            }
             
             await context.DisposeAsync();
             

@@ -2761,6 +2761,15 @@ export const TimeoutSourceType = {
 };
 
 /**
+ * Enum for TotalizerMemory source types
+ */
+export type TotalizerSourceType = 0 | 1;
+export const TotalizerSourceType = {
+  Point: 0 as const,
+  GlobalVariable: 1 as const,
+};
+
+/**
  * Enum for PIDMemory source types
  */
 export type PIDSourceType = 0 | 1;
@@ -3246,8 +3255,10 @@ export type AccumulationType = (typeof AccumulationType)[keyof typeof Accumulati
 export interface TotalizerMemory {
   id: string; // UUID
   name?: string | null;
-  inputItemId: string; // UUID - AnalogInput for rate, DigitalInput for events
-  outputItemId: string; // UUID - AnalogOutput for accumulated value
+  inputType: number; // TotalizerSourceType (0=Point, 1=GlobalVariable)
+  inputReference: string; // GUID string for Point, name for GlobalVariable
+  outputType: number; // TotalizerSourceType (0=Point, 1=GlobalVariable)
+  outputReference: string; // GUID string for Point, name for GlobalVariable
   interval: number; // int - Execution interval in seconds
   isDisabled: boolean; // bool - Whether totalizer is disabled
   accumulationType: AccumulationType; // Accumulation type
@@ -3268,11 +3279,9 @@ export interface TotalizerMemory {
  * Enhanced Totalizer Memory with item details
  */
 export interface TotalizerMemoryWithItems extends TotalizerMemory {
-  inputItemName?: string;
-  inputItemNameFa?: string;
+  inputSourceName?: string;
   inputItemType?: ItemType;
-  outputItemName?: string;
-  outputItemNameFa?: string;
+  outputSourceName?: string;
   outputItemType?: ItemType;
 }
 

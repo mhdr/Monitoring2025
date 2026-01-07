@@ -8206,8 +8206,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             var totalizerMemory = new Core.Models.TotalizerMemory
             {
                 Name = request.Name,
-                InputItemId = request.InputItemId,
-                OutputItemId = request.OutputItemId,
+                InputType = request.InputType,
+                InputReference = request.InputReference,
+                OutputType = request.OutputType,
+                OutputReference = request.OutputReference,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 AccumulationType = (Core.Models.AccumulationType)request.AccumulationType,
@@ -8285,8 +8287,10 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 Id = request.Id,
                 Name = request.Name,
-                InputItemId = request.InputItemId,
-                OutputItemId = request.OutputItemId,
+                InputType = request.InputType,
+                InputReference = request.InputReference,
+                OutputType = request.OutputType,
+                OutputReference = request.OutputReference,
                 Interval = request.Interval,
                 IsDisabled = request.IsDisabled,
                 AccumulationType = (Core.Models.AccumulationType)request.AccumulationType,

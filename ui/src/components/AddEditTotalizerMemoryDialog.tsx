@@ -24,18 +24,23 @@ import {
   FormControl,
   InputLabel,
   FormHelperText,
+  ToggleButtonGroup,
+  ToggleButton,
+  Stack,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   Save as SaveIcon,
   Close as CloseIcon,
   HelpOutline as HelpOutlineIcon,
+  Memory as MemoryIcon,
+  Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addTotalizerMemory, editTotalizerMemory } from '../services/extendedApi';
-import type { TotalizerMemoryWithItems, MonitoringItem, ItemType } from '../types/api';
-import { ItemTypeEnum, AccumulationType } from '../types/api';
+import { addTotalizerMemory, editTotalizerMemory, getGlobalVariables } from '../services/extendedApi';
+import type { TotalizerMemoryWithItems, MonitoringItem, ItemType, GlobalVariable } from '../types/api';
+import { ItemTypeEnum, AccumulationType, TotalizerSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import CronExpressionInput from './CronExpressionInput';
 import FieldHelpPopover from './common/FieldHelpPopover';
@@ -51,8 +56,10 @@ interface AddEditTotalizerMemoryDialogProps {
 
 interface FormData {
   name: string;
-  inputItemId: string;
-  outputItemId: string;
+  inputType: number;
+  inputReference: string;
+  outputType: number;
+  outputReference: string;
   interval: number;
   isDisabled: boolean;
   accumulationType: AccumulationType;
@@ -104,11 +111,37 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [globalVariables, setGlobalVariables] = useState<GlobalVariable[]>([]);
+  const [loadingGlobalVariables, setLoadingGlobalVariables] = useState(false);
+
+  // Fetch global variables when dialog opens
+  useEffect(() => {
+    const fetchGlobalVariables = async () => {
+      if (open) {
+        setLoadingGlobalVariables(true);
+        try {
+          const response = await getGlobalVariables({});
+          if (response?.globalVariables) {
+            setGlobalVariables(response.globalVariables);
+            logger.log('Global variables loaded', { count: response.globalVariables.length });
+          }
+        } catch (err) {
+          logger.error('Failed to fetch global variables', { error: err });
+        } finally {
+          setLoadingGlobalVariables(false);
+        }
+      }
+    };
+
+    fetchGlobalVariables();
+  }, [open]);
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    inputItemId: '',
-    outputItemId: '',
+    inputType: TotalizerSourceType.Point,
+    inputReference: '',
+    outputType: TotalizerSourceType.Point,
+    outputReference: '',
     interval: 10,
     isDisabled: false,
     accumulationType: AccumulationType.RateIntegration,
@@ -126,8 +159,10 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
     if (editMode && totalizerMemory) {
       setFormData({
         name: totalizerMemory.name || '',
-        inputItemId: totalizerMemory.inputItemId,
-        outputItemId: totalizerMemory.outputItemId,
+        inputType: totalizerMemory.inputType,
+        inputReference: totalizerMemory.inputReference,
+        outputType: totalizerMemory.outputType,
+        outputReference: totalizerMemory.outputReference,
         interval: totalizerMemory.interval,
         isDisabled: totalizerMemory.isDisabled,
         accumulationType: totalizerMemory.accumulationType,
@@ -171,21 +206,44 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
     }
   }, [formData.accumulationType, analogInputItems, digitalInputItems]);
 
-  // Get selected items
-  const selectedInputItem = useMemo(
-    () => items.find((item) => item.id === formData.inputItemId),
-    [items, formData.inputItemId]
-  );
+  // Get selected items and variables
+  const selectedInputItem = useMemo(() => {
+    if (formData.inputType === TotalizerSourceType.Point) {
+      return items.find((item) => item.id === formData.inputReference) || null;
+    }
+    return null;
+  }, [items, formData.inputType, formData.inputReference]);
 
-  const selectedOutputItem = useMemo(
-    () => items.find((item) => item.id === formData.outputItemId),
-    [items, formData.outputItemId]
-  );
+  const selectedOutputItem = useMemo(() => {
+    if (formData.outputType === TotalizerSourceType.Point) {
+      return analogOutputItems.find((item) => item.id === formData.outputReference) || null;
+    }
+    return null;
+  }, [analogOutputItems, formData.outputType, formData.outputReference]);
+
+  const selectedInputVariable = useMemo(() => {
+    if (formData.inputType === TotalizerSourceType.GlobalVariable) {
+      return globalVariables.find((v) => v.name === formData.inputReference) || null;
+    }
+    return null;
+  }, [globalVariables, formData.inputType, formData.inputReference]);
+
+  const selectedOutputVariable = useMemo(() => {
+    if (formData.outputType === TotalizerSourceType.GlobalVariable) {
+      return globalVariables.find((v) => v.name === formData.outputReference) || null;
+    }
+    return null;
+  }, [globalVariables, formData.outputType, formData.outputReference]);
 
   // Helper to get item label
   const getItemLabel = (item: MonitoringItem): string => {
     const name = t('language') === 'fa' ? item.nameFa || item.name : item.name;
     return `${item.pointNumber} - ${name}`;
+  };
+
+  // Helper to get variable label
+  const getVariableLabel = (variable: GlobalVariable): string => {
+    return variable.name;
   };
 
   // Helper to get item type color
@@ -234,28 +292,75 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
       }));
     }
 
-    // If accumulation type changes, clear input item
+    // If accumulation type changes, clear input reference
     if (field === 'accumulationType') {
       setFormData((prev) => ({
         ...prev,
-        inputItemId: '',
+        inputReference: '',
       }));
+    }
+  };
+
+  const handleInputTypeChange = (_event: React.MouseEvent<HTMLElement>, newValue: number | null) => {
+    if (newValue !== null) {
+      setFormData((prev) => ({ ...prev, inputType: newValue, inputReference: '' }));
+      if (formErrors.inputReference) {
+        setFormErrors((prev) => ({ ...prev, inputReference: undefined }));
+      }
+    }
+  };
+
+  const handleOutputTypeChange = (_event: React.MouseEvent<HTMLElement>, newValue: number | null) => {
+    if (newValue !== null) {
+      setFormData((prev) => ({ ...prev, outputType: newValue, outputReference: '' }));
+      if (formErrors.outputReference) {
+        setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
+      }
+    }
+  };
+
+  const handleInputItemChange = (_event: React.SyntheticEvent, value: MonitoringItem | null) => {
+    setFormData((prev) => ({ ...prev, inputReference: value?.id || '' }));
+    if (formErrors.inputReference) {
+      setFormErrors((prev) => ({ ...prev, inputReference: undefined }));
+    }
+  };
+
+  const handleOutputItemChange = (_event: React.SyntheticEvent, value: MonitoringItem | null) => {
+    setFormData((prev) => ({ ...prev, outputReference: value?.id || '' }));
+    if (formErrors.outputReference) {
+      setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
+    }
+  };
+
+  const handleInputVariableChange = (_event: React.SyntheticEvent, value: GlobalVariable | null) => {
+    setFormData((prev) => ({ ...prev, inputReference: value?.name || '' }));
+    if (formErrors.inputReference) {
+      setFormErrors((prev) => ({ ...prev, inputReference: undefined }));
+    }
+  };
+
+  const handleOutputVariableChange = (_event: React.SyntheticEvent, value: GlobalVariable | null) => {
+    setFormData((prev) => ({ ...prev, outputReference: value?.name || '' }));
+    if (formErrors.outputReference) {
+      setFormErrors((prev) => ({ ...prev, outputReference: undefined }));
     }
   };
 
   const validate = (): boolean => {
     const errors: FormErrors = {};
 
-    if (!formData.inputItemId) {
-      errors.inputItemId = t('totalizerMemory.validation.inputItemRequired');
+    if (!formData.inputReference) {
+      errors.inputReference = t('totalizerMemory.validation.inputItemRequired');
     }
 
-    if (!formData.outputItemId) {
-      errors.outputItemId = t('totalizerMemory.validation.outputItemRequired');
+    if (!formData.outputReference) {
+      errors.outputReference = t('totalizerMemory.validation.outputItemRequired');
     }
 
-    if (formData.inputItemId === formData.outputItemId) {
-      errors.outputItemId = t('totalizerMemory.validation.inputOutputSame');
+    // Validate Input != Output (same type and reference)
+    if (formData.inputType === formData.outputType && formData.inputReference === formData.outputReference) {
+      errors.outputReference = t('totalizerMemory.validation.inputOutputSame');
     }
 
     if (formData.interval < 1) {
@@ -302,8 +407,10 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
         const editPayload = {
           id: totalizerMemory.id,
           name: formData.name || undefined,
-          inputItemId: formData.inputItemId,
-          outputItemId: formData.outputItemId,
+          inputType: formData.inputType,
+          inputReference: formData.inputReference,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
           interval: formData.interval,
           isDisabled: formData.isDisabled,
           accumulationType: formData.accumulationType,
@@ -323,8 +430,10 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
       } else {
         const addPayload = {
           name: formData.name || undefined,
-          inputItemId: formData.inputItemId,
-          outputItemId: formData.outputItemId,
+          inputType: formData.inputType,
+          inputReference: formData.inputReference,
+          outputType: formData.outputType,
+          outputReference: formData.outputReference,
           interval: formData.interval,
           isDisabled: formData.isDisabled,
           accumulationType: formData.accumulationType,
@@ -434,89 +543,217 @@ const AddEditTotalizerMemoryDialog: React.FC<AddEditTotalizerMemoryDialogProps> 
                 </IconButton>
               </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Autocomplete
+              {/* Input Type Selection */}
+              <Box>
+                <Typography variant="subtitle2" gutterBottom data-id-ref="totalizer-memory-input-type-label">
+                  {t('totalizerMemory.inputType')} *
+                </Typography>
+                <ToggleButtonGroup
+                  value={formData.inputType}
+                  exclusive
+                  onChange={handleInputTypeChange}
                   fullWidth
-                  options={inputItems}
-                  value={selectedInputItem || null}
-                  onChange={(_, newValue) => handleFieldChange('inputItemId', newValue?.id || '')}
-                  getOptionLabel={getItemLabel}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
-                      </Box>
-                    </Box>
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('totalizerMemory.inputItem')}
-                      error={!!formErrors.inputItemId}
-                      helperText={formErrors.inputItemId || t('totalizerMemory.inputItemHelp')}
-                      required
-                    />
-                  )}
+                  disabled={loading}
+                  data-id-ref="totalizer-memory-input-type-toggle"
                   sx={{ mb: 2 }}
-                  data-id-ref="totalizer-memory-input-item-select"
-                />
+                >
+                  <ToggleButton value={TotalizerSourceType.Point} data-id-ref="totalizer-memory-input-type-point">
+                    <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                    {t('totalizerMemory.sourceTypePoint')}
+                  </ToggleButton>
+                  <ToggleButton value={TotalizerSourceType.GlobalVariable} data-id-ref="totalizer-memory-input-type-globalvariable">
+                    <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                    {t('totalizerMemory.sourceTypeGlobalVariable')}
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+
+              {/* Input Source Selection */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {formData.inputType === TotalizerSourceType.Point ? (
+                  <Autocomplete
+                    fullWidth
+                    options={inputItems}
+                    value={selectedInputItem || null}
+                    onChange={handleInputItemChange}
+                    getOptionLabel={getItemLabel}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                            {getItemLabel(option)}
+                          </Typography>
+                          <Chip
+                            label={getItemTypeLabel(option.itemType)}
+                            size="small"
+                            color={getItemTypeColor(option.itemType)}
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </Box>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('totalizerMemory.inputSource')}
+                        error={!!formErrors.inputReference}
+                        helperText={formErrors.inputReference || t('totalizerMemory.inputSourceHelp')}
+                        required
+                      />
+                    )}
+                    sx={{ mb: 2 }}
+                    disabled={loading || loadingGlobalVariables}
+                    data-id-ref="totalizer-memory-input-item-select"
+                  />
+                ) : (
+                  <Autocomplete
+                    fullWidth
+                    options={globalVariables}
+                    value={selectedInputVariable || null}
+                    onChange={handleInputVariableChange}
+                    getOptionLabel={getVariableLabel}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.name}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                            {getVariableLabel(option)}
+                          </Typography>
+                          <Chip
+                            label={t('common.globalVariable')}
+                            size="small"
+                            color="warning"
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </Box>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('totalizerMemory.inputSource')}
+                        error={!!formErrors.inputReference}
+                        helperText={formErrors.inputReference || t('totalizerMemory.inputSourceGlobalVariableHelp')}
+                        required
+                      />
+                    )}
+                    sx={{ mb: 2 }}
+                    disabled={loading || loadingGlobalVariables}
+                    data-id-ref="totalizer-memory-input-variable-select"
+                  />
+                )}
                 <IconButton
                   size="small"
-                  onClick={handleHelpOpen('totalizerMemory.help.inputItem')}
+                  onClick={handleHelpOpen('totalizerMemory.help.inputSource')}
                   sx={{ p: 0.25, mt: -3 }}
-                  data-id-ref="totalizer-memory-input-item-help-btn"
+                  data-id-ref="totalizer-memory-input-source-help-btn"
                 >
                   <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                 </IconButton>
               </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Autocomplete
+              {/* Output Type Selection */}
+              <Box>
+                <Typography variant="subtitle2" gutterBottom data-id-ref="totalizer-memory-output-type-label">
+                  {t('totalizerMemory.outputType')} *
+                </Typography>
+                <ToggleButtonGroup
+                  value={formData.outputType}
+                  exclusive
+                  onChange={handleOutputTypeChange}
                   fullWidth
-                  options={analogOutputItems}
-                  value={selectedOutputItem || null}
-                  onChange={(_, newValue) => handleFieldChange('outputItemId', newValue?.id || '')}
-                  getOptionLabel={getItemLabel}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} key={option.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                          {getItemLabel(option)}
-                        </Typography>
-                        <Chip
-                          label={getItemTypeLabel(option.itemType)}
-                          size="small"
-                          color={getItemTypeColor(option.itemType)}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
-                      </Box>
-                    </Box>
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t('totalizerMemory.outputItem')}
-                      error={!!formErrors.outputItemId}
-                      helperText={formErrors.outputItemId || t('totalizerMemory.outputItemHelp')}
-                      required
-                    />
-                  )}
+                  disabled={loading}
+                  data-id-ref="totalizer-memory-output-type-toggle"
                   sx={{ mb: 2 }}
-                  data-id-ref="totalizer-memory-output-item-select"
-                />
+                >
+                  <ToggleButton value={TotalizerSourceType.Point} data-id-ref="totalizer-memory-output-type-point">
+                    <MemoryIcon sx={{ mr: 1 }} fontSize="small" />
+                    {t('totalizerMemory.sourceTypePoint')}
+                  </ToggleButton>
+                  <ToggleButton value={TotalizerSourceType.GlobalVariable} data-id-ref="totalizer-memory-output-type-globalvariable">
+                    <FunctionsIcon sx={{ mr: 1 }} fontSize="small" />
+                    {t('totalizerMemory.sourceTypeGlobalVariable')}
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+
+              {/* Output Source Selection */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {formData.outputType === TotalizerSourceType.Point ? (
+                  <Autocomplete
+                    fullWidth
+                    options={analogOutputItems}
+                    value={selectedOutputItem || null}
+                    onChange={handleOutputItemChange}
+                    getOptionLabel={getItemLabel}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                            {getItemLabel(option)}
+                          </Typography>
+                          <Chip
+                            label={getItemTypeLabel(option.itemType)}
+                            size="small"
+                            color={getItemTypeColor(option.itemType)}
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </Box>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('totalizerMemory.outputSource')}
+                        error={!!formErrors.outputReference}
+                        helperText={formErrors.outputReference || t('totalizerMemory.outputSourceHelp')}
+                        required
+                      />
+                    )}
+                    sx={{ mb: 2 }}
+                    disabled={loading || loadingGlobalVariables}
+                    data-id-ref="totalizer-memory-output-item-select"
+                  />
+                ) : (
+                  <Autocomplete
+                    fullWidth
+                    options={globalVariables}
+                    value={selectedOutputVariable || null}
+                    onChange={handleOutputVariableChange}
+                    getOptionLabel={getVariableLabel}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.name}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                            {getVariableLabel(option)}
+                          </Typography>
+                          <Chip
+                            label={t('common.globalVariable')}
+                            size="small"
+                            color="warning"
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </Box>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('totalizerMemory.outputSource')}
+                        error={!!formErrors.outputReference}
+                        helperText={formErrors.outputReference || t('totalizerMemory.outputSourceGlobalVariableHelp')}
+                        required
+                      />
+                    )}
+                    sx={{ mb: 2 }}
+                    disabled={loading || loadingGlobalVariables}
+                    data-id-ref="totalizer-memory-output-variable-select"
+                  />
+                )}
                 <IconButton
                   size="small"
-                  onClick={handleHelpOpen('totalizerMemory.help.outputItem')}
+                  onClick={handleHelpOpen('totalizerMemory.help.outputSource')}
                   sx={{ p: 0.25, mt: -3 }}
-                  data-id-ref="totalizer-memory-output-item-help-btn"
+                  data-id-ref="totalizer-memory-output-source-help-btn"
                 >
                   <HelpOutlineIcon sx={{ fontSize: 16, color: 'info.main' }} />
                 </IconButton>

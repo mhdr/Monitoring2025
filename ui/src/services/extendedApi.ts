@@ -1135,8 +1135,10 @@ export const getTotalizerMemories = async (params: {} = {}): Promise<{ isSuccess
  */
 export const addTotalizerMemory = async (data: {
   name?: string;
-  inputItemId: string;
-  outputItemId: string;
+  inputType: number;
+  inputReference: string;
+  outputType: number;
+  outputReference: string;
   interval: number;
   isDisabled: boolean;
   accumulationType: number;
@@ -1165,8 +1167,10 @@ export const addTotalizerMemory = async (data: {
 export const editTotalizerMemory = async (data: {
   id: string;
   name?: string;
-  inputItemId: string;
-  outputItemId: string;
+  inputType: number;
+  inputReference: string;
+  outputType: number;
+  outputReference: string;
   interval: number;
   isDisabled: boolean;
   accumulationType: number;

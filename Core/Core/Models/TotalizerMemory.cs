@@ -5,6 +5,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Core.Models;
 
 /// <summary>
+/// Specifies the source type for totalizer memory input or output
+/// </summary>
+public enum TotalizerSourceType
+{
+    /// <summary>
+    /// Reference is a Point (MonitoringItem) GUID
+    /// </summary>
+    Point = 0,
+    
+    /// <summary>
+    /// Reference is a Global Variable name
+    /// </summary>
+    GlobalVariable = 1
+}
+
+/// <summary>
 /// Accumulation types for totalizer memory
 /// </summary>
 public enum AccumulationType
@@ -47,16 +63,32 @@ public class TotalizerMemory
     public string? Name { get; set; }
 
     /// <summary>
-    /// Input monitoring item ID (AnalogInput for rate integration, DigitalInput for event counting)
+    /// Type of the input source: Point or GlobalVariable
     /// </summary>
-    [Column("input_item_id")]
-    public Guid InputItemId { get; set; }
+    [Column("input_type")] 
+    public TotalizerSourceType InputType { get; set; } = TotalizerSourceType.Point;
     
     /// <summary>
-    /// Output monitoring item ID where accumulated value is written (must be AnalogOutput)
+    /// Reference to the input source (AnalogInput for rate integration, DigitalInput for event counting).
+    /// - If InputType = Point: GUID string of the MonitoringItem
+    /// - If InputType = GlobalVariable: Name of the Global Variable
     /// </summary>
-    [Column("output_item_id")]
-    public Guid OutputItemId { get; set; }
+    [Column("input_reference")] 
+    public string InputReference { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Type of the output source: Point or GlobalVariable
+    /// </summary>
+    [Column("output_type")] 
+    public TotalizerSourceType OutputType { get; set; } = TotalizerSourceType.Point;
+    
+    /// <summary>
+    /// Reference to the output source where accumulated value is written.
+    /// - If OutputType = Point: GUID string of the MonitoringItem (must be AnalogOutput)
+    /// - If OutputType = GlobalVariable: Name of the Global Variable
+    /// </summary>
+    [Column("output_reference")] 
+    public string OutputReference { get; set; } = string.Empty;
 
     /// <summary>
     /// Processing interval in seconds
