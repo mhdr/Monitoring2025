@@ -279,21 +279,45 @@ public class MinMaxSelectorMemoryProcess
         // we could consider switching. But the simple approach is: if we have valid inputs,
         // just select based on mode. The failover is really for when inputs go bad.
         
-        // Write output value
-        await Points.WriteOrAddValue(
-            memory.OutputItemId,
-            selectedInput.SelectedValue.ToString("F4"),
-            null,
-            memory.Duration);
+        // Write output value based on output type
+        if (memory.OutputType == Models.MinMaxSourceType.Point)
+        {
+            if (Guid.TryParse(memory.OutputReference, out var outputItemId))
+            {
+                await Points.WriteOrAddValue(
+                    outputItemId,
+                    selectedInput.SelectedValue.ToString("F4"),
+                    null,
+                    memory.Duration);
+            }
+        }
+        else if (memory.OutputType == Models.MinMaxSourceType.GlobalVariable)
+        {
+            await GlobalVariableProcess.SetVariable(memory.OutputReference, selectedInput.SelectedValue.ToString("F4"));
+        }
 
         // Write selected index if configured
-        if (memory.SelectedIndexOutputItemId.HasValue)
+        if (memory.SelectedIndexOutputType.HasValue)
         {
-            await Points.WriteOrAddValue(
-                memory.SelectedIndexOutputItemId.Value,
-                selectedInput.SelectedIndex.ToString(),
-                null,
-                memory.Duration);
+            if (memory.SelectedIndexOutputType.Value == Models.MinMaxSourceType.Point)
+            {
+                if (!string.IsNullOrEmpty(memory.SelectedIndexOutputReference) &&
+                    Guid.TryParse(memory.SelectedIndexOutputReference, out var indexOutputItemId))
+                {
+                    await Points.WriteOrAddValue(
+                        indexOutputItemId,
+                        selectedInput.SelectedIndex.ToString(),
+                        null,
+                        memory.Duration);
+                }
+            }
+            else if (memory.SelectedIndexOutputType.Value == Models.MinMaxSourceType.GlobalVariable)
+            {
+                if (!string.IsNullOrEmpty(memory.SelectedIndexOutputReference))
+                {
+                    await GlobalVariableProcess.SetVariable(memory.SelectedIndexOutputReference, selectedInput.SelectedIndex.ToString());
+                }
+            }
         }
 
         // Update runtime state
@@ -333,19 +357,45 @@ public class MinMaxSelectorMemoryProcess
                 // Output the last known good value if available
                 if (memory.LastSelectedValue.HasValue)
                 {
-                    await Points.WriteOrAddValue(
-                        memory.OutputItemId,
-                        memory.LastSelectedValue.Value.ToString("F4"),
-                        null,
-                        memory.Duration);
-
-                    if (memory.SelectedIndexOutputItemId.HasValue && memory.LastSelectedIndex.HasValue)
+                    // Write output value based on output type
+                    if (memory.OutputType == Models.MinMaxSourceType.Point)
                     {
-                        await Points.WriteOrAddValue(
-                            memory.SelectedIndexOutputItemId.Value,
-                            memory.LastSelectedIndex.Value.ToString(),
-                            null,
-                            memory.Duration);
+                        if (Guid.TryParse(memory.OutputReference, out var outputItemId))
+                        {
+                            await Points.WriteOrAddValue(
+                                outputItemId,
+                                memory.LastSelectedValue.Value.ToString("F4"),
+                                null,
+                                memory.Duration);
+                        }
+                    }
+                    else if (memory.OutputType == Models.MinMaxSourceType.GlobalVariable)
+                    {
+                        await GlobalVariableProcess.SetVariable(memory.OutputReference, memory.LastSelectedValue.Value.ToString("F4"));
+                    }
+
+                    // Write selected index if configured
+                    if (memory.SelectedIndexOutputType.HasValue && memory.LastSelectedIndex.HasValue)
+                    {
+                        if (memory.SelectedIndexOutputType.Value == Models.MinMaxSourceType.Point)
+                        {
+                            if (!string.IsNullOrEmpty(memory.SelectedIndexOutputReference) &&
+                                Guid.TryParse(memory.SelectedIndexOutputReference, out var indexOutputItemId))
+                            {
+                                await Points.WriteOrAddValue(
+                                    indexOutputItemId,
+                                    memory.LastSelectedIndex.Value.ToString(),
+                                    null,
+                                    memory.Duration);
+                            }
+                        }
+                        else if (memory.SelectedIndexOutputType.Value == Models.MinMaxSourceType.GlobalVariable)
+                        {
+                            if (!string.IsNullOrEmpty(memory.SelectedIndexOutputReference))
+                            {
+                                await GlobalVariableProcess.SetVariable(memory.SelectedIndexOutputReference, memory.LastSelectedIndex.Value.ToString());
+                            }
+                        }
                     }
 
                     MyLog.Debug($"MinMaxSelectorMemory {memory.Id}: No valid inputs, HoldLastGood - using last value {memory.LastSelectedValue.Value:F4} from input {memory.LastSelectedIndex}");

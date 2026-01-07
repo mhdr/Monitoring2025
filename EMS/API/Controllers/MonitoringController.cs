@@ -13420,7 +13420,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                         Id = memory.Id,
                         Name = memory.Name,
                         InputItemIds = memory.InputItemIds,
+                        OutputType = (int)memory.OutputType,
+                        OutputReference = memory.OutputReference,
                         OutputItemId = memory.OutputItemId,
+                        SelectedIndexOutputType = memory.SelectedIndexOutputType.HasValue 
+                            ? (int?)memory.SelectedIndexOutputType.Value 
+                            : null,
+                        SelectedIndexOutputReference = memory.SelectedIndexOutputReference,
                         SelectedIndexOutputItemId = memory.SelectedIndexOutputItemId,
                         SelectionMode = (int)memory.SelectionMode,
                         FailoverMode = (int)memory.FailoverMode,
@@ -13494,7 +13500,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
             {
                 Name = request.Name,
                 InputItemIds = request.InputItemIds,
+                OutputType = (Core.Models.MinMaxSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
                 OutputItemId = request.OutputItemId,
+                SelectedIndexOutputType = request.SelectedIndexOutputType.HasValue 
+                    ? (Core.Models.MinMaxSourceType?)request.SelectedIndexOutputType.Value 
+                    : null,
+                SelectedIndexOutputReference = request.SelectedIndexOutputReference,
                 SelectedIndexOutputItemId = request.SelectedIndexOutputItemId,
                 SelectionMode = (Core.Models.MinMaxSelectionMode)request.SelectionMode,
                 FailoverMode = (Core.Models.MinMaxFailoverMode)request.FailoverMode,
@@ -13566,7 +13578,13 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 Id = request.Id,
                 Name = request.Name,
                 InputItemIds = request.InputItemIds,
+                OutputType = (Core.Models.MinMaxSourceType)request.OutputType,
+                OutputReference = request.OutputReference,
                 OutputItemId = request.OutputItemId,
+                SelectedIndexOutputType = request.SelectedIndexOutputType.HasValue 
+                    ? (Core.Models.MinMaxSourceType?)request.SelectedIndexOutputType.Value 
+                    : null,
+                SelectedIndexOutputReference = request.SelectedIndexOutputReference,
                 SelectedIndexOutputItemId = request.SelectedIndexOutputItemId,
                 SelectionMode = (Core.Models.MinMaxSelectionMode)request.SelectionMode,
                 FailoverMode = (Core.Models.MinMaxFailoverMode)request.FailoverMode,

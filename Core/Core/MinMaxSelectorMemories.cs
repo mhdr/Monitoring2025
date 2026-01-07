@@ -100,46 +100,106 @@ public class MinMaxSelectorMemories
             }
 
             // Validate output item
-            var outputItem = await context.MonitoringItems.FindAsync(memory.OutputItemId);
-            if (outputItem == null)
+            if (memory.OutputType == Models.MinMaxSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, null, "Output item not found");
-            }
+                if (!Guid.TryParse(memory.OutputReference, out var outputGuid))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Invalid output item GUID");
+                }
 
-            if (outputItem.ItemType != ItemType.AnalogOutput)
-            {
-                await context.DisposeAsync();
-                return (false, null, "Output item must be AnalogOutput");
-            }
+                var outputItem = await context.MonitoringItems.FindAsync(outputGuid);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item not found");
+                }
 
-            if (usedItemIds.Contains(memory.OutputItemId))
-            {
-                await context.DisposeAsync();
-                return (false, null, "Output item cannot be the same as an input item");
+                if (outputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item must be AnalogOutput");
+                }
+
+                if (usedItemIds.Contains(outputGuid))
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output item cannot be the same as an input item");
+                }
+                usedItemIds.Add(outputGuid);
             }
-            usedItemIds.Add(memory.OutputItemId);
+            else if (memory.OutputType == Models.MinMaxSourceType.GlobalVariable)
+            {
+                var outputVariable = await GlobalVariables.GetGlobalVariableByName(memory.OutputReference);
+                if (outputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable not found");
+                }
+                
+                if (outputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, null, "Output global variable is disabled");
+                }
+            }
 
             // Validate optional selected index output item
-            if (memory.SelectedIndexOutputItemId.HasValue)
+            if (memory.SelectedIndexOutputType.HasValue)
             {
-                var indexOutputItem = await context.MonitoringItems.FindAsync(memory.SelectedIndexOutputItemId.Value);
-                if (indexOutputItem == null)
+                if (memory.SelectedIndexOutputType.Value == Models.MinMaxSourceType.Point)
                 {
-                    await context.DisposeAsync();
-                    return (false, null, "Selected index output item not found");
-                }
+                    if (string.IsNullOrEmpty(memory.SelectedIndexOutputReference))
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Selected index output reference is required when type is Point");
+                    }
 
-                if (indexOutputItem.ItemType != ItemType.AnalogOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, null, "Selected index output item must be AnalogOutput");
-                }
+                    if (!Guid.TryParse(memory.SelectedIndexOutputReference, out var indexOutputGuid))
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Invalid selected index output item GUID");
+                    }
 
-                if (usedItemIds.Contains(memory.SelectedIndexOutputItemId.Value))
+                    var indexOutputItem = await context.MonitoringItems.FindAsync(indexOutputGuid);
+                    if (indexOutputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Selected index output item not found");
+                    }
+
+                    if (indexOutputItem.ItemType != ItemType.AnalogOutput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Selected index output item must be AnalogOutput");
+                    }
+
+                    if (usedItemIds.Contains(indexOutputGuid))
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Selected index output item cannot be the same as input or value output item");
+                    }
+                }
+                else if (memory.SelectedIndexOutputType.Value == Models.MinMaxSourceType.GlobalVariable)
                 {
-                    await context.DisposeAsync();
-                    return (false, null, "Selected index output item cannot be the same as input or value output item");
+                    if (string.IsNullOrEmpty(memory.SelectedIndexOutputReference))
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Selected index output reference is required when type is GlobalVariable");
+                    }
+
+                    var indexOutputVariable = await GlobalVariables.GetGlobalVariableByName(memory.SelectedIndexOutputReference);
+                    if (indexOutputVariable == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Selected index output global variable not found");
+                    }
+                    
+                    if (indexOutputVariable.IsDisabled)
+                    {
+                        await context.DisposeAsync();
+                        return (false, null, "Selected index output global variable is disabled");
+                    }
                 }
             }
 
@@ -175,6 +235,10 @@ public class MinMaxSelectorMemories
             await context.SaveChangesAsync();
             var id = memory.Id;
             await context.DisposeAsync();
+            
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(id, "MinMaxSelectorMemory");
+            
             return (true, id, null);
         }
         catch (Exception e)
@@ -259,46 +323,106 @@ public class MinMaxSelectorMemories
             }
 
             // Validate output item
-            var outputItem = await context.MonitoringItems.FindAsync(memory.OutputItemId);
-            if (outputItem == null)
+            if (memory.OutputType == Models.MinMaxSourceType.Point)
             {
-                await context.DisposeAsync();
-                return (false, "Output item not found");
-            }
+                if (!Guid.TryParse(memory.OutputReference, out var outputGuid))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Invalid output item GUID");
+                }
 
-            if (outputItem.ItemType != ItemType.AnalogOutput)
-            {
-                await context.DisposeAsync();
-                return (false, "Output item must be AnalogOutput");
-            }
+                var outputItem = await context.MonitoringItems.FindAsync(outputGuid);
+                if (outputItem == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item not found");
+                }
 
-            if (usedItemIds.Contains(memory.OutputItemId))
-            {
-                await context.DisposeAsync();
-                return (false, "Output item cannot be the same as an input item");
+                if (outputItem.ItemType != ItemType.AnalogOutput)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item must be AnalogOutput");
+                }
+
+                if (usedItemIds.Contains(outputGuid))
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output item cannot be the same as an input item");
+                }
+                usedItemIds.Add(outputGuid);
             }
-            usedItemIds.Add(memory.OutputItemId);
+            else if (memory.OutputType == Models.MinMaxSourceType.GlobalVariable)
+            {
+                var outputVariable = await GlobalVariables.GetGlobalVariableByName(memory.OutputReference);
+                if (outputVariable == null)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable not found");
+                }
+                
+                if (outputVariable.IsDisabled)
+                {
+                    await context.DisposeAsync();
+                    return (false, "Output global variable is disabled");
+                }
+            }
 
             // Validate optional selected index output item
-            if (memory.SelectedIndexOutputItemId.HasValue)
+            if (memory.SelectedIndexOutputType.HasValue)
             {
-                var indexOutputItem = await context.MonitoringItems.FindAsync(memory.SelectedIndexOutputItemId.Value);
-                if (indexOutputItem == null)
+                if (memory.SelectedIndexOutputType.Value == Models.MinMaxSourceType.Point)
                 {
-                    await context.DisposeAsync();
-                    return (false, "Selected index output item not found");
-                }
+                    if (string.IsNullOrEmpty(memory.SelectedIndexOutputReference))
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Selected index output reference is required when type is Point");
+                    }
 
-                if (indexOutputItem.ItemType != ItemType.AnalogOutput)
-                {
-                    await context.DisposeAsync();
-                    return (false, "Selected index output item must be AnalogOutput");
-                }
+                    if (!Guid.TryParse(memory.SelectedIndexOutputReference, out var indexOutputGuid))
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Invalid selected index output item GUID");
+                    }
 
-                if (usedItemIds.Contains(memory.SelectedIndexOutputItemId.Value))
+                    var indexOutputItem = await context.MonitoringItems.FindAsync(indexOutputGuid);
+                    if (indexOutputItem == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Selected index output item not found");
+                    }
+
+                    if (indexOutputItem.ItemType != ItemType.AnalogOutput)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Selected index output item must be AnalogOutput");
+                    }
+
+                    if (usedItemIds.Contains(indexOutputGuid))
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Selected index output item cannot be the same as input or value output item");
+                    }
+                }
+                else if (memory.SelectedIndexOutputType.Value == Models.MinMaxSourceType.GlobalVariable)
                 {
-                    await context.DisposeAsync();
-                    return (false, "Selected index output item cannot be the same as input or value output item");
+                    if (string.IsNullOrEmpty(memory.SelectedIndexOutputReference))
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Selected index output reference is required when type is GlobalVariable");
+                    }
+
+                    var indexOutputVariable = await GlobalVariables.GetGlobalVariableByName(memory.SelectedIndexOutputReference);
+                    if (indexOutputVariable == null)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Selected index output global variable not found");
+                    }
+                    
+                    if (indexOutputVariable.IsDisabled)
+                    {
+                        await context.DisposeAsync();
+                        return (false, "Selected index output global variable is disabled");
+                    }
                 }
             }
 
@@ -341,6 +465,10 @@ public class MinMaxSelectorMemories
             context.MinMaxSelectorMemories.Update(memory);
             await context.SaveChangesAsync();
             await context.DisposeAsync();
+            
+            // Invalidate usage cache for referenced global variables
+            await GlobalVariableUsageCache.OnMemoryChanged(memory.Id, "MinMaxSelectorMemory");
+            
             return (true, null);
         }
         catch (Exception e)
@@ -365,6 +493,9 @@ public class MinMaxSelectorMemories
                 await context.DisposeAsync();
                 return (false, "Min/Max selector memory not found");
             }
+
+            // Invalidate usage cache for referenced global variables (before deletion)
+            await GlobalVariableUsageCache.OnMemoryChanged(id, "MinMaxSelectorMemory");
 
             context.MinMaxSelectorMemories.Remove(memory);
             await context.SaveChangesAsync();

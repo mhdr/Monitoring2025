@@ -628,7 +628,34 @@ public class GlobalVariables
                 }
             }
 
-            // 2. Scan FormulaMemory for @GV: references in VariableAliases
+            // 2. Scan MinMaxSelectorMemory
+            var minMaxMemories = await context.MinMaxSelectorMemories.ToListAsync();
+            foreach (var mm in minMaxMemories)
+            {
+                if (mm.OutputType == MinMaxSourceType.GlobalVariable && mm.OutputReference == variableName)
+                {
+                    references.Add(new MemoryReference
+                    {
+                        MemoryId = mm.Id,
+                        MemoryType = "MinMaxSelectorMemory",
+                        MemoryName = mm.Name,
+                        UsageContext = "Output"
+                    });
+                }
+                
+                if (mm.SelectedIndexOutputType == MinMaxSourceType.GlobalVariable && mm.SelectedIndexOutputReference == variableName)
+                {
+                    references.Add(new MemoryReference
+                    {
+                        MemoryId = mm.Id,
+                        MemoryType = "MinMaxSelectorMemory",
+                        MemoryName = mm.Name,
+                        UsageContext = "SelectedIndexOutput"
+                    });
+                }
+            }
+
+            // 3. Scan FormulaMemory for @GV: references in VariableAliases
             var formulaMemories = await context.FormulaMemories.ToListAsync();
             foreach (var fm in formulaMemories)
             {
@@ -659,7 +686,7 @@ public class GlobalVariables
                 }
             }
 
-            // 3. Scan IfMemory for @GV: references in VariableAliases
+            // 4. Scan IfMemory for @GV: references in VariableAliases
             var ifMemories = await context.IfMemories.ToListAsync();
             foreach (var im in ifMemories)
             {

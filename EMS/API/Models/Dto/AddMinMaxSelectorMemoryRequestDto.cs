@@ -21,16 +21,40 @@ public class AddMinMaxSelectorMemoryRequestDto
     public string InputItemIds { get; set; } = "[]";
 
     /// <summary>
-    /// ID of the output monitoring item where the selected min/max value will be written.
+    /// Type of the output source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    [Required(ErrorMessage = "Output type is required")]
+    public int OutputType { get; set; } = 0;
+
+    /// <summary>
+    /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    [Required(ErrorMessage = "Output reference is required")]
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// (Legacy) ID of the output monitoring item where the selected min/max value will be written.
     /// Must be AnalogOutput type.
+    /// DEPRECATED: Use OutputType and OutputReference instead
     /// </summary>
     [Required(ErrorMessage = "Output item ID is required")]
     public Guid OutputItemId { get; set; }
 
     /// <summary>
-    /// Optional output item ID for the selected input index (1-16).
+    /// Type of the selected index output source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int? SelectedIndexOutputType { get; set; }
+
+    /// <summary>
+    /// Reference to the selected index output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    public string? SelectedIndexOutputReference { get; set; }
+
+    /// <summary>
+    /// (Legacy) Optional output item ID for the selected input index (1-16).
     /// When configured, writes which input (by position) was selected.
     /// Must be AnalogOutput type if specified.
+    /// DEPRECATED: Use SelectedIndexOutputType and SelectedIndexOutputReference instead
     /// </summary>
     public Guid? SelectedIndexOutputItemId { get; set; }
 

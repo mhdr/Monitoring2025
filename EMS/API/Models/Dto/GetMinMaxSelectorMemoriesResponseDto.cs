@@ -42,12 +42,34 @@ public class MinMaxSelectorMemoryItemDto
     public string InputItemIds { get; set; } = "[]";
 
     /// <summary>
-    /// Output item ID for selected value
+    /// Type of the output source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int OutputType { get; set; }
+
+    /// <summary>
+    /// Reference to the output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// (Legacy) Output item ID for selected value
+    /// DEPRECATED: Use OutputType and OutputReference instead
     /// </summary>
     public Guid OutputItemId { get; set; }
 
     /// <summary>
-    /// Optional output item ID for selected input index (1-16)
+    /// Type of the selected index output source: 0=Point, 1=GlobalVariable
+    /// </summary>
+    public int? SelectedIndexOutputType { get; set; }
+
+    /// <summary>
+    /// Reference to the selected index output source (GUID string for Point, name for GlobalVariable)
+    /// </summary>
+    public string? SelectedIndexOutputReference { get; set; }
+
+    /// <summary>
+    /// (Legacy) Optional output item ID for selected input index (1-16)
+    /// DEPRECATED: Use SelectedIndexOutputType and SelectedIndexOutputReference instead
     /// </summary>
     public Guid? SelectedIndexOutputItemId { get; set; }
 

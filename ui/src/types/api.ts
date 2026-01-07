@@ -4378,6 +4378,16 @@ export interface DeleteComparisonMemoryResponseDto {
 // ============================================================================
 
 /**
+ * Source type for Min/Max Selector Memory output
+ */
+export type MinMaxSourceType = 0 | 1; // 0 = Point, 1 = GlobalVariable
+
+export const MinMaxSourceTypeEnum = {
+  Point: 0 as MinMaxSourceType,
+  GlobalVariable: 1 as MinMaxSourceType,
+} as const;
+
+/**
  * Selection mode for Min/Max Selector Memory
  */
 export type MinMaxSelectionMode = 1 | 2; // 1 = Minimum, 2 = Maximum
@@ -4406,8 +4416,12 @@ export interface MinMaxSelectorMemory {
   id: string; // UUID
   name?: string | null;
   inputItemIds: string; // JSON array of input item GUIDs ["guid1", "guid2", ...]
-  outputItemId: string; // UUID - Output for selected value
-  selectedIndexOutputItemId?: string | null; // UUID - Optional output for which input (1-16) was selected
+  outputType: MinMaxSourceType; // 0 = Point, 1 = GlobalVariable
+  outputReference: string; // UUID for Point, Name for GlobalVariable
+  outputItemId: string; // UUID - Output for selected value (DEPRECATED: use outputType/outputReference)
+  selectedIndexOutputType?: MinMaxSourceType | null; // 0 = Point, 1 = GlobalVariable
+  selectedIndexOutputReference?: string | null; // UUID for Point, Name for GlobalVariable
+  selectedIndexOutputItemId?: string | null; // UUID - Optional output for which input (1-16) was selected (DEPRECATED)
   selectionMode: MinMaxSelectionMode; // 1 = Minimum, 2 = Maximum
   failoverMode: MinMaxFailoverMode; // 1 = IgnoreBad, 2 = FallbackToOpposite, 3 = HoldLastGood
   interval: number; // int - Execution interval in seconds
@@ -4440,8 +4454,12 @@ export interface GetMinMaxSelectorMemoriesResponseDto {
 export interface AddMinMaxSelectorMemoryRequestDto {
   name?: string | null;
   inputItemIds: string; // JSON array of input item GUIDs (2-16 items)
-  outputItemId: string; // UUID
-  selectedIndexOutputItemId?: string | null; // UUID - Optional
+  outputType: MinMaxSourceType; // 0 = Point, 1 = GlobalVariable
+  outputReference: string; // UUID for Point, Name for GlobalVariable
+  outputItemId: string; // UUID (DEPRECATED: use outputType/outputReference)
+  selectedIndexOutputType?: MinMaxSourceType | null; // 0 = Point, 1 = GlobalVariable
+  selectedIndexOutputReference?: string | null; // UUID for Point, Name for GlobalVariable
+  selectedIndexOutputItemId?: string | null; // UUID - Optional (DEPRECATED)
   selectionMode: MinMaxSelectionMode;
   failoverMode: MinMaxFailoverMode;
   interval: number; // int - must be > 0
@@ -4465,8 +4483,12 @@ export interface EditMinMaxSelectorMemoryRequestDto {
   id: string; // UUID
   name?: string | null;
   inputItemIds: string; // JSON array of input item GUIDs (2-16 items)
-  outputItemId: string; // UUID
-  selectedIndexOutputItemId?: string | null; // UUID - Optional
+  outputType: MinMaxSourceType; // 0 = Point, 1 = GlobalVariable
+  outputReference: string; // UUID for Point, Name for GlobalVariable
+  outputItemId: string; // UUID (DEPRECATED: use outputType/outputReference)
+  selectedIndexOutputType?: MinMaxSourceType | null; // 0 = Point, 1 = GlobalVariable
+  selectedIndexOutputReference?: string | null; // UUID for Point, Name for GlobalVariable
+  selectedIndexOutputItemId?: string | null; // UUID - Optional (DEPRECATED)
   selectionMode: MinMaxSelectionMode;
   failoverMode: MinMaxFailoverMode;
   interval: number; // int - must be > 0

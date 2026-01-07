@@ -5,6 +5,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Core.Models;
 
 /// <summary>
+/// Specifies the source type for MinMax Selector Memory output
+/// </summary>
+public enum MinMaxSourceType
+{
+    /// <summary>
+    /// Reference is a Point (MonitoringItem) GUID
+    /// </summary>
+    Point = 0,
+    
+    /// <summary>
+    /// Reference is a Global Variable name
+    /// </summary>
+    GlobalVariable = 1
+}
+
+/// <summary>
 /// Selection mode for Min/Max Selector Memory
 /// </summary>
 public enum MinMaxSelectionMode
@@ -92,17 +108,47 @@ public class MinMaxSelectorMemory
     public string InputItemIds { get; set; } = "[]";
 
     /// <summary>
-    /// The output item where the selected min/max value will be written.
+    /// Type of the output source: Point or GlobalVariable
+    /// </summary>
+    [Column("output_type")] 
+    public MinMaxSourceType OutputType { get; set; } = MinMaxSourceType.Point;
+    
+    /// <summary>
+    /// Reference to the output source where the selected value will be written.
+    /// - If OutputType = Point: GUID string of the MonitoringItem (AnalogOutput)
+    /// - If OutputType = GlobalVariable: Name of the Global Variable
+    /// </summary>
+    [Column("output_reference")] 
+    public string OutputReference { get; set; } = string.Empty;
+
+    /// <summary>
+    /// (Legacy) The output item where the selected min/max value will be written.
     /// Must be an AnalogOutput type.
+    /// DEPRECATED: Use OutputType and OutputReference instead
     /// </summary>
     [Column("output_item_id")]
     public Guid OutputItemId { get; set; }
 
     /// <summary>
-    /// Optional output item for the selected input index (1-16).
+    /// Type of the selected index output source: Point or GlobalVariable
+    /// </summary>
+    [Column("selected_index_output_type")] 
+    public MinMaxSourceType? SelectedIndexOutputType { get; set; }
+    
+    /// <summary>
+    /// Reference to the selected index output source.
+    /// - If SelectedIndexOutputType = Point: GUID string of the MonitoringItem (AnalogOutput)
+    /// - If SelectedIndexOutputType = GlobalVariable: Name of the Global Variable
+    /// </summary>
+    [Column("selected_index_output_reference")] 
+    public string? SelectedIndexOutputReference { get; set; }
+
+    /// <summary>
+    /// (Legacy) Optional output item for the selected input index (1-16).
     /// When configured, writes which input (by position 1-based) was selected.
     /// Must be an AnalogOutput type if specified.
     /// Use case: Trending which sensor is being used, HMI display
+    /// DEPRECATED: Use SelectedIndexOutputType and SelectedIndexOutputReference instead
     /// </summary>
     [Column("selected_index_output_item_id")]
     public Guid? SelectedIndexOutputItemId { get; set; }
