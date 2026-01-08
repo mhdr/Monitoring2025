@@ -296,7 +296,8 @@ builder.Services.AddSwaggerGen(c =>
     {
         // For types with duplicate names, include namespace to differentiate
         var typeName = type.Name;
-        if (type.Namespace != null && (typeName == "IoOperationType" || type.FullName?.Contains("IoOperationType") == true))
+        if (type.Namespace != null && (typeName == "IoOperationType" || typeName == "DataType" || 
+            type.FullName?.Contains("IoOperationType") == true || type.FullName?.Contains("DataType") == true))
         {
             return type.FullName?.Replace("+", ".").Replace(".", "_");
         }
