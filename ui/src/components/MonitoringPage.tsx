@@ -210,10 +210,10 @@ const MonitoringPage: React.FC = () => {
       fetchValues(currentFolderItemIds);
     }, 150); // 150ms delay - UI renders instantly, then data loads
 
-    // Set up polling interval (every 4 seconds as per requirement)
+    // Set up polling interval (every 5 seconds as per requirement)
     pollingIntervalRef.current = window.setInterval(() => {
       fetchValues(currentFolderItemIds);
-    }, 4000);
+    }, 5000);
 
     // Cleanup on unmount or when item IDs change
     return () => {

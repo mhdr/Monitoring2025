@@ -82,7 +82,7 @@ const LiveMonitoringDetailPage: React.FC = () => {
   // State management
   const [liveData, setLiveData] = useState<LiveDataPoint[]>([]);
   const [isPolling, setIsPolling] = useState<boolean>(false);
-  const [pollingInterval, setPollingInterval] = useState<number>(4000); // Default 4s
+  const [pollingInterval, setPollingInterval] = useState<number>(5000); // Default 5s
   const [maxDataPoints, setMaxDataPoints] = useState<number>(50); // Default 50 points
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);

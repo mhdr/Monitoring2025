@@ -252,7 +252,7 @@ const PIDMemoryManagementPage: React.FC = () => {
     // Set up polling interval
     const intervalId = setInterval(() => {
       fetchTuningSessions();
-    }, 3000); // Poll every 3 seconds
+    }, 5000); // Poll every 5 seconds
 
     return () => clearInterval(intervalId);
     // eslint-disable-next-line react-hooks/exhaustive-deps

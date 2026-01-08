@@ -32,7 +32,7 @@ public class ActiveGlobalVariablesBackgroundWorker : BackgroundService, IDisposa
 
     /// <summary>
     /// Main background loop. Runs until the host cancellation token is signaled.
-    /// Polls every 2 seconds for global variable value changes.
+    /// Polls every 5 seconds for global variable value changes.
     /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -53,7 +53,7 @@ public class ActiveGlobalVariablesBackgroundWorker : BackgroundService, IDisposa
                         await _signalRBroadcastService.BroadcastGlobalVariablesUpdateAsync(variables, stoppingToken);
                     }
 
-                    await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {

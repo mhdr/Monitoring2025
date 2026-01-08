@@ -128,7 +128,7 @@ export function useActiveAlarmCount(isAuthenticated: boolean, isAuthLoading: boo
   }, [isAuthenticated]);
 
   /**
-   * Periodic refresh of alarm count every 5 minutes
+   * Periodic refresh of alarm count every 60 seconds
    * This ensures the badge stays updated even if SignalR connection fails
    * Uses retry logic for reliability
    */
@@ -137,12 +137,12 @@ export function useActiveAlarmCount(isAuthenticated: boolean, isAuthLoading: boo
       return;
     }
 
-    logger.log('Setting up periodic alarm count refresh (5 minutes)');
+    logger.log('Setting up periodic alarm count refresh (60 seconds)');
 
     const intervalId = setInterval(() => {
       logger.log('Periodic alarm count refresh');
       fetchWithRetry(0);
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 60 * 1000); // 60 seconds
 
     return () => {
       clearInterval(intervalId);

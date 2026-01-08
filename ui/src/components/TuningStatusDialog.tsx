@@ -111,7 +111,7 @@ const TuningStatusDialog: React.FC<TuningStatusDialogProps> = ({
         }
         return currentSession; // Return unchanged to avoid unnecessary re-render
       });
-    }, 2000);
+    }, 5000);
 
     return () => clearInterval(intervalId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
