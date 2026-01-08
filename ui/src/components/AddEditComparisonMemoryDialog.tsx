@@ -164,6 +164,8 @@ const AddEditComparisonMemoryDialog: React.FC<AddEditComparisonMemoryDialogProps
     name: '',
     comparisonGroups: [],
     groupOperator: GroupOperator.And,
+    outputType: 0,
+    outputReference: '',
     outputItemId: '',
     interval: 1,
     duration: 10,

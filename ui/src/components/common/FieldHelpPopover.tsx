@@ -48,7 +48,16 @@ const FieldHelpPopover: React.FC<FieldHelpPopoverProps> = ({
     try {
       const translatedSections = t(`${fieldKey}.sections`, { returnObjects: true });
       if (Array.isArray(translatedSections)) {
-        helpSections = translatedSections;
+        // Validate that all items are objects with required properties
+        const validSections = translatedSections.filter(
+          (item): item is HelpSection => 
+            typeof item === 'object' && 
+            item !== null && 
+            'content' in item
+        );
+        if (validSections.length > 0) {
+          helpSections = validSections;
+        }
       } else {
         // Fallback to single content if sections is not an array
         const content = t(`${fieldKey}.content`, { defaultValue: '' });

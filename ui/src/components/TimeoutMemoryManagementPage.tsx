@@ -27,7 +27,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getTimeoutMemories, getGlobalVariables } from '../services/extendedApi';
-import type { TimeoutMemory, ItemType, GlobalVariable } from '../types/api';
+import type { TimeoutMemory, ItemType } from '../types/api';
 import { ItemTypeEnum, TimeoutSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';

@@ -29,8 +29,8 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getRateOfChangeMemories, getGlobalVariables } from '../services/extendedApi';
-import type { RateOfChangeMemory, RateOfChangeMemoryWithItems, ItemType, GlobalVariable } from '../types/api';
-import { ItemTypeEnum, RateCalculationMethod, RateTimeUnit, RateOfChangeSourceType } from '../types/api';
+import type { RateOfChangeMemory, RateOfChangeMemoryWithItems, ItemType } from '../types/api';
+import { ItemTypeEnum, RateCalculationMethod, RateTimeUnit } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 

@@ -45,7 +45,7 @@ const DeleteWriteActionMemoryDialog: React.FC<DeleteWriteActionMemoryDialogProps
       return writeActionMemory.name;
     }
     
-    const inputName = writeActionMemory.inputItemName || writeActionMemory.inputItemId.substring(0, 8);
+    const inputName = writeActionMemory.inputItemName || writeActionMemory.inputItemId?.substring(0, 8) || 'N/A';
     const outputName = writeActionMemory.outputItemName || writeActionMemory.outputItemId.substring(0, 8);
     return `${inputName} → ${outputName}`;
   };

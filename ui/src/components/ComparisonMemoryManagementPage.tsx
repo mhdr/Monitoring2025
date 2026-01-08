@@ -28,7 +28,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getComparisonMemories } from '../services/extendedApi';
-import type { ComparisonMemory, ComparisonGroup, GroupOperator } from '../types/api';
+import type { ComparisonMemory, ComparisonGroup } from '../types/api';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
 // Lazy load dialog components for code splitting
@@ -172,7 +172,7 @@ const ComparisonMemoryManagementPage: React.FC = () => {
   }, [memories, searchTerm]);
 
   // Get group operator label
-  const getGroupOperatorLabel = useCallback((op: GroupOperator): string => {
+  const getGroupOperatorLabel = useCallback((op: number): string => {
     switch (op) {
       case 1: // And
         return t('comparisonMemory.groupOperator.and');
@@ -231,7 +231,7 @@ const ComparisonMemoryManagementPage: React.FC = () => {
                     ? `${group.name} (${t('comparisonMemory.nOutOfM', { n: group.requiredVotes, m: inputCount })})`
                     : t('comparisonMemory.nOutOfM', { n: group.requiredVotes, m: inputCount });
                   return (
-                    <Tooltip key={idx} title={`${getModeLabel(group.comparisonMode)}: ${group.inputItemNames?.join(', ') || ''}`}>
+                    <Tooltip key={idx} title={`${getModeLabel(group.comparisonMode || 1)}: ${group.inputItemNames?.join(', ') || ''}`}>
                       <Chip
                         label={label}
                         size="small"

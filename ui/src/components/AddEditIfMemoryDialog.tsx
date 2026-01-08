@@ -51,9 +51,9 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
-import { addIfMemory, editIfMemory, testIfCondition, getGlobalVariables } from '../services/extendedApi';
-import type { IfMemory, MonitoringItem, VariableAlias, GlobalVariable } from '../types/api';
-import { ItemTypeEnum, IfMemoryOutputType, TimeoutSourceType } from '../types/api';
+import { addIfMemory, editIfMemory, testIfCondition } from '../services/extendedApi';
+import type { IfMemory, MonitoringItem, VariableAlias } from '../types/api';
+import { ItemTypeEnum, IfMemoryOutputType } from '../types/api';
 import { createLogger } from '../utils/logger';
 import FieldHelpPopover from './common/FieldHelpPopover';
 
@@ -220,6 +220,8 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
     branches: [],
     defaultValue: 0,
     variableMappings: [],
+    outputDestinationType: 0,
+    outputReference: '',
     outputItemId: '',
     outputType: IfMemoryOutputType.Digital,
     interval: 1,
@@ -238,6 +240,8 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
         branches,
         defaultValue: ifMemory.defaultValue,
         variableMappings: mappings,
+        outputDestinationType: ifMemory.outputDestinationType || 0,
+        outputReference: ifMemory.outputReference || '',
         outputItemId: ifMemory.outputItemId,
         outputType: ifMemory.outputType,
         interval: ifMemory.interval,
@@ -251,6 +255,8 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
         branches: [],
         defaultValue: 0,
         variableMappings: [],
+        outputDestinationType: 0,
+        outputReference: '',
         outputItemId: '',
         outputType: IfMemoryOutputType.Digital,
         interval: 1,
@@ -633,6 +639,8 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
           branches: branchesJson,
           defaultValue: formData.defaultValue,
           variableAliases: variableAliasesJson,
+          outputDestinationType: formData.outputDestinationType,
+          outputReference: formData.outputReference,
           outputItemId: formData.outputItemId,
           outputType: formData.outputType,
           interval: formData.interval,
@@ -654,6 +662,8 @@ const AddEditIfMemoryDialog: React.FC<AddEditIfMemoryDialogProps> = ({
           branches: branchesJson,
           defaultValue: formData.defaultValue,
           variableAliases: variableAliasesJson,
+          outputDestinationType: formData.outputDestinationType,
+          outputReference: formData.outputReference,
           outputItemId: formData.outputItemId,
           outputType: formData.outputType,
           interval: formData.interval,

@@ -130,7 +130,6 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
     outputValueSourceItemId: '',
     duration: 10,
     isDisabled: false,
-    resetExecutionCount: false,
   });
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -282,7 +281,6 @@ const AddEditWriteActionMemoryDialog: React.FC<AddEditWriteActionMemoryDialogPro
         const response = await editWriteActionMemory({
           ...requestData,
           id: writeActionMemory.id,
-          resetExecutionCount: formData.resetExecutionCount,
         });
 
         if (response.isSuccessful) {

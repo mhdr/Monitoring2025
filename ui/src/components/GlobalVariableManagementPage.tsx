@@ -100,25 +100,26 @@ const formatVariableValue = (variable: GlobalVariable, t: (key: string) => strin
 
 /**
  * Format last update time to relative time
+ * Currently unused but kept for future use
  */
-const formatLastUpdateTime = (timestamp: number | null | undefined, t: (key: string) => string): string => {
-  if (!timestamp) return t('common.never');
+// const formatLastUpdateTime = (timestamp: number | null | undefined, t: (key: string) => string): string => {
+//   if (!timestamp) return t('common.never');
 
-  const now = Date.now();
-  const diff = now - timestamp;
-  const seconds = Math.floor(diff / 1000);
+//   const now = Date.now();
+//   const diff = now - timestamp;
+//   const seconds = Math.floor(diff / 1000);
 
-  if (seconds < 60) return `${seconds}${t('common.secondsAgo')}`;
+//   if (seconds < 60) return `${seconds}${t('common.secondsAgo')}`;
 
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}${t('common.minutesAgo')}`;
+//   const minutes = Math.floor(seconds / 60);
+//   if (minutes < 60) return `${minutes}${t('common.minutesAgo')}`;
 
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}${t('common.hoursAgo')}`;
+//   const hours = Math.floor(minutes / 60);
+//   if (hours < 24) return `${hours}${t('common.hoursAgo')}`;
 
-  const days = Math.floor(hours / 24);
-  return `${days}${t('common.daysAgo')}`;
-};
+//   const days = Math.floor(hours / 24);
+//   return `${days}${t('common.daysAgo')}`;
+// };
 
 /**
  * Global Variable Management Page Component

@@ -26,7 +26,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getTotalizerMemories, getGlobalVariables } from '../services/extendedApi';
-import type { TotalizerMemory, TotalizerMemoryWithItems, ItemType, GlobalVariable } from '../types/api';
+import type { TotalizerMemory, TotalizerMemoryWithItems, ItemType } from '../types/api';
 import { ItemTypeEnum, AccumulationType, TotalizerSourceType } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -229,18 +229,13 @@ const TotalizerMemoryManagementPage: React.FC = () => {
   /**
    * Handle dialog close
    */
-  const handleDialogClose = () => {
+  const handleDialogClose = (shouldRefresh = false) => {
     setAddEditDialogOpen(false);
     setDeleteDialogOpen(false);
     setSelectedTotalizerMemory(null);
-  };
-
-  /**
-   * Handle successful operation (add/edit/delete)
-   */
-  const handleOperationSuccess = () => {
-    handleDialogClose();
-    fetchTotalizerMemories();
+    if (shouldRefresh) {
+      fetchTotalizerMemories();
+    }
   };
 
   /**
@@ -545,7 +540,6 @@ const TotalizerMemoryManagementPage: React.FC = () => {
           <AddEditTotalizerMemoryDialog
             open={addEditDialogOpen}
             onClose={handleDialogClose}
-            onSuccess={handleOperationSuccess}
             totalizerMemory={selectedTotalizerMemory}
             editMode={editMode}
           />
@@ -555,7 +549,6 @@ const TotalizerMemoryManagementPage: React.FC = () => {
           <DeleteTotalizerMemoryDialog
             open={deleteDialogOpen}
             onClose={handleDialogClose}
-            onSuccess={handleOperationSuccess}
             totalizerMemory={selectedTotalizerMemory}
           />
         )}

@@ -28,7 +28,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useMonitoring } from '../hooks/useMonitoring';
 import SyncfusionGridWrapper, { type SyncfusionColumnDef } from './SyncfusionGridWrapper';
 import { getStatisticalMemories, getGlobalVariables } from '../services/extendedApi';
-import type { StatisticalMemory, StatisticalWindowType, PercentileConfig, GlobalVariable } from '../types/api';
+import type { StatisticalMemory, StatisticalWindowType, PercentileConfig } from '../types/api';
 import { StatisticalSourceType } from '../types/api';
 import FieldHelpPopover from './common/FieldHelpPopover';
 

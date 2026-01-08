@@ -16,7 +16,7 @@ import {
 import { Warning as WarningIcon } from '@mui/icons-material';
 import { useLanguage } from '../hooks/useLanguage';
 import { deleteComparisonMemory } from '../services/extendedApi';
-import type { ComparisonMemory, GroupOperator } from '../types/api';
+import type { ComparisonMemory } from '../types/api';
 
 interface DeleteComparisonMemoryDialogProps {
   open: boolean;
@@ -55,7 +55,7 @@ const DeleteComparisonMemoryDialog: React.FC<DeleteComparisonMemoryDialogProps> 
     }
   };
 
-  const getGroupOperatorLabel = (op: GroupOperator): string => {
+  const getGroupOperatorLabel = (op: number): string => {
     switch (op) {
       case 1:
         return t('comparisonMemory.groupOperator.and');

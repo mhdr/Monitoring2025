@@ -398,10 +398,12 @@ export const ComparisonMode = {
  * GroupOperator enum for combining comparison groups
  * 1 = AND
  * 2 = OR
+ * 3 = XOR
  */
 export const GroupOperator = {
   And: 1,
   Or: 2,
+  Xor: 3,
 } as const;
 
 /** ControllerType: 1 = Siemens */
@@ -3027,10 +3029,15 @@ export interface WriteActionMemory {
   id: string; // UUID
   name?: string | null; // Optional name for the write action memory
   outputItemId: string; // UUID - Item to write values (must be DigitalOutput or AnalogOutput)
+  inputItemId?: string | null; // UUID - Input item that triggers the write action
   outputValue?: string | null; // Static value to write (used when outputValueSourceItemId is null)
   outputValueSourceItemId?: string | null; // UUID - Item to read dynamic value from (used when outputValue is null)
   duration: number; // int64 - Duration parameter for WriteOrAddValue (must be >= 0)
+  interval?: number; // Interval in seconds
   isDisabled: boolean; // Whether this write action memory is disabled
+  currentExecutionCount?: number; // Current execution count
+  maxExecutionCount?: number | null; // Maximum execution count (null for unlimited)
+  resetExecutionCount?: boolean; // Whether to reset execution count
 }
 
 /**
@@ -3263,9 +3270,13 @@ export interface PIDMemory {
   // Input (Process Variable)
   inputType: number; // 0=Point, 1=GlobalVariable
   inputReference: string; // GUID string for Point, name for GlobalVariable (must be AnalogInput for Point)
+  inputItemId?: string; // DEPRECATED - UUID for backward compatibility
+  inputItemName?: string; // Display name for UI
   // Output (Control Variable)
   outputType: number; // 0=Point, 1=GlobalVariable
   outputReference: string; // GUID string for Point, name for GlobalVariable (must be AnalogOutput for Point)
+  outputItemId?: string; // DEPRECATED - UUID for backward compatibility
+  outputItemName?: string; // Display name for UI
   kp: number; // double - Proportional gain
   ki: number; // double - Integral gain
   kd: number; // double - Derivative gain
@@ -3430,8 +3441,12 @@ export interface TotalizerMemory {
   name?: string | null;
   inputType: number; // TotalizerSourceType (0=Point, 1=GlobalVariable)
   inputReference: string; // GUID string for Point, name for GlobalVariable
+  inputItemId?: string; // DEPRECATED - UUID for backward compatibility
+  inputItemName?: string; // Display name for UI
   outputType: number; // TotalizerSourceType (0=Point, 1=GlobalVariable)
   outputReference: string; // GUID string for Point, name for GlobalVariable
+  outputItemId?: string; // DEPRECATED - UUID for backward compatibility
+  outputItemName?: string; // Display name for UI
   interval: number; // int - Execution interval in seconds
   isDisabled: boolean; // bool - Whether totalizer is disabled
   accumulationType: AccumulationType; // Accumulation type
@@ -4292,6 +4307,26 @@ export interface ComparisonMemory {
 }
 
 /**
+ * Comparison group within a comparison memory
+ */
+export interface ComparisonGroup {
+  id?: string;
+  inputItemIds: string[];
+  compareType: number; // CompareType enum value
+  compareValue?: number;
+  operator?: number; // Group operator for combining comparisons
+  requiredVotes?: number;
+  comparisonMode?: number; // 1 = Analog, 2 = Digital
+  threshold1?: number | null;
+  threshold2?: number | null;
+  thresholdHysteresis?: number;
+  votingHysteresis?: number;
+  digitalValue?: string | null;
+  name?: string | null;
+  inputItemNames?: string[];
+}
+
+/**
  * Request DTO for retrieving comparison memory configurations
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -4654,6 +4689,9 @@ export interface HolidayDate {
   holidayCalendarId: string;
   date: string;
   description?: string | null;
+  name?: string | null;
+  holidayAnalogValue?: number | null;
+  holidayDigitalValue?: boolean | null;
 }
 
 /**
@@ -4662,7 +4700,62 @@ export interface HolidayDate {
 export interface AddHolidayDateDto {
   date: string;
   description?: string | null;
+  name?: string | null;
+  holidayAnalogValue?: number | null;
+  holidayDigitalValue?: boolean | null;
 }
+
+/**
+ * Request DTO for adding a holiday calendar
+ */
+export interface AddHolidayCalendarRequestDto {
+  name: string;
+  description?: string | null;
+  dates?: AddHolidayDateDto[] | null;
+}
+
+/**
+ * Response DTO for adding a holiday calendar
+ */
+export interface AddHolidayCalendarResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+  id?: string | null;
+}
+
+/**
+ * Request DTO for editing a holiday calendar
+ */
+export interface EditHolidayCalendarRequestDto {
+  id: string;
+  name: string;
+  description?: string | null;
+  dates?: AddHolidayDateDto[] | null;
+}
+
+/**
+ * Response DTO for editing a holiday calendar
+ */
+export interface EditHolidayCalendarResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
+/**
+ * Request DTO for deleting a holiday calendar
+ */
+export interface DeleteHolidayCalendarRequestDto {
+  id: string;
+}
+
+/**
+ * Response DTO for deleting a holiday calendar
+ */
+export interface DeleteHolidayCalendarResponseDto {
+  isSuccessful: boolean;
+  errorMessage?: string | null;
+}
+
 /**
  * Request DTO for getting schedule memories
  */
@@ -4757,6 +4850,7 @@ export interface GlobalVariable {
   id: string;
   name: string;
   variableType: GlobalVariableType;
+  dataType: GlobalVariableType; // Alias for variableType
   description?: string | null;
   isDisabled: boolean;
   currentValue: string; // "true"/"false" for boolean, numeric string for float
