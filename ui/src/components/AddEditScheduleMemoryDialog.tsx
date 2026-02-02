@@ -79,8 +79,6 @@ interface FormData {
   duration: number;
   isDisabled: boolean;
   holidayCalendarId: string;
-  defaultAnalogValue: number | null;
-  defaultDigitalValue: boolean | null;
   scheduleBlocks: ScheduleBlockForm[];
 }
 
@@ -207,8 +205,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
     duration: 10,
     isDisabled: false,
     holidayCalendarId: '',
-    defaultAnalogValue: null,
-    defaultDigitalValue: null,
     scheduleBlocks: [],
   });
 
@@ -283,8 +279,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           duration: scheduleMemory.duration ?? 10,
           isDisabled: scheduleMemory.isDisabled,
           holidayCalendarId: scheduleMemory.holidayCalendarId || '',
-          defaultAnalogValue: scheduleMemory.defaultAnalogValue ?? null,
-          defaultDigitalValue: scheduleMemory.defaultDigitalValue ?? null,
           scheduleBlocks: scheduleMemory.scheduleBlocks?.map((b) => ({
             tempId: b.id || generateTempId(),
             dayOfWeek: typeof b.dayOfWeek === 'number' ? b.dayOfWeek : 0,
@@ -307,8 +301,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           duration: 10,
           isDisabled: false,
           holidayCalendarId: '',
-          defaultAnalogValue: null,
-          defaultDigitalValue: null,
           scheduleBlocks: [],
         });
       }
@@ -425,8 +417,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           duration: formData.duration,
           isDisabled: formData.isDisabled,
           holidayCalendarId: formData.holidayCalendarId || null,
-          defaultAnalogValue: isAnalogOutput ? formData.defaultAnalogValue : null,
-          defaultDigitalValue: !isAnalogOutput ? formData.defaultDigitalValue : null,
           scheduleBlocks: blocks,
         });
 
@@ -445,8 +435,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
           duration: formData.duration,
           isDisabled: formData.isDisabled,
           holidayCalendarId: formData.holidayCalendarId || null,
-          defaultAnalogValue: isAnalogOutput ? formData.defaultAnalogValue : null,
-          defaultDigitalValue: !isAnalogOutput ? formData.defaultDigitalValue : null,
           scheduleBlocks: blocks,
         });
 
@@ -730,39 +718,6 @@ const AddEditScheduleMemoryDialog: React.FC<AddEditScheduleMemoryDialogProps> = 
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography variant="subtitle2">{t('scheduleMemory.defaultAnalogValue')}</Typography>
-                <IconButton size="small" onClick={handleHelpOpen('scheduleMemory.help.defaultValue')}>
-                  <HelpOutlineIcon fontSize="small" />
-                </IconButton>
-              </Box>
-              {isAnalogOutput ? (
-                <TextField
-                  label={t('scheduleMemory.defaultAnalogValue')}
-                  type="number"
-                  value={formData.defaultAnalogValue ?? ''}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, defaultAnalogValue: e.target.value ? Number(e.target.value) : null }))}
-                  disabled={loading}
-                  fullWidth
-                  data-id-ref="schedule-memory-default-analog-input"
-                  helperText={t('scheduleMemory.defaultValueHelp')}
-                />
-              ) : (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.defaultDigitalValue ?? false}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, defaultDigitalValue: e.target.checked }))}
-                      disabled={loading}
-                      data-id-ref="schedule-memory-default-digital-switch"
-                    />
-                  }
-                  label={t('scheduleMemory.defaultDigitalValue')}
-                />
-              )}
             </Grid>
 
             <Grid size={12}>

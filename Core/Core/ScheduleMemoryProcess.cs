@@ -138,22 +138,79 @@ public class ScheduleMemoryProcess
 
         // Collect all unique Point output IDs for batch fetching (skip GlobalVariable outputs)
         var allOutputIds = new HashSet<string>();
+        var pointMemories = new List<ScheduleMemory>();
+        var globalVarMemories = new List<ScheduleMemory>();
+        
         foreach (var memory in memoriesToProcess)
         {
             if (memory.OutputType == ScheduleSourceType.Point)
             {
                 allOutputIds.Add(memory.OutputReference);
+                pointMemories.Add(memory);
+            }
+            else
+            {
+                globalVarMemories.Add(memory);
             }
         }
 
         // Batch fetch all required Redis items (performance optimization)
         var outputItemsCache = await Points.GetRawItemsBatch(allOutputIds.ToList());
+        
+        // Batch fetch MonitoringItems to determine type for Points
+        var pointTypeCache = new Dictionary<string, ItemType>();
+        if (pointMemories.Count > 0)
+        {
+            var outputGuids = pointMemories
+                .Select(m => m.OutputReference)
+                .Where(r => Guid.TryParse(r, out _))
+                .Select(r => Guid.Parse(r))
+                .ToList();
+                
+            if (outputGuids.Count > 0)
+            {
+                var monitoringItems = await _context!.MonitoringItems
+                    .Where(item => outputGuids.Contains(item.Id))
+                    .Select(item => new { item.Id, item.ItemType })
+                    .ToListAsync();
+                    
+                foreach (var item in monitoringItems)
+                {
+                    pointTypeCache[item.Id.ToString()] = item.ItemType;
+                }
+            }
+        }
+        
+        // Batch fetch GlobalVariables to determine type
+        var globalVarTypeCache = new Dictionary<string, GlobalVariableType>();
+        if (globalVarMemories.Count > 0)
+        {
+            var globalVarNames = globalVarMemories
+                .Select(m => m.OutputReference)
+                .Distinct()
+                .ToList();
+                
+            if (globalVarNames.Count > 0)
+            {
+                var globalVars = await _context!.GlobalVariables
+                    .Where(gv => globalVarNames.Contains(gv.Name))
+                    .Select(gv => new { gv.Name, gv.VariableType })
+                    .ToListAsync();
+                    
+                foreach (var gv in globalVars)
+                {
+                    globalVarTypeCache[gv.Name] = gv.VariableType;
+                }
+            }
+        }
 
         MyLog.Debug("Batch fetched Redis items for Schedule processing", new Dictionary<string, object?>
         {
             ["MemoryCount"] = memoriesToProcess.Count,
             ["OutputItemsRequested"] = allOutputIds.Count,
-            ["OutputItemsFetched"] = outputItemsCache.Count
+            ["OutputItemsFetched"] = outputItemsCache.Count,
+            ["PointTypesLoaded"] = pointTypeCache.Count,
+            ["GlobalVarTypesLoaded"] = globalVarTypeCache.Count
         });
 
         // Process each memory
@@ -161,7 +218,7 @@ public class ScheduleMemoryProcess
         {
             try
             {
-                await ProcessSingleSchedule(memory, outputItemsCache, epochTime, utcNow);
+                await ProcessSingleSchedule(memory, outputItemsCache, pointTypeCache, globalVarTypeCache, epochTime, utcNow);
                 _lastExecutionTimes[memory.Id] = epochTime;
             }
             catch (Exception ex)
@@ -178,6 +235,8 @@ public class ScheduleMemoryProcess
     private async Task ProcessSingleSchedule(
         ScheduleMemory memory,
         Dictionary<string, RawItemRedis> outputItemsCache,
+        Dictionary<string, ItemType> pointTypeCache,
+        Dictionary<string, GlobalVariableType> globalVarTypeCache,
         long epochTime,
         DateTime utcNow)
     {
@@ -195,9 +254,41 @@ public class ScheduleMemoryProcess
             }
         }
 
-        // Determine if output is analog based on what default value is set
-        // If DefaultAnalogValue is set, it's analog output; otherwise digital
-        bool isAnalogOutput = memory.DefaultAnalogValue.HasValue;
+        // Determine if output is analog based on output type
+        bool isAnalogOutput = false;
+        
+        if (memory.OutputType == ScheduleSourceType.Point)
+        {
+            if (pointTypeCache.TryGetValue(memory.OutputReference, out var itemType))
+            {
+                isAnalogOutput = itemType == ItemType.AnalogOutput;
+            }
+            else
+            {
+                MyLog.Warning("Point type not found in cache", new Dictionary<string, object?>
+                {
+                    ["MemoryId"] = memory.Id,
+                    ["OutputReference"] = memory.OutputReference
+                });
+                return;
+            }
+        }
+        else if (memory.OutputType == ScheduleSourceType.GlobalVariable)
+        {
+            if (globalVarTypeCache.TryGetValue(memory.OutputReference, out var variableType))
+            {
+                isAnalogOutput = variableType == GlobalVariableType.Float;
+            }
+            else
+            {
+                MyLog.Warning("GlobalVariable type not found in cache", new Dictionary<string, object?>
+                {
+                    ["MemoryId"] = memory.Id,
+                    ["OutputReference"] = memory.OutputReference
+                });
+                return;
+            }
+        }
 
         // Check if today is a holiday
         var (isHoliday, holidayDate) = await CheckHoliday(memory, utcNow);
@@ -218,8 +309,12 @@ public class ScheduleMemoryProcess
         }
         else
         {
-            // No active block - write default value
-            await WriteDefaultValue(memory, isAnalogOutput, epochTime);
+            // No active block - do nothing to preserve last device state
+            MyLog.Debug("No active schedule block - preserving device state", new Dictionary<string, object?>
+            {
+                ["MemoryId"] = memory.Id,
+                ["MemoryName"] = memory.Name
+            });
         }
     }
 
@@ -332,15 +427,15 @@ public class ScheduleMemoryProcess
     {
         string value;
         
-        // Check if holiday has specific value, otherwise use default
+        // Use holiday-specific value, or 0/false if not set
         if (isAnalogOutput)
         {
-            var holidayValue = holidayDate?.HolidayAnalogValue ?? memory.DefaultAnalogValue;
+            var holidayValue = holidayDate?.HolidayAnalogValue;
             value = holidayValue?.ToString() ?? "0";
         }
         else
         {
-            var holidayValue = holidayDate?.HolidayDigitalValue ?? memory.DefaultDigitalValue;
+            var holidayValue = holidayDate?.HolidayDigitalValue;
             value = holidayValue == true ? "1" : "0";
         }
 
@@ -403,44 +498,6 @@ public class ScheduleMemoryProcess
             ["OutputReference"] = memory.OutputReference,
             ["BlockId"] = block.Id,
             ["BlockDescription"] = block.Description,
-            ["Value"] = value,
-            ["IsAnalog"] = isAnalogOutput
-        });
-    }
-
-    /// <summary>
-    /// Write default value to output (no active block)
-    /// </summary>
-    private async Task WriteDefaultValue(ScheduleMemory memory, bool isAnalogOutput, long epochTime)
-    {
-        string value;
-        if (isAnalogOutput)
-        {
-            value = memory.DefaultAnalogValue?.ToString() ?? "0";
-        }
-        else
-        {
-            value = memory.DefaultDigitalValue == true ? "1" : "0";
-        }
-
-        // Write to output based on type (Point or GlobalVariable)
-        if (memory.OutputType == ScheduleSourceType.Point)
-        {
-            if (Guid.TryParse(memory.OutputReference, out var outputItemId))
-            {
-                await Points.WriteOrAddValue(outputItemId, value, null, memory.Duration);
-            }
-        }
-        else if (memory.OutputType == ScheduleSourceType.GlobalVariable)
-        {
-            await GlobalVariableProcess.SetVariable(memory.OutputReference, value);
-        }
-        
-        MyLog.Debug("Schedule default value written", new Dictionary<string, object?>
-        {
-            ["MemoryId"] = memory.Id,
-            ["OutputType"] = memory.OutputType,
-            ["OutputReference"] = memory.OutputReference,
             ["Value"] = value,
             ["IsAnalog"] = isAnalogOutput
         });

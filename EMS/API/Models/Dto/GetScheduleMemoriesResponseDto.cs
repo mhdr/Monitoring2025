@@ -48,8 +48,6 @@ public class ScheduleMemoryItemDto
 
     public Guid? HolidayCalendarId { get; set; }
     public string? HolidayCalendarName { get; set; }
-    public double? DefaultAnalogValue { get; set; }
-    public bool? DefaultDigitalValue { get; set; }
     
     /// <summary>
     /// Schedule blocks for this memory

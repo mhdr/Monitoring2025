@@ -4652,8 +4652,6 @@ export interface ScheduleMemory {
   duration: number; // long - Write duration in seconds for controller writes. Default: 10
   holidayCalendarId?: string | null;
   holidayCalendarName?: string | null;
-  defaultAnalogValue?: number | null;
-  defaultDigitalValue?: boolean | null;
   scheduleBlocks?: ScheduleBlock[] | null;
 }
 
@@ -4782,8 +4780,6 @@ export interface AddScheduleMemoryRequestDto {
   isDisabled?: boolean;
   duration?: number; // long - Write duration in seconds. Default: 10
   holidayCalendarId?: string | null;
-  defaultAnalogValue?: number | null;
-  defaultDigitalValue?: boolean | null;
   scheduleBlocks?: AddScheduleBlockDto[] | null;
 }
 
@@ -4808,8 +4804,6 @@ export interface EditScheduleMemoryRequestDto {
   isDisabled?: boolean;
   duration?: number; // long - Write duration in seconds. Default: 10
   holidayCalendarId?: string | null;
-  defaultAnalogValue?: number | null;
-  defaultDigitalValue?: boolean | null;
   scheduleBlocks?: AddScheduleBlockDto[] | null;
 }
 

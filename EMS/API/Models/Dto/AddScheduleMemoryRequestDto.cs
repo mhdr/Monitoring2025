@@ -48,16 +48,6 @@ public class AddScheduleMemoryRequestDto
     public Guid? HolidayCalendarId { get; set; }
 
     /// <summary>
-    /// Default analog output value when no schedule block is active
-    /// </summary>
-    public double? DefaultAnalogValue { get; set; }
-
-    /// <summary>
-    /// Default digital output value when no schedule block is active
-    /// </summary>
-    public bool? DefaultDigitalValue { get; set; }
-
-    /// <summary>
     /// Schedule blocks for this memory
     /// </summary>
     public List<AddScheduleBlockDto>? ScheduleBlocks { get; set; }

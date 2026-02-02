@@ -121,18 +121,6 @@ public class ScheduleMemories
                 }
             }
 
-            // Validate default value based on output type
-            if (isAnalogOutput)
-            {
-                // For analog output, default analog value should be set (digital value ignored)
-                scheduleMemory.DefaultDigitalValue = null;
-            }
-            else
-            {
-                // For digital output, default digital value should be set (analog value ignored)
-                scheduleMemory.DefaultAnalogValue = null;
-            }
-
             // Validate schedule blocks if provided
             if (scheduleMemory.ScheduleBlocks != null && scheduleMemory.ScheduleBlocks.Count > 0)
             {
@@ -252,16 +240,6 @@ public class ScheduleMemories
                 }
             }
 
-            // Validate default value based on output type
-            if (isAnalogOutput)
-            {
-                scheduleMemory.DefaultDigitalValue = null;
-            }
-            else
-            {
-                scheduleMemory.DefaultAnalogValue = null;
-            }
-
             // Validate schedule blocks if provided
             if (scheduleMemory.ScheduleBlocks != null && scheduleMemory.ScheduleBlocks.Count > 0)
             {
@@ -287,8 +265,6 @@ public class ScheduleMemories
             existingMemory.IsDisabled = scheduleMemory.IsDisabled;
             existingMemory.Duration = scheduleMemory.Duration;
             existingMemory.HolidayCalendarId = scheduleMemory.HolidayCalendarId;
-            existingMemory.DefaultAnalogValue = scheduleMemory.DefaultAnalogValue;
-            existingMemory.DefaultDigitalValue = scheduleMemory.DefaultDigitalValue;
 
             // Add new blocks
             if (scheduleMemory.ScheduleBlocks != null)

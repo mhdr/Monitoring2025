@@ -117,18 +117,6 @@ public class ScheduleMemory
     public virtual HolidayCalendar? HolidayCalendar { get; set; }
     
     /// <summary>
-    /// Default analog output value when no schedule block is active (for AnalogOutput items)
-    /// </summary>
-    [Column("default_analog_value")]
-    public double? DefaultAnalogValue { get; set; }
-    
-    /// <summary>
-    /// Default digital output value when no schedule block is active (for DigitalOutput items)
-    /// </summary>
-    [Column("default_digital_value")]
-    public bool? DefaultDigitalValue { get; set; }
-    
-    /// <summary>
     /// Navigation property for schedule blocks (weekly time schedules)
     /// </summary>
     public virtual ICollection<ScheduleBlock>? ScheduleBlocks { get; set; }

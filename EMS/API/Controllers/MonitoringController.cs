@@ -11330,8 +11330,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                     Duration = m.Duration,
                     HolidayCalendarId = m.HolidayCalendarId,
                     HolidayCalendarName = m.HolidayCalendar?.Name,
-                    DefaultAnalogValue = m.DefaultAnalogValue,
-                    DefaultDigitalValue = m.DefaultDigitalValue,
                     ScheduleBlocks = m.ScheduleBlocks?.Select(b => new ScheduleBlockItemDto
                     {
                         Id = b.Id,
@@ -11417,8 +11415,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 IsDisabled = request.IsDisabled,
                 Duration = request.Duration,
                 HolidayCalendarId = request.HolidayCalendarId,
-                DefaultAnalogValue = request.DefaultAnalogValue,
-                DefaultDigitalValue = request.DefaultDigitalValue,
                 ScheduleBlocks = request.ScheduleBlocks?.Select(b => new Core.Models.ScheduleBlock
                 {
                     DayOfWeek = (Core.Models.ScheduleDayOfWeek)b.DayOfWeek,
@@ -11479,8 +11475,6 @@ hub_connection.send(""SubscribeToActiveAlarms"", [])"
                 IsDisabled = request.IsDisabled,
                 Duration = request.Duration,
                 HolidayCalendarId = request.HolidayCalendarId,
-                DefaultAnalogValue = request.DefaultAnalogValue,
-                DefaultDigitalValue = request.DefaultDigitalValue,
                 ScheduleBlocks = request.ScheduleBlocks?.Select(b => new Core.Models.ScheduleBlock
                 {
                     DayOfWeek = (Core.Models.ScheduleDayOfWeek)b.DayOfWeek,
