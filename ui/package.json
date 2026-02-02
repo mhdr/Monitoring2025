@@ -61,6 +61,7 @@
     "@types/stylis": "^4.2.7",
     "@vitejs/plugin-basic-ssl": "^2.1.0",
     "@vitejs/plugin-react": "^5.1.0",
+    "baseline-browser-mapping": "^2.9.19",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.24",
