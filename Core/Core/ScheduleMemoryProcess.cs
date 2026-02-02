@@ -122,6 +122,19 @@ public class ScheduleMemoryProcess
 
         long epochTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         DateTime utcNow = DateTime.UtcNow;
+        
+        // Convert UTC to local time (Iran Standard Time) for schedule comparison
+        TimeZoneInfo localTimeZone;
+        try
+        {
+            localTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+        }
+        catch
+        {
+            // Fallback to system local timezone if Iran Standard Time is not available
+            localTimeZone = TimeZoneInfo.Local;
+        }
+        DateTime localNow = TimeZoneInfo.ConvertTimeFromUtc(utcNow, localTimeZone);
 
         // Filter memories that should be processed based on interval
         var memoriesToProcess = memories.Where(memory =>
@@ -210,7 +223,10 @@ public class ScheduleMemoryProcess
             ["OutputItemsRequested"] = allOutputIds.Count,
             ["OutputItemsFetched"] = outputItemsCache.Count,
             ["PointTypesLoaded"] = pointTypeCache.Count,
-            ["GlobalVarTypesLoaded"] = globalVarTypeCache.Count
+            ["GlobalVarTypesLoaded"] = globalVarTypeCache.Count,
+            ["UtcNow"] = utcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+            ["LocalNow"] = localNow.ToString("yyyy-MM-dd HH:mm:ss"),
+            ["TimeZone"] = localTimeZone.DisplayName
         });
 
         // Process each memory
@@ -218,7 +234,7 @@ public class ScheduleMemoryProcess
         {
             try
             {
-                await ProcessSingleSchedule(memory, outputItemsCache, pointTypeCache, globalVarTypeCache, epochTime, utcNow);
+                await ProcessSingleSchedule(memory, outputItemsCache, pointTypeCache, globalVarTypeCache, epochTime, localNow);
                 _lastExecutionTimes[memory.Id] = epochTime;
             }
             catch (Exception ex)
@@ -238,7 +254,7 @@ public class ScheduleMemoryProcess
         Dictionary<string, ItemType> pointTypeCache,
         Dictionary<string, GlobalVariableType> globalVarTypeCache,
         long epochTime,
-        DateTime utcNow)
+        DateTime localNow)
     {
         // For Point type, check if output item exists in cache
         if (memory.OutputType == ScheduleSourceType.Point)
@@ -291,7 +307,7 @@ public class ScheduleMemoryProcess
         }
 
         // Check if today is a holiday
-        var (isHoliday, holidayDate) = await CheckHoliday(memory, utcNow);
+        var (isHoliday, holidayDate) = await CheckHoliday(memory, localNow);
         if (isHoliday)
         {
             // Write holiday value or default value
@@ -300,7 +316,7 @@ public class ScheduleMemoryProcess
         }
 
         // Find active schedule block for current day and time
-        var activeBlock = FindActiveBlock(memory, utcNow);
+        var activeBlock = FindActiveBlock(memory, localNow);
         
         if (activeBlock != null)
         {
@@ -321,14 +337,14 @@ public class ScheduleMemoryProcess
     /// <summary>
     /// Check if today is a holiday in the associated calendar
     /// </summary>
-    private async Task<(bool IsHoliday, HolidayDate? HolidayDate)> CheckHoliday(ScheduleMemory memory, DateTime utcNow)
+    private async Task<(bool IsHoliday, HolidayDate? HolidayDate)> CheckHoliday(ScheduleMemory memory, DateTime localNow)
     {
         if (!memory.HolidayCalendarId.HasValue || memory.HolidayCalendar?.Dates == null)
         {
             return (false, null);
         }
 
-        var todayDate = utcNow.Date;
+        var todayDate = localNow.Date;
         var holidayDate = memory.HolidayCalendar.Dates
             .FirstOrDefault(d => d.Date.Date == todayDate);
 
@@ -339,16 +355,26 @@ public class ScheduleMemoryProcess
     /// Find the active schedule block for current day and time
     /// Handles: null EndTime, cross-midnight blocks, priority resolution
     /// </summary>
-    private ScheduleBlock? FindActiveBlock(ScheduleMemory memory, DateTime utcNow)
+    private ScheduleBlock? FindActiveBlock(ScheduleMemory memory, DateTime localNow)
     {
         if (memory.ScheduleBlocks == null || memory.ScheduleBlocks.Count == 0)
         {
             return null;
         }
 
-        var currentDayOfWeek = (ScheduleDayOfWeek)utcNow.DayOfWeek;
-        var currentTime = utcNow.TimeOfDay;
+        var currentDayOfWeek = (ScheduleDayOfWeek)localNow.DayOfWeek;
+        var currentTime = localNow.TimeOfDay;
         var previousDay = (ScheduleDayOfWeek)(((int)currentDayOfWeek + 6) % 7);
+        
+        MyLog.Debug("Finding active schedule block", new Dictionary<string, object?>
+        {
+            ["MemoryId"] = memory.Id,
+            ["MemoryName"] = memory.Name,
+            ["CurrentDayOfWeek"] = currentDayOfWeek.ToString(),
+            ["CurrentTime"] = currentTime.ToString(@"hh\:mm\:ss"),
+            ["LocalNow"] = localNow.ToString("yyyy-MM-dd HH:mm:ss"),
+            ["TotalBlocks"] = memory.ScheduleBlocks.Count
+        });
         
         var matchingBlocks = new List<ScheduleBlock>();
         
@@ -409,14 +435,30 @@ public class ScheduleMemoryProcess
 
         if (matchingBlocks.Count == 0)
         {
+            MyLog.Debug("No matching schedule blocks found", new Dictionary<string, object?>
+            {
+                ["MemoryId"] = memory.Id
+            });
             return null;
         }
 
         // Return highest priority block, then earliest start time for tie-breaking
-        return matchingBlocks
+        var activeBlock = matchingBlocks
             .OrderByDescending(b => b.Priority)
             .ThenBy(b => b.StartTime)
             .First();
+            
+        MyLog.Debug("Active schedule block found", new Dictionary<string, object?>
+        {
+            ["MemoryId"] = memory.Id,
+            ["BlockDayOfWeek"] = activeBlock.DayOfWeek.ToString(),
+            ["BlockStartTime"] = activeBlock.StartTime.ToString(@"hh\:mm\:ss"),
+            ["BlockEndTime"] = activeBlock.EndTime?.ToString(@"hh\:mm\:ss") ?? "null",
+            ["BlockPriority"] = activeBlock.Priority.ToString(),
+            ["MatchingBlocksCount"] = matchingBlocks.Count
+        });
+        
+        return activeBlock;
     }
 
 
